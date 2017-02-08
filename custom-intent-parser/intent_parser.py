@@ -5,7 +5,7 @@ class IntentParser(object):
     __metaclass__ = ABCMeta
 
     _intents = []
-    _slots = []
+    _entities = []
 
     @property
     def intents(self):
@@ -16,19 +16,19 @@ class IntentParser(object):
         self._intents = value
 
     @property
-    def slots(self):
-        return self._slots
+    def entities(self):
+        return self._entities
 
-    @slots.setter
-    def slots(self, value):
-        self._slots = value
+    @entities.setter
+    def entities(self, value):
+        self._entities = value
 
     @abstractmethod
     def get_intent(self, text):
         pass
 
     @abstractmethod
-    def get_slots(self, text, intent=None):
+    def get_entities(self, text, intent=None):
         pass
 
     @abstractmethod

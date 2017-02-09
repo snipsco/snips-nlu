@@ -12,6 +12,9 @@ class Entity(object):
             "entries": self.entries
         }
 
+    def to_json(self):
+        return json.dumps(self.to_dict(), indent=2)
+    
     @classmethod
     def from_dict(cls, dict_entity):
         dict_keys = {"is_extensible", "entries"}

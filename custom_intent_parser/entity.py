@@ -36,7 +36,7 @@ class Entity(object):
     def to_dict(self):
         return {
             "name": self.name,
-            "useLearning": self.use_learning,
+            "automaticallyExtensible": self.use_learning,
             "useSynonyms": self.use_synonyms,
             "entries": self.entries
         }
@@ -48,15 +48,16 @@ class Entity(object):
 
     @classmethod
     def from_dict(cls, dict_entity):
-        dict_keys = {"name", "useLearning", "useSynonyms", "entries"}
+        dict_keys = {"name", "automaticallyExtensible", "useSynonyms",
+                     "entries"}
         if not set(dict_entity.keys()) == dict_keys:
             raise ValueError("Entity dict keys must exactly be %s" % dict_keys)
 
         name = dict_entity["name"]
         check_type(name, [str, unicode], obj_label="name")
 
-        use_learning = dict_entity["useLearning"]
-        check_type(use_learning, [bool], obj_label="useLearning")
+        use_learning = dict_entity["automaticallyExtensible"]
+        check_type(use_learning, [bool], obj_label="automaticallyExtensible")
 
         use_synonyms = dict_entity["useSynonyms"]
         check_type(use_synonyms, [bool], obj_label="useSynonyms")

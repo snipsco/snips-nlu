@@ -36,7 +36,7 @@ class TestEntity(unittest.TestCase):
 
         # Then
         self.assertEqual(entity.name, loaded_entity.name)
-        self.assertEqual(entity.entries, loaded_entity.entries)
+        self.assertSequenceEqual(entity.entries, loaded_entity.entries)
         self.assertEqual(entity.use_learning, loaded_entity.use_learning)
         self.assertEqual(entity.use_synonyms, loaded_entity.use_synonyms)
 

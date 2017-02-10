@@ -35,10 +35,7 @@ class TestEntity(unittest.TestCase):
         loaded_entity = Entity.from_json(self.save_path)
 
         # Then
-        self.assertEqual(entity.name, loaded_entity.name)
-        self.assertSequenceEqual(entity.entries, loaded_entity.entries)
-        self.assertEqual(entity.use_learning, loaded_entity.use_learning)
-        self.assertEqual(entity.use_synonyms, loaded_entity.use_synonyms)
+        self.assertEqual(entity, loaded_entity)
 
     def test_invalid_name_should_raise_exception(self):
         # Given
@@ -46,7 +43,7 @@ class TestEntity(unittest.TestCase):
         # When / Then
         with self.assertRaises(ValueError) as ctx:
             Entity(name)
-        self.assertEqual("Entity name must be alpha numeric,"
+        self.assertEqual("Entity name must only contain [0-9a-zA-Z_],"
                          " found 'dummy:dummier'", ctx.exception.message)
 
     def test_invalid_synonyms_should_raise_exception(self):

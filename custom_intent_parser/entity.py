@@ -1,5 +1,10 @@
 import io
 import json
+import re
+
+from utils import sequence_equal
+
+ALPHA_REGEX = re.compile("^[\w]+$")
 
 
 def check_type(obj, allowed_types, obj_label=None):
@@ -19,8 +24,19 @@ class Entity(object):
         self.name = name
         self.validate_entries(entries)
         self.entries = entries if entries is not None else []
-        self.use_synonyms = use_synonyms
         self.use_learning = use_learning
+        self.use_synonyms = use_synonyms
+
+    def __eq__(self, other):
+        if self._name != other.name:
+            return False
+        if self.use_learning != other.use_learning:
+            return False
+        if self.use_synonyms != other.use_synonyms:
+            return False
+        if not sequence_equal(self.entries, other.entries):
+            return False
+        return True
 
     @property
     def name(self):
@@ -28,9 +44,9 @@ class Entity(object):
 
     @name.setter
     def name(self, value):
-        if not value.isalpha():
-            raise ValueError("Entity name must be alpha numeric, found '%s'"
-                             % value)
+        if not ALPHA_REGEX.match(value):
+            raise ValueError("Entity name must only contain [0-9a-zA-Z_],"
+                             " found '%s'" % value)
         self._name = value
 
     def to_dict(self):

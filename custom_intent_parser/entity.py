@@ -22,8 +22,8 @@ class Entity(object):
                  use_synonyms=False):
         self._name = None
         self.name = name
-        self.validate_entries(entries)
         self.entries = entries if entries is not None else []
+        self.validate_entries(entries)
         self.use_learning = use_learning
         self.use_synonyms = use_synonyms
 

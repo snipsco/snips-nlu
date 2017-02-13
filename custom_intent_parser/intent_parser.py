@@ -8,18 +8,8 @@ class IntentParser(object):
     def intents(self):
         pass
 
-    @abstractmethod
-    @intents.setter
-    def intents(self, value):
-        pass
-
     @abstractproperty
     def entities(self):
-        pass
-
-    @abstractmethod
-    @entities.setter
-    def entities(self, value):
         pass
 
     @abstractproperty

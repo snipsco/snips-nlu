@@ -9,11 +9,6 @@ class IntentClassifier(object):
         pass
 
     @abstractproperty
-    @intents.setter
-    def intents(self, value):
-        pass
-
-    @abstractproperty
     def fitted(self):
         pass
 

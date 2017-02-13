@@ -9,11 +9,6 @@ class EntityExtractor(object):
         pass
 
     @abstractproperty
-    @entities.setter
-    def entities(self, value):
-        pass
-
-    @abstractproperty
     def fitted(self):
         pass
 

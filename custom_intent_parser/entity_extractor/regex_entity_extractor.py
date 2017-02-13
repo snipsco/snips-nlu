@@ -149,9 +149,3 @@ class RegexEntityExtractor(EntityExtractor):
             }
             results.append(entity)
         return results
-
-    @classmethod
-    def from_dataset(cls, dataset):
-        extractor = cls()
-        extractor.fit(dataset.queries)
-        return extractor

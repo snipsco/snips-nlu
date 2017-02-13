@@ -1,8 +1,9 @@
 import re
 import unittest
+from collections import namedtuple
 
-from custom_intent_parser.entity_extractor import (query_to_patterns,
-                                                   RegexEntityExtractor)
+from custom_intent_parser.entity_extractor.regex_entity_extractor import (
+    query_to_patterns, RegexEntityExtractor)
 
 
 def get_queries():
@@ -136,7 +137,9 @@ class TestRegexEntityExtractor(unittest.TestCase):
     def test_extract_entities(self):
         # Given
         queries = get_queries()
-        extractor = RegexEntityExtractor().fit(queries)
+        mocked_dataset = namedtuple("Dataset", ["queries"])
+        dataset = mocked_dataset(queries=queries)
+        extractor = RegexEntityExtractor().fit(dataset)
 
         # When
         expected_entities = {

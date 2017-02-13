@@ -22,6 +22,10 @@ class IntentParser(object):
                              " 'fit' method.")
 
     @abstractmethod
+    def fit(self, dataset):
+        pass
+
+    @abstractmethod
     def parse(self, text):
         pass
 
@@ -30,10 +34,5 @@ class IntentParser(object):
         pass
 
     @abstractmethod
-    def get_entities(self, text, intent=None):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def from_dataset(cls, dataset):
+    def extract_entities(self, text, intent=None):
         pass

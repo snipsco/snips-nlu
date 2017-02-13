@@ -5,10 +5,6 @@ class IntentClassifier(object):
     __metaclass__ = ABCMeta
 
     @abstractproperty
-    def intents(self):
-        pass
-
-    @abstractproperty
     def fitted(self):
         pass
 
@@ -18,14 +14,9 @@ class IntentClassifier(object):
                              "calling the 'fit' method.")
 
     @abstractmethod
-    def fit(self, queries):
+    def fit(self, dataset):
         pass
 
     @abstractmethod
     def get_intent(self, text):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def from_dataset(cls, dataset):
         pass

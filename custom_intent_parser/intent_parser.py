@@ -1,27 +1,39 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 
 class IntentParser(object):
     __metaclass__ = ABCMeta
 
-    _intents = []
-    _entities = []
-
-    @property
+    @abstractproperty
     def intents(self):
-        return self._intents
+        pass
 
+    @abstractmethod
     @intents.setter
     def intents(self, value):
-        self._intents = value
+        pass
 
-    @property
+    @abstractproperty
     def entities(self):
-        return self._entities
+        pass
 
+    @abstractmethod
     @entities.setter
     def entities(self, value):
-        self._entities = value
+        pass
+
+    @abstractproperty
+    def fitted(self):
+        pass
+
+    def check_fitted(self):
+        if not self.fitted:
+            raise ValueError("IntentParser must be fitted before calling the"
+                             " 'fit' method.")
+
+    @abstractmethod
+    def parse(self, text):
+        pass
 
     @abstractmethod
     def get_intent(self, text):
@@ -31,6 +43,7 @@ class IntentParser(object):
     def get_entities(self, text, intent=None):
         pass
 
+    @classmethod
     @abstractmethod
-    def parse(self, text):
+    def from_dataset(cls, dataset):
         pass

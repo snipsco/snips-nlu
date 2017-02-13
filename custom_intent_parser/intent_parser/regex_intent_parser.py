@@ -4,16 +4,17 @@ from collections import defaultdict
 from custom_intent_parser.entity_extractor.regex_entity_extractor import (
     RegexEntityExtractor)
 from custom_intent_parser.intent_parser.intent_parser import IntentParser
+from custom_intent_parser.utils import LimitedSizeDict
 
 
 class RegexIntentParser(IntentParser):
-    def __init__(self, entity_extractor):
+    def __init__(self, entity_extractor, cache_size=100):
         if not isinstance(entity_extractor, RegexEntityExtractor):
             raise ValueError("entity_extractor must be an instance of %s. "
                              "Found %s" % (RegexEntityExtractor.__name__,
                                            type(entity_extractor)))
         self.entity_extractor = entity_extractor
-        self._cache = dict()
+        self._cache = LimitedSizeDict(size_limit=cache_size)
 
     def fitted(self):
         return self.entity_extractor.fitted

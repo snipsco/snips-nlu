@@ -24,24 +24,33 @@ class RegexIntentParser(IntentParser):
 
     def parse(self, text):
         if text not in self._cache:
-            self._extract_entities(text)
+            self._update_cache(text)
         return self._cache[text]
 
     def get_intent(self, text):
         if text not in self._cache:
-            self._extract_entities(text)
+            self._update_cache(text)
         parse = self._cache[text]
-        return parse["intent"]
+        return {"intent": parse["intent"], "text": text}
 
     def extract_entities(self, text, intent=None):
         if text not in self._cache:
-            self._extract_entities(text)
+            self._update_cache(text)
         parse = self._cache[text]
-        return parse["entities"]
+        return {"entities": parse["entities"], "text": text}
 
-    def _extract_entities(self, text, intent=None):
+    def _update_cache(self, text, intent=None):
         self.check_fitted()
         entities = self.entity_extractor.get_entities(text)
+
+        if len(entities) == 0:
+            res = {
+                "text": text,
+                "entities": [],
+                "intent": None
+            }
+            self._cache[text] = res
+            return
 
         intent_probs = defaultdict(int)
         num_intents = 0.
@@ -49,17 +58,18 @@ class RegexIntentParser(IntentParser):
             intent_probs[e["intent"]] += 1.
             num_intents += 1.
 
-        for k, v in intent_probs.keys():
+        for k, v in intent_probs.iteritems():
             intent_probs[k] /= num_intents
 
         top_intent, top_prob = sorted(intent_probs.items(),
                                       key=operator.itemgetter(1),
                                       reverse=True)[0]
         result = {
+            "text": text,
             "entities": entities,
             "intent": {
                 "name": top_intent,
                 "prob": top_prob,
             }
         }
-        self._cache = result
+        self._cache[text] = result

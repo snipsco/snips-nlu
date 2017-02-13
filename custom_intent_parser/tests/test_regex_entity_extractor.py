@@ -211,3 +211,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
         for t in expected_entities:
             print "Text: %s" % t
             self.assertItemsEqual(entities[t], expected_entities[t])
+
+
+if __name__ == '__main__':
+    unittest.main()

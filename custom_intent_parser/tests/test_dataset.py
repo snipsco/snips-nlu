@@ -19,7 +19,7 @@ def get_queries():
                         {
                             "text": "dummy_1",
                             "entity": "dummy_entity_1",
-                            "slotName": "dummy_slot_name"
+                            "role": "dummy_role"
                         },
                         {
                             "text": " query."
@@ -67,7 +67,7 @@ def get_queries():
                         {
                             "text": "dummy_4",
                             "entity": "dummy_entity_2",
-                            "slotName": "dummy_slot_name"
+                            "role": "dummy_role"
                         },
                         {
                             "text": " query from another intent"
@@ -132,6 +132,7 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(ctx.exception.message,
                          "Unknown entity 'dummy_entity_2'. Entities must"
                          " belong to ['dummy_entity_1']")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -26,5 +26,5 @@ class IntentParser(object):
         pass
 
     @abstractmethod
-    def extract_entities(self, text, intent=None):
+    def get_entities(self, text, intent=None):
         pass

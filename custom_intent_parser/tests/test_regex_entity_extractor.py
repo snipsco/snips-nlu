@@ -1,9 +1,9 @@
-import re
 import unittest
-from collections import namedtuple
 
+from custom_intent_parser.dataset import Dataset
+from custom_intent_parser.entity import Entity
 from custom_intent_parser.entity_extractor.regex_entity_extractor import (
-    query_to_patterns, RegexEntityExtractor)
+    RegexEntityExtractor)
 
 
 def get_queries():
@@ -48,28 +48,7 @@ def get_queries():
                 "data":
                     [
                         {
-                            "text": "dummy_2 first",
-                            "entity": "dummy_entity_2"
-                        },
-                        {
-                            "text": " with text after it "
-                        },
-                        {
                             "text": "dummy_1",
-                            "entity": "dummy_entity_1",
-                            "role": "dummy_role"
-                        },
-                    ]
-            },
-            {
-                "data":
-                    [
-                        {
-                            "text": "Just dummy_1",
-                            "entity": "dummy_entity_1",
-                        },
-                        {
-                            "text": " with another",
                             "entity": "dummy_entity_1",
                         }
                     ]
@@ -96,102 +75,81 @@ def get_queries():
     return queries
 
 
-class TestRegexEntityExtractor(unittest.TestCase):
-    def test_query_to_patterns(self):
-        # Given
-        queries = get_queries()
-        # When
-        patterns = dict()
-        for _, intent_queries in queries.iteritems():
-            for query in intent_queries:
-                query_patterns = query_to_patterns(query)
-                for entity_name, pattern in query_patterns.iteritems():
-                    if entity_name not in patterns:
-                        patterns[entity_name] = []
-                    patterns[entity_name] += pattern
+def get_entities():
+    entries_1 = [
+        {
+            "value": "dummy_a",
+            "synonyms": ["dummy_a", "dummy_aa", "dummy a", "dummy\s"]
+        },
+        {
+            "value": "dummy_b",
+            "synonyms": ["dummy_b", "dummy_bb", "dummy b"]
+        },
+        {
+            "value": "dummy\d",
+            "synonyms": ["dummy\d"]
+        },
+    ]
+    entity_1 = Entity("dummy_entity_1", entries=entries_1)
 
-        for entity_name, regexes in patterns.iteritems():
-            unique_patterns = set([r.pattern for r in regexes])
-            patterns[entity_name] = [re.compile(p, re.IGNORECASE)
-                                     for p in unique_patterns]
-
-        # Then
-        expected_patterns = {
-            "dummy_entity_1": [
-                r"This is a (\w+\b)",
-                r" with text after it (\w+\b)",
-                r"(Just dummy_1)",
-                r"( with another)"
-            ],
-            "dummy_entity_2": [
-                r" query with another (\w+\b)",
-                r"This is another (\w+\b)",
-                r"(\w+\b\s*\w+\b) with text after it "
-            ]
+    entries_2 = [
+        {
+            "value": "dummy_c",
+            "synonyms": ["dummy_c", "dummy_cc", "dummy c"]
         }
-        for entity_name, entity_patterns in expected_patterns.iteritems():
-            self.assertIn(entity_name, patterns)
-            self.assertItemsEqual(entity_patterns,
-                                  [r.pattern for r in patterns[entity_name]])
+    ]
+    entity_2 = Entity("dummy_entity_2", entries=entries_2)
+    return {entity_1.name: entity_1, entity_2.name: entity_2}
 
+
+class TestRegexEntityExtractor(unittest.TestCase):
     def test_extract_entities(self):
         # Given
+        entities = get_entities()
         queries = get_queries()
-        mocked_dataset = namedtuple("Dataset", ["queries"])
-        dataset = mocked_dataset(queries=queries)
+        dataset = Dataset(entities=entities, queries=queries)
         extractor = RegexEntityExtractor().fit(dataset)
 
         # When
         expected_entities = {
-            "this is a dummy_a entity": [
+            "this is a dummy_a query with another dummy_c": [
                 {
                     "range": (10, 17),
                     "value": "dummy_a",
-                    "entity": "dummy_entity_1"
-                }
-            ],
-            "this is a dummy_a entity with another dummy_b entity and this is"
-            " a dummy_c": [
-                {
-                    "range": (10, 17),
-                    "value": "dummy_a",
-                    "entity": "dummy_entity_1"
+                    "entity": "dummy_entity_1",
+                    "intent": "dummy_intent_1"
                 },
                 {
-                    "range": (24, 37),
-                    "value": " with another",
-                    "entity": "dummy_entity_1"
-                },
-                {
-                    "range": (67, 74),
+                    "range": (37, 44),
                     "value": "dummy_c",
-                    "entity": "dummy_entity_1"
-                },
-            ],
-            "this is an entity with text after it you know?": [
-                {
-                    "range": (37, 40),
-                    "value": "you",
-                    "entity": "dummy_entity_1"
-                },
-                {
-                    "range": (8, 17),
-                    "value": "an entity",
-                    "entity": "dummy_entity_2"
+                    "entity": "dummy_entity_2",
+                    "intent": "dummy_intent_1"
                 }
             ],
-            "several tokens with text after it ": [
+            "this is a whatever query with another whatever": [],
+            "this is another dummy_c query.": [
                 {
-                    "range": (0, 14),
-                    "value": "several tokens",
-                    "entity": "dummy_entity_2"
+                    "range": (16, 23),
+                    "value": "dummy_c",
+                    "entity": "dummy_entity_2",
+                    "intent": "dummy_intent_1"
                 }
             ],
-            "if i place just dummy_1 in a sentence it should parser": [
+            "dummy\d": [
                 {
-                    "range": (11, 23),
-                    "value": "just dummy_1",
-                    "entity": "dummy_entity_1"
+                    "range": (0, 7),
+                    "value": "dummy\d",
+                    "entity": "dummy_entity_1",
+                    "intent": "dummy_intent_1"
+                }
+            ],
+            "whatever": [],
+            "this is a dummy_a query from another intent": [
+                {
+                    "range": (10, 17),
+                    "value": "dummy_a",
+                    "entity": "dummy_entity_1",
+                    "intent": "dummy_intent_2"
                 }
             ]
         }
@@ -200,4 +158,56 @@ class TestRegexEntityExtractor(unittest.TestCase):
 
         # Then
         for t in expected_entities:
+            print "Text: %s" % t
+            self.assertItemsEqual(entities[t], expected_entities[t])
+
+    def test_extract_entities_with_synonyms(self):
+        # Given
+        entities = get_entities()
+        entities["dummy_entity_1"].use_synonyms = True
+        queries = get_queries()
+        dataset = Dataset(entities=entities, queries=queries)
+        extractor = RegexEntityExtractor().fit(dataset)
+
+        # When
+        expected_entities = {
+            "this is a dummy a query with another dummy_c": [
+                {
+                    "range": (10, 17),
+                    "value": "dummy a",
+                    "entity": "dummy_entity_1",
+                    "intent": "dummy_intent_1"
+                },
+                {
+                    "range": (37, 44),
+                    "value": "dummy_c",
+                    "entity": "dummy_entity_2",
+                    "intent": "dummy_intent_1"
+                }
+            ],
+            "this is a whatever query with another whatever": [],
+            "this is another dummy_c query.": [
+                {
+                    "range": (16, 23),
+                    "value": "dummy_c",
+                    "entity": "dummy_entity_2",
+                    "intent": "dummy_intent_1"
+                }
+            ],
+            "dummy_aa": [
+                {
+                    "range": (0, 8),
+                    "value": "dummy_aa",
+                    "entity": "dummy_entity_1",
+                    "intent": "dummy_intent_1"
+                }
+            ],
+            "whatever": []
+        }
+        entities = dict((t, extractor.get_entities(t))
+                        for t in expected_entities.keys())
+
+        # Then
+        for t in expected_entities:
+            print "Text: %s" % t
             self.assertItemsEqual(entities[t], expected_entities[t])

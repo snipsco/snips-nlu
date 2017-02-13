@@ -5,14 +5,6 @@ class IntentParser(object):
     __metaclass__ = ABCMeta
 
     @abstractproperty
-    def intents(self):
-        pass
-
-    @abstractproperty
-    def entities(self):
-        pass
-
-    @abstractproperty
     def fitted(self):
         pass
 

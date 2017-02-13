@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 
 class EntityExtractor(object):
@@ -6,9 +6,18 @@ class EntityExtractor(object):
 
     _entities = []
 
-    @property
+    @abstractproperty
     def entities(self):
-        return self._entities
+        pass
+
+    @abstractproperty
+    def fitted(self):
+        pass
+
+    def check_fitted(self):
+        if not self.fitted:
+            raise ValueError("EntityExtractor must be fitted before "
+                             "calling the 'fit' method.")
 
     @entities.setter
     def entities(self, value):
@@ -20,4 +29,9 @@ class EntityExtractor(object):
 
     @abstractmethod
     def get_entities(self, text):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_dataset(cls, dataset):
         pass

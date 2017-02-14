@@ -18,7 +18,7 @@ def sequence_equal(seq, other_seq):
 class LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         if "size_limit" not in kwds:
-            raise ValueError("'size_limit' must be passed as a keywords "
+            raise ValueError("'size_limit' must be passed as a keyword "
                              "argument")
         self.size_limit = kwds.pop("size_limit")
         if len(args) > 1:

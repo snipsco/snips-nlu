@@ -15,14 +15,14 @@ def parsed_entity(match_range, value, entity, role=None, **kwargs):
     is_range(match_range)
     parsed_ent["range"] = match_range
 
-    assert isinstance(value, [str, unicode])
+    assert isinstance(value, (str, unicode))
     parsed_ent["value"] = value
 
-    assert isinstance(value, [str, unicode])
+    assert isinstance(value, (str, unicode))
     parsed_ent["entity"] = entity
 
     if role is not None:
-        assert isinstance(value, [str, unicode])
+        assert isinstance(value, (str, unicode))
         parsed_ent["role"] = role
 
     parsed_ent.update(kwargs)
@@ -45,6 +45,6 @@ def result(text, intent=None, entities=None):
         for ent in entities:
             for k in mandatory_keys:
                 if k not in ent:
-                    raise LookupError("Missing %s key" % k)
+                    raise LookupError("Missing '%s' key" % k)
     res["entities"] = entities
     return res

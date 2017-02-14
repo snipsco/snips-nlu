@@ -92,9 +92,9 @@ class Entity(object):
 
     @staticmethod
     def validate_entries(entries):
-        for entrie in entries:
+        for entry in entries:
             expected_keys = {"value", "synonyms"}
-            actual_keys = set(entrie.keys())
+            actual_keys = set(entry.keys())
 
             unexpected_keys = actual_keys - expected_keys
             if len(unexpected_keys) > 0:
@@ -104,8 +104,8 @@ class Entity(object):
             if len(missing_keys) > 0:
                 raise ValueError("Missing entry keys: %s" % str(missing_keys))
 
-            value = entrie["value"]
-            synonyms = entrie["synonyms"]
+            value = entry["value"]
+            synonyms = entry["synonyms"]
             if len(synonyms) == 1:
                 if not synonyms[0] == value:
                     raise ValueError("If there only one synonym it must be"

@@ -44,10 +44,7 @@ class RegexEntityExtractor(EntityExtractor):
     def __init__(self, regexes=None):
         if regexes is None:
             regexes = {}
-        if not isinstance(regexes, dict):
-            raise ValueError("regexes must be an dict, found %s. "
-                             "The first matching regex will give its label "
-                             "to the entity" % type(regexes))
+        assert isinstance(regexes, dict)
         self.regexes = regexes
 
     @property

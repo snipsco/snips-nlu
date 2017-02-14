@@ -20,7 +20,6 @@ def check_type(obj, allowed_types, obj_label=None):
 class Entity(object):
     def __init__(self, name, entries=None, use_learning=False,
                  use_synonyms=False):
-        self._name = None
         self.name = name
         entries = entries if entries is not None else []
         self.validate_entries(entries)

@@ -40,7 +40,7 @@ class RegexIntentParser(IntentParser):
         parse = self._cache[text]
         return {"entities": parse["entities"], "text": text}
 
-    def _update_cache(self, text, intent=None):
+    def _update_cache(self, text):
         self.check_fitted()
         entities = self.entity_extractor.get_entities(text)
 

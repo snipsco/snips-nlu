@@ -55,7 +55,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
         text = "this is a dummy_a query with another dummy_c"
 
         # When
-        entities = parser.extract_entities(text)
+        entities = parser.get_entities(text)
 
         # Then
         expected_entities = {

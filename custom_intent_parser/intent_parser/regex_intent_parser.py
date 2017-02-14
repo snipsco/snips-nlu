@@ -34,7 +34,7 @@ class RegexIntentParser(IntentParser):
         parse = self._cache[text]
         return {"intent": parse["intent"], "text": text}
 
-    def extract_entities(self, text, intent=None):
+    def get_entities(self, text, intent=None):
         if text not in self._cache:
             self._update_cache(text)
         parse = self._cache[text]

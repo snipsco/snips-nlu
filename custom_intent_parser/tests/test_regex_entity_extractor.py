@@ -117,7 +117,8 @@ class TestRegexEntityExtractor(unittest.TestCase):
                     "range": (10, 17),
                     "value": "dummy_a",
                     "entity": "dummy_entity_1",
-                    "intent": "dummy_intent_1"
+                    "intent": "dummy_intent_1",
+                    "role": "dummy_role"
                 },
                 {
                     "range": (37, 44),
@@ -176,7 +177,8 @@ class TestRegexEntityExtractor(unittest.TestCase):
                     "range": (10, 17),
                     "value": "dummy a",
                     "entity": "dummy_entity_1",
-                    "intent": "dummy_intent_1"
+                    "intent": "dummy_intent_1",
+                    "role": "dummy_role"
                 },
                 {
                     "range": (37, 44),

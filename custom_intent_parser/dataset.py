@@ -1,13 +1,15 @@
 import io
 import json
 import os
+import re
 from copy import deepcopy
 
 from custom_intent_parser.entity import Entity
 
+VALID_FILE_REGEX = re.compile(r"^[\w\s-]+$")
 
 def is_valid_filename(string):
-    return "\\" not in string and "/" not in string
+    return VALID_FILE_REGEX.match(string)
 
 
 def format_query_for_import(query):
@@ -32,7 +34,7 @@ def validate_queries(queries, entities):
         # TODO: find a better way to ensure intent_name validity
         if not is_valid_filename(intent_name):
             raise ValueError("%s is an invalid intent name. Intent names must "
-                             "be a valid file name: no slash or backslash."
+                             "be a valid file name, use only: [a-zA-Z0-9_- ]"
                              % intent_name)
         for q in intent_queries:
             data = q["data"]

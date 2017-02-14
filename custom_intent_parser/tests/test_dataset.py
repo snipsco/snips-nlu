@@ -116,8 +116,8 @@ class TestDataset(unittest.TestCase):
             Dataset(entities=entities, queries=queries)
         self.assertEqual(ctx.exception.message,
                          "invalid/intent_name is an invalid intent name. "
-                         "Intent names must be a valid file name: no slash or"
-                         " backslash.")
+                         "Intent names must be a valid file name, use only: "
+                         "[a-zA-Z0-9_- ]")
 
     def test_unknown_entity_should_raise_exception(self):
         # Given

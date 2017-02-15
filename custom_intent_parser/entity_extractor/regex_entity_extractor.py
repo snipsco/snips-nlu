@@ -1,5 +1,6 @@
 import re
 
+from custom_intent_parser.result import parsed_entity
 from entity_extractor import EntityExtractor
 
 
@@ -76,16 +77,11 @@ def generate_regexes(intent_queries, target_entity, entities):
 
 def match_to_result(matches):
     results = []
-    for match_range, match in matches:
-        entity = {
-            "range": match_range,
-            "value": match["value"],
-            "entity": match["entity"],
-            "intent": match["intent"],
-        }
-        if match["role"] is not None:
-            entity["role"] = match["role"]
-        results.append(entity)
+    for match_rng, match in matches:
+        parsed_ent = parsed_entity(
+            match_rng, match["value"], match["entity"],
+            role=match.get("role", None), intent=match["intent"])
+        results.append(parsed_ent)
     return results
 
 
@@ -135,8 +131,8 @@ class RegexEntityExtractor(EntityExtractor):
         return self
 
     def get_entities(self, text):
-        # TODO: handle roles
         self.check_fitted()
+        # Matches is a dict to ensure that we have only 1 match per range
         matches = dict()
         for intent_name in self.regexes:
             for (entity_name, role), entity_regexes \

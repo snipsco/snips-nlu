@@ -15,7 +15,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
         self._dataset = Dataset(queries=get_queries(),
                                 entities=get_entities())
 
-    def test_parse_entities(self):
+    def test_parse(self):
         # Given
         entity_extractor = RegexEntityExtractor().fit(self._dataset)
         parser = RegexIntentParser(entity_extractor).fit(self._dataset)
@@ -30,13 +30,12 @@ class TestRegexEntityExtractor(unittest.TestCase):
                 "range": (10, 17),
                 "value": "dummy_a",
                 "entity": "dummy_entity_1",
-                "intent": "dummy_intent_1"
+                "role": "dummy_role"
             },
             {
                 "range": (37, 44),
                 "value": "dummy_c",
-                "entity": "dummy_entity_2",
-                "intent": "dummy_intent_1"
+                "entity": "dummy_entity_2"
             }
         ]
         expected_parse = {
@@ -58,26 +57,20 @@ class TestRegexEntityExtractor(unittest.TestCase):
         entities = parser.get_entities(text)
 
         # Then
-        expected_entities = {
-            "entities": [
-                {
-                    "range": (10, 17),
-                    "value": "dummy_a",
-                    "entity": "dummy_entity_1",
-                    "intent": "dummy_intent_1"
-                },
-                {
-                    "range": (37, 44),
-                    "value": "dummy_c",
-                    "entity": "dummy_entity_2",
-                    "intent": "dummy_intent_1"
-                }
-            ],
-            "text": text
-        }
-        self.assertEqual(expected_entities["text"], entities["text"])
-        self.assertItemsEqual(expected_entities["entities"],
-                              entities["entities"])
+        expected_entities = [
+            {
+                "range": (10, 17),
+                "value": "dummy_a",
+                "entity": "dummy_entity_1",
+                "role": "dummy_role"
+            },
+            {
+                "range": (37, 44),
+                "value": "dummy_c",
+                "entity": "dummy_entity_2"
+            }
+        ]
+        self.assertItemsEqual(expected_entities, entities)
 
     def test_get_intent(self):
         # Given
@@ -90,14 +83,10 @@ class TestRegexEntityExtractor(unittest.TestCase):
 
         # Then
         expected_intent = {
-            "text": text,
-            "intent": {
-                "name": "dummy_intent_1",
-                "prob": 1.0
-            }
+            "intent": "dummy_intent_1",
+            "prob": 1.0
         }
         self.assertEqual(intent, expected_intent)
 
-
-if __name__ == '__main__':
-    unittest.main()
+        if __name__ == '__main__':
+            unittest.main()

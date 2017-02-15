@@ -4,6 +4,7 @@ from collections import defaultdict
 from custom_intent_parser.entity_extractor.regex_entity_extractor import (
     RegexEntityExtractor)
 from custom_intent_parser.intent_parser.intent_parser import IntentParser
+from custom_intent_parser.result import result, intent_classification_result
 from custom_intent_parser.utils import LimitedSizeDict
 
 
@@ -32,24 +33,21 @@ class RegexIntentParser(IntentParser):
         if text not in self._cache:
             self._update_cache(text)
         parse = self._cache[text]
-        return {"intent": parse["intent"], "text": text}
+        return intent_classification_result(
+            parse["intent"].get("name"), parse["intent"].get("prob"))
 
     def get_entities(self, text, intent=None):
         if text not in self._cache:
             self._update_cache(text)
         parse = self._cache[text]
-        return {"entities": parse["entities"], "text": text}
+        return parse["entities"]
 
     def _update_cache(self, text):
         self.check_fitted()
         entities = self.entity_extractor.get_entities(text)
 
         if len(entities) == 0:
-            res = {
-                "text": text,
-                "entities": [],
-                "intent": None
-            }
+            res = result(text)
             self._cache[text] = res
             return
 
@@ -65,12 +63,8 @@ class RegexIntentParser(IntentParser):
         top_intent, top_prob = sorted(intent_probs.items(),
                                       key=operator.itemgetter(1),
                                       reverse=True)[0]
-        result = {
-            "text": text,
-            "entities": entities,
-            "intent": {
-                "name": top_intent,
-                "prob": top_prob,
-            }
-        }
-        self._cache[text] = result
+        intent = intent_classification_result(top_intent, top_prob)
+        for e in entities:
+            e.pop("intent", None)
+        res = result(text, intent, entities)
+        self._cache[text] = res

@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from custom_intent_parser.utils import abstractclassmethod
+
 
 class IntentParser(object):
     __metaclass__ = ABCMeta
@@ -27,4 +29,12 @@ class IntentParser(object):
 
     @abstractmethod
     def get_entities(self, text, intent=None):
+        pass
+
+    @abstractmethod
+    def save(self, path):
+        pass
+
+    @abstractclassmethod
+    def load(cls, path):
         pass

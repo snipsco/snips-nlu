@@ -4,7 +4,7 @@ def is_range(rng):
                          "valid")
 
 
-def classification_result(intent_name=None, prob=None):
+def intent_classification_result(intent_name=None, prob=None):
     if intent_name is None:
         return None
     res = {"intent": intent_name}

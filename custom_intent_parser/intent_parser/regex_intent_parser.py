@@ -21,6 +21,7 @@ class RegexIntentParser(IntentParser):
         return self.entity_extractor.fitted
 
     def fit(self, dataset):
+        self._cache.clear()
         self.entity_extractor = self.entity_extractor.fit(dataset)
         return self
 

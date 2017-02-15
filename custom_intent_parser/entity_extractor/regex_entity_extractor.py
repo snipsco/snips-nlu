@@ -1,3 +1,5 @@
+import io
+import json
 import re
 
 from custom_intent_parser.result import parsed_entity
@@ -154,3 +156,28 @@ class RegexEntityExtractor(EntityExtractor):
                             "role": role
                         }
         return match_to_result(matches.items())
+
+    def save(self, path):
+        patterns = dict(self.regexes)
+        for intent_name, intent_regexes in self.regexes.iteritems():
+            patterns[intent_name] = [r.pattern for r in intent_regexes]
+        self_as_dict = {
+            "patterns": patterns,
+            "group_names_to_labels": self.group_names_to_labels
+        }
+        with io.open(path, "w", encoding="utf8") as f:
+            data = json.dumps(self_as_dict)
+            f.write(unicode(data))
+
+    @classmethod
+    def load(cls, path):
+        with io.open(path, encoding="utf8") as f:
+            data = json.load(f)
+        regexes = dict()
+        for intent_name, patterns in data["patterns"].iteritems():
+            regexes[intent_name] = [re.compile(r"%s" % p, re.IGNORECASE)
+                                    for p in patterns]
+        group_names_to_labels = data["group_names_to_labels"]
+        for group_name, label in group_names_to_labels.iteritems():
+            group_names_to_labels[group_name] = tuple(label)
+        return cls(regexes, group_names_to_labels)

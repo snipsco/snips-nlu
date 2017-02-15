@@ -3,41 +3,46 @@ import re
 from custom_intent_parser.result import parsed_entity
 from entity_extractor import EntityExtractor
 
+GROUP_NAME_PREFIX = "group"
+GROUP_NAME_SEPARATOR = "_"
 
-def query_to_pattern(query, target_entity_name, target_role,
-                     joined_entity_utterances):
+
+def order(index):
+    split = index.split(GROUP_NAME_SEPARATOR)
+    if len(split) != 2 or split[0] != GROUP_NAME_PREFIX:
+        raise ValueError("Misformatted index")
+    return int(split[1])
+
+
+def make_index(i):
+    return "%s%s%s" % (GROUP_NAME_PREFIX, GROUP_NAME_SEPARATOR, i)
+
+
+def generate_new_index(roles_to_labels):
+    if len(roles_to_labels) == 0:
+        return make_index(0)
+    else:
+        max_index = max(roles_to_labels.keys(), key=order)
+        max_index = int(max_index.split(GROUP_NAME_SEPARATOR)[1]) + 1
+        return make_index(max_index)
+
+
+def query_to_pattern(query, joined_entity_utterances, roles_to_labels):
     pattern = r"^"
     for chunk in query["data"]:
         if "entity" in chunk:
-            if chunk["entity"] == target_entity_name \
-                    and chunk.get("role", None) == target_role:
-                pattern += r"(%s)" % joined_entity_utterances[chunk["entity"]]
-            else:
-                pattern += r"(?:%s)" % joined_entity_utterances[
-                    chunk["entity"]]
+            max_index = generate_new_index(roles_to_labels)
+            role_name = chunk.get("role", None)
+            label = (chunk["entity"], role_name)
+            roles_to_labels[max_index] = label
+            pattern += r"(?P<%s>%s)" % (
+                max_index, joined_entity_utterances[chunk["entity"]])
         else:
             pattern += r"%s" % chunk["text"]
-    return pattern + r"$"
+    return pattern + r"$", roles_to_labels
 
 
-def generate_role_regexes(queries, target_entity, target_role,
-                          joined_entity_utterances):
-    # Filter queries by role
-    role_queries = []
-    for q in queries:
-        if any(c.get("entity", None) == target_entity
-               and c.get("role", None) == target_role for c in q["data"]):
-            role_queries.append(q)
-    # Extract the patterns for this role
-    role_patterns = set()
-    for q in role_queries:
-        pattern = query_to_pattern(q, target_entity, target_role,
-                                   joined_entity_utterances)
-        role_patterns.add(pattern)
-    return [re.compile(p, re.IGNORECASE) for p in role_patterns]
-
-
-def generate_regexes(intent_queries, target_entity, entities):
+def generate_regexes(intent_queries, entities, group_names_to_labels):
     # Join all the entities utterances with a "|" to create the patterns
     joined_entity_utterances = dict()
     for entity_name, entity in entities.iteritems():
@@ -49,27 +54,13 @@ def generate_regexes(intent_queries, target_entity, entities):
                           for entry in entity.entries]
         joined_entity_utterances[entity_name] = r"|".join(
             utterances)
-
-    # Filter queries by entity type
-    queries = []
-    for q in intent_queries:
-        if any(c.get("entity", None) == target_entity.name for c in q["data"]):
-            queries.append(q)
-
-    # Extract the different roles
-    roles = set()
-    for q in queries:
-        for chunk in q["data"]:
-            roles.add(chunk.get("role", None))
-
-    # Filter queries by role
-    patterns = dict()
-    for role in roles:
-        role_regexes = generate_role_regexes(
-            queries, target_entity.name, role, joined_entity_utterances)
-        if len(role_regexes) > 0:
-            patterns[(target_entity.name, role)] = role_regexes
-    return patterns
+    patterns = set()
+    for query in intent_queries:
+        pattern, group_names_to_labels = query_to_pattern(
+            query, joined_entity_utterances, group_names_to_labels)
+        patterns.add(pattern)
+    regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
+    return regexes, group_names_to_labels
 
 
 def match_to_result(matches):
@@ -83,7 +74,7 @@ def match_to_result(matches):
 
 
 class RegexEntityExtractor(EntityExtractor):
-    def __init__(self, regexes=None):
+    def __init__(self, regexes=None, group_names_to_labels=None):
         """
         :param regexes: dict. The keys of the dict are (entity_name, role_name)
           pairs. role_name can be None if there is no role associated with the
@@ -91,7 +82,10 @@ class RegexEntityExtractor(EntityExtractor):
         """
         if regexes is None:
             regexes = {}
+        if group_names_to_labels is None:
+            group_names_to_labels = {}
         self.regexes = regexes
+        self.group_names_to_labels = group_names_to_labels
 
     @property
     def regexes(self):
@@ -99,16 +93,31 @@ class RegexEntityExtractor(EntityExtractor):
 
     @regexes.setter
     def regexes(self, value):
-        for intent_name, intent_patterns in value.iteritems():
-            for k, pattern_list in intent_patterns.iteritems():
-                if not isinstance(k, tuple) or len(k) != 2:
-                    raise TypeError("regexes must be a dict with (entity_name,"
-                                    " role_name) 2-tuples as keys.")
-                for pattern in pattern_list:
-                    if not isinstance(pattern, re._pattern_type):
-                        raise TypeError("patterns must be compile regexes "
-                                        "founds %s" % type(pattern))
+        for pattern_list in value.values():
+            for pattern in pattern_list:
+                if not isinstance(pattern, re._pattern_type):
+                    raise TypeError("patterns must be compile regexes "
+                                    "founds %s" % type(pattern))
         self._regexes = value
+
+    @property
+    def group_names_to_labels(self):
+        return self._group_names_to_labels
+
+    @group_names_to_labels.setter
+    def group_names_to_labels(self, value):
+        for group_name, label in value.iteritems():
+            try:
+                eval(group_name)
+            except NameError:
+                pass
+            except TypeError:
+                raise TypeError("group names must be valid Python identifiers")
+
+            if not isinstance(label, tuple) or len(label) != 2:
+                raise TypeError("labels must be a dict with (entity_name,"
+                                " role_name) 2-tuples as keys.")
+        self._group_names_to_labels = value
 
     @property
     def fitted(self):
@@ -117,31 +126,31 @@ class RegexEntityExtractor(EntityExtractor):
     def fit(self, dataset):
         # TODO: handle use_learning = True
         regexes = dict()
+        group_names_to_labels = dict()
         for intent_name, intent_queries in dataset.queries.iteritems():
-            regexes[intent_name] = dict()
-            for target_name, target_entity in dataset.entities.iteritems():
-                patterns_dict = generate_regexes(intent_queries, target_entity,
-                                                 dataset.entities)
-                for (entity_name, role), pattern in patterns_dict.iteritems():
-                    regexes[intent_name][(entity_name, role)] = pattern
+            intent_patterns, group_names_to_labels = generate_regexes(
+                intent_queries, dataset.entities, group_names_to_labels)
+            if len(intent_patterns) > 0:
+                regexes[intent_name] = intent_patterns
         self.regexes = regexes
+        self.group_names_to_labels = group_names_to_labels
         return self
 
     def get_entities(self, text):
         self.check_fitted()
         # Matches is a dict to ensure that we have only 1 match per range
         matches = dict()
-        for intent_name in self.regexes:
-            for (entity_name, role), entity_regexes \
-                    in self.regexes[intent_name].iteritems():
-                for regex in entity_regexes:
-                    for match in regex.finditer(text):
-                        match_range = match.regs[1]
-                        if match_range not in matches:
-                            matches[match_range] = {
-                                "value": match.group(1),
-                                "entity": entity_name,
-                                "intent": intent_name,
-                                "role": role
-                            }
+        for intent_name, intent_regexes in self.regexes.iteritems():
+            for regex in intent_regexes:
+                match = regex.match(text)
+                if match is not None:
+                    for group_name in match.groupdict():
+                        entity, role = self.group_names_to_labels[group_name]
+                        rng = (match.start(group_name), match.end(group_name))
+                        matches[rng] = {
+                            "value": match.group(group_name),
+                            "entity": entity,
+                            "intent": intent_name,
+                            "role": role
+                        }
         return match_to_result(matches.items())

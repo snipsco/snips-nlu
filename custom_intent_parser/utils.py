@@ -34,3 +34,8 @@ class LimitedSizeDict(OrderedDict):
         if self.size_limit is not None:
             while len(self) > self.size_limit:
                 self.popitem(last=False)
+
+    def __eq__(self, other):
+        if self.size_limit != other.size_limit:
+            return False
+        return super(LimitedSizeDict, self).__eq__(other)

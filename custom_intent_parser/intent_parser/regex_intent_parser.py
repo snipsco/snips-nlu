@@ -59,9 +59,9 @@ class RegexIntentParser(IntentParser):
         for k, v in intent_probs.iteritems():
             intent_probs[k] /= float(len(entities))
 
-        top_intent, top_prob = sorted(intent_probs.items(),
-                                      key=operator.itemgetter(1),
-                                      reverse=True)[0]
+        top_intent, top_prob = max(intent_probs.items(),
+                                   key=operator.itemgetter(1),
+                                   reverse=True)
         intent = intent_classification_result(top_intent, top_prob)
         for e in entities:
             e.pop("intent", None)

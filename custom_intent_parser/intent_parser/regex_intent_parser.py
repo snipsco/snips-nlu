@@ -53,13 +53,11 @@ class RegexIntentParser(IntentParser):
             return
 
         intent_probs = defaultdict(int)
-        num_intents = 0.
         for e in entities:
             intent_probs[e["intent"]] += 1.
-            num_intents += 1.
 
         for k, v in intent_probs.iteritems():
-            intent_probs[k] /= num_intents
+            intent_probs[k] /= float(len(entities))
 
         top_intent, top_prob = sorted(intent_probs.items(),
                                       key=operator.itemgetter(1),

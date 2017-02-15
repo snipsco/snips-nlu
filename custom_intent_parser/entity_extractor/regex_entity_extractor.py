@@ -58,12 +58,10 @@ def generate_regexes(intent_queries, target_entity, entities):
             queries.append(q)
 
     # Extract the different roles
-    roles = {None}
+    roles = set()
     for q in queries:
         for chunk in q["data"]:
-            role = chunk.get("role", False)
-            if role:
-                roles.add(role)
+            roles.add(chunk.get("role", None))
 
     # Filter queries by role
     patterns = dict()

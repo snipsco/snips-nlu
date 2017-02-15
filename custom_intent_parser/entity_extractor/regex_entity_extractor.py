@@ -29,12 +29,11 @@ def generate_role_regexes(queries, target_entity, target_role,
                and c.get("role", None) == target_role for c in q["data"]):
             role_queries.append(q)
     # Extract the patterns for this role
-    role_patterns = []
+    role_patterns = set()
     for q in role_queries:
         pattern = query_to_pattern(q, target_entity, target_role,
                                    joined_entity_utterances)
-        role_patterns.append(pattern)
-    role_patterns = set(role_patterns)
+        role_patterns.add(pattern)
     return [re.compile(p, re.IGNORECASE) for p in role_patterns]
 
 

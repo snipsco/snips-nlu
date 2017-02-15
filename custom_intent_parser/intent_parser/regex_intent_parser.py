@@ -63,7 +63,8 @@ class RegexIntentParser(IntentParser):
                                    key=operator.itemgetter(1),
                                    reverse=True)
         intent = intent_classification_result(top_intent, top_prob)
-        for e in entities:
-            e.pop("intent", None)
-        res = result(text, intent, entities)
+        # Remove entities from wrong intent and the intent key
+        valid_entities = [e.pop("intent", None)
+                          for e in entities if e["intent"] == top_intent]
+        res = result(text, intent, valid_entities)
         self._cache[text] = res

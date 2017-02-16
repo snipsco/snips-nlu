@@ -8,6 +8,7 @@ from custom_intent_parser.entity import Entity
 
 VALID_FILE_REGEX = re.compile(r"^[\w\s-]+$")
 
+
 def is_valid_filename(string):
     return VALID_FILE_REGEX.match(string)
 
@@ -52,16 +53,12 @@ def validate_queries(queries, entities):
 
 class Dataset(object):
     def __init__(self, entities=None, queries=None):
-        if entities is None:
-            entities = {}
-
-        if queries is None:
-            queries = {}
-        else:
-            validate_queries(queries, entities)
-
-        self.entities = entities
-        self.queries = queries
+        self._entities = {}
+        self._queries = {}
+        if entities is not None:
+            self.entities = entities
+        if queries is not None:
+            self.queries = queries
 
     def __eq__(self, other):
         if self.queries != other.queries:
@@ -69,6 +66,32 @@ class Dataset(object):
         if self.entities != self.entities:
             return False
         return True
+
+    @property
+    def entities(self):
+        return self._entities
+
+    @entities.setter
+    def entities(self, value):
+        if isinstance(value, dict):
+            for ent in value.values():
+                assert isinstance(ent, Entity)
+            self._entities = value
+        elif isinstance(value, list):
+            for ent in value:
+                assert isinstance(ent, Entity)
+            self._entities = dict((ent.name, ent) for ent in value)
+        else:
+            raise ValueError("Expected dict or list, found %s" % type(value))
+
+    @property
+    def queries(self):
+        return self._queries
+
+    @queries.setter
+    def queries(self, value):
+        validate_queries(value, self.entities)
+        self._queries = value
 
     @classmethod
     def load(cls, dir_path):

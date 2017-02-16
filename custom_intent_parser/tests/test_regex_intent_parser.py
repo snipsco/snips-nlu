@@ -121,3 +121,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
                 [r.flags for r in
                  new_parser.entity_extractor.regexes[intent_name]])
         self.assertEqual(parser._cache, new_parser._cache)
+
+
+if __name__ == '__main__':
+    unittest.main()

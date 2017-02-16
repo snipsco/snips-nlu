@@ -39,8 +39,12 @@ class RegexIntentParser(IntentParser):
         if text not in self._cache:
             self._update_cache(text)
         parse = self._cache[text]
-        return intent_classification_result(
-            parse["intent"].get("name"), parse["intent"].get("prob"))
+        intent = parse["intent"]
+        prob = None
+        if intent is not None:
+            prob = intent["prob"]
+            intent = intent["name"]
+        return intent_classification_result(intent, prob)
 
     def get_entities(self, text, intent=None):
         if text not in self._cache:

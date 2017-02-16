@@ -47,8 +47,9 @@ def parse_line(line):
                 current_entity_match = next(entity_matches)
             except StopIteration:
                 current_entity_match = None
-        query_data.append({"text": chunk})
-        num_char += len(chunk)
+        if len(chunk) > 0:
+            query_data.append({"text": chunk})
+            num_char += len(chunk)
     try:
         last_entity_match = next(entity_matches)
         query_data.append(get_entity_chunk(last_entity_match))

@@ -76,6 +76,14 @@ def dataset_from_text_file(path, dataset_path):
             if all(e != entry for e in entities[c["entity"]]):
                 entities[c["entity"]].append({"value": c["text"],
                                               "synonyms": [c["text"]]})
+    for entity_name, entry_list in entities.iteritems():
+        existing_entries = set()
+        unique_entries = list()
+        for entry in entry_list:
+            if entry["value"] not in existing_entries:
+                existing_entries.add(entry["value"])
+                unique_entries.append(entry)
+        entities[entity_name] = unique_entries
 
     entities = [Entity(ent_name, entries=entries)
                 for ent_name, entries in entities.iteritems()]

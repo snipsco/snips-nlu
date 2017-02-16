@@ -12,6 +12,6 @@ The simplest way to create data is to put them in the following format in a `dat
  
 Convert your text file into a `Dataset` like this:
     
-    python data_helpers path/to/dataset.txt path/to/dataset_dir
+    python custom_intent_parser/data_helpers.py path/to/dataset.txt path/to/dataset_dir
     
 Replace the dummy entities in the `dataset_dir/entities/*.json` by real entities utterances 

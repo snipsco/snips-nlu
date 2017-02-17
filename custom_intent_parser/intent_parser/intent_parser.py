@@ -44,6 +44,10 @@ class IntentParser(object):
     def load(cls, path):
         pass
 
+    @abstractclassmethod
+    def from_dataset(cls, dataset):
+        pass
+
 
 class SnipsIntentParser(IntentParser):
     __metaclass__ = ABCMeta

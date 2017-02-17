@@ -111,3 +111,9 @@ class RegexIntentParser(IntentParser):
         cache = LimitedSizeDict([(k, v) for k, v in data["cache_items"]],
                                 size_limit=cache_size)
         return cls(entity_extractor, cache)
+
+    @classmethod
+    def from_dataset(cls, dataset):
+        extractor = RegexEntityExtractor()
+        extractor = extractor.fit(dataset)
+        return cls(extractor)

@@ -4,7 +4,7 @@ import os
 import re
 from copy import deepcopy
 
-from custom_intent_parser.entity import Entity
+from entity import Entity
 
 VALID_FILE_REGEX = re.compile(r"^[\w\s-]+$")
 

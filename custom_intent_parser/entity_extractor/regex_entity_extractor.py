@@ -49,19 +49,19 @@ def generate_regexes(intent_queries, entities, group_names_to_labels):
     joined_entity_utterances = dict()
     for entity_name, entity in entities.iteritems():
         if entity.use_synonyms:
-            utterances = [re.escape(s) for entry in entity.entries
+            utterances = [s for entry in entity.entries
                           for s in entry["synonyms"]]
         else:
-            utterances = [re.escape(entry["value"])
-                          for entry in entity.entries]
+            utterances = [entry["value"] for entry in entity.entries]
         joined_entity_utterances[entity_name] = r"|".join(
-            utterances)
+            sorted([e.replace("\\", "\\\\") for e in utterances], key=len,
+                   reverse=True))
     patterns = set()
     for query in intent_queries:
         pattern, group_names_to_labels = query_to_pattern(
             query, joined_entity_utterances, group_names_to_labels)
         patterns.add(pattern)
-    regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
+    regexes = [re.compile(r"%s" % p, re.IGNORECASE) for p in patterns]
     return regexes, group_names_to_labels
 
 

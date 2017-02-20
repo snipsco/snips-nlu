@@ -27,6 +27,9 @@ def get_queries():
                             "text": "dummy_2",
                             "entity": "dummy_entity_2"
                         },
+                        {
+                            "text": "?"
+                        },
                     ]
             },
             {
@@ -79,7 +82,7 @@ def get_entities():
     entries_1 = [
         {
             "value": "dummy_a",
-            "synonyms": ["dummy_a", "dummy_aa", "dummy a", "dummy\s"]
+            "synonyms": ["dummy_a", "dummy 2a", "dummy a", "2 dummy a"]
         },
         {
             "value": "dummy_b",
@@ -172,16 +175,16 @@ class TestRegexEntityExtractor(unittest.TestCase):
 
         # When
         expected_entities = {
-            "this is a dummy a query with another dummy_c": [
+            "this is a 2 dummy a query with another dummy_c": [
                 {
-                    "range": (10, 17),
-                    "value": "dummy a",
+                    "range": (10, 19),
+                    "value": "2 dummy a",
                     "entity": "dummy_entity_1",
                     "intent": "dummy_intent_1",
                     "role": "dummy_role"
                 },
                 {
-                    "range": (37, 44),
+                    "range": (39, 46),
                     "value": "dummy_c",
                     "entity": "dummy_entity_2",
                     "intent": "dummy_intent_1"
@@ -196,10 +199,10 @@ class TestRegexEntityExtractor(unittest.TestCase):
                     "intent": "dummy_intent_1"
                 }
             ],
-            "dummy_aa": [
+            "dummy 2a": [
                 {
                     "range": (0, 8),
-                    "value": "dummy_aa",
+                    "value": "dummy 2a",
                     "entity": "dummy_entity_1",
                     "intent": "dummy_intent_1"
                 }

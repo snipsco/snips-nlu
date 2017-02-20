@@ -8,6 +8,7 @@ import unittest
 from custom_intent_parser.dataset import Dataset
 from custom_intent_parser.entity import Entity
 
+from custom_intent_parser.intent_parser.rasa_intent_parser import RasaIntentParser
 
 try:
     from custom_intent_parser.intent_parser.rasa_intent_parser import RasaIntentParser
@@ -97,7 +98,6 @@ class TestRegexIntentParser(unittest.TestCase):
 
         if module_failed:
             self.skipTest('Rasa intent parser not tested')
-        die
 
         queries = get_queries()
 
@@ -110,15 +110,15 @@ class TestRegexIntentParser(unittest.TestCase):
         self._dataset = Dataset(entities=entities, queries=queries)
 
 
-    # def test_get_intent(self):
-    #     # Given
-    #     parser = RasaIntentParser().fit(self._dataset)
+    def test_get_intent(self):
+        # Given
+        parser = RasaIntentParser().fit(self._dataset)
 
-    #     # When
-    #     text="show me chinese restaurants"
+        # When
+        text="show me chinese restaurants"
 
-    #     parsed_intent=parser.parse(text)["intent"]
-    #     self.assertTrue(parsed_intent["intent"]=='restaurant_search' and parsed_intent["proba"]>0)
+        parsed_intent=parser.parse(text)["intent"]
+        self.assertTrue(parsed_intent["intent"]=='restaurant_search' and parsed_intent["proba"]>0)
 
 
     def test_load_save(self):
@@ -143,8 +143,4 @@ class TestRegexIntentParser(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    rasa_loader = pkgutil.find_loader('rasa_nlu')
-    print rasa_loader
-    print rasa_loader is None
-    if rasa_loader is not None:
-        unittest.main()
+    unittest.main()

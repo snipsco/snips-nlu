@@ -1,5 +1,7 @@
 import argparse
 import io
+import json
+import os
 import re
 from collections import defaultdict
 
@@ -7,27 +9,43 @@ from dataset import Dataset
 from entity import Entity
 
 INTENT_REGEX = re.compile(r"^(?P<intent>[\w]+)\s+")
-ENTITY_ROLE_REGEX = re.compile(r"@(?P<entity>[\w]+):?(?P<role>[\w]+)?")
-ENTITY_ROLE_SPLIT_REGEX = re.compile(r"@[\w]+[:[\w]+]?")
+SLOT_NAME_REGEX = re.compile(r"\{(?P<slot_name>\w+)\}")
+SLOT_NAME_SPLIT_REGEX = re.compile(r"\{\w+\}")
+
+ENTITY_ENTRIES_SEP = ";"
 
 
-def get_entity_chunk(current_entity_match):
-    entity = current_entity_match.group("entity")
-    role = current_entity_match.group("role")
-    entity_chunk = {"text": "put_a_%s_here" % entity, "entity": entity}
-    if role is not None:
-        entity_chunk["role"] = role
+def get_entity_chunk(slot_name, intent, ontology):
+    if slot_name not in ontology["intents"][intent]["slots"]:
+        raise KeyError("Slot '%s' was found in the queries but is missing in "
+                       "the intent description" % slot_name)
+
+    entity_name = ontology["intents"][intent]["slots"][slot_name][
+        "entityName"]
+    if entity_name not in ontology["entities"]:
+        raise KeyError("'%s' entityName was found in slot description but is "
+                       "missing from the entities description"
+                       % entity_name)
+
+    entity_chunk = {
+        "text": "dummy_%s" % entity_name,
+        "entity": entity_name,
+        "role": slot_name
+    }
     return entity_chunk
 
 
-def parse_line(line):
+def parse_line(line, ontology):
     intent_match = INTENT_REGEX.match(line)
     if intent_match is None or "intent" not in intent_match.groupdict():
-        raise ValueError("No intent in this line: %s" % line)
+        raise ValueError("No intent in this line: '%s'" % line)
     intent = intent_match.group("intent")
+    if intent not in ontology["intents"]:
+        raise KeyError("'%s' was found in the queries but is missing in the "
+                       "intents description")
     line = INTENT_REGEX.sub("", line)
 
-    entity_matches = ENTITY_ROLE_REGEX.finditer(line)
+    entity_matches = SLOT_NAME_REGEX.finditer(line)
     try:
         current_entity_match = next(entity_matches)
     except StopIteration:
@@ -35,14 +53,17 @@ def parse_line(line):
         return intent, query_data
     num_char = 0
     query_data = []
-    for chunk in ENTITY_ROLE_SPLIT_REGEX.split(line):
+    for chunk in SLOT_NAME_SPLIT_REGEX.split(line):
         while current_entity_match is not None and \
                         num_char == current_entity_match.start():
-            entity_chunk = get_entity_chunk(current_entity_match)
+            slot_name = current_entity_match.group("slot_name")
+            if slot_name not in ontology["intents"][intent]["slots"]:
+                raise KeyError("Found a query with intent '%s' having a "
+                               "slot '%s' which is not allowed by the "
+                               "intent description." % (intent, slot_name))
+            entity_chunk = get_entity_chunk(slot_name, intent, ontology)
             query_data.append(entity_chunk)
-            num_char += len("@%s" % entity_chunk["entity"])
-            if "role" in entity_chunk:
-                num_char += len(":%s" % entity_chunk["role"])
+            num_char += len("{%s}" % slot_name)
             try:
                 current_entity_match = next(entity_matches)
             except StopIteration:
@@ -52,41 +73,150 @@ def parse_line(line):
             num_char += len(chunk)
     try:
         last_entity_match = next(entity_matches)
-        query_data.append(get_entity_chunk(last_entity_match))
+        slot_name = last_entity_match.group("slot_name")
+        query_data.append(get_entity_chunk(slot_name, intent, ontology))
     except StopIteration:
         pass
 
     return intent, query_data
 
 
-def dataset_from_text_file(path, dataset_path):
-    with io.open(path, encoding="utf8") as f:
+def extract_queries(query_utterances_path, ontology):
+    with io.open(query_utterances_path, encoding="utf8") as f:
         lines = [l for l in f]
     lines = [l.strip() for l in lines if len(l.strip()) > 0]
 
     queries = defaultdict(list)
-    entities = defaultdict(list)
     for l in lines:
-        intent, query_data = parse_line(l)
+        intent, query_data = parse_line(l, ontology)
         queries[intent].append({"data": query_data})
-        for c in query_data:
-            if "entity" not in c:
-                continue
-            entry = c["text"]
-            if all(e != entry for e in entities[c["entity"]]):
-                entities[c["entity"]].append({"value": c["text"],
-                                              "synonyms": [c["text"]]})
-    for entity_name, entry_list in entities.iteritems():
-        existing_entries = set()
-        unique_entries = list()
-        for entry in entry_list:
-            if entry["value"] not in existing_entries:
-                existing_entries.add(entry["value"])
-                unique_entries.append(entry)
-        entities[entity_name] = unique_entries
+    return queries
 
-    entities = [Entity(ent_name, entries=entries)
-                for ent_name, entries in entities.iteritems()]
+
+def extract_entity_entries(path, use_synonyms):
+    with io.open(path, encoding="utf8") as f:
+        lines = [l for l in f]
+    lines = [l.strip() for l in lines if len(l.strip()) > 0]
+    entity_name = os.path.basename(path).replace(".txt", "")
+    entries = []
+    for l in lines:
+        split = l.split(ENTITY_ENTRIES_SEP)
+        if not use_synonyms and len(split) != 1:
+            raise ValueError("Entity '%s' does not use synonyms but found "
+                             "synonyms were found in %s" % (entity_name, path))
+        entry = {"value": split[0], "synonyms": split}
+        entries.append(entry)
+    return entries
+
+
+def extract_entity(path, ontology):
+    entity_name = os.path.basename(path).replace(".txt", "")
+    if not os.path.exists(path):
+        raise IOError("File not found '%s'" % path)
+
+    entity_description = ontology["entities"][entity_name]
+
+    use_learning = entity_description["automaticallyExtensible"]
+    use_synonyms = entity_description["useSynonyms"]
+    entries = extract_entity_entries(path, use_synonyms)
+    return Entity(entity_name, entries=entries, use_learning=use_learning,
+                  use_synonyms=use_synonyms)
+
+
+def extract_ontology_intents(ontology_data):
+    mandatory_intent_keys = ["intent", "slots"]
+    mandatory_slot_keys = ["name", "entityName"]
+    intents = dict()
+    for intent in ontology_data["intents"]:
+        parsed_intent = dict()
+        for k in mandatory_intent_keys:
+            if k not in intent:
+                raise KeyError("Missing key '%s' in intent description" % k)
+        intent_name = intent["intent"]
+        if not isinstance(intent_name, (str, unicode)):
+            raise TypeError("Expected 'intent' value to be a str or unicode, "
+                            "found %s" % type(intent_name))
+        parsed_intent["name"] = intent_name
+        parsed_intent["slots"] = dict()
+        for slot in intent["slots"]:
+            if not isinstance(slot, dict):
+                raise TypeError("Expected slot to be an instance of %s, "
+                                "but found %s" % type(slot))
+            for k in mandatory_slot_keys:
+                if k not in slot:
+                    raise KeyError("Missing key '%s' in slot description" % k)
+            parsed_intent["slots"][slot["name"]] = slot
+        intents[parsed_intent["name"]] = parsed_intent
+
+    return intents
+
+
+def extract_ontology_entities(ontology_data):
+    mandatory_keys = ["entityName", "automaticallyExtensible", "useSynonyms"]
+    entities = dict()
+    for entity in ontology_data["entities"]:
+        for k in mandatory_keys:
+            if k not in entity:
+                raise KeyError("Missing key '%s' in intent description" % k)
+        entity_name = entity["entityName"]
+        if not isinstance(entity_name, (str, unicode)):
+            raise TypeError("Expected 'intent' value to be a str or unicode, "
+                            "found %s" % type(entity_name))
+        use_learning = entity["automaticallyExtensible"]
+        if not isinstance(use_learning, bool):
+            raise TypeError("Expected 'automaticallyExtensible' to be a "
+                            "boolean but found %s" % type(use_learning))
+        use_synonyms = entity["useSynonyms"]
+        if not isinstance(use_synonyms, bool):
+            raise TypeError("Expected 'useSynonyms' to be a boolean "
+                            "but found %s" % type(use_synonyms))
+        entities[entity_name] = {
+            "entityName": entity_name,
+            "automaticallyExtensible": use_learning,
+            "useSynonyms": use_synonyms,
+        }
+
+    return entities
+
+
+def extract_ontology(path):
+    with io.open(path, encoding="utf8") as f:
+        data = json.load(f)
+    mandatory_intent_keys = ["intents", "entities"]
+    for k in mandatory_intent_keys:
+        if k not in data:
+            KeyError("Missing '%s' key in ontology" % k)
+    ontology = dict()
+    if not isinstance(data["intents"], list):
+        raise TypeError("Expected ontology's intents to be a list")
+
+    ontology["intents"] = extract_ontology_intents(data)
+    ontology["entities"] = extract_ontology_entities(data)
+    return ontology
+
+
+def dataset_from_asset_directory(assets_path, dataset_path):
+    json_files = [f for f in os.listdir(assets_path) if f.endswith(".json")]
+    if len(json_files) != 1:
+        raise ValueError("Expected 1 json ontology file, found %s"
+                         % len(json_files))
+    ontology_path = os.path.join(assets_path, json_files[0])
+    ontology = extract_ontology(ontology_path)
+
+    entities = []
+    for entity_name in ontology["entities"]:
+        entity_utterances_path = os.path.join(
+            assets_path, "%s.txt" % entity_name)
+        if not os.path.exists(entity_utterances_path):
+            raise IOError("Missing %s file" % entity_utterances_path)
+        entities.append(extract_entity(entity_utterances_path, ontology))
+
+    sample_utterance_filename = "SamplesUtterances.txt"
+    query_utterance_path = os.path.join(assets_path, sample_utterance_filename)
+    if not os.path.exists(query_utterance_path):
+        raise ValueError("%s does not exist" % query_utterance_path)
+    queries = extract_queries(query_utterance_path, ontology)
+
     dataset = Dataset(entities, queries)
     dataset.save(dataset_path)
 
@@ -97,4 +227,4 @@ if __name__ == "__main__":
     parser.add_argument("path", help="Path to the text file")
     parser.add_argument("dataset_path", help="Output path to the dataset")
     args = parser.parse_args()
-    dataset_from_text_file(**vars(args))
+    dataset_from_asset_directory(**vars(args))

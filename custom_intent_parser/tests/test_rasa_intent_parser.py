@@ -1,4 +1,8 @@
+import io
 import json
+import os
+import pkgutil
+import shutil
 import unittest
 
 from custom_intent_parser.dataset import Dataset
@@ -97,16 +101,39 @@ class TestRegexIntentParser(unittest.TestCase):
         self._dataset = Dataset(entities=entities, queries=queries)
 
 
-    def test_get_intent(self):
+    # def test_get_intent(self):
+    #     # Given
+    #     parser = RasaIntentParser().fit(self._dataset)
+
+    #     # When
+    #     text="show me chinese restaurants"
+
+    #     parsed_intent=parser.parse(text)["intent"]
+    #     self.assertTrue(parsed_intent["intent"]=='restaurant_search' and parsed_intent["proba"]>0)
+
+
+    def test_load_save(self):
         # Given
-        parser = RasaIntentParser().fit(self._dataset)
+        parser1 = RasaIntentParser().fit(self._dataset)
+
+        dirname = '__rasa_load_save_test'
+
+        if os.path.isdir(dirname):
+            shutil.rmtree(dirname)
+        parser1.save(dirname)
+
+        parser2 = RasaIntentParser().load(dirname)
+        shutil.rmtree(dirname)
 
         # When
         text="show me chinese restaurants"
 
-        parsed_intent=parser.parse(text)["intent"]
-        self.assertTrue(parsed_intent["intent"]=='restaurant_search' and parsed_intent["proba"]>0)
+        parsed_intent=parser2.parse(text)["intent"]
+
+        self.assertTrue(parsed_intent["intent"]=='restaurant_search' and parsed_intent["proba"]>0)        
 
 
 if __name__ == '__main__':
-    unittest.main()
+    rasa_loader = pkgutil.find_loader('rasa_nlu')
+    if rasa_loader is not None:
+        unittest.main()

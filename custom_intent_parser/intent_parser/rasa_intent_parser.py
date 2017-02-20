@@ -11,7 +11,6 @@ from rasa_nlu import train
 from rasa_nlu.training_data import TrainingData
 from rasa_nlu.extractors.spacy_entity_extractor import SpacyEntityExtractor
 from rasa_nlu.featurizers.spacy_featurizer import SpacyFeaturizer
-from rasa_nlu.persistor import Persistor
 
 from custom_intent_parser.intent_parser.intent_parser import IntentParser
 from custom_intent_parser.utils import LimitedSizeDict, transform_to_rasa_format
@@ -51,7 +50,7 @@ class RasaIntentParser(IntentParser):
         training_data = TrainingData(training_file_name, self.backend, self.language)
         
         shutil.rmtree(dir_name)
-        
+
         self.train_dataset=dataset
         self.trainer.train(training_data)
         self.interpreter.featurizer=SpacyFeaturizer(self.trainer.nlp)

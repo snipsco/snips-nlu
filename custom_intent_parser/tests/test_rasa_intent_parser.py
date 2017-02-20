@@ -7,8 +7,13 @@ import unittest
 
 from custom_intent_parser.dataset import Dataset
 from custom_intent_parser.entity import Entity
-from custom_intent_parser.intent_parser.rasa_intent_parser import \
-    RasaIntentParser
+
+
+try:
+    from custom_intent_parser.intent_parser.rasa_intent_parser import RasaIntentParser
+    module_failed = False
+except ImportError:
+    module_failed = True
 
 
 def format_rasa_example(example):
@@ -90,6 +95,10 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def setUp(self):
 
+        if module_failed:
+            self.skipTest('Rasa intent parser not tested')
+        die
+
         queries = get_queries()
 
         # so far we don't use other intents than the one of the intent we're training
@@ -135,5 +144,7 @@ class TestRegexIntentParser(unittest.TestCase):
 
 if __name__ == '__main__':
     rasa_loader = pkgutil.find_loader('rasa_nlu')
+    print rasa_loader
+    print rasa_loader is None
     if rasa_loader is not None:
         unittest.main()

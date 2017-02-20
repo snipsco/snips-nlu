@@ -11,7 +11,7 @@ ENTITY_ROLE_REGEX = re.compile(r"@(?P<entity>[\w]+):?(?P<role>[\w]+)?")
 ENTITY_ROLE_SPLIT_REGEX = re.compile(r"@[\w]+[:[\w]+]?")
 
 
-def get_entity_chunk(current_entity_match, ):
+def get_entity_chunk(current_entity_match):
     entity = current_entity_match.group("entity")
     role = current_entity_match.group("role")
     entity_chunk = {"text": "put_a_%s_here" % entity, "entity": entity}

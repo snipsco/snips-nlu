@@ -196,6 +196,20 @@ def extract_ontology(path):
     return ontology
 
 
+def extract_ontologies(assets_dirs):
+    ontologies = dict()
+    for assets_dir in assets_dirs:
+        json_files = [f for f in os.listdir(assets_dir) if
+                      f.endswith(".json")]
+        if len(json_files) != 1:
+            raise ValueError(
+                "Expected 1 json ontology file, found %s in %s"
+                % (len(json_files), assets_dir))
+        ontology_path = os.path.join(assets_dir, json_files[0])
+        ontologies[assets_dir] = extract_ontology(ontology_path)
+    return ontologies
+
+
 def merge_ontologies(ontologies_dict):
     intents = set()
     slots = set()
@@ -226,20 +240,11 @@ def merge_ontologies(ontologies_dict):
     return {"intents": merged_intents, "entities": merged_entities}
 
 
-def dataset_from_asset_directories(assets_dirs, dataset_path):
+def dataset_from_asset_directories(assets_dirs):
     if isinstance(assets_dirs, (str, unicode)):
         assets_dirs = [assets_dirs]
 
-    ontologies = dict()
-    for assets_dir in assets_dirs:
-        json_files = [f for f in os.listdir(assets_dir) if
-                      f.endswith(".json")]
-        if len(json_files) != 1:
-            raise ValueError(
-                "Expected 1 json ontology file, found %s in %s"
-                % (len(json_files), assets_dir))
-        ontology_path = os.path.join(assets_dir, json_files[0])
-        ontologies[assets_dir] = extract_ontology(ontology_path)
+    ontologies = extract_ontologies(assets_dirs)
 
     # Just to run the mergeability of ontologies
     _ = merge_ontologies(ontologies)
@@ -260,7 +265,11 @@ def dataset_from_asset_directories(assets_dirs, dataset_path):
             raise ValueError("%s does not exist" % query_utterance_path)
         queries.update(extract_queries(query_utterance_path, ontology))
 
-    dataset = Dataset(entities, queries)
+    return Dataset(entities, queries)
+
+
+def save_dataset_from_asset_directories(assets_dirs, dataset_path):
+    dataset = dataset_from_asset_directories(assets_dirs)
     dataset.save(dataset_path)
 
 
@@ -271,4 +280,4 @@ if __name__ == "__main__":
                         help="List of paths to the assets directories")
     parser.add_argument("dataset_path", help="Output path to the dataset")
     args = parser.parse_args()
-    dataset_from_asset_directories(**vars(args))
+    save_dataset_from_asset_directories(**vars(args))

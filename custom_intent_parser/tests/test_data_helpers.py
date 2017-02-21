@@ -26,11 +26,7 @@ class TestDataHelpers(unittest.TestCase):
     _entity_3_path = os.path.join(_nlu_assets_path_2, "entity_3.txt")
     _entity_4_path = os.path.join(_nlu_assets_path_2, "entity_4.txt")
 
-    _dataset_path = os.path.join(TEST_PATH, "dataset")
-
     def setUp(self):
-        if os.path.exists(self._dataset_path):
-            shutil.rmtree(self._dataset_path)
 
         if os.path.exists(self._nlu_assets_path_1):
             shutil.rmtree(self._nlu_assets_path_1)
@@ -157,13 +153,10 @@ class TestDataHelpers(unittest.TestCase):
             shutil.rmtree(self._nlu_assets_path_1)
         if os.path.exists(self._nlu_assets_path_2):
             shutil.rmtree(self._nlu_assets_path_2)
-        if os.path.exists(self._dataset_path):
-            shutil.rmtree(self._dataset_path)
 
     def test_dataset_from_asset_directories(self):
         # Given
         paths = [self._nlu_assets_path_1, self._nlu_assets_path_2]
-        dataset_path = self._dataset_path
         queries = {
             "intent_1": [
                 {
@@ -296,8 +289,7 @@ class TestDataHelpers(unittest.TestCase):
         ]
         expected_dataset = Dataset(entities=entities, queries=queries)
         # When
-        dataset_from_asset_directories(paths, dataset_path)
-        dataset = Dataset.load(dataset_path)
+        dataset = dataset_from_asset_directories(paths)
         # Then
         self.assertEqual(dataset, expected_dataset)
 

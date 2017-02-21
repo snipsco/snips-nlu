@@ -54,6 +54,7 @@ def parse_line(line, ontology):
     num_char = 0
     query_data = []
     for chunk in SLOT_NAME_SPLIT_REGEX.split(line):
+        # Loop on adjacent entities
         while current_entity_match is not None and \
                         num_char == current_entity_match.start():
             slot_name = current_entity_match.group("slot_name")
@@ -195,27 +196,60 @@ def extract_ontology(path):
     return ontology
 
 
-def dataset_from_asset_directory(assets_path, dataset_path):
-    json_files = [f for f in os.listdir(assets_path) if f.endswith(".json")]
-    if len(json_files) != 1:
-        raise ValueError("Expected 1 json ontology file, found %s"
-                         % len(json_files))
-    ontology_path = os.path.join(assets_path, json_files[0])
-    ontology = extract_ontology(ontology_path)
+def check_mergeable(ontologies_dict):
+    # Check the intent names
+    intents = set()
+    slots = set()
+    duplicate_intents = set()
+    duplicate_slots = set()
+    for ontology_file, ontology in ontologies_dict.iteritems():
+        ontology_intents = set(ontology["intents"].keys())
+        duplicate_intents.update(intents.intersection(ontology_intents))
+        intents.update(ontology["intents"].keys())
+        ontology_slots = set([s for intent in ontology["intents"]
+                              for s in ontology["intents"][intent]["slots"]])
+        duplicate_slots.update(slots.intersection(ontology_slots))
+        slots.update(ontology_slots)
+    if len(duplicate_intents) > 0:
+        raise ValueError("Found these intents in several different ontology "
+                         "file: %s" % list(duplicate_intents))
+    if len(duplicate_slots) > 0:
+        raise ValueError("Found these slots in several different ontology "
+                         "file: %s" % list(duplicate_slots))
+
+
+def dataset_from_asset_directories(assets_dirs, dataset_path):
+    if isinstance(assets_dirs, (str, unicode)):
+        assets_dirs = [assets_dirs]
+
+    ontologies = dict()
+    for assets_dir in assets_dirs:
+        json_files = [f for f in os.listdir(assets_dir) if
+                      f.endswith(".json")]
+        if len(json_files) != 1:
+            raise ValueError(
+                "Expected 1 json ontology file, found %s in %s"
+                % (len(json_files), assets_dir))
+        ontology_path = os.path.join(assets_dir, json_files[0])
+        ontologies[assets_dir] = extract_ontology(ontology_path)
+
+    check_mergeable(ontologies)
 
     entities = []
-    for entity_name in ontology["entities"]:
-        entity_utterances_path = os.path.join(
-            assets_path, "%s.txt" % entity_name)
-        if not os.path.exists(entity_utterances_path):
-            raise IOError("Missing %s file" % entity_utterances_path)
-        entities.append(extract_entity(entity_utterances_path, ontology))
-
+    queries = dict()
     sample_utterance_filename = "SamplesUtterances.txt"
-    query_utterance_path = os.path.join(assets_path, sample_utterance_filename)
-    if not os.path.exists(query_utterance_path):
-        raise ValueError("%s does not exist" % query_utterance_path)
-    queries = extract_queries(query_utterance_path, ontology)
+    for assets_dir, ontology in ontologies.iteritems():
+        for entity_name in ontology["entities"]:
+            entity_utterances_path = os.path.join(assets_dir,
+                                                  "%s.txt" % entity_name)
+            if not os.path.exists(entity_utterances_path):
+                raise IOError("Missing %s file" % entity_utterances_path)
+            entities.append(extract_entity(entity_utterances_path, ontology))
+        query_utterance_path = os.path.join(assets_dir,
+                                            sample_utterance_filename)
+        if not os.path.exists(query_utterance_path):
+            raise ValueError("%s does not exist" % query_utterance_path)
+        queries.update(extract_queries(query_utterance_path, ontology))
 
     dataset = Dataset(entities, queries)
     dataset.save(dataset_path)
@@ -224,7 +258,8 @@ def dataset_from_asset_directory(assets_path, dataset_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="rCreate a dataset from a"
                                                  " text file")
-    parser.add_argument("path", help="Path to the text file")
+    parser.add_argument("assets_dirs", metavar='N', type=str, nargs='+',
+                        help="List of paths to the assets directories")
     parser.add_argument("dataset_path", help="Output path to the dataset")
     args = parser.parse_args()
-    dataset_from_asset_directory(**vars(args))
+    dataset_from_asset_directories(**vars(args))

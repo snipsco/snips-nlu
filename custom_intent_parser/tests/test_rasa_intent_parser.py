@@ -9,9 +9,6 @@ from collections import defaultdict
 from custom_intent_parser.dataset import Dataset
 from custom_intent_parser.entity import Entity
 
-from custom_intent_parser.intent_parser.rasa_intent_parser import (
-    RasaIntentParser)
-
 
 try:
     from custom_intent_parser.intent_parser.rasa_intent_parser import (

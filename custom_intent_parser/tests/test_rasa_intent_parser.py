@@ -9,6 +9,10 @@ from collections import defaultdict
 from custom_intent_parser.dataset import Dataset
 from custom_intent_parser.entity import Entity
 
+from custom_intent_parser.intent_parser.rasa_intent_parser import (
+    RasaIntentParser)
+
+
 try:
     from custom_intent_parser.intent_parser.rasa_intent_parser import (
         RasaIntentParser)
@@ -92,11 +96,6 @@ class TestFitted(unittest.TestCase):
             self.skipTest('Rasa intent parser not tested')
 
         queries = get_queries()
-
-        # so far we don't use other intents than the one of the intent we're
-        # training a model for
-        queries = {'restaurant_search': queries['restaurant_search']}
-
         entities = get_entities_from_queries(queries)
 
         self._dataset = Dataset(entities=entities, queries=queries)
@@ -132,11 +131,6 @@ class TestRegexIntentParser(unittest.TestCase):
             shutil.rmtree(self.load_save_test_dirname)
 
         queries = get_queries()
-
-        # so far we don't use other intents than the one of the intent we're
-        # training a model for
-        queries = {'restaurant_search': queries['restaurant_search']}
-
         entities = get_entities_from_queries(queries)
 
         self._dataset = Dataset(entities=entities, queries=queries)

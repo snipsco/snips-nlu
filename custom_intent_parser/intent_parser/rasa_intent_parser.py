@@ -10,8 +10,8 @@ from rasa_nlu.featurizers.spacy_featurizer import SpacyFeaturizer
 from custom_intent_parser.intent_parser.intent_parser import IntentParser
 from custom_intent_parser.result import (intent_classification_result,
                                          parsed_entity, result)
-from custom_intent_parser.utils import (LimitedSizeDict,
-                                        transform_to_rasa_format)
+from custom_intent_parser.utils import LimitedSizeDict
+from custom_intent_parser.rasa_utils import transform_to_rasa_format
 
 
 class RasaIntentParser(IntentParser):
@@ -47,6 +47,10 @@ class RasaIntentParser(IntentParser):
         return (self.train_dataset is not None)
 
     def fit(self, dataset):
+
+        if len(dataset.queries.keys()) < 2:
+            raise ValueError("Rasa backend can only be used on a dataset \
+                containing multiple intents")
 
         dir_name = '__rasa_tmp'
         if not os.path.exists(dir_name):
@@ -108,10 +112,7 @@ class RasaIntentParser(IntentParser):
                 value,
                 entity["entity"]))
 
-        if intent['intent'] is 'Other':
-            r = result(text)
-        else:
-            r = result(text, parsed_intent=intent,
+        r = result(text, parsed_intent=intent,
                        parsed_entities=entities)
         self._cache[text] = r
         return

@@ -40,7 +40,8 @@ def query_to_pattern(query, joined_entity_utterances, roles_to_labels):
             pattern += r"(?P<%s>%s)" % (
                 max_index, joined_entity_utterances[chunk["entity"]])
         else:
-            pattern += r"%s" % chunk["text"]
+            pattern += re.escape(chunk["text"])
+
     return pattern + r"$", roles_to_labels
 
 
@@ -54,14 +55,13 @@ def generate_regexes(intent_queries, entities, group_names_to_labels):
         else:
             utterances = [entry["value"] for entry in entity.entries]
         joined_entity_utterances[entity_name] = r"|".join(
-            sorted([e.replace("\\", "\\\\") for e in utterances], key=len,
-                   reverse=True))
+            sorted([re.escape(e) for e in utterances], key=len, reverse=True))
     patterns = set()
     for query in intent_queries:
         pattern, group_names_to_labels = query_to_pattern(
             query, joined_entity_utterances, group_names_to_labels)
         patterns.add(pattern)
-    regexes = [re.compile(r"%s" % p, re.IGNORECASE) for p in patterns]
+    regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
     return regexes, group_names_to_labels
 
 

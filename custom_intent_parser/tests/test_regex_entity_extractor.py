@@ -26,10 +26,7 @@ def get_queries():
                         {
                             "text": "dummy_2",
                             "entity": "dummy_entity_2"
-                        },
-                        {
-                            "text": "?"
-                        },
+                        }
                     ]
             },
             {
@@ -44,6 +41,21 @@ def get_queries():
                         },
                         {
                             "text": " query."
+                        }
+                    ]
+            },
+            {
+                "data":
+                    [
+                        {
+                            "text": "This is another "
+                        },
+                        {
+                            "text": "dummy_2_again",
+                            "entity": "dummy_entity_2"
+                        },
+                        {
+                            "text": "?"
                         }
                     ]
             },
@@ -98,7 +110,7 @@ def get_entities():
     entries_2 = [
         {
             "value": "dummy_c",
-            "synonyms": ["dummy_c", "dummy_cc", "dummy c"]
+            "synonyms": ["dummy_c", "dummy_cc", "dummy c", "3p.m."]
         }
     ]
     entity_2 = Entity("dummy_entity_2", entries=entries_2)
@@ -169,6 +181,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
         # Given
         entities = get_entities()
         entities["dummy_entity_1"].use_synonyms = True
+        entities["dummy_entity_2"].use_synonyms = True
         queries = get_queries()
         dataset = Dataset(entities=entities, queries=queries)
         extractor = RegexEntityExtractor().fit(dataset)
@@ -191,10 +204,10 @@ class TestRegexEntityExtractor(unittest.TestCase):
                 }
             ],
             "this is a whatever query with another whatever": [],
-            "this is another dummy_c query.": [
+            "this is another 3p.m.?": [
                 {
-                    "range": (16, 23),
-                    "value": "dummy_c",
+                    "range": (16, 21),
+                    "value": "3p.m.",
                     "entity": "dummy_entity_2",
                     "intent": "dummy_intent_1"
                 }

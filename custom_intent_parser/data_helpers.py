@@ -196,8 +196,7 @@ def extract_ontology(path):
     return ontology
 
 
-def check_mergeable(ontologies_dict):
-    # Check the intent names
+def merge_ontologies(ontologies_dict):
     intents = set()
     slots = set()
     duplicate_intents = set()
@@ -216,6 +215,15 @@ def check_mergeable(ontologies_dict):
     if len(duplicate_slots) > 0:
         raise ValueError("Found these slots in several different ontology "
                          "file: %s" % list(duplicate_slots))
+    merged_intents = dict((intent_name, intent)
+                          for ontology in ontologies_dict.values()
+                          for intent_name, intent
+                          in ontology["intents"].iteritems())
+    merged_entities = dict((entity_name, entity)
+                           for ontology in ontologies_dict.values()
+                           for entity_name, entity
+                           in ontology["entities"].iteritems())
+    return {"intents": merged_intents, "entities": merged_entities}
 
 
 def dataset_from_asset_directories(assets_dirs, dataset_path):
@@ -233,7 +241,8 @@ def dataset_from_asset_directories(assets_dirs, dataset_path):
         ontology_path = os.path.join(assets_dir, json_files[0])
         ontologies[assets_dir] = extract_ontology(ontology_path)
 
-    check_mergeable(ontologies)
+    # Just to run the mergeability of ontologies
+    _ = merge_ontologies(ontologies)
 
     entities = []
     queries = dict()

@@ -273,7 +273,7 @@ def save_dataset_from_asset_directories(assets_dirs, dataset_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="rCreate a dataset from a"
+    parser = argparse.ArgumentParser(description="Create a dataset from a"
                                                  " text file")
     parser.add_argument("assets_dirs", metavar='N', type=str, nargs='+',
                         help="List of paths to the assets directories")

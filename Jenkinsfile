@@ -9,6 +9,6 @@ node('jenkins-slave-generic') {
     }
 
     stage('Tests') {
-        sh 'python -m unittest discover'
+    	sh '. venv/bin/activate && python -m unittest discover'
     }
 }

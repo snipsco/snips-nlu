@@ -50,10 +50,12 @@ class TestDataHelpers(unittest.TestCase):
                 {
                     "intent": "intent_1",
                     "slots": [
-                        {"name": "entity_1_name", "entityName": "entity_1"},
-                        {"name": "entity_2_name", "entityName": "entity_2"},
-                        {"name": "entity_2_other_name",
-                            "entityName": "entity_2"}
+                        {"slotName": "entity_1_name", 
+                            "entity": "entity_1"},
+                        {"slotName": "entity_2_name", 
+                            "entity": "entity_2"},
+                        {"slotName": "entity_2_other_name",
+                            "entity": "entity_2"}
                         ]
                 },
                 {
@@ -63,12 +65,12 @@ class TestDataHelpers(unittest.TestCase):
             ],
             "entities": [
                 {
-                    "entityName": "entity_1",
+                    "entity": "entity_1",
                     "automaticallyExtensible": false,
                     "useSynonyms": false
                 },
                 {
-                    "entityName": "entity_2",
+                    "entity": "entity_2",
                     "automaticallyExtensible": true,
                     "useSynonyms": true
                 }
@@ -106,10 +108,12 @@ class TestDataHelpers(unittest.TestCase):
                 {
                     "intent": "intent_3",
                     "slots": [
-                        {"name": "entity_3_name", "entityName": "entity_3"},
-                        {"name": "entity_4_name", "entityName": "entity_4"},
-                        {"name": "entity_4_other_name",
-                            "entityName": "entity_4"}
+                        {"slotName": "entity_3_name", 
+                            "entity": "entity_3"},
+                        {"slotName": "entity_4_name", 
+                            "entity": "entity_4"},
+                        {"slotName": "entity_4_other_name",
+                            "entity": "entity_4"}
                         ]
                 },
                 {
@@ -119,12 +123,12 @@ class TestDataHelpers(unittest.TestCase):
             ],
             "entities": [
                 {
-                    "entityName": "entity_3",
+                    "entity": "entity_3",
                     "automaticallyExtensible": false,
                     "useSynonyms": false
                 },
                 {
-                    "entityName": "entity_4",
+                    "entity": "entity_4",
                     "automaticallyExtensible": true,
                     "useSynonyms": true
                 }
@@ -167,7 +171,7 @@ class TestDataHelpers(unittest.TestCase):
                         {
                             "text": "dummy_entity_1",
                             "entity": "entity_1",
-                            "role": "entity_1_name"
+                            "slotName": "entity_1_name"
                         },
                         {
                             "text": " and another "
@@ -175,7 +179,7 @@ class TestDataHelpers(unittest.TestCase):
                         {
                             "text": "dummy_entity_2",
                             "entity": "entity_2",
-                            "role": "entity_2_name"
+                            "slotName": "entity_2_name"
                         },
                         {
                             "text": " !"
@@ -190,7 +194,7 @@ class TestDataHelpers(unittest.TestCase):
                         {
                             "text": "dummy_entity_2",
                             "entity": "entity_2",
-                            "role": "entity_2_other_name"
+                            "slotName": "entity_2_other_name"
                         },
                         {
                             "text": " !"
@@ -216,7 +220,7 @@ class TestDataHelpers(unittest.TestCase):
                         {
                             "text": "dummy_entity_3",
                             "entity": "entity_3",
-                            "role": "entity_3_name"
+                            "slotName": "entity_3_name"
                         },
                         {
                             "text": " and another "
@@ -224,7 +228,7 @@ class TestDataHelpers(unittest.TestCase):
                         {
                             "text": "dummy_entity_4",
                             "entity": "entity_4",
-                            "role": "entity_4_name"
+                            "slotName": "entity_4_name"
                         },
                         {
                             "text": " !"
@@ -239,7 +243,7 @@ class TestDataHelpers(unittest.TestCase):
                         {
                             "text": "dummy_entity_4",
                             "entity": "entity_4",
-                            "role": "entity_4_other_name"
+                            "slotName": "entity_4_other_name"
                         },
                         {
                             "text": " !"

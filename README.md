@@ -17,9 +17,9 @@ This file must respect the following structure:
             {
                 "intent": "intent_1",
                 "slots": [
-                    {"name": "entity_1_name", "entityName": "entity_1"},
-                    {"name": "entity_2_name", "entityName": "entity_2"},
-                    {"name": "entity_2_other_name", "entityName": "entity_2"}
+                    {"slotName": "slot_1", "entity": "entity_1"},
+                    {"slotName": "slot_2", "entity": "entity_2"},
+                    {"slotName": "slot_3", "entity": "entity_2"}
                     ]
             },
             {
@@ -29,12 +29,12 @@ This file must respect the following structure:
         ],
         "entities": [
             {
-                "entityName": "entity_1",
+                "entity": "entity_1",
                 "automaticallyExtensible": false,
                 "useSynonyms": false
             },
             {
-                "entityName": "entity_2",
+                "entity": "entity_2",
                 "automaticallyExtensible": true,
                 "useSynonyms": true
             }

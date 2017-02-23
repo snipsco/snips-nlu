@@ -1,1 +1,2 @@
 custom_intent_parser/tests/.cache
+*.py[cod]

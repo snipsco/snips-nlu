@@ -13,7 +13,7 @@ def classification_result(intent_name=None, prob=None):
     return res
 
 
-def parsed_entity(match_range, value, entity, role=None, **kwargs):
+def parsed_entity(match_range, value, entity, slot_name=None, **kwargs):
     parsed_ent = dict(kwargs)
 
     is_range(match_range)
@@ -25,9 +25,9 @@ def parsed_entity(match_range, value, entity, role=None, **kwargs):
     assert isinstance(value, (str, unicode))
     parsed_ent["entity"] = entity
 
-    if role is not None:
+    if slot_name is not None:
         assert isinstance(value, (str, unicode))
-        parsed_ent["role"] = role
+        parsed_ent["slotName"] = slot_name
 
     return parsed_ent
 

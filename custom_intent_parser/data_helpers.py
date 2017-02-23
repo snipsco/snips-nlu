@@ -20,17 +20,16 @@ def get_entity_chunk(slot_name, intent, ontology):
         raise KeyError("Slot '%s' was found in the queries but is missing in "
                        "the intent description" % slot_name)
 
-    entity_name = ontology["intents"][intent]["slots"][slot_name][
-        "entityName"]
+    entity_name = ontology["intents"][intent]["slots"][slot_name]["entity"]
     if entity_name not in ontology["entities"]:
-        raise KeyError("'%s' entityName was found in slot description but is "
+        raise KeyError("'%s' entity was found in slot description but is "
                        "missing from the entities description"
                        % entity_name)
 
     entity_chunk = {
         "text": "dummy_%s" % entity_name,
         "entity": entity_name,
-        "role": slot_name
+        "slotName": slot_name
     }
     return entity_chunk
 
@@ -126,7 +125,7 @@ def extract_entity(path, ontology):
 
 def extract_ontology_intents(ontology_data):
     mandatory_intent_keys = ["intent", "slots"]
-    mandatory_slot_keys = ["name", "entityName"]
+    mandatory_slot_keys = ["slotName", "entity"]
     intents = dict()
     for intent in ontology_data["intents"]:
         parsed_intent = dict()
@@ -146,20 +145,20 @@ def extract_ontology_intents(ontology_data):
             for k in mandatory_slot_keys:
                 if k not in slot:
                     raise KeyError("Missing key '%s' in slot description" % k)
-            parsed_intent["slots"][slot["name"]] = slot
+            parsed_intent["slots"][slot["slotName"]] = slot
         intents[parsed_intent["name"]] = parsed_intent
 
     return intents
 
 
 def extract_ontology_entities(ontology_data):
-    mandatory_keys = ["entityName", "automaticallyExtensible", "useSynonyms"]
+    mandatory_keys = ["entity", "automaticallyExtensible", "useSynonyms"]
     entities = dict()
     for entity in ontology_data["entities"]:
         for k in mandatory_keys:
             if k not in entity:
                 raise KeyError("Missing key '%s' in intent description" % k)
-        entity_name = entity["entityName"]
+        entity_name = entity["entity"]
         if not isinstance(entity_name, (str, unicode)):
             raise TypeError("Expected 'intent' value to be a str or unicode, "
                             "found %s" % type(entity_name))
@@ -172,7 +171,7 @@ def extract_ontology_entities(ontology_data):
             raise TypeError("Expected 'useSynonyms' to be a boolean "
                             "but found %s" % type(use_synonyms))
         entities[entity_name] = {
-            "entityName": entity_name,
+            "entity": entity_name,
             "automaticallyExtensible": use_learning,
             "useSynonyms": use_synonyms,
         }
@@ -274,7 +273,7 @@ def save_dataset_from_asset_directories(assets_dirs, dataset_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="rCreate a dataset from a"
+    parser = argparse.ArgumentParser(description="Create a dataset from a"
                                                  " text file")
     parser.add_argument("assets_dirs", metavar='N', type=str, nargs='+',
                         help="List of paths to the assets directories")

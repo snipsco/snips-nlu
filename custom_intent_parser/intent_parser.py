@@ -38,3 +38,15 @@ class IntentParser(object):
     @abstractclassmethod
     def load(cls, path):
         pass
+
+
+class SnipsIntentParser(IntentParser):
+    __metaclass__ = ABCMeta
+
+    @abstractproperty
+    def built_in_intents(self):
+        pass
+
+    @built_in_intents.setter
+    def built_in_intents(self, value):
+        pass

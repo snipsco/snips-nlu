@@ -77,3 +77,18 @@ Convert your text file into a `Dataset` like this:
     
     python custom_intent_parser/data_helpers.py path/to/NLUAssets path/to/dataset_dir
     
+
+Replace the dummy entities in the `dataset_dir/entities/*.json` by real entities utterances 
+
+### Use Rasa_nlu backend
+
+The `spacy_sklearn` backend of Rasa_nlu can be used to define an intent parser. Doing so requires the following additional installation steps:
+
+```
+pip install spacy
+pip install sklearn
+pip install scipy
+pip install git+https://github.com/golastmile/rasa_nlu.git
+python -m spacy.en.download all
+```
+

@@ -127,27 +127,12 @@ def extract_entity(path, ontology):
 
 
 def extract_ontology_intents(ontology_data):
-    mandatory_intent_keys = ["intent", "slots"]
-    mandatory_slot_keys = ["slotName", "entity"]
     intents = dict()
     for intent in ontology_data["intents"]:
         parsed_intent = dict()
-        for k in mandatory_intent_keys:
-            if k not in intent:
-                raise KeyError("Missing key '%s' in intent description" % k)
-        intent_name = intent["intent"]
-        if not isinstance(intent_name, (str, unicode)):
-            raise TypeError("Expected 'intent' value to be a str or unicode, "
-                            "found %s" % type(intent_name))
-        parsed_intent["name"] = intent_name
+        parsed_intent["name"] = intent["intent"]
         parsed_intent["slots"] = dict()
         for slot in intent["slots"]:
-            if not isinstance(slot, dict):
-                raise TypeError("Expected slot to be an instance of %s, "
-                                "but found %s" % type(slot))
-            for k in mandatory_slot_keys:
-                if k not in slot:
-                    raise KeyError("Missing key '%s' in slot description" % k)
             parsed_intent["slots"][slot["slotName"]] = slot
         intents[parsed_intent["name"]] = parsed_intent
 
@@ -155,10 +140,50 @@ def extract_ontology_intents(ontology_data):
 
 
 def extract_ontology_entities(ontology_data):
-    mandatory_keys = ["entity", "automaticallyExtensible", "useSynonyms"]
     entities = dict()
     for entity in ontology_data["entities"]:
-        for k in mandatory_keys:
+        entity_name = entity["entity"]
+        use_learning = entity["automaticallyExtensible"]
+        use_synonyms = entity["useSynonyms"]
+        entities[entity_name] = {
+            "entity": entity_name,
+            "automaticallyExtensible": use_learning,
+            "useSynonyms": use_synonyms,
+        }
+
+    return entities
+
+
+def validate_ontology(ontology):
+    mandatory_intent_keys = ["intent", "slots"]
+    mandatory_slot_keys = ["slotName", "entity"]
+
+    for k in mandatory_intent_keys:
+        if k not in ontology:
+            KeyError("Missing '%s' key in ontology" % k)
+    if not isinstance(ontology["intents"], list):
+        raise TypeError("Expected ontology's intents to be a list")
+
+    for intent in ontology["intents"]:
+        for k in mandatory_intent_keys:
+            if k not in intent:
+                raise KeyError("Missing key '%s' in intent description" % k)
+        intent_name = intent["intent"]
+        if not isinstance(intent_name, (str, unicode)):
+            raise TypeError("Expected 'intent' value to be a str or unicode, "
+                            "found %s" % type(intent_name))
+        for slot in intent["slots"]:
+            if not isinstance(slot, dict):
+                raise TypeError("Expected slot to be an instance of %s, "
+                                "but found %s" % type(slot))
+            for k in mandatory_slot_keys:
+                if k not in slot:
+                    raise KeyError("Missing key '%s' in slot description" % k)
+
+    mandatory_entity_keys = ["entity", "automaticallyExtensible",
+                             "useSynonyms"]
+    for entity in ontology["entities"]:
+        for k in mandatory_entity_keys:
             if k not in entity:
                 raise KeyError("Missing key '%s' in intent description" % k)
         entity_name = entity["entity"]
@@ -173,23 +198,6 @@ def extract_ontology_entities(ontology_data):
         if not isinstance(use_synonyms, bool):
             raise TypeError("Expected 'useSynonyms' to be a boolean "
                             "but found %s" % type(use_synonyms))
-        entities[entity_name] = {
-            "entity": entity_name,
-            "automaticallyExtensible": use_learning,
-            "useSynonyms": use_synonyms,
-        }
-
-    return entities
-
-
-def validate_ontology(ontology):
-    mandatory_intent_keys = ["intents", "entities"]
-    for k in mandatory_intent_keys:
-        if k not in ontology:
-            KeyError("Missing '%s' key in ontology" % k)
-    ontology = dict()
-    if not isinstance(ontology["intents"], list):
-        raise TypeError("Expected ontology's intents to be a list")
 
 
 def extract_ontology(path):

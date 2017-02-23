@@ -5,6 +5,7 @@ import os
 import re
 from collections import defaultdict
 
+from built_in_intents import BuiltInIntent
 from dataset import Dataset
 from entity import Entity
 
@@ -215,9 +216,17 @@ def extract_ontologies(assets_dirs):
 
 
 def get_built_in_intents(ontology):
-    return [intent.lstrip(BUILT_IN_INTENT_PREFIX)
-            for intent in ontology["intent"]
-            if BUILT_IN_INTENT_PREFIX in intent]
+    built_in_candidates = [intent.lstrip(BUILT_IN_INTENT_PREFIX)
+                           for intent in ontology["intent"]
+                           if BUILT_IN_INTENT_PREFIX in intent]
+    built_ins = []
+    for intent_name in built_in_candidates:
+        try:
+            intent = BuiltInIntent[intent_name]
+        except KeyError:
+            raise KeyError("Unknown built-in: '%s'" % intent_name)
+        built_ins.append(intent)
+    return built_ins
 
 
 def merge_ontologies(ontologies_dict):

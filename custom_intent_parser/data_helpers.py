@@ -14,6 +14,8 @@ SLOT_NAME_SPLIT_REGEX = re.compile(r"\{\w+\}")
 
 ENTITY_ENTRIES_SEP = ";"
 
+BUILT_IN_INTENT_PREFIX = "SNIPS."
+
 
 def get_entity_chunk(slot_name, intent, ontology):
     if slot_name not in ontology["intents"][intent]["slots"]:
@@ -179,19 +181,22 @@ def extract_ontology_entities(ontology_data):
     return entities
 
 
-def extract_ontology(path):
-    with io.open(path, encoding="utf8") as f:
-        data = json.load(f)
+def validate_ontology(ontology):
     mandatory_intent_keys = ["intents", "entities"]
     for k in mandatory_intent_keys:
-        if k not in data:
+        if k not in ontology:
             KeyError("Missing '%s' key in ontology" % k)
     ontology = dict()
-    if not isinstance(data["intents"], list):
+    if not isinstance(ontology["intents"], list):
         raise TypeError("Expected ontology's intents to be a list")
 
-    ontology["intents"] = extract_ontology_intents(data)
-    ontology["entities"] = extract_ontology_entities(data)
+
+def extract_ontology(path):
+    with io.open(path, encoding="utf8") as f:
+        ontology = json.load(f)
+    validate_ontology(ontology)
+    ontology["intents"] = extract_ontology_intents(ontology)
+    ontology["entities"] = extract_ontology_entities(ontology)
     return ontology
 
 
@@ -207,6 +212,12 @@ def extract_ontologies(assets_dirs):
         ontology_path = os.path.join(assets_dir, json_files[0])
         ontologies[assets_dir] = extract_ontology(ontology_path)
     return ontologies
+
+
+def get_built_in_intents(ontology):
+    return [intent.lstrip(BUILT_IN_INTENT_PREFIX)
+            for intent in ontology["intent"]
+            if BUILT_IN_INTENT_PREFIX in intent]
 
 
 def merge_ontologies(ontologies_dict):

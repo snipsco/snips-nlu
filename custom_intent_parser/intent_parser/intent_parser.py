@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from data_helpers import is_existing_built_in
-from utils import abstractclassmethod
+from custom_intent_parser.data_helpers import is_existing_built_in
+from custom_intent_parser.utils import abstractclassmethod
 
 
 class IntentParser(object):
@@ -19,6 +19,14 @@ class IntentParser(object):
         if not self.fitted:
             raise ValueError("IntentParser must be fitted before calling the"
                              " 'fit' method.")
+
+    @abstractproperty
+    def value(self):
+        return 'Should never see this'
+
+    @value.setter
+    def value(self, newvalue):
+        return
 
     @abstractmethod
     def fit(self, dataset):

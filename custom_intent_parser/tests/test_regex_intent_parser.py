@@ -38,7 +38,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
                 "range": (10, 17),
                 "value": "dummy_a",
                 "entity": "dummy_entity_1",
-                "role": "dummy_role"
+                "slotName": "dummy_slotName"
             },
             {
                 "range": (37, 44),
@@ -70,7 +70,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
                 "range": (10, 17),
                 "value": "dummy_a",
                 "entity": "dummy_entity_1",
-                "role": "dummy_role"
+                "slotName": "dummy_slotName"
             },
             {
                 "range": (37, 44),

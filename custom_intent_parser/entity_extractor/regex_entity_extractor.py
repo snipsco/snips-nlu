@@ -20,29 +20,29 @@ def make_index(i):
     return "%s%s%s" % (GROUP_NAME_PREFIX, GROUP_NAME_SEPARATOR, i)
 
 
-def generate_new_index(roles_to_labels):
-    if len(roles_to_labels) == 0:
+def generate_new_index(slots_name_to_labels):
+    if len(slots_name_to_labels) == 0:
         return make_index(0)
     else:
-        max_index = max(roles_to_labels.keys(), key=order)
+        max_index = max(slots_name_to_labels.keys(), key=order)
         max_index = int(max_index.split(GROUP_NAME_SEPARATOR)[1]) + 1
         return make_index(max_index)
 
 
-def query_to_pattern(query, joined_entity_utterances, roles_to_labels):
+def query_to_pattern(query, joined_entity_utterances, slots_names_to_labels):
     pattern = r"^"
     for chunk in query["data"]:
         if "entity" in chunk:
-            max_index = generate_new_index(roles_to_labels)
-            role_name = chunk.get("role", None)
-            label = (chunk["entity"], role_name)
-            roles_to_labels[max_index] = label
+            max_index = generate_new_index(slots_names_to_labels)
+            slot_name = chunk.get("slotName", None)
+            label = (chunk["entity"], slot_name)
+            slots_names_to_labels[max_index] = label
             pattern += r"(?P<%s>%s)" % (
                 max_index, joined_entity_utterances[chunk["entity"]])
         else:
             pattern += re.escape(chunk["text"])
 
-    return pattern + r"$", roles_to_labels
+    return pattern + r"$", slots_names_to_labels
 
 
 def generate_regexes(intent_queries, entities, group_names_to_labels):
@@ -70,7 +70,7 @@ def match_to_result(matches):
     for match_rng, match in matches:
         parsed_ent = parsed_entity(
             match_rng, match["value"], match["entity"],
-            role=match.get("role", None), intent=match["intent"])
+            slot_name=match.get("slotName", None), intent=match["intent"])
         results.append(parsed_ent)
     return results
 
@@ -78,9 +78,9 @@ def match_to_result(matches):
 class RegexEntityExtractor(EntityExtractor):
     def __init__(self, regexes=None, group_names_to_labels=None):
         """
-        :param regexes: dict. The keys of the dict are (entity_name, role_name)
-          pairs. role_name can be None if there is no role associated with the
-          entity
+        :param regexes: dict. The keys of the dict are (entity_name, slot_name)
+          pairs. slot_name can be None if there is no slotName associated with
+          the entity
         """
         if regexes is None:
             regexes = {}
@@ -117,8 +117,8 @@ class RegexEntityExtractor(EntityExtractor):
                 raise TypeError("group names must be valid Python identifiers")
 
             if not isinstance(label, tuple) or len(label) != 2:
-                raise TypeError("labels must be a dict with (entity_name,"
-                                " role_name) 2-tuples as keys.")
+                raise TypeError("labels must be a dict with (entity,"
+                                " slotName) 2-tuples as keys.")
         self._group_names_to_labels = value
 
     @property
@@ -147,13 +147,14 @@ class RegexEntityExtractor(EntityExtractor):
                 match = regex.match(text)
                 if match is not None:
                     for group_name in match.groupdict():
-                        entity, role = self.group_names_to_labels[group_name]
+                        entity, slot_name = self.group_names_to_labels[
+                            group_name]
                         rng = (match.start(group_name), match.end(group_name))
                         matches[rng] = {
                             "value": match.group(group_name),
                             "entity": entity,
                             "intent": intent_name,
-                            "role": role
+                            "slotName": slot_name
                         }
         return match_to_result(matches.items())
 

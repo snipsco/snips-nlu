@@ -18,7 +18,7 @@ def get_queries():
                         {
                             "text": "dummy_1",
                             "entity": "dummy_entity_1",
-                            "role": "dummy_role"
+                            "slotName": "dummy_slotName"
                         },
                         {
                             "text": " query with another "
@@ -133,7 +133,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
                     "value": "dummy_a",
                     "entity": "dummy_entity_1",
                     "intent": "dummy_intent_1",
-                    "role": "dummy_role"
+                    "slotName": "dummy_slotName"
                 },
                 {
                     "range": (37, 44),
@@ -194,7 +194,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
                     "value": "2 dummy a",
                     "entity": "dummy_entity_1",
                     "intent": "dummy_intent_1",
-                    "role": "dummy_role"
+                    "slotName": "dummy_slotName"
                 },
                 {
                     "range": (39, 46),

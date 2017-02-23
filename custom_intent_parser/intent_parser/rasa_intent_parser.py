@@ -30,8 +30,7 @@ class RasaIntentParser(IntentParser):
             from rasa_nlu.trainers.spacy_sklearn_trainer import (
                 SpacySklearnTrainer)
             self.interpreter = SpacySklearnInterpreter()
-            self.trainer = SpacySklearnTrainer(
-                {}, self.language, self.num_threads)
+            self.trainer = SpacySklearnTrainer(self.language, self.num_threads)
             self.interpreter.nlp = spacy.load(
                 self.language, parser=False, entity=False, matcher=False)
         else:
@@ -96,7 +95,6 @@ class RasaIntentParser(IntentParser):
 
     def _update_cache(self, text, intent=None):
         self.check_fitted()
-
         rasa_result = self.interpreter.parse(unicode(text))
         intent = intent_classification_result(intent_name=rasa_result['intent'],
                                               prob=rasa_result.get('confidence',

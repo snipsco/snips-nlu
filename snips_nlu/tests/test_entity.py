@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from custom_intent_parser.entity import Entity
+from snips_nlu.entity import Entity
 from utils import TEST_PATH
 
 

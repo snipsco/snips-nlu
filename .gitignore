@@ -1,3 +1,4 @@
 custom_intent_parser/tests/.cache
 *.py[cod]
 snips-queries-rust
+*.egg-info

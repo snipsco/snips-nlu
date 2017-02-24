@@ -1,7 +1,16 @@
 # Snips NLU
 
 ## Installation
+Create a virtual env
+    
+    virtualenv venv
+    
+Activate it
+    
+    venv/bin/activate
 
+Install the package
+    
     python setup.py install
 
 ### Dependencies
@@ -14,7 +23,7 @@ You need to have [Rust](https://www.rust-lang.org/en-US/install.html) installed,
     cd snips-queries-rust/queries-cli
     make sync-submodules
     cargo build
-    source
+    export PATH=~/.cargo/bin:PATH
     
 Then copy the `snips-queries-rust/queries-cli/target/debug/queries-cli` at the root of this project
 

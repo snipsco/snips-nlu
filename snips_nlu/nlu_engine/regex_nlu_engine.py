@@ -126,7 +126,7 @@ class RegexIntentParser(SnipsIntentParser):
         return cls(entity_extractor, cache)
 
     @classmethod
-    def from_dataset(cls, dataset):
+    def from_dataset(cls, dataset, built_in_intents):
         extractor = RegexEntityExtractor()
         extractor = extractor.fit(dataset)
-        return cls(extractor)
+        return cls(extractor, built_in_intents=built_in_intents)

@@ -2,31 +2,14 @@ import io
 import json
 import os
 import re
-from copy import deepcopy
 
-from custom_intent_parser.entity import Entity
+from entity import Entity
 
 VALID_FILE_REGEX = re.compile(r"^[\w\s-]+$")
 
 
 def is_valid_filename(string):
     return VALID_FILE_REGEX.match(string)
-
-
-def format_query_for_import(query):
-    formatted_query = deepcopy(query)
-    for chunk in formatted_query["data"]:
-        if "entity" in chunk:
-            chunk["entity"] = chunk["entity"].lstrip("@")
-    return formatted_query
-
-
-def format_query_for_export(query):
-    formatted_query = deepcopy(query)
-    for chunk in formatted_query["data"]:
-        if "entity" in chunk:
-            chunk["entity"] = "@" + chunk["entity"]
-    return formatted_query
 
 
 def validate_queries(queries, entities):
@@ -103,8 +86,6 @@ class Dataset(object):
             intent_name, _ = os.path.splitext(f)
             intent_queries = cls.load_intent_queries(
                 os.path.join(queries_path, f))
-            intent_queries = [format_query_for_import(q)
-                              for q in intent_queries]
             queries[intent_name] = intent_queries
 
         entities_path = os.path.join(dir_path, "entities")
@@ -141,8 +122,7 @@ class Dataset(object):
             path = os.path.join(queries_path, "%s.json" % intent_name)
             data = {
                 "intent": intent_name,
-                "queries": [format_query_for_export(q)
-                            for q in intent_queries],
+                "queries": intent_queries,
             }
             with io.open(path, "w", encoding="utf-8") as f:
                 data = json.dumps(data, indent=2)

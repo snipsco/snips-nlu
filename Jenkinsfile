@@ -1,6 +1,10 @@
-node('jenkins-slave-generic') {
+node('jenkins-slave-tensorflow') {
     stage('Checkout') {
         checkout scm
+    }
+
+    stage('Setup') {
+        sh 'python setup.py install'
     }
 
     stage('Tests') {

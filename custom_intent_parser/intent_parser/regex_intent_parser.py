@@ -4,13 +4,13 @@ import operator
 import os
 from collections import defaultdict
 
-from snips_nlu.built_in_intents import (
+from custom_intent_parser.built_in_intents import (
     get_built_in_intents, get_built_in_intent_entities, BuiltInIntent)
-from snips_nlu.entity_extractor.regex_entity_extractor import (
+from custom_intent_parser.entity_extractor.regex_entity_extractor import (
     RegexEntityExtractor)
-from snips_nlu.intent_parser.intent_parser import SnipsIntentParser
-from snips_nlu.result import result, intent_classification_result
-from snips_nlu.utils import LimitedSizeDict
+from custom_intent_parser.intent_parser.intent_parser import SnipsIntentParser
+from custom_intent_parser.result import result, intent_classification_result
+from custom_intent_parser.utils import LimitedSizeDict
 
 
 class RegexIntentParser(SnipsIntentParser):

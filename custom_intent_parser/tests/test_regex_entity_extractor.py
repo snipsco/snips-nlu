@@ -1,8 +1,8 @@
 import unittest
 
-from snips_nlu.dataset import Dataset
-from snips_nlu.entity import Entity
-from snips_nlu.entity_extractor.regex_entity_extractor import (
+from custom_intent_parser.dataset import Dataset
+from custom_intent_parser.entity import Entity
+from custom_intent_parser.entity_extractor.regex_entity_extractor import (
     RegexEntityExtractor)
 
 

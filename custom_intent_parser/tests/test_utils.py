@@ -1,6 +1,6 @@
 import unittest
 
-from snips_nlu.utils import LimitedSizeDict
+from custom_intent_parser.utils import LimitedSizeDict
 
 
 class TestLimitedSizeDict(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from snips_nlu.built_in_intents import (
+from custom_intent_parser.built_in_intents import (
     get_built_in_intents, get_built_in_intent_entities, BuiltInIntent)
 
 

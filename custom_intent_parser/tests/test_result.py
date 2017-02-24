@@ -1,6 +1,6 @@
 import unittest
 
-from snips_nlu.result import parsed_entity, result
+from custom_intent_parser.result import parsed_entity, result
 
 
 class TestResult(unittest.TestCase):

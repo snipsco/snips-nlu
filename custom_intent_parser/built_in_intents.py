@@ -5,7 +5,7 @@ import subprocess
 
 from enum import Enum
 
-from snips_nlu.result import parsed_entity
+from custom_intent_parser.result import parsed_entity
 from utils import ROOT_PATH
 
 BINARY_PATH = os.path.join(ROOT_PATH, "snips-queries-rust", "queries-cli",

@@ -4,9 +4,9 @@ import os
 import shutil
 import unittest
 
-from snips_nlu.data_helpers import dataset_from_asset_directories
-from snips_nlu.dataset import Dataset
-from snips_nlu.entity import Entity
+from custom_intent_parser.data_helpers import dataset_from_asset_directories
+from custom_intent_parser.dataset import Dataset
+from custom_intent_parser.entity import Entity
 from utils import TEST_PATH
 
 

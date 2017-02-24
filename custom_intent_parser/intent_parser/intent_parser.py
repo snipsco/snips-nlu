@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from snips_nlu.built_in_intents import BuiltInIntent
-from snips_nlu.utils import abstractclassmethod
+from custom_intent_parser.built_in_intents import BuiltInIntent
+from custom_intent_parser.utils import abstractclassmethod
 
 
 class IntentParser(object):

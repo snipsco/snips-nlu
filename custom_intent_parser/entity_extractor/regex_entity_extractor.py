@@ -2,7 +2,7 @@ import io
 import json
 import re
 
-from snips_nlu.result import parsed_entity
+from custom_intent_parser.result import parsed_entity
 from entity_extractor import EntityExtractor
 
 GROUP_NAME_PREFIX = "group"

@@ -45,7 +45,7 @@ def get_built_in_intent_entities(text, intent):
     results = dict()
     for slot_name, slot_value in output.iteritems():
         if slot_name not in BuiltInIntent[intent.value["name"]].value["slots"]:
-            raise KeyError("Invalid slot '%s' for intent '%s'"
+            raise KeyError("Unknown slot '%s' for intent '%s'"
                            % (slot_name, intent))
         if len(slot_value) > 0:
             results[slot_name] = slot_value

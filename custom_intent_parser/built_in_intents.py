@@ -31,11 +31,11 @@ def get_built_in_intents(text, candidate_intents):
     for i, res in enumerate(output):
         intent_name = res["name"]
         try:
-            parsed_intent = BuiltInIntent[intent_name]
+            BuiltInIntent[intent_name]
         except KeyError:
             raise KeyError("Built in intent parser returned unknown intent "
                            "'%s'" % intent_name)
-        results.append({"intent": parsed_intent, "prob": res["probability"]})
+        results.append({"intent": intent_name, "prob": res["probability"]})
     return results
 
 

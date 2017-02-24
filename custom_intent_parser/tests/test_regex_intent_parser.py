@@ -3,7 +3,6 @@ import shutil
 import unittest
 
 from custom_intent_parser.built_in_intents import BuiltInIntent
-
 from custom_intent_parser.dataset import Dataset
 from custom_intent_parser.entity_extractor.regex_entity_extractor import \
     RegexEntityExtractor
@@ -108,33 +107,41 @@ class TestRegexEntityExtractor(unittest.TestCase):
         parser = RegexIntentParser(entity_extractor,
                                    built_in_intents=built_in_intents)
         parser = parser.fit(self._dataset)
-        text = "Book me an italian restaurant in NY for 8pm for 2"
+        texts = {
+            "Book me an italian restaurant in NY for 8pm for 2": {
+                "text": "Book me an italian restaurant in NY for 8pm for 2",
+                "intent": {
+                    "name": BuiltInIntent.BookRestaurant.value["name"],
+                    "prob": 0.9794680411508389
+                },
+                "entities": [
+                    {
+                        u"value": u"an italian restaurant in NY",
+                        u"range": (8, 35),
+                        u"entity": u"restaurant"
+                    },
+                    {
+                        u"value": u"2",
+                        u"range": (48, 49),
+                        u"entity": u"partySize"
+                    },
+                    {
+                        u"value": u"for 8pm",
+                        u"range": (36, 43),
+                        u"entity": u"reservationDatetime"
+                    }
 
-        # When
-        parse = parser.parse(text)
-
-        # Then
-        expected_entities = [
-            {
-                "range": (10, 17),
-                "value": "dummy_a",
-                "entity": "dummy_entity_1",
-                "slotName": "dummy_slotName"
-            },
-            {
-                "range": (37, 44),
-                "value": "dummy_c",
-                "entity": "dummy_entity_2"
+                ]
             }
-        ]
-        expected_parse = {
-            "text": text,
-            "intent": {"name": "dummy_intent_1", "prob": 1.0},
-            "entities": expected_entities
         }
-        self.assertEqual(parse["text"], expected_parse["text"])
-        self.assertEqual(parse["intent"], expected_parse["intent"])
-        self.assertItemsEqual(parse["entities"], expected_parse["entities"])
+
+        # When / Then
+        for text, expected_parse in texts.iteritems():
+            parse = parser.parse(text)
+            self.assertEqual(parse["text"], expected_parse["text"])
+            self.assertEqual(parse["intent"], expected_parse["intent"])
+            self.assertItemsEqual(parse["entities"],
+                                  expected_parse["entities"])
 
     def test_save_and_load(self):
         # Given

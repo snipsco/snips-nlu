@@ -9,7 +9,7 @@ class TestBuiltInIntents(unittest.TestCase):
         # Given
         texts = {
             "Book me an italian restaurant in NY": [
-                {"intent": BuiltInIntent.BookRestaurant,
+                {"intent": "BookRestaurant",
                  "prob": 0.7474335557693172}
             ],
             "yo dude wassup": []

@@ -9,7 +9,7 @@ GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
 
 
-def order(index):
+def get_index(index):
     split = index.split(GROUP_NAME_SEPARATOR)
     if len(split) != 2 or split[0] != GROUP_NAME_PREFIX:
         raise ValueError("Misformatted index")
@@ -24,8 +24,8 @@ def generate_new_index(slots_name_to_labels):
     if len(slots_name_to_labels) == 0:
         return make_index(0)
     else:
-        max_index = max(slots_name_to_labels.keys(), key=order)
-        max_index = int(max_index.split(GROUP_NAME_SEPARATOR)[1]) + 1
+        max_index = max(slots_name_to_labels.keys(), key=get_index)
+        max_index = get_index(max_index) + 1
         return make_index(max_index)
 
 

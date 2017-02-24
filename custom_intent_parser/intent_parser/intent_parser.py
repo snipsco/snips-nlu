@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from custom_intent_parser.data_helpers import is_existing_built_in
+from custom_intent_parser.built_in_intents import BuiltInIntent
 from custom_intent_parser.utils import abstractclassmethod
 
 
@@ -19,14 +19,6 @@ class IntentParser(object):
         if not self.fitted:
             raise ValueError("IntentParser must be fitted before calling the"
                              " 'fit' method.")
-
-    @abstractproperty
-    def value(self):
-        return 'Should never see this'
-
-    @value.setter
-    def value(self, newvalue):
-        return
 
     @abstractmethod
     def fit(self, dataset):
@@ -66,14 +58,6 @@ class SnipsIntentParser(IntentParser):
         self._fitted = False
 
     @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, newvalue):
-        self._value = newvalue
-
-    @property
     def fitted(self):
         return self._fitted
 
@@ -87,9 +71,9 @@ class SnipsIntentParser(IntentParser):
 
     @built_in_intents.setter
     def built_in_intents(self, value):
-        for intent_name in value:
-            if not is_existing_built_in(intent_name):
-                raise AttributeError("Unknown built in intent: %s"
-                                     % intent_name)
+        for intent in value:
+            if not isinstance(intent, BuiltInIntent):
+                raise ValueError("Expected a BuiltInIntent, found: %s"
+                                 % type(intent))
         self._built_in_intents = value
         self.fitted = False

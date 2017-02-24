@@ -4,8 +4,8 @@ import operator
 import os
 from collections import defaultdict
 
-from custom_intent_parser.built_in_intents import get_built_in_intent, \
-    get_built_in_intent_entities
+from custom_intent_parser.built_in_intents import (
+    get_built_in_intents, get_built_in_intent_entities, BuiltInIntent)
 from custom_intent_parser.entity_extractor.regex_entity_extractor import (
     RegexEntityExtractor)
 from custom_intent_parser.intent_parser.intent_parser import SnipsIntentParser
@@ -63,11 +63,13 @@ class RegexIntentParser(SnipsIntentParser):
         entities = self.entity_extractor.get_entities(text)
 
         if len(entities) == 0:
-            intent = get_built_in_intent(text, self.built_in_intents)
-            if intent["intent"] is None:
+            intents = get_built_in_intents(text, self.built_in_intents)
+            if len(intents) == 0:
                 res = result(text)
             else:
-                entities = get_built_in_intent_entities(text, intent)
+                intent = max(intents, key=lambda x: x["prob"])
+                entities = get_built_in_intent_entities(
+                    text, BuiltInIntent[intent["intent"]])
                 res = result(text, intent, entities)
             self._cache[text] = res
             return

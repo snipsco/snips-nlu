@@ -5,6 +5,7 @@ import os
 import re
 from collections import defaultdict
 
+from built_in_intents import BuiltInIntent
 from dataset import Dataset
 from entity import Entity
 
@@ -13,6 +14,8 @@ SLOT_NAME_REGEX = re.compile(r"\{(?P<slot_name>\w+)\}")
 SLOT_NAME_SPLIT_REGEX = re.compile(r"\{\w+\}")
 
 ENTITY_ENTRIES_SEP = ";"
+
+BUILT_IN_INTENT_PREFIX = "SNIPS."
 
 
 def get_entity_chunk(slot_name, intent, ontology):
@@ -124,27 +127,12 @@ def extract_entity(path, ontology):
 
 
 def extract_ontology_intents(ontology_data):
-    mandatory_intent_keys = ["intent", "slots"]
-    mandatory_slot_keys = ["slotName", "entity"]
     intents = dict()
     for intent in ontology_data["intents"]:
         parsed_intent = dict()
-        for k in mandatory_intent_keys:
-            if k not in intent:
-                raise KeyError("Missing key '%s' in intent description" % k)
-        intent_name = intent["intent"]
-        if not isinstance(intent_name, (str, unicode)):
-            raise TypeError("Expected 'intent' value to be a str or unicode, "
-                            "found %s" % type(intent_name))
-        parsed_intent["name"] = intent_name
+        parsed_intent["name"] = intent["intent"]
         parsed_intent["slots"] = dict()
         for slot in intent["slots"]:
-            if not isinstance(slot, dict):
-                raise TypeError("Expected slot to be an instance of %s, "
-                                "but found %s" % type(slot))
-            for k in mandatory_slot_keys:
-                if k not in slot:
-                    raise KeyError("Missing key '%s' in slot description" % k)
             parsed_intent["slots"][slot["slotName"]] = slot
         intents[parsed_intent["name"]] = parsed_intent
 
@@ -152,10 +140,57 @@ def extract_ontology_intents(ontology_data):
 
 
 def extract_ontology_entities(ontology_data):
-    mandatory_keys = ["entity", "automaticallyExtensible", "useSynonyms"]
     entities = dict()
     for entity in ontology_data["entities"]:
-        for k in mandatory_keys:
+        entity_name = entity["entity"]
+        use_learning = entity["automaticallyExtensible"]
+        use_synonyms = entity["useSynonyms"]
+        entities[entity_name] = {
+            "entity": entity_name,
+            "automaticallyExtensible": use_learning,
+            "useSynonyms": use_synonyms,
+        }
+
+    return entities
+
+
+def validate_ontology(ontology):
+    mandatory_intent_keys = ["intent", "slots"]
+    mandatory_slot_keys = ["slotName", "entity"]
+
+    for k in mandatory_intent_keys:
+        if k not in ontology:
+            KeyError("Missing '%s' key in ontology" % k)
+    if not isinstance(ontology["intents"], list):
+        raise TypeError("Expected ontology's intents to be a list")
+
+    for intent in ontology["intents"]:
+        for k in mandatory_intent_keys:
+            if k not in intent:
+                raise KeyError("Missing key '%s' in intent description" % k)
+        intent_name = intent["intent"]
+        if not isinstance(intent_name, (str, unicode)):
+            raise TypeError("Expected 'intent' value to be a str or unicode, "
+                            "found %s" % type(intent_name))
+        for slot in intent["slots"]:
+            if not isinstance(slot, dict):
+                raise TypeError("Expected slot to be an instance of %s, "
+                                "but found %s" % type(slot))
+            for k in mandatory_slot_keys:
+                if k not in slot:
+                    raise KeyError("Missing key '%s' in slot description" % k)
+
+    built_ins = extract_built_in_intents(ontology)
+    for intent_name in built_ins:
+        if is_existing_built_in(intent_name):
+            built_ins.append(BuiltInIntent[intent_name])
+        else:
+            raise AttributeError("Unknown built in intent: %s" % intent_name)
+
+    mandatory_entity_keys = ["entity", "automaticallyExtensible",
+                             "useSynonyms"]
+    for entity in ontology["entities"]:
+        for k in mandatory_entity_keys:
             if k not in entity:
                 raise KeyError("Missing key '%s' in intent description" % k)
         entity_name = entity["entity"]
@@ -170,28 +205,14 @@ def extract_ontology_entities(ontology_data):
         if not isinstance(use_synonyms, bool):
             raise TypeError("Expected 'useSynonyms' to be a boolean "
                             "but found %s" % type(use_synonyms))
-        entities[entity_name] = {
-            "entity": entity_name,
-            "automaticallyExtensible": use_learning,
-            "useSynonyms": use_synonyms,
-        }
-
-    return entities
 
 
 def extract_ontology(path):
     with io.open(path, encoding="utf8") as f:
-        data = json.load(f)
-    mandatory_intent_keys = ["intents", "entities"]
-    for k in mandatory_intent_keys:
-        if k not in data:
-            KeyError("Missing '%s' key in ontology" % k)
-    ontology = dict()
-    if not isinstance(data["intents"], list):
-        raise TypeError("Expected ontology's intents to be a list")
-
-    ontology["intents"] = extract_ontology_intents(data)
-    ontology["entities"] = extract_ontology_entities(data)
+        ontology = json.load(f)
+    validate_ontology(ontology)
+    ontology["intents"] = extract_ontology_intents(ontology)
+    ontology["entities"] = extract_ontology_entities(ontology)
     return ontology
 
 
@@ -207,6 +228,20 @@ def extract_ontologies(assets_dirs):
         ontology_path = os.path.join(assets_dir, json_files[0])
         ontologies[assets_dir] = extract_ontology(ontology_path)
     return ontologies
+
+
+def extract_built_in_intents(ontology):
+    return [intent.lstrip(BUILT_IN_INTENT_PREFIX)
+            for intent in ontology["intents"]
+            if BUILT_IN_INTENT_PREFIX in intent]
+
+
+def is_existing_built_in(intent_name):
+    try:
+        BuiltInIntent[intent_name]
+    except KeyError:
+        return False
+    return True
 
 
 def merge_ontologies(ontologies_dict):

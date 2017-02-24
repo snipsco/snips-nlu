@@ -1,4 +1,36 @@
-# Custom Intent Parser
+# Snips NLU
+
+## Installation
+Create a virtual env
+    
+    virtualenv venv
+    
+Activate it
+    
+    venv/bin/activate
+
+Install the package
+    
+    python setup.py install
+
+### Dependencies
+
+#### 1. Snips built-in intents [library](https://github.com/snipsco/snips-queries-rust)
+
+You need to have [Rust](https://www.rust-lang.org/en-US/install.html) installed, then do:
+
+    git clone git@github.com:snipsco/snips-queries-rust.git
+    cd snips-queries-rust/queries-cli
+    make sync-submodules
+    cargo build
+    export PATH=~/.cargo/bin:PATH
+    
+Then copy the `snips-queries-rust/queries-cli/target/debug/queries-cli` at the root of this project
+
+#### 2. Snips Tensorflow build
+
+Follow installation instructions [here](https://github.com/snipsco/tensorflow-build).
+
 
 ## Input data
 

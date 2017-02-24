@@ -2,13 +2,13 @@ import os
 import shutil
 import unittest
 
-from custom_intent_parser.built_in_intents import BuiltInIntent
-from custom_intent_parser.dataset import Dataset
-from custom_intent_parser.entity_extractor.regex_entity_extractor import \
+from snips_nlu.built_in_intents import BuiltInIntent
+from snips_nlu.dataset import Dataset
+from snips_nlu.entity_extractor.regex_entity_extractor import \
     RegexEntityExtractor
-from custom_intent_parser.intent_parser.regex_intent_parser import \
+from snips_nlu.nlu_engine.regex_nlu_engine import \
     RegexIntentParser
-from custom_intent_parser.tests.utils import TEST_PATH
+from snips_nlu.tests.utils import TEST_PATH
 from test_regex_entity_extractor import (get_entities, get_queries)
 
 

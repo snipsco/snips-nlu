@@ -9,7 +9,7 @@ class TestBuiltInIntents(unittest.TestCase):
         # Given
         texts = {
             "Book me an italian restaurant in NY": [
-                {"intent": BuiltInIntent.BookRestaurant,
+                {"intent": "BookRestaurant",
                  "prob": 0.7474335557693172}
             ],
             "yo dude wassup": []
@@ -27,11 +27,24 @@ class TestBuiltInIntents(unittest.TestCase):
         texts = {
             "Book me an italian restaurant in NY for 8pm for 2": {
                 "intent": BuiltInIntent.BookRestaurant,
-                "entities": {
-                    u"restaurant": u"an italian restaurant in NY",
-                    u"partySize": u"2",
-                    u"reservationDatetime": u"for 8pm"
-                }
+                "entities": [
+                    {
+                        u"value": u"an italian restaurant in NY",
+                        u"range": (8, 35),
+                        u"entity": u"restaurant"
+                    },
+                    {
+                        u"value": u"2",
+                        u"range": (48, 49),
+                        u"entity": u"partySize"
+                    },
+                    {
+                        u"value": u"for 8pm",
+                        u"range": (36, 43),
+                        u"entity": u"reservationDatetime"
+                    }
+
+                ]
             }
         }
         # When
@@ -41,7 +54,7 @@ class TestBuiltInIntents(unittest.TestCase):
 
         # Then
         for t in texts:
-            self.assertEqual(texts[t]["entities"], parsed_intents[t])
+            self.assertItemsEqual(texts[t]["entities"], parsed_intents[t])
 
 
 if __name__ == '__main__':

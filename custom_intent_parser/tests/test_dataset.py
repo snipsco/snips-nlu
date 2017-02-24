@@ -133,5 +133,6 @@ class TestDataset(unittest.TestCase):
                          "Unknown entity 'dummy_entity_2'. Entities must"
                          " belong to ['dummy_entity_1']")
 
+
 if __name__ == '__main__':
     unittest.main()

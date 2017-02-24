@@ -5,7 +5,7 @@ import subprocess
 from setuptools import setup
 from setuptools.command.install import install
 
-from custom_intent_parser.utils import ROOT_PATH
+from snips_nlu.utils import ROOT_PATH
 
 
 class SnipsNLUInstall(install):
@@ -41,7 +41,7 @@ class SnipsNLUInstall(install):
         install.run(self)
 
 
-setup(name="custom_intent_parser",
+setup(name="snips_nlu",
       version="0.0.1",
       description="",
       author="Clement Doumouro",
@@ -49,10 +49,10 @@ setup(name="custom_intent_parser",
       url="",
       download_url="",
       license="MIT",
-      install_requires=[],
-      packages=["custom_intent_parser",
-                "custom_intent_parser.entity_extractor",
-                "custom_intent_parser.intent_parser"],
+      install_requires=["enum34"],
+      packages=["snips_nlu",
+                "snips_nlu.entity_extractor",
+                "snips_nlu.intent_parser"],
       cmdclass={"install": SnipsNLUInstall},
       entry_points={},
       include_package_data=False,

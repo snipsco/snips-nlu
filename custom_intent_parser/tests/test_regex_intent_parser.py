@@ -2,6 +2,8 @@ import os
 import shutil
 import unittest
 
+from custom_intent_parser.built_in_intents import BuiltInIntent
+
 from custom_intent_parser.dataset import Dataset
 from custom_intent_parser.entity_extractor.regex_entity_extractor import \
     RegexEntityExtractor
@@ -98,6 +100,41 @@ class TestRegexEntityExtractor(unittest.TestCase):
 
         if __name__ == '__main__':
             unittest.main()
+
+    def test_should_get_built_in(self):
+        # Given
+        entity_extractor = RegexEntityExtractor().fit(self._dataset)
+        built_in_intents = [BuiltInIntent.BookRestaurant]
+        parser = RegexIntentParser(entity_extractor,
+                                   built_in_intents=built_in_intents)
+        parser = parser.fit(self._dataset)
+        text = "Book me an italian restaurant in NY for 8pm for 2"
+
+        # When
+        parse = parser.parse(text)
+
+        # Then
+        expected_entities = [
+            {
+                "range": (10, 17),
+                "value": "dummy_a",
+                "entity": "dummy_entity_1",
+                "slotName": "dummy_slotName"
+            },
+            {
+                "range": (37, 44),
+                "value": "dummy_c",
+                "entity": "dummy_entity_2"
+            }
+        ]
+        expected_parse = {
+            "text": text,
+            "intent": {"name": "dummy_intent_1", "prob": 1.0},
+            "entities": expected_entities
+        }
+        self.assertEqual(parse["text"], expected_parse["text"])
+        self.assertEqual(parse["intent"], expected_parse["intent"])
+        self.assertItemsEqual(parse["entities"], expected_parse["entities"])
 
     def test_save_and_load(self):
         # Given

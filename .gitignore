@@ -3,3 +3,4 @@
 snips-queries-rust
 *.egg-info
 *build
+*venv

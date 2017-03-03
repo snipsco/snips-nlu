@@ -57,13 +57,25 @@ class Dataset(object):
     @entities.setter
     def entities(self, value):
         if isinstance(value, dict):
-            for ent in value.values():
-                assert isinstance(ent, Entity)
-            self._entities = value
+            if any((not isinstance(ent, Entity) for ent in value.values())):
+                entities_dict = {}
+                for ent in value.values():
+                    if not isinstance(ent, dict):
+                        raise ValueError("Expected dict, found %s" % type(ent))
+                    entities_dict[ent['name']] = Entity.from_dict(ent)
+                self._entities = entities_dict
+            else:
+                self._entities = value
         elif isinstance(value, list):
-            for ent in value:
-                assert isinstance(ent, Entity)
-            self._entities = dict((ent.name, ent) for ent in value)
+            if any((not isinstance(ent, Entity) for ent in value)):
+                entities_dict = {}
+                for ent in value:
+                    if not isinstance(ent, dict):
+                        raise ValueError("Expected dict, found %s" % type(ent))
+                    entities_dict[ent['name']] = Entity.from_dict(ent)
+                self._entities = entities_dict
+            else:
+                self._entities = dict((ent.name, ent) for ent in value)
         else:
             raise ValueError("Expected dict or list, found %s" % type(value))
 

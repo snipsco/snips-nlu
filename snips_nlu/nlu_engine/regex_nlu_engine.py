@@ -63,7 +63,10 @@ class RegexIntentParser(SnipsIntentParser):
         entities = self.entity_extractor.get_entities(text)
 
         if len(entities) == 0:
-            intents = get_built_in_intents(text, self.built_in_intents)
+            if len(self.built_in_intents) > 0:
+                intents = get_built_in_intents(text, self.built_in_intents)
+            else:
+                intents = []
             if len(intents) == 0:
                 res = result(text)
             else:

@@ -3,5 +3,6 @@
 snips-queries-rust
 *.egg-info
 *build
+.idea
 
 /venv

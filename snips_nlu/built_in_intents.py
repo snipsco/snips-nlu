@@ -61,6 +61,7 @@ def get_built_in_intent_entities(text, intent):
         if len(slot_value) == 0:
             continue
         rng = get_entity_range(text, slot_value)
-        results.append(parsed_entity(rng, slot_value, entity=slot_name))
+        results.append(parsed_entity(rng, slot_value, entity=slot_name,
+                                     slot_name=slot_name))
 
     return results

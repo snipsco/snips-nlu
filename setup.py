@@ -24,6 +24,7 @@ class SnipsNLUInstall(install):
         subprocess.call(["git", "clone", "--recursive", git_project_url])
         print("Building built-ins...")
 
+        subprocess.call(["cargo install protobuf"], env=env, shell=True)
         try:
             args = (["cargo build"])
             cwd = os.path.join(ROOT_PATH, "snips-queries-rust", "queries-cli")

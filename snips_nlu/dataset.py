@@ -58,7 +58,7 @@ class Dataset(object):
     def entities(self, value):
         if isinstance(value, dict):
             if any((not isinstance(ent, Entity) for ent in value.values())):
-                entities_dict = {}
+                entities_dict = dict()
                 for ent in value.values():
                     if not isinstance(ent, dict):
                         raise ValueError("Expected dict, found %s" % type(ent))
@@ -68,7 +68,7 @@ class Dataset(object):
                 self._entities = value
         elif isinstance(value, list):
             if any((not isinstance(ent, Entity) for ent in value)):
-                entities_dict = {}
+                entities_dict = dict()
                 for ent in value:
                     if not isinstance(ent, dict):
                         raise ValueError("Expected dict, found %s" % type(ent))

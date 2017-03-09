@@ -9,7 +9,7 @@ from snips_nlu.utils import ROOT_PATH
 
 
 class SnipsNLUInstall(install):
-    def run(self):
+    def do_egg_install(self):
         print("Installing built-ins...")
         env = os.environ.copy()
         env["PATH"] = "~/.cargo/bin:" + env["PATH"]
@@ -37,7 +37,7 @@ class SnipsNLUInstall(install):
                             "requires rust to be installed and cargo to be on "
                             "the PATH")
 
-        install.run(self)
+        install.do_egg_install(self)
 
 
 setup(name="snips_nlu",

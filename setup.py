@@ -9,7 +9,7 @@ from snips_nlu.utils import ROOT_PATH
 
 
 class SnipsNLUInstall(install):
-    def run(self):
+    def do_egg_install(self):
         print("Installing built-ins...")
         env = os.environ.copy()
         env["PATH"] = "~/.cargo/bin:" + env["PATH"]
@@ -21,11 +21,10 @@ class SnipsNLUInstall(install):
         subprocess.call(["cd", ROOT_PATH])
 
         git_project_url = "git@github.com:snipsco/snips-queries-rust.git"
-        subprocess.call(["git", "clone", git_project_url])
-        cwd = os.path.join(ROOT_PATH, "snips-queries-rust")
-        subprocess.call(["make", "sync-submodules"], cwd=cwd)
+        subprocess.call(["git", "clone", "--recursive", git_project_url])
         print("Building built-ins...")
 
+        subprocess.call(["cargo install protobuf"], env=env, shell=True)
         try:
             args = (["cargo build"])
             cwd = os.path.join(ROOT_PATH, "snips-queries-rust", "queries-cli")
@@ -38,7 +37,7 @@ class SnipsNLUInstall(install):
                             "requires rust to be installed and cargo to be on "
                             "the PATH")
 
-        install.run(self)
+        install.do_egg_install(self)
 
 
 setup(name="snips_nlu",

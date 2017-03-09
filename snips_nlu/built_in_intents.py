@@ -22,10 +22,12 @@ class BuiltInIntent(Enum):
 
 
 def get_built_in_intents(text, candidate_intents):
+    if not candidate_intents:
+        return []
     intent = " ".join([c.value["name"] for c in candidate_intents])
     output = subprocess.check_output(
-        [BINARY_PATH, text, "--root_dir", DATA_PATH, "--intent", intent,
-         "intents"])
+        [BINARY_PATH, "--text", text, "--root_dir", DATA_PATH, "--intent",
+         intent, "intents"])
     output = json.loads(output)
     results = list()
     for i, res in enumerate(output):
@@ -43,13 +45,13 @@ def get_entity_range(text, slot_value):
     match = re.search(r"%s" % re.escape(slot_value), text)
     if match is None:
         raise ValueError("Could not find '%s' in '%s'" % (slot_value, text))
-    return (match.start(), match.end())
+    return match.start(), match.end()
 
 
 def get_built_in_intent_entities(text, intent):
     output = subprocess.check_output(
-        [BINARY_PATH, text, "--root_dir", DATA_PATH, "tokens", "--intent_name",
-         intent.value["name"]])
+        [BINARY_PATH, "--text", text, "--root_dir", DATA_PATH, "tokens",
+         "--intent_name", intent.value["name"]])
     output = json.loads(output)
     results = list()
     for slot_name, slot_value in output.iteritems():

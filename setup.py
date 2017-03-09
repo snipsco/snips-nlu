@@ -21,9 +21,7 @@ class SnipsNLUInstall(install):
         subprocess.call(["cd", ROOT_PATH])
 
         git_project_url = "git@github.com:snipsco/snips-queries-rust.git"
-        subprocess.call(["git", "clone", git_project_url])
-        cwd = os.path.join(ROOT_PATH, "snips-queries-rust")
-        subprocess.call(["make", "sync-submodules"], cwd=cwd)
+        subprocess.call(["git", "clone", "--recursive", git_project_url])
         print("Building built-ins...")
 
         try:

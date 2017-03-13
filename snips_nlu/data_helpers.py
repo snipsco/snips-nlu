@@ -180,11 +180,7 @@ def validate_ontology(ontology):
                 if k not in slot:
                     raise KeyError("Missing key '%s' in slot description" % k)
 
-    built_in_intent_names = extract_built_in_intent_names(ontology)
-    for intent_name in built_in_intent_names:
-        if not is_existing_built_in(intent_name):
-            raise AttributeError("Unknown built in intent: %s" % intent_name)
-
+    _ = extract_built_in_intent_names(ontology)
     mandatory_entity_keys = ["entity", "automaticallyExtensible",
                              "useSynonyms"]
     for entity in ontology["entities"]:
@@ -229,17 +225,17 @@ def extract_ontologies(assets_dirs):
 
 
 def extract_built_in_intent_names(ontology):
-    return [intent.lstrip(BUILT_IN_INTENT_PREFIX)
-            for intent in ontology["intents"]
-            if BUILT_IN_INTENT_PREFIX in intent]
-
-
-def is_existing_built_in(intent_name):
-    try:
-        BuiltInIntent[intent_name]
-    except KeyError:
-        return False
-    return True
+    intent_names = [intent.lstrip(BUILT_IN_INTENT_PREFIX)
+                    for intent in ontology["intents"]
+                    if BUILT_IN_INTENT_PREFIX in intent]
+    built_intents = []
+    for name in intent_names:
+        try:
+            intent = BuiltInIntent[name]
+        except KeyError:
+            raise KeyError("Unknown intent '%s'" % name)
+        built_intents.append(intent)
+    return built_intents
 
 
 def merge_ontologies(ontologies_dict):

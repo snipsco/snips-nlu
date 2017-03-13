@@ -1,5 +1,6 @@
-import os
 from collections import OrderedDict
+
+import os
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -14,6 +15,19 @@ class abstractclassmethod(classmethod):
 
 def sequence_equal(seq, other_seq):
     return len(seq) == len(other_seq) and sorted(seq) == sorted(other_seq)
+
+
+def merge_two_dicts(x, y, shallow_copy=True):
+
+    """Given two dicts, merge them into a new dict.
+    :param x: first dict
+    :param y: second dict
+    :param shallow_copy: if False, `x` will be updated with y and returned.
+    Otherwise a shallow copy of `x` will be created (default).
+    """
+    z = x.copy() if shallow_copy else x
+    z.update(y)
+    return z
 
 
 class LimitedSizeDict(OrderedDict):

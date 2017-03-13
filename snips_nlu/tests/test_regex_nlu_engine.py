@@ -7,7 +7,7 @@ from snips_nlu.dataset import Dataset
 from snips_nlu.entity_extractor.regex_entity_extractor import \
     RegexEntityExtractor
 from snips_nlu.nlu_engine.regex_nlu_engine import \
-    RegexIntentParser
+    RegexNLUEngine
 from snips_nlu.tests.utils import TEST_PATH
 from test_regex_entity_extractor import (get_entities, get_queries)
 
@@ -27,7 +27,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
     def test_parse(self):
         # Given
         entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexNLUEngine(entity_extractor).fit(self._dataset)
         text = "this is a dummy_a query with another dummy_c"
 
         # When
@@ -59,7 +59,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
     def test_get_entities(self):
         # Given
         entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexNLUEngine(entity_extractor).fit(self._dataset)
         text = "this is a dummy_a query with another dummy_c"
 
         # When
@@ -84,7 +84,7 @@ class TestRegexEntityExtractor(unittest.TestCase):
     def test_get_intent(self):
         # Given
         entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexNLUEngine(entity_extractor).fit(self._dataset)
         text = "this is a dummy_a query with another dummy_c"
 
         # When
@@ -104,8 +104,8 @@ class TestRegexEntityExtractor(unittest.TestCase):
         # Given
         entity_extractor = RegexEntityExtractor().fit(self._dataset)
         built_in_intents = [BuiltInIntent.BookRestaurant]
-        parser = RegexIntentParser(entity_extractor,
-                                   built_in_intents=built_in_intents)
+        parser = RegexNLUEngine(entity_extractor,
+                                built_in_intents=built_in_intents)
         parser = parser.fit(self._dataset)
         texts = {
             "Book me an italian restaurant in NY for 8pm for 2": {
@@ -146,11 +146,11 @@ class TestRegexEntityExtractor(unittest.TestCase):
     def test_save_and_load(self):
         # Given
         entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexNLUEngine(entity_extractor).fit(self._dataset)
 
         # When
         parser.save(self._save_path)
-        new_parser = RegexIntentParser.load(self._save_path)
+        new_parser = RegexNLUEngine.load(self._save_path)
 
         self.assertEqual(parser.entity_extractor.group_names_to_labels,
                          new_parser.entity_extractor.group_names_to_labels)

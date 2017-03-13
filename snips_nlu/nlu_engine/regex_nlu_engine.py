@@ -8,15 +8,15 @@ from snips_nlu.built_in_intents import (
     get_built_in_intents, get_built_in_intent_entities, BuiltInIntent)
 from snips_nlu.entity_extractor.regex_entity_extractor import (
     RegexEntityExtractor)
-from snips_nlu.nlu_engine.nlu_engine import SnipsIntentParser
+from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import result, intent_classification_result
 from snips_nlu.utils import LimitedSizeDict
 
 
-class RegexIntentParser(SnipsIntentParser):
+class RegexNLUEngine(SnipsNLUEngine):
     def __init__(self, entity_extractor, built_in_intents=None, cache=None,
                  cache_size=100):
-        super(RegexIntentParser, self).__init__()
+        super(RegexNLUEngine, self).__init__()
         if not isinstance(entity_extractor, RegexEntityExtractor):
             raise ValueError("entity_extractor must be an instance of %s. "
                              "Found %s" % (RegexEntityExtractor.__name__,

@@ -4,7 +4,7 @@ from snips_nlu.built_in_intents import BuiltInIntent
 from snips_nlu.utils import abstractclassmethod
 
 
-class IntentParser(object):
+class NLUEngine(object):
     __metaclass__ = ABCMeta
 
     @abstractproperty
@@ -17,7 +17,7 @@ class IntentParser(object):
 
     def check_fitted(self):
         if not self.fitted:
-            raise ValueError("IntentParser must be fitted before calling the"
+            raise ValueError("NLUEngine must be fitted before calling the"
                              " 'fit' method.")
 
     @abstractmethod
@@ -45,11 +45,11 @@ class IntentParser(object):
         pass
 
 
-class SnipsIntentParser(IntentParser):
+class SnipsNLUEngine(NLUEngine):
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        super(SnipsIntentParser, self).__init__()
+        super(SnipsNLUEngine, self).__init__()
         self._built_in_intents = []
         self._fitted = False
 

@@ -180,7 +180,7 @@ def validate_ontology(ontology):
                 if k not in slot:
                     raise KeyError("Missing key '%s' in slot description" % k)
 
-    _ = extract_built_in_intent_names(ontology)
+    _ = extract_built_in_intent(ontology)
     mandatory_entity_keys = ["entity", "automaticallyExtensible",
                              "useSynonyms"]
     for entity in ontology["entities"]:
@@ -224,7 +224,7 @@ def extract_ontologies(assets_dirs):
     return ontologies
 
 
-def extract_built_in_intent_names(ontology):
+def extract_built_in_intent(ontology):
     intent_names = [intent.lstrip(BUILT_IN_INTENT_PREFIX)
                     for intent in ontology["intents"]
                     if BUILT_IN_INTENT_PREFIX in intent]

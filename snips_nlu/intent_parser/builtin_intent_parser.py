@@ -34,12 +34,10 @@ def parse_entity(text, raw_entities):
 
 
 class BuiltinIntentParser(IntentParser):
-    def __init__(self, resources_path, intents,
-                 cache=None, cache_size=100):
+    def __init__(self, resources_path, cache=None, cache_size=100):
         self.configs_path = os.path.join(resources_path, 'configurations')
         self.gazetteers_path = os.path.join(resources_path, 'gazetteers')
-        self._intents = None
-        self.intents = intents
+        self.intents = self.get_intent_names()
 
         if cache is None:
             cache = LimitedSizeDict(size_limit=cache_size)
@@ -48,19 +46,9 @@ class BuiltinIntentParser(IntentParser):
     def is_valid_intent(self, intent):
         return os.path.exists(os.path.join(self.configs_path, '%s.pb' % intent))
 
-    @property
-    def intents(self):
-        return self._intents
-
-    @intents.setter
-    def intents(self, value):
-        for intent in value:
-            if not self.is_valid_intent(intent):
-                raise IOError('The built-in intent `%s` not found in the '
-                              'resource folder `%s`.' % (
-                                  intent, self.configs_path))
-
-        self._intents = value
+    def get_intent_names(self):
+        return [os.path.splitext(os.path.basename(path))[0] for path in
+                os.listdir(self.configs_path)]
 
     def parse(self, text):
         if text not in self._cache:

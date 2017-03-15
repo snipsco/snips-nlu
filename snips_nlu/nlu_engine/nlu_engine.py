@@ -1,6 +1,9 @@
+import os
 from abc import ABCMeta, abstractmethod
 
+from ..intent_parser.builtin_intent_parser import BuiltinIntentParser
 from ..intent_parser.intent_parser import IntentParser
+from ..intent_parser.regex_intent_parser import RegexIntentParser
 from ..result import result
 
 
@@ -65,9 +68,20 @@ class SnipsNLUEngine(NLUEngine):
         else:
             return result(text)
 
-    def save(self, path):
-        pass
-
     @classmethod
-    def load(cls, path):
-        pass
+    def load(cls, directory_path):
+        custom_intents_directory = os.path.join(directory_path,
+                                                "custom_intents")
+        builtin_intents_directory = os.path.join(directory_path,
+                                                 "builtin_intents")
+        if len(os.listdir(custom_intents_directory)) > 0:
+            custom_intent_parser = RegexIntentParser.load(
+                custom_intents_directory)
+        else:
+            custom_intent_parser = None
+        if len(os.listdir(builtin_intents_directory)) > 0:
+            builtin_intent_parser = BuiltinIntentParser(
+                builtin_intents_directory)
+        else:
+            builtin_intent_parser = None
+        return SnipsNLUEngine(custom_intent_parser, builtin_intent_parser)

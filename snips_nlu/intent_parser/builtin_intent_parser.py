@@ -1,12 +1,12 @@
 import os
 
-from intent_parser import IntentParser
-from ..utils import LimitedSizeDict
-from ..result import parsed_entity, result, intent_classification_result
-
-from snips.preprocessing import tokenize
 from snips.attribute_extraction import AttributeExtraction
 from snips.intent_classifier import IntentClassifier
+from snips.preprocessing import tokenize
+
+from intent_parser import IntentParser
+from ..result import parsed_entity, result, intent_classification_result
+from ..utils import LimitedSizeDict
 
 
 def parse_entity(text, raw_entities):
@@ -26,8 +26,9 @@ def parse_entity(text, raw_entities):
             spans.append((start_index, end_index))
 
         entities.extend([parsed_entity((start_index, end_index),
-            text[start_index:end_index], entity=intent, slot_name=intent)
-            for (start_index, end_index) in spans])
+                                       text[start_index:end_index],
+                                       entity=intent, slot_name=intent)
+                         for (start_index, end_index) in spans])
 
     return entities
 
@@ -56,7 +57,8 @@ class BuiltinIntentParser(IntentParser):
         for intent in value:
             if not self.is_valid_intent(intent):
                 raise IOError('The built-in intent `%s` not found in the '
-                    'resource folder `%s`.' % (intent, self.configs_path))
+                              'resource folder `%s`.' % (
+                                  intent, self.configs_path))
 
         self._intents = value
 
@@ -67,19 +69,18 @@ class BuiltinIntentParser(IntentParser):
 
     def _parse(self, text):
         intent = self.get_intent(text)
-        if intent is not None:
-            entities = self.get_entities(text, intent=intent.get('name'))
-        else:
-            entities = []
+        if intent is None:
+            return result(text)
 
+        entities = self.get_entities(text, intent=intent['name'])
         return result(text, parsed_intent=intent, parsed_entities=entities)
 
     def get_intent(self, text):
-        if not self.intents:
+        if not self.intents or len(self.intents) == 0:
             return None
 
         tokenized_text = tokenize({'text': unicode(text)})
-        max_proba, best_intent = -1., None
+        max_proba, best_intent = 0., None
         for intent in self.intents:
             intent_classifier = IntentClassifier(
                 intent_config_file=os.path.join(
@@ -88,23 +89,24 @@ class BuiltinIntentParser(IntentParser):
             )
             proba = intent_classifier.transform(tokenized_text)
 
-            if (max_proba < 0.) or (proba > max_proba):
+            if proba > max_proba:
                 max_proba = proba
                 best_intent = intent
 
-        return intent_classification_result(intent_name=best_intent, prob=proba)
+        return intent_classification_result(intent_name=best_intent,
+                                            prob=max_proba)
 
     def get_entities(self, text, intent=None):
         if intent is None:
             # If the intent is not specified, run the intent classification
-            intent = self.get_intent(text).get('name')
-            # If the intent can't be inferred automatically, return no entity
+            intent = self.get_intent(text)
             if intent is None:
-                return []
+                return None
+            intent = intent['name']
 
         if not self.is_valid_intent(intent):
             raise IOError('The built-in intent `%s` not found in the '
-                    'resource folder `%s`.' % (intent, self.configs_path))
+                          'resource folder `%s`.' % (intent, self.configs_path))
 
         tokenized_text = tokenize({'text': unicode(text)})
         entity_extractor = AttributeExtraction(

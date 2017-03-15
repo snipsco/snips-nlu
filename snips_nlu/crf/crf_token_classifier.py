@@ -4,28 +4,15 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.crf.crf_feature import CRFFeature
 from snips_nlu.crf.crf_utils import get_bilou_labels
-from snips_nlu.tokenizer import Tokenizer
 
 
 class CRFTokenClassifier:
-    def __init__(self, model, tokenizer, features):
+    def __init__(self, model, features, use_bilou=True):
         self._model = None
         self.model = model
-
-        self._tokenizer = None
-        self.tokenizer = tokenizer
-
         self._features = None
         self.features = features
-
-    @property
-    def tokenizer(self):
-        return self._tokenizer
-
-    @tokenizer.setter
-    def tokenizer(self, value):
-        assert isinstance(value, Tokenizer)
-        self._tokenizer = value
+        self.use_bilou = use_bilou
 
     @property
     def model(self):
@@ -33,7 +20,8 @@ class CRFTokenClassifier:
 
     @model.setter
     def model(self, value):
-        assert isinstance(value, CRF)
+        if not isinstance(value, CRF):
+            raise ValueError("Expected CRF but found: %s" % type(value))
         self._model = value
 
     @property
@@ -42,32 +30,23 @@ class CRFTokenClassifier:
 
     @features.setter
     def features(self, value):
-        assert all(isinstance(feature, CRFFeature) for feature in value)
+        for feature in value:
+            if not isinstance(feature, CRFFeature):
+                raise ValueError("Expected CRFFeature but found: %s"
+                                 % type(feature))
         self._features = value
 
     def parse(self, tokens):
         features = self.compute_features(tokens)
         return self.model.predict_single(features)
 
-    def fit(self, utterances):
-        tokens_and_labels = [self.get_tokens_and_labels(utterance) for utterance
-                             in utterances]
-        X = [self.compute_features(sample['tokens']) for sample in
-             tokens_and_labels]
-        Y = [get_bilou_labels(sample['labels']) for sample in tokens_and_labels]
+    def fit(self, data):
+        X = [self.compute_features(sample['tokens']) for sample in data]
+        Y = [self.transform_labels(sample['labels']) for sample in data]
         self.model.fit(X, Y)
 
-    def get_tokens_and_labels(self, utterance):
-        tokens = []
-        labels = []
-        for chunk in utterance:
-            _tokens = self.tokenizer.tokenize(chunk['text'])
-            _label = chunk.get('slotName', None)
-            _labels = [_label for t in _tokens]
-            tokens += _tokens
-            labels += _labels
-
-        return {'tokens': tokens, 'labels': labels}
+    def transform_labels(self, labels):
+        return get_bilou_labels(labels) if self.use_bilou else labels
 
     def compute_features(self, tokens):
         features = []

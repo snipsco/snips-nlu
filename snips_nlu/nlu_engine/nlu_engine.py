@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
-from ..intent_orchestrator.intent_orchestrator import IntentOrchestrator
+from ..intent_parser.intent_parser import IntentParser
 from ..intent_parser.builtin_intent_parser import BuiltinIntentParser
-from ..intent_parser.custom_intent_parser import CustomIntentParser
+from ..result import result
 
 
 class NLUEngine(object):
@@ -15,19 +15,15 @@ class NLUEngine(object):
 
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, custom_intent_parser, builtin_intent_parser,
-                 intent_orchestrator):
+                 custom_first=True):
         super(SnipsNLUEngine, self).__init__()
         self._custom_intent_parser = None
         self.custom_intent_parser = custom_intent_parser
-
         self._builtin_intent_parser = None
         self.builtin_intent_parser = builtin_intent_parser
-
-        self._intent_orchestrator = None
-        self.intent_orchestrator = intent_orchestrator
-
         self._built_in_intents = []
         self._fitted = False
+        self.custom_first = custom_first
 
     @property
     def custom_intent_parser(self):
@@ -35,9 +31,8 @@ class SnipsNLUEngine(NLUEngine):
 
     @custom_intent_parser.setter
     def custom_intent_parser(self, value):
-        if value is not None and not isinstance(value, CustomIntentParser):
-            raise ValueError("Expected CustomIntentParser, found: %s"
-                             % type(value))
+        if value is not None and not isinstance(value, IntentParser):
+            raise ValueError("Expected IntentParser, found: %s" % type(value))
         self._custom_intent_parser = value
 
     @property
@@ -46,31 +41,34 @@ class SnipsNLUEngine(NLUEngine):
 
     @builtin_intent_parser.setter
     def builtin_intent_parser(self, value):
-        if value is not None and not isinstance(value, BuiltinIntentParser):
-            raise ValueError("Expected BuiltinIntentParser, found: %s"
-                             % type(value))
+        if value is not None and not isinstance(value, IntentParser):
+            raise ValueError("Expected IntentParser, found: %s" % type(value))
         self._builtin_intent_parser = value
 
-    @property
-    def intent_orchestrator(self):
-        return self._intent_orchestrator
-
-    @intent_orchestrator.setter
-    def intent_orchestrator(self, value):
-        if not isinstance(value, IntentOrchestrator):
-            raise ValueError("Expected IntentOrchestrator, found: %s"
-                             % type(value))
-        self._intent_orchestrator = value
-
     def parse(self, text):
-        return self.intent_orchestrator.orchestrate_parsing(
-            text,
-            self.custom_intent_parser,
-            self.builtin_intent_parser
-        )
+        if self.custom_first:
+            first_parser = self.custom_intent_parser
+            second_parser = self.builtin_intent_parser
+        else:
+            first_parser = self.builtin_intent_parser
+            second_parser = self.custom_intent_parser
+
+        first_parse = self._parse(text, first_parser)
+        if first_parse["intent"] is not None:
+            return first_parse
+        else:
+            return self._parse(text, second_parser)
+
+    @staticmethod
+    def _parse(text, parser):
+        if parser is not None:
+            return parser.parse(text)
+        else:
+            return result(text)
 
     def save(self, path):
         pass
 
+    @classmethod
     def load(cls, path):
         pass

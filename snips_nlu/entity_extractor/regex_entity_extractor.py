@@ -3,7 +3,6 @@ import json
 import re
 
 from snips_nlu.result import parsed_entity
-from entity_extractor import EntityExtractor
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -75,18 +74,16 @@ def match_to_result(matches):
     return results
 
 
-class RegexEntityExtractor(EntityExtractor):
+class RegexEntityExtractor(object):
     def __init__(self, regexes=None, group_names_to_labels=None):
         """
         :param regexes: dict. The keys of the dict are (entity_name, slot_name)
           pairs. slot_name can be None if there is no slotName associated with
           the entity
         """
-        if regexes is None:
-            regexes = {}
-        if group_names_to_labels is None:
-            group_names_to_labels = {}
+        self._regexes = None
         self.regexes = regexes
+        self._group_names_to_labels = None
         self.group_names_to_labels = group_names_to_labels
 
     @property
@@ -95,6 +92,10 @@ class RegexEntityExtractor(EntityExtractor):
 
     @regexes.setter
     def regexes(self, value):
+        if value is None:
+            self._regexes = dict()
+            return
+
         for pattern_list in value.values():
             for pattern in pattern_list:
                 if not isinstance(pattern, re._pattern_type):
@@ -108,6 +109,10 @@ class RegexEntityExtractor(EntityExtractor):
 
     @group_names_to_labels.setter
     def group_names_to_labels(self, value):
+        if value is None:
+            self._group_names_to_labels = dict()
+            return
+
         for group_name, label in value.iteritems():
             try:
                 eval(group_name)
@@ -139,7 +144,10 @@ class RegexEntityExtractor(EntityExtractor):
         return self
 
     def get_entities(self, text):
-        self.check_fitted()
+        if not self.fitted:
+            raise ValueError("EntityExtractor must be fitted before calling "
+                             "the 'get_entities' method.")
+
         # Matches is a dict to ensure that we have only 1 match per range
         matches = dict()
         for intent_name, intent_regexes in self.regexes.iteritems():

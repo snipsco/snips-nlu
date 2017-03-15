@@ -4,20 +4,20 @@ import operator
 import os
 from collections import defaultdict
 
-from custom_intent_parser import CustomIntentParser
+from intent_parser import IntentParser
 from ..entity_extractor.regex_entity_extractor import RegexEntityExtractor
 from ..result import result, intent_classification_result
 from ..utils import LimitedSizeDict
 
 
-class RegexIntentParser(CustomIntentParser):
+class RegexIntentParser(IntentParser):
     def __init__(self, entity_extractor, cache=None, cache_size=100):
         if not isinstance(entity_extractor, RegexEntityExtractor):
             raise ValueError("entity_extractor must be an instance of %s. "
                              "Found %s" % (RegexEntityExtractor.__name__,
                                            type(entity_extractor)))
-        super(CustomIntentParser, self).__init__()
         self.entity_extractor = entity_extractor
+        self.fitted = entity_extractor.fitted
         if cache is None:
             cache = LimitedSizeDict(size_limit=cache_size)
         self._cache = cache

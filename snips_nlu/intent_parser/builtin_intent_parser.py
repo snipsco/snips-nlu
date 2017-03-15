@@ -1,9 +1,6 @@
 import os
 
 from intent_parser import IntentParser
-from ..built_in_intents import get_built_in_intents, \
-    get_built_in_intent_entities, BuiltInIntent
-from ..result import result
 from ..utils import LimitedSizeDict
 from ..result import parsed_entity
 

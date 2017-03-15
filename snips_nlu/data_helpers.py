@@ -5,7 +5,6 @@ import os
 import re
 from collections import defaultdict
 
-from built_in_intents import BuiltInIntent
 from dataset import Dataset
 from entity import Entity
 
@@ -180,7 +179,6 @@ def validate_ontology(ontology):
                 if k not in slot:
                     raise KeyError("Missing key '%s' in slot description" % k)
 
-    _ = extract_built_in_intent(ontology)
     mandatory_entity_keys = ["entity", "automaticallyExtensible",
                              "useSynonyms"]
     for entity in ontology["entities"]:
@@ -222,20 +220,6 @@ def extract_ontologies(assets_dirs):
         ontology_path = os.path.join(assets_dir, json_files[0])
         ontologies[assets_dir] = extract_ontology(ontology_path)
     return ontologies
-
-
-def extract_built_in_intent(ontology):
-    intent_names = [intent.lstrip(BUILT_IN_INTENT_PREFIX)
-                    for intent in ontology["intents"]
-                    if BUILT_IN_INTENT_PREFIX in intent]
-    built_intents = []
-    for name in intent_names:
-        try:
-            intent = BuiltInIntent[name]
-        except KeyError:
-            raise KeyError("Unknown intent '%s'" % name)
-        built_intents.append(intent)
-    return built_intents
 
 
 def merge_ontologies(ontologies_dict):

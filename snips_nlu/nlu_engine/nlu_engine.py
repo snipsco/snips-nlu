@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
 from ..intent_parser.intent_parser import IntentParser
-from ..intent_parser.builtin_intent_parser import BuiltinIntentParser
 from ..result import result
 
 

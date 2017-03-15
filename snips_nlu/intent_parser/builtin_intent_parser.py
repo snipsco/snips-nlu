@@ -2,7 +2,7 @@ import os
 
 from intent_parser import IntentParser
 from ..utils import LimitedSizeDict
-from ..result import parsed_entity
+from ..result import parsed_entity, result, intent_classification_result
 
 from snips.preprocessing import tokenize
 from snips.attribute_extraction import AttributeExtraction
@@ -66,13 +66,13 @@ class BuiltinIntentParser(IntentParser):
         return self._cache[text]
 
     def _parse(self, text):
-        if not self.intents:
-            return {'text': text, 'intent': None, 'entities': []}
-
         intent = self.get_intent(text)
-        entities = self.get_entities(text, intent=intent.get('name'))
+        if intent is not None:
+            entities = self.get_entities(text, intent=intent.get('name'))
+        else:
+            entities = []
 
-        return {'text': text, 'intent': intent, 'entities': entities}
+        return result(text, parsed_intent=intent, parsed_entities=entities)
 
     def get_intent(self, text):
         if not self.intents:
@@ -92,11 +92,15 @@ class BuiltinIntentParser(IntentParser):
                 max_proba = proba
                 best_intent = intent
 
-        return {'name': best_intent, 'proba': max_proba}
+        return intent_classification_result(intent_name=best_intent, prob=proba)
 
     def get_entities(self, text, intent=None):
         if intent is None:
+            # If the intent is not specified, run the intent classification
             intent = self.get_intent(text).get('name')
+            # If the intent can't be inferred automatically, return no entity
+            if intent is None:
+                return []
 
         if not self.is_valid_intent(intent):
             raise IOError('The built-in intent `%s` not found in the '

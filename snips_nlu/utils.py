@@ -18,7 +18,6 @@ def sequence_equal(seq, other_seq):
 
 
 def merge_two_dicts(x, y, shallow_copy=True):
-
     """Given two dicts, merge them into a new dict.
     :param x: first dict
     :param y: second dict

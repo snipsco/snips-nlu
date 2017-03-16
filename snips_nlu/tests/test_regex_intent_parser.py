@@ -1,18 +1,131 @@
 import os
-import shutil
 import unittest
 
 from snips_nlu.dataset import Dataset
-from snips_nlu.entity_extractor.regex_entity_extractor import \
-    RegexEntityExtractor
+from snips_nlu.entity import Entity
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.tests.utils import TEST_PATH
-from test_regex_entity_extractor import (get_entities, get_queries)
+
+
+def get_queries():
+    queries = {
+        "dummy_intent_1": [
+            {
+                "data":
+                    [
+                        {
+                            "text": "This is a "
+                        },
+                        {
+                            "text": "dummy_1",
+                            "entity": "dummy_entity_1",
+                            "slotName": "dummy_slotName"
+                        },
+                        {
+                            "text": " query with another "
+                        },
+                        {
+                            "text": "dummy_2",
+                            "entity": "dummy_entity_2",
+                            "slotName": "dummy_slotName2"
+                        }
+                    ]
+            },
+            {
+                "data":
+                    [
+                        {
+                            "text": "This is another "
+                        },
+                        {
+                            "text": "dummy_2_again",
+                            "entity": "dummy_entity_2",
+                            "slotName": "dummy_slotName2"
+                        },
+                        {
+                            "text": " query."
+                        }
+                    ]
+            },
+            {
+                "data":
+                    [
+                        {
+                            "text": "This is another "
+                        },
+                        {
+                            "text": "dummy_2_again",
+                            "entity": "dummy_entity_2",
+                            "slotName": "dummy_slotName3"
+                        },
+                        {
+                            "text": "?"
+                        }
+                    ]
+            },
+            {
+                "data":
+                    [
+                        {
+                            "text": "dummy_1",
+                            "entity": "dummy_entity_1",
+                            "slotName": "dummy_slotName"
+                        }
+                    ]
+            }
+        ],
+        "dummy_intent_2": [
+            {
+                "data":
+                    [
+                        {
+                            "text": "This is a "
+                        },
+                        {
+                            "text": "dummy_3",
+                            "entity": "dummy_entity_1",
+                            "slotName": "dummy_slotName"
+                        },
+                        {
+                            "text": " query from another intent"
+                        }
+                    ]
+            }
+        ]
+    }
+    return queries
+
+
+def get_entities():
+    entries_1 = [
+        {
+            "value": "dummy_a",
+            "synonyms": ["dummy_a", "dummy 2a", "dummy a", "2 dummy a"]
+        },
+        {
+            "value": "dummy_b",
+            "synonyms": ["dummy_b", "dummy_bb", "dummy b"]
+        },
+        {
+            "value": "dummy\d",
+            "synonyms": ["dummy\d"]
+        },
+    ]
+    entity_1 = Entity("dummy_entity_1", entries=entries_1)
+
+    entries_2 = [
+        {
+            "value": "dummy_c",
+            "synonyms": ["dummy_c", "dummy_cc", "dummy c", "3p.m."]
+        }
+    ]
+    entity_2 = Entity("dummy_entity_2", entries=entries_2)
+    return {entity_1.name: entity_1, entity_2.name: entity_2}
 
 
 class TestRegexIntentParser(unittest.TestCase):
     _dataset = None
-    _save_path = os.path.join(TEST_PATH, "regex_intent_parser")
+    _save_path = os.path.join(TEST_PATH, "regex_intent_parser.pkl")
 
     def setUp(self):
         self._dataset = Dataset(queries=get_queries(),
@@ -20,12 +133,11 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(self._save_path):
-            shutil.rmtree(self._save_path)
+            os.remove(self._save_path)
 
     def test_should_parse(self):
         # Given
-        entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexIntentParser("dummy_intent_1").fit(self._dataset)
         text = "this is a dummy_a query with another dummy_c"
 
         # When
@@ -42,12 +154,15 @@ class TestRegexIntentParser(unittest.TestCase):
             {
                 "range": (37, 44),
                 "value": "dummy_c",
-                "entity": "dummy_entity_2"
+                "entity": "dummy_entity_2",
+                "slotName": "dummy_slotName2"
             }
         ]
         expected_parse = {
             "text": text,
-            "intent": {"name": "dummy_intent_1", "prob": 1.0},
+            "intent": {"name": "dummy_intent_1",
+                       "prob": (len("dummy_a") + len("dummy_c")) / float(
+                           len(text))},
             "entities": expected_entities
         }
         self.assertEqual(parse["text"], expected_parse["text"])
@@ -56,8 +171,7 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def test_should_get_intent(self):
         # Given
-        entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexIntentParser("dummy_intent_1").fit(self._dataset)
         text = "this is a dummy_a query with another dummy_c"
 
         # When
@@ -66,17 +180,14 @@ class TestRegexIntentParser(unittest.TestCase):
         # Then
         expected_intent = {
             "intent": "dummy_intent_1",
-            "prob": 1.0
+            "prob": (len("dummy_a") + len("dummy_c")) / float(len(text))
         }
-        self.assertEqual(intent, expected_intent)
 
-        if __name__ == '__main__':
-            unittest.main()
+        self.assertEqual(intent, expected_intent)
 
     def test_should_get_entities(self):
         # Given
-        entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexIntentParser("dummy_intent_1").fit(self._dataset)
         text = "this is a dummy_a query with another dummy_c"
 
         # When
@@ -93,33 +204,22 @@ class TestRegexIntentParser(unittest.TestCase):
             {
                 "range": (37, 44),
                 "value": "dummy_c",
-                "entity": "dummy_entity_2"
+                "entity": "dummy_entity_2",
+                "slotName": "dummy_slotName2"
             }
         ]
         self.assertItemsEqual(expected_entities, entities)
 
     def test_save_and_load(self):
         # Given
-        entity_extractor = RegexEntityExtractor().fit(self._dataset)
-        parser = RegexIntentParser(entity_extractor).fit(self._dataset)
+        parser = RegexIntentParser("dummy_intent_1").fit(self._dataset)
 
         # When
         parser.save(self._save_path)
         new_parser = RegexIntentParser.load(self._save_path)
 
-        self.assertEqual(parser.entity_extractor.group_names_to_labels,
-                         new_parser.entity_extractor.group_names_to_labels)
-        for intent_name, patterns \
-                in parser.entity_extractor.regexes.iteritems():
-            self.assertEqual(
-                [r.pattern for r in patterns],
-                [r.pattern for r in
-                 new_parser.entity_extractor.regexes[intent_name]])
-            self.assertEqual(
-                [r.flags for r in patterns],
-                [r.flags for r in
-                 new_parser.entity_extractor.regexes[intent_name]])
-        self.assertEqual(parser._cache, new_parser._cache)
+        # Then
+        self.assertEqual(parser, new_parser)
 
 
 if __name__ == '__main__':

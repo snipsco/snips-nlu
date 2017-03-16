@@ -2,7 +2,8 @@ import os
 from abc import ABCMeta, abstractmethod
 
 from ..intent_parser.builtin_intent_parser import BuiltinIntentParser
-from ..intent_parser.intent_parser import IntentParser
+from ..intent_parser.intent_parser import CUSTOM_PARSER_TYPE, \
+    BUILTIN_PARSER_TYPE
 from ..intent_parser.regex_intent_parser import RegexIntentParser
 from ..result import result
 
@@ -16,72 +17,52 @@ class NLUEngine(object):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, custom_intent_parser, builtin_intent_parser,
-                 custom_first=True):
+    def __init__(self, parsers, custom_first=True):
         super(SnipsNLUEngine, self).__init__()
-        self._custom_intent_parser = None
-        self.custom_intent_parser = custom_intent_parser
-        self._builtin_intent_parser = None
-        self.builtin_intent_parser = builtin_intent_parser
-        self._built_in_intents = []
-        self._fitted = False
+        self.custom_parsers = filter(
+            lambda parser: parser.parser_type == CUSTOM_PARSER_TYPE, parsers)
+        self.builtin_parsers = filter(
+            lambda parser: parser.parser_type == BUILTIN_PARSER_TYPE, parsers)
         self.custom_first = custom_first
-
-    @property
-    def custom_intent_parser(self):
-        return self._custom_intent_parser
-
-    @custom_intent_parser.setter
-    def custom_intent_parser(self, value):
-        if value is not None and not isinstance(value, IntentParser):
-            raise ValueError("Expected IntentParser, found: %s" % type(value))
-        self._custom_intent_parser = value
-
-    @property
-    def builtin_intent_parser(self):
-        return self._builtin_intent_parser
-
-    @builtin_intent_parser.setter
-    def builtin_intent_parser(self, value):
-        if value is not None and not isinstance(value, IntentParser):
-            raise ValueError("Expected IntentParser, found: %s" % type(value))
-        self._builtin_intent_parser = value
 
     def parse(self, text):
         if self.custom_first:
-            first_parser = self.custom_intent_parser
-            second_parser = self.builtin_intent_parser
+            first_parsers = self.custom_parsers
+            second_parsers = self.builtin_parsers
         else:
-            first_parser = self.builtin_intent_parser
-            second_parser = self.custom_intent_parser
+            first_parsers = self.builtin_parsers
+            second_parsers = self.custom_parsers
 
-        first_parse = self._parse(text, first_parser)
+        first_parse = self._parse(text, first_parsers)
         if first_parse["intent"] is not None:
             return first_parse
         else:
-            return self._parse(text, second_parser)
+            return self._parse(text, second_parsers)
 
     @staticmethod
-    def _parse(text, parser):
-        if parser is not None:
-            return parser.parse(text)
-        else:
+    def _parse(text, parsers):
+        if len(parsers) == 0:
             return result(text)
 
+        best_parser = None
+        best_intent = None
+        for parser in parsers:
+            res = parser.get_intent(text)
+            if best_intent is None or res["prob"] > best_intent["prob"]:
+                best_intent = res
+                best_parser = parser
+        entities = best_parser.get_entities(text)
+        return result(text, best_intent, entities)
+
     @classmethod
-    def load(cls, directory_path):
-        custom_intents_directory = os.path.join(directory_path,
-                                                "custom_intents")
-        builtin_intents_directory = os.path.join(directory_path,
-                                                 "builtin_intents")
-        if len(os.listdir(custom_intents_directory)) > 0:
-            custom_intent_parser = RegexIntentParser.load(
-                custom_intents_directory)
-        else:
-            custom_intent_parser = None
-        if len(os.listdir(builtin_intents_directory)) > 0:
-            builtin_intent_parser = BuiltinIntentParser(
-                builtin_intents_directory)
-        else:
-            builtin_intent_parser = None
-        return SnipsNLUEngine(custom_intent_parser, builtin_intent_parser)
+    def load(cls, path):
+        custom_intents_dir = os.path.join(path, "custom_intents")
+        builtin_intents_dir = os.path.join(path, "builtin_intents")
+        custom_parsers = [
+            RegexIntentParser.load(os.path.join(custom_intents_dir, path)) for
+            path in os.listdir(custom_intents_dir)]
+        configs_dir = os.path.join(builtin_intents_dir, 'configurations')
+        gazetteers_dir = os.path.join(builtin_intents_dir, 'gazetteers')
+        builtin_parsers = [BuiltinIntentParser(config_path, gazetteers_dir) for
+                           config_path in os.listdir(configs_dir)]
+        return SnipsNLUEngine(custom_parsers + builtin_parsers)

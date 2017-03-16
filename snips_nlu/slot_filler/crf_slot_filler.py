@@ -2,18 +2,32 @@ import cPickle
 
 from sklearn_crfsuite import CRF
 
-from snips_nlu.crf.crf_feature import CRFFeature
-from snips_nlu.crf.crf_utils import add_bilou_tags, remove_bilou_tags
+from snips_nlu.slot_filler.crf_feature import CRFFeature
+from snips_nlu.slot_filler.crf_utils import add_bilou_tags, remove_bilou_tags
+from ..tokenizer import Tokenizer
 
 
-class CRFTokenClassifier:
-    def __init__(self, model, features, use_bilou=True):
+class CRFSlotFiller:
+    def __init__(self, tokenizer, model, features, use_bilou=True):
+        self._tokenizer = None
+        self.tokenizer = tokenizer
         self._model = None
         self.model = model
         self._features = None
         self.features = features
         self.use_bilou = use_bilou
         self.fitted = False
+
+    @property
+    def tokenizer(self):
+        return self._tokenizer
+
+    @tokenizer.setter
+    def tokenizer(self, value):
+        if not isinstance(value, Tokenizer):
+            raise ValueError("Expected Tokenizer but found: %s"
+                             % type(value))
+        self._tokenizer = value
 
     @property
     def model(self):
@@ -36,6 +50,9 @@ class CRFTokenClassifier:
                 raise ValueError("Expected CRFFeature but found: %s"
                                  % type(feature))
         self._features = value
+
+    def get_slots(self, text):
+        pass
 
     def predict(self, tokens):
         if not self.fitted:

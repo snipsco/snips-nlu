@@ -9,7 +9,7 @@ def is_other(label):
     return label == OUTSIDE or label is None
 
 
-def get_bilou_labels(labels):
+def add_bilou_tags(labels):
     bilou_labels = []
     if len(labels) == 1:
         if is_other(labels[0]):
@@ -41,3 +41,7 @@ def get_bilou_labels(labels):
                     bilou_labels.append(INSIDE_PREFIX + labels[i])
 
     return bilou_labels
+
+
+def remove_bilou_tags(bilou_labels):
+    return [label if label == OUTSIDE else label[2:] for label in bilou_labels]

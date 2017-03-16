@@ -1,3 +1,5 @@
+from snips_nlu.result import parsed_entity
+
 BEGINNING_PREFIX = 'B-'
 INSIDE_PREFIX = 'I-'
 LAST_PREFIX = 'L-'
@@ -45,3 +47,32 @@ def add_bilou_tags(labels):
 
 def remove_bilou_tags(bilou_labels):
     return [label if label == OUTSIDE else label[2:] for label in bilou_labels]
+
+
+def build_parsed_entities(text, tokens, labels, slot_name_to_entity_mapping):
+    slots = []
+    last_slot_name = None
+    for i in range(len(tokens)):
+        token = tokens[i]
+        slot_name = labels[i]
+        if slot_name == OUTSIDE:
+            last_slot_name = slot_name
+            continue
+        if slot_name == last_slot_name:
+            last_range = slots[-1]['range']
+            updated_range = (last_range[0], token.range[1])
+            slots[-1].update({'range': updated_range})
+        else:
+            slot = {'slot_name': slot_name, 'range': token.range}
+            slots.append(slot)
+            last_slot_name = slot_name
+
+    parsed_entities = []
+    for slot in slots:
+        rng = slot['range']
+        value = text[rng[0]:rng[1]]
+        slot_name = slot['slot_name']
+        entity_name = slot_name_to_entity_mapping[slot_name]
+        entity = parsed_entity(rng, value, entity_name, slot_name)
+        parsed_entities.append(entity)
+    return parsed_entities

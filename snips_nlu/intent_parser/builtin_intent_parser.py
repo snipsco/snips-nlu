@@ -4,16 +4,15 @@ from snips.attribute_extraction import AttributeExtraction
 from snips.intent_classifier import IntentClassifier
 from snips.preprocessing import tokenize
 
-from intent_parser import IntentParser
+from intent_parser import IntentParser, BUILTIN_PARSER_TYPE
 from ..result import parsed_entity, result, intent_classification_result
-from ..utils import LimitedSizeDict
 
 
 def parse_entity(text, raw_entities):
     entities = []
     for intent in raw_entities:
         tokens = sorted(raw_entities[intent],
-                        key=lambda token: token['startIndex'])
+                        key=lambda _token: _token['startIndex'])
         start_index, end_index = -1, -1
         spans = []
         for token in tokens:
@@ -34,74 +33,33 @@ def parse_entity(text, raw_entities):
 
 
 class BuiltinIntentParser(IntentParser):
-    def __init__(self, resources_path, cache=None, cache_size=100):
-        self.configs_path = os.path.join(resources_path, 'configurations')
-        self.gazetteers_path = os.path.join(resources_path, 'gazetteers')
-        self.intents = self.get_intent_names()
-
-        if cache is None:
-            cache = LimitedSizeDict(size_limit=cache_size)
-        self._cache = cache
-
-    def is_valid_intent(self, intent):
-        return os.path.exists(os.path.join(self.configs_path, '%s.pb' % intent))
-
-    def get_intent_names(self):
-        return [os.path.splitext(os.path.basename(path))[0] for path in
-                os.listdir(self.configs_path)]
+    def __init__(self, config_path, resources_dir):
+        intent_name = os.path.splitext(os.path.basename(config_path))[0]
+        super(BuiltinIntentParser, self).__init__(intent_name,
+                                                  BUILTIN_PARSER_TYPE)
+        self.config_path = config_path
+        self.resources_dir = resources_dir
 
     def parse(self, text):
-        if text not in self._cache:
-            self._cache[text] = self._parse(text)
-        return self._cache[text]
-
-    def _parse(self, text):
         intent = self.get_intent(text)
-        if intent is None:
-            return result(text)
-
         entities = self.get_entities(text, intent=intent['name'])
         return result(text, parsed_intent=intent, parsed_entities=entities)
 
     def get_intent(self, text):
-        if not self.intents or len(self.intents) == 0:
-            return None
-
         tokenized_text = tokenize({'text': unicode(text)})
-        max_proba, best_intent = 0., None
-        for intent in self.intents:
-            intent_classifier = IntentClassifier(
-                intent_config_file=os.path.join(
-                    self.configs_path, '%s.pb' % intent),
-                gazetteers_dir=self.gazetteers_path
-            )
-            proba = intent_classifier.transform(tokenized_text)
-
-            if proba > max_proba:
-                max_proba = proba
-                best_intent = intent
-
-        return intent_classification_result(intent_name=best_intent,
-                                            prob=max_proba)
+        intent_classifier = IntentClassifier(
+            intent_config_file=self.config_path,
+            gazetteers_dir=self.resources_dir
+        )
+        proba = intent_classifier.transform(tokenized_text)
+        return intent_classification_result(intent_name=self.intent_name,
+                                            prob=proba)
 
     def get_entities(self, text, intent=None):
-        if intent is None:
-            # If the intent is not specified, run the intent classification
-            intent = self.get_intent(text)
-            if intent is None:
-                return None
-            intent = intent['name']
-
-        if not self.is_valid_intent(intent):
-            raise IOError('The built-in intent `%s` not found in the '
-                          'resource folder `%s`.' % (intent, self.configs_path))
-
         tokenized_text = tokenize({'text': unicode(text)})
         entity_extractor = AttributeExtraction(
-            intent_config_file=os.path.join(
-                self.configs_path, '%s.pb' % intent),
-            gazetteers_dir=self.gazetteers_path
+            intent_config_file=self.config_path,
+            gazetteers_dir=self.resources_dir
         )
         entities = entity_extractor.transform(tokenized_text)
-
         return parse_entity(unicode(text), entities)

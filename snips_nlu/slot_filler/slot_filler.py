@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class IntentClassifier(object):
+class SlotFiller(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -9,5 +9,5 @@ class IntentClassifier(object):
         pass
 
     @abstractmethod
-    def get_intent(self, text):
+    def get_slots(self, text):
         pass

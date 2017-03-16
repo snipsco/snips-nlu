@@ -34,7 +34,8 @@ def get_queries():
                         },
                         {
                             "text": "dummy_2",
-                            "entity": "dummy_entity_2"
+                            "entity": "dummy_entity_2",
+                            "slotName": "dummy_slot_name2"
                         },
                         {
                             "text": " query."
@@ -51,7 +52,8 @@ def get_queries():
                         },
                         {
                             "text": "dummy_3",
-                            "entity": "dummy_entity_1"
+                            "entity": "dummy_entity_1",
+                            "slotName": "dummy_slot_name2"
                         },
                         {
                             "text": " query from another intent"

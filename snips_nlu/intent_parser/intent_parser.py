@@ -2,9 +2,15 @@ from abc import ABCMeta, abstractmethod
 
 from ..result import intent_classification_result
 
+CUSTOM_PARSER_TYPE, BUILTIN_PARSER_TYPE = ("CUSTOM", "BUILTIN")
+
 
 class IntentParser(object):
     __metaclass__ = ABCMeta
+
+    def __init__(self, intent_name, parser_type):
+        self.intent_name = intent_name
+        self.parser_type = parser_type
 
     @abstractmethod
     def parse(self, text):

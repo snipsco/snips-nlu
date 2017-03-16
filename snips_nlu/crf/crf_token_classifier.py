@@ -3,7 +3,7 @@ import cPickle
 from sklearn_crfsuite import CRF
 
 from snips_nlu.crf.crf_feature import CRFFeature
-from snips_nlu.crf.crf_utils import get_bilou_labels
+from snips_nlu.crf.crf_utils import add_bilou_tags, remove_bilou_tags
 
 
 class CRFTokenClassifier:
@@ -13,6 +13,7 @@ class CRFTokenClassifier:
         self._features = None
         self.features = features
         self.use_bilou = use_bilou
+        self.fitted = False
 
     @property
     def model(self):
@@ -36,17 +37,24 @@ class CRFTokenClassifier:
                                  % type(feature))
         self._features = value
 
-    def parse(self, tokens):
+    def predict(self, tokens):
+        if not self.fitted:
+            raise AssertionError("Model must be fitted before using predict")
         features = self.compute_features(tokens)
-        return self.model.predict_single(features)
+        predicted_labels = self.model.predict_single(features)
+        return remove_bilou_tags(predicted_labels)
 
     def fit(self, data):
         X = [self.compute_features(sample['tokens']) for sample in data]
-        Y = [self.transform_labels(sample['labels']) for sample in data]
+        Y = [self.add_bilou(sample['labels']) for sample in data]
         self.model.fit(X, Y)
+        self.fitted = True
 
-    def transform_labels(self, labels):
-        return get_bilou_labels(labels) if self.use_bilou else labels
+    def add_bilou(self, labels):
+        return add_bilou_tags(labels) if self.use_bilou else labels
+
+    def remove_bilou(self, labels):
+        return remove_bilou_tags(labels) if self.use_bilou else labels
 
     def compute_features(self, tokens):
         features = []

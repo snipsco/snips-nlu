@@ -64,3 +64,12 @@ class BuiltinIntentParser(IntentParser):
         )
         entities = entity_extractor.transform(tokenized_text)
         return parse_entity(unicode(text), entities)
+
+    def __eq__(self, other):
+        if not isinstance(other, BuiltinIntentParser):
+            return False
+        if self.config_path != other.config_path:
+            return False
+        if self.resources_dir != other.resources_dir:
+            return False
+        return True

@@ -1,11 +1,11 @@
 import cPickle
 from abc import ABCMeta, abstractmethod
 
-from ..dataset import merge_intent_datasets
 from ..intent_parser.intent_parser import CUSTOM_PARSER_TYPE, \
     BUILTIN_PARSER_TYPE
 from ..intent_parser.regex_intent_parser import RegexIntentParser
 from ..result import result
+from ..dataset import validate_dataset
 
 
 class NLUEngine(object):
@@ -17,8 +17,10 @@ class NLUEngine(object):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, parsers, custom_first=True):
+    def __init__(self, parsers=None, custom_first=True):
         super(SnipsNLUEngine, self).__init__()
+        if parsers is None:
+            parsers = []
         self.custom_parsers = filter(
             lambda parser: parser.parser_type == CUSTOM_PARSER_TYPE, parsers)
         self.builtin_parsers = filter(
@@ -35,7 +37,7 @@ class SnipsNLUEngine(NLUEngine):
             second_parsers = self.custom_parsers
 
         first_parse = self._parse(text, first_parsers)
-        if first_parse["intent"] is not None:
+        if first_parse.parsed_intent is not None:
             return first_parse
         else:
             return self._parse(text, second_parsers)
@@ -49,32 +51,37 @@ class SnipsNLUEngine(NLUEngine):
         best_intent = None
         for parser in parsers:
             res = parser.get_intent(text)
-            if best_intent is None or res["prob"] > best_intent["prob"]:
+            if best_intent is None or res.probability > best_intent.probability:
                 best_intent = res
                 best_parser = parser
         entities = best_parser.get_entities(text)
         return result(text, best_intent, entities)
 
-    def fit(self):
-        if self.fitted:
-            return
-        for parser in self.custom_parsers:
-            parser.fit()
+    def fit(self, dataset):
+        validate_dataset(dataset)
+        updated_parsers = []
+        for intent_name in dataset["intents"].keys():
+            parser = RegexIntentParser(intent_name).fit(dataset)
+            updated_parsers.append(parser)
+        self.custom_parsers = updated_parsers
         self.fitted = True
+        return self
 
     def save_to_pickle_string(self):
         return cPickle.dumps(self)
 
     @classmethod
     def load_from_dict(cls, obj_dict):
-        custom_intent_datasets = obj_dict["custom_intents"]
-        merged_dataset = merge_intent_datasets(custom_intent_datasets)
-        custom_parsers = [
-            RegexIntentParser.load(intent_dataset["name"], merged_dataset) for
-            intent_dataset in custom_intent_datasets]
-        return SnipsNLUEngine(custom_parsers)
+        return SnipsNLUEngine()
 
     @classmethod
     def load_from_pickle_string(cls, pkl_str):
         return cPickle.loads(pkl_str)
 
+    def __eq__(self, other):
+        if self.fitted != other.fitted:
+            return False
+        for i, parser in enumerate(self.custom_parsers):
+            if parser != other.custom_parsers[i]:
+                return False
+        return True

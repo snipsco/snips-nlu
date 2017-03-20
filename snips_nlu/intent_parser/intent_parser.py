@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from ..result import intent_classification_result
+from ..result import IntentClassificationResult
 
 CUSTOM_PARSER_TYPE, BUILTIN_PARSER_TYPE = ("CUSTOM", "BUILTIN")
 
@@ -18,13 +18,14 @@ class IntentParser(object):
 
     def get_intent(self, text):
         parsing = self.parse(text)
-        intent = parsing["intent"]
-        prob = None
+        intent = parsing.parsed_intent
+        proba = None
         if intent is not None:
-            prob = intent["prob"]
-            intent = intent["name"]
-        return intent_classification_result(intent, prob)
+            proba = intent.probability
+            intent = intent.name
+        return IntentClassificationResult(intent_name=intent, probability=proba)
 
     def get_entities(self, text, intent=None):
         parsing = self.parse(text)
-        return parsing["entities"]
+        return parsing.parsed_entities
+

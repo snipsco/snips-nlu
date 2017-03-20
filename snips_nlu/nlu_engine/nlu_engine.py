@@ -1,7 +1,7 @@
-import os
+import cPickle
 from abc import ABCMeta, abstractmethod
 
-from ..intent_parser.builtin_intent_parser import BuiltinIntentParser
+from ..dataset import merge_intent_datasets
 from ..intent_parser.intent_parser import CUSTOM_PARSER_TYPE, \
     BUILTIN_PARSER_TYPE
 from ..intent_parser.regex_intent_parser import RegexIntentParser
@@ -24,6 +24,7 @@ class SnipsNLUEngine(NLUEngine):
         self.builtin_parsers = filter(
             lambda parser: parser.parser_type == BUILTIN_PARSER_TYPE, parsers)
         self.custom_first = custom_first
+        self.fitted = False
 
     def parse(self, text):
         if self.custom_first:
@@ -54,15 +55,26 @@ class SnipsNLUEngine(NLUEngine):
         entities = best_parser.get_entities(text)
         return result(text, best_intent, entities)
 
+    def fit(self):
+        if self.fitted:
+            return
+        for parser in self.custom_parsers:
+            parser.fit()
+        self.fitted = True
+
+    def save_to_pickle_string(self):
+        return cPickle.dumps(self)
+
     @classmethod
-    def load(cls, path):
-        custom_intents_dir = os.path.join(path, "custom_intents")
-        builtin_intents_dir = os.path.join(path, "builtin_intents")
+    def load_from_dict(cls, obj_dict):
+        custom_intent_datasets = obj_dict["custom_intents"]
+        merged_dataset = merge_intent_datasets(custom_intent_datasets)
         custom_parsers = [
-            RegexIntentParser.load(os.path.join(custom_intents_dir, path)) for
-            path in os.listdir(custom_intents_dir)]
-        configs_dir = os.path.join(builtin_intents_dir, 'configurations')
-        gazetteers_dir = os.path.join(builtin_intents_dir, 'gazetteers')
-        builtin_parsers = [BuiltinIntentParser(config_path, gazetteers_dir) for
-                           config_path in os.listdir(configs_dir)]
-        return SnipsNLUEngine(custom_parsers + builtin_parsers)
+            RegexIntentParser.load(intent_dataset["name"], merged_dataset) for
+            intent_dataset in custom_intent_datasets]
+        return SnipsNLUEngine(custom_parsers)
+
+    @classmethod
+    def load_from_pickle_string(cls, pkl_str):
+        return cPickle.loads(pkl_str)
+

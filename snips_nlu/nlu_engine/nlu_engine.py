@@ -68,6 +68,7 @@ class SnipsNLUEngine(NLUEngine):
         return self
 
     def save_to_pickle_string(self):
+        self.builtin_parsers = []
         return cPickle.dumps(self)
 
     @classmethod
@@ -75,8 +76,16 @@ class SnipsNLUEngine(NLUEngine):
         return SnipsNLUEngine()
 
     @classmethod
-    def load_from_pickle_string(cls, pkl_str):
-        return cPickle.loads(pkl_str)
+    def load_from_pickle_and_path(cls, pkl_str, builtin_dir_path):
+        engine = cPickle.loads(pkl_str)
+        # TODO: update engine with builtin parsers using builtin_dir_path
+        return engine
+
+    @classmethod
+    def load_from_pickle_and_bytearray(cls, pkl_str, builtin_byte_array):
+        engine = cPickle.loads(pkl_str)
+        # TODO: update engine with builtin parsers using builtin_byte_array
+        return engine
 
     def __eq__(self, other):
         if self.fitted != other.fitted:

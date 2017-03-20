@@ -1,8 +1,7 @@
-import io
-import json
 import re
 
-from snips_nlu.result import result, intent_classification_result, parsed_entity
+from snips_nlu.result import Result, result, IntentClassificationResult, \
+    ParsedEntity
 from ..intent_parser.intent_parser import IntentParser, CUSTOM_PARSER_TYPE
 
 GROUP_NAME_PREFIX = "group"
@@ -34,7 +33,7 @@ def get_slot_names_mapping(intent_queries):
     for query in intent_queries:
         for chunk in query["data"]:
             if "entity" in chunk:
-                slot_name = chunk["slotName"]
+                slot_name = chunk["slot_name"]
                 entity = chunk["entity"]
                 slot_names_to_entities[slot_name] = entity
     return slot_names_to_entities
@@ -46,7 +45,7 @@ def query_to_pattern(query, joined_entity_utterances,
     for chunk in query["data"]:
         if "entity" in chunk:
             max_index = generate_new_index(group_names_to_slot_names)
-            slot_name = chunk["slotName"]
+            slot_name = chunk["slot_name"]
             entity = chunk["entity"]
             group_names_to_slot_names[max_index] = slot_name
             pattern += r"(?P<%s>%s)" % (
@@ -62,11 +61,11 @@ def generate_regexes(intent_queries, entities):
     group_names_to_labels = dict()
     joined_entity_utterances = dict()
     for entity_name, entity in entities.iteritems():
-        if entity.use_synonyms:
-            utterances = [syn for entry in entity.entries
+        if entity["use_synonyms"]:
+            utterances = [syn for entry in entity["data"]
                           for syn in entry["synonyms"]]
         else:
-            utterances = [entry["value"] for entry in entity.entries]
+            utterances = [entry["value"] for entry in entity["data"]]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted([re.escape(e) for e in utterances], key=len, reverse=True))
     patterns = set()
@@ -81,11 +80,11 @@ def generate_regexes(intent_queries, entities):
 def match_to_result(matches):
     results = []
     for match_rng, match in matches:
-        parsed_ent = parsed_entity(
-            match_rng, match["value"], match["entity"],
-            slot_name=match.get("slotName", None))
+        parsed_ent = ParsedEntity(match_range=match_rng, value=match["value"],
+                                  entity=match["entity"],
+                                  slot_name=match["slot_name"])
         results.append(parsed_ent)
-    results.sort(key=lambda res: res["range"][0])
+    results.sort(key=lambda res: res.match_range[0])
     return results
 
 
@@ -106,13 +105,13 @@ class RegexIntentParser(IntentParser):
         return self.regexes is not None
 
     def fit(self, dataset):
-        if self.intent_name not in dataset.queries:
+        if self.intent_name not in dataset["intents"]:
             return self
 
-        intent_queries = dataset.queries[self.intent_name]
+        utterances = dataset["intents"][self.intent_name]["utterances"]
         self.regexes, self.group_names_to_slot_names = generate_regexes(
-            intent_queries, dataset.entities)
-        self.slot_names_to_entities = get_slot_names_mapping(intent_queries)
+            utterances, dataset["entities"])
+        self.slot_names_to_entities = get_slot_names_mapping(utterances)
         return self
 
     def parse(self, text):
@@ -121,11 +120,12 @@ class RegexIntentParser(IntentParser):
         entities = self.get_entities(text)
         entities_length = 0
         for entity in entities:
-            entities_length += entity["range"][1] - entity["range"][0]
+            entities_length += entity.match_range[1] - entity.match_range[0]
         intent_score = entities_length / float(len(text))
-        intent_result = intent_classification_result(self.intent_name,
-                                                     intent_score)
-        return result(text, intent_result, entities)
+        intent_result = IntentClassificationResult(intent_name=self.intent_name,
+                                                   probability=intent_score)
+        return Result(text=text, parsed_intent=intent_result,
+                      parsed_entities=entities)
 
     def get_intent(self, text):
         if len(text) == 0:
@@ -133,15 +133,12 @@ class RegexIntentParser(IntentParser):
         entities = self.get_entities(text)
         entities_length = 0
         for entity in entities:
-            entities_length += entity["range"][1] - entity["range"][0]
+            entities_length += entity.match_range[1] - entity.match_range[0]
         intent_score = entities_length / float(len(text))
-        return intent_classification_result(self.intent_name, intent_score)
+        return IntentClassificationResult(intent_name=self.intent_name,
+                                          probability=intent_score)
 
     def get_entities(self, text, intent=None):
-        if not self.fitted:
-            raise ValueError("Parser must be fitted before calling the "
-                             "'get_entities' method.")
-
         # Matches is a dict to ensure that we have only 1 match per range
         matches = dict()
         for regex in self.regexes:
@@ -155,31 +152,9 @@ class RegexIntentParser(IntentParser):
                     matches[rng] = {
                         "value": match.group(group_name),
                         "entity": entity,
-                        "slotName": slot_name
+                        "slot_name": slot_name
                     }
         return match_to_result(matches.items())
-
-    def save(self, path):
-        self_as_dict = {
-            "intent_name": self.intent_name,
-            "patterns": [r.pattern for r in self.regexes],
-            "group_names_to_slot_names": self.group_names_to_slot_names,
-            "slot_names_to_entities": self.slot_names_to_entities,
-        }
-        with io.open(path, "w", encoding="utf8") as f:
-            data = json.dumps(self_as_dict)
-            f.write(unicode(data))
-
-    @classmethod
-    def load(cls, path):
-        with io.open(path, encoding="utf8") as f:
-            data = json.load(f)
-        return cls(
-            data["intent_name"],
-            data["patterns"],
-            data["group_names_to_slot_names"],
-            data["slot_names_to_entities"]
-        )
 
     def __eq__(self, other):
         if self.intent_name != other.intent_name:

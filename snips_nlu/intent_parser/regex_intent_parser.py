@@ -1,6 +1,6 @@
 import re
 
-from snips_nlu.result import Result, result, IntentClassificationResult, \
+from snips_nlu.result import Result, IntentClassificationResult, \
     ParsedEntity
 from ..intent_parser.intent_parser import IntentParser, CUSTOM_PARSER_TYPE
 
@@ -116,7 +116,7 @@ class RegexIntentParser(IntentParser):
 
     def parse(self, text):
         if len(text) == 0:
-            return result(text)
+            return Result(text, parsed_intent=None, parsed_entities=None)
         entities = self.get_entities(text)
         entities_length = 0
         for entity in entities:
@@ -129,7 +129,7 @@ class RegexIntentParser(IntentParser):
 
     def get_intent(self, text):
         if len(text) == 0:
-            return result(text)
+            return Result(text, parsed_intent=None, parsed_entities=None)
         entities = self.get_entities(text)
         entities_length = 0
         for entity in entities:

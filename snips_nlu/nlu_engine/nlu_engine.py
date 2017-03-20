@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from ..intent_parser.intent_parser import CUSTOM_PARSER_TYPE, \
     BUILTIN_PARSER_TYPE
 from ..intent_parser.regex_intent_parser import RegexIntentParser
-from ..result import result
+from ..result import Result
 from ..dataset import validate_dataset
 
 
@@ -45,7 +45,7 @@ class SnipsNLUEngine(NLUEngine):
     @staticmethod
     def _parse(text, parsers):
         if len(parsers) == 0:
-            return result(text)
+            return Result(text, parsed_intent=None, parsed_entities=None)
 
         best_parser = None
         best_intent = None
@@ -55,7 +55,7 @@ class SnipsNLUEngine(NLUEngine):
                 best_intent = res
                 best_parser = parser
         entities = best_parser.get_entities(text)
-        return result(text, best_intent, entities)
+        return Result(text, parsed_intent=best_intent, parsed_entities=entities)
 
     def fit(self, dataset):
         validate_dataset(dataset)

@@ -29,3 +29,11 @@ class IntentParser(object):
         parsing = self.parse(text)
         return parsing.parsed_entities
 
+    def __eq__(self, other):
+        return NotImplemented
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return result
+        return not result

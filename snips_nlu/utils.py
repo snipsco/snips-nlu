@@ -1,6 +1,5 @@
-from collections import OrderedDict
-
 import os
+from collections import OrderedDict
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,6 +26,39 @@ def merge_two_dicts(x, y, shallow_copy=True):
     z = x.copy() if shallow_copy else x
     z.update(y)
     return z
+
+
+def type_error(expected_type, found_type):
+    return TypeError("Expected %s but found: %s" % (expected_type, found_type))
+
+
+def validate_type(obj, expected_type):
+    if not isinstance(obj, expected_type):
+        raise type_error(expected_type=expected_type, found_type=type(obj))
+
+
+def missing_key_error(key, object_label=None):
+    if object_label is None:
+        return KeyError("Missing key: '%s'" % key)
+    else:
+        return KeyError(
+            "Expected %s to have key: '%s'" % (object_label, key))
+
+
+def validate_key(obj, key, object_label=None):
+    if key not in obj:
+        raise missing_key_error(key, object_label)
+
+
+def validate_keys(obj, keys, object_label=None):
+    for key in keys:
+        validate_key(obj, key, object_label)
+
+
+def validate_range(rng):
+    if not isinstance(rng, (list, tuple)) or len(rng) != 2 or rng[0] > rng[1]:
+        raise ValueError("range must be a length 2 list or tuple and must be "
+                         "valid")
 
 
 class LimitedSizeDict(OrderedDict):

@@ -25,81 +25,148 @@ Install the package
     
     python setup.py install
 
+### Initialization
+The NLU Engine can be initialized in various ways:
 
-## Alexa style data format
+- from a cPickle serialized string and directory path (for the builtin intents part):
+    ```python
+    engine = SnipsNLUEngine.load_from_pickle_and_path(pkl_str, builtin_dir_path)
+    ```
 
-### Create a dataset from an asset directory
+- from a cPickle serialized string and byte array (for the builtin intents part):
+    ```python
+    engine = SnipsNLUEngine.load_from_pickle_and_byte_array(pkl_str, builtin_byte_array)
+    ```
 
-Create an `nluAsset` directory
+- from a python dictionary:
+    ```python
+    engine = SnipsNLUEngine.load_from_dict(obj_dict)
+    ```
+    Here is the format of the input dictionary:
+    ```python
 
-#### Ontology
-
-Create a `nluAsset/mySkill.json` file representing your skill NLU ontology
-
-This file must respect the following structure:
-
-    {
-        "intents": [
-            {
-                "intent": "intent_1",
-                "slots": [
-                    {"slotName": "slot_1", "entity": "entity_1"},
-                    {"slotName": "slot_2", "entity": "entity_2"},
-                    {"slotName": "slot_3", "entity": "entity_2"}
-                    ]
-            },
-            {
-                "intent": "intent_2",
-                "slots": []
-            }
+    engine_dict = {
+        "custom_intents": [
+            "switch_light",
+            "lock_door"
         ],
-        "entities": [
-            {
-                "entity": "entity_1",
-                "automaticallyExtensible": false,
-                "useSynonyms": false
-            },
-            {
-                "entity": "entity_2",
-                "automaticallyExtensible": true,
-                "useSynonyms": true
-            }
-        ]
+        "builtin_intents": None # not defined yet
     }
+    ```
+    Note: in this case, the resulting object will not be fitted.
 
-Make sure that entities names that you use in the intent `slots` description exists in the `entities` list.
- 
+### Serialization
+The NLU Engine has an API that allows to persist the object as a cPickle string:
+```python
+# pkl_str is a string which uses the cPickle serialization protocol
+pkl_str = engine.save_to_pickle_string()
+```
 
-#### Samples utterances
+### Parsing
+```python
+>>> parsing = engine.parse("Turn on the light in the kitchen")
+>>> pprint(parsing)
+# {
+#     "text": "Turn on the light in the kitchen", 
+#     "intent": {
+#         "name": "switch_light",
+#         "prob": 0.95
+#     }
+#     "slots": [
+#         {
+#             "value": "on",
+#             "range": [5, 7],
+#             "name": "on_off",
+#         },
+#         {
+#             "value": "kitchen",
+#             "range": [25, 32],
+#             "name": "room",
+#         }
+#     ]
+# }
+```
 
-Place some queries utterances in a the `nluAsset/SampleUtterances.txt` file.
-The file must respect the following format:
-
-    intent_1 an query with a {entity_1_name} and another {entity_2_name} !
-    intent_1 another intent with {entity_2_other_name} !
-    intent_2 another intent with not entity
-
-
-#### Entities utterances
-
-
-You can place utterance of entities in files containing `nluAsset/<entity_name>.txt` files.
-If you chose to use `useSynonyms = false` make sure that your file only contains 1 utterance per line.
-Otherwise you can define synonyms for a utterance of entity by seperating them with a `;`.
-
-For our example we could put, this content in `nluAsset/entity_1.txt`:
-    
-    my_entity_1
-    my_other_entity_1
-    
-and the following content in `nluAsset/entity_2.txt`:
-    
-    my_entity_2;my_entity_2_synonym;my_entity_2_other_synonym
-    my_other_entity_2
- 
-#### Convert your dataset
-
-Convert your text file into a `Dataset` like this:
-    
-    python custom_intent_parser/data_helpers.py path/to/nluAsset path/to/dataset_dir
+### Training
+``` python
+engine.fitted # False
+engine.fit(dataset) 
+engine.fitted # True
+```
+where `dataset` is a dictionary with the following format:
+```python
+dataset = 
+    {
+        "intents": {
+            "dummy_intent_1": {
+                "utterances": [
+                    {
+                        "data": [
+                            {
+                                "text": "This is a "
+                            },
+                            {
+                                "text": "dummy_1",
+                                "entity": "dummy_entity_1",
+                                "slot_name": "dummy_slot_name"
+                            },
+                            {
+                                "text": " query."
+                            }
+                        ]
+                    },
+                    {
+                        "data": [
+                            {
+                                "text": "This is another "
+                            },
+                            {
+                                "text": "dummy_2",
+                                "entity": "dummy_entity_2",
+                                "slot_name": "dummy_slot_name2"
+                            },
+                            {
+                                "text": " query."
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        "entities": {
+            "dummy_entity_1": {
+                "use_synonyms": True,
+                "automatically_extensible": False,
+                "data": [
+                    {
+                        "value": "dummy1",
+                        "synonyms": [
+                            "dummy1",
+                            "dummy1_bis"
+                        ]
+                    },
+                    {
+                        "value": "dummy2",
+                        "synonyms": [
+                            "dummy2",
+                            "dummy2_bis"
+                        ]
+                    }
+                ]
+            },
+            "dummy_entity_2": {
+                "use_synonyms": False,
+                "automatically_extensible": True,
+                "data": [
+                    {
+                        "value": "dummy2",
+                        "synonyms": [
+                            "dummy2"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+```
     

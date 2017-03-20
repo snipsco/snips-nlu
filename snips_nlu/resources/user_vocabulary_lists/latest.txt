@@ -1,0 +1,4 @@
+name=latest 
+type=free_text 
+latest;latest 
+last_release_of;last release of 

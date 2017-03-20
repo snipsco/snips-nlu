@@ -1,0 +1,3 @@
+name=similarTo 
+type=free_text 
+some_songs_similar_to;some songs similar to 

@@ -1,148 +1,66 @@
-import io
-import json
-import os
 import re
 
-from entity import Entity
+from utils import validate_type, validate_key, validate_keys
 
-VALID_FILE_REGEX = re.compile(r"^[\w\s-]+$")
-
-
-def is_valid_filename(string):
-    return VALID_FILE_REGEX.match(string)
+INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
+ENTITY_NAME_REGEX = re.compile("^[\w]+$")
 
 
-def validate_queries(queries, entities):
-    entities_names = entities.keys()
-    for intent_name, intent_queries in queries.iteritems():
-        # TODO: find a better way to ensure intent_name validity
-        if not is_valid_filename(intent_name):
-            raise ValueError("%s is an invalid intent name. Intent names must "
-                             "be a valid file name, use only: [a-zA-Z0-9_- ]"
-                             % intent_name)
-        for q in intent_queries:
-            data = q["data"]
-            for chunk in data:
-                if "text" not in chunk:
-                    raise ValueError("Query chunk must have 'text' key")
-
-                entity_name = chunk.get("entity", None)
-                if entity_name is not None:
-                    if entity_name not in entities_names:
-                        raise ValueError("Unknown entity '%s'. Entities must "
-                                         "belong to %s" %
-                                         (entity_name, entities_names))
+def validate_dataset(dataset):
+    validate_type(dataset, dict)
+    mandatory_keys = ["intents", "entities"]
+    for key in mandatory_keys:
+        validate_key(dataset, key, object_label="dataset")
+    validate_type(dataset["entities"], dict)
+    validate_type(dataset["intents"], dict)
+    entities = set()
+    for entity_name, entity in dataset["entities"].iteritems():
+        validate_entity_name(entity_name)
+        entities.add(entity_name)
+        validate_entity(entity)
+    for intent_name, intent in dataset["intents"].iteritems():
+        validate_intent_name(intent_name)
+        validate_intent(intent, entities)
 
 
-class Dataset(object):
-    def __init__(self, entities=None, queries=None):
-        self._entities = {}
-        self._queries = {}
-        if entities is not None:
-            self.entities = entities
-        if queries is not None:
-            self.queries = queries
+def validate_intent_name(name):
+    if not INTENT_NAME_REGEX.match(name):
+        raise AssertionError("%s is an invalid intent name. Intent names must "
+                             "only use: [a-zA-Z0-9_- ]"
+                             % name)
 
-    def __eq__(self, other):
-        if self.queries != other.queries:
-            return False
-        if self.entities != self.entities:
-            return False
-        return True
 
-    @property
-    def entities(self):
-        return self._entities
+def validate_intent(intent, entities):
+    validate_type(intent, dict)
+    validate_key(intent, "utterances", object_label="intent dict")
+    validate_type(intent["utterances"], list)
+    for utterance in intent["utterances"]:
+        validate_type(utterance, dict)
+        validate_key(utterance, "data", object_label="utterance")
+        validate_type(utterance["data"], list)
+        for chunk in utterance["data"]:
+            validate_type(chunk, dict)
+            validate_key(chunk, "text", object_label="chunk")
+            if len(chunk.keys()) > 1:
+                mandatory_keys = ["entity", "slot_name"]
+                validate_keys(chunk, mandatory_keys, object_label="chunk")
+                validate_key(entities, chunk["entity"], object_label="entities")
 
-    @entities.setter
-    def entities(self, value):
-        if isinstance(value, dict):
-            if any((not isinstance(ent, Entity) for ent in value.values())):
-                entities_dict = dict()
-                for ent in value.values():
-                    if not isinstance(ent, dict):
-                        raise ValueError("Expected dict, found %s" % type(ent))
-                    entities_dict[ent['name']] = Entity.from_dict(ent)
-                self._entities = entities_dict
-            else:
-                self._entities = value
-        elif isinstance(value, list):
-            if any((not isinstance(ent, Entity) for ent in value)):
-                entities_dict = dict()
-                for ent in value:
-                    if not isinstance(ent, dict):
-                        raise ValueError("Expected dict, found %s" % type(ent))
-                    entities_dict[ent['name']] = Entity.from_dict(ent)
-                self._entities = entities_dict
-            else:
-                self._entities = dict((ent.name, ent) for ent in value)
-        else:
-            raise ValueError("Expected dict or list, found %s" % type(value))
 
-    @property
-    def queries(self):
-        return self._queries
+def validate_entity_name(name):
+    if not ENTITY_NAME_REGEX.match(name):
+        raise ValueError("Entity name must only contain [0-9a-zA-Z_],"
+                         " found '%s'" % name)
 
-    @queries.setter
-    def queries(self, value):
-        validate_queries(value, self.entities)
-        self._queries = value
 
-    @classmethod
-    def load(cls, dir_path):
-        queries_path = os.path.join(dir_path, "queries")
-        json_files = [f for f in os.listdir(queries_path)
-                      if f.endswith("json")]
-        queries = dict()
-        for f in json_files:
-            intent_name, _ = os.path.splitext(f)
-            intent_queries = cls.load_intent_queries(
-                os.path.join(queries_path, f))
-            queries[intent_name] = intent_queries
-
-        entities_path = os.path.join(dir_path, "entities")
-        json_files = [f for f in os.listdir(entities_path)
-                      if f.endswith("json")]
-        entities = dict()
-        for f in json_files:
-            entity = Entity.from_json(os.path.join(entities_path, f))
-            entities[entity.name] = entity
-
-        return cls(entities=entities, queries=queries)
-
-    @staticmethod
-    def load_intent_queries(path):
-        expected_intent_name, _ = os.path.splitext(os.path.basename(path))
-        with io.open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if data["intent"] != expected_intent_name:
-            raise ValueError("query file name and intent name must match. "
-                             "Expected intent %s, found %s"
-                             % (expected_intent_name, data["intent"]))
-
-        return data["queries"]
-
-    def save(self, dir_path):
-        if os.path.exists(dir_path):
-            raise RuntimeError("%s is an existing directory or file"
-                               % dir_path)
-        os.mkdir(dir_path)
-
-        queries_path = os.path.join(dir_path, "queries")
-        os.mkdir(queries_path)
-        for intent_name, intent_queries in self.queries.iteritems():
-            path = os.path.join(queries_path, "%s.json" % intent_name)
-            data = {
-                "intent": intent_name,
-                "queries": intent_queries,
-            }
-            with io.open(path, "w", encoding="utf-8") as f:
-                data = json.dumps(data, indent=2)
-                f.write(unicode(data))
-
-        entities_path = os.path.join(dir_path, "entities")
-        os.mkdir(entities_path)
-        for entity_name, entity in self.entities.iteritems():
-            path = os.path.join(entities_path,
-                                "%s.json" % entity_name)
-            entity.to_json(path)
+def validate_entity(entity):
+    validate_type(entity, dict)
+    mandatory_keys = ["use_synonyms", "automatically_extensible", "data"]
+    validate_keys(entity, mandatory_keys, object_label="entity")
+    validate_type(entity["use_synonyms"], bool)
+    validate_type(entity["automatically_extensible"], bool)
+    validate_type(entity["data"], list)
+    for entry in entity["data"]:
+        validate_type(entry, dict)
+        validate_keys(entry, ["value", "synonyms"], object_label="entity entry")
+        validate_type(entry["synonyms"], list)

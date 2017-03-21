@@ -19,7 +19,6 @@ setup(name="snips_nlu",
       ],
       packages=[
           "snips_nlu",
-          "snips_nlu.entity_extractor",
           "snips_nlu.nlu_engine"
       ],
       entry_points={},

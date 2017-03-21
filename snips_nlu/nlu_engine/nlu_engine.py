@@ -82,7 +82,7 @@ class SnipsNLUEngine(NLUEngine):
         return engine
 
     @classmethod
-    def load_from_pickle_and_bytearray(cls, pkl_str, builtin_byte_array):
+    def load_from_pickle_and_byte_array(cls, pkl_str, builtin_byte_array):
         engine = cPickle.loads(pkl_str)
         # TODO: update engine with builtin parsers using builtin_byte_array
         return engine

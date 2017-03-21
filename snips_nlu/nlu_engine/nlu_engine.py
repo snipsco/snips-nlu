@@ -4,6 +4,24 @@ from abc import ABCMeta, abstractmethod
 from ..intent_parser.regex_intent_parser import RegexIntentParser
 from ..result import Result
 from ..dataset import validate_dataset
+from snips_queries.intent_parser import IntentParser as BuiltinIntentParser
+
+
+def _parse(text, parsers, threshold):
+    if len(parsers) == 0:
+        return Result(text, parsed_intent=None, parsed_entities=None)
+
+    best_parser = None
+    best_intent = None
+    for parser in parsers:
+        res = parser.get_intent(text)
+        if best_intent is None or res.probability > best_intent.probability:
+            best_intent = res
+            best_parser = parser
+    if best_intent.probability <= threshold:
+        return Result(text, parsed_intent=None, parsed_entities=None)
+    entities = best_parser.get_entities(text)
+    return Result(text, parsed_intent=best_intent, parsed_entities=entities)
 
 
 class NLUEngine(object):
@@ -15,45 +33,22 @@ class NLUEngine(object):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, parsers=None, custom_first=True):
+    def __init__(self, custom_parsers=None):
         super(SnipsNLUEngine, self).__init__()
-        if parsers is None:
-            parsers = []
-        self.custom_parsers = filter(
-            lambda parser: parser.parser_type == CUSTOM_PARSER_TYPE, parsers)
-        self.builtin_parsers = filter(
-            lambda parser: parser.parser_type == BUILTIN_PARSER_TYPE, parsers)
-        self.custom_first = custom_first
+        if custom_parsers is None:
+            custom_parsers = []
+        self.custom_parsers = custom_parsers
+        self.builtin_parser = None
         self.fitted = False
 
     def parse(self, text):
-        if self.custom_first:
-            first_parsers = self.custom_parsers
-            second_parsers = self.builtin_parsers
+        custom_parse = _parse(text, self.custom_parsers, threshold=0.)
+        if custom_parse.parsed_intent is not None:
+            return custom_parse
+        elif self.builtin_parser is not None:
+            return self.builtin_parser.parse(text, threshold=0.)
         else:
-            first_parsers = self.builtin_parsers
-            second_parsers = self.custom_parsers
-
-        first_parse = self._parse(text, first_parsers)
-        if first_parse.parsed_intent is not None:
-            return first_parse
-        else:
-            return self._parse(text, second_parsers)
-
-    @staticmethod
-    def _parse(text, parsers):
-        if len(parsers) == 0:
-            return Result(text, parsed_intent=None, parsed_entities=None)
-
-        best_parser = None
-        best_intent = None
-        for parser in parsers:
-            res = parser.get_intent(text)
-            if best_intent is None or res.probability > best_intent.probability:
-                best_intent = res
-                best_parser = parser
-        entities = best_parser.get_entities(text)
-        return Result(text, parsed_intent=best_intent, parsed_entities=entities)
+            return Result(text=text, parsed_intent=None, parsed_entities=None)
 
     def fit(self, dataset):
         validate_dataset(dataset)
@@ -66,7 +61,7 @@ class SnipsNLUEngine(NLUEngine):
         return self
 
     def save_to_pickle_string(self):
-        self.builtin_parsers = []
+        self.builtin_parser = None
         return cPickle.dumps(self)
 
     @classmethod
@@ -74,9 +69,9 @@ class SnipsNLUEngine(NLUEngine):
         return SnipsNLUEngine()
 
     @classmethod
-    def load_from_pickle_and_path(cls, pkl_str, builtin_dir_path):
+    def load_from_pickle_and_path(cls, pkl_str, builtin_path):
         engine = cPickle.loads(pkl_str)
-        # TODO: update engine with builtin parsers using builtin_dir_path
+        engine.builtin_parser = BuiltinIntentParser(builtin_path, intents=[])
         return engine
 
     @classmethod
@@ -84,11 +79,3 @@ class SnipsNLUEngine(NLUEngine):
         engine = cPickle.loads(pkl_str)
         # TODO: update engine with builtin parsers using builtin_byte_array
         return engine
-
-    def __eq__(self, other):
-        if self.fitted != other.fitted:
-            return False
-        for i, parser in enumerate(self.custom_parsers):
-            if parser != other.custom_parsers[i]:
-                return False
-        return True

@@ -1,8 +1,6 @@
 import cPickle
 from abc import ABCMeta, abstractmethod
 
-from ..intent_parser.intent_parser import CUSTOM_PARSER_TYPE, \
-    BUILTIN_PARSER_TYPE
 from ..intent_parser.regex_intent_parser import RegexIntentParser
 from ..result import Result
 from ..dataset import validate_dataset

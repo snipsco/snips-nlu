@@ -128,7 +128,8 @@ class RegexIntentParser(IntentParser):
 
     def get_intent(self, text):
         if len(text) == 0:
-            return Result(text, parsed_intent=None, parsed_entities=None)
+            return IntentClassificationResult(intent_name=self.intent_name,
+                                              probability=0)
         entities = self.get_entities(text)
         entities_length = 0
         for entity in entities:

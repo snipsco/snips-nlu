@@ -10,7 +10,7 @@ class TestNLUEngine(unittest.TestCase):
         nlu_engine_dict = dict()
         engine = SnipsNLUEngine.load_from_dict(nlu_engine_dict)
         self.assertEqual(len(engine.custom_parsers), 0)
-        self.assertEqual(len(engine.builtin_parsers), 0)
+        self.assertIsNone(engine.builtin_parser)
 
     def test_should_fit_nlu_engine(self):
         # Given
@@ -22,7 +22,7 @@ class TestNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(len(engine.custom_parsers), 2)
-        self.assertEqual(len(engine.builtin_parsers), 0)
+        self.assertIsNone(engine.builtin_parser)
 
     def test_should_save_nlu_engine(self):
         # Given
@@ -35,7 +35,8 @@ class TestNLUEngine(unittest.TestCase):
                                                                     None)
 
         # Then
-        self.assertEqual(engine, new_engine)
+        self.assertEqual(engine.fitted, new_engine.fitted)
+        self.assertListEqual(engine.custom_parsers, new_engine.custom_parsers)
 
     def test_nlu_engine_should_parse_text(self):
         # Given

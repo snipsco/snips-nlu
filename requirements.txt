@@ -1,1 +1,0 @@
-git+ssh://git@github.com/snipsco/snips-queries-python.git@v0.1.2#egg=snips

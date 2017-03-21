@@ -31,8 +31,8 @@ class TestNLUEngine(unittest.TestCase):
         pkl_str = engine.save_to_pickle_string()
 
         # When
-        new_engine = SnipsNLUEngine.load_from_pickle_and_bytearray(pkl_str,
-                                                                   None)
+        new_engine = SnipsNLUEngine.load_from_pickle_and_byte_array(pkl_str,
+                                                                    None)
 
         # Then
         self.assertEqual(engine, new_engine)

@@ -2,7 +2,7 @@ import unittest
 
 from mock import Mock
 
-from ..nlu_engine.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine
 from ..result import Result, ParsedEntity, IntentClassificationResult
 
 

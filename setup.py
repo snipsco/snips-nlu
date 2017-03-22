@@ -10,6 +10,7 @@ setup(name="snips_nlu",
       license="MIT",
       install_requires=[
           "enum34",
+          "mock",
           "sklearn-crfsuite",
           "snips"
       ],
@@ -18,8 +19,7 @@ setup(name="snips_nlu",
           #egg=snips"
       ],
       packages=[
-          "snips_nlu",
-          "snips_nlu.nlu_engine"
+          "snips_nlu"
       ],
       entry_points={},
       include_package_data=False,

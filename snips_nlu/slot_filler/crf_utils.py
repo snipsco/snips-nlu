@@ -1,4 +1,4 @@
-from snips_nlu.result import parsed_entity
+from snips_nlu.result import ParsedEntity
 
 BEGINNING_PREFIX = 'B-'
 INSIDE_PREFIX = 'I-'
@@ -73,6 +73,6 @@ def build_parsed_entities(text, tokens, labels, slot_name_to_entity_mapping):
         value = text[rng[0]:rng[1]]
         slot_name = slot['slot_name']
         entity_name = slot_name_to_entity_mapping[slot_name]
-        entity = parsed_entity(rng, value, entity_name, slot_name)
+        entity = ParsedEntity(rng, value, entity_name, slot_name)
         parsed_entities.append(entity)
     return parsed_entities

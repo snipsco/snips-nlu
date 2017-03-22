@@ -9,6 +9,7 @@ setup(name="snips_nlu",
       download_url="",
       license="MIT",
       install_requires=[
+          "pytest",
           "enum34",
           "mock",
           "sklearn-crfsuite",

@@ -1,5 +1,7 @@
 from snips_nlu.slot_filler.crf_utils import add_bilou_tags, remove_bilou_tags, \
     OUTSIDE
+from feature_functions import TOKEN_NAME
+from snips_nlu.utils import UnupdatableDict
 
 
 class CRFSlotFiller(object):
@@ -32,12 +34,13 @@ class CRFSlotFiller(object):
         return remove_bilou_tags(labels) if self.use_bilou else labels
 
     def compute_features(self, tokens):
-        cache = [{"token": token} for token in tokens]
+        cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         for i in range(len(tokens)):
-            token_features = dict()
-            for feature in self.features:
-                value = feature.compute(token_index=i, cache=cache)
-                token_features.update({feature.name: value})
+            token_features = UnupdatableDict()
+            for feature_name, feature_fn in self.features:
+                value = feature_fn(i, cache)
+                if value is not None:
+                    token_features[feature_name] = value
             features.append(token_features)
         return features

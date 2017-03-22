@@ -87,3 +87,10 @@ class LimitedSizeDict(OrderedDict):
         if self.size_limit != other.size_limit:
             return False
         return super(LimitedSizeDict, self).__eq__(other)
+
+
+class UnupdatableDict(dict):
+    def __setitem__(self, key, value):
+        if key in self:
+            raise KeyError("Can't update key '%s'" % key)
+        super(UnupdatableDict, self).__setitem__(key, value)

@@ -2,6 +2,8 @@ import os
 
 TEST_PATH = os.path.dirname(os.path.abspath(__file__))
 
+EMPTY_DATASET = {"intents": {}, "entities": {}}
+
 SAMPLE_DATASET = {
     "intents": {
         "dummy_intent_1": {

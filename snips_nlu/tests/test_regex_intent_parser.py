@@ -74,17 +74,6 @@ class TestRegexIntentParser(unittest.TestCase):
         ]
         self.assertItemsEqual(expected_entities, entities)
 
-        # def test_save_and_load(self):
-        #     # Given
-        #     parser = RegexIntentParser("dummy_intent_1").fit(self._dataset)
-        #
-        #     # When
-        #     parser.save(self._save_path)
-        #     new_parser = RegexIntentParser.load(self._save_path)
-        #
-        #     # Then
-        #     self.assertEqual(parser, new_parser)
-
 
 if __name__ == '__main__':
     unittest.main()

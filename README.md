@@ -15,17 +15,25 @@ Follow installation instructions [here](https://github.com/snipsco/tensorflow-bu
 ## Installation
 Create a virtual env
     
-    virtualenv venv
-    
+    virtualenv venv    
+
 Activate it
     
     venv/bin/activate
 
 Install the package
     
-    python setup.py install
+    pip install -f https://nexus-repository.snips.ai/repository/pypi-internal/packages/snips-queries/0.1.0a1/snips_queries-0.1.0a1-py2.py3-none-macosx_10_11_x86_64.whl -e .
+
+As the repository is private, you will need a valid username/password to authenticate to the Nexus repository.
 
 ### Initialization
+
+```python
+from snips_nlu.nlu_engine import SnipsNLUEngine
+```
+
+
 The NLU Engine can be initialized in various ways:
 
 - from a cPickle serialized string and directory path (for the builtin intents part):

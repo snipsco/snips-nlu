@@ -12,11 +12,7 @@ setup(name="snips_nlu",
           "enum34",
           "mock",
           "sklearn-crfsuite",
-          "snips"
-      ],
-      dependency_links=[
-          "git+ssh://git@github.com/snipsco/snips-queries-python.git@v0.1.2\
-          #egg=snips"
+          "snips-queries"
       ],
       packages=[
           "snips_nlu"

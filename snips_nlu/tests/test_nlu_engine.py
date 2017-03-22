@@ -3,9 +3,9 @@ import unittest
 from mock import Mock
 
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from utils import SAMPLE_DATASET
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedEntity, IntentClassificationResult
-from utils import SAMPLE_DATASET
 
 
 class TestSnipsNLUEngine(unittest.TestCase):

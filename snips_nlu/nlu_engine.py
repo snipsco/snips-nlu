@@ -1,10 +1,18 @@
 import cPickle
 from abc import ABCMeta, abstractmethod
 
-from ..intent_parser.regex_intent_parser import RegexIntentParser
-from ..intent_parser.builtin_intent_parser import BuiltinIntentParser
-from ..result import Result
-from ..dataset import validate_dataset
+from snips_nlu.dataset import validate_dataset
+from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
+from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.result import Result
+
+
+class NLUEngine(object):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def parse(self, text):
+        raise NotImplementedError
 
 
 def _parse(text, parsers, threshold):
@@ -24,14 +32,6 @@ def _parse(text, parsers, threshold):
         return Result(text, parsed_intent=None, parsed_entities=None)
     entities = best_parser.get_entities(text, best_intent.intent_name)
     return Result(text, parsed_intent=best_intent, parsed_entities=entities)
-
-
-class NLUEngine(object):
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def parse(self, text):
-        pass
 
 
 class SnipsNLUEngine(NLUEngine):

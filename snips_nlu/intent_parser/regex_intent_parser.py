@@ -2,7 +2,7 @@ import re
 
 from snips_nlu.result import Result, IntentClassificationResult, \
     ParsedEntity
-from ..intent_parser.intent_parser import IntentParser
+from ..intent_parser.intent_parser import CustomIntentParser
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -88,7 +88,7 @@ def match_to_result(matches):
     return results
 
 
-class RegexIntentParser(IntentParser):
+class RegexIntentParser(CustomIntentParser):
     def __init__(self, intent_name, patterns=None,
                  group_names_to_slot_names=None, slot_names_to_entities=None):
         super(RegexIntentParser, self).__init__(intent_name)

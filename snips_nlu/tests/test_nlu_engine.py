@@ -1,62 +1,101 @@
 import unittest
 
-from snips_nlu.tests.utils import SAMPLE_DATASET
-from ..nlu_engine.nlu_engine import SnipsNLUEngine
+from mock import Mock
+
+from snips_nlu.nlu_engine import SnipsNLUEngine
 from ..result import Result, ParsedEntity, IntentClassificationResult
 
 
-class TestNLUEngine(unittest.TestCase):
-    def test_should_load_nlu_engine_from_dict(self):
-        nlu_engine_dict = dict()
-        engine = SnipsNLUEngine.load_from_dict(nlu_engine_dict)
-        self.assertEqual(len(engine.custom_parsers), 0)
-        self.assertEqual(len(engine.builtin_parsers), 0)
-
-    def test_should_fit_nlu_engine(self):
+class TestSnipsNLUEngine(unittest.TestCase):
+    def test_should_parse_with_custom_parsers_first(self):
         # Given
-        dataset = SAMPLE_DATASET
-        engine = SnipsNLUEngine.load_from_dict(dict())
+        mocked_parser1 = Mock()
+        intent_result1 = IntentClassificationResult(
+            intent_name='mocked_intent1', probability=0.5)
+        intent_entities1 = []
+        mocked_parser1.get_intent.return_value = intent_result1
+        mocked_parser1.get_entities.return_value = intent_entities1
+
+        mocked_parser2 = Mock()
+        intent_result2 = IntentClassificationResult(
+            intent_name='mocked_intent2', probability=0.7)
+        intent_entities2 = [
+            ParsedEntity(match_range=(3, 5), value='mocked_value',
+                         entity='mocked_entity', slot_name='mocked_slot_name')]
+        mocked_parser2.get_intent.return_value = intent_result2
+        mocked_parser2.get_entities.return_value = intent_entities2
+
+        mocked_builtin_parser = Mock()
+        builtin_intent_result = IntentClassificationResult(
+            intent_name='mocked_builtin_intent', probability=0.9)
+        builtin_entities = []
+        mocked_builtin_parser.get_intent.return_value = builtin_intent_result
+        mocked_builtin_parser.get_entities.return_value = builtin_entities
+
+        engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
+                                mocked_builtin_parser)
 
         # When
-        engine.fit(dataset)
-
-        # Then
-        self.assertEqual(len(engine.custom_parsers), 2)
-        self.assertEqual(len(engine.builtin_parsers), 0)
-
-    def test_should_save_nlu_engine(self):
-        # Given
-        dataset = SAMPLE_DATASET
-        engine = SnipsNLUEngine.load_from_dict(dict()).fit(dataset)
-        pkl_str = engine.save_to_pickle_string()
-
-        # When
-        new_engine = SnipsNLUEngine.load_from_pickle_and_byte_array(pkl_str,
-                                                                    None)
-
-        # Then
-        self.assertEqual(engine, new_engine)
-
-    def test_nlu_engine_should_parse_text(self):
-        # Given
-        dataset = SAMPLE_DATASET
-        engine = SnipsNLUEngine.load_from_dict(dict()).fit(dataset)
-
-        # When
-        text = "this is a dummy_a query with another dummy_c"
+        text = "hello world"
         parse = engine.parse(text)
 
         # Then
-        expected_entities = [
-            ParsedEntity(match_range=(10, 17), value="dummy_a",
-                         entity="dummy_entity_1", slot_name="dummy_slot_name"),
-            ParsedEntity(match_range=(37, 44), value="dummy_c",
-                         entity="dummy_entity_2", slot_name="dummy_slot_name2")
-        ]
-        expected_proba = (len("dummy_a") + len("dummy_c")) / float(len(text))
-        expected_intent = IntentClassificationResult(
-            intent_name="dummy_intent_1",
-            probability=expected_proba)
-        expected_parse = Result(text=text, parsed_intent=expected_intent,
-                                parsed_entities=expected_entities)
-        self.assertEqual(parse, expected_parse)
+        self.assertEqual(parse, Result(text, intent_result2, intent_entities2))
+
+    def test_should_parse_with_builtin_when_no_custom(self):
+        # When
+        mocked_builtin_parser = Mock()
+        builtin_intent_result = IntentClassificationResult(
+            intent_name='mocked_builtin_intent', probability=0.9)
+        builtin_entities = []
+        mocked_builtin_parser.get_intent.return_value = builtin_intent_result
+        mocked_builtin_parser.get_entities.return_value = builtin_entities
+        engine = SnipsNLUEngine([], mocked_builtin_parser)
+
+        # When
+        text = "hello world"
+        parse = engine.parse(text)
+
+        # Then
+        self.assertEqual(parse,
+                         Result(text, builtin_intent_result, builtin_entities))
+
+    def test_should_parse_with_builtin_when_customs_return_nothing(self):
+        # Given
+        mocked_parser1 = Mock()
+        mocked_parser1.get_intent.return_value = None
+        mocked_parser1.get_entities.return_value = []
+
+        mocked_parser2 = Mock()
+        mocked_parser2.get_intent.return_value = IntentClassificationResult(
+            intent_name='mocked_custom_intent', probability=0.)
+        mocked_parser2.get_entities.return_value = []
+
+        mocked_builtin_parser = Mock()
+        builtin_intent_result = IntentClassificationResult(
+            intent_name='mocked_builtin_intent', probability=0.9)
+        builtin_entities = []
+        mocked_builtin_parser.get_intent.return_value = builtin_intent_result
+        mocked_builtin_parser.get_entities.return_value = builtin_entities
+
+        engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
+                                mocked_builtin_parser)
+
+        # When
+        text = "hello world"
+        parse = engine.parse(text)
+
+        # Then
+        self.assertEqual(parse, Result(text, builtin_intent_result,
+                                       builtin_entities))
+
+    def test_should_not_fail_when_no_custom_no_builtin(self):
+        # Given
+        engine = SnipsNLUEngine()
+
+        # When
+        text = "hello world"
+        parse = engine.parse(text)
+
+        # Then
+        self.assertEqual(parse, Result(text, None, None))

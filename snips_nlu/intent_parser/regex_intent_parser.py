@@ -2,7 +2,7 @@ import re
 
 from snips_nlu.result import Result, IntentClassificationResult, \
     ParsedEntity
-from ..intent_parser.intent_parser import IntentParser, CUSTOM_PARSER_TYPE
+from ..intent_parser.intent_parser import CustomIntentParser
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -88,11 +88,10 @@ def match_to_result(matches):
     return results
 
 
-class RegexIntentParser(IntentParser):
+class RegexIntentParser(CustomIntentParser):
     def __init__(self, intent_name, patterns=None,
                  group_names_to_slot_names=None, slot_names_to_entities=None):
-        super(RegexIntentParser, self).__init__(intent_name,
-                                                CUSTOM_PARSER_TYPE)
+        super(RegexIntentParser, self).__init__(intent_name)
         self.regexes = None
         if patterns is not None:
             self.regexes = [re.compile(r"%s" % p, re.IGNORECASE) for p in
@@ -129,7 +128,8 @@ class RegexIntentParser(IntentParser):
 
     def get_intent(self, text):
         if len(text) == 0:
-            return Result(text, parsed_intent=None, parsed_entities=None)
+            return IntentClassificationResult(intent_name=self.intent_name,
+                                              probability=0)
         entities = self.get_entities(text)
         entities_length = 0
         for entity in entities:

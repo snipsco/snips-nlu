@@ -15,23 +15,16 @@ class NLUEngine(object):
         raise NotImplementedError
 
 
-def _parse(text, parsers, threshold):
+def _parse(text, parsers):
     if len(parsers) == 0:
         return Result(text, parsed_intent=None, parsed_entities=None)
-
-    best_parser = None
-    best_intent = None
     for parser in parsers:
         res = parser.get_intent(text)
         if res is None:
             continue
-        if best_intent is None or res.probability > best_intent.probability:
-            best_intent = res
-            best_parser = parser
-    if best_intent is None or best_intent.probability <= threshold:
-        return Result(text, parsed_intent=None, parsed_entities=None)
-    entities = best_parser.get_entities(text, best_intent.intent_name)
-    return Result(text, parsed_intent=best_intent, parsed_entities=entities)
+        entities = parser.get_entities(text, res.intent_name)
+        return Result(text, parsed_intent=res, parsed_entities=entities)
+    return Result(text, parsed_intent=None, parsed_entities=None)
 
 
 class SnipsNLUEngine(NLUEngine):
@@ -44,13 +37,10 @@ class SnipsNLUEngine(NLUEngine):
         self.fitted = False
 
     def parse(self, text):
-        custom_parse = _parse(text, self.custom_parsers, threshold=0.)
-        if custom_parse.parsed_intent is not None:
-            return custom_parse
-        elif self.builtin_parser is not None:
-            return _parse(text, [self.builtin_parser], threshold=0.)
-        else:
-            return Result(text=text, parsed_intent=None, parsed_entities=None)
+        parsers = self.custom_parsers
+        if self.builtin_parser is not None:
+            parsers.append(self.builtin_parser)
+        return _parse(text, parsers)
 
     def fit(self, dataset):
         validate_dataset(dataset)

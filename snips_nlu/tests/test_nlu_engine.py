@@ -4,7 +4,7 @@ from mock import Mock
 
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.result import Result, ParsedEntity, IntentClassificationResult
+from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET
 
 
@@ -24,8 +24,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             intent_name='mocked_intent2', probability=0.7)
         intent_entities2_empty = []
         intent_entities2 = [
-            ParsedEntity(match_range=(3, 5), value='mocked_value',
-                         entity='mocked_entity', slot_name='mocked_slot_name')]
+            ParsedSlot(match_range=(3, 5), value='mocked_value',
+                       entity='mocked_entity', slot_name='mocked_slot_name')]
         mocked_parser2.get_intent.return_value = intent_result2
 
         def mock_get_entities(text, intent):

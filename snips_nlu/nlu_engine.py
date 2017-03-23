@@ -67,10 +67,6 @@ class SnipsNLUEngine(NLUEngine):
         return cPickle.dumps(self)
 
     @classmethod
-    def load_from_dict(cls, obj_dict):
-        return SnipsNLUEngine()
-
-    @classmethod
     def load_from_pickle_and_path(cls, pkl_str, builtin_path):
         engine = cPickle.loads(pkl_str)
         engine.builtin_parser = BuiltinIntentParser(builtin_path)

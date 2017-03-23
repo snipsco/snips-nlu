@@ -1,9 +1,9 @@
 import operator
 import re
 
+from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import IntentClassificationResult, \
     ParsedEntity
-from ..intent_parser.intent_parser import IntentParser
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"

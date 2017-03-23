@@ -1,6 +1,7 @@
 from snips_queries.intent_parser import IntentParser as _BuiltinIntentParser
-from ..result import IntentClassificationResult
-from ..intent_parser.intent_parser import IntentParser
+
+from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.result import IntentClassificationResult
 
 
 class BuiltinIntentParser(IntentParser):

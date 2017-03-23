@@ -1,6 +1,6 @@
 import os
 
-from ..dataset import validate_dataset
+from snips_nlu.dataset import validate_dataset
 
 TEST_PATH = os.path.dirname(os.path.abspath(__file__))
 

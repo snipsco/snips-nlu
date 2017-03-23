@@ -1,8 +1,8 @@
 import unittest
 
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.result import IntentClassificationResult, ParsedEntity
 from snips_nlu.tests.utils import SAMPLE_DATASET
-from ..result import IntentClassificationResult, ParsedEntity
 
 
 class TestRegexIntentParser(unittest.TestCase):

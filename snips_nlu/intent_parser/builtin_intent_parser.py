@@ -1,8 +1,10 @@
 from snips_queries.intent_parser import IntentParser as _BuiltinIntentParser
-from ..result import IntentClassificationResult
+
+from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.result import IntentClassificationResult
 
 
-class BuiltinIntentParser(object):
+class BuiltinIntentParser(IntentParser):
     def __init__(self, data_path):
         self.parser = _BuiltinIntentParser(data_path, intents=[])
 

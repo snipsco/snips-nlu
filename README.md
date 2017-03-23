@@ -36,6 +36,11 @@ from snips_nlu.nlu_engine import SnipsNLUEngine
 
 The NLU Engine can be initialized in various ways:
 
+- non fitted nlu engine:
+    ```python
+    engine = SnipsNLUEngine()
+    ```
+
 - from a cPickle serialized string and directory path (for the builtin intents part):
     ```python
     engine = SnipsNLUEngine.load_from_pickle_and_path(pkl_str, builtin_dir_path)
@@ -45,23 +50,6 @@ The NLU Engine can be initialized in various ways:
     ```python
     engine = SnipsNLUEngine.load_from_pickle_and_byte_array(pkl_str, builtin_byte_array)
     ```
-
-- from a python dictionary:
-    ```python
-    engine = SnipsNLUEngine.load_from_dict(obj_dict)
-    ```
-    Here is the format of the input dictionary:
-    ```python
-
-    engine_dict = {
-        "custom_intents": [
-            "switch_light",
-            "lock_door"
-        ],
-        "builtin_intents": None # not defined yet
-    }
-    ```
-    Note: in this case, the resulting object will not be fitted.
 
 ### Serialization
 The NLU Engine has an API that allows to persist the object as a cPickle string:

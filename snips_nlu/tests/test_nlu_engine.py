@@ -2,16 +2,19 @@ import unittest
 
 from mock import Mock
 
+from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from ..result import Result, ParsedEntity, IntentClassificationResult
+from snips_nlu.result import Result, ParsedEntity, IntentClassificationResult
+from utils import SAMPLE_DATASET
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
-    def test_should_parse_with_custom_parsers_first(self):
+    def test_should_use_parsers_sequentially(self):
         # Given
+        input_text = "hello world"
+
         mocked_parser1 = Mock()
-        intent_result1 = IntentClassificationResult(
-            intent_name='mocked_intent1', probability=0.5)
+        intent_result1 = None
         intent_entities1 = []
         mocked_parser1.get_intent.return_value = intent_result1
         mocked_parser1.get_entities.return_value = intent_entities1
@@ -19,11 +22,20 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_parser2 = Mock()
         intent_result2 = IntentClassificationResult(
             intent_name='mocked_intent2', probability=0.7)
+        intent_entities2_empty = []
         intent_entities2 = [
             ParsedEntity(match_range=(3, 5), value='mocked_value',
                          entity='mocked_entity', slot_name='mocked_slot_name')]
         mocked_parser2.get_intent.return_value = intent_result2
-        mocked_parser2.get_entities.return_value = intent_entities2
+
+        def mock_get_entities(text, intent):
+            assert text == input_text
+            if intent == intent_result2.intent_name:
+                return intent_entities2
+            else:
+                return intent_entities2_empty
+
+        mocked_parser2.get_entities = Mock(side_effect=mock_get_entities)
 
         mocked_builtin_parser = Mock()
         builtin_intent_result = IntentClassificationResult(
@@ -36,11 +48,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                 mocked_builtin_parser)
 
         # When
-        text = "hello world"
-        parse = engine.parse(text)
+        parse = engine.parse(input_text)
 
         # Then
-        self.assertEqual(parse, Result(text, intent_result2, intent_entities2))
+        self.assertEqual(parse,
+                         Result(input_text, intent_result2, intent_entities2))
 
     def test_should_parse_with_builtin_when_no_custom(self):
         # When
@@ -67,8 +79,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_parser1.get_entities.return_value = []
 
         mocked_parser2 = Mock()
-        mocked_parser2.get_intent.return_value = IntentClassificationResult(
-            intent_name='mocked_custom_intent', probability=0.)
+        mocked_parser2.get_intent.return_value = None
         mocked_parser2.get_entities.return_value = []
 
         mocked_builtin_parser = Mock()
@@ -89,7 +100,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertEqual(parse, Result(text, builtin_intent_result,
                                        builtin_entities))
 
-    def test_should_not_fail_when_no_custom_no_builtin(self):
+    def test_should_not_fail_when_no_parsers(self):
         # Given
         engine = SnipsNLUEngine()
 
@@ -99,3 +110,16 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse, Result(text, None, None))
+
+    def test_should_fit_from_dataset(self):
+        # Given
+        dataset = SAMPLE_DATASET
+        engine = SnipsNLUEngine()
+
+        # When
+        engine.fit(dataset)
+
+        # Then
+        expected_parser = RegexIntentParser().fit(dataset)
+        self.assertListEqual(engine.custom_parsers, [expected_parser])
+        self.assertIsNone(engine.builtin_parser)

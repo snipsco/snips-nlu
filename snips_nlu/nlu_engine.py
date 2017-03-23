@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from snips_nlu.dataset import validate_dataset
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
 from snips_nlu.result import Result
 
 
@@ -44,6 +45,9 @@ class SnipsNLUEngine(NLUEngine):
     def fit(self, dataset):
         validate_dataset(dataset)
         custom_parser = RegexIntentParser().fit(dataset)
+        intent_classifier = None
+        slot_fillers = {}
+        crf_parser = CRFIntentParser(intent_classifier, slot_fillers)
         self.custom_parsers = [custom_parser]
         return self
 

@@ -1,8 +1,9 @@
 import unittest
 
 from snips_nlu.intent_parser.crf_intent_parser import (
-    utterance_to_bilou_sample, utterance_to_bio_sample, tags_to_slots_with_bio,
-    tags_to_slots_with_bilou)
+    utterance_to_bilou_sample, utterance_to_bio_sample, tags_to_slots_with_bilou)
+from snips_nlu.slot_filler.crf_slot_filler import tags_to_slots_with_bio, \
+    tags_to_slots_with_bilou, labels_to_bilou_tags, utterance_to_bio_sample
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX)
 
@@ -77,7 +78,7 @@ class TestCRFIntentParser(unittest.TestCase):
         for query, expected_tags in queries:
             expected_tokens = " ".join(c["text"] for c in query).split()
             # When
-            sample = utterance_to_bilou_sample(query)
+            sample = labels_to_bilou_tags(query)
 
             # Then
             self.assertEqual(expected_tokens, sample["tokens"])

@@ -3,7 +3,7 @@ import re
 
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import IntentClassificationResult, \
-    ParsedEntity
+    ParsedSlot
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -152,10 +152,10 @@ class RegexIntentParser(IntentParser):
                 slot_name = self.group_names_to_slot_names[group_name]
                 entity = self.slot_names_to_entities[slot_name]
                 rng = (match.start(group_name), match.end(group_name))
-                parsed_entity = ParsedEntity(match_range=rng,
-                                             value=match.group(group_name),
-                                             entity=entity,
-                                             slot_name=slot_name)
+                parsed_entity = ParsedSlot(match_range=rng,
+                                           value=match.group(group_name),
+                                           entity=entity,
+                                           slot_name=slot_name)
                 entities.append(parsed_entity)
         return entities
 

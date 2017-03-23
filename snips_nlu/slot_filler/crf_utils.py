@@ -1,4 +1,6 @@
-from snips_nlu.result import ParsedEntity
+from enum import Enum
+
+from snips_nlu.result import ParsedSlot
 
 BEGINNING_PREFIX = 'B-'
 INSIDE_PREFIX = 'I-'
@@ -7,11 +9,27 @@ UNIT_PREFIX = 'U-'
 OUTSIDE = 'O'
 
 
+class Tagging(Enum):
+    NONE = 0
+    BIO = 1
+    BILOU = 2
+
+
 def is_other(label):
     return label == OUTSIDE or label is None
 
 
-def add_bilou_tags(labels):
+def labels_to_tags(labels, tagging):
+    if tagging == Tagging.NONE:
+        return [l if not is_other(l) else OUTSIDE for l in labels]
+    if tagging == Tagging.BILOU:
+        return labels_to_bilou_tags(labels)
+    if tagging == Tagging.BIO:
+        return labels_to_bio_tags(labels)
+    raise ValueError("Invalid value for tagging: %s" % tagging)
+
+
+def labels_to_bilou_tags(labels):
     bilou_labels = []
     if len(labels) == 1:
         if is_other(labels[0]):
@@ -45,6 +63,34 @@ def add_bilou_tags(labels):
     return bilou_labels
 
 
+def labels_to_bio_tags(labels):
+    bio_labels = []
+    if len(labels) == 1:
+        if is_other(labels[0]):
+            bio_labels.append(OUTSIDE)
+        else:
+            bio_labels.append(BEGINNING_PREFIX + labels[0])
+        return bio_labels
+
+    for i in range(len(labels)):
+        if is_other(labels[i]):
+            bio_labels.append(OUTSIDE)
+        elif i == 0:
+            bio_labels.append(BEGINNING_PREFIX + labels[i])
+        elif labels[i] != labels[i - 1]:
+            bio_labels.append(BEGINNING_PREFIX + labels[i])
+        else:
+            bio_labels.append(INSIDE_PREFIX + labels[i])
+
+    return bio_labels
+
+
+def tags_to_labels(labels, tagging):
+    if tagging is Tagging.NONE:
+        return labels
+    return [label[2:] if label != OUTSIDE else None for label in labels]
+
+
 def remove_bilou_tags(bilou_labels):
     return [label if label == OUTSIDE else label[2:] for label in bilou_labels]
 
@@ -73,6 +119,6 @@ def build_parsed_entities(text, tokens, labels, slot_name_to_entity_mapping):
         value = text[rng[0]:rng[1]]
         slot_name = slot['slot_name']
         entity_name = slot_name_to_entity_mapping[slot_name]
-        entity = ParsedEntity(rng, value, entity_name, slot_name)
+        entity = ParsedSlot(rng, value, entity_name, slot_name)
         parsed_entities.append(entity)
     return parsed_entities

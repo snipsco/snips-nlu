@@ -1,5 +1,7 @@
 import os
 
+from ..dataset import validate_dataset
+
 TEST_PATH = os.path.dirname(os.path.abspath(__file__))
 
 EMPTY_DATASET = {"intents": {}, "entities": {}}
@@ -127,3 +129,6 @@ SAMPLE_DATASET = {
         }
     }
 }
+
+validate_dataset(EMPTY_DATASET)
+validate_dataset(SAMPLE_DATASET)

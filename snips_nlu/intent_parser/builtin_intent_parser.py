@@ -6,7 +6,7 @@ from snips_nlu.result import IntentClassificationResult
 
 class BuiltinIntentParser(IntentParser):
     def __init__(self, data_path):
-        self.parser = _BuiltinIntentParser(data_path, intents=[])
+        self.parser = _BuiltinIntentParser(data_path)
 
     def get_intent(self, text, threshold=0.):
         result = self.parser.get_intent(text, threshold=threshold)
@@ -15,5 +15,7 @@ class BuiltinIntentParser(IntentParser):
         return IntentClassificationResult(intent_name=result[0]["name"],
                                           probability=result[0]["probability"])
 
-    def get_entities(self, text, intent):
+    def get_slots(self, text, intent=None):
+        if intent is None:
+            raise ValueError("intent can't be None")
         return self.parser.get_entities(text, intent)

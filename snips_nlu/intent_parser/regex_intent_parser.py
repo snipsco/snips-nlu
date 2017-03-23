@@ -1,8 +1,9 @@
+import operator
 import re
 
-from snips_nlu.result import Result, IntentClassificationResult, \
+from snips_nlu.result import IntentClassificationResult, \
     ParsedEntity
-from ..intent_parser.intent_parser import CustomIntentParser
+from ..intent_parser.intent_parser import IntentParser
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -28,14 +29,15 @@ def generate_new_index(slots_name_to_labels):
         return make_index(max_index)
 
 
-def get_slot_names_mapping(intent_queries):
+def get_slot_names_mapping(dataset):
     slot_names_to_entities = dict()
-    for query in intent_queries:
-        for chunk in query["data"]:
-            if "entity" in chunk:
-                slot_name = chunk["slot_name"]
-                entity = chunk["entity"]
-                slot_names_to_entities[slot_name] = entity
+    for intent in dataset["intents"].values():
+        for utterance in intent["utterances"]:
+            for chunk in utterance["data"]:
+                if "entity" in chunk:
+                    slot_name = chunk["slot_name"]
+                    entity = chunk["entity"]
+                    slot_names_to_entities[slot_name] = entity
     return slot_names_to_entities
 
 
@@ -56,18 +58,9 @@ def query_to_pattern(query, joined_entity_utterances,
     return pattern + r"$", group_names_to_slot_names
 
 
-def generate_regexes(intent_queries, entities):
+def generate_regexes(intent_queries, joined_entity_utterances,
+                     group_names_to_labels):
     # Join all the entities utterances with a "|" to create the patterns
-    group_names_to_labels = dict()
-    joined_entity_utterances = dict()
-    for entity_name, entity in entities.iteritems():
-        if entity["use_synonyms"]:
-            utterances = [syn for entry in entity["data"]
-                          for syn in entry["synonyms"]]
-        else:
-            utterances = [entry["value"] for entry in entity["data"]]
-        joined_entity_utterances[entity_name] = r"|".join(
-            sorted([re.escape(e) for e in utterances], key=len, reverse=True))
     patterns = set()
     for query in intent_queries:
         pattern, group_names_to_labels = query_to_pattern(
@@ -77,102 +70,101 @@ def generate_regexes(intent_queries, entities):
     return regexes, group_names_to_labels
 
 
-def match_to_result(matches):
-    results = []
-    for match_rng, match in matches:
-        parsed_ent = ParsedEntity(match_range=match_rng, value=match["value"],
-                                  entity=match["entity"],
-                                  slot_name=match["slot_name"])
-        results.append(parsed_ent)
-    results.sort(key=lambda res: res.match_range[0])
-    return results
+def get_joined_entity_utterances(dataset):
+    joined_entity_utterances = dict()
+    for entity_name, entity in dataset["entities"].iteritems():
+        if entity["use_synonyms"]:
+            utterances = [syn for entry in entity["data"]
+                          for syn in entry["synonyms"]]
+        else:
+            utterances = [entry["value"] for entry in entity["data"]]
+        joined_entity_utterances[entity_name] = r"|".join(
+            sorted([re.escape(e) for e in utterances], key=len, reverse=True))
+    return joined_entity_utterances
 
 
-class RegexIntentParser(CustomIntentParser):
-    def __init__(self, intent_name, patterns=None,
-                 group_names_to_slot_names=None, slot_names_to_entities=None):
-        super(RegexIntentParser, self).__init__(intent_name)
-        self.regexes = None
+class RegexIntentParser(IntentParser):
+    def __init__(self, patterns=None, group_names_to_slot_names=None,
+                 slot_names_to_entities=None):
+        self.regexes_per_intent = None
         if patterns is not None:
-            self.regexes = [re.compile(r"%s" % p, re.IGNORECASE) for p in
-                            patterns]
+            self.regexes_per_intent = dict()
+            for intent, patterns in patterns.iteritems():
+                regexes = [re.compile(r"%s" % p, re.IGNORECASE) for p in
+                           patterns]
+                self.regexes_per_intent[intent] = regexes
         self.group_names_to_slot_names = group_names_to_slot_names
         self.slot_names_to_entities = slot_names_to_entities
 
     @property
     def fitted(self):
-        return self.regexes is not None
+        return self.regexes_per_intent is not None
 
     def fit(self, dataset):
-        if self.intent_name not in dataset["intents"]:
-            return self
-
-        utterances = dataset["intents"][self.intent_name]["utterances"]
-        self.regexes, self.group_names_to_slot_names = generate_regexes(
-            utterances, dataset["entities"])
-        self.slot_names_to_entities = get_slot_names_mapping(utterances)
+        self.regexes_per_intent = dict()
+        self.group_names_to_slot_names = dict()
+        joined_entity_utterances = get_joined_entity_utterances(dataset)
+        self.slot_names_to_entities = get_slot_names_mapping(dataset)
+        for intent_name, intent in dataset["intents"].iteritems():
+            utterances = intent["utterances"]
+            regexes, self.group_names_to_slot_names = generate_regexes(
+                utterances, joined_entity_utterances,
+                self.group_names_to_slot_names)
+            self.regexes_per_intent[intent_name] = regexes
         return self
 
-    def parse(self, text):
-        if len(text) == 0:
-            return Result(text, parsed_intent=None, parsed_entities=None)
-        entities = self.get_entities(text)
-        entities_length = 0
-        for entity in entities:
-            entities_length += entity.match_range[1] - entity.match_range[0]
-        intent_score = entities_length / float(len(text))
-        intent_result = IntentClassificationResult(intent_name=self.intent_name,
-                                                   probability=intent_score)
-        return Result(text=text, parsed_intent=intent_result,
-                      parsed_entities=entities)
-
     def get_intent(self, text):
-        if len(text) == 0:
-            return IntentClassificationResult(intent_name=self.intent_name,
-                                              probability=0)
-        entities = self.get_entities(text)
-        entities_length = 0
-        for entity in entities:
-            entities_length += entity.match_range[1] - entity.match_range[0]
-        intent_score = entities_length / float(len(text))
-        return IntentClassificationResult(intent_name=self.intent_name,
-                                          probability=intent_score)
+        if not self.fitted:
+            raise AssertionError("RegexIntentParser must be fitted before "
+                                 "calling `get_entities`")
+        entities_per_intent = dict()
+        for intent in self.regexes_per_intent.keys():
+            entities_per_intent[intent] = self.get_entities(text, intent)
 
-    def get_entities(self, text, intent=None):
-        # Matches is a dict to ensure that we have only 1 match per range
-        matches = dict()
-        for regex in self.regexes:
+        intents_probas = dict()
+        total_nb_entities = sum(
+            len(entities) for entities in entities_per_intent.values())
+        # TODO: handle intents without slots
+        if total_nb_entities == 0:
+            return None
+        for intent_name, entities in entities_per_intent.iteritems():
+            intents_probas[intent_name] = float(len(entities)) / float(
+                total_nb_entities)
+
+        top_intent, top_proba = max(intents_probas.items(),
+                                    key=operator.itemgetter(1))
+        return IntentClassificationResult(intent_name=top_intent,
+                                          probability=top_proba)
+
+    def get_entities(self, text, intent):
+        if not self.fitted:
+            raise AssertionError("RegexIntentParser must be fitted before "
+                                 "calling `get_entities`")
+        if intent not in self.regexes_per_intent:
+            raise KeyError("Intent not found in RegexIntentParser: %s"
+                           % intent)
+        entities = []
+        for regex in self.regexes_per_intent[intent]:
             match = regex.match(text)
-            if match is not None:
-                for group_name in match.groupdict():
-                    slot_name = self.group_names_to_slot_names[
-                        group_name]
-                    entity = self.slot_names_to_entities[slot_name]
-                    rng = (match.start(group_name), match.end(group_name))
-                    matches[rng] = {
-                        "value": match.group(group_name),
-                        "entity": entity,
-                        "slot_name": slot_name
-                    }
-        return match_to_result(matches.items())
+            if match is None:
+                continue
+            for group_name in match.groupdict():
+                slot_name = self.group_names_to_slot_names[group_name]
+                entity = self.slot_names_to_entities[slot_name]
+                rng = (match.start(group_name), match.end(group_name))
+                parsed_entity = ParsedEntity(match_range=rng,
+                                             value=match.group(group_name),
+                                             entity=entity,
+                                             slot_name=slot_name)
+                entities.append(parsed_entity)
+        return entities
 
     def __eq__(self, other):
-        if self.intent_name != other.intent_name:
-            return False
-        if self.group_names_to_slot_names != other.group_names_to_slot_names:
-            return False
-        if self.slot_names_to_entities != other.slot_names_to_entities:
-            return False
-        if self.regexes is not None and other.regexes is not None:
-            self_patterns = [r.pattern for r in self.regexes]
-            self_flags = [r.flags for r in self.regexes]
-            other_patterns = [r.pattern for r in other.regexes]
-            other_flags = [r.flags for r in other.regexes]
-            if self_patterns != other_patterns or self_flags != other_flags:
-                return False
-        if self.regexes is None and other.regexes is not None:
-            return False
-        if self.regexes is not None and other.regexes is None:
-            return False
+        return isinstance(other, RegexIntentParser) and \
+               self.group_names_to_slot_names \
+               == other.group_names_to_slot_names and \
+               self.slot_names_to_entities == other.slot_names_to_entities and \
+               self.regexes_per_intent == other.regexes_per_intent
 
-        return True
+    def __ne__(self, other):
+        return not self.__eq__(other)

@@ -1,10 +1,7 @@
 from intent_parser import IntentParser
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_utils import tags_to_labels, OUTSIDE
-
-
-def tokenize(text):
-    return text.split()
+from snips_nlu.tokenization import tokenize
 
 
 def get_slot_name_to_entity(dataset):

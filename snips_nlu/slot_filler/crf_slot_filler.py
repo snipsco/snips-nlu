@@ -1,7 +1,7 @@
 from sklearn_crfsuite import CRF
 
 from feature_functions import TOKEN_NAME
-from snips_nlu.slot_filler.crf_utils import labels_to_tags, tags_to_labels
+from snips_nlu.slot_filler.crf_utils import labels_to_tags
 from snips_nlu.utils import UnupdatableDict
 
 
@@ -30,7 +30,7 @@ class CRFTagger(object):
         return self
 
     def compute_features(self, tokens):
-        cache = [{TOKEN_NAME: token} for token in tokens]
+        cache = [{TOKEN_NAME: token.value} for token in tokens]
         features = []
         for i in range(len(tokens)):
             token_features = UnupdatableDict()

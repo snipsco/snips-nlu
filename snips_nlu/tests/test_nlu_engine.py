@@ -4,6 +4,8 @@ from mock import Mock
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from ..result import Result, ParsedEntity, IntentClassificationResult
+from utils import SAMPLE_DATASET
+from ..intent_parser.regex_intent_parser import RegexIntentParser
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
@@ -108,3 +110,16 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse, Result(text, None, None))
+
+    def test_should_fit_from_dataset(self):
+        # Given
+        dataset = SAMPLE_DATASET
+        engine = SnipsNLUEngine()
+
+        # When
+        engine.fit(dataset)
+
+        # Then
+        expected_parser = RegexIntentParser().fit(dataset)
+        self.assertListEqual(engine.custom_parsers, [expected_parser])
+        self.assertIsNone(engine.builtin_parser)

@@ -4,7 +4,7 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.slot_filler.crf_feature import CRFFeature
 from snips_nlu.slot_filler.crf_utils import add_bilou_tags, remove_bilou_tags
-from ..tokenizer import Tokenizer
+from snips_nlu.tokenizer import Tokenizer
 
 
 class CRFSlotFiller:

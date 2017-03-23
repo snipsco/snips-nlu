@@ -34,7 +34,6 @@ class SnipsNLUEngine(NLUEngine):
             custom_parsers = []
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
-        self.fitted = False
 
     def parse(self, text):
         parsers = self.custom_parsers
@@ -44,12 +43,8 @@ class SnipsNLUEngine(NLUEngine):
 
     def fit(self, dataset):
         validate_dataset(dataset)
-        updated_parsers = []
-        for intent_name in dataset["intents"].keys():
-            parser = RegexIntentParser(intent_name).fit(dataset)
-            updated_parsers.append(parser)
-        self.custom_parsers = updated_parsers
-        self.fitted = True
+        custom_parser = RegexIntentParser().fit(dataset)
+        self.custom_parsers = [custom_parser]
         return self
 
     def save_to_pickle_string(self):

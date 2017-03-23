@@ -1,4 +1,4 @@
-from intent_parser import CustomIntentParser
+from intent_parser import IntentParser
 from snips_nlu.result import ParsedEntity
 from snips_nlu.slot_filler.crf_slot_filler import (CRFSlotFiller,
                                                    default_crf_model)
@@ -60,7 +60,7 @@ def tags_to_slots_with_bilou(tokens, tags):
                           "slot_name": tag_name_to_slot_name(tag)})
         if tag.startswith(BEGINNING_PREFIX):
             current_slot_start = i
-        if tag.startswith(LAST_PREFIX) :
+        if tag.startswith(LAST_PREFIX):
             slots.append({"range": (current_slot_start, i + 1),
                           "value": " ".join(tokens[current_slot_start: i + 1]),
                           "slot_name": tag_name_to_slot_name(tag)})
@@ -121,7 +121,7 @@ def utterance_to_sample(query, use_bilou):
         else utterance_to_bio_sample(query)
 
 
-class CRFIntentParser(CustomIntentParser):
+class CRFIntentParser(IntentParser):
     def __init__(self, intent_classifier=None, crf_slot_fillers=None,
                  use_bilou=True):
         super(CRFIntentParser, self).__init__()

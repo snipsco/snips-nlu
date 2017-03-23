@@ -1,4 +1,5 @@
 import re
+from collections import namedtuple
 
 from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
@@ -9,8 +10,36 @@ LOWER_REGEX = re.compile(r"^[^A-Z]+$")
 UPPER_REGEX = re.compile(r"^[^a-z]+$")
 TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 
+BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
-# TODO: check that all features from the location entity tagger are here
+
+def default_features(use_bilou):
+    features = []
+    # n-grams
+    features.append((get_ngram_fn(1, common_words=None), -2))
+    features.append((get_ngram_fn(1, common_words=None), -1))
+    features.append((get_ngram_fn(1, common_words=None), +0))
+    features.append((get_ngram_fn(1, common_words=None), +1))
+    features.append((get_ngram_fn(1, common_words=None), +2))
+
+    features.append((get_ngram_fn(2, common_words=None), -2))
+    features.append((get_ngram_fn(2, common_words=None), +1))
+
+    # Shape
+    features.append((get_ngram_fn(1, common_words=None), 0))
+
+    features.append((get_ngram_fn(2, common_words=None), -1))
+    features.append((get_ngram_fn(2, common_words=None), 0))
+
+    features.append((get_ngram_fn(3, common_words=None), -1))
+
+    # Digit
+    features.append((is_digit, -1))
+    features.append((is_digit, 0))
+    features.append((is_digit, +1))
+
+    return [create_feature_function(f, offset) for name, f, offset in features]
+
 
 # Helpers for base feature functions and factories
 
@@ -61,24 +90,27 @@ def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
 
 
 # Base feature functions and factories
+is_digit = BaseFeatureFunction(
+    "is_digit",
+    lambda tokens, token_index: str(int(tokens[token_index].is_digit()))
+)
 
-def is_digit(tokens, token_index):
-    return str(int(tokens[token_index].is_digit()))
+is_first = BaseFeatureFunction(
+    "is_first",
+    lambda tokens, token_index: str(int(token_index == 0))
+)
 
-
-def is_first(tokens, token_index):
-    return str(int(token_index == 0))
-
-
-def is_last(tokens, token_index):
-    return str(int(token_index == len(tokens) - 1))
+is_last = BaseFeatureFunction(
+    "is_last",
+    lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
+)
 
 
 def get_prefix_fn(prefix_size):
     def prefix(tokens, token_index):
         return get_word_chunk(tokens[token_index].lower(), prefix_size, 0)
 
-    return prefix
+    return BaseFeatureFunction("prefix-%s" % prefix_size, prefix)
 
 
 def get_suffix_fn(suffix_size):
@@ -86,7 +118,7 @@ def get_suffix_fn(suffix_size):
         return get_word_chunk(tokens[token_index].lower(), suffix_size,
                               len(tokens[token_index]), reverse=True)
 
-    return suffix
+    return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
 
 def get_ngram_fn(n, common_words=None):
@@ -108,7 +140,7 @@ def get_ngram_fn(n, common_words=None):
                 return " ".join(words)
         return None
 
-    return ngram
+    return BaseFeatureFunction("ngram_%s" % n, ngram)
 
 
 def get_shape_ngram_fn(n):
@@ -122,7 +154,7 @@ def get_shape_ngram_fn(n):
             return " ".join(get_shape(t) for t in tokens[token_index:end])
         return None
 
-    return shape_ngram
+    return BaseFeatureFunction("shape_ngram_%s" % n, shape_ngram)
 
 
 def get_word_cluster_fn(cluster_name):
@@ -130,7 +162,16 @@ def get_word_cluster_fn(cluster_name):
         return get_word_clusters()[cluster_name].get(
             tokens[token_index].lower(), None)
 
-    return word_cluster
+    return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
+
+
+def get_token_is_in(collection, collection_name):
+    lowered_collection = set([c.lower() for c in collection])
+
+    def token_is_in(tokens, token_index):
+        return str(int(tokens[token_index].lower() in lowered_collection))
+
+    return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
 def get_regex_match_fn(regex, match_name, use_bilou=False):
@@ -173,29 +214,35 @@ def get_regex_match_fn(regex, match_name, use_bilou=False):
 
         return feature
 
-    return regex_match
+    return BaseFeatureFunction("match_%s" % match_name, regex_match)
 
 
-def create_feature_function(base_feature_name, base_feature_fn, offset):
+def create_feature_function(base_feature_fn, offset):
     """
     Transforms a base feature function into a feature function 
     """
-    if base_feature_name == TOKEN_NAME:
+    if base_feature_fn.name == TOKEN_NAME:
         raise ValueError("'%s' name is reserved" % TOKEN_NAME)
-    sign = "+" if offset > 0 else ""
-    feature_name = base_feature_name + "[%s%s]" % (sign, offset)
+    if offset > 0:
+        index = "[+%s]" % offset
+    elif offset < 0:
+        index = "[%s]" % offset
+    else:
+        index = ""
+
+    feature_name = base_feature_fn.name + index
 
     def feature_fn(token_index, cache):
         if not 0 <= (token_index + offset) < len(cache):
             return
 
-        if base_feature_name in cache[token_index + offset]:
-            return cache[token_index + offset].get(base_feature_name, None)
+        if base_feature_fn.name in cache[token_index + offset]:
+            return cache[token_index + offset].get(base_feature_fn.name, None)
         else:
             tokens = [c["token"] for c in cache]
-            value = base_feature_fn(tokens, token_index + offset)
+            value = base_feature_fn.function(tokens, token_index + offset)
             if value is not None:
-                cache[token_index + offset][base_feature_name] = value
+                cache[token_index + offset][base_feature_fn.name] = value
             return value
 
     return feature_name, feature_fn

@@ -3,7 +3,8 @@ import unittest
 
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_regex_match_fn, get_prefix_fn,
-    get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME)
+    get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME,
+    BaseFeatureFunction, get_token_is_in)
 
 
 class TestFeatureFunctions(unittest.TestCase):
@@ -19,7 +20,8 @@ class TestFeatureFunctions(unittest.TestCase):
         for n, expected_features in ngrams.iteritems():
             ngrams_fn = get_ngram_fn(n)
             # When
-            features = [ngrams_fn(tokens, i) for i in xrange(len(tokens))]
+            features = [ngrams_fn.function(tokens, i)
+                        for i in xrange(len(tokens))]
             # Then
             self.assertEqual(expected_features, features)
 
@@ -36,7 +38,8 @@ class TestFeatureFunctions(unittest.TestCase):
         for n, expected_features in ngrams.iteritems():
             ngrams_fn = get_ngram_fn(n, common_words)
             # When
-            features = [ngrams_fn(tokens, i) for i in xrange(len(tokens))]
+            features = [ngrams_fn.function(tokens, i)
+                        for i in xrange(len(tokens))]
             # Then
             self.assertEqual(expected_features, features)
 
@@ -52,7 +55,7 @@ class TestFeatureFunctions(unittest.TestCase):
         for i in xrange(1, len(token) + 2):
             prefix_fn = get_prefix_fn(i)
             # When
-            prefix = prefix_fn(tokens, 0)
+            prefix = prefix_fn.function(tokens, 0)
             # Then
             self.assertEqual(prefix, expected_prefixes[i - 1])
 
@@ -63,9 +66,9 @@ class TestFeatureFunctions(unittest.TestCase):
         expected_suffixes = ["e", "de", "cde", "bcde", "abcde", None]
 
         for i in xrange(1, len(token) + 2):
-            suffix = get_suffix_fn(i)
+            suffix_fn = get_suffix_fn(i)
             # When
-            prefix = suffix(tokens, 0)
+            prefix = suffix_fn.function(tokens, 0)
             # Then
             self.assertEqual(prefix, expected_suffixes[i - 1])
 
@@ -89,7 +92,8 @@ class TestFeatureFunctions(unittest.TestCase):
         for text, features in texts.iteritems():
             tokens = text.split()
             self.assertEqual(
-                features, [feature_fn(tokens, i) for i in xrange(len(tokens))])
+                features, [feature_fn.function(tokens, i)
+                           for i in xrange(len(tokens))])
 
     def test_gazetteer_with_bilou(self):
         # Given
@@ -110,8 +114,22 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         for text, features in texts.iteritems():
             tokens = text.split()
-            self.assertEqual(
-                features, [feature_fn(tokens, i) for i in xrange(len(tokens))])
+            self.assertEqual(features,
+                             [feature_fn.function(tokens, i)
+                              for i in xrange(len(tokens))])
+
+    def test_token_is_in(self):
+        # Given
+        collection = {"bIrd"}
+        tokens = ["i", "m", "a", "bird"]
+        expected_features = ["0", "0", "0", "1"]
+        # When
+        feature_fn = get_token_is_in(collection, "animal")
+
+        # Then
+        self.assertEqual(expected_features,
+                         [feature_fn.function(tokens, i)
+                          for i in xrange(len(tokens))])
 
     def test_char_range_to_token_range(self):
         # Given
@@ -133,10 +151,12 @@ class TestFeatureFunctions(unittest.TestCase):
     def test_create_feature_function(self):
         # Given
         name = "position"
-        base_feature_function = lambda tokens, token_index: token_index + 1
+        base_feature_function = BaseFeatureFunction(
+            name, lambda tokens, token_index: token_index + 1)
+
         tokens = ["a", "b", "c"]
         expected_features = {
-            0: ("position[0]", [1, 2, 3]),
+            0: ("position", [1, 2, 3]),
             -1: ("position[-1]", [None, 1, 2]),
             1: ("position[+1]", [2, 3, None]),
             2: ("position[+2]", [3, None, None])
@@ -144,7 +164,7 @@ class TestFeatureFunctions(unittest.TestCase):
         cache = [{TOKEN_NAME: t for t in tokens} for _ in xrange(len(tokens))]
         for offset, expected in expected_features.iteritems():
             feature_name, feature_function = create_feature_function(
-                name, base_feature_function, offset)
+                base_feature_function, offset)
             expected_name, expected_feats = expected
             # When
             feats = [feature_function(i, cache) for i in xrange(len(tokens))]

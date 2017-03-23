@@ -1,7 +1,13 @@
-from snips_nlu.slot_filler.crf_utils import add_bilou_tags, remove_bilou_tags, \
-    OUTSIDE
+from sklearn_crfsuite import CRF
+
 from feature_functions import TOKEN_NAME
+from snips_nlu.slot_filler.crf_utils import (add_bilou_tags, remove_bilou_tags,
+                                             OUTSIDE)
 from snips_nlu.utils import UnupdatableDict
+
+
+def default_crf_model():
+    return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False)
 
 
 class CRFSlotFiller(object):

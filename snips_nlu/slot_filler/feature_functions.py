@@ -13,7 +13,7 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features(use_bilou):
+def default_features():
     features = []
     # n-grams
     features.append((get_ngram_fn(1, common_words=None), -2))

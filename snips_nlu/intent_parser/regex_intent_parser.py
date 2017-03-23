@@ -119,7 +119,7 @@ class RegexIntentParser(IntentParser):
                                  "calling `get_entities`")
         entities_per_intent = dict()
         for intent in self.regexes_per_intent.keys():
-            entities_per_intent[intent] = self.get_entities(text, intent)
+            entities_per_intent[intent] = self.get_slots(text, intent)
 
         intents_probas = dict()
         total_nb_entities = sum(
@@ -136,7 +136,7 @@ class RegexIntentParser(IntentParser):
         return IntentClassificationResult(intent_name=top_intent,
                                           probability=top_proba)
 
-    def get_entities(self, text, intent):
+    def get_slots(self, text, intent=None):
         if not self.fitted:
             raise AssertionError("RegexIntentParser must be fitted before "
                                  "calling `get_entities`")

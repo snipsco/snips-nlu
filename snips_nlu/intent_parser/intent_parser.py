@@ -9,5 +9,5 @@ class IntentParser(object):
         raise NotImplementedError
 
     @abstractmethod
-    def get_entities(self, text, intent):
+    def get_slots(self, text, intent=None):
         raise NotImplementedError

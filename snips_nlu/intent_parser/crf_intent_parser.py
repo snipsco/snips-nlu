@@ -134,7 +134,7 @@ class CRFIntentParser(IntentParser):
         check_fitted(self)
         return self.intent_classifier.get_intent(text)
 
-    def get_entities(self, text, intent=None):
+    def get_slots(self, text, intent=None):
         if intent is None:
             raise ValueError("intent can't be None")
         check_fitted(self)
@@ -157,7 +157,7 @@ class CRFIntentParser(IntentParser):
 
     def fit(self, dataset, crf_model=default_crf_model(), features=None):
         if features is None:
-            features = default_features(self.use_bilou)
+            features = default_features()
         self.slot_name_to_entity = get_slot_name_to_entity(dataset)
         self.intent_classifier.fit(dataset)
 

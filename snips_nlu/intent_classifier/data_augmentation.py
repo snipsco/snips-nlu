@@ -7,15 +7,15 @@ def augment_dataset(dataset, language='en'):
 	intent_list = dataset.queries.keys()
 	intent_code = dict((intent, i+1) for i,intent in enumerate(intent_list))
 
-    # get size of smaller intent (for noise amount and regularization)
+	# get size of smaller intent (for noise amount and regularization)
 	queries_per_intent = [ len(dataset.queries[intent]) for intent in dataset.queries ]
 	mean_queries_per_intent = np.mean(queries_per_intent)
 	alpha = 1.0/(4*(sum(queries_per_intent)+5*mean_queries_per_intent)
-    
+
 	data_noise_train = get_subtitles("en")
 	queries_noise = np.random.choice(data_noise_train, size=5*mean_queries_per_intent, replace=False)
 
-    queries = []
+	queries = []
 	y = []
 	data = {                                                
 	'text': [],   
@@ -30,5 +30,5 @@ def augment_dataset(dataset, language='en'):
 
 	queries = np.array(queries)
 	y = np.array(y)
-    
+	
 	return (queries, y), alpha, intent_list

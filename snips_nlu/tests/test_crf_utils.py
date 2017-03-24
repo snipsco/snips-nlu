@@ -14,6 +14,11 @@ class TestCRFUtils(unittest.TestCase):
         slot_name = "animal"
         tags = [
             {
+                "text": "",
+                "tags": [],
+                "expected_slots": []
+            },
+            {
                 "text": "nothing here",
                 "tags": [OUTSIDE, OUTSIDE],
                 "expected_slots": []
@@ -100,6 +105,11 @@ class TestCRFUtils(unittest.TestCase):
         # Given
         slot_name = "animal"
         tags = [
+            {
+                "text": "",
+                "tags": [],
+                "expected_slots": []
+            },
             {
                 "text": "nothing here",
                 "tags": [OUTSIDE, OUTSIDE],
@@ -195,6 +205,11 @@ class TestCRFUtils(unittest.TestCase):
         # Given
         slot_name = "animal"
         tags = [
+            {
+                "text": "",
+                "tags": [],
+                "expected_slots": []
+            },
             {
                 "text": "nothing here",
                 "tags": [OUTSIDE, OUTSIDE],

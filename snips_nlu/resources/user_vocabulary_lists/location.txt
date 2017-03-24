@@ -1,3 +1,0 @@
-name=location 
-type=free_text 
-next_to_st._petersburg;next to st. petersburg 

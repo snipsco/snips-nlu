@@ -1,5 +1,0 @@
-name=recommend 
-type=free_text 
-some_new;some new 
-gimme_new_stuff;gimme new stuff 
-recommend_me_some_cool_stuff;recommend me some cool stuff 

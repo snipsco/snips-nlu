@@ -28,21 +28,21 @@ class TestSnipsNLUEngine(unittest.TestCase):
                        entity='mocked_entity', slot_name='mocked_slot_name')]
         mocked_parser2.get_intent.return_value = intent_result2
 
-        def mock_get_entities(text, intent):
+        def mock_get_slots(text, intent):
             assert text == input_text
             if intent == intent_result2.intent_name:
                 return intent_entities2
             else:
                 return intent_entities2_empty
 
-        mocked_parser2.get_entities = Mock(side_effect=mock_get_entities)
+        mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
 
         mocked_builtin_parser = Mock()
         builtin_intent_result = IntentClassificationResult(
             intent_name='mocked_builtin_intent', probability=0.9)
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
-        mocked_builtin_parser.get_entities.return_value = builtin_entities
+        mocked_builtin_parser.get_slots.return_value = builtin_entities
 
         engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
                                 mocked_builtin_parser)
@@ -61,7 +61,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             intent_name='mocked_builtin_intent', probability=0.9)
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
-        mocked_builtin_parser.get_entities.return_value = builtin_entities
+        mocked_builtin_parser.get_slots.return_value = builtin_entities
         engine = SnipsNLUEngine([], mocked_builtin_parser)
 
         # When
@@ -76,18 +76,18 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         mocked_parser1 = Mock()
         mocked_parser1.get_intent.return_value = None
-        mocked_parser1.get_entities.return_value = []
+        mocked_parser1.get_slots.return_value = []
 
         mocked_parser2 = Mock()
         mocked_parser2.get_intent.return_value = None
-        mocked_parser2.get_entities.return_value = []
+        mocked_parser2.get_slots.return_value = []
 
         mocked_builtin_parser = Mock()
         builtin_intent_result = IntentClassificationResult(
             intent_name='mocked_builtin_intent', probability=0.9)
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
-        mocked_builtin_parser.get_entities.return_value = builtin_entities
+        mocked_builtin_parser.get_slots.return_value = builtin_entities
 
         engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
                                 mocked_builtin_parser)

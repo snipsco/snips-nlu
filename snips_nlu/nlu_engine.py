@@ -60,7 +60,13 @@ class SnipsNLUEngine(NLUEngine):
         """
         validate_dataset(dataset)
         custom_parser = RegexIntentParser().fit(dataset)
-        self.custom_parsers = [custom_parser]
+        intent_classifier = SnipsIntentClassifier().fit(dataset)
+        taggers = {}
+        for intent in dataset["intents"].keys():
+            taggers[intent] = CRFTagger(default_crf_model(), default_features(),
+                                        Tagging.BILOU)
+        crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
+        self.custom_parsers = [custom_parser, crf_parser]
         return self
 
     def save_to_pickle_string(self):

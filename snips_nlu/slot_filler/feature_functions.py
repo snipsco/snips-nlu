@@ -88,11 +88,10 @@ def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
     end = chunk_start if reverse else chunk_start + chunk_size
     return word[start:end]
 
-
 # Base feature functions and factories
 is_digit = BaseFeatureFunction(
     "is_digit",
-    lambda tokens, token_index: str(int(tokens[token_index].is_digit()))
+    lambda tokens, token_index: str(int(tokens[token_index].isdigit()))
 )
 
 is_first = BaseFeatureFunction(

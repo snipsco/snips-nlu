@@ -29,7 +29,7 @@ class TestRegexIntentParser(unittest.TestCase):
         text = "this is a dummy_a query with another dummy_c"
 
         # When
-        entities = parser.get_tags(text, intent="dummy_intent_1")
+        entities = parser.get_slots(text, intent="dummy_intent_1")
 
         # Then
         expected_entities = [

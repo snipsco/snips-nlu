@@ -1,7 +1,6 @@
 from sklearn_crfsuite import CRF
 
 from feature_functions import TOKEN_NAME
-from snips_nlu.slot_filler.crf_utils import labels_to_tags
 from snips_nlu.utils import UnupdatableDict
 
 
@@ -24,7 +23,7 @@ class CRFTagger(object):
 
     def fit(self, data):
         X = [self.compute_features(sample['tokens']) for sample in data]
-        Y = [labels_to_tags(sample['labels'], self.tagging) for sample in data]
+        Y = [sample['tags'] for sample in data]
         self.crf_model.fit(X, Y)
         self.fitted = True
         return self

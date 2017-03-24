@@ -17,16 +17,12 @@ def augment_dataset(dataset, language='en'):
 
 	queries = []
 	y = []
-	data = {                                                
-	'text': [],   
-	'intent_val': []
-	}
 	for intent in intent_list:
 		queries += [ ''.join( [ dataset['intents'][intent]['utterances'][i]['data'][j]['text'] for j in range(len(dataset['intents'][intent]['utterances'][i]['data'])) ] ) for i in range(len(dataset['intents'][intent]['utterances'])) ]
 		y +=  [ intent_code[intent] for _ in xrange(len(dataset['intents'][intent]['utterances'])) ]
 
-	queries += queries_noise
-	y += [ 0 for _ in len(queries_noise) ]
+	queries += [ query for query in queries_noise]
+	y += [ 0 for _ in xrange(len(queries_noise)) ]
 
 	queries = np.array(queries)
 	y = np.array(y)

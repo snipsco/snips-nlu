@@ -47,7 +47,7 @@ class Featurizer(object):
         X_train_counts = self.count_vect.transform(queries)
         X_train_tfidf = self.tfidf_transformer.transform(X_train_counts)
         X = X_train_tfidf[:, self.best_feat]
-        return self.best_feat, X
+        return X
 
 
     def fit_transform(self, queries, y):

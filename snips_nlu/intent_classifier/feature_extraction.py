@@ -26,7 +26,7 @@ class Featurizer(object):
         # select best features with p value under threshold
         chi2val, pval = chi2(X_train_tfidf, y)
         self.best_feat = [i for i,v in enumerate(pval) if v < 0.4]
-        if len(best_feat) == 0: # if no feature is selected, select min pvalue
+        if len(self.best_feat) == 0: # if no feature is selected, select min pvalue
             self.best_feat = [idx for idx, val in enumerate(pval) if val == pval.min()] 
 
         feature_names = {}
@@ -47,7 +47,7 @@ class Featurizer(object):
         X_train_counts = self.count_vect.transform(queries)
         X_train_tfidf = self.tfidf_transformer.transform(X_train_counts)
         X = X_train_tfidf[:, self.best_feat]
-        return best_feat, X
+        return self.best_feat, X
 
 
     def fit_transform(self, queries, y):

@@ -30,7 +30,7 @@ class SnipsIntentClassifier(IntentClassifier):
 
         X = self.featurizer.fit_transform(queries, y)
         
-        clf = SGDClassifier(loss='hinge', penalty='l2', alpha=alpha, class_weight = 'balanced', n_iter=5, random_state=42, n_jobs=-1)
+        clf = SGDClassifier(loss='log', penalty='l2', alpha=alpha, class_weight = 'balanced', n_iter=5, random_state=42, n_jobs=-1)
         self.clf = clf.fit(X, y)
 
         return self

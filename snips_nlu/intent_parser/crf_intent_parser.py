@@ -49,7 +49,7 @@ class CRFIntentParser(IntentParser):
     @property
     def fitted(self):
         return self.intent_classifier.fitted and all(
-            slot_filler.fitted for slot_filler in self.crf_taggers)
+            slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
     def fit(self, dataset):
         self.slot_name_to_entity = get_slot_name_to_entity(dataset)

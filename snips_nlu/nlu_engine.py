@@ -18,14 +18,14 @@ class NLUEngine(object):
 
 def _parse(text, parsers):
     if len(parsers) == 0:
-        return Result(text, parsed_intent=None, parsed_entities=None)
+        return Result(text, parsed_intent=None, parsed_slots=None)
     for parser in parsers:
         res = parser.get_intent(text)
         if res is None:
             continue
-        entities = parser.get_entities(text, res.intent_name)
-        return Result(text, parsed_intent=res, parsed_entities=entities)
-    return Result(text, parsed_intent=None, parsed_entities=None)
+        slots = parser.get_slots(text, res.intent_name)
+        return Result(text, parsed_intent=res, parsed_slots=slots)
+    return Result(text, parsed_intent=None, parsed_slots=None)
 
 
 class SnipsNLUEngine(NLUEngine):

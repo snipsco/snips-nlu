@@ -1,10 +1,8 @@
 from intent_parser import IntentParser
 from snips_nlu.result import ParsedSlot
-from snips_nlu.slot_filler.crf_utils import tags_to_labels, OUTSIDE
-
-
-def tokenize(text):
-    return text.split()
+from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
+                                             utterance_to_sample)
+from snips_nlu.tokenization import tokenize
 
 
 def get_slot_name_to_entity(dataset):
@@ -42,38 +40,11 @@ class CRFIntentParser(IntentParser):
         tagger = self.crf_taggers[intent]
 
         tags = tagger.get_tags(tokens)
-        labels = tags_to_labels(tags, tagging=tagger.tagging)
-
-        slots = []
-        current_slot_start_index = 0
-        for i in xrange(len(labels)):
-            slot_name = labels[i]
-            if slot_name != labels[current_slot_start_index]:
-                if slot_name != OUTSIDE:
-                    rng = (
-                        tokens[current_slot_start_index].start,
-                        tokens[i - 1].end)
-                    slot = ParsedSlot(
-                        match_range=rng,
-                        value=text[rng[0]: rng[1]],
-                        entity=self.slot_name_to_entity[slot_name],
-                        slot_name=slot_name
-                    )
-                    slots.append(slot)
-                current_slot_start_index = i
-
-        if current_slot_start_index < len(labels) - 1 \
-                and labels[current_slot_start_index] != OUTSIDE:
-            rng = (tokens[current_slot_start_index].start, tokens[-1].end)
-            slot = ParsedSlot(
-                match_range=rng,
-                value=text[rng[0]: rng[1]],
-                entity=self.slot_name_to_entity[labels[-1]],
-                slot_name=labels[-1]
-            )
-            slots.append(slot)
-
-        return slots
+        slots = tags_to_slots(tokens, tags, tagging=tagger.tagging)
+        return [ParsedSlot(match_range=s["range"],
+                           value=text[s["range"][0]:s["range"][1]],
+                           entity=self.slot_name_to_entity[s["slot_name"]],
+                           slot_name=s["slot_name"]) for s in slots]
 
     @property
     def fitted(self):
@@ -86,21 +57,11 @@ class CRFIntentParser(IntentParser):
 
         for intent_name in dataset["intents"]:
             intent_utterances = dataset["intents"][intent_name]["utterances"]
-            crf_samples = [utterance_to_sample(u["data"]) for u in
-                           intent_utterances]
-            self.crf_taggers[intent_name] = self.crf_taggers[
-                intent_name].fit(crf_samples)
+            tagging = self.crf_taggers[intent_name].tagging
+            crf_samples = [utterance_to_sample(u["data"], tagging)
+                           for u in intent_utterances]
+            self.crf_taggers[intent_name] = self.crf_taggers[intent_name].fit(
+                crf_samples)
         return self
 
 
-def utterance_to_sample(query):
-    tokens, labels = [], []
-    for i, chunk in enumerate(query):
-        chunk_tokens = tokenize(chunk["text"])
-        tokens += chunk_tokens
-        if "slot_name" not in chunk:
-            labels += [None for _ in xrange(len(chunk_tokens))]
-        else:
-            slot_name = chunk["slot_name"]
-            labels += [slot_name for _ in xrange(len(chunk_tokens))]
-    return {"tokens": tokens, "labels": labels}

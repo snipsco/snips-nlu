@@ -80,7 +80,8 @@ class SnipsNLUEngine(NLUEngine):
         :return: a SnipsNLUEngine already fitted
         """
         engine = cPickle.loads(pkl_str)
-        engine.builtin_parser = BuiltinIntentParser(builtin_path)
+        if builtin_path is not None:
+            engine.builtin_parser = BuiltinIntentParser(builtin_path)
         return engine
 
     @classmethod

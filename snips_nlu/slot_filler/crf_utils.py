@@ -1,5 +1,7 @@
 from enum import Enum
 
+from snips_nlu.tokenization import tokenize, Token
+
 BEGINNING_PREFIX = 'B-'
 INSIDE_PREFIX = 'I-'
 LAST_PREFIX = 'L-'
@@ -117,3 +119,20 @@ def positive_tagging(tagging, slot_name, slot_size):
 
 def negative_tagging(size):
     return [OUTSIDE for _ in xrange(size)]
+
+
+def utterance_to_sample(query_data, tagging):
+    tokens, tags = [], []
+    current_length = 0
+    # tokens = tokenize("".join(q["text"] for q in query_data))
+    for i, chunk in enumerate(query_data):
+        chunk_tokens = tokenize(chunk["text"])
+        tokens += [Token(t.value, current_length + t.start,
+                         current_length + t.end) for t in chunk_tokens]
+        current_length += len(chunk["text"])
+        if "slot_name" not in chunk:
+            tags += negative_tagging(len(chunk_tokens))
+        else:
+            tags += positive_tagging(tagging, chunk["slot_name"],
+                                     len(chunk_tokens))
+    return {"tokens": tokens, "tags": tags}

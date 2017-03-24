@@ -4,6 +4,7 @@ import json
 
 from intent_classifier import IntentClassifier
 from feature_extraction import Featurizer
+from data_augmentation  import augment_dataset
 from snips_nlu.result import IntentClassificationResult
 
 from sklearn.linear_model import SGDClassifier

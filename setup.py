@@ -1,4 +1,6 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+
+packages = find_packages()
 
 setup(name="snips_nlu",
       version="0.0.1",
@@ -15,9 +17,7 @@ setup(name="snips_nlu",
           "sklearn-crfsuite",
           "snips-queries"
       ],
-      packages=[
-          "snips_nlu"
-      ],
+      packages=packages,
       entry_points={},
       include_package_data=False,
       zip_safe=False)

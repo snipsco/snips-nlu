@@ -26,12 +26,12 @@ def default_features():
     features.append((get_ngram_fn(2, common_words=None), +1))
 
     # Shape
-    features.append((get_ngram_fn(1, common_words=None), 0))
+    features.append((get_shape_ngram_fn(1), 0))
 
-    features.append((get_ngram_fn(2, common_words=None), -1))
-    features.append((get_ngram_fn(2, common_words=None), 0))
+    features.append((get_shape_ngram_fn(2), -1))
+    features.append((get_shape_ngram_fn(2), 0))
 
-    features.append((get_ngram_fn(3, common_words=None), -1))
+    features.append((get_shape_ngram_fn(3), -1))
 
     # Digit
     features.append((is_digit, -1))

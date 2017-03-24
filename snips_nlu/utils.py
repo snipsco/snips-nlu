@@ -3,6 +3,7 @@ import os
 from collections import OrderedDict
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RESOURCES_PATH = os.path.join(ROOT_PATH, "snips-nlu-resources")
 
 
 def instance_from_dict(obj_dict):

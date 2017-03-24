@@ -1,7 +1,8 @@
+import os
 from collections import OrderedDict
 
-import os
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 class abstractclassmethod(classmethod):
     __isabstractmethod__ = True
@@ -13,6 +14,51 @@ class abstractclassmethod(classmethod):
 
 def sequence_equal(seq, other_seq):
     return len(seq) == len(other_seq) and sorted(seq) == sorted(other_seq)
+
+
+def merge_two_dicts(x, y, shallow_copy=True):
+    """Given two dicts, merge them into a new dict.
+    :param x: first dict
+    :param y: second dict
+    :param shallow_copy: if False, `x` will be updated with y and returned.
+    Otherwise a shallow copy of `x` will be created (default).
+    """
+    z = x.copy() if shallow_copy else x
+    z.update(y)
+    return z
+
+
+def type_error(expected_type, found_type):
+    return TypeError("Expected %s but found: %s" % (expected_type, found_type))
+
+
+def validate_type(obj, expected_type):
+    if not isinstance(obj, expected_type):
+        raise type_error(expected_type=expected_type, found_type=type(obj))
+
+
+def missing_key_error(key, object_label=None):
+    if object_label is None:
+        return KeyError("Missing key: '%s'" % key)
+    else:
+        return KeyError(
+            "Expected %s to have key: '%s'" % (object_label, key))
+
+
+def validate_key(obj, key, object_label=None):
+    if key not in obj:
+        raise missing_key_error(key, object_label)
+
+
+def validate_keys(obj, keys, object_label=None):
+    for key in keys:
+        validate_key(obj, key, object_label)
+
+
+def validate_range(rng):
+    if not isinstance(rng, (list, tuple)) or len(rng) != 2 or rng[0] > rng[1]:
+        raise ValueError("range must be a length 2 list or tuple and must be "
+                         "valid")
 
 
 class LimitedSizeDict(OrderedDict):
@@ -41,3 +87,10 @@ class LimitedSizeDict(OrderedDict):
         if self.size_limit != other.size_limit:
             return False
         return super(LimitedSizeDict, self).__eq__(other)
+
+
+class UnupdatableDict(dict):
+    def __setitem__(self, key, value):
+        if key in self:
+            raise KeyError("Can't update key '%s'" % key)
+        super(UnupdatableDict, self).__setitem__(key, value)

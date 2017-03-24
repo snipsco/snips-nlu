@@ -19,10 +19,7 @@ def tag_name_to_slot_name(tag):
 
 def end_of_boi_slot(tags, i):
     if i + 1 == len(tags):
-        if tags[i] != OUTSIDE:
-            return True
-        else:
-            return False
+        return tags[i] != OUTSIDE
     else:
         if tags[i] == OUTSIDE:
             return False

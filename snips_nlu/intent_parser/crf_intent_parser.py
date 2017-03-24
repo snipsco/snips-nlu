@@ -1,7 +1,7 @@
 from intent_parser import IntentParser
 from snips_nlu.result import ParsedSlot
-from snips_nlu.slot_filler.crf_utils import (negative_tagging,
-                                             positive_tagging, tags_to_slots)
+from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
+                                             utterance_to_sample)
 from snips_nlu.tokenization import tokenize
 
 
@@ -65,14 +65,3 @@ class CRFIntentParser(IntentParser):
         return self
 
 
-def utterance_to_sample(query_data, tagging):
-    tags = []
-    tokens = tokenize("".join(c["text"] for c in query_data))
-    for i, chunk in enumerate(query_data):
-        chunk_tokens = tokenize(chunk["text"])
-        if "slot_name" not in chunk:
-            tags += negative_tagging(len(chunk_tokens))
-        else:
-            tags += positive_tagging(tagging, chunk["slot_name"],
-                                     len(chunk_tokens))
-    return {"tokens": tokens, "tags": tags}

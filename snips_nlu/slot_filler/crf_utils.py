@@ -1,7 +1,5 @@
 from enum import Enum
 
-from snips_nlu.result import ParsedSlot
-
 BEGINNING_PREFIX = 'B-'
 INSIDE_PREFIX = 'I-'
 LAST_PREFIX = 'L-'
@@ -10,115 +8,115 @@ OUTSIDE = 'O'
 
 
 class Tagging(Enum):
-    NONE = 0
+    IO = 0
     BIO = 1
     BILOU = 2
 
 
-def is_other(label):
-    return label == OUTSIDE or label is None
+def tag_name_to_slot_name(tag):
+    return tag[2:]
 
 
-def labels_to_tags(labels, tagging):
-    if tagging == Tagging.NONE:
-        return [l if not is_other(l) else OUTSIDE for l in labels]
-    if tagging == Tagging.BILOU:
-        return labels_to_bilou_tags(labels)
-    if tagging == Tagging.BIO:
-        return labels_to_bio_tags(labels)
-    raise ValueError("Invalid value for tagging: %s" % tagging)
-
-
-def labels_to_bilou_tags(labels):
-    bilou_labels = []
-    if len(labels) == 1:
-        if is_other(labels[0]):
-            bilou_labels.append(OUTSIDE)
+def end_of_boi_slot(tags, i):
+    if i + 1 == len(tags):
+        if tags[i] != OUTSIDE:
+            return True
         else:
-            bilou_labels.append(UNIT_PREFIX + labels[0])
-        return bilou_labels
-
-    for i in range(len(labels)):
-        if is_other(labels[i]):
-            bilou_labels.append(OUTSIDE)
-        elif i == 0:
-            bilou_labels.append(BEGINNING_PREFIX + labels[i])
-        elif i == len(labels) - 1:
-            if labels[i] == labels[i - 1]:
-                bilou_labels.append(LAST_PREFIX + labels[i])
+            return False
+    else:
+        if tags[i] == OUTSIDE:
+            return False
+        else:
+            if tags[i + 1].startswith(INSIDE_PREFIX):
+                return False
             else:
-                bilou_labels.append(UNIT_PREFIX + labels[i])
-        else:
-            if labels[i] != labels[i - 1]:
-                if labels[i] != labels[i + 1]:
-                    bilou_labels.append(UNIT_PREFIX + labels[i])
-                else:
-                    bilou_labels.append(BEGINNING_PREFIX + labels[i])
-            else:
-                if labels[i] != labels[i + 1]:
-                    bilou_labels.append(LAST_PREFIX + labels[i])
-                else:
-                    bilou_labels.append(INSIDE_PREFIX + labels[i])
-
-    return bilou_labels
+                return True
 
 
-def labels_to_bio_tags(labels):
-    bio_labels = []
-    if len(labels) == 1:
-        if is_other(labels[0]):
-            bio_labels.append(OUTSIDE)
-        else:
-            bio_labels.append(BEGINNING_PREFIX + labels[0])
-        return bio_labels
-
-    for i in range(len(labels)):
-        if is_other(labels[i]):
-            bio_labels.append(OUTSIDE)
-        elif i == 0:
-            bio_labels.append(BEGINNING_PREFIX + labels[i])
-        elif labels[i] != labels[i - 1]:
-            bio_labels.append(BEGINNING_PREFIX + labels[i])
-        else:
-            bio_labels.append(INSIDE_PREFIX + labels[i])
-
-    return bio_labels
-
-
-def tags_to_labels(labels, tagging):
-    if tagging is Tagging.NONE:
-        return labels
-    return [label[2:] if label != OUTSIDE else None for label in labels]
-
-
-def remove_bilou_tags(bilou_labels):
-    return [label if label == OUTSIDE else label[2:] for label in bilou_labels]
-
-
-def build_parsed_entities(text, tokens, labels, slot_name_to_entity_mapping):
+def bio_tags_to_slots(tags, tokens):
     slots = []
-    last_slot_name = None
-    for i in range(len(tokens)):
-        token = tokens[i]
-        slot_name = labels[i]
-        if slot_name == OUTSIDE:
-            last_slot_name = slot_name
-            continue
-        if slot_name == last_slot_name:
-            last_range = slots[-1]['range']
-            updated_range = (last_range[0], token.range[1])
-            slots[-1].update({'range': updated_range})
-        else:
-            slot = {'slot_name': slot_name, 'range': token.range}
-            slots.append(slot)
-            last_slot_name = slot_name
+    current_slot_start = 0
+    for i, tag in enumerate(tags):
+        if tag.startswith(BEGINNING_PREFIX):
+            current_slot_start = i
+        if end_of_boi_slot(tags, i):
+            slots.append({
+                "range": (tokens[current_slot_start].start, tokens[i].end),
+                "slot_name": tag_name_to_slot_name(tag)
+            })
+    return slots
 
-    parsed_entities = []
-    for slot in slots:
-        rng = slot['range']
-        value = text[rng[0]:rng[1]]
-        slot_name = slot['slot_name']
-        entity_name = slot_name_to_entity_mapping[slot_name]
-        entity = ParsedSlot(rng, value, entity_name, slot_name)
-        parsed_entities.append(entity)
-    return parsed_entities
+
+def bilou_tags_to_slots(tags, tokens):
+    slots = []
+    current_slot_start = 0
+    for i, tag in enumerate(tags):
+        if tag.startswith(UNIT_PREFIX):
+            slots.append({"range": (tokens[i].start, tokens[i].end),
+                          "slot_name": tag_name_to_slot_name(tag)})
+        if tag.startswith(BEGINNING_PREFIX):
+            current_slot_start = i
+        if tag.startswith(LAST_PREFIX):
+            slots.append({"range": (tokens[current_slot_start].start,
+                                    tokens[i].end),
+                          "slot_name": tag_name_to_slot_name(tag)})
+    return slots
+
+
+def io_tags_to_slots(tags, tokens):
+    slots = []
+    current_slot_start = None
+    for i, tag in enumerate(tags):
+        if tag == OUTSIDE:
+            if current_slot_start is not None:
+                slots.append({
+                    "range": (tokens[current_slot_start].start,
+                              tokens[i - 1].end),
+                    "slot_name": tag_name_to_slot_name(tag)
+                })
+                current_slot_start = None
+        else:
+            if current_slot_start is None:
+                current_slot_start = i
+
+    if current_slot_start is not None:
+        slots.append({
+            "range": (tokens[current_slot_start].start,
+                      tokens[len(tokens) - 1].end),
+            "slot_name": tag_name_to_slot_name(tags[-1])
+        })
+    return slots
+
+
+def tags_to_slots(tokens, tags, tagging):
+    if tagging == Tagging.IO:
+        return io_tags_to_slots(tags, tokens)
+    elif tagging == Tagging.BIO:
+        return bio_tags_to_slots(tags, tokens)
+    elif tagging == Tagging.BILOU:
+        return bilou_tags_to_slots(tags, tokens)
+    else:
+        raise ValueError("Unknown tagging %s" % tagging)
+
+
+def positive_tagging(tagging, slot_name, slot_size):
+    if tagging == Tagging.IO:
+        tags = [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
+    elif tagging == Tagging.BIO:
+        tags = [BEGINNING_PREFIX + slot_name]
+        tags += [INSIDE_PREFIX + slot_name for _ in xrange(1, slot_size)]
+    elif tagging == Tagging.BILOU:
+        if slot_size == 1:
+            tags = [UNIT_PREFIX + slot_name]
+        else:
+            tags = [BEGINNING_PREFIX + slot_name]
+            tags += [INSIDE_PREFIX + slot_name
+                     for _ in xrange(1, slot_size - 1)]
+            tags.append(LAST_PREFIX + slot_name)
+    else:
+        raise ValueError("Invalid tagging %s" % tagging)
+    return tags
+
+
+def negative_tagging(size):
+    return [OUTSIDE for _ in xrange(size)]

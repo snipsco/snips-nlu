@@ -1,7 +1,7 @@
 import re
 from collections import namedtuple
 
-Token = namedtuple('Token', 'value', 'start', 'end')
+Token = namedtuple('Token', 'value start end')
 
 TOKEN_REGEX = re.compile(r"\w+", re.UNICODE)
 

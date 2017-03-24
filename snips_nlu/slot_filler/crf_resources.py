@@ -2,6 +2,8 @@ import io
 import os
 import re
 
+from snips_nlu.tokenization import tokenize
+
 RESOURCE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "resources")
 CLUSTER_NAMES = ["brown"]
@@ -21,8 +23,10 @@ def get_word_clusters():
                 WORD_CLUSTERS[name] = dict()
                 for l in f:
                     split = l.rstrip().split("\t")
+                    normalized = " ".join(
+                        [t.value for t in tokenize(split[0])])
                     if len(split) == 2:
-                        WORD_CLUSTERS[name][split[0]] = split[1]
+                        WORD_CLUSTERS[name][normalized] = split[1]
 
     return WORD_CLUSTERS
 
@@ -43,7 +47,9 @@ def get_gazetteers():
                 for l in f:
                     stripped = l.strip()
                     if len(stripped) > 0:
-                        GAZETTEERS[name].add(stripped)
+                        normalized = " ".join(
+                            [t.value for t in tokenize(stripped)])
+                        GAZETTEERS[name].add(normalized)
 
     return GAZETTEERS
 

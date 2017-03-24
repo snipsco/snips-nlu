@@ -38,7 +38,7 @@ def default_features():
     features.append((is_digit, 0))
     features.append((is_digit, +1))
 
-    return [create_feature_function(f, offset) for name, f, offset in features]
+    return [create_feature_function(f, offset) for f, offset in features]
 
 
 # Helpers for base feature functions and factories

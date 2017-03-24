@@ -110,16 +110,3 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse, Result(text, None, None))
-
-    def test_should_fit_from_dataset(self):
-        # Given
-        dataset = SAMPLE_DATASET
-        engine = SnipsNLUEngine()
-
-        # When
-        engine.fit(dataset)
-
-        # Then
-        expected_parser = RegexIntentParser().fit(dataset)
-        self.assertListEqual(engine.custom_parsers, [expected_parser])
-        self.assertIsNone(engine.builtin_parser)

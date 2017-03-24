@@ -34,7 +34,7 @@ class CRFIntentParser(IntentParser):
         if not self.fitted:
             raise ValueError("CRFIntentParser must be fitted before "
                              "`get_slots` is called")
-        if intent not in self.intent_classifier:
+        if intent not in self.crf_taggers:
             raise KeyError("Invalid intent '%s'" % intent)
         tokens = tokenize(text)
         tagger = self.crf_taggers[intent]

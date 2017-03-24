@@ -2,9 +2,13 @@ import cPickle
 from abc import ABCMeta, abstractmethod
 
 from snips_nlu.dataset import validate_dataset
+from snips_nlu.intent_classifier.intent_classifier import SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
+from snips_nlu.slot_filler.crf_slot_tagger import CRFTagger, default_crf_model
+from snips_nlu.slot_filler.crf_utils import Tagging
+from snips_nlu.slot_filler.feature_functions import default_features
 from snips_nlu.result import Result
 
 
@@ -56,10 +60,13 @@ class SnipsNLUEngine(NLUEngine):
         """
         validate_dataset(dataset)
         custom_parser = RegexIntentParser().fit(dataset)
-        intent_classifier = None
-        slot_fillers = {}
-        crf_parser = CRFIntentParser(intent_classifier, slot_fillers)
-        self.custom_parsers = [custom_parser]
+        intent_classifier = SnipsIntentClassifier().fit(dataset)
+        taggers = {}
+        for intent in dataset["intents"].keys():
+            taggers[intent] = CRFTagger(default_crf_model(), default_features(),
+                                        Tagging.BILOU)
+        crf_parser = CRFIntentParser(intent_classifier, taggers)
+        self.custom_parsers = [custom_parser, crf_parser]
         return self
 
     def save_to_pickle_string(self):

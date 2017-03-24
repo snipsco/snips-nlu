@@ -1,6 +1,0 @@
-name=trackAlbumArtist 
-type=free_text 
-teresa_patti_gonzales;teresa patti gonzales 
-brannon_kippi;brannon kippi 
-spying_on_friendship;spying on friendship 
-tericaelvia;tericaelvia 

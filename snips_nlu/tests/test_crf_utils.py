@@ -1,10 +1,11 @@
 import unittest
 
-from mock import mock
+from mock import patch
 
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
-    io_tags_to_slots, utterance_to_sample, Tagging)
+    io_tags_to_slots, utterance_to_sample, Tagging, negative_tagging,
+    positive_tagging)
 from snips_nlu.slot_filler.crf_utils import (bio_tags_to_slots,
                                              bilou_tags_to_slots)
 from snips_nlu.tokenization import tokenize, Token
@@ -303,275 +304,13 @@ class TestCRFUtils(unittest.TestCase):
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
-    def test_utterance_to_io_sample(self):
+    @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
+    def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
-        slot_name = "animal"
-        queries = [
-            ([
-                 {
-                     "text": "nothing here",
-                 }
-             ],
-             [OUTSIDE, OUTSIDE]),
-            ([
-                 {
-                     "text": "i am a ",
-
-                 },
-                 {
-                     "text": "blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, INSIDE_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "i am a ",
-
-                 },
-                 {
-                     "text": "bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [INSIDE_PREFIX + slot_name, INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "light blue bird",
-                     "slot_name": slot_name
-                 },
-                 {
-                     "text": " blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [INSIDE_PREFIX + slot_name, INSIDE_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name, INSIDE_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "i am a b",
-
-                 },
-                 {
-                     "text": "lue bird",
-                     "slot_name": slot_name
-                 },
-                 {
-                     "text": " hey",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, OUTSIDE, INSIDE_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name, OUTSIDE])
-        ]
-
-        for query, expected_tags in queries:
-            expected_tokens = tokenize("".join(c["text"] for c in query))
-            # When
-            sample = utterance_to_sample(query, Tagging.IO)
-
-            # Then
-            self.assertEqual(expected_tokens, sample["tokens"])
-            self.assertEqual(expected_tags, sample["tags"])
-
-    def test_utterance_to_bilou_sample(self):
-        # Given
-        slot_name = "animal"
-        queries = [
-            ([
-                 {
-                     "text": "nothing here",
-                 }
-             ],
-             [OUTSIDE, OUTSIDE]),
-            ([
-                 {
-                     "text": "i am a ",
-
-                 },
-                 {
-                     "text": "blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, BEGINNING_PREFIX + slot_name,
-              LAST_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "i am a ",
-
-                 },
-                 {
-                     "text": "bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, UNIT_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [UNIT_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [BEGINNING_PREFIX + slot_name, LAST_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "light blue bird",
-                     "slot_name": slot_name
-                 },
-                 {
-                     "text": " blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [BEGINNING_PREFIX + slot_name, INSIDE_PREFIX + slot_name,
-              LAST_PREFIX + slot_name, BEGINNING_PREFIX + slot_name,
-              LAST_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "i am a b",
-
-                 },
-                 {
-                     "text": "lue bird",
-                     "slot_name": slot_name
-                 },
-                 {
-                     "text": " hey",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, OUTSIDE, BEGINNING_PREFIX + slot_name,
-              LAST_PREFIX + slot_name, OUTSIDE])
-        ]
-
-        for query, expected_tags in queries:
-            expected_tokens = tokenize("".join(c["text"] for c in query))
-            # When
-            sample = utterance_to_sample(query, Tagging.BILOU)
-
-            # Then
-            self.assertEqual(expected_tokens, sample["tokens"])
-            self.assertEqual(expected_tags, sample["tags"])
-
-    def test_utterance_to_bio_sample(self):
-        # Given
-        slot_name = "animal"
-        queries = [
-            ([
-                 {
-                     "text": "nothing here",
-                 }
-             ],
-             [OUTSIDE, OUTSIDE]),
-            ([
-                 {
-                     "text": "i am a ",
-
-                 },
-                 {
-                     "text": "blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, BEGINNING_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "i am a ",
-
-                 },
-                 {
-                     "text": "bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, BEGINNING_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [BEGINNING_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [BEGINNING_PREFIX + slot_name, INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "light blue bird",
-                     "slot_name": slot_name
-                 },
-                 {
-                     "text": " blue bird",
-                     "slot_name": slot_name
-                 }
-             ],
-             [BEGINNING_PREFIX + slot_name, INSIDE_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name, BEGINNING_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name]),
-            ([
-                 {
-                     "text": "i am a b",
-
-                 },
-                 {
-                     "text": "lue bird",
-                     "slot_name": slot_name
-                 },
-                 {
-                     "text": " hey",
-                     "slot_name": slot_name
-                 }
-             ],
-             [OUTSIDE, OUTSIDE, OUTSIDE, OUTSIDE, BEGINNING_PREFIX + slot_name,
-              INSIDE_PREFIX + slot_name, OUTSIDE])
-        ]
-
-        for query, expected_tags in queries:
-            expected_tokens = tokenize("".join(c["text"] for c in query))
-            # When
-            sample = utterance_to_sample(query, Tagging.BIO)
-
-            # Then
-            self.assertEqual(expected_tokens, sample["tokens"])
-            self.assertEqual(expected_tags, sample["tags"])
-
-    @mock.patch("snips_nlu.slot_filler.crf_utils")
-    def test_utterance_to_sample(self, mock_crf_utils):
-        # Given
-        def mocked_positive_tagging(tagging, slot_name, slot_size):
+        def mock_positive_tagging(tagging, slot_name, slot_size):
             return [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
 
-        mock_crf_utils.positive_tagging = mock.Mock(
-            side_effect=mocked_positive_tagging)
+        mocked_positive_tagging.side_effect = mock_positive_tagging
         slot_name = "animal"
         query_data = [{"text": "i am a "},
                       {"text": "beautiful bird", "slot_name": slot_name}]
@@ -592,14 +331,15 @@ class TestCRFUtils(unittest.TestCase):
         # Then
         self.assertEqual(sample, expected_sample)
 
-    @mock.patch("snips_nlu.slot_filler.crf_utils")
-    def test_utterance_to_sample_with_partial_slots(self, mock_crf_utils):
+    @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
+    def test_utterance_to_sample_with_partial_slots(self,
+                                                    mocked_positive_tagging):
+
         # Given
-        def mocked_positive_tagging(tagging, slot_name, slot_size):
+        def mock_positive_tagging(tagging, slot_name, slot_size):
             return [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
 
-        mock_crf_utils.positive_tagging = mock.Mock(
-            side_effect=mocked_positive_tagging)
+        mocked_positive_tagging.side_effect = mock_positive_tagging
         slot_name = "animal"
         query_data = [{"text": "i am a b"},
                       {"text": "eautiful bird", "slot_name": slot_name}]
@@ -620,4 +360,71 @@ class TestCRFUtils(unittest.TestCase):
         sample = utterance_to_sample(query_data, Tagging.IO)
 
         # Then
+        mocked_positive_tagging.assert_called()
         self.assertEqual(sample, expected_sample)
+
+    def test_negative_tagging(self):
+        # Given
+        size = 3
+
+        # When
+        tagging = negative_tagging(size)
+
+        # Then
+        expected_tagging = [OUTSIDE, OUTSIDE, OUTSIDE]
+        self.assertListEqual(tagging, expected_tagging)
+
+    def test_positive_tagging_with_io(self):
+        # Give
+        tagging = Tagging.IO
+        slot_name = "animal"
+        slot_size = 3
+
+        # When
+        tags = positive_tagging(tagging, slot_name, slot_size)
+
+        # Then
+        t = INSIDE_PREFIX + slot_name
+        expected_tags = [t, t, t]
+        self.assertListEqual(tags, expected_tags)
+
+    def test_positive_tagging_with_bio(self):
+        # Give
+        tagging = Tagging.BIO
+        slot_name = "animal"
+        slot_size = 3
+
+        # When
+        tags = positive_tagging(tagging, slot_name, slot_size)
+
+        # Then
+        expected_tags = [BEGINNING_PREFIX + slot_name,
+                         INSIDE_PREFIX + slot_name, INSIDE_PREFIX + slot_name]
+        self.assertListEqual(tags, expected_tags)
+
+    def test_positive_tagging_with_bilou(self):
+        # Give
+        tagging = Tagging.BILOU
+        slot_name = "animal"
+        slot_size = 3
+
+        # When
+        tags = positive_tagging(tagging, slot_name, slot_size)
+
+        # Then
+        expected_tags = [BEGINNING_PREFIX + slot_name,
+                         INSIDE_PREFIX + slot_name, LAST_PREFIX + slot_name]
+        self.assertListEqual(tags, expected_tags)
+
+    def test_positive_tagging_with_bilou_unit(self):
+        # Give
+        tagging = Tagging.BILOU
+        slot_name = "animal"
+        slot_size = 1
+
+        # When
+        tags = positive_tagging(tagging, slot_name, slot_size)
+
+        # Then
+        expected_tags = [UNIT_PREFIX + slot_name]
+        self.assertListEqual(tags, expected_tags)

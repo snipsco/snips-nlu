@@ -27,4 +27,6 @@ def augment_dataset(dataset, language='en'):
 	queries = np.array(queries)
 	y = np.array(y)
 
+	intent_list = np.concatenate( (['None'], intent_list) )
+	
 	return (queries, y), alpha, intent_list

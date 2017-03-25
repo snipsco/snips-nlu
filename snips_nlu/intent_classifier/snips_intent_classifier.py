@@ -45,5 +45,5 @@ class SnipsIntentClassifier(IntentClassifier):
         intent_name = self.intent_list[int(predicted)]
         prob = proba_vect[0][int(predicted)]
 
-        return IntentClassificationResult(intent_name=intent_name, prob=prob)
+        return IntentClassificationResult(intent_name, prob)
 

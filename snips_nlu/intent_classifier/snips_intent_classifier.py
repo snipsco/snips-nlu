@@ -40,7 +40,7 @@ class SnipsIntentClassifier(IntentClassifier):
         X = self.featurizer.transform([text])
 
         proba_vect = self.clf.predict_proba(X)
-         predicted = np.argmax(proba_vect[0])
+        predicted = np.argmax(proba_vect[0])
         
         intent_name = self.intent_list[int(predicted)]
         prob = proba_vect[0][int(predicted)]

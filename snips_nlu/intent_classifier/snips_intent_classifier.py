@@ -39,11 +39,9 @@ class SnipsIntentClassifier(IntentClassifier):
             raise AssertionError('Fit before predict.')
 
         if len(text) == 0:
-            print 'empty query !'
             return None
 
         if self.is_empty:
-            print 'empty training set !'
             return None
 
         X = self.featurizer.transform([text])

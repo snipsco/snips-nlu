@@ -20,7 +20,7 @@ class SnipsIntentClassifier(IntentClassifier):
 
     @property
     def is_empty(self):
-        return len(self.intent_list) == 0
+        return len(self.intent_list) == 1
 
     def fit(self, dataset):
         self.intent_list = get_non_empty_intents(dataset)
@@ -39,9 +39,11 @@ class SnipsIntentClassifier(IntentClassifier):
             raise AssertionError('Fit before predict.')
 
         if len(text) == 0:
+            print 'empty query !'
             return None
 
         if self.is_empty:
+            print 'empty training set !'
             return None
 
         X = self.featurizer.transform([text])

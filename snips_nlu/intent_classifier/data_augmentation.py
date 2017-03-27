@@ -4,7 +4,7 @@ from intent_classifier_resources import get_subtitles
 
 
 def get_non_empty_intents(dataset):
-    return [name for name, data in dataset["intents"].items() if len(data["utterances"]) > 0]
+    return ['None'] + [name for name, data in dataset["intents"].items() if len(data["utterances"]) > 0]
 
 
 def augment_dataset(dataset, intent_list, language='en'):

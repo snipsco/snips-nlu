@@ -34,28 +34,22 @@ from snips_nlu.nlu_engine import SnipsNLUEngine
 ```
 
 
-The NLU Engine can be initialized in various ways:
+The NLU Engine can be initialized in two ways:
 
-- non fitted nlu engine:
+- You can create an empty engine in order to fit it with a dataset afterwards:
     ```python
     engine = SnipsNLUEngine()
     ```
 
-- from a cPickle serialized string and directory path (for the builtin intents part):
+- Or you can load an already trained engine from a dictionary:
     ```python
-    engine = SnipsNLUEngine.load_from_pickle_and_path(pkl_str, builtin_dir_path)
-    ```
-
-- from a cPickle serialized string and byte array (for the builtin intents part):
-    ```python
-    engine = SnipsNLUEngine.load_from_pickle_and_byte_array(pkl_str, builtin_byte_array)
+    engine = SnipsNLUEngine.from_dict(engine_dict)
     ```
 
 ### Serialization
-The NLU Engine has an API that allows to persist the object as a cPickle string:
+The NLU Engine has an API that allows to persist the object as a dictionary:
 ```python
-# pkl_str is a string which uses the cPickle serialization protocol
-pkl_str = engine.save_to_pickle_string()
+engine_dict = engine.to_dict()
 ```
 
 ### Parsing

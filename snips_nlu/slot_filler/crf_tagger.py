@@ -14,14 +14,17 @@ def default_crf_model():
 
 
 def get_features_from_signatures(signatures):
-    features = []
+    features = dict()
     for signature in signatures:
         factory_name = signature["factory_name"]
         module_name = signature["module_name"]
         factory = getattr(importlib.import_module(module_name), factory_name)
         fn = factory(**(signature["args"]))
         for offset in signature["offsets"]:
-            features.append(create_feature_function(fn, offset))
+            feature_name, feature_fn = create_feature_function(fn, offset)
+            if feature_name in features:
+                raise KeyError("Existing feature: " % feature_name)
+            features[feature_name] = feature_fn
     return features
 
 
@@ -54,11 +57,11 @@ class CRFTagger(object):
         return self
 
     def compute_features(self, tokens):
-        cache = [{TOKEN_NAME: token.value} for token in tokens]
+        cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
-            for feature_name, feature_fn in self.features:
+            for feature_name, feature_fn in self.features.iteritems():
                 value = feature_fn(i, cache)
                 if value is not None:
                     token_features[feature_name] = value

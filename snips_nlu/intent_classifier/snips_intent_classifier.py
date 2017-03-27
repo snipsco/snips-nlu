@@ -31,7 +31,7 @@ class SnipsIntentClassifier(IntentClassifier):
             clf = SGDClassifier(loss='log', penalty='l2', alpha=alpha, class_weight='balanced', n_iter=5,
                                 random_state=42, n_jobs=-1)
             self.clf = clf.fit(X, y)
-
+            self.intent_list = ['None'] + self.intent_list
         return self
 
     def get_intent(self, text):
@@ -45,8 +45,6 @@ class SnipsIntentClassifier(IntentClassifier):
         if self.is_empty:
             print 'empty training set !'
             return None
-
-        self.intent_list = ['None'] + self.intent_list
 
         X = self.featurizer.transform([text])
         proba_vect = self.clf.predict_proba(X)

@@ -1,6 +1,7 @@
 import unittest
 
-from snips_nlu.intent_classifier.snips_intent_classifier import SnipsIntentClassifier
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 from snips_nlu.tests.utils import EMPTY_DATASET, SAMPLE_DATASET
 
 
@@ -16,7 +17,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         intent = res[0]
 
         # Then
-        expected_intent = intent_name = "dummy_intent_2"
+        expected_intent = "dummy_intent_2"
 
         self.assertEqual(intent, expected_intent)
 
@@ -31,7 +32,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # Then
         expected_intent = None
-
         self.assertEqual(intent, expected_intent)
 
 

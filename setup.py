@@ -14,7 +14,7 @@ setup(name="snips_nlu",
           "pytest",
           "enum34",
           "mock",
-          "numpy>=1.6.1",
+          "numpy",
           "scipy",
           "scikit-learn",
           "sklearn-crfsuite"

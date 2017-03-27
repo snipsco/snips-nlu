@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from data_augmentation import augment_dataset, check_if_empty, get_non_empty_intents
+from data_augmentation import augment_dataset, get_non_empty_intents
 from feature_extraction import Featurizer
 from intent_classifier import IntentClassifier
 from snips_nlu.result import IntentClassificationResult
@@ -27,9 +27,7 @@ class SnipsIntentClassifier(IntentClassifier):
 
         if not self.is_empty:
             (queries, y), alpha = augment_dataset(dataset, self.intent_list, self.language)
-
             X = self.featurizer.fit_transform(queries, y)
-
             clf = SGDClassifier(loss='log', penalty='l2', alpha=alpha, class_weight='balanced', n_iter=5,
                                 random_state=42, n_jobs=-1)
             self.clf = clf.fit(X, y)

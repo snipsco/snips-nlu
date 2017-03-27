@@ -3,16 +3,6 @@ import numpy as np
 from intent_classifier_resources import get_subtitles
 
 
-def check_if_empty(dataset):
-    intent_list = dataset['intents'].keys()
-
-    queries_per_intent = [len(dataset['intents'][intent]['utterances']) for intent in intent_list]
-    ind_0 = [i for i, x in enumerate(queries_per_intent) if x == 0]
-
-    intent_list = [intent for i, intent in enumerate(intent_list) if i not in ind_0]
-
-    return ['None'] + intent_list, len(intent_list) == 0
-
 def get_non_empty_intents(dataset):
     return [name for name, data in dataset["intents"].items() if len(data["utterances"]) > 0]
 

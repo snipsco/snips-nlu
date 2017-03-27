@@ -49,3 +49,24 @@ class TestBuiltInEntities(unittest.TestCase):
 
         # Then
         self.assertEqual(expected_dims, dims)
+
+    def test_built_in_label_uniqueness(self):
+        # Given
+        labels = [ent.value["label"] for ent in BuiltInEntity]
+
+        # When
+        unique_labels = set(labels)
+
+        # Then
+        self.assertEqual(len(unique_labels), len(labels))
+
+    def test_built_in_label_duckling_dim_mapping(self):
+        # Given
+        duckling_names = [ent.value["duckling_dim"] for ent in BuiltInEntity]
+
+        # When
+        unique_duckling_name = set(duckling_names)
+
+        # Then
+        self.assertEqual(len(duckling_names), len(unique_duckling_name))
+

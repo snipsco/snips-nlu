@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, unique
 
 from snips_nlu.tokenization import tokenize, Token
 
@@ -9,6 +9,7 @@ UNIT_PREFIX = 'U-'
 OUTSIDE = 'O'
 
 
+@unique
 class Tagging(Enum):
     IO = 0
     BIO = 1

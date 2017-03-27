@@ -152,7 +152,7 @@ class TestFeatureFunctions(unittest.TestCase):
         # Given
         name = "position"
         base_feature_function = BaseFeatureFunction(
-            name, lambda tokens, token_index: token_index + 1)
+            name, lambda _, token_index: token_index + 1)
 
         tokens = ["a", "b", "c"]
         expected_features = {

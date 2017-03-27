@@ -11,6 +11,7 @@ setup(name="snips_nlu",
       download_url="",
       license="MIT",
       install_requires=[
+          "duckling==0.0.1",
           "pytest",
           "enum34",
           "mock",
@@ -20,6 +21,8 @@ setup(name="snips_nlu",
           "sklearn-crfsuite==0.3.5",
           "snips-queries==0.1.0a1"
       ],
+      dependency_links=[
+          "git+ssh://git@github.com/snipsco/duckling-python.git"],
       packages=packages,
       package_data={"": ["snips-nlu-resources/*", "tests/resources/*"]},
       entry_points={},

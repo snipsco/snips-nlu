@@ -10,7 +10,7 @@ def get_non_empty_intents(dataset):
 def augment_dataset(dataset, intent_list, language='en'):
     intent_code = dict((intent, i) for i, intent in enumerate(intent_list))
 
-    queries_per_intent = [len(dataset['intents'][intent]['utterances']) for intent in intent_list if intent is not None]
+    queries_per_intent = [len(dataset['intents'][intent]['utterances']) for intent in intent_list if intent != 'None']
     mean_queries_per_intent = np.mean(queries_per_intent)
 
     alpha = 1.0 / (4 * (sum(queries_per_intent) + 5 * mean_queries_per_intent))

@@ -36,7 +36,7 @@ def get_built_in_entities(text, language, scope=None):
     else:
         dims = scope_to_dims(scope)
 
-    if text not in _DUCKLING_CACHE:
+    if (text, language) not in _DUCKLING_CACHE:
         parse = core.parse(language, text)
         _DUCKLING_CACHE[(text, language)] = parse
     else:

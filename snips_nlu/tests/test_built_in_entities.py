@@ -1,10 +1,14 @@
 import unittest
 
-from duckling.core import default_context
+from duckling import core
 from mock import patch
 
-from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity, \
-    scope_to_dims, _DUCKLING_CACHE
+from snips_nlu.built_in_entities import (get_built_in_entities, BuiltInEntity,
+                                         scope_to_dims, _DUCKLING_CACHE)
+
+
+def mocked_parse(module, text):
+    return []
 
 
 class TestBuiltInEntities(unittest.TestCase):
@@ -15,7 +19,7 @@ class TestBuiltInEntities(unittest.TestCase):
         text = "let's meet at 2p.m in the bronx"
 
         def mocked_parse(module, text, dims=[],
-                         context=default_context("now")):
+                         context=core.default_context("now")):
             return [{
                 'body': u'at 2p.m.',
                 'dim': 'time',
@@ -70,8 +74,8 @@ class TestBuiltInEntities(unittest.TestCase):
         # Then
         self.assertEqual(len(duckling_names), len(unique_duckling_name))
 
-    @patch("duckling.core.parse")
-    def test_duckling_cache(self, mocked_parse):
+    @patch("duckling.core.parse", side_effect=mocked_parse)
+    def test_duckling_cache(self, mocked_duckling_parse):
         # Given
         _DUCKLING_CACHE.clear()
         language = "en"
@@ -83,12 +87,7 @@ class TestBuiltInEntities(unittest.TestCase):
 
         # When
         get_built_in_entities(text_2, language)
-
-        # Then
-        mocked_parse.called = False
-
-        # When
         get_built_in_entities(text_1, language)
 
         # Then
-        mocked_parse.called = True
+        mocked_duckling_parse.assert_called_once_with("en", text_1)

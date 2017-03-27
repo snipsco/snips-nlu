@@ -1,11 +1,10 @@
 import re
 from collections import namedtuple
 
-from snips_nlu.slot_filler.crf_resources import get_word_clusters
-from snips_nlu.slot_filler.crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX,
-                                             LAST_PREFIX,
-                                             INSIDE_PREFIX)
-from snips_nlu.built_in_entities import get_built_in_entities
+from crf_resources import get_word_clusters
+from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
+                       INSIDE_PREFIX)
+from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
@@ -15,7 +14,7 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features():
+def default_features(language):
     features_signatures = [
         {
             "module_name": __name__,
@@ -52,9 +51,19 @@ def default_features():
             "factory_name": "is_digit",
             "args": {},
             "offsets": [-1, 0, 1]
-        },
+        }
     ]
 
+    # Built-ins
+    for entity in BuiltInEntity:
+        features_signatures.append(
+            {
+                "module_name": __name__,
+                "factory_name": "get_built_in_annotation_fn",
+                "args": {entity, language},
+                "offsets": [-2, -1, 0]
+            }
+        )
     return features_signatures
 
 
@@ -115,7 +124,6 @@ def initial_string_from_tokens(tokens):
         s += t.value
         current_index = t.end
     return s
-
 
 
 # Base feature functions and factories

@@ -18,8 +18,16 @@ BUILT_ENTITY_BY_LABEL = dict((ent.value["label"], ent)
                              for ent in BuiltInEntity)
 
 
-def get_built_in_by_label(label):
-    return BUILT_ENTITY_BY_LABEL[label]
+class BuiltInEntityLookupError(LookupError):
+    pass
+
+
+def get_built_in_entity_by_label(label):
+    try:
+        ent = BUILT_ENTITY_BY_LABEL[label]
+    except:
+        raise BuiltInEntityLookupError("Unknown entity %s" % label)
+    return ent
 
 
 def scope_to_dims(scope):

@@ -64,7 +64,7 @@ class SnipsNLUEngine(NLUEngine):
         taggers = {}
         for intent in dataset["intents"].keys():
             taggers[intent] = CRFTagger(default_crf_model(),
-                                        default_features(),
+                                        default_features(dataset["language"]),
                                         Tagging.BILOU)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]

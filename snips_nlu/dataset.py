@@ -1,5 +1,7 @@
 import re
 
+from snips_nlu.built_in_entities import get_built_in_entity_by_label, \
+    BuiltInEntityLookupError
 from utils import validate_type, validate_key, validate_keys
 
 INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
@@ -43,8 +45,11 @@ def validate_intent(intent, entities):
             if len(chunk.keys()) > 1:
                 mandatory_keys = ["entity", "slot_name"]
                 validate_keys(chunk, mandatory_keys, object_label="chunk")
-                validate_key(entities, chunk["entity"],
-                             object_label="entities")
+                try:
+                    get_built_in_entity_by_label(chunk["entity"])
+                except BuiltInEntityLookupError:
+                    validate_key(entities, chunk["entity"],
+                                 object_label="entities")
 
 
 def validate_entity_name(name):

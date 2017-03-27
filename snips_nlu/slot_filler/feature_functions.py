@@ -5,6 +5,7 @@ from snips_nlu.slot_filler.crf_resources import get_word_clusters
 from snips_nlu.slot_filler.crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX,
                                              LAST_PREFIX,
                                              INSIDE_PREFIX)
+from snips_nlu.built_in_entities import get_built_in_entities
 
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
@@ -60,12 +61,12 @@ def default_features():
 # Helpers for base feature functions and factories
 
 
-def char_range_to_token_range(char_range, tokens):
+def char_range_to_token_range(char_range, tokens_as_string):
     start, end = char_range
     # TODO: if possible avoid looping on the tokens for better efficiency
     current_length = 0
     token_start = None
-    for i, t in enumerate(tokens):
+    for i, t in enumerate(tokens_as_string):
         if current_length == start:
             token_start = i
             break
@@ -75,7 +76,7 @@ def char_range_to_token_range(char_range, tokens):
 
     token_end = None
     current_length -= 1  # Remove the last space
-    for i, t in enumerate(tokens[token_start:]):
+    for i, t in enumerate(tokens_as_string[token_start:]):
         current_length += len(t) + 1
         if current_length == end:
             token_end = token_start + i + 1
@@ -85,12 +86,12 @@ def char_range_to_token_range(char_range, tokens):
     return token_start, token_end
 
 
-def get_shape(token):
-    if LOWER_REGEX.match(token):
+def get_shape(string):
+    if LOWER_REGEX.match(string):
         shape = "xxx"
-    elif UPPER_REGEX.match(token):
+    elif UPPER_REGEX.match(string):
         shape = "XXX"
-    elif TITLE_REGEX.match(token):
+    elif TITLE_REGEX.match(string):
         shape = "Xxx"
     else:
         shape = "xX"
@@ -105,11 +106,24 @@ def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
     return word[start:end]
 
 
+def initial_string_from_tokens(tokens):
+    current_index = 0
+    s = ""
+    for t in tokens:
+        if t.start > current_index:
+            s += " " * (t.start - current_index)
+        s += t.value
+        current_index = t.end
+    return s
+
+
+
 # Base feature functions and factories
 def is_digit():
     return BaseFeatureFunction(
         "is_digit",
-        lambda tokens, token_index: str(int(tokens[token_index].isdigit()))
+        lambda tokens, token_index: str(
+            int(tokens[token_index].value.isdigit()))
     )
 
 
@@ -121,7 +135,7 @@ def is_first():
 
 
 def is_last():
-    return BaseFeatureFunction(
+    return  BaseFeatureFunction(
         "is_last",
         lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
     )
@@ -129,15 +143,16 @@ def is_last():
 
 def get_prefix_fn(prefix_size):
     def prefix(tokens, token_index):
-        return get_word_chunk(tokens[token_index].lower(), prefix_size, 0)
+        return get_word_chunk(tokens[token_index].value.lower(), prefix_size,
+                              0)
 
     return BaseFeatureFunction("prefix-%s" % prefix_size, prefix)
 
 
 def get_suffix_fn(suffix_size):
     def suffix(tokens, token_index):
-        return get_word_chunk(tokens[token_index].lower(), suffix_size,
-                              len(tokens[token_index]), reverse=True)
+        return get_word_chunk(tokens[token_index].value.lower(), suffix_size,
+                              len(tokens[token_index].value), reverse=True)
 
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
@@ -151,13 +166,14 @@ def get_ngram_fn(n, common_words=None):
         end = token_index + n
         if 0 <= token_index < max_len and 0 < end <= max_len:
             if common_words is None:
-                return " ".join(t.lower() for t in tokens[token_index:end])
+                return " ".join(t.value.lower()
+                                for t in tokens[token_index:end])
             else:
                 words = []
-                for w in tokens[token_index:end]:
-                    lowered = w.lower()
-                    words.append(
-                        lowered if lowered in common_words else "rare_word")
+                for t in tokens[token_index:end]:
+                    lowered = t.value.lower()
+                    words.append(lowered if lowered in common_words
+                                 else "rare_word")
                 return " ".join(words)
         return None
 
@@ -172,7 +188,8 @@ def get_shape_ngram_fn(n):
         max_len = len(tokens)
         end = token_index + n
         if 0 <= token_index < max_len and 0 <= end < max_len:
-            return " ".join(get_shape(t) for t in tokens[token_index:end])
+            return " ".join(get_shape(t.value)
+                            for t in tokens[token_index:end])
         return None
 
     return BaseFeatureFunction("shape_ngram_%s" % n, shape_ngram)
@@ -181,7 +198,7 @@ def get_shape_ngram_fn(n):
 def get_word_cluster_fn(cluster_name):
     def word_cluster(tokens, token_index):
         return get_word_clusters()[cluster_name].get(
-            tokens[token_index].lower(), None)
+            tokens[token_index].value.lower(), None)
 
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
@@ -190,21 +207,26 @@ def get_token_is_in(collection, collection_name):
     lowered_collection = set([c.lower() for c in collection])
 
     def token_is_in(tokens, token_index):
-        return str(int(tokens[token_index].lower() in lowered_collection))
+        return str(int(tokens[token_index].value.lower()
+                       in lowered_collection))
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
 def get_regex_match_fn(regex, match_name, use_bilou=False):
     def regex_match(tokens, token_index):
-        text = " ".join(tokens).lower()
+        text = " ".join(t.value for t in tokens).lower()
 
         match = regex.search(text)
         if match is None:
             return
 
-        token_start = len(" ".join(tokens[:token_index])) + 1
-        token_end = token_start + len(tokens[token_index])
+        if token_index == 0:
+            token_start = 0
+        else:
+            token_start = len(" ".join(t.value for t in tokens[:token_index])) \
+                          + 1
+        token_end = token_start + len(tokens[token_index].value)
 
         match_start = match.start()
         match_end = match.end()
@@ -213,7 +235,7 @@ def get_regex_match_fn(regex, match_name, use_bilou=False):
             return
 
         match_token_range = char_range_to_token_range(
-            (match_start, match_end), tokens)
+            (match_start, match_end), [t.value for t in tokens])
         if match_token_range is None:
             return
         match_token_start, match_token_end = match_token_range
@@ -236,6 +258,24 @@ def get_regex_match_fn(regex, match_name, use_bilou=False):
         return feature
 
     return BaseFeatureFunction("match_%s" % match_name, regex_match)
+
+
+def get_built_in_annotation_fn(built_in_entity, language):
+    feature_name = "built-in-%s" % built_in_entity.value["label"]
+
+    def built_in_annotation(tokens, token_index):
+        text = initial_string_from_tokens(tokens)
+
+        built_ins = get_built_in_entities(text, language,
+                                          scope=[built_in_entity])
+        start = tokens[token_index].start
+        end = tokens[token_index].end
+        for ent in built_ins:
+            if (ent["match_range"][0] <= start < ent["match_range"][1]
+                and ent["match_range"][0] < end <= ent["match_range"][1]):
+                return "1"
+
+    return BaseFeatureFunction(feature_name, built_in_annotation)
 
 
 def create_feature_function(base_feature_fn, offset):

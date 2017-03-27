@@ -26,8 +26,7 @@ def validate_dataset(dataset):
 def validate_intent_name(name):
     if not INTENT_NAME_REGEX.match(name):
         raise AssertionError("%s is an invalid intent name. Intent names must "
-                             "only use: [a-zA-Z0-9_- ]"
-                             % name)
+                             "only use: [a-zA-Z0-9_- ]" % name)
 
 
 def validate_intent(intent, entities):
@@ -44,7 +43,8 @@ def validate_intent(intent, entities):
             if len(chunk.keys()) > 1:
                 mandatory_keys = ["entity", "slot_name"]
                 validate_keys(chunk, mandatory_keys, object_label="chunk")
-                validate_key(entities, chunk["entity"], object_label="entities")
+                validate_key(entities, chunk["entity"],
+                             object_label="entities")
 
 
 def validate_entity_name(name):
@@ -62,5 +62,6 @@ def validate_entity(entity):
     validate_type(entity["data"], list)
     for entry in entity["data"]:
         validate_type(entry, dict)
-        validate_keys(entry, ["value", "synonyms"], object_label="entity entry")
+        validate_keys(entry, ["value", "synonyms"],
+                      object_label="entity entry")
         validate_type(entry["synonyms"], list)

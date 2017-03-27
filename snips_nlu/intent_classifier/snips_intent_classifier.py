@@ -1,49 +1,56 @@
 import numpy as np
-import random
-import json
+from sklearn.linear_model import SGDClassifier
 
-from intent_classifier import IntentClassifier
+from data_augmentation import augment_dataset, check_if_empty, get_non_empty_intents
 from feature_extraction import Featurizer
-from data_augmentation  import augment_dataset
+from intent_classifier import IntentClassifier
 from snips_nlu.result import IntentClassificationResult
 
-from sklearn.linear_model import SGDClassifier
-from sklearn.utils.validation import check_is_fitted
 
 class SnipsIntentClassifier(IntentClassifier):
-
     def __init__(self):
-        
         self.language = 'en'
-        self.best_feat = None
         self.clf = None
         self.intent_list = None
-        self.featurizer = Featurizer()
+        self.featurizer = Featurizer(language=self.language)
 
     @property
     def fitted(self):
-        return check_is_fitted(self.clf, "t_")
+        return self.intent_list is not None
+
+    @property
+    def is_empty(self):
+        return len(self.intent_list) == 0
 
     def fit(self, dataset):
+        self.intent_list = get_non_empty_intents(dataset)
 
-        (queries, y), alpha, self.intent_list = augment_dataset(dataset, self.language)
+        if not self.is_empty:
+            (queries, y), alpha = augment_dataset(dataset, self.intent_list, self.language)
 
-        X = self.featurizer.fit_transform(queries, y)
-        
-        clf = SGDClassifier(loss='log', penalty='l2', alpha=alpha, class_weight = 'balanced', n_iter=5, random_state=42, n_jobs=-1)
-        self.clf = clf.fit(X, y)
+            X = self.featurizer.fit_transform(queries, y)
+
+            clf = SGDClassifier(loss='log', penalty='l2', alpha=alpha, class_weight='balanced', n_iter=5,
+                                random_state=42, n_jobs=-1)
+            self.clf = clf.fit(X, y)
 
         return self
 
     def get_intent(self, text):
+        if not self.fitted:
+            raise AssertionError('Fit before predict.')
+
+        if len(text) == 0:
+            return None
+
+        if self.is_empty:
+            return None
 
         X = self.featurizer.transform([text])
-
         proba_vect = self.clf.predict_proba(X)
         predicted = np.argmax(proba_vect[0])
-        
+
         intent_name = self.intent_list[int(predicted)]
         prob = proba_vect[0][int(predicted)]
 
         return IntentClassificationResult(intent_name, prob)
-

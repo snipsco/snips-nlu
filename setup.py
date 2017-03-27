@@ -14,9 +14,10 @@ setup(name="snips_nlu",
           "pytest",
           "enum34",
           "mock",
-          "numpy",
-          "sklearn-crfsuite",
-          "snips-queries"
+          "numpy>=1.6.1",
+          "scipy",
+          "scikit-learn",
+          "sklearn-crfsuite"
       ],
       packages=packages,
       package_data={"": ["snips-nlu-resources/*"]},

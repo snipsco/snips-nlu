@@ -14,6 +14,7 @@ setup(name="snips_nlu",
           "pytest",
           "enum34",
           "mock",
+          "numpy",
           "sklearn-crfsuite",
           "snips-queries"
       ],

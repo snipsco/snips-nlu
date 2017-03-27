@@ -20,7 +20,7 @@ class SnipsIntentClassifier(IntentClassifier):
 
     @property
     def is_empty(self):
-        return len(self.intent_list) == 1
+        return len(self.intent_list) == 0
 
     def fit(self, dataset):
         self.intent_list = get_non_empty_intents(dataset)
@@ -45,6 +45,8 @@ class SnipsIntentClassifier(IntentClassifier):
         if self.is_empty:
             print 'empty training set !'
             return None
+
+        self.intent_list = ['None'] + self.intent_list
 
         X = self.featurizer.transform([text])
         proba_vect = self.clf.predict_proba(X)

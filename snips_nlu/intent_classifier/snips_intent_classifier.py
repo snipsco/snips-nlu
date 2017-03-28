@@ -1,5 +1,6 @@
-import numpy as np
 import cPickle
+
+import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from data_augmentation import augment_dataset, get_non_empty_intents
@@ -61,6 +62,9 @@ class SnipsIntentClassifier(IntentClassifier):
         intent_name = self.intent_list[int(predicted)]
         prob = proba_vect[0][int(predicted)]
 
+        if intent_name == 'None':
+            return None
+            
         return IntentClassificationResult(intent_name, prob)
 
     def to_dict(self):

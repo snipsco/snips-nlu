@@ -1,6 +1,7 @@
 from duckling import core
 from enum import Enum
 
+from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from utils import LimitedSizeDict, classproperty
 
 core.load()
@@ -88,9 +89,9 @@ def get_built_in_entities(text, language, scope=None):
     for ent in parse:
         if ent["dim"] in dims:
             parsed_entity = {
-                "match_range": (ent["start"], ent["end"]),
-                "value": ent["body"],
-                "entity": BuiltInEntity.from_duckling_dim(ent["dim"])
+                MATCH_RANGE: (ent["start"], ent["end"]),
+                VALUE: ent["body"],
+                ENTITY: BuiltInEntity.from_duckling_dim(ent["dim"])
             }
             parsed_entities.append(parsed_entity)
     return parsed_entities

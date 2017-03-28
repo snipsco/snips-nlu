@@ -1,5 +1,6 @@
 from enum import Enum, unique
 
+from snips_nlu.constants import TEXT, SLOT_NAME
 from snips_nlu.tokenization import tokenize, Token
 
 BEGINNING_PREFIX = 'B-'
@@ -7,6 +8,10 @@ INSIDE_PREFIX = 'I-'
 LAST_PREFIX = 'L-'
 UNIT_PREFIX = 'U-'
 OUTSIDE = 'O'
+
+RANGE = "range"
+TAGS = "tags"
+TOKENS = "tokens"
 
 
 @unique
@@ -41,8 +46,8 @@ def bio_tags_to_slots(tags, tokens):
             current_slot_start = i
         if end_of_boi_slot(tags, i):
             slots.append({
-                "range": (tokens[current_slot_start].start, tokens[i].end),
-                "slot_name": tag_name_to_slot_name(tag)
+                RANGE: (tokens[current_slot_start].start, tokens[i].end),
+                SLOT_NAME: tag_name_to_slot_name(tag)
             })
     return slots
 
@@ -52,14 +57,14 @@ def bilou_tags_to_slots(tags, tokens):
     current_slot_start = 0
     for i, tag in enumerate(tags):
         if tag.startswith(UNIT_PREFIX):
-            slots.append({"range": (tokens[i].start, tokens[i].end),
-                          "slot_name": tag_name_to_slot_name(tag)})
+            slots.append({RANGE: (tokens[i].start, tokens[i].end),
+                          SLOT_NAME: tag_name_to_slot_name(tag)})
         if tag.startswith(BEGINNING_PREFIX):
             current_slot_start = i
         if tag.startswith(LAST_PREFIX):
-            slots.append({"range": (tokens[current_slot_start].start,
-                                    tokens[i].end),
-                          "slot_name": tag_name_to_slot_name(tag)})
+            slots.append({RANGE: (tokens[current_slot_start].start,
+                                  tokens[i].end),
+                          SLOT_NAME: tag_name_to_slot_name(tag)})
     return slots
 
 
@@ -70,9 +75,9 @@ def io_tags_to_slots(tags, tokens):
         if tag == OUTSIDE:
             if current_slot_start is not None:
                 slots.append({
-                    "range": (tokens[current_slot_start].start,
-                              tokens[i - 1].end),
-                    "slot_name": tag_name_to_slot_name(tag)
+                    RANGE: (tokens[current_slot_start].start,
+                            tokens[i - 1].end),
+                    SLOT_NAME: tag_name_to_slot_name(tag)
                 })
                 current_slot_start = None
         else:
@@ -81,9 +86,9 @@ def io_tags_to_slots(tags, tokens):
 
     if current_slot_start is not None:
         slots.append({
-            "range": (tokens[current_slot_start].start,
-                      tokens[len(tokens) - 1].end),
-            "slot_name": tag_name_to_slot_name(tags[-1])
+            RANGE: (tokens[current_slot_start].start,
+                    tokens[len(tokens) - 1].end),
+            SLOT_NAME: tag_name_to_slot_name(tags[-1])
         })
     return slots
 
@@ -125,15 +130,15 @@ def negative_tagging(size):
 def utterance_to_sample(query_data, tagging):
     tokens, tags = [], []
     current_length = 0
-    # tokens = tokenize("".join(q["text"] for q in query_data))
+    # tokens = tokenize("".join(q[AUTOMATICALLY_EXTENSIBLE] for q in query_data))
     for i, chunk in enumerate(query_data):
-        chunk_tokens = tokenize(chunk["text"])
+        chunk_tokens = tokenize(chunk[TEXT])
         tokens += [Token(t.value, current_length + t.start,
                          current_length + t.end) for t in chunk_tokens]
-        current_length += len(chunk["text"])
-        if "slot_name" not in chunk:
+        current_length += len(chunk[TEXT])
+        if SLOT_NAME not in chunk:
             tags += negative_tagging(len(chunk_tokens))
         else:
-            tags += positive_tagging(tagging, chunk["slot_name"],
+            tags += positive_tagging(tagging, chunk[SLOT_NAME],
                                      len(chunk_tokens))
-    return {"tokens": tokens, "tags": tags}
+    return {TOKENS: tokens, TAGS: tags}

@@ -9,6 +9,8 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.result import ParsedSlot
+from snips_nlu.slot_filler.crf_slot_tagger import CRFTagger, default_crf_model
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
@@ -24,7 +26,7 @@ class NLUEngine(object):
         raise NotImplementedError
 
 
-def _parse(text, parsers, keyword_entities_sets):
+def _parse(text, parsers, entities):
     if len(parsers) == 0:
         return Result(text, parsed_intent=None, parsed_slots=None)
     for parser in parsers:
@@ -34,26 +36,18 @@ def _parse(text, parsers, keyword_entities_sets):
         slots = parser.get_slots(text, res.intent_name)
         valid_slot = []
         for s in slots:
-            if s.entity in keyword_entities_sets:
-                if s.value not in keyword_entities_sets[s.entity]:
+            entity = entities[s.entity]
+            if not entity["automatically_extensible"]:
+                if s.value not in entity["utterances"]:
                     continue
+                slot_value = entity["utterances"][s.value]
+            else:
+                slot_value = s.value
+            s = ParsedSlot(s.match_range, slot_value, s.entity,
+                           s.slot_name)
             valid_slot.append(s)
         return Result(text, parsed_intent=res, parsed_slots=valid_slot)
     return Result(text, parsed_intent=None, parsed_slots=None)
-
-
-def extract_keyword_entities_sets(dataset):
-    keyword_entities = dict()
-    for entity_name, entity in dataset["entities"].iteritems():
-        if not entity["automatically_extensible"]:
-            if entity["use_synonyms"]:
-                keywords = set(s for d in entity["data"]
-                               for s in d["synonyms"])
-            else:
-                keywords = set(d["data"]["value"] for d in entity["data"])
-
-            keyword_entities[entity_name] = keywords
-    return keyword_entities
 
 
 def get_intent_custom_entities(dataset, intent):
@@ -71,6 +65,26 @@ def get_intent_custom_entities(dataset, intent):
     return custom_entities
 
 
+def snips_nlu_entities(dataset):
+    entities = dict()
+    for entity_name, entity in dataset["entities"].iteritems():
+        entity_data = dict()
+        use_synonyms = entity["use_synonyms"]
+        automatically_extensible = entity["automatically_extensible"]
+        entity_data["automatically_extensible"] = automatically_extensible
+
+        entity_utterances = dict()
+        for data in entity["data"]:
+            if use_synonyms:
+                for s in data["synonyms"]:
+                    entity_utterances[s] = data["value"]
+            else:
+                entity_utterances[data["value"]] = data["value"]
+        entity_data["utterances"] = entity_utterances
+        entities[entity_name] = entity_data
+    return entities
+
+
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, custom_parsers=None, builtin_parser=None):
         super(SnipsNLUEngine, self).__init__()
@@ -78,7 +92,7 @@ class SnipsNLUEngine(NLUEngine):
             custom_parsers = []
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
-        self.keyword_entities_sets = None
+        self.entities = None
 
     def parse(self, text):
         """
@@ -88,7 +102,7 @@ class SnipsNLUEngine(NLUEngine):
         parsers = self.custom_parsers
         if self.builtin_parser is not None:
             parsers.append(self.builtin_parser)
-        return _parse(text, parsers, self.keyword_entities_sets)
+        return _parse(text, parsers, self.entities)
 
     def fit(self, dataset):
         """
@@ -101,7 +115,7 @@ class SnipsNLUEngine(NLUEngine):
         validate_dataset(dataset)
         custom_parser = RegexIntentParser().fit(dataset)
         intent_classifier = SnipsIntentClassifier().fit(dataset)
-        self.keyword_entities_sets = extract_keyword_entities_sets(dataset)
+        self.entities = snips_nlu_entities(dataset)
         taggers = dict()
         for intent in dataset["intents"].keys():
             intent_entities = get_intent_custom_entities(dataset, intent)

@@ -61,6 +61,9 @@ class SnipsIntentClassifier(IntentClassifier):
         intent_name = self.intent_list[int(predicted)]
         prob = proba_vect[0][int(predicted)]
 
+        if intent_name == 'None':
+            return None
+
         return IntentClassificationResult(intent_name, prob)
 
     def to_dict(self):

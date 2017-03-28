@@ -1,7 +1,22 @@
+import importlib
 import os
 from collections import OrderedDict
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def instance_from_dict(obj_dict):
+    module = obj_dict["@module"]
+    class_name = obj_dict["@class_name"]
+    obj_class = getattr(importlib.import_module(module), class_name)
+    return obj_class.from_dict(obj_dict)
+
+
+def instance_to_generic_dict(obj):
+    return {
+        "@class_name": obj.__class__.__name__,
+        "@module": obj.__class__.__module__
+    }
 
 
 class abstractclassmethod(classmethod):

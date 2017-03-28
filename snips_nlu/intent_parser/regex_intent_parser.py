@@ -4,6 +4,7 @@ import re
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import IntentClassificationResult, \
     ParsedSlot
+from snips_nlu.utils import instance_to_generic_dict
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -159,12 +160,33 @@ class RegexIntentParser(IntentParser):
                 entities.append(parsed_entity)
         return entities
 
+    def to_dict(self):
+        obj_dict = instance_to_generic_dict(self)
+        if self.regexes_per_intent is not None:
+            patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
+                        self.regexes_per_intent.iteritems()}
+        else:
+            patterns = None
+
+        obj_dict.update({
+            "patterns": patterns,
+            "group_names_to_slot_names": self.group_names_to_slot_names,
+            "slot_names_to_entities": self.slot_names_to_entities
+        })
+
+        return obj_dict
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        patterns = obj_dict["patterns"]
+        group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
+        slot_names_to_entities = obj_dict["slot_names_to_entities"]
+        return RegexIntentParser(patterns, group_names_to_slot_names,
+                                 slot_names_to_entities)
+
     def __eq__(self, other):
         return isinstance(other, RegexIntentParser) and \
-               self.group_names_to_slot_names \
-               == other.group_names_to_slot_names and \
-               self.slot_names_to_entities == other.slot_names_to_entities and \
-               self.regexes_per_intent == other.regexes_per_intent
+               self.to_dict() == other.to_dict()
 
     def __ne__(self, other):
         return not self.__eq__(other)

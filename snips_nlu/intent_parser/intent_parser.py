@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
+from snips_nlu.utils import instance_from_dict
+
 
 class IntentParser(object):
     __metaclass__ = ABCMeta
@@ -11,3 +13,11 @@ class IntentParser(object):
     @abstractmethod
     def get_slots(self, text, intent=None):
         raise NotImplementedError
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return instance_from_dict(obj_dict)
+
+    @abstractmethod
+    def to_dict(self):
+        pass

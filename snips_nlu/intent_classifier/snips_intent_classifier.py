@@ -43,7 +43,7 @@ class SnipsIntentClassifier(IntentClassifier):
             X = self.featurizer.fit_transform(queries, y)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
-            self.intent_list = ['None'] + self.intent_list
+            self.intent_list = [None] + self.intent_list
         return self
 
     def get_intent(self, text):
@@ -60,6 +60,9 @@ class SnipsIntentClassifier(IntentClassifier):
 
         intent_name = self.intent_list[int(predicted)]
         prob = proba_vect[0][int(predicted)]
+
+        if intent_name is None:
+            return None
 
         return IntentClassificationResult(intent_name, prob)
 

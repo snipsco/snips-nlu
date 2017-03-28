@@ -1,15 +1,19 @@
+import cPickle
 from abc import ABCMeta, abstractmethod
 
+from snips_nlu.built_in_entities import (BuiltInEntityLookupError,
+                                         get_built_in_entity_by_label)
 from snips_nlu.dataset import validate_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import Tagging
-from snips_nlu.slot_filler.feature_functions import default_features
+from snips_nlu.slot_filler.feature_functions import crf_features
 
 
 class NLUEngine(object):
@@ -37,6 +41,7 @@ class SnipsNLUEngine(NLUEngine):
         super(SnipsNLUEngine, self).__init__()
         if custom_parsers is None:
             custom_parsers = []
+        self.language = "en"
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
 
@@ -63,8 +68,9 @@ class SnipsNLUEngine(NLUEngine):
         intent_classifier = SnipsIntentClassifier().fit(dataset)
         taggers = {}
         for intent in dataset["intents"].keys():
-            taggers[intent] = CRFTagger(default_crf_model(),
-                                        default_features(dataset["language"]),
+            intent_entities = get_intent_custom_entities(dataset, intent)
+            features = crf_features(intent_entities, language=self.language)
+            taggers[intent] = CRFTagger(default_crf_model(), features,
                                         Tagging.BILOU)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
@@ -92,3 +98,18 @@ class SnipsNLUEngine(NLUEngine):
                 obj_dict["builtin_parser"])
         return SnipsNLUEngine(custom_parsers=custom_parsers,
                               builtin_parser=builtin_parser)
+
+
+def get_intent_custom_entities(dataset, intent):
+    intent_entities = set()
+    for utterance in dataset["intents"][intent]["utterances"]:
+        for c in utterance["data"]:
+            if "entity" in c:
+                intent_entities.add(c["entity"])
+    custom_entities = dict()
+    for ent in intent_entities:
+        try:
+            get_built_in_entity_by_label(ent)
+        except BuiltInEntityLookupError:
+            custom_entities[ent] = dataset["entities"][ent]
+    return custom_entities

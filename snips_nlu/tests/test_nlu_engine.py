@@ -1,10 +1,11 @@
 import unittest
 
-from mock import Mock
+from mock import Mock, patch, call
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET
+
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
@@ -123,3 +124,98 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         parse = deserialized_engine.parse(text)
         self.assertEqual(parse, expected_parse)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    @patch("snips_nlu.slot_filler.feature_functions.get_token_is_in")
+    def test_should_add_custom_entity_in_collection_feature(
+            self, mocked_get_token, mocked_default_features):
+        # Given
+        def mocked_get_token_is_in(collection, entity_name):
+            return (entity_name, lambda tokens, token_index: None)
+
+        def mocked_default(language):
+            return []
+
+        mocked_get_token.side_effect = mocked_get_token_is_in
+        mocked_default_features.side_effect = mocked_default
+
+        dataset = {
+            "intents": {
+                "dummy_intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy_1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                },
+                                {
+                                    "text": " query."
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "2 P.M",
+                                    "entity": "snips/datetime",
+                                    "slot_name": "origin_time"
+                                },
+                                {
+                                    "text": "dummy_2",
+                                    "entity": "dummy_entity_2",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        },
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2",
+                                "dummy2_bis"
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2"
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+
+        # When
+        SnipsNLUEngine().fit(dataset)
+
+        # Then
+        calls = [
+            call(["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"],
+                 "dummy_entity_1"),
+            call(["dummy2"], "dummy_entity_2")
+        ]
+
+        mocked_get_token.assert_has_calls(calls, any_order=True)

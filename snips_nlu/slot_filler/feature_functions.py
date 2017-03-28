@@ -67,6 +67,17 @@ def default_features(language):
     return features_signatures
 
 
+def crf_features(intent_entities, language):
+    features = default_features(language)
+    for entity_name, entity in intent_entities.iteritems():
+        if entity["use_synonyms"]:
+            collection = [s for d in entity["data"] for s in d["synonyms"]]
+        else:
+            collection = [d["value"] for d in entity["data"]]
+        features.append(get_token_is_in(collection, entity_name))
+    return features
+
+
 # Helpers for base feature functions and factories
 
 

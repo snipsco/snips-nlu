@@ -70,7 +70,7 @@ class TestRegexIntentParser(unittest.TestCase):
         # Then
         expected_dict = {
             "@class_name": "RegexIntentParser",
-            "@module": "snips_nlu.intent_parser.regex_intent_parser",
+            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
             'group_names_to_slot_names': {
                 'hello_group': 'hello_slot',
                 'world_group': 'world_slot'
@@ -92,7 +92,7 @@ class TestRegexIntentParser(unittest.TestCase):
         # Given
         parser_dict = {
             "@class_name": "RegexIntentParser",
-            "@module": "snips_nlu.intent_parser.regex_intent_parser",
+            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
             'group_names_to_slot_names': {
                 'hello_group': 'hello_slot',
                 'world_group': 'world_slot'

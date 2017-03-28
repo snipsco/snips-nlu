@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
 from snips_nlu.dataset import validate_dataset
-from snips_nlu.intent_classifier.intent_classifier import SnipsIntentClassifier
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
 from snips_nlu.intent_parser.intent_parser import IntentParser

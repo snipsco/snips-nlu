@@ -35,7 +35,7 @@ class TestCRFUtils(unittest.TestCase):
         model_pkl = cPickle.dumps(crf_model)
         expected_dict = {
             "@class_name": "CRFTagger",
-            "@module": "snips_nlu.slot_filler.crf_tagger",
+            "@module_name": "snips_nlu.slot_filler.crf_tagger",
             "crf_model": model_pkl,
             "features_signatures": [
                 {

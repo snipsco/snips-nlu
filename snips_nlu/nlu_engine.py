@@ -24,7 +24,7 @@ class NLUEngine(object):
         raise NotImplementedError
 
 
-def _parse(text, parsers):
+def _parse(text, parsers, keyword_entities_sets):
     if len(parsers) == 0:
         return Result(text, parsed_intent=None, parsed_slots=None)
     for parser in parsers:
@@ -32,8 +32,43 @@ def _parse(text, parsers):
         if res is None:
             continue
         slots = parser.get_slots(text, res.intent_name)
-        return Result(text, parsed_intent=res, parsed_slots=slots)
+        valid_slot = []
+        for s in slots:
+            if s.entity in keyword_entities_sets:
+                if s.value not in keyword_entities_sets[s.entity]:
+                    continue
+            valid_slot.append(s)
+        return Result(text, parsed_intent=res, parsed_slots=valid_slot)
     return Result(text, parsed_intent=None, parsed_slots=None)
+
+
+def extract_keyword_entities_sets(dataset):
+    keyword_entities = dict()
+    for entity_name, entity in dataset["entities"].iteritems():
+        if not entity["automatically_extensible"]:
+            if entity["use_synonyms"]:
+                keywords = set(s for d in entity["data"]
+                               for s in d["synonyms"])
+            else:
+                keywords = set(d["data"]["value"] for d in entity["data"])
+
+            keyword_entities[entity_name] = keywords
+    return keyword_entities
+
+
+def get_intent_custom_entities(dataset, intent):
+    intent_entities = set()
+    for utterance in dataset["intents"][intent]["utterances"]:
+        for c in utterance["data"]:
+            if "entity" in c:
+                intent_entities.add(c["entity"])
+    custom_entities = dict()
+    for ent in intent_entities:
+        try:
+            get_built_in_entity_by_label(ent)
+        except BuiltInEntityLookupError:
+            custom_entities[ent] = dataset["entities"][ent]
+    return custom_entities
 
 
 class SnipsNLUEngine(NLUEngine):
@@ -41,9 +76,9 @@ class SnipsNLUEngine(NLUEngine):
         super(SnipsNLUEngine, self).__init__()
         if custom_parsers is None:
             custom_parsers = []
-        self.language = "en"
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
+        self.keyword_entities_sets = None
 
     def parse(self, text):
         """
@@ -53,7 +88,7 @@ class SnipsNLUEngine(NLUEngine):
         parsers = self.custom_parsers
         if self.builtin_parser is not None:
             parsers.append(self.builtin_parser)
-        return _parse(text, parsers)
+        return _parse(text, parsers, self.keyword_entities_sets)
 
     def fit(self, dataset):
         """
@@ -66,10 +101,12 @@ class SnipsNLUEngine(NLUEngine):
         validate_dataset(dataset)
         custom_parser = RegexIntentParser().fit(dataset)
         intent_classifier = SnipsIntentClassifier().fit(dataset)
-        taggers = {}
+        self.keyword_entities_sets = extract_keyword_entities_sets(dataset)
+        taggers = dict()
         for intent in dataset["intents"].keys():
             intent_entities = get_intent_custom_entities(dataset, intent)
-            features = crf_features(intent_entities, language=self.language)
+            features = crf_features(intent_entities,
+                                    language=dataset["language"])
             taggers[intent] = CRFTagger(default_crf_model(), features,
                                         Tagging.BILOU)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
@@ -98,18 +135,3 @@ class SnipsNLUEngine(NLUEngine):
                 obj_dict["builtin_parser"])
         return SnipsNLUEngine(custom_parsers=custom_parsers,
                               builtin_parser=builtin_parser)
-
-
-def get_intent_custom_entities(dataset, intent):
-    intent_entities = set()
-    for utterance in dataset["intents"][intent]["utterances"]:
-        for c in utterance["data"]:
-            if "entity" in c:
-                intent_entities.add(c["entity"])
-    custom_entities = dict()
-    for ent in intent_entities:
-        try:
-            get_built_in_entity_by_label(ent)
-        except BuiltInEntityLookupError:
-            custom_entities[ent] = dataset["entities"][ent]
-    return custom_entities

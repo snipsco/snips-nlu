@@ -60,21 +60,29 @@ def default_features(language):
             {
                 "module_name": __name__,
                 "factory_name": "get_built_in_annotation_fn",
-                "args": {entity, language},
+                "args": {"built_in_entity": entity, "language": language},
                 "offsets": [-2, -1, 0]
             }
         )
     return features_signatures
 
 
-def crf_features(intent_entities, language):
+def crf_features(intent_entities, language, offsets=[-2, -1, 0]):
     features = default_features(language)
     for entity_name, entity in intent_entities.iteritems():
         if entity["use_synonyms"]:
             collection = [s for d in entity["data"] for s in d["synonyms"]]
         else:
             collection = [d["value"] for d in entity["data"]]
-        features.append(get_token_is_in(collection, entity_name))
+
+        features.append(
+            {
+                "module": __name__,
+                "factory_name": "get_token_is_in",
+                "args": {"collection": collection,
+                         "collection_name": entity_name}
+            }
+        )
     return features
 
 

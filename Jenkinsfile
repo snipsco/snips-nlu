@@ -26,6 +26,7 @@ node('jenkins-slave-generic') {
     }
 
     stage('Publish') {
+        def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
         switch (branchName) {
             case "master":
                 sh """

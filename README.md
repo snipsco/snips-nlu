@@ -20,22 +20,28 @@ Follow installation instructions [here](https://github.com/snipsco/tensorflow-bu
 
 
 ### Installation
-Create a virtual env
-    
-    virtualenv venv    
+Create a virtual env:
 
-Activate it
-    
+    virtualenv venv
+
+Activate it:
+
     venv/bin/activate
 
-Then create a pip.conf file within the virtual env
+
+Update the submodules:
+
+    git submodule update --init --recursive
+
+
+Then create a pip.conf file within the virtual env:
 
 ```
 echo "[global]\nindex = https://nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
 ```
 
-Install the package in edition mode
-    
+Install the package in edition mode:
+
     pip install -e .
 
 As some dependencies are private, you will need a valid username/password to authenticate to the Nexus repository.

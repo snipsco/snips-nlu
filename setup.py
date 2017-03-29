@@ -21,9 +21,6 @@ setup(name="snips_nlu",
           "sklearn-crfsuite==0.3.5",
           "snips-queries==0.1.0a1"
       ],
-      dependency_links=[
-          "git+ssh://git@github.com/snipsco/duckling-python.git@0.0.1"
-          "#egg=duckling-0.0.1"],
       packages=packages,
       package_data={"": ["snips-nlu-resources/*", "tests/resources/*"]},
       entry_points={},

@@ -1,23 +1,24 @@
 import numpy as np
 
 from intent_classifier_resources import get_subtitles
+from snips_nlu.constants import TEXT, DATA, INTENTS, UTTERANCES, LANGUAGE
 
 
 def get_non_empty_intents(dataset):
-    return [name for name, data in dataset["intents"].items() if
-            len(data["utterances"]) > 0]
+    return [name for name, data in dataset[INTENTS].items() if
+            len(data[UTTERANCES]) > 0]
 
 
-def augment_dataset(dataset, intent_list, language='en'):
+def augment_dataset(dataset, intent_list):
     intent_code = dict((intent, i + 1) for i, intent in enumerate(intent_list))
 
-    queries_per_intent = [len(dataset['intents'][intent]['utterances']) for
+    queries_per_intent = [len(dataset[INTENTS][intent][UTTERANCES]) for
                           intent in intent_list]
     mean_queries_per_intent = np.mean(queries_per_intent)
 
     alpha = 1.0 / (4 * (sum(queries_per_intent) + 5 * mean_queries_per_intent))
 
-    data_noise_train = list(get_subtitles(language))
+    data_noise_train = list(get_subtitles(dataset[LANGUAGE]))
     queries_noise = np.random.choice(data_noise_train,
                                      size=int(5 * mean_queries_per_intent),
                                      replace=False)
@@ -25,9 +26,9 @@ def augment_dataset(dataset, intent_list, language='en'):
     queries = []
     y = []
     for intent in intent_list:
-        utterances = dataset['intents'][intent]['utterances']
-        queries += [''.join([utterances[i]['data'][j]['text'] for j in
-                             xrange(len(utterances[i]['data']))]) for i in
+        utterances = dataset[INTENTS][intent][UTTERANCES]
+        queries += [''.join([utterances[i][DATA][j][TEXT] for j in
+                             xrange(len(utterances[i][DATA]))]) for i in
                     xrange(len(utterances))]
         y += [intent_code[intent] for _ in xrange(len(utterances))]
 

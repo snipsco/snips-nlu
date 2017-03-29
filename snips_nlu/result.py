@@ -1,5 +1,8 @@
 from collections import namedtuple
 
+from snips_nlu.constants import INTENT_NAME, PROBABILITY, PARSED_INTENT, \
+    PARSED_SLOTS, TEXT, SLOT_NAME, MATCH_RANGE, VALUE
+
 _IntentClassificationResult = namedtuple('_IntentClassificationResult',
                                          'intent_name probability')
 _ParsedSlot = namedtuple('_ParsedSlot', 'match_range value entity slot_name')
@@ -13,8 +16,8 @@ class IntentClassificationResult(_IntentClassificationResult):
 
     def as_dict(self):
         return {
-            "intent_name": self.intent_name,
-            "probability": self.probability
+            INTENT_NAME: self.intent_name,
+            PROBABILITY: self.probability
         }
 
 
@@ -25,9 +28,9 @@ class ParsedSlot(_ParsedSlot):
 
     def as_dict(self):
         return {
-            "match_range": [self.match_range[0], self.match_range[1]],
-            "value": self.value,
-            "slot_name": self.slot_name
+            MATCH_RANGE: [self.match_range[0], self.match_range[1]],
+            VALUE: self.value,
+            SLOT_NAME: self.slot_name
         }
 
 
@@ -46,7 +49,7 @@ class Result(_Result):
         else:
             parsed_entities = None
         return {
-            "text": self.text,
-            "parsed_intent": parsed_intent,
-            "parsed_slots": parsed_entities
+            TEXT: self.text,
+            PARSED_INTENT: parsed_intent,
+            PARSED_SLOTS: parsed_entities
         }

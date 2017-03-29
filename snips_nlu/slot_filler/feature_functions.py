@@ -5,6 +5,8 @@ from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
+from snips_nlu.constants import USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE, \
+    VALUE
 
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
@@ -70,10 +72,10 @@ def default_features(language):
 def crf_features(intent_entities, language, offsets=[-2, -1, 0]):
     features = default_features(language)
     for entity_name, entity in intent_entities.iteritems():
-        if entity["use_synonyms"]:
-            collection = [s for d in entity["data"] for s in d["synonyms"]]
+        if entity[USE_SYNONYMS]:
+            collection = [s for d in entity[DATA] for s in d[SYNONYMS]]
         else:
-            collection = [d["value"] for d in entity["data"]]
+            collection = [d[VALUE] for d in entity[DATA]]
 
         features.append(
             {
@@ -252,8 +254,8 @@ def get_regex_match_fn(regex, match_name, use_bilou=False):
         if token_index == 0:
             token_start = 0
         else:
-            token_start = len(" ".join(t.value for t in tokens[:token_index])) \
-                          + 1
+            token_start = len(" ".join(t.value for t in tokens[:token_index])
+                              ) + 1
         token_end = token_start + len(tokens[token_index].value)
 
         match_start = match.start()
@@ -299,8 +301,8 @@ def get_built_in_annotation_fn(built_in_entity, language):
         start = tokens[token_index].start
         end = tokens[token_index].end
         for ent in built_ins:
-            if (ent["match_range"][0] <= start < ent["match_range"][1]
-                and ent["match_range"][0] < end <= ent["match_range"][1]):
+            if (ent[MATCH_RANGE][0] <= start < ent[MATCH_RANGE][1]
+                and ent[MATCH_RANGE][0] < end <= ent[MATCH_RANGE][1]):
                 return "1"
 
     return BaseFeatureFunction(feature_name, built_in_annotation)

@@ -1,4 +1,6 @@
 from intent_parser import IntentParser
+from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY
+from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
@@ -9,11 +11,11 @@ from snips_nlu.utils import instance_to_generic_dict, instance_from_dict
 
 def get_slot_name_to_entity_mapping(dataset):
     slot_name_to_entity = dict()
-    for intent in dataset["intents"].values():
-        for utterance in intent["utterances"]:
-            for chunk in utterance["data"]:
-                if "slot_name" in chunk:
-                    slot_name_to_entity[chunk["slot_name"]] = chunk["entity"]
+    for intent in dataset[INTENTS].values():
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if SLOT_NAME in chunk:
+                    slot_name_to_entity[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_to_entity
 
 
@@ -47,8 +49,8 @@ class CRFIntentParser(IntentParser):
         return [ParsedSlot(match_range=s["range"],
                            value=text[s["range"][0]:s["range"][1]],
                            entity=self.slot_name_to_entity_mapping[
-                               s["slot_name"]],
-                           slot_name=s["slot_name"]) for s in slots]
+                               s[SLOT_NAME]],
+                           slot_name=s[SLOT_NAME]) for s in slots]
 
     @property
     def fitted(self):
@@ -60,8 +62,8 @@ class CRFIntentParser(IntentParser):
             dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
 
-        for intent_name in dataset["intents"]:
-            intent_utterances = dataset["intents"][intent_name]["utterances"]
+        for intent_name in dataset[INTENTS]:
+            intent_utterances = dataset[INTENTS][intent_name][UTTERANCES]
             tagging = self.crf_taggers[intent_name].tagging
             crf_samples = [utterance_to_sample(u["data"], tagging)
                            for u in intent_utterances]

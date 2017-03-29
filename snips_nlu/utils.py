@@ -5,18 +5,21 @@ from collections import OrderedDict
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESOURCES_PATH = os.path.join(ROOT_PATH, "snips_nlu/snips-nlu-resources")
 
+MODULE_NAME = "@module_name"
+CLASS_NAME = "@class_name"
+
 
 def instance_from_dict(obj_dict):
-    module = obj_dict["@module_name"]
-    class_name = obj_dict["@class_name"]
+    module = obj_dict[MODULE_NAME]
+    class_name = obj_dict[CLASS_NAME]
     obj_class = getattr(importlib.import_module(module), class_name)
     return obj_class.from_dict(obj_dict)
 
 
 def instance_to_generic_dict(obj):
     return {
-        "@class_name": obj.__class__.__name__,
-        "@module_name": obj.__class__.__module__
+        CLASS_NAME: obj.__class__.__name__,
+        MODULE_NAME: obj.__class__.__module__
     }
 
 
@@ -26,6 +29,11 @@ class abstractclassmethod(classmethod):
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractclassmethod, self).__init__(callable)
+
+
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
 
 
 def sequence_equal(seq, other_seq):

@@ -63,7 +63,7 @@ class Featurizer(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return Featurizer(
+        return cls(
             language=obj_dict['language'],
             count_vectorizer=cPickle.loads(obj_dict['count_vectorizer']),
             tfidf_transformer=cPickle.loads(obj_dict['tfidf_transformer']),

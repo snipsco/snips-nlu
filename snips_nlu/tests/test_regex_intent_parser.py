@@ -1,8 +1,7 @@
 import unittest
 
-from snips_nlu.intent_parser.intent_parser import IntentParser
-
-from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.intent_parser.regex_intent_parser import (
+    RegexIntentParser, deduplicate_overlapping_slots)
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
@@ -110,7 +109,7 @@ class TestRegexIntentParser(unittest.TestCase):
         }
 
         # When
-        parser = IntentParser.from_dict(parser_dict)
+        parser = RegexIntentParser.from_dict(parser_dict)
         patterns = {
             "intent_name": [
                 "(?P<hello_group>hello?)",
@@ -132,5 +131,63 @@ class TestRegexIntentParser(unittest.TestCase):
         )
         self.assertEqual(parser, expected_parser)
 
-    if __name__ == '__main__':
-        unittest.main()
+    def test_should_deduplicate_overlapping_slots(self):
+        # Given
+        slots = [
+            ParsedSlot(
+                [3, 7],
+                "non_overlapping1",
+                "e",
+                "s1"
+            ),
+            ParsedSlot(
+                [9, 16],
+                "aaaaaaa",
+                "e1",
+                "s2"
+            ),
+            ParsedSlot(
+                [10, 18],
+                "bbbbbbbb",
+                "e1",
+                "s3"
+            ),
+            ParsedSlot(
+                [17, 23],
+                "b cccc",
+                "e1",
+                "s4"
+            ),
+            ParsedSlot(
+                [50, 60],
+                "non_overlapping2",
+                "e",
+                "s5"
+            ),
+        ]
+
+        # When
+        deduplicated_slots = deduplicate_overlapping_slots(slots)
+
+        # Then
+        expected_slots = [
+            ParsedSlot(
+                [3, 7],
+                "non_overlapping1",
+                "e",
+                "s1"
+            ),
+            ParsedSlot(
+                [17, 23],
+                "b cccc",
+                "e1",
+                "s4"
+            ),
+            ParsedSlot(
+                [50, 60],
+                "non_overlapping2",
+                "e",
+                "s5"
+            ),
+        ]
+        self.assertSequenceEqual(deduplicated_slots, expected_slots)

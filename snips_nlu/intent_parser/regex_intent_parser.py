@@ -1,9 +1,14 @@
 import operator
 import re
 
+from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
+                                 ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
+                                 ENTITY)
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.intent_parser.intent_parser import IntentParser
-from snips_nlu.result import IntentClassificationResult, \
-    ParsedSlot
+from snips_nlu.result import (IntentClassificationResult,
+                              ParsedSlot)
+from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import instance_to_generic_dict
 
 GROUP_NAME_PREFIX = "group"
@@ -32,12 +37,12 @@ def generate_new_index(slots_name_to_labels):
 
 def get_slot_names_mapping(dataset):
     slot_names_to_entities = dict()
-    for intent in dataset["intents"].values():
-        for utterance in intent["utterances"]:
-            for chunk in utterance["data"]:
-                if "entity" in chunk:
-                    slot_name = chunk["slot_name"]
-                    entity = chunk["entity"]
+    for intent in dataset[INTENTS].values():
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if SLOT_NAME in chunk:
+                    slot_name = chunk[SLOT_NAME]
+                    entity = chunk[ENTITY]
                     slot_names_to_entities[slot_name] = entity
     return slot_names_to_entities
 
@@ -45,16 +50,17 @@ def get_slot_names_mapping(dataset):
 def query_to_pattern(query, joined_entity_utterances,
                      group_names_to_slot_names):
     pattern = r"^"
-    for chunk in query["data"]:
-        if "entity" in chunk:
+    for chunk in query[DATA]:
+        if SLOT_NAME in chunk and chunk[ENTITY] not in \
+                BuiltInEntity.built_in_entity_by_label:
             max_index = generate_new_index(group_names_to_slot_names)
-            slot_name = chunk["slot_name"]
-            entity = chunk["entity"]
+            slot_name = chunk[SLOT_NAME]
+            entity = chunk[ENTITY]
             group_names_to_slot_names[max_index] = slot_name
             pattern += r"(?P<%s>%s)" % (
                 max_index, joined_entity_utterances[entity])
         else:
-            pattern += re.escape(chunk["text"])
+            pattern += re.escape(chunk[TEXT])
 
     return pattern + r"$", group_names_to_slot_names
 
@@ -73,15 +79,35 @@ def generate_regexes(intent_queries, joined_entity_utterances,
 
 def get_joined_entity_utterances(dataset):
     joined_entity_utterances = dict()
-    for entity_name, entity in dataset["entities"].iteritems():
-        if entity["use_synonyms"]:
-            utterances = [syn for entry in entity["data"]
-                          for syn in entry["synonyms"]]
+    for entity_name, entity in dataset[ENTITIES].iteritems():
+        if entity[USE_SYNONYMS]:
+            utterances = [syn for entry in entity[DATA]
+                          for syn in entry[SYNONYMS]]
         else:
-            utterances = [entry["value"] for entry in entity["data"]]
+            utterances = [entry[VALUE] for entry in entity[DATA]]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted([re.escape(e) for e in utterances], key=len, reverse=True))
     return joined_entity_utterances
+
+
+def deduplicate_overlapping_slots(slots):
+    deduplicated_slots = []
+    for slot in slots:
+        is_overlapping = False
+        for slot_index, dedup_slot in enumerate(deduplicated_slots):
+            if slot.match_range[1] > dedup_slot.match_range[0] \
+                    and slot.match_range[0] < dedup_slot.match_range[1]:
+                is_overlapping = True
+                tokens = tokenize(slot.value)
+                dedup_tokens = tokenize(dedup_slot.value)
+                if len(tokens) > len(dedup_tokens):
+                    deduplicated_slots[slot_index] = slot
+                elif len(tokens) == len(dedup_tokens) \
+                        and len(slot.value) > len(dedup_slot.value):
+                    deduplicated_slots[slot_index] = slot
+        if not is_overlapping:
+            deduplicated_slots.append(slot)
+    return deduplicated_slots
 
 
 class RegexIntentParser(IntentParser):
@@ -106,8 +132,8 @@ class RegexIntentParser(IntentParser):
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = get_joined_entity_utterances(dataset)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
-        for intent_name, intent in dataset["intents"].iteritems():
-            utterances = intent["utterances"]
+        for intent_name, intent in dataset[INTENTS].iteritems():
+            utterances = intent[UTTERANCES]
             regexes, self.group_names_to_slot_names = generate_regexes(
                 utterances, joined_entity_utterances,
                 self.group_names_to_slot_names)
@@ -144,7 +170,7 @@ class RegexIntentParser(IntentParser):
         if intent not in self.regexes_per_intent:
             raise KeyError("Intent not found in RegexIntentParser: %s"
                            % intent)
-        entities = []
+        slots = []
         for regex in self.regexes_per_intent[intent]:
             match = regex.match(text)
             if match is None:
@@ -153,12 +179,12 @@ class RegexIntentParser(IntentParser):
                 slot_name = self.group_names_to_slot_names[group_name]
                 entity = self.slot_names_to_entities[slot_name]
                 rng = (match.start(group_name), match.end(group_name))
-                parsed_entity = ParsedSlot(match_range=rng,
-                                           value=match.group(group_name),
-                                           entity=entity,
-                                           slot_name=slot_name)
-                entities.append(parsed_entity)
-        return entities
+                parsed_slot = ParsedSlot(match_range=rng,
+                                         value=match.group(group_name),
+                                         entity=entity,
+                                         slot_name=slot_name)
+                slots.append(parsed_slot)
+        return deduplicate_overlapping_slots(slots)
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)
@@ -181,12 +207,5 @@ class RegexIntentParser(IntentParser):
         patterns = obj_dict["patterns"]
         group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
         slot_names_to_entities = obj_dict["slot_names_to_entities"]
-        return RegexIntentParser(patterns, group_names_to_slot_names,
-                                 slot_names_to_entities)
-
-    def __eq__(self, other):
-        return isinstance(other, RegexIntentParser) and \
-               self.to_dict() == other.to_dict()
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        return cls(patterns, group_names_to_slot_names,
+                   slot_names_to_entities)

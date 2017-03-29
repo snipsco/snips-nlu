@@ -1,5 +1,6 @@
-import numpy as np
 import cPickle
+
+import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from data_augmentation import augment_dataset, get_non_empty_intents
@@ -21,10 +22,8 @@ def get_default_parameters():
 
 
 class SnipsIntentClassifier(IntentClassifier):
-    def __init__(self, language='en', classifier_args=get_default_parameters(),
-                 classifier=None, intent_list=None,
-                 featurizer=Featurizer(language='en')):
-        self.language = language
+    def __init__(self, classifier_args=get_default_parameters(),
+                 classifier=None, intent_list=None, featurizer=None):
         self.classifier_args = classifier_args
         self.classifier = classifier
         self.intent_list = intent_list
@@ -35,11 +34,13 @@ class SnipsIntentClassifier(IntentClassifier):
         return self.intent_list is not None
 
     def fit(self, dataset):
+        if self.featurizer is None:
+            self.featurizer = Featurizer(dataset["language"])
+
         self.intent_list = get_non_empty_intents(dataset)
 
         if len(self.intent_list) > 0:
-            (queries, y), alpha = augment_dataset(dataset, self.intent_list,
-                                                  self.language)
+            (queries, y), alpha = augment_dataset(dataset, self.intent_list)
             X = self.featurizer.fit_transform(queries, y)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
@@ -69,7 +70,6 @@ class SnipsIntentClassifier(IntentClassifier):
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)
         obj_dict.update({
-            "language": self.language,
             "classifier_args": self.classifier_args,
             "classifier_pkl": cPickle.dumps(self.classifier),
             "intent_list": self.intent_list,
@@ -79,8 +79,7 @@ class SnipsIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return SnipsIntentClassifier(
-            language=obj_dict['language'],
+        return cls(
             classifier_args=obj_dict['classifier_args'],
             classifier=cPickle.loads(obj_dict['classifier_pkl']),
             intent_list=obj_dict['intent_list'],

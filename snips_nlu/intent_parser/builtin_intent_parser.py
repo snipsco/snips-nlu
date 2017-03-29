@@ -23,7 +23,7 @@ class BuiltinIntentParser(IntentParser):
     @classmethod
     def from_dict(cls, obj_dict):
         if "data_path" in obj_dict:
-            return BuiltinIntentParser(data_path=obj_dict["data_path"])
+            return cls(data_path=obj_dict["data_path"])
         raise KeyError("Expected obj_dict to have key 'data_path'")
 
     def to_dict(self):

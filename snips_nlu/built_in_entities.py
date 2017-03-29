@@ -11,22 +11,6 @@ class BuiltInEntity(Enum):
     DURATION = {"label": "snips/duration", "duckling_dim": "duration"}
     NUMBER = {"label": "snips/number", "duckling_dim": "number"}
 
-    def __init__(self, value):
-        Enum.__init__(value)
-        enum_class = type(self)
-        try:
-            enum_class._built_in_entity_by_label[self.label] = self
-        except AttributeError:
-            enum_class._built_in_entity_by_label = dict()
-        enum_class._built_in_entity_by_label[self.label] = self
-
-        try:
-            enum_class._built_in_entity_by_duckling_dim[
-                self.duckling_dim] = self
-        except AttributeError:
-            enum_class._built_in_entity_by_duckling_dim = dict()
-        enum_class._built_in_entity_by_duckling_dim[self.duckling_dim] = self
-
     @property
     def label(self):
         return self.value["label"]
@@ -38,6 +22,12 @@ class BuiltInEntity(Enum):
     @classproperty
     @classmethod
     def built_in_entity_by_label(cls):
+        try:
+            return cls._built_in_entity_by_label
+        except AttributeError:
+            cls._built_in_entity_by_label = dict()
+            for ent in cls:
+                cls._built_in_entity_by_label[ent.label] = ent
         return cls._built_in_entity_by_label
 
     @classmethod
@@ -54,6 +44,12 @@ class BuiltInEntity(Enum):
     @classproperty
     @classmethod
     def built_in_entity_by_duckling_dim(cls):
+        try:
+            return cls._built_in_entity_by_duckling_dim
+        except AttributeError:
+            cls._built_in_entity_by_duckling_dim = dict()
+            for ent in cls:
+                cls._built_in_entity_by_duckling_dim[ent.duckling_dim] = ent
         return cls._built_in_entity_by_duckling_dim
 
     @classmethod

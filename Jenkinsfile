@@ -26,12 +26,11 @@ node('jenkins-slave-generic') {
     }
 
     stage('Publish') {
-        def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
         switch (branchName) {
             case "master":
                 sh """
                 . venv/bin/activate
-                python setup.py bdist_wheel upload -r https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/
+                python setup.py bdist_wheel upload -r pypisnips
                 """
             default:
                 sh """

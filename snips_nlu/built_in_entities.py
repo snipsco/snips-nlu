@@ -67,6 +67,7 @@ class BuiltInEntity(Enum):
                 return default
         return ent
 
+
 def scope_to_dims(scope):
     return [entity.duckling_dim for entity in scope]
 

@@ -1,16 +1,18 @@
 import re
 import unittest
 
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_regex_match_fn, get_prefix_fn,
     get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME,
-    BaseFeatureFunction, get_token_is_in)
+    BaseFeatureFunction, get_token_is_in, get_built_in_annotation_fn)
+from snips_nlu.tokenization import tokenize
 
 
 class TestFeatureFunctions(unittest.TestCase):
     def test_ngrams(self):
         # Given
-        tokens = ["I", "love", "house", "music"]
+        tokens = tokenize("I love house music")
         ngrams = {
             1: ["i", "love", "house", "music"],
             2: ["i love", "love house", "house music", None],
@@ -27,7 +29,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_ngrams_with_rare_word(self):
         # Given
-        tokens = ["I", "love", "house", "music"]
+        tokens = tokenize("I love house music")
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
             2: ["i love", "love rare_word", "rare_word music", None],
@@ -48,11 +50,11 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_prefix(self):
         # Given
-        tokens = ["AbCde"]
+        tokens = tokenize("AbCde")
         token = tokens[0]
         expected_prefixes = ["a", "ab", "abc", "abcd", "abcde", None]
 
-        for i in xrange(1, len(token) + 2):
+        for i in xrange(1, len(token.value) + 2):
             prefix_fn = get_prefix_fn(i)
             # When
             prefix = prefix_fn.function(tokens, 0)
@@ -61,28 +63,28 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_suffix(self):
         # Given
-        tokens = ["AbCde"]
+        tokens = tokenize("AbCde")
         token = tokens[0]
         expected_suffixes = ["e", "de", "cde", "bcde", "abcde", None]
 
-        for i in xrange(1, len(token) + 2):
+        for i in xrange(1, len(token.value) + 2):
             suffix_fn = get_suffix_fn(i)
             # When
             prefix = suffix_fn.function(tokens, 0)
             # Then
             self.assertEqual(prefix, expected_suffixes[i - 1])
 
-    def test_gazetteer(self):
+    def test_regex_match(self):
         # Given
-        terms = ["bird | rat", "dog pig", "cat"]
+        terms = ["bird cow rat", "dog pig", "cat"]
         pattern = r"|".join(re.escape(t) for t in terms)
         regex = re.compile(pattern, re.IGNORECASE)
 
         texts = {
             "there is nothing here": [None, None, None, None],
-            "there's a bird | rat here": [None, None, "B-animal", "I-animal",
-                                          "I-animal", None],
-            "I'm a cat": [None, None, "B-animal"]
+            "there s a bird cow rat here": [None, None, None, "B-animal",
+                                            "I-animal", "I-animal", None],
+            "I m a cat": [None, None, None, "B-animal"]
         }
 
         # When
@@ -90,22 +92,22 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # Then
         for text, features in texts.iteritems():
-            tokens = text.split()
-            self.assertEqual(
-                features, [feature_fn.function(tokens, i)
-                           for i in xrange(len(tokens))])
+            tokens = tokenize(text)
+            self.assertEqual(features,
+                             [feature_fn.function(tokens, i)
+                              for i in xrange(len(tokens))])
 
-    def test_gazetteer_with_bilou(self):
+    def test_regex_match_with_bilou(self):
         # Given
-        terms = ["bird | rat", "dog pig", "cat"]
+        terms = ["bird cow rat", "dog pig", "cat"]
         pattern = r"|".join(re.escape(t) for t in terms)
         regex = re.compile(pattern, re.IGNORECASE)
 
         texts = {
             "there is nothing here": [None, None, None, None],
-            "there's a bird | rat here": [None, None, "B-animal", "I-animal",
-                                          "L-animal", None],
-            "I'm a cat": [None, None, "U-animal"]
+            "there s a bird cow rat here": [None, None, None, "B-animal",
+                                            "I-animal", "L-animal", None],
+            "I m a cat": [None, None, None, "U-animal"]
         }
 
         # When
@@ -113,7 +115,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # Then
         for text, features in texts.iteritems():
-            tokens = text.split()
+            tokens = tokenize(text)
             self.assertEqual(features,
                              [feature_fn.function(tokens, i)
                               for i in xrange(len(tokens))])
@@ -121,7 +123,7 @@ class TestFeatureFunctions(unittest.TestCase):
     def test_token_is_in(self):
         # Given
         collection = {"bIrd"}
-        tokens = ["i", "m", "a", "bird"]
+        tokens = tokenize("i m a bird")
         expected_features = ["0", "0", "0", "1"]
         # When
         feature_fn = get_token_is_in(collection, "animal")
@@ -130,6 +132,23 @@ class TestFeatureFunctions(unittest.TestCase):
         self.assertEqual(expected_features,
                          [feature_fn.function(tokens, i)
                           for i in xrange(len(tokens))])
+
+    def test_get_built_in_annotation_fn(self):
+        # Given
+        language = "en"
+        text = "i ll be there tomorrow at noon   is that ok?"
+        tokens = tokenize(text)
+        built_in = BuiltInEntity.DATETIME
+        feature_fn = get_built_in_annotation_fn(built_in, language)
+        expected_features = [None, None, None, None, "1", "1", "1", None, None,
+                             None]
+
+        # When
+        features = [feature_fn.function(tokens, i)
+                    for i in xrange(len(tokens))]
+
+        # Then
+        self.assertEqual(features, expected_features)
 
     def test_char_range_to_token_range(self):
         # Given
@@ -154,7 +173,7 @@ class TestFeatureFunctions(unittest.TestCase):
         base_feature_function = BaseFeatureFunction(
             name, lambda _, token_index: token_index + 1)
 
-        tokens = ["a", "b", "c"]
+        tokens = tokenize("a b c")
         expected_features = {
             0: ("position", [1, 2, 3]),
             -1: ("position[-1]", [None, 1, 2]),

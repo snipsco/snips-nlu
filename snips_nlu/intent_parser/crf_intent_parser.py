@@ -1,11 +1,10 @@
 from intent_parser import IntentParser
-from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample)
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import instance_to_generic_dict
+from snips_nlu.utils import instance_to_generic_dict, instance_from_dict
 
 
 def get_slot_name_to_entity_mapping(dataset):
@@ -83,8 +82,8 @@ class CRFIntentParser(IntentParser):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return CRFIntentParser(
-            intent_classifier=IntentClassifier.from_dict(
+        return cls(
+            intent_classifier=instance_from_dict(
                 obj_dict["intent_classifier"]),
             crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)
                          for intent_name, tagger_dict in

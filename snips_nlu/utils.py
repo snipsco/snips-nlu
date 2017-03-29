@@ -28,6 +28,11 @@ class abstractclassmethod(classmethod):
         super(abstractclassmethod, self).__init__(callable)
 
 
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
+
+
 def sequence_equal(seq, other_seq):
     return len(seq) == len(other_seq) and sorted(seq) == sorted(other_seq)
 

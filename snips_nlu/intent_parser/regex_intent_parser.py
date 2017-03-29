@@ -1,6 +1,7 @@
 import operator
 import re
 
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import IntentClassificationResult, \
     ParsedSlot
@@ -46,7 +47,8 @@ def query_to_pattern(query, joined_entity_utterances,
                      group_names_to_slot_names):
     pattern = r"^"
     for chunk in query["data"]:
-        if "entity" in chunk:
+        if "entity" in chunk and chunk["entity"] not in \
+                BuiltInEntity.built_in_entity_by_label:
             max_index = generate_new_index(group_names_to_slot_names)
             slot_name = chunk["slot_name"]
             entity = chunk["entity"]
@@ -181,12 +183,5 @@ class RegexIntentParser(IntentParser):
         patterns = obj_dict["patterns"]
         group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
         slot_names_to_entities = obj_dict["slot_names_to_entities"]
-        return RegexIntentParser(patterns, group_names_to_slot_names,
-                                 slot_names_to_entities)
-
-    def __eq__(self, other):
-        return isinstance(other, RegexIntentParser) and \
-               self.to_dict() == other.to_dict()
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        return cls(patterns, group_names_to_slot_names,
+                   slot_names_to_entities)

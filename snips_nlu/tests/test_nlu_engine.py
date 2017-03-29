@@ -1,10 +1,15 @@
 import unittest
 
-from mock import Mock
+from mock import Mock, patch, call
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
+from snips_nlu.slot_filler.feature_functions import BaseFeatureFunction
 from utils import SAMPLE_DATASET
+
+
+def mocked_default(_):
+    return []
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
@@ -45,6 +50,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
                                 mocked_builtin_parser)
+        engine.entities = {"mocked_entity": {"automatically_extensible": True}}
 
         # When
         parse = engine.parse(input_text)
@@ -114,12 +120,288 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         engine = SnipsNLUEngine().fit(SAMPLE_DATASET)
         text = "this is a dummy_1 query with another dummy_2"
+        expected_parse = engine.parse(text)
 
         # When
         serialized_engine = engine.to_dict()
         deserialized_engine = SnipsNLUEngine.from_dict(serialized_engine)
-        expected_parse = engine.parse(text)
 
         # Then
-        parse = deserialized_engine.parse(text)
-        self.assertEqual(parse, expected_parse)
+        self.assertEqual(deserialized_engine.parse(text), expected_parse)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features",
+           side_effect=mocked_default)
+    @patch("snips_nlu.slot_filler.feature_functions.get_token_is_in")
+    def test_should_add_custom_entity_in_collection_feature(
+            self, mocked_get_token, mocked_default_features):
+
+        # Given
+        def mocked_get_token_is_in(collection, collection_name):
+            def f(index, cache):
+                return None
+
+            return BaseFeatureFunction("token_is_in_%s" % collection_name, f)
+
+        mocked_get_token.side_effect = mocked_get_token_is_in
+
+        dataset = {
+            "intents": {
+                "dummy_intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy_1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                },
+                                {
+                                    "text": " query."
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "2 P.M",
+                                    "entity": "snips/datetime",
+                                    "slot_name": "origin_time"
+                                },
+                                {
+                                    "text": "dummy_2",
+                                    "entity": "dummy_entity_2",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        },
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2",
+                                "dummy2_bis"
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": "en"
+        }
+
+        # When
+        SnipsNLUEngine().fit(dataset)
+
+        # Then
+        calls = [
+            call(collection=["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"],
+                 collection_name="dummy_entity_1"),
+            call(collection=["dummy2"], collection_name="dummy_entity_2")
+        ]
+
+        mocked_get_token.assert_has_calls(calls, any_order=True)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features",
+           side_effect=mocked_default)
+    @patch("snips_nlu.intent_parser.crf_intent_parser.CRFIntentParser"
+           ".get_slots")
+    @patch("snips_nlu.intent_parser.crf_intent_parser.CRFIntentParser"
+           ".get_intent")
+    @patch("snips_nlu.intent_parser.regex_intent_parser.RegexIntentParser"
+           ".get_intent")
+    def test_should_handle_keyword_entities(self, mocked_regex_get_intent,
+                                            mocked_crf_get_intent,
+                                            mocked_crf_get_slots, _):
+        # Given
+        dataset = {
+            "intents": {
+                "dummy_intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy_1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                },
+                                {
+                                    "text": " dummy_2",
+                                    "entity": "dummy_entity_2",
+                                    "slot_name": "other_dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        },
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2",
+                                "dummy2_bis"
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": "en"
+        }
+
+        def mocked_regex_intent(_):
+            return None
+
+        def mocked_crf_intent(_):
+            return IntentClassificationResult("dummy_intent_1", 1.0)
+
+        def mocked_crf_slots(_, intent=None):
+            return [ParsedSlot(match_range=(0, 7),
+                               value="dummy_3",
+                               entity="dummy_entity_1",
+                               slot_name="dummy_slot_name"),
+                    ParsedSlot(match_range=(8, 15),
+                               value="dummy_4",
+                               entity="dummy_entity_2",
+                               slot_name="other_dummy_slot_name")]
+
+        mocked_regex_get_intent.side_effect = mocked_regex_intent
+        mocked_crf_get_intent.side_effect = mocked_crf_intent
+        mocked_crf_get_slots.side_effect = mocked_crf_slots
+
+        engine = SnipsNLUEngine()
+        text = "dummy_3 dummy_4"
+
+        # When
+        engine = engine.fit(dataset)
+        result = engine.parse(text)
+
+        # Then
+        expected_result = Result(
+            text, parsed_intent=mocked_crf_intent(text),
+            parsed_slots=[ParsedSlot(match_range=(8, 15), value="dummy_4",
+                                     entity="dummy_entity_2",
+                                     slot_name="other_dummy_slot_name")])
+        self.assertEqual(result, expected_result)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features",
+           side_effect=mocked_default)
+    @patch("snips_nlu.intent_parser.crf_intent_parser.CRFIntentParser"
+           ".get_slots")
+    @patch("snips_nlu.intent_parser.crf_intent_parser.CRFIntentParser"
+           ".get_intent")
+    @patch("snips_nlu.intent_parser.regex_intent_parser.RegexIntentParser"
+           ".get_intent")
+    def test_synonyms_should_point_to_base_value(self, mocked_regex_get_intent,
+                                                 mocked_crf_get_intent,
+                                                 mocked_crf_get_slots, _):
+        # Given
+        dataset = {
+            "intents": {
+                "dummy_intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy_1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": "en"
+        }
+
+        def mocked_regex_intent(_):
+            return None
+
+        def mocked_crf_intent(_):
+            return IntentClassificationResult("dummy_intent_1", 1.0)
+
+        def mocked_crf_slots(_, intent=None):
+            return [ParsedSlot(match_range=(0, 10), value="dummy1_bis",
+                               entity="dummy_entity_1",
+                               slot_name="dummy_slot_name")]
+
+        mocked_regex_get_intent.side_effect = mocked_regex_intent
+        mocked_crf_get_intent.side_effect = mocked_crf_intent
+        mocked_crf_get_slots.side_effect = mocked_crf_slots
+
+        engine = SnipsNLUEngine().fit(dataset)
+        text = "dummy1_bis"
+
+        # When
+        result = engine.parse(text)
+
+        # Then
+        expected_result = Result(
+            text, parsed_intent=mocked_crf_intent(text),
+            parsed_slots=[ParsedSlot(match_range=(0, 10), value="dummy1",
+                                     entity="dummy_entity_1",
+                                     slot_name="dummy_slot_name")])
+        self.assertEqual(result, expected_result)

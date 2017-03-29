@@ -21,7 +21,7 @@ setup(name="snips_nlu",
           "snips-queries==0.1.0a1"
       ],
       packages=packages,
-      package_data={"": ["snips-nlu-resources/*"]},
+      package_data={"": ["snips-nlu-resources/*", "tests/resources/*"]},
       entry_points={},
       include_package_data=False,
       zip_safe=False)

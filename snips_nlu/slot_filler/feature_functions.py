@@ -254,8 +254,8 @@ def get_regex_match_fn(regex, match_name, use_bilou=False):
         if token_index == 0:
             token_start = 0
         else:
-            token_start = len(" ".join(t.value for t in tokens[:token_index])) \
-                          + 1
+            token_start = len(" ".join(t.value for t in tokens[:token_index])
+                              ) + 1
         token_end = token_start + len(tokens[token_index].value)
 
         match_start = match.start()

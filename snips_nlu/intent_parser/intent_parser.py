@@ -16,7 +16,7 @@ class IntentParser(object):
 
     @abstractclassmethod
     def from_dict(cls, obj_dict):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def to_dict(self):

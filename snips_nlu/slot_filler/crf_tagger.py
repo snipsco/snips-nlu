@@ -78,12 +78,12 @@ class CRFTagger(object):
         })
         return obj_dict
 
-    @staticmethod
-    def from_dict(obj_dict):
+    @classmethod
+    def from_dict(cls, obj_dict):
         crf_model = cPickle.loads(obj_dict["crf_model"])
         features_signatures = obj_dict["features_signatures"]
         tagging = Tagging(int(obj_dict["tagging"]))
         fitted = obj_dict["fitted"]
-        return CRFTagger(crf_model=crf_model,
-                         features_signatures=features_signatures,
-                         tagging=tagging, fitted=fitted)
+        return cls(crf_model=crf_model,
+                   features_signatures=features_signatures,
+                   tagging=tagging, fitted=fitted)

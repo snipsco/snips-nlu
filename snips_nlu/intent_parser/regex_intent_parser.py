@@ -186,12 +186,5 @@ class RegexIntentParser(IntentParser):
         patterns = obj_dict["patterns"]
         group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
         slot_names_to_entities = obj_dict["slot_names_to_entities"]
-        return RegexIntentParser(patterns, group_names_to_slot_names,
-                                 slot_names_to_entities)
-
-    def __eq__(self, other):
-        return isinstance(other, RegexIntentParser) and \
-               self.to_dict() == other.to_dict()
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        return cls(patterns, group_names_to_slot_names,
+                   slot_names_to_entities)

@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from snips_nlu.utils import instance_from_dict
+from snips_nlu.utils import abstractclassmethod
 
 
 class IntentParser(object):
@@ -8,16 +8,23 @@ class IntentParser(object):
 
     @abstractmethod
     def get_intent(self, text):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def get_slots(self, text, intent=None):
-        raise NotImplementedError
+        pass
 
-    @classmethod
+    @abstractclassmethod
     def from_dict(cls, obj_dict):
-        return instance_from_dict(obj_dict)
+        raise NotImplementedError
 
     @abstractmethod
     def to_dict(self):
         pass
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and \
+               self.to_dict() == other.to_dict()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

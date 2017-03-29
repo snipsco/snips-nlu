@@ -21,7 +21,7 @@ class NLUEngine(object):
 
     @abstractmethod
     def parse(self, text):
-        raise NotImplementedError
+        pass
 
 
 def _parse(text, parsers, entities):
@@ -136,8 +136,8 @@ class SnipsNLUEngine(NLUEngine):
             "builtin_parser": None
         }
 
-    @staticmethod
-    def from_dict(obj_dict):
+    @classmethod
+    def from_dict(cls, obj_dict):
         custom_parsers = [IntentParser.from_dict(d) for d in
                           obj_dict["custom_parsers"]]
         builtin_parser = None
@@ -145,5 +145,5 @@ class SnipsNLUEngine(NLUEngine):
                 and obj_dict["builtin_parser"] is not None:
             builtin_parser = BuiltinIntentParser.from_dict(
                 obj_dict["builtin_parser"])
-        return SnipsNLUEngine(custom_parsers=custom_parsers,
-                              builtin_parser=builtin_parser)
+        return cls(custom_parsers=custom_parsers,
+                   builtin_parser=builtin_parser)

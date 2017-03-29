@@ -1,5 +1,6 @@
-import numpy as np
 import cPickle
+
+import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from data_augmentation import augment_dataset, get_non_empty_intents
@@ -79,7 +80,7 @@ class SnipsIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return SnipsIntentClassifier(
+        return cls(
             language=obj_dict['language'],
             classifier_args=obj_dict['classifier_args'],
             classifier=cPickle.loads(obj_dict['classifier_pkl']),

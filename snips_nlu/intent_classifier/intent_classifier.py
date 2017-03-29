@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from snips_nlu.utils import instance_from_dict
+from snips_nlu.utils import abstractclassmethod
 
 
 class IntentClassifier(object):
@@ -22,6 +22,6 @@ class IntentClassifier(object):
     def to_dict(self):
         pass
 
-    @classmethod
+    @abstractclassmethod
     def from_dict(cls, obj_dict):
-        return instance_from_dict(obj_dict)
+        raise NotImplementedError

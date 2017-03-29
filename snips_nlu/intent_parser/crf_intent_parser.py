@@ -83,7 +83,7 @@ class CRFIntentParser(IntentParser):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return CRFIntentParser(
+        return cls(
             intent_classifier=IntentClassifier.from_dict(
                 obj_dict["intent_classifier"]),
             crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)

@@ -2,7 +2,6 @@ import unittest
 
 from mock import Mock
 
-from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET
@@ -110,3 +109,17 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse, Result(text, None, None))
+
+    def test_should_be_serializable(self):
+        # Given
+        engine = SnipsNLUEngine().fit(SAMPLE_DATASET)
+        text = "this is a dummy_1 query with another dummy_2"
+
+        # When
+        serialized_engine = engine.to_dict()
+        deserialized_engine = SnipsNLUEngine.from_dict(serialized_engine)
+        expected_parse = engine.parse(text)
+
+        # Then
+        parse = deserialized_engine.parse(text)
+        self.assertEqual(parse, expected_parse)

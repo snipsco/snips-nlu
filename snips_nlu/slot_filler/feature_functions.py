@@ -1,9 +1,10 @@
 import re
 from collections import namedtuple
 
-from crf_resources import get_word_clusters
-from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
-                       INSIDE_PREFIX)
+from snips_nlu.slot_filler.crf_resources import get_word_clusters
+from snips_nlu.slot_filler.crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX,
+                                             LAST_PREFIX,
+                                             INSIDE_PREFIX)
 
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
@@ -14,31 +15,46 @@ BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
 def default_features():
-    features = []
-    # n-grams
-    features.append((get_ngram_fn(1, common_words=None), -2))
-    features.append((get_ngram_fn(1, common_words=None), -1))
-    features.append((get_ngram_fn(1, common_words=None), +0))
-    features.append((get_ngram_fn(1, common_words=None), +1))
-    features.append((get_ngram_fn(1, common_words=None), +2))
+    features_signatures = [
+        {
+            "module_name": __name__,
+            "factory_name": "get_ngram_fn",
+            "args": {"n": 1, "common_words": None},
+            "offsets": [-2, -1, 0, 1, 2]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "get_ngram_fn",
+            "args": {"n": 2, "common_words": None},
+            "offsets": [-2, 1]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 1},
+            "offsets": [0]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 2},
+            "offsets": [-1, 0]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 3},
+            "offsets": [-1]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "is_digit",
+            "args": {},
+            "offsets": [-1, 0, 1]
+        },
+    ]
 
-    features.append((get_ngram_fn(2, common_words=None), -2))
-    features.append((get_ngram_fn(2, common_words=None), +1))
-
-    # Shape
-    features.append((get_shape_ngram_fn(1), 0))
-
-    features.append((get_shape_ngram_fn(2), -1))
-    features.append((get_shape_ngram_fn(2), 0))
-
-    features.append((get_shape_ngram_fn(3), -1))
-
-    # Digit
-    features.append((is_digit, -1))
-    features.append((is_digit, 0))
-    features.append((is_digit, +1))
-
-    return [create_feature_function(f, offset) for f, offset in features]
+    return features_signatures
 
 
 # Helpers for base feature functions and factories
@@ -88,21 +104,27 @@ def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
     end = chunk_start if reverse else chunk_start + chunk_size
     return word[start:end]
 
+
 # Base feature functions and factories
-is_digit = BaseFeatureFunction(
-    "is_digit",
-    lambda tokens, token_index: str(int(tokens[token_index].isdigit()))
-)
+def is_digit():
+    return BaseFeatureFunction(
+        "is_digit",
+        lambda tokens, token_index: str(int(tokens[token_index].isdigit()))
+    )
 
-is_first = BaseFeatureFunction(
-    "is_first",
-    lambda tokens, token_index: str(int(token_index == 0))
-)
 
-is_last = BaseFeatureFunction(
-    "is_last",
-    lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
-)
+def is_first():
+    return BaseFeatureFunction(
+        "is_first",
+        lambda tokens, token_index: str(int(token_index == 0))
+    )
+
+
+def is_last():
+    return BaseFeatureFunction(
+        "is_last",
+        lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
+    )
 
 
 def get_prefix_fn(prefix_size):

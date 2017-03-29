@@ -1,5 +1,7 @@
 import unittest
 
+from snips_nlu.intent_parser.intent_parser import IntentParser
+
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
@@ -40,6 +42,95 @@ class TestRegexIntentParser(unittest.TestCase):
         ]
         self.assertItemsEqual(expected_slots, slots)
 
+    def test_should_be_serializable(self):
+        # Given
+        patterns = {
+            "intent_name": [
+                "(?P<hello_group>hello?)",
+                "(?P<world_group>world$)"
+            ]
+        }
+        group_names_to_slot_names = {
+            "hello_group": "hello_slot",
+            "world_group": "world_slot"
+        }
+        slot_names_to_entities = {
+            "hello_slot": "hello_entity",
+            "world_slot": "world_entity"
+        }
+        parser = RegexIntentParser(
+            patterns=patterns,
+            group_names_to_slot_names=group_names_to_slot_names,
+            slot_names_to_entities=slot_names_to_entities
+        )
 
-if __name__ == '__main__':
-    unittest.main()
+        # When
+        parser_dict = parser.to_dict()
+
+        # Then
+        expected_dict = {
+            "@class_name": "RegexIntentParser",
+            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
+            'group_names_to_slot_names': {
+                'hello_group': 'hello_slot',
+                'world_group': 'world_slot'
+            },
+            'patterns': {
+                'intent_name': [
+                    '(?P<hello_group>hello?)',
+                    '(?P<world_group>world$)'
+                ]
+            },
+            'slot_names_to_entities': {
+                'hello_slot': 'hello_entity',
+                'world_slot': 'world_entity'
+            }
+        }
+        self.assertDictEqual(parser_dict, expected_dict)
+
+    def test_should_be_deserializable(self):
+        # Given
+        parser_dict = {
+            "@class_name": "RegexIntentParser",
+            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
+            'group_names_to_slot_names': {
+                'hello_group': 'hello_slot',
+                'world_group': 'world_slot'
+            },
+            'patterns': {
+                'intent_name': [
+                    '(?P<hello_group>hello?)',
+                    '(?P<world_group>world$)'
+                ]
+            },
+            'slot_names_to_entities': {
+                'hello_slot': 'hello_entity',
+                'world_slot': 'world_entity'
+            }
+        }
+
+        # When
+        parser = IntentParser.from_dict(parser_dict)
+        patterns = {
+            "intent_name": [
+                "(?P<hello_group>hello?)",
+                "(?P<world_group>world$)"
+            ]
+        }
+        group_names_to_slot_names = {
+            "hello_group": "hello_slot",
+            "world_group": "world_slot"
+        }
+        slot_names_to_entities = {
+            "hello_slot": "hello_entity",
+            "world_slot": "world_entity"
+        }
+        expected_parser = RegexIntentParser(
+            patterns=patterns,
+            group_names_to_slot_names=group_names_to_slot_names,
+            slot_names_to_entities=slot_names_to_entities
+        )
+        self.assertEqual(parser, expected_parser)
+
+    if __name__ == '__main__':
+        unittest.main()

@@ -1,15 +1,16 @@
-import cPickle
 from abc import ABCMeta, abstractmethod
 
 from snips_nlu.dataset import validate_dataset
-from snips_nlu.intent_classifier.intent_classifier import SnipsIntentClassifier
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
-from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
-from snips_nlu.slot_filler.crf_slot_tagger import CRFTagger, default_crf_model
+from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.result import Result
+from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import Tagging
 from snips_nlu.slot_filler.feature_functions import default_features
-from snips_nlu.result import Result
 
 
 class NLUEngine(object):
@@ -60,38 +61,34 @@ class SnipsNLUEngine(NLUEngine):
         """
         validate_dataset(dataset)
         custom_parser = RegexIntentParser().fit(dataset)
-        self.custom_parsers = [custom_parser]
+        intent_classifier = SnipsIntentClassifier().fit(dataset)
+        taggers = {}
+        for intent in dataset["intents"].keys():
+            taggers[intent] = CRFTagger(default_crf_model(), default_features(),
+                                        Tagging.BILOU)
+        crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
+        self.custom_parsers = [custom_parser, crf_parser]
         return self
 
-    def save_to_pickle_string(self):
+    def to_dict(self):
         """
-        Serialize the SnipsNLUEngine to a pickle string, after having reset the
+        Serialize the SnipsNLUEngine to a json dict, after having reset the
         builtin intent parser. Thus this serialization, contains only the
         custom intent parsers.
         """
-        self.builtin_parser = None
-        return cPickle.dumps(self)
+        return {
+            "custom_parsers": [p.to_dict() for p in self.custom_parsers],
+            "builtin_parser": None
+        }
 
-    @classmethod
-    def load_from_pickle_and_path(cls, pkl_str, builtin_path):
-        """
-        :param pkl_str: content of the pickle file describing the nlu engine
-        :param builtin_path: path of the builtin intent parser directory
-        :return: a SnipsNLUEngine already fitted
-        """
-        engine = cPickle.loads(pkl_str)
-        if builtin_path is not None:
-            engine.builtin_parser = BuiltinIntentParser(builtin_path)
-        return engine
-
-    @classmethod
-    def load_from_pickle_and_byte_array(cls, pkl_str, builtin_byte_array):
-        """
-        :param pkl_str: content of the pickle file describing the nlu engine
-        :param builtin_byte_array: byte_array data need to initialize the
-        builtin intent parser
-        :return:
-        """
-        engine = cPickle.loads(pkl_str)
-        # TODO: update engine with builtin parsers using builtin_byte_array
-        return engine
+    @staticmethod
+    def from_dict(obj_dict):
+        custom_parsers = [IntentParser.from_dict(d) for d in
+                          obj_dict["custom_parsers"]]
+        builtin_parser = None
+        if "builtin_parser" in obj_dict \
+                and obj_dict["builtin_parser"] is not None:
+            builtin_parser = BuiltinIntentParser.from_dict(
+                obj_dict["builtin_parser"])
+        return SnipsNLUEngine(custom_parsers=custom_parsers,
+                              builtin_parser=builtin_parser)

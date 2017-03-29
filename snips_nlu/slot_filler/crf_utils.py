@@ -130,7 +130,6 @@ def negative_tagging(size):
 def utterance_to_sample(query_data, tagging):
     tokens, tags = [], []
     current_length = 0
-    # tokens = tokenize("".join(q[AUTOMATICALLY_EXTENSIBLE] for q in query_data))
     for i, chunk in enumerate(query_data):
         chunk_tokens = tokenize(chunk[TEXT])
         tokens += [Token(t.value, current_length + t.start,

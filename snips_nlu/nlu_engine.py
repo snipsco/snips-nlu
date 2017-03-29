@@ -5,7 +5,7 @@ from snips_nlu.built_in_entities import BuiltInEntity
 from dataset import validate_dataset
 from snips_nlu.constants import (
     USE_SYNONYMS, SYNONYMS, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES,
-    LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE)
+    LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE, ENTITY)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -56,8 +56,8 @@ def get_intent_custom_entities(dataset, intent):
     intent_entities = set()
     for utterance in dataset[INTENTS][intent][UTTERANCES]:
         for c in utterance[DATA]:
-            if SLOT_NAME in c:
-                intent_entities.add(c[SLOT_NAME])
+            if ENTITY in c:
+                intent_entities.add(c[ENTITY])
     custom_entities = dict()
     for ent in intent_entities:
         if ent not in BuiltInEntity.built_in_entity_by_label:

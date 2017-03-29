@@ -1,5 +1,5 @@
 from intent_parser import IntentParser
-from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES
+from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
@@ -15,7 +15,7 @@ def get_slot_name_to_entity_mapping(dataset):
         for utterance in intent[UTTERANCES]:
             for chunk in utterance[DATA]:
                 if SLOT_NAME in chunk:
-                    slot_name_to_entity[chunk[SLOT_NAME]] = chunk[SLOT_NAME]
+                    slot_name_to_entity[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_to_entity
 
 

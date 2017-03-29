@@ -77,10 +77,11 @@ def crf_features(intent_entities, language, offsets=[-2, -1, 0]):
 
         features.append(
             {
-                "module": __name__,
+                "module_name": __name__,
                 "factory_name": "get_token_is_in",
                 "args": {"collection": collection,
-                         "collection_name": entity_name}
+                         "collection_name": entity_name},
+                "offsets": offsets
             }
         )
     return features
@@ -162,7 +163,7 @@ def is_first():
 
 
 def is_last():
-    return  BaseFeatureFunction(
+    return BaseFeatureFunction(
         "is_last",
         lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
     )

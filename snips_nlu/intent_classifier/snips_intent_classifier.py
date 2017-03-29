@@ -22,12 +22,14 @@ def get_default_parameters():
 
 
 class SnipsIntentClassifier(IntentClassifier):
-    def __init__(self, classifier_args=get_default_parameters(),
-                 classifier=None, intent_list=None, featurizer=None):
+    def __init__(self, language='en', classifier_args=get_default_parameters(),
+                 classifier=None, intent_list=None,
+                 featurizer=None):
+        self.language = language
         self.classifier_args = classifier_args
         self.classifier = classifier
         self.intent_list = intent_list
-        self.featurizer = featurizer
+        self.featurizer = featurizer if featurizer is not None else Featurizer(language=language)
 
     @property
     def fitted(self):

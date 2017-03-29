@@ -4,9 +4,8 @@ from mock import Mock, patch, call
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from utils import SAMPLE_DATASET
-
 from snips_nlu.slot_filler.feature_functions import BaseFeatureFunction
+from utils import SAMPLE_DATASET
 
 
 def mocked_default(_):
@@ -121,28 +120,27 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         engine = SnipsNLUEngine().fit(SAMPLE_DATASET)
         text = "this is a dummy_1 query with another dummy_2"
+        expected_parse = engine.parse(text)
 
         # When
         serialized_engine = engine.to_dict()
         deserialized_engine = SnipsNLUEngine.from_dict(serialized_engine)
-        expected_parse = engine.parse(text)
 
         # Then
-        parse = deserialized_engine.parse(text)
-        self.assertEqual(parse, expected_parse)
+        self.assertEqual(deserialized_engine.parse(text), expected_parse)
 
-    @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch("snips_nlu.slot_filler.feature_functions.default_features",
            side_effect=mocked_default)
     @patch("snips_nlu.slot_filler.feature_functions.get_token_is_in")
     def test_should_add_custom_entity_in_collection_feature(
             self, mocked_get_token, mocked_default_features):
+
         # Given
-        def mocked_get_token_is_in(collection, entity_name):
+        def mocked_get_token_is_in(collection, collection_name):
             def f(index, cache):
                 return None
 
-            return BaseFeatureFunction("f", f)
+            return BaseFeatureFunction("token_is_in_%s" % collection_name, f)
 
         mocked_get_token.side_effect = mocked_get_token_is_in
 
@@ -221,9 +219,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         calls = [
-            call(["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"],
-                 "dummy_entity_1"),
-            call(["dummy2"], "dummy_entity_2")
+            call(collection=["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"],
+                 collection_name="dummy_entity_1"),
+            call(collection=["dummy2"], collection_name="dummy_entity_2")
         ]
 
         mocked_get_token.assert_has_calls(calls, any_order=True)

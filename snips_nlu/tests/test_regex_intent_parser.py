@@ -110,7 +110,7 @@ class TestRegexIntentParser(unittest.TestCase):
         }
 
         # When
-        parser = IntentParser.from_dict(parser_dict)
+        parser = RegexIntentParser.from_dict(parser_dict)
         patterns = {
             "intent_name": [
                 "(?P<hello_group>hello?)",

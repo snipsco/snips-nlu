@@ -1,19 +1,18 @@
 from abc import ABCMeta, abstractmethod
 
-from snips_nlu.built_in_entities import (BuiltInEntityLookupError,
-                                         get_built_in_entity_by_label)
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.dataset import validate_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
-from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.result import ParsedSlot
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import Tagging
 from snips_nlu.slot_filler.feature_functions import crf_features
+from snips_nlu.utils import instance_from_dict
 
 
 class NLUEngine(object):
@@ -56,9 +55,7 @@ def get_intent_custom_entities(dataset, intent):
                 intent_entities.add(c["entity"])
     custom_entities = dict()
     for ent in intent_entities:
-        try:
-            get_built_in_entity_by_label(ent)
-        except BuiltInEntityLookupError:
+        if ent not in BuiltInEntity.built_in_entity_by_label:
             custom_entities[ent] = dataset["entities"][ent]
     return custom_entities
 
@@ -133,17 +130,27 @@ class SnipsNLUEngine(NLUEngine):
         """
         return {
             "custom_parsers": [p.to_dict() for p in self.custom_parsers],
-            "builtin_parser": None
+            "builtin_parser": None,
+            "entities": self.entities
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
-        custom_parsers = [IntentParser.from_dict(d) for d in
+        custom_parsers = [instance_from_dict(d) for d in
                           obj_dict["custom_parsers"]]
         builtin_parser = None
         if "builtin_parser" in obj_dict \
                 and obj_dict["builtin_parser"] is not None:
             builtin_parser = BuiltinIntentParser.from_dict(
                 obj_dict["builtin_parser"])
-        return cls(custom_parsers=custom_parsers,
+        self = cls(custom_parsers=custom_parsers,
                    builtin_parser=builtin_parser)
+        self.entities = obj_dict["entities"]
+        return self
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and \
+               self.to_dict() == other.to_dict()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

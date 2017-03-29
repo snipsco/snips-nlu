@@ -1,8 +1,7 @@
 import operator
 import re
 
-from snips_nlu.built_in_entities import get_built_in_entity_by_label, \
-    BuiltInEntityLookupError
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import IntentClassificationResult, \
     ParsedSlot
@@ -48,16 +47,14 @@ def query_to_pattern(query, joined_entity_utterances,
                      group_names_to_slot_names):
     pattern = r"^"
     for chunk in query["data"]:
-        if "entity" in chunk:
+        if "entity" in chunk and chunk["entity"] not in \
+                BuiltInEntity.built_in_entity_by_label:
             max_index = generate_new_index(group_names_to_slot_names)
             slot_name = chunk["slot_name"]
             entity = chunk["entity"]
-            try:
-                get_built_in_entity_by_label(entity)
-            except BuiltInEntityLookupError:
-                group_names_to_slot_names[max_index] = slot_name
-                pattern += r"(?P<%s>%s)" % (
-                    max_index, joined_entity_utterances[entity])
+            group_names_to_slot_names[max_index] = slot_name
+            pattern += r"(?P<%s>%s)" % (
+                max_index, joined_entity_utterances[entity])
         else:
             pattern += re.escape(chunk["text"])
 

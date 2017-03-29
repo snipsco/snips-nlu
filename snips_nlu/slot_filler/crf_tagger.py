@@ -23,7 +23,7 @@ def get_features_from_signatures(signatures):
         for offset in signature["offsets"]:
             feature_name, feature_fn = create_feature_function(fn, offset)
             if feature_name in features:
-                raise KeyError("Existing feature: " % feature_name)
+                raise KeyError("Existing feature: %s" % feature_name)
             features[feature_name] = feature_fn
     return features
 

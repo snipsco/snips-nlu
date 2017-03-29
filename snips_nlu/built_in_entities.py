@@ -41,14 +41,15 @@ class BuiltInEntity(Enum):
         return cls._built_in_entity_by_label
 
     @classmethod
-    def get_from_label(cls, label, default=None):
+    def from_label(cls, label, default=None):
         try:
-            cls.built_in_entity_by_label[label]
+            ent = cls.built_in_entity_by_label[label]
         except KeyError:
             if default is None:
                 raise KeyError("Unknown entity '%s'" % label)
             else:
                 return default
+        return ent
 
     @classproperty
     @classmethod
@@ -56,16 +57,15 @@ class BuiltInEntity(Enum):
         return cls._built_in_entity_by_duckling_dim
 
     @classmethod
-    def get_from_duckling_dim(cls, duckling_dim, default=None):
-
+    def from_duckling_dim(cls, duckling_dim, default=None):
         try:
-            cls.built_in_entity_by_duckling_dim[duckling_dim]
+            ent = cls.built_in_entity_by_duckling_dim[duckling_dim]
         except KeyError:
             if default is None:
                 raise KeyError("Unknown duckling dim '%s'" % duckling_dim)
             else:
                 return default
-
+        return ent
 
 def scope_to_dims(scope):
     return [entity.duckling_dim for entity in scope]
@@ -93,7 +93,7 @@ def get_built_in_entities(text, language, scope=None):
             parsed_entity = {
                 "match_range": (ent["start"], ent["end"]),
                 "value": ent["body"],
-                "entity": BuiltInEntity.from_dim([ent["dim"]])
+                "entity": BuiltInEntity.from_duckling_dim(ent["dim"])
             }
             parsed_entities.append(parsed_entity)
     return parsed_entities

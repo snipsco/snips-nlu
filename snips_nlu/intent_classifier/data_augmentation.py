@@ -1,7 +1,7 @@
 import numpy as np
 
 from intent_classifier_resources import get_subtitles
-from snips_nlu.constants import TEXT, DATA, INTENTS, UTTERANCES, LANGUAGE
+from snips_nlu.constants import TEXT, DATA, INTENTS, UTTERANCES
 
 
 def get_non_empty_intents(dataset):

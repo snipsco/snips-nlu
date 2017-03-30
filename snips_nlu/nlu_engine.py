@@ -9,10 +9,10 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
-from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.result import Result
+from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import Tagging
 from snips_nlu.slot_filler.feature_functions import crf_features
@@ -114,13 +114,14 @@ class SnipsNLUEngine(NLUEngine):
         validate_dataset(dataset)
         language = Language.from_iso_code(dataset[LANGUAGE])
         custom_parser = RegexIntentParser().fit(dataset)
-        intent_classifier = SnipsIntentClassifier().fit(dataset)
+        intent_classifier = SnipsIntentClassifier().fit(
+            dataset)
         self.entities = snips_nlu_entities(dataset)
         taggers = dict()
         for intent in dataset[INTENTS].keys():
-            intent_custom_entities = get_intent_custom_entities(dataset, intent)
-            features = crf_features(intent_custom_entities,
-                                    language=language)
+            intent_custom_entities = get_intent_custom_entities(dataset,
+                                                                intent)
+            features = crf_features(intent_custom_entities, language=language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
                                         Tagging.BILOU)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)

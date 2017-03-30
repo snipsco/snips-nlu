@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 from mock import Mock, patch, call
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
@@ -134,6 +135,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
     @patch("snips_nlu.slot_filler.feature_functions.get_token_is_in")
     def test_should_add_custom_entity_in_collection_feature(
             self, mocked_get_token, mocked_default_features):
+        np.random.seed(1)
 
         # Given
         def mocked_get_token_is_in(collection, collection_name):
@@ -217,11 +219,20 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # When
         SnipsNLUEngine().fit(dataset)
 
+        np.random.seed(1)
+        keep_prob = .5
+        collection_1 = ["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"]
+        length_collection_1 = int(keep_prob * len(collection_1))
+        collection_1 = np.random.choice(collection_1, length_collection_1,
+                                        replace=False).tolist()
+
+        collection_2 = ["dummy2"]
+
         # Then
         calls = [
-            call(collection=["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"],
+            call(collection=collection_1,
                  collection_name="dummy_entity_1"),
-            call(collection=["dummy2"], collection_name="dummy_entity_2")
+            call(collection=collection_2, collection_name="dummy_entity_2"),
         ]
 
         mocked_get_token.assert_has_calls(calls, any_order=True)

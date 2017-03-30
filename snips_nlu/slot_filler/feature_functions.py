@@ -1,6 +1,8 @@
 import re
 from collections import namedtuple
 
+import numpy as np
+
 from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
@@ -69,14 +71,17 @@ def default_features(language):
     return features_signatures
 
 
-def crf_features(intent_entities, language, offsets=[-2, -1, 0]):
+def crf_features(intent_entities, language, offsets=(-2, -1, 0),
+                 keep_prob=.5):
     features = default_features(language)
     for entity_name, entity in intent_entities.iteritems():
         if entity[USE_SYNONYMS]:
             collection = [s for d in entity[DATA] for s in d[SYNONYMS]]
         else:
             collection = [d[VALUE] for d in entity[DATA]]
-
+        collection_size = max(int(keep_prob * len(collection)), 1)
+        collection = np.random.choice(collection, collection_size,
+                                      replace=False).tolist()
         features.append(
             {
                 "module_name": __name__,

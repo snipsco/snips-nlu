@@ -5,7 +5,7 @@ from utils import classproperty
 
 core.load()
 
-ISO_CODE, DUCKLING_CODE = "iso", "ducking_code"
+ISO_CODE, DUCKLING_CODE = "iso", "duckling_code"
 
 
 class Language(Enum):

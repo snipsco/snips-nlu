@@ -10,7 +10,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.crf_intent_parser import CRFIntentParser
-
+from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.result import Result
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
@@ -116,11 +116,12 @@ class SnipsNLUEngine(NLUEngine):
         custom_parser = RegexIntentParser().fit(dataset)
         intent_classifier = SnipsIntentClassifier(language=dataset[LANGUAGE]).fit(dataset)
         self.entities = snips_nlu_entities(dataset)
+        language = Language.from_iso_code(dataset[LANGUAGE])
         taggers = dict()
         for intent in dataset[INTENTS].keys():
             intent_custom_entities = get_intent_custom_entities(dataset, intent)
             features = crf_features(intent_custom_entities,
-                                    language=dataset[LANGUAGE])
+                                    language=language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
                                         Tagging.BILOU)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)

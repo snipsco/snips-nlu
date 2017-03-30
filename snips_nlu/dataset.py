@@ -18,7 +18,7 @@ def validate_dataset(dataset):
         validate_key(dataset, key, object_label="dataset")
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
-    validate_type(dataset[LANGUAGE], str)
+    validate_type(dataset[LANGUAGE], basestring)
     entities = set()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         validate_entity_name(entity_name)

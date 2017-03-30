@@ -7,7 +7,7 @@ STOP_WORDS = None
 SUBTITLES = None
 
 
-def get_stop_words(language='en'):
+def get_stop_words(language='eng'):
     global STOP_WORDS
     if STOP_WORDS is None:
         stop_words_file_path = os.path.join(RESOURCES_PATH,
@@ -19,7 +19,7 @@ def get_stop_words(language='en'):
     return STOP_WORDS
 
 
-def get_subtitles(language='en'):
+def get_subtitles(language='eng'):
     global SUBTITLES
     if SUBTITLES is None:
         subtitles_file_path = os.path.join(RESOURCES_PATH,

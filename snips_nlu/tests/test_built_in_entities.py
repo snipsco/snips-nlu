@@ -5,7 +5,7 @@ from mock import patch
 
 from snips_nlu.built_in_entities import (get_built_in_entities, BuiltInEntity,
                                          scope_to_dims, _DUCKLING_CACHE)
-
+from snips_nlu.languages import Language
 
 def mocked_parse(module, text):
     return []
@@ -15,7 +15,8 @@ class TestBuiltInEntities(unittest.TestCase):
     @patch("duckling.core.parse")
     def test_get_built_in_entities(self, mocked_duckling_parse):
         # Given
-        language = "en"
+        language = "eng"
+        language = Language.from_iso_code(language)
         text = "let's meet at 2p.m in the bronx"
 
         def mocked_parse(module, text, dims=[],
@@ -78,16 +79,16 @@ class TestBuiltInEntities(unittest.TestCase):
     def test_duckling_cache(self, mocked_duckling_parse):
         # Given
         _DUCKLING_CACHE.clear()
-        language = "en"
-
+        language = "eng"
+        language = Language.from_iso_code(language)
         text_1 = "ok"
         text_2 = "other_text"
 
-        _DUCKLING_CACHE[(text_2, language)] = []
+        _DUCKLING_CACHE[(text_2, language.duckling_code)] = []
 
         # When
         get_built_in_entities(text_2, language)
         get_built_in_entities(text_1, language)
 
         # Then
-        mocked_duckling_parse.assert_called_once_with("en", text_1)
+        mocked_duckling_parse.assert_called_once_with(language.duckling_code, text_1)

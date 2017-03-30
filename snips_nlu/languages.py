@@ -9,8 +9,8 @@ ISO_CODE, DUCKLING_CODE = "iso", "ducking_code"
 
 
 class Language(Enum):
-    ENG = {ISO_CODE: "eng", DUCKLING_CODE: "es"}
-    SPA = {ISO_CODE: "spa", DUCKLING_CODE: "sp"}
+    ENG = {ISO_CODE: "eng", DUCKLING_CODE: "en"}
+    SPA = {ISO_CODE: "spa", DUCKLING_CODE: "es"}
     FRA = {ISO_CODE: "fra", DUCKLING_CODE: "fr"}
 
     @property

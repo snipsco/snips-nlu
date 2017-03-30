@@ -9,7 +9,7 @@ from snips_nlu.slot_filler.feature_functions import BaseFeatureFunction
 from utils import SAMPLE_DATASET
 
 
-def mocked_default(_):
+def mocked_default(_, use_stemming):
     return []
 
 

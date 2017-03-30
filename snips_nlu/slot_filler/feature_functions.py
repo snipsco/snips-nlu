@@ -18,7 +18,7 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features(language, use_stemming=False):
+def default_features(language, use_stemming):
     features_signatures = [
         {
             "module_name": __name__,
@@ -73,8 +73,8 @@ def default_features(language, use_stemming=False):
     return features_signatures
 
 
-def crf_features(intent_entities, language, offsets=(-2, -1, 0),
-                 keep_prob=.5, use_stemming=False):
+def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
+                 keep_prob=.5):
     if use_stemming:
         preprocess = lambda s: s.stem
     else:
@@ -202,7 +202,7 @@ def get_suffix_fn(suffix_size):
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
 
-def get_ngram_fn(n, common_words=None, use_stemming=False):
+def get_ngram_fn(n, use_stemming, common_words=None):
     if n < 1:
         raise ValueError("n should be >= 1")
 
@@ -253,7 +253,7 @@ def get_word_cluster_fn(cluster_name):
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
-def get_token_is_in(collection, collection_name, use_stemming=False):
+def get_token_is_in(collection, collection_name, use_stemming):
     lowered_collection = set([c.lower() for c in collection])
 
     def token_is_in(tokens, token_index):

@@ -1,8 +1,10 @@
 import re
 
 from snips_nlu.constants import TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS, \
-    ENTITIES, ENTITY, SLOT_NAME, UTTERANCES, VALUE, AUTOMATICALLY_EXTENSIBLE
+    ENTITIES, ENTITY, SLOT_NAME, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE
 from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.languages import Language
+
 from utils import validate_type, validate_key, validate_keys
 
 INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
@@ -11,11 +13,12 @@ ENTITY_NAME_REGEX = re.compile("^[\w]+$")
 
 def validate_dataset(dataset):
     validate_type(dataset, dict)
-    mandatory_keys = [INTENTS, ENTITIES]
+    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
     for key in mandatory_keys:
         validate_key(dataset, key, object_label="dataset")
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
+    validate_type(dataset[LANGUAGE], basestring)
     entities = set()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         validate_entity_name(entity_name)
@@ -24,6 +27,7 @@ def validate_dataset(dataset):
     for intent_name, intent in dataset[INTENTS].iteritems():
         validate_intent_name(intent_name)
         validate_intent(intent, entities)
+    validate_language(dataset[LANGUAGE])
 
 
 def validate_intent_name(name):
@@ -71,3 +75,9 @@ def validate_entity(entity):
         validate_keys(entry, [VALUE, SYNONYMS],
                       object_label="entity entry")
         validate_type(entry[SYNONYMS], list)
+
+
+def validate_language(language):
+    if language not in Language.language_by_iso_code:
+        raise ValueError("Language name must be ISO 639-3,"
+                         " found '%s'" % language)

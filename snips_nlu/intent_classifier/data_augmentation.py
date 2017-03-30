@@ -9,7 +9,7 @@ def get_non_empty_intents(dataset):
             len(data[UTTERANCES]) > 0]
 
 
-def augment_dataset(dataset, intent_list):
+def augment_dataset(dataset, language, intent_list):
     intent_code = dict((intent, i + 1) for i, intent in enumerate(intent_list))
 
     queries_per_intent = [len(dataset[INTENTS][intent][UTTERANCES]) for
@@ -18,7 +18,7 @@ def augment_dataset(dataset, intent_list):
 
     alpha = 1.0 / (4 * (sum(queries_per_intent) + 5 * mean_queries_per_intent))
 
-    data_noise_train = list(get_subtitles(dataset[LANGUAGE]))
+    data_noise_train = list(get_subtitles(language))
     queries_noise = np.random.choice(data_noise_train,
                                      size=int(5 * mean_queries_per_intent),
                                      replace=False)

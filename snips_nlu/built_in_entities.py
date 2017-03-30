@@ -74,6 +74,7 @@ _DUCKLING_CACHE = LimitedSizeDict(size_limit=1000)
 
 def get_built_in_entities(text, language, scope=None):
     global _DUCKLING_CACHE
+    language = language.duckling_code
     if scope is None:
         dims = core.get_dims(language)
     else:

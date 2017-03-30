@@ -22,12 +22,14 @@ def get_default_parameters():
 
 
 class SnipsIntentClassifier(IntentClassifier):
-    def __init__(self, classifier_args=get_default_parameters(),
-                 classifier=None, intent_list=None, featurizer=None):
+    def __init__(self, language, classifier_args=get_default_parameters(),
+                 classifier=None, intent_list=None,
+                 featurizer=None):
+        self.language = language
         self.classifier_args = classifier_args
         self.classifier = classifier
         self.intent_list = intent_list
-        self.featurizer = featurizer
+        self.featurizer = featurizer if featurizer is not None else Featurizer(language=self.language)
 
     @property
     def fitted(self):
@@ -35,12 +37,12 @@ class SnipsIntentClassifier(IntentClassifier):
 
     def fit(self, dataset):
         if self.featurizer is None:
-            self.featurizer = Featurizer(dataset["language"])
+            self.featurizer = Featurizer(self.language)
 
         self.intent_list = get_non_empty_intents(dataset)
 
         if len(self.intent_list) > 0:
-            (queries, y), alpha = augment_dataset(dataset, self.intent_list)
+            (queries, y), alpha = augment_dataset(dataset, self.language, self.intent_list)
             X = self.featurizer.fit_transform(queries, y)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
@@ -73,6 +75,7 @@ class SnipsIntentClassifier(IntentClassifier):
             "classifier_args": self.classifier_args,
             "classifier_pkl": cPickle.dumps(self.classifier),
             "intent_list": self.intent_list,
+            "language": self.language,
             "featurizer": self.featurizer.to_dict()
         })
         return obj_dict
@@ -83,5 +86,6 @@ class SnipsIntentClassifier(IntentClassifier):
             classifier_args=obj_dict['classifier_args'],
             classifier=cPickle.loads(obj_dict['classifier_pkl']),
             intent_list=obj_dict['intent_list'],
+            language=obj_dict['language'],
             featurizer=Featurizer.from_dict(obj_dict['featurizer'])
         )

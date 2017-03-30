@@ -114,7 +114,7 @@ class SnipsNLUEngine(NLUEngine):
         validate_dataset(dataset)
         language = Language.from_iso_code(dataset[LANGUAGE])
         custom_parser = RegexIntentParser().fit(dataset)
-        intent_classifier = SnipsIntentClassifier(language=language).fit(dataset)
+        intent_classifier = SnipsIntentClassifier().fit(dataset)
         self.entities = snips_nlu_entities(dataset)
         taggers = dict()
         for intent in dataset[INTENTS].keys():

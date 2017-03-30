@@ -1,10 +1,10 @@
-import unittest
 import cPickle
+import unittest
 
 from sklearn_crfsuite import CRF
-from snips_nlu.slot_filler.crf_utils import Tagging
 
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
+from snips_nlu.slot_filler.crf_utils import Tagging
 
 
 class TestCRFUtils(unittest.TestCase):
@@ -72,7 +72,8 @@ class TestCRFUtils(unittest.TestCase):
             }
         ]
         tagging = Tagging.BILOU
-        tagger = CRFTagger(crf_model, features_signatures, tagging, True)
+        tagger = CRFTagger(crf_model, features_signatures, tagging,
+                           use_stemming=False)
         tagger_dict = tagger.to_dict()
 
         # When

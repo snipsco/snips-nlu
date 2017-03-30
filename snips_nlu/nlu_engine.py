@@ -85,13 +85,15 @@ def snips_nlu_entities(dataset):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, custom_parsers=None, builtin_parser=None):
+    def __init__(self, custom_parsers=None, builtin_parser=None,
+                 use_stemming=False):
         super(SnipsNLUEngine, self).__init__()
         if custom_parsers is None:
             custom_parsers = []
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
         self.entities = None
+        self.use_stemming = use_stemming
 
     def parse(self, text):
         """
@@ -121,9 +123,12 @@ class SnipsNLUEngine(NLUEngine):
         for intent in dataset[INTENTS].keys():
             intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
-            features = crf_features(intent_custom_entities, language=language)
+            features = crf_features(intent_custom_entities, language=language,
+                                    use_stemming=self.use_stemming)
             taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        Tagging.BILOU)
+                                        Tagging.BILOU,
+                                        language=language,
+                                        use_stemming=self.use_stemming)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
         return self

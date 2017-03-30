@@ -138,7 +138,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         np.random.seed(1)
 
         # Given
-        def mocked_get_token_is_in(collection, collection_name):
+        def mocked_get_token_is_in(collection, collection_name,
+                                   use_stemming=False):
             def f(index, cache):
                 return None
 
@@ -231,8 +232,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         calls = [
             call(collection=collection_1,
-                 collection_name="dummy_entity_1"),
-            call(collection=collection_2, collection_name="dummy_entity_2"),
+                 collection_name="dummy_entity_1", use_stemming=False),
+            call(collection=collection_2, collection_name="dummy_entity_2",
+                 use_stemming=False),
         ]
 
         mocked_get_token.assert_has_calls(calls, any_order=True)

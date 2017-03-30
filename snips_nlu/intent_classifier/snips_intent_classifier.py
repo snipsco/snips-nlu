@@ -75,6 +75,7 @@ class SnipsIntentClassifier(IntentClassifier):
             "classifier_args": self.classifier_args,
             "classifier_pkl": cPickle.dumps(self.classifier),
             "intent_list": self.intent_list,
+            "language": self.language,
             "featurizer": self.featurizer.to_dict()
         })
         return obj_dict
@@ -85,5 +86,6 @@ class SnipsIntentClassifier(IntentClassifier):
             classifier_args=obj_dict['classifier_args'],
             classifier=cPickle.loads(obj_dict['classifier_pkl']),
             intent_list=obj_dict['intent_list'],
+            language=obj_dict['language'],
             featurizer=Featurizer.from_dict(obj_dict['featurizer'])
         )

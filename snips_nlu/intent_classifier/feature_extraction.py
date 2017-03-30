@@ -7,7 +7,7 @@ from intent_classifier_resources import get_stop_words
 
 
 class Featurizer(object):
-    def __init__(self, language="en",
+    def __init__(self, language,
                  count_vectorizer=CountVectorizer(ngram_range=(1, 1)),
                  tfidf_transformer=TfidfTransformer(),
                  best_features=None, pvalue_threshold=0.4):

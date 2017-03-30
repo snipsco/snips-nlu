@@ -113,10 +113,10 @@ class SnipsNLUEngine(NLUEngine):
         :return: A fitted SnipsNLUEngine
         """
         validate_dataset(dataset)
-        custom_parser = RegexIntentParser().fit(dataset)
-        intent_classifier = SnipsIntentClassifier(language=dataset[LANGUAGE]).fit(dataset)
-        self.entities = snips_nlu_entities(dataset)
         language = Language.from_iso_code(dataset[LANGUAGE])
+        custom_parser = RegexIntentParser().fit(dataset)
+        intent_classifier = SnipsIntentClassifier(language=language).fit(dataset)
+        self.entities = snips_nlu_entities(dataset)
         taggers = dict()
         for intent in dataset[INTENTS].keys():
             intent_custom_entities = get_intent_custom_entities(dataset, intent)

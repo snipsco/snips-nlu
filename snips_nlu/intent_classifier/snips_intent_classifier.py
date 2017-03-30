@@ -22,14 +22,14 @@ def get_default_parameters():
 
 
 class SnipsIntentClassifier(IntentClassifier):
-    def __init__(self, language='en', classifier_args=get_default_parameters(),
+    def __init__(self, language, classifier_args=get_default_parameters(),
                  classifier=None, intent_list=None,
                  featurizer=None):
         self.language = language
         self.classifier_args = classifier_args
         self.classifier = classifier
         self.intent_list = intent_list
-        self.featurizer = featurizer if featurizer is not None else Featurizer(language=language)
+        self.featurizer = featurizer if featurizer is not None else Featurizer(language=self.language)
 
     @property
     def fitted(self):
@@ -37,12 +37,12 @@ class SnipsIntentClassifier(IntentClassifier):
 
     def fit(self, dataset):
         if self.featurizer is None:
-            self.featurizer = Featurizer(dataset["language"])
+            self.featurizer = Featurizer(self.language)
 
         self.intent_list = get_non_empty_intents(dataset)
 
         if len(self.intent_list) > 0:
-            (queries, y), alpha = augment_dataset(dataset, self.intent_list)
+            (queries, y), alpha = augment_dataset(dataset, self.language, self.intent_list)
             X = self.featurizer.fit_transform(queries, y)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)

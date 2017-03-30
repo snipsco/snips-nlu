@@ -12,7 +12,8 @@ class TestDataset(unittest.TestCase):
                     "utterances": [],
                 }
             },
-            "entities": {}
+            "entities": {},
+            "language": "eng"
         }
 
         # When/Then
@@ -39,7 +40,8 @@ class TestDataset(unittest.TestCase):
                     ]
                 }
             },
-            "entities": {}
+            "entities": {},
+            "language": "eng"
         }
 
         # When/Then
@@ -72,7 +74,8 @@ class TestDataset(unittest.TestCase):
                     "use_synonyms": True,
                     "automatically_extensible": False
                 }
-            }
+            },
+            "language": "eng"
         }
 
         # When/Then
@@ -90,7 +93,8 @@ class TestDataset(unittest.TestCase):
                     "data": [],
                     "automatically_extensible": False
                 }
-            }
+            },
+            "language": "eng"
         }
 
         # When/Then

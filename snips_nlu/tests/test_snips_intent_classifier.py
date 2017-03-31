@@ -3,7 +3,6 @@ import unittest
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.tests.utils import EMPTY_DATASET, SAMPLE_DATASET
-from snips_nlu.languages import Language
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):

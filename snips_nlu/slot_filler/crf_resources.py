@@ -3,19 +3,18 @@ import os
 import re
 
 from snips_nlu.tokenization import tokenize
+from snips_nlu.utils import RESOURCES_PATH
 
-RESOURCE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "resources")
 CLUSTER_NAMES = ["brown"]
-WORD_CLUSTERS_PATHS = dict(
-    (name, os.path.join(RESOURCE_PATH, "%s_clusters.txt" % name))
-    for name in CLUSTER_NAMES)
 
 WORD_CLUSTERS = None
 
 
-def get_word_clusters():
+def get_word_clusters(language):
     global WORD_CLUSTERS
+    WORD_CLUSTERS_PATHS = dict(
+        (name, os.path.join(get_resources_path(language), "%s_clusters.txt" % name))
+        for name in CLUSTER_NAMES)
     if WORD_CLUSTERS is None:
         WORD_CLUSTERS = dict()
         for name, path in WORD_CLUSTERS_PATHS.iteritems():
@@ -31,14 +30,15 @@ def get_word_clusters():
     return WORD_CLUSTERS
 
 
-GAZETTEERS_NAMES = ["english_top_10000"]
-GAZETTEERS_PATHS = dict((name, os.path.join(RESOURCE_PATH, "%s.txt" % name))
-                        for name in GAZETTEERS_NAMES)
+GAZETTEERS_NAMES = ["top_10000_nouns"]
+
 GAZETTEERS = None
 
 
-def get_gazetteers():
+def get_gazetteers(language):
     global GAZETTEERS
+    GAZETTEERS_PATHS = dict((name, os.path.join(get_resources_path(language), "%s.txt" % name))
+                            for name in GAZETTEERS_NAMES)
     if GAZETTEERS is None:
         GAZETTEERS = dict()
         for name, path in GAZETTEERS_PATHS.iteritems():
@@ -76,3 +76,7 @@ def get_gazetteers_regexes():
 
 def get_gazetteer_regex(gazetteer_name):
     return get_gazetteers_regexes()[gazetteer_name]
+
+
+def get_resources_path(language):
+    return os.path.join(RESOURCES_PATH, language.iso_code)

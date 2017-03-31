@@ -1,5 +1,6 @@
 import cPickle
 import importlib
+import math
 
 from sklearn_crfsuite import CRF
 
@@ -53,11 +54,21 @@ class CRFTagger(object):
         features = self.compute_features(tokens)
         return self.crf_model.predict_single(features)
 
-    def fit(self, data):
+    def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]
         self.crf_model.fit(X, Y)
         self.fitted = True
+        if verbose:
+            feature_weights = self.crf_model.state_features_
+            feature_weights = sorted(
+                feature_weights.iteritems(),
+                key=lambda (feature, weight): math.fabs(weight),
+                reverse=True)
+            print "\nFeature weights: \n\n"
+            for (feat, tag), weight in feature_weights:
+                print "%s %s: %s" % (feat, tag, weight)
+
         return self
 
     def compute_features(self, tokens):
@@ -114,3 +125,22 @@ class CRFTagger(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+def process_transitions(transitions):
+    return [{"from": t[0], "to": t[1], "weight": w}
+            for t, w in transitions.iteritems()]
+
+
+def process_features(state_features):
+    return [{"feature": f[0], "tag": f[1], "weight": w}
+            for f, w in state_features.iteritems()]
+
+
+def extract_parameters(tagger):
+    info = tagger.info()
+
+    params = dict()
+    params["transitions"] = process_transitions(info.transitions)
+    params["features_weights"] = process_features()
+    return params

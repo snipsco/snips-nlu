@@ -1,24 +1,32 @@
 import glob
 import io
 import os
-import ujson
 
 from snips_nlu.utils import RESOURCES_PATH
 
-_LANGUAGE_STEMS = None
+_LANGUAGE_STEMS = dict()
+
+
+def verbs_stems(language):
+    stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language.iso_code,
+                                         "top_*_verbs_conjugated.json"))
+    if len(stems_paths) == 0:
+        return dict()
+
+    verb_stemmings = dict()
+    lines = [l.strip() for l in io.open(stems_paths[0], encoding="utf8")]
+    for line in lines:
+        elements = line.split(sep=';')
+        verb_stemmings.update(
+            {inflection.split(',')[1]: elements[0] for inflection in
+             elements[1:]})
+    return verb_stemmings
 
 
 def language_stems(language):
     global _LANGUAGE_STEMS
-    if _LANGUAGE_STEMS is None:
-        _LANGUAGE_STEMS = dict()
-        stems_paths = glob.glob(os.path.join(RESOURCES_PATH, "stems_*.json"))
-        for path in stems_paths:
-            _, filename = os.path.split(path)
-            lang = os.path.splitext(filename)[0].split("_")[-1]
-            with io.open(path, encoding="utf8") as f:
-                _LANGUAGE_STEMS[lang] = ujson.load(f)
-
+    if language.iso_code not in _LANGUAGE_STEMS:
+        _LANGUAGE_STEMS[language.iso_code] = verbs_stems(language)
     return _LANGUAGE_STEMS[language.iso_code]
 
 

@@ -9,14 +9,14 @@ _LANGUAGE_STEMS = dict()
 
 def verbs_stems(language):
     stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language.iso_code,
-                                         "top_*_verbs_conjugated.json"))
+                                         "top_*_verbs_conjugated.txt"))
     if len(stems_paths) == 0:
         return dict()
 
     verb_stemmings = dict()
     lines = [l.strip() for l in io.open(stems_paths[0], encoding="utf8")]
     for line in lines:
-        elements = line.split(sep=';')
+        elements = line.split(';')
         verb_stemmings.update(
             {inflection.split(',')[1]: elements[0] for inflection in
              elements[1:]})

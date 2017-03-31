@@ -1,7 +1,7 @@
 import io
 import os
 
-from snips_nlu.utils import RESOURCES_PATH
+from snips_nlu.utils import get_resources_path
 
 STOP_WORDS = None
 SUBTITLES = None
@@ -27,7 +27,3 @@ def get_subtitles(language):
             SUBTITLES = set(l for l in lines if len(l) > 0)
 
     return SUBTITLES
-
-
-def get_resources_path(language):
-    return os.path.join(RESOURCES_PATH, language.iso_code)

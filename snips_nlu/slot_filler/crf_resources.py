@@ -3,7 +3,7 @@ import os
 import re
 
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import RESOURCES_PATH
+from snips_nlu.utils import get_resources_path
 
 CLUSTER_NAMES = ["brown"]
 
@@ -76,7 +76,3 @@ def get_gazetteers_regexes():
 
 def get_gazetteer_regex(gazetteer_name):
     return get_gazetteers_regexes()[gazetteer_name]
-
-
-def get_resources_path(language):
-    return os.path.join(RESOURCES_PATH, language.iso_code)

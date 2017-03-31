@@ -75,6 +75,8 @@ def validate_entity(entity):
         validate_keys(entry, [VALUE, SYNONYMS],
                       object_label="entity entry")
         validate_type(entry[SYNONYMS], list)
+        if entry[VALUE] not in entry[SYNONYMS]:
+            raise ValueError("Synonyms must contain the entity value")
 
 
 def validate_language(language):

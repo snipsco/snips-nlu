@@ -20,7 +20,7 @@ class TestFeatureFunctions(unittest.TestCase):
         }
 
         for n, expected_features in ngrams.iteritems():
-            ngrams_fn = get_ngram_fn(n)
+            ngrams_fn = get_ngram_fn(n, use_stemming=False)
             # When
             features = [ngrams_fn.function(tokens, i)
                         for i in xrange(len(tokens))]
@@ -38,7 +38,8 @@ class TestFeatureFunctions(unittest.TestCase):
         common_words = {"i", "love", "music"}
 
         for n, expected_features in ngrams.iteritems():
-            ngrams_fn = get_ngram_fn(n, common_words)
+            ngrams_fn = get_ngram_fn(n, use_stemming=False,
+                                     common_words=common_words)
             # When
             features = [ngrams_fn.function(tokens, i)
                         for i in xrange(len(tokens))]
@@ -126,7 +127,7 @@ class TestFeatureFunctions(unittest.TestCase):
         tokens = tokenize("i m a bird")
         expected_features = [None, None, None, "1"]
         # When
-        feature_fn = get_token_is_in(collection, "animal")
+        feature_fn = get_token_is_in(collection, "animal", use_stemming=False)
 
         # Then
         self.assertEqual(expected_features,

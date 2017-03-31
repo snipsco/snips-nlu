@@ -124,7 +124,7 @@ class TestFeatureFunctions(unittest.TestCase):
         # Given
         collection = {"bIrd"}
         tokens = tokenize("i m a bird")
-        expected_features = ["0", "0", "0", "1"]
+        expected_features = [None, None, None, "1"]
         # When
         feature_fn = get_token_is_in(collection, "animal")
 

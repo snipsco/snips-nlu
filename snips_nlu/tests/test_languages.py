@@ -1,6 +1,6 @@
 import unittest
 
-from ..languages import Language
+from snips_nlu.languages import Language
 
 
 class TestLanguage(unittest.TestCase):

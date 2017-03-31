@@ -157,22 +157,23 @@ def initial_string_from_tokens(tokens):
 def is_digit():
     return BaseFeatureFunction(
         "is_digit",
-        lambda tokens, token_index: str(
-            int(tokens[token_index].value.isdigit()))
+        lambda tokens, token_index: "1" if tokens[
+            token_index].value.isdigit() else None
     )
 
 
 def is_first():
     return BaseFeatureFunction(
         "is_first",
-        lambda tokens, token_index: str(int(token_index == 0))
+        lambda tokens, token_index: "1" if token_index == 0 else None
     )
 
 
 def is_last():
     return BaseFeatureFunction(
         "is_last",
-        lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
+        lambda tokens, token_index: "1" if token_index == len(
+            tokens) - 1 else None
     )
 
 
@@ -242,8 +243,8 @@ def get_token_is_in(collection, collection_name):
     lowered_collection = set([c.lower() for c in collection])
 
     def token_is_in(tokens, token_index):
-        return str(int(tokens[token_index].value.lower()
-                       in lowered_collection))
+        return "1" if tokens[token_index].value.lower() in lowered_collection \
+            else None
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 

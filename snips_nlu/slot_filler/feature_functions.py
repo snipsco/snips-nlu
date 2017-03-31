@@ -6,6 +6,7 @@ import numpy as np
 from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
+from snips_nlu.preprocessing import stem
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE,
                                  VALUE)
@@ -76,7 +77,7 @@ def default_features(language, use_stemming):
 def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
                  keep_prob=.5):
     if use_stemming:
-        preprocess = lambda s: s.stem
+        preprocess = lambda s: stem(s, language, s)
     else:
         preprocess = lambda s: s
 

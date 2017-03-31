@@ -46,7 +46,8 @@ class SnipsIntentClassifier(IntentClassifier):
         if len(self.intent_list) > 0:
             (queries, y), alpha = augment_dataset(dataset, self.language,
                                                   self.intent_list)
-            X = self.featurizer.fit_transform(queries, y)
+            self.featurizer = self.featurizer.fit(queries, y)
+            X = self.featurizer.transform(queries)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
             self.intent_list = [None] + self.intent_list

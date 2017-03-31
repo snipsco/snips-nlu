@@ -101,7 +101,7 @@ class SnipsNLUEngine(NLUEngine):
         parsers = self.custom_parsers
         if self.builtin_parser is not None:
             parsers.append(self.builtin_parser)
-        return _parse(text, parsers, self.entities)
+        return _parse(text, parsers, self.entities).as_dict()
 
     def fit(self, dataset):
         """

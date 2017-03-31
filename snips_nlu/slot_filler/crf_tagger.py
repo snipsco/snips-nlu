@@ -3,6 +3,7 @@ import importlib
 
 from sklearn_crfsuite import CRF
 
+from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import Tagging, TOKENS, TAGS
 from snips_nlu.slot_filler.feature_functions import TOKEN_NAME, \
@@ -31,16 +32,12 @@ def get_features_from_signatures(signatures):
 
 
 class CRFTagger(object):
-    def __init__(self, crf_model, features_signatures, tagging,
-                 use_stemming=False, language=None):
+    def __init__(self, crf_model, features_signatures, tagging, language):
         self.crf_model = crf_model
         self.features_signatures = features_signatures
         self._features = None
         self.tagging = tagging
         self.fitted = False
-        if use_stemming and language is None:
-            raise ValueError("language must be provided if stemming is used")
-        self.use_stemming = use_stemming
         self.language = language
 
     @property
@@ -64,10 +61,9 @@ class CRFTagger(object):
         return self
 
     def compute_features(self, tokens):
-        if self.use_stemming:
-            tokens = [Token(t.value, t.start, t.end,
-                            stem=stem(t.value, self.language, t.value))
-                      for t in tokens]
+        tokens = [Token(t.value, t.start, t.end,
+                        stem=stem(t.value, self.language, t.value))
+                  for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         for i in range(len(tokens)):
@@ -85,7 +81,8 @@ class CRFTagger(object):
             "crf_model": cPickle.dumps(self.crf_model),
             "features_signatures": self.features_signatures,
             "tagging": self.tagging.value,
-            "fitted": self.fitted
+            "fitted": self.fitted,
+            "language": self.language.iso_code
         })
         return obj_dict
 
@@ -94,8 +91,10 @@ class CRFTagger(object):
         crf_model = cPickle.loads(obj_dict["crf_model"])
         features_signatures = obj_dict["features_signatures"]
         tagging = Tagging(int(obj_dict["tagging"]))
+        language = Language.from_iso_code(obj_dict["language"])
         fitted = obj_dict["fitted"]
         self = cls(crf_model=crf_model,
-                   features_signatures=features_signatures, tagging=tagging)
+                   features_signatures=features_signatures, tagging=tagging,
+                   language=language)
         self.fitted = fitted
         return self

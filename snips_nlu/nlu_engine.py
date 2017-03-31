@@ -121,11 +121,10 @@ class SnipsNLUEngine(NLUEngine):
         for intent in dataset[INTENTS].keys():
             intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
-            features = crf_features(intent_custom_entities,
-                                   use_stemming=False, language=language)
+            features = crf_features(intent_custom_entities, use_stemming=False,
+                                    language=language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        Tagging.BILOU,
-                                        language=language)
+                                        Tagging.BILOU, language)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
         return self

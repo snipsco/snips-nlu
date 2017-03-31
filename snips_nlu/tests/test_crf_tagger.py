@@ -3,11 +3,12 @@ import unittest
 
 from sklearn_crfsuite import CRF
 
+from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import Tagging
 
 
-class TestCRFUtils(unittest.TestCase):
+class TestCRFTagger(unittest.TestCase):
     def test_should_be_serializable(self):
         # Given
         crf_model = CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None,
@@ -26,7 +27,8 @@ class TestCRFUtils(unittest.TestCase):
             }
         ]
         tagging = Tagging.BILOU
-        tagger = CRFTagger(crf_model, features_signatures, tagging)
+        tagger = CRFTagger(crf_model, features_signatures, tagging,
+                           Language.ENG)
 
         # When
         tagger_dict = tagger.to_dict()
@@ -37,6 +39,7 @@ class TestCRFUtils(unittest.TestCase):
             "@class_name": "CRFTagger",
             "@module_name": "snips_nlu.slot_filler.crf_tagger",
             "crf_model": model_pkl,
+            "language": "eng",
             "features_signatures": [
                 {
                     'args': {'n': 1},
@@ -52,6 +55,7 @@ class TestCRFUtils(unittest.TestCase):
             "tagging": 2,
             "fitted": False
         }
+
         self.assertDictEqual(tagger_dict, expected_dict)
 
     def test_should_be_deserializable(self):
@@ -73,7 +77,7 @@ class TestCRFUtils(unittest.TestCase):
         ]
         tagging = Tagging.BILOU
         tagger = CRFTagger(crf_model, features_signatures, tagging,
-                           use_stemming=False)
+                           language=Language.ENG)
         tagger_dict = tagger.to_dict()
 
         # When

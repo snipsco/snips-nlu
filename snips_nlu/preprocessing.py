@@ -11,6 +11,7 @@ _LANGUAGE_STEMS = None
 def language_stems(language):
     global _LANGUAGE_STEMS
     if _LANGUAGE_STEMS is None:
+        _LANGUAGE_STEMS = dict()
         stems_paths = glob.glob(os.path.join(RESOURCES_PATH, "stems_*.json"))
         for path in stems_paths:
             _, filename = os.path.split(path)
@@ -18,7 +19,7 @@ def language_stems(language):
             with io.open(path, encoding="utf8") as f:
                 _LANGUAGE_STEMS[lang] = ujson.load(f)
 
-    return _LANGUAGE_STEMS[language.iso]
+    return _LANGUAGE_STEMS[language.iso_code]
 
 
 def stem(string, language, *default):

@@ -1,9 +1,6 @@
-from duckling import core
 from enum import Enum
 
 from utils import classproperty
-
-core.load()
 
 ISO_CODE, DUCKLING_CODE = "iso", "duckling_code"
 

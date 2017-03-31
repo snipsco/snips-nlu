@@ -13,7 +13,7 @@ WORD_CLUSTERS = None
 def get_word_clusters(language):
     global WORD_CLUSTERS
     WORD_CLUSTERS_PATHS = dict(
-        (name, os.path.join(RESOURCES_PATH, "%s" % language.iso_code, "%s_clusters.txt" % name))
+        (name, os.path.join(get_resources_path(language), "%s_clusters.txt" % name))
         for name in CLUSTER_NAMES)
     if WORD_CLUSTERS is None:
         WORD_CLUSTERS = dict()
@@ -37,7 +37,7 @@ GAZETTEERS = None
 
 def get_gazetteers(language):
     global GAZETTEERS
-    GAZETTEERS_PATHS = dict((name, os.path.join(RESOURCES_PATH, "%s" % language.iso_code, "%s.txt" % name))
+    GAZETTEERS_PATHS = dict((name, os.path.join(get_resources_path(language), "%s.txt" % name))
                             for name in GAZETTEERS_NAMES)
     if GAZETTEERS is None:
         GAZETTEERS = dict()
@@ -76,3 +76,7 @@ def get_gazetteers_regexes():
 
 def get_gazetteer_regex(gazetteer_name):
     return get_gazetteers_regexes()[gazetteer_name]
+
+
+def get_resources_path(language):
+    return os.path.join(RESOURCES_PATH, language.iso_code)

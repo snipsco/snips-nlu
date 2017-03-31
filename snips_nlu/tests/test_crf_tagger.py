@@ -84,7 +84,4 @@ class TestCRFTagger(unittest.TestCase):
         deserialized_tagger = CRFTagger.from_dict(tagger_dict)
 
         # Then
-        self.assertEqual(deserialized_tagger.features_signatures,
-                         tagger.features_signatures)
-        self.assertEqual(deserialized_tagger.tagging, tagger.tagging)
-        self.assertEqual(deserialized_tagger.fitted, tagger.fitted)
+        self.assertEqual(deserialized_tagger, tagger)

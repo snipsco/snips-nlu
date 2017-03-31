@@ -98,3 +98,19 @@ class CRFTagger(object):
                    language=language)
         self.fitted = fitted
         return self
+
+    def __eq__(self, other):
+        if not isinstance(other, CRFTagger):
+            return False
+        self_model_state = self.crf_model.__getstate__()
+        other_model_state = other.crf_model.__getstate__()
+        self_model_state.pop('modelfile')
+        other_model_state.pop('modelfile')
+        return self.features_signatures == other.features_signatures \
+               and self.tagging == other.tagging \
+               and self.fitted == other.fitted \
+               and self.language == other.language \
+               and self_model_state == other_model_state
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

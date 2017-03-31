@@ -6,10 +6,10 @@ import numpy as np
 from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
-from snips_nlu.preprocessing import stem
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE,
                                  VALUE)
+from snips_nlu.preprocessing import stem
 
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
@@ -58,6 +58,18 @@ def default_features(language, use_stemming):
             "factory_name": "is_digit",
             "args": {},
             "offsets": [-1, 0, 1]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "is_first",
+            "args": {},
+            "offsets": [-2, -1, 0]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "is_last",
+            "args": {},
+            "offsets": [0, 1, 2]
         }
     ]
 

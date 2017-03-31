@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESOURCES_PATH = os.path.join(ROOT_PATH, "snips_nlu/snips-nlu-resources")
+RESOURCES_PATH = os.path.join(ROOT_PATH, "snips_nlu", "snips-nlu-resources")
 
 MODULE_NAME = "@module_name"
 CLASS_NAME = "@class_name"
@@ -118,3 +118,7 @@ class UnupdatableDict(dict):
         if key in self:
             raise KeyError("Can't update key '%s'" % key)
         super(UnupdatableDict, self).__setitem__(key, value)
+
+
+def get_resources_path(language):
+    return os.path.join(RESOURCES_PATH, language.iso_code)

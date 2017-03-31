@@ -60,6 +60,15 @@ class CRFTagger(object):
         self.crf_model = self.crf_model.fit(X, Y)
         self.fitted = True
         if verbose:
+            transition_features = self.crf_model.transition_features_
+            transition_features = sorted(
+                transition_features.iteritems(),
+                key=lambda (transition, weight): math.fabs(weight),
+                reverse=True)
+            print "\nTransition weights: \n\n"
+            for (state_1, state_2), weight in transition_features:
+                print "%s %s: %s" % (state_1, state_2, weight)
+
             feature_weights = self.crf_model.state_features_
             feature_weights = sorted(
                 feature_weights.iteritems(),

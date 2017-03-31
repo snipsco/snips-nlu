@@ -57,7 +57,7 @@ class CRFTagger(object):
     def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]
-        self.crf_model.fit(X, Y)
+        self.crf_model = self.crf_model.fit(X, Y)
         self.fitted = True
         if verbose:
             feature_weights = self.crf_model.state_features_

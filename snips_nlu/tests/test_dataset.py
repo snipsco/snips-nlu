@@ -13,7 +13,7 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "entities": {},
-            "language": "eng"
+            "language": "en"
         }
 
         # When/Then
@@ -41,7 +41,7 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "entities": {},
-            "language": "eng"
+            "language": "en"
         }
 
         # When/Then
@@ -75,7 +75,7 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "eng"
+            "language": "en"
         }
 
         # When/Then
@@ -94,7 +94,7 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "eng"
+            "language": "en"
         }
 
         # When/Then
@@ -123,7 +123,7 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "eng"
+            "language": "en"
         }
 
         # When/Then
@@ -131,6 +131,20 @@ class TestDataset(unittest.TestCase):
             validate_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "Synonyms must contain the entity value")
+
+    def test_invalid_language_should_raise_exception(self):
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {},
+            "language": "eng"
+        }
+
+        # When/Then
+        with self.assertRaises(ValueError) as ctx:
+            validate_dataset(dataset)
+        self.assertEqual(ctx.exception.message,
+                         "Language name must be ISO 639-1, found 'eng'")
 
 
 if __name__ == '__main__':

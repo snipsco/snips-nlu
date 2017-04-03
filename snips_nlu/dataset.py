@@ -81,5 +81,5 @@ def validate_entity(entity):
 
 def validate_language(language):
     if language not in Language.language_by_iso_code:
-        raise ValueError("Language name must be ISO 639-3,"
+        raise ValueError("Language name must be ISO 639-1,"
                          " found '%s'" % language)

@@ -216,7 +216,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "eng"
+            "language": "en"
         }
 
         # When
@@ -308,7 +308,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "eng"
+            "language": "en"
         }
 
         def mocked_regex_intent(_):
@@ -390,7 +390,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "eng"
+            "language": "en"
         }
 
         def mocked_regex_intent(_):

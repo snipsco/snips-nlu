@@ -1,17 +1,19 @@
 import re
+from copy import deepcopy
 
-from snips_nlu.constants import TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS, \
-    ENTITIES, ENTITY, SLOT_NAME, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE
 from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
+                                 ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
+                                 LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE)
 from snips_nlu.languages import Language
-
 from utils import validate_type, validate_key, validate_keys
 
 INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
 ENTITY_NAME_REGEX = re.compile("^[\w]+$")
 
 
-def validate_dataset(dataset):
+def validate_and_format_dataset(dataset):
+    dataset = deepcopy(dataset)
     validate_type(dataset, dict)
     mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
     for key in mandatory_keys:
@@ -23,11 +25,12 @@ def validate_dataset(dataset):
     for entity_name, entity in dataset[ENTITIES].iteritems():
         validate_entity_name(entity_name)
         entities.add(entity_name)
-        validate_entity(entity)
+        dataset[ENTITIES][entity_name] = validate_and_format_entity(entity)
     for intent_name, intent in dataset[INTENTS].iteritems():
         validate_intent_name(intent_name)
         validate_intent(intent, entities)
     validate_language(dataset[LANGUAGE])
+    return dataset
 
 
 def validate_intent_name(name):
@@ -63,7 +66,7 @@ def validate_entity_name(name):
                          " found '%s'" % name)
 
 
-def validate_entity(entity):
+def validate_and_format_entity(entity):
     validate_type(entity, dict)
     mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA]
     validate_keys(entity, mandatory_keys, object_label="entity")
@@ -76,7 +79,9 @@ def validate_entity(entity):
                       object_label="entity entry")
         validate_type(entry[SYNONYMS], list)
         if entry[VALUE] not in entry[SYNONYMS]:
-            raise ValueError("Synonyms must contain the entity value")
+            entry[SYNONYMS].append(entry[VALUE])
+
+    return entity
 
 
 def validate_language(language):

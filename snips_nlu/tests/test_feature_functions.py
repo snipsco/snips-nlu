@@ -136,7 +136,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_get_built_in_annotation_fn(self):
         # Given
-        language = "eng"
+        language = "en"
         language = Language.from_iso_code(language)
         text = "i ll be there tomorrow at noon   is that ok?"
         tokens = tokenize(text)

@@ -15,7 +15,7 @@ class TestBuiltInEntities(unittest.TestCase):
     @patch("duckling.core.parse")
     def test_get_built_in_entities(self, mocked_duckling_parse):
         # Given
-        language = "eng"
+        language = "en"
         language = Language.from_iso_code(language)
         text = "let's meet at 2p.m in the bronx"
 
@@ -79,7 +79,7 @@ class TestBuiltInEntities(unittest.TestCase):
     def test_duckling_cache(self, mocked_duckling_parse):
         # Given
         _DUCKLING_CACHE.clear()
-        language = "eng"
+        language = "en"
         language = Language.from_iso_code(language)
         text_1 = "ok"
         text_2 = "other_text"

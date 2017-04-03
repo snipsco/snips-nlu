@@ -39,7 +39,7 @@ class TestCRFTagger(unittest.TestCase):
             "@class_name": "CRFTagger",
             "@module_name": "snips_nlu.slot_filler.crf_tagger",
             "crf_model": model_pkl,
-            "language": "eng",
+            "language": "en",
             "features_signatures": [
                 {
                     'args': {'n': 1},

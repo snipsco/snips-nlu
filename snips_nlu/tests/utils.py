@@ -13,5 +13,5 @@ EMPTY_DATASET = {"intents": {}, "entities": {}, "language": "en"}
 with io.open(SAMPLE_DATASET_PATH) as dataset_file:
     SAMPLE_DATASET = json.load(dataset_file)
 
-validate_and_format_dataset(EMPTY_DATASET)
-validate_and_format_dataset(SAMPLE_DATASET)
+EMPTY_DATASET = validate_and_format_dataset(EMPTY_DATASET)
+SAMPLE_DATASET = validate_and_format_dataset(SAMPLE_DATASET)

@@ -49,8 +49,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities
 
-        engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
-                                mocked_builtin_parser)
+        engine = SnipsNLUEngine()
+        engine.custom_parsers = [mocked_parser1, mocked_parser2]
+        engine.builtin_parser = mocked_builtin_parser
         engine.entities = {"mocked_entity": {"automatically_extensible": True}}
 
         # When
@@ -69,7 +70,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities
-        engine = SnipsNLUEngine([], mocked_builtin_parser)
+        engine = SnipsNLUEngine()
+        engine.builtin_parser = mocked_builtin_parser
 
         # When
         text = "hello world"
@@ -97,8 +99,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities
 
-        engine = SnipsNLUEngine([mocked_parser1, mocked_parser2],
-                                mocked_builtin_parser)
+        engine = SnipsNLUEngine()
+        engine.custom_parsers = [mocked_parser1, mocked_parser2]
+        engine.builtin_parser = mocked_builtin_parser
 
         # When
         text = "hello world"

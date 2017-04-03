@@ -4,7 +4,8 @@ from dataset import validate_dataset
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (
     USE_SYNONYMS, SYNONYMS, DATA, INTENTS, ENTITIES, UTTERANCES,
-    LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE, ENTITY)
+    LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE, ENTITY, BUILTIN_PARSER,
+    CUSTOM_PARSERS)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -85,12 +86,10 @@ def snips_nlu_entities(dataset):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, custom_parsers=None, builtin_parser=None):
+    def __init__(self):
         super(SnipsNLUEngine, self).__init__()
-        if custom_parsers is None:
-            custom_parsers = []
-        self.custom_parsers = custom_parsers
-        self.builtin_parser = builtin_parser
+        self.custom_parsers = []
+        self.builtin_parser = None
         self.entities = None
 
     def parse(self, text):
@@ -136,22 +135,22 @@ class SnipsNLUEngine(NLUEngine):
         custom intent parsers.
         """
         return {
-            "custom_parsers": [p.to_dict() for p in self.custom_parsers],
-            "builtin_parser": None,
+            CUSTOM_PARSERS: [p.to_dict() for p in self.custom_parsers],
+            BUILTIN_PARSER: None,
             ENTITIES: self.entities
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
         custom_parsers = [instance_from_dict(d) for d in
-                          obj_dict["custom_parsers"]]
+                          obj_dict[CUSTOM_PARSERS]]
         builtin_parser = None
-        if "builtin_parser" in obj_dict \
-                and obj_dict["builtin_parser"] is not None:
+        if BUILTIN_PARSER in obj_dict and obj_dict[BUILTIN_PARSER] is not None:
             builtin_parser = BuiltinIntentParser.from_dict(
-                obj_dict["builtin_parser"])
-        self = cls(custom_parsers=custom_parsers,
-                   builtin_parser=builtin_parser)
+                obj_dict[BUILTIN_PARSER])
+        self = cls()
+        self.custom_parsers = custom_parsers
+        self.builtin_parser = builtin_parser
         self.entities = obj_dict[ENTITIES]
         return self
 

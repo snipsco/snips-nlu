@@ -7,8 +7,8 @@ from sklearn_crfsuite import CRF
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import Tagging, TOKENS, TAGS
-from snips_nlu.slot_filler.feature_functions import TOKEN_NAME, \
-    create_feature_function
+from snips_nlu.slot_filler.feature_functions import (
+    TOKEN_NAME, create_feature_function)
 from snips_nlu.tokenization import Token
 from snips_nlu.utils import UnupdatableDict, instance_to_generic_dict
 
@@ -108,6 +108,8 @@ class CRFTagger(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
+        if isinstance(obj_dict["crf_model"], unicode):
+            obj_dict["crf_model"] = obj_dict["crf_model"].encode("utf8")
         crf_model = cPickle.loads(obj_dict["crf_model"])
         features_signatures = obj_dict["features_signatures"]
         tagging = Tagging(int(obj_dict["tagging"]))

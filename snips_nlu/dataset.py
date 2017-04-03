@@ -50,14 +50,13 @@ def validate_intent(intent, entities):
         for chunk in utterance[DATA]:
             validate_type(chunk, dict)
             validate_key(chunk, TEXT, object_label="chunk")
-            if len(chunk.keys()) > 1:
+            if ENTITY in chunk or SLOT_NAME in chunk:
                 mandatory_keys = [ENTITY, SLOT_NAME]
                 validate_keys(chunk, mandatory_keys, object_label="chunk")
                 if chunk[ENTITY] in BuiltInEntity.built_in_entity_by_label:
                     continue
                 else:
-                    validate_key(entities, chunk[ENTITY],
-                                 object_label=ENTITIES)
+                    validate_key(entities, chunk[ENTITY], object_label=ENTITIES)
 
 
 def validate_entity_name(name):

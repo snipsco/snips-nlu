@@ -42,6 +42,6 @@ def augment_dataset(dataset, language, intent_list):
     verb_stemmings = verbs_stems(language)
     queries_stem = []
     for query in queries:
-        queries_stem.append(' '.join(str(verb_stemmings.get(word, word)) for word in query.split()))
+        queries_stem.append(' '.join(unicode(verb_stemmings.get(word, word)) for word in query.split()))
 
     return (queries_stem, y), alpha

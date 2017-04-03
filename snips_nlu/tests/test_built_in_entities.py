@@ -1,14 +1,11 @@
 import unittest
 
-from duckling import core
 from mock import patch
 
 from snips_nlu.built_in_entities import (get_built_in_entities, BuiltInEntity,
-                                         scope_to_dims, _DUCKLING_CACHE)
+                                         scope_to_dims, clear_cache)
+from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.languages import Language
-
-def mocked_parse(module, text):
-    return []
 
 
 class TestBuiltInEntities(unittest.TestCase):
@@ -19,8 +16,7 @@ class TestBuiltInEntities(unittest.TestCase):
         language = Language.from_iso_code(language)
         text = "let's meet at 2p.m in the bronx"
 
-        def mocked_parse(module, text, dims=[],
-                         context=core.default_context("now")):
+        def mocked_parse(module, text):
             return [{
                 'body': u'at 2p.m.',
                 'dim': 'time',
@@ -37,8 +33,8 @@ class TestBuiltInEntities(unittest.TestCase):
                 'start': 9}]
 
         mocked_duckling_parse.side_effect = mocked_parse
-        expected_entities = [{"match_range": (9, 17), "value": u'at 2p.m.',
-                              "entity": BuiltInEntity.DATETIME}]
+        expected_entities = [{MATCH_RANGE: (9, 17), VALUE: u'at 2p.m.',
+                              ENTITY: BuiltInEntity.DATETIME}]
 
         # When
         entities = get_built_in_entities(text, language)
@@ -75,20 +71,23 @@ class TestBuiltInEntities(unittest.TestCase):
         # Then
         self.assertEqual(len(duckling_names), len(unique_duckling_name))
 
-    @patch("duckling.core.parse", side_effect=mocked_parse)
+    @patch("duckling.core.parse")
     def test_duckling_cache(self, mocked_duckling_parse):
         # Given
-        _DUCKLING_CACHE.clear()
+        clear_cache()
         language = "en"
         language = Language.from_iso_code(language)
-        text_1 = "ok"
-        text_2 = "other_text"
+        text = "input text used twice"
 
-        _DUCKLING_CACHE[(text_2, language.duckling_code)] = []
+        def mocked_parse(module, text):
+            return []
+
+        mocked_duckling_parse.side_effect = mocked_parse
 
         # When
-        get_built_in_entities(text_2, language)
-        get_built_in_entities(text_1, language)
+        get_built_in_entities(text, language)
+        get_built_in_entities(text, language)
 
         # Then
-        mocked_duckling_parse.assert_called_once_with(language.duckling_code, text_1)
+        mocked_duckling_parse.assert_called_once_with(language.duckling_code,
+                                                      text)

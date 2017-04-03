@@ -80,19 +80,19 @@ engine_dict = engine.to_dict()
 # {
 #     "text": "Turn on the light in the kitchen", 
 #     "intent": {
-#         "name": "switch_light",
-#         "prob": 0.95
+#         "intent_name": "switch_light",
+#         "probability": 0.95
 #     }
 #     "slots": [
 #         {
 #             "value": "on",
 #             "range": [5, 7],
-#             "name": "on_off",
+#             "slot_name": "on_off",
 #         },
 #         {
 #             "value": "kitchen",
 #             "range": [25, 32],
-#             "name": "room",
+#             "slot_name": "room",
 #         }
 #     ]
 # }
@@ -105,4 +105,4 @@ engine.fit(dataset)
 engine.fitted # True
 ```
 
-where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/task/update-readme/snips_nlu/tests/resources/sample_dataset.json)
+where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)

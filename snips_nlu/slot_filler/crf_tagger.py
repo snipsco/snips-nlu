@@ -60,6 +60,15 @@ class CRFTagger(object):
         self.crf_model = self.crf_model.fit(X, Y)
         self.fitted = True
         if verbose:
+            transition_features = self.crf_model.transition_features_
+            transition_features = sorted(
+                transition_features.iteritems(),
+                key=lambda (transition, weight): math.fabs(weight),
+                reverse=True)
+            print "\nTransition weights: \n\n"
+            for (state_1, state_2), weight in transition_features:
+                print "%s %s: %s" % (state_1, state_2, weight)
+
             feature_weights = self.crf_model.state_features_
             feature_weights = sorted(
                 feature_weights.iteritems(),
@@ -125,22 +134,3 @@ class CRFTagger(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
-def process_transitions(transitions):
-    return [{"from": t[0], "to": t[1], "weight": w}
-            for t, w in transitions.iteritems()]
-
-
-def process_features(state_features):
-    return [{"feature": f[0], "tag": f[1], "weight": w}
-            for f, w in state_features.iteritems()]
-
-
-def extract_parameters(tagger):
-    info = tagger.info()
-
-    params = dict()
-    params["transitions"] = process_transitions(info.transitions)
-    params["features_weights"] = process_features()
-    return params

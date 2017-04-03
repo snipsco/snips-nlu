@@ -1,6 +1,5 @@
 from intent_parser import IntentParser
 from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY
-from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,

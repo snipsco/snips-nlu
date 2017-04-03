@@ -1,3 +1,4 @@
+import json
 import unittest
 
 import numpy as np
@@ -133,6 +134,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
         deserialized_engine = SnipsNLUEngine.from_dict(serialized_engine)
 
         # Then
+        try:
+            json.dumps(serialized_engine)
+        except:
+            self.fail("NLU engine dict should be json serializatble")
+
         self.assertEqual(deserialized_engine.parse(text), expected_parse)
 
     @patch("snips_nlu.slot_filler.feature_functions.default_features",

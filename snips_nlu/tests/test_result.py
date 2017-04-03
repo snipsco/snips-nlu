@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from snips_nlu.constants import (PARSED_INTENT, PARSED_SLOTS, TEXT, INTENT_NAME,
@@ -17,6 +18,11 @@ class TestResult(unittest.TestCase):
         result_dict = result.as_dict()
 
         # Then
+        try:
+            json.dumps(result_dict)
+        except:
+            self.fail("Result dict should be json serializatble")
+
         expected_dict = {
             PARSED_INTENT: {INTENT_NAME: 'world', PROBABILITY: 0.5},
             PARSED_SLOTS: [{MATCH_RANGE: [3, 5],

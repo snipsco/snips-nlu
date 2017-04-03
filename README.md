@@ -105,4 +105,4 @@ engine.fit(dataset)
 engine.fitted # True
 ```
 
-where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/task/update-readme/snips_nlu/tests/resources/sample_dataset.json)
+where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)

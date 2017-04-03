@@ -38,13 +38,14 @@ def _parse(text, parsers, entities):
         slots = parser.get_slots(text, res.intent_name)
         valid_slot = []
         for s in slots:
-            entity = entities[s.entity]
-            if not entity[AUTOMATICALLY_EXTENSIBLE]:
-                if s.value not in entity[UTTERANCES]:
-                    continue
-                slot_value = entity[UTTERANCES][s.value]
-            else:
-                slot_value = s.value
+            slot_value = s.value
+            # Check if the entity is from a custom intent
+            if s.entity in entities:
+                entity = entities[s.entity]
+                if not entity[AUTOMATICALLY_EXTENSIBLE]:
+                    if s.value not in entity[UTTERANCES]:
+                        continue
+                    slot_value = entity[UTTERANCES][s.value]
             s = ParsedSlot(s.match_range, slot_value, s.entity,
                            s.slot_name)
             valid_slot.append(s)
@@ -91,6 +92,7 @@ class SnipsNLUEngine(NLUEngine):
         self.custom_parsers = []
         self.builtin_parser = None
         self.entities = None
+        self.language = None
 
     def parse(self, text):
         """
@@ -111,7 +113,7 @@ class SnipsNLUEngine(NLUEngine):
         :return: A fitted SnipsNLUEngine
         """
         dataset = validate_and_format_dataset(dataset)
-        language = Language.from_iso_code(dataset[LANGUAGE])
+        self.language = Language.from_iso_code(dataset[LANGUAGE])
         custom_parser = RegexIntentParser().fit(dataset)
         intent_classifier = SnipsIntentClassifier().fit(
             dataset)
@@ -121,9 +123,9 @@ class SnipsNLUEngine(NLUEngine):
             intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, use_stemming=False,
-                                    language=language)
+                                    language=self.language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        Tagging.BIO, language)
+                                        Tagging.BIO, self.language)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
         return self
@@ -135,20 +137,24 @@ class SnipsNLUEngine(NLUEngine):
         custom intent parsers.
         """
         return {
+            LANGUAGE: self.language.iso_code,
             CUSTOM_PARSERS: [p.to_dict() for p in self.custom_parsers],
             BUILTIN_PARSER: None,
             ENTITIES: self.entities
         }
 
     @classmethod
-    def from_dict(cls, obj_dict):
+    def from_dict(cls, obj_dict, builtin_path=None, builtin_binary=None):
+        language = Language.from_iso_code(obj_dict[LANGUAGE])
         custom_parsers = [instance_from_dict(d) for d in
                           obj_dict[CUSTOM_PARSERS]]
         builtin_parser = None
-        if BUILTIN_PARSER in obj_dict and obj_dict[BUILTIN_PARSER] is not None:
-            builtin_parser = BuiltinIntentParser.from_dict(
-                obj_dict[BUILTIN_PARSER])
+        if builtin_path is not None or builtin_binary is not None:
+            builtin_parser = BuiltinIntentParser(language=language,
+                                                 data_path=builtin_path,
+                                                 data_binary=builtin_binary)
         self = cls()
+        self.language = language
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
         self.entities = obj_dict[ENTITIES]

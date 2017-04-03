@@ -99,3 +99,7 @@ def get_built_in_entities(text, language, scope=None):
             }
             parsed_entities.append(parsed_entity)
     return parsed_entities
+
+
+def clear_cache():
+    _DUCKLING_CACHE.clear()

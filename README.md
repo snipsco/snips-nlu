@@ -80,19 +80,19 @@ engine_dict = engine.to_dict()
 # {
 #     "text": "Turn on the light in the kitchen", 
 #     "intent": {
-#         "name": "switch_light",
-#         "prob": 0.95
+#         "intent_name": "switch_light",
+#         "probability": 0.95
 #     }
 #     "slots": [
 #         {
 #             "value": "on",
 #             "range": [5, 7],
-#             "name": "on_off",
+#             "slot_name": "on_off",
 #         },
 #         {
 #             "value": "kitchen",
 #             "range": [25, 32],
-#             "name": "room",
+#             "slot_name": "room",
 #         }
 #     ]
 # }

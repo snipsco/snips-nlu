@@ -9,6 +9,7 @@ from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE,
                                  VALUE)
+from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 
 TOKEN_NAME = "token"
@@ -79,7 +80,10 @@ def default_features(language, use_stemming):
             {
                 "module_name": __name__,
                 "factory_name": "get_built_in_annotation_fn",
-                "args": {"built_in_entity": entity, "language": language},
+                "args": {
+                    "built_in_entity_label": entity.label,
+                    "language_code": language.iso_code
+                },
                 "offsets": [-2, -1, 0]
             }
         )
@@ -258,9 +262,11 @@ def get_shape_ngram_fn(n):
     return BaseFeatureFunction("shape_ngram_%s" % n, shape_ngram)
 
 
-def get_word_cluster_fn(cluster_name):
+def get_word_cluster_fn(cluster_name, language_code):
+    language = Language.from_iso_code(language_code)
+
     def word_cluster(tokens, token_index):
-        return get_word_clusters()[cluster_name].get(
+        return get_word_clusters(language)[cluster_name].get(
             tokens[token_index].value.lower(), None)
 
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
@@ -324,7 +330,9 @@ def get_regex_match_fn(regex, match_name, use_bilou=False):
     return BaseFeatureFunction("match_%s" % match_name, regex_match)
 
 
-def get_built_in_annotation_fn(built_in_entity, language):
+def get_built_in_annotation_fn(built_in_entity_label, language_code):
+    language = Language.from_iso_code(language_code)
+    built_in_entity = BuiltInEntity.from_label(built_in_entity_label)
     feature_name = "built-in-%s" % built_in_entity.value["label"]
 
     def built_in_annotation(tokens, token_index):

@@ -1,4 +1,5 @@
 import cPickle
+import json
 import unittest
 
 from sklearn_crfsuite import CRF
@@ -34,12 +35,17 @@ class TestCRFTagger(unittest.TestCase):
         tagger_dict = tagger.to_dict()
 
         # Then
+        try:
+            json.dumps(tagger_dict)
+        except:
+            self.fail("Tagger dict should be json serializable")
+
         model_pkl = cPickle.dumps(crf_model)
         expected_dict = {
             "@class_name": "CRFTagger",
             "@module_name": "snips_nlu.slot_filler.crf_tagger",
             "crf_model": model_pkl,
-            "language": "eng",
+            "language": "en",
             "features_signatures": [
                 {
                     'args': {'n': 1},

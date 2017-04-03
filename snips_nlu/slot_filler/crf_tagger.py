@@ -134,22 +134,3 @@ class CRFTagger(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
-def process_transitions(transitions):
-    return [{"from": t[0], "to": t[1], "weight": w}
-            for t, w in transitions.iteritems()]
-
-
-def process_features(state_features):
-    return [{"feature": f[0], "tag": f[1], "weight": w}
-            for f, w in state_features.iteritems()]
-
-
-def extract_parameters(tagger):
-    info = tagger.info()
-
-    params = dict()
-    params["transitions"] = process_transitions(info.transitions)
-    params["features_weights"] = process_features()
-    return params

@@ -1,6 +1,6 @@
 import unittest
 
-from snips_nlu.dataset import validate_dataset
+from snips_nlu.dataset import validate_and_format_dataset
 
 
 class TestDataset(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestDataset(unittest.TestCase):
 
         # When/Then
         with self.assertRaises(AssertionError) as ctx:
-            validate_dataset(dataset)
+            validate_and_format_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "invalid/intent_name is an invalid intent name. "
                          "Intent names must only use: [a-zA-Z0-9_- ]")
@@ -46,7 +46,7 @@ class TestDataset(unittest.TestCase):
 
         # When/Then
         with self.assertRaises(KeyError) as ctx:
-            validate_dataset(dataset)
+            validate_and_format_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "Expected chunk to have key: 'slot_name'")
 
@@ -80,7 +80,7 @@ class TestDataset(unittest.TestCase):
 
         # When/Then
         with self.assertRaises(KeyError) as ctx:
-            validate_dataset(dataset)
+            validate_and_format_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "Expected entities to have key: 'unknown_entity'")
 
@@ -99,38 +99,9 @@ class TestDataset(unittest.TestCase):
 
         # When/Then
         with self.assertRaises(KeyError) as ctx:
-            validate_dataset(dataset)
+            validate_and_format_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "Expected entity to have key: 'use_synonyms'")
-
-    def test_invalid_synonyms_should_raise_exception(self):
-        # Given
-        dataset = {
-            "intents": {},
-            "entities": {
-                "entity1": {
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy 2a",
-                                "dummy a",
-                                "2 dummy a"
-                            ],
-                            "value": "dummy_a"
-                        },
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False
-                }
-            },
-            "language": "en"
-        }
-
-        # When/Then
-        with self.assertRaises(ValueError) as ctx:
-            validate_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
-                         "Synonyms must contain the entity value")
 
     def test_invalid_language_should_raise_exception(self):
         # Given
@@ -142,9 +113,79 @@ class TestDataset(unittest.TestCase):
 
         # When/Then
         with self.assertRaises(ValueError) as ctx:
-            validate_dataset(dataset)
+            validate_and_format_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "Language name must be ISO 639-1, found 'eng'")
+
+    def test_should_add_missing_value_to_synonyms(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": []
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en"
+        }
+
+        expected_dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["entity 1"]
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en"
+        }
+
+        # When
+        dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        self.assertEqual(dataset, expected_dataset)
 
 
 if __name__ == '__main__':

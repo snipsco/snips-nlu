@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from dataset import validate_dataset
+from dataset import validate_and_format_dataset
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (
     USE_SYNONYMS, SYNONYMS, DATA, INTENTS, ENTITIES, UTTERANCES,
@@ -110,7 +110,7 @@ class SnipsNLUEngine(NLUEngine):
         details about the format.
         :return: A fitted SnipsNLUEngine
         """
-        validate_dataset(dataset)
+        dataset = validate_and_format_dataset(dataset)
         language = Language.from_iso_code(dataset[LANGUAGE])
         custom_parser = RegexIntentParser().fit(dataset)
         intent_classifier = SnipsIntentClassifier().fit(

@@ -71,7 +71,7 @@ class TestRegexIntentParser(unittest.TestCase):
         try:
             json.dumps(parser_dict)
         except:
-            self.fail("Parser dict should be json serializatble")
+            self.fail("Parser dict should be json serializable")
 
         expected_dict = {
             "@class_name": "RegexIntentParser",

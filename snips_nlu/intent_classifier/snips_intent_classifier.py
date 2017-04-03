@@ -86,6 +86,7 @@ class SnipsIntentClassifier(IntentClassifier):
     def from_dict(cls, obj_dict):
         classifier = cls(classifier_args=obj_dict['classifier_args'])
         classifier.classifier = cPickle.loads(obj_dict['classifier_pkl'])
-        classifier.intent_list = obj_dict['intent_list'],
+        classifier.intent_list = obj_dict['intent_list']
         classifier.language = Language.from_iso_code(obj_dict['language_code'])
         classifier.featurizer = Featurizer.from_dict(obj_dict['featurizer'])
+        return classifier

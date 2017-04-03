@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_selection import chi2
 
 from intent_classifier_resources import get_stop_words
+from snips_nlu.languages import Language
 
 
 class Featurizer(object):
@@ -54,7 +55,7 @@ class Featurizer(object):
 
     def to_dict(self):
         return {
-            'language': self.language,
+            'language_code': self.language.iso_code,
             'count_vectorizer': cPickle.dumps(self.count_vectorizer),
             'tfidf_transformer': cPickle.dumps(self.tfidf_transformer),
             'best_features': self.best_features,
@@ -64,7 +65,7 @@ class Featurizer(object):
     @classmethod
     def from_dict(cls, obj_dict):
         return cls(
-            language=obj_dict['language'],
+            language=Language.from_iso_code(obj_dict['language_code']),
             count_vectorizer=cPickle.loads(obj_dict['count_vectorizer']),
             tfidf_transformer=cPickle.loads(obj_dict['tfidf_transformer']),
             best_features=obj_dict['best_features'],

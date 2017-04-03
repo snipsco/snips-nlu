@@ -21,7 +21,7 @@ class TestResult(unittest.TestCase):
         try:
             json.dumps(result_dict)
         except:
-            self.fail("Result dict should be json serializatble")
+            self.fail("Result dict should be json serializable")
 
         expected_dict = {
             PARSED_INTENT: {INTENT_NAME: 'world', PROBABILITY: 0.5},

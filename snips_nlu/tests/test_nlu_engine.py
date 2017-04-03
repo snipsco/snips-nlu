@@ -137,7 +137,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         try:
             json.dumps(serialized_engine)
         except:
-            self.fail("NLU engine dict should be json serializatble")
+            self.fail("NLU engine dict should be json serializable")
 
         self.assertEqual(deserialized_engine.parse(text), expected_parse)
 

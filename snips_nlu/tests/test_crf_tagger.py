@@ -38,7 +38,7 @@ class TestCRFTagger(unittest.TestCase):
         try:
             json.dumps(tagger_dict)
         except:
-            self.fail("Tagger dict should be json serializatble")
+            self.fail("Tagger dict should be json serializable")
 
         model_pkl = cPickle.dumps(crf_model)
         expected_dict = {

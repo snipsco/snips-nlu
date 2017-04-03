@@ -2,6 +2,7 @@ import numpy as np
 
 from intent_classifier_resources import get_subtitles
 from snips_nlu.constants import TEXT, DATA, INTENTS, UTTERANCES
+from snips_nlu.preprocessing import verbs_stems
 
 
 def get_non_empty_intents(dataset):
@@ -38,4 +39,9 @@ def augment_dataset(dataset, language, intent_list):
     queries = np.array(queries)
     y = np.array(y)
 
-    return (queries, y), alpha
+    verb_stemmings = verbs_stems(language)
+    queries_stem = []
+    for query in queries:
+        queries_stem.append(' '.join(str(verb_stemmings.get(word, word)) for word in query.split()))
+
+    return (queries_stem, y), alpha

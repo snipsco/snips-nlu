@@ -8,6 +8,7 @@ from feature_extraction import Featurizer
 from intent_classifier import IntentClassifier
 from snips_nlu.constants import LANGUAGE
 from snips_nlu.languages import Language
+from snips_nlu.preprocessing import verbs_stems
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.utils import instance_to_generic_dict
 
@@ -61,7 +62,10 @@ class SnipsIntentClassifier(IntentClassifier):
         if len(text) == 0 or len(self.intent_list) == 0:
             return None
 
-        X = self.featurizer.transform([text])
+        verb_stemmings = verbs_stems(self.language)
+        text_stem = ' '.join(str(verb_stemmings.get(word, word)) for word in text.split())
+
+        X = self.featurizer.transform([text_stem])
         proba_vect = self.classifier.predict_proba(X)
         predicted = np.argmax(proba_vect[0])
 

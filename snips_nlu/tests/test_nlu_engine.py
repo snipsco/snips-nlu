@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 from mock import Mock, patch, call
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
@@ -8,7 +9,7 @@ from snips_nlu.slot_filler.feature_functions import BaseFeatureFunction
 from utils import SAMPLE_DATASET
 
 
-def mocked_default(_):
+def mocked_default(_, use_stemming):
     return []
 
 
@@ -57,7 +58,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse,
-                         Result(input_text, intent_result2, intent_entities2))
+                         Result(input_text, intent_result2,
+                                intent_entities2).as_dict())
 
     def test_should_parse_with_builtin_when_no_custom(self):
         # When
@@ -75,7 +77,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse,
-                         Result(text, builtin_intent_result, builtin_entities))
+                         Result(text, builtin_intent_result,
+                                builtin_entities).as_dict())
 
     def test_should_parse_with_builtin_when_customs_return_nothing(self):
         # Given
@@ -103,7 +106,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         self.assertEqual(parse, Result(text, builtin_intent_result,
-                                       builtin_entities))
+                                       builtin_entities).as_dict())
 
     def test_should_not_fail_when_no_parsers(self):
         # Given
@@ -114,7 +117,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         parse = engine.parse(text)
 
         # Then
-        self.assertEqual(parse, Result(text, None, None))
+        self.assertEqual(parse, Result(text, None, None).as_dict())
 
     def test_should_be_serializable(self):
         # Given
@@ -134,9 +137,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
     @patch("snips_nlu.slot_filler.feature_functions.get_token_is_in")
     def test_should_add_custom_entity_in_collection_feature(
             self, mocked_get_token, mocked_default_features):
+        np.random.seed(1)
 
         # Given
-        def mocked_get_token_is_in(collection, collection_name):
+        def mocked_get_token_is_in(collection, collection_name,
+                                   use_stemming=False):
             def f(index, cache):
                 return None
 
@@ -211,17 +216,27 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "en"
+            "language": "eng"
         }
 
         # When
         SnipsNLUEngine().fit(dataset)
 
+        np.random.seed(1)
+        keep_prob = .5
+        collection_1 = ["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"]
+        length_collection_1 = int(keep_prob * len(collection_1))
+        collection_1 = np.random.choice(collection_1, length_collection_1,
+                                        replace=False).tolist()
+
+        collection_2 = ["dummy2"]
+
         # Then
         calls = [
-            call(collection=["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"],
-                 collection_name="dummy_entity_1"),
-            call(collection=["dummy2"], collection_name="dummy_entity_2")
+            call(collection=collection_1,
+                 collection_name="dummy_entity_1", use_stemming=False),
+            call(collection=collection_2, collection_name="dummy_entity_2",
+                 use_stemming=False),
         ]
 
         mocked_get_token.assert_has_calls(calls, any_order=True)
@@ -293,7 +308,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "en"
+            "language": "eng"
         }
 
         def mocked_regex_intent(_):
@@ -328,7 +343,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             text, parsed_intent=mocked_crf_intent(text),
             parsed_slots=[ParsedSlot(match_range=(8, 15), value="dummy_4",
                                      entity="dummy_entity_2",
-                                     slot_name="other_dummy_slot_name")])
+                                     slot_name="other_dummy_slot_name")]) \
+            .as_dict()
         self.assertEqual(result, expected_result)
 
     @patch("snips_nlu.slot_filler.feature_functions.default_features",
@@ -374,7 +390,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "en"
+            "language": "eng"
         }
 
         def mocked_regex_intent(_):
@@ -403,5 +419,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
             text, parsed_intent=mocked_crf_intent(text),
             parsed_slots=[ParsedSlot(match_range=(0, 10), value="dummy1",
                                      entity="dummy_entity_1",
-                                     slot_name="dummy_slot_name")])
+                                     slot_name="dummy_slot_name")]) \
+            .as_dict()
         self.assertEqual(result, expected_result)

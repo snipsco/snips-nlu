@@ -12,7 +12,8 @@ class TestDataset(unittest.TestCase):
                     "utterances": [],
                 }
             },
-            "entities": {}
+            "entities": {},
+            "language": "eng"
         }
 
         # When/Then
@@ -39,7 +40,8 @@ class TestDataset(unittest.TestCase):
                     ]
                 }
             },
-            "entities": {}
+            "entities": {},
+            "language": "eng"
         }
 
         # When/Then
@@ -72,7 +74,8 @@ class TestDataset(unittest.TestCase):
                     "use_synonyms": True,
                     "automatically_extensible": False
                 }
-            }
+            },
+            "language": "eng"
         }
 
         # When/Then
@@ -90,7 +93,8 @@ class TestDataset(unittest.TestCase):
                     "data": [],
                     "automatically_extensible": False
                 }
-            }
+            },
+            "language": "eng"
         }
 
         # When/Then
@@ -98,6 +102,35 @@ class TestDataset(unittest.TestCase):
             validate_dataset(dataset)
         self.assertEqual(ctx.exception.message,
                          "Expected entity to have key: 'use_synonyms'")
+
+    def test_invalid_synonyms_should_raise_exception(self):
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "synonyms": [
+                                "dummy 2a",
+                                "dummy a",
+                                "2 dummy a"
+                            ],
+                            "value": "dummy_a"
+                        },
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "eng"
+        }
+
+        # When/Then
+        with self.assertRaises(ValueError) as ctx:
+            validate_dataset(dataset)
+        self.assertEqual(ctx.exception.message,
+                         "Synonyms must contain the entity value")
 
 
 if __name__ == '__main__':

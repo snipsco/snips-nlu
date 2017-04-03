@@ -3,22 +3,22 @@ import os
 import re
 
 from snips_nlu.tokenization import tokenize
+from snips_nlu.utils import get_resources_path
 
-RESOURCE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "resources")
 CLUSTER_NAMES = ["brown"]
-WORD_CLUSTERS_PATHS = dict(
-    (name, os.path.join(RESOURCE_PATH, "%s_clusters.txt" % name))
-    for name in CLUSTER_NAMES)
 
 WORD_CLUSTERS = None
 
 
-def get_word_clusters():
+def get_word_clusters(language):
     global WORD_CLUSTERS
+    word_clusters_paths = dict(
+        (name,
+         os.path.join(get_resources_path(language), "%s_clusters.txt" % name))
+        for name in CLUSTER_NAMES)
     if WORD_CLUSTERS is None:
         WORD_CLUSTERS = dict()
-        for name, path in WORD_CLUSTERS_PATHS.iteritems():
+        for name, path in word_clusters_paths.iteritems():
             with io.open(path, encoding="utf8") as f:
                 WORD_CLUSTERS[name] = dict()
                 for l in f:
@@ -31,17 +31,19 @@ def get_word_clusters():
     return WORD_CLUSTERS
 
 
-GAZETTEERS_NAMES = ["english_top_10000"]
-GAZETTEERS_PATHS = dict((name, os.path.join(RESOURCE_PATH, "%s.txt" % name))
-                        for name in GAZETTEERS_NAMES)
+GAZETTEERS_NAMES = ["top_10000_nouns"]
+
 GAZETTEERS = None
 
 
-def get_gazetteers():
+def get_gazetteers(language):
     global GAZETTEERS
+    gazetteers_paths = dict(
+        (name, os.path.join(get_resources_path(language), "%s.txt" % name))
+        for name in GAZETTEERS_NAMES)
     if GAZETTEERS is None:
         GAZETTEERS = dict()
-        for name, path in GAZETTEERS_PATHS.iteritems():
+        for name, path in gazetteers_paths.iteritems():
             with io.open(path, encoding="utf8") as f:
                 GAZETTEERS[name] = set()
                 for l in f:
@@ -54,8 +56,8 @@ def get_gazetteers():
     return GAZETTEERS
 
 
-def get_gazetteer(gazetteer_name):
-    return get_gazetteers()[gazetteer_name]
+def get_gazetteer(language, gazetteer_name):
+    return get_gazetteers(language)[gazetteer_name]
 
 
 GAZETTEERS_REGEXES = None

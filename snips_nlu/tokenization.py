@@ -1,7 +1,10 @@
 import re
 from collections import namedtuple
 
-Token = namedtuple('Token', 'value start end')
+from snips_nlu.utils import namedtuple_with_defaults
+
+Token = namedtuple_with_defaults('Token', 'value start end stem', {
+    'stem': None})
 
 TOKEN_REGEX = re.compile(r"\w+", re.UNICODE)
 

@@ -6,19 +6,22 @@ from utils import LimitedSizeDict, classproperty
 
 core.load()
 
+LABEL = "label"
+DUCKLING_DIM = "duckling_dim"
+
 
 class BuiltInEntity(Enum):
-    DATETIME = {"label": "snips/datetime", "duckling_dim": "time"}
-    DURATION = {"label": "snips/duration", "duckling_dim": "duration"}
-    NUMBER = {"label": "snips/number", "duckling_dim": "number"}
+    DATETIME = {LABEL: "snips/datetime", DUCKLING_DIM: "time"}
+    DURATION = {LABEL: "snips/duration", DUCKLING_DIM: "duration"}
+    NUMBER = {LABEL: "snips/number", DUCKLING_DIM: "number"}
 
     @property
     def label(self):
-        return self.value["label"]
+        return self.value[LABEL]
 
     @property
     def duckling_dim(self):
-        return self.value["duckling_dim"]
+        return self.value[DUCKLING_DIM]
 
     @classproperty
     @classmethod
@@ -74,6 +77,7 @@ _DUCKLING_CACHE = LimitedSizeDict(size_limit=1000)
 
 def get_built_in_entities(text, language, scope=None):
     global _DUCKLING_CACHE
+    language = language.duckling_code
     if scope is None:
         dims = core.get_dims(language)
     else:

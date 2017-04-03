@@ -1,12 +1,15 @@
 import re
 from collections import namedtuple
 
+import numpy as np
+
 from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
-from snips_nlu.constants import USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE, \
-    VALUE
+from snips_nlu.constants import (USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE,
+                                 VALUE)
+from snips_nlu.preprocessing import stem
 
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
@@ -16,18 +19,20 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features(language):
+def default_features(language, use_stemming):
     features_signatures = [
         {
             "module_name": __name__,
             "factory_name": "get_ngram_fn",
-            "args": {"n": 1, "common_words": None},
+            "args": {"n": 1, "common_words": None,
+                     "use_stemming": use_stemming},
             "offsets": [-2, -1, 0, 1, 2]
         },
         {
             "module_name": __name__,
             "factory_name": "get_ngram_fn",
-            "args": {"n": 2, "common_words": None},
+            "args": {"n": 2, "common_words": None,
+                     "use_stemming": use_stemming},
             "offsets": [-2, 1]
         },
         {
@@ -53,6 +58,18 @@ def default_features(language):
             "factory_name": "is_digit",
             "args": {},
             "offsets": [-1, 0, 1]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "is_first",
+            "args": {},
+            "offsets": [-2, -1, 0]
+        },
+        {
+            "module_name": __name__,
+            "factory_name": "is_last",
+            "args": {},
+            "offsets": [0, 1, 2]
         }
     ]
 
@@ -69,20 +86,30 @@ def default_features(language):
     return features_signatures
 
 
-def crf_features(intent_entities, language, offsets=[-2, -1, 0]):
-    features = default_features(language)
+def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
+                 keep_prob=.5):
+    if use_stemming:
+        preprocess = lambda s: stem(s, language, s)
+    else:
+        preprocess = lambda s: s
+
+    features = default_features(language, use_stemming)
     for entity_name, entity in intent_entities.iteritems():
         if entity[USE_SYNONYMS]:
-            collection = [s for d in entity[DATA] for s in d[SYNONYMS]]
+            collection = [preprocess(s) for d in entity[DATA] for s in
+                          d[SYNONYMS]]
         else:
-            collection = [d[VALUE] for d in entity[DATA]]
-
+            collection = [preprocess(d[VALUE]) for d in entity[DATA]]
+        collection_size = max(int(keep_prob * len(collection)), 1)
+        collection = np.random.choice(collection, collection_size,
+                                      replace=False).tolist()
         features.append(
             {
                 "module_name": __name__,
                 "factory_name": "get_token_is_in",
                 "args": {"collection": collection,
-                         "collection_name": entity_name},
+                         "collection_name": entity_name,
+                         "use_stemming": use_stemming},
                 "offsets": offsets
             }
         )
@@ -152,22 +179,23 @@ def initial_string_from_tokens(tokens):
 def is_digit():
     return BaseFeatureFunction(
         "is_digit",
-        lambda tokens, token_index: str(
-            int(tokens[token_index].value.isdigit()))
+        lambda tokens, token_index: "1" if tokens[
+            token_index].value.isdigit() else None
     )
 
 
 def is_first():
     return BaseFeatureFunction(
         "is_first",
-        lambda tokens, token_index: str(int(token_index == 0))
+        lambda tokens, token_index: "1" if token_index == 0 else None
     )
 
 
 def is_last():
     return BaseFeatureFunction(
         "is_last",
-        lambda tokens, token_index: str(int(token_index == len(tokens) - 1))
+        lambda tokens, token_index: "1" if token_index == len(
+            tokens) - 1 else None
     )
 
 
@@ -187,7 +215,7 @@ def get_suffix_fn(suffix_size):
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
 
-def get_ngram_fn(n, common_words=None):
+def get_ngram_fn(n, use_stemming, common_words=None):
     if n < 1:
         raise ValueError("n should be >= 1")
 
@@ -196,13 +224,18 @@ def get_ngram_fn(n, common_words=None):
         end = token_index + n
         if 0 <= token_index < max_len and 0 < end <= max_len:
             if common_words is None:
-                return " ".join(t.value.lower()
-                                for t in tokens[token_index:end])
+                if use_stemming:
+                    return " ".join(t.stem.lower()
+                                    for t in tokens[token_index:end])
+                else:
+                    return " ".join(t.value.lower()
+                                    for t in tokens[token_index:end])
             else:
                 words = []
                 for t in tokens[token_index:end]:
-                    lowered = t.value.lower()
-                    words.append(lowered if lowered in common_words
+                    lowered = t.stem.lower() if use_stemming else \
+                        t.value.lower()
+                    words.append(lowered if t.value.lower() in common_words
                                  else "rare_word")
                 return " ".join(words)
         return None
@@ -233,12 +266,13 @@ def get_word_cluster_fn(cluster_name):
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
-def get_token_is_in(collection, collection_name):
+def get_token_is_in(collection, collection_name, use_stemming):
     lowered_collection = set([c.lower() for c in collection])
 
     def token_is_in(tokens, token_index):
-        return str(int(tokens[token_index].value.lower()
-                       in lowered_collection))
+        token_string = tokens[token_index].stem.lower() if use_stemming \
+            else tokens[token_index].value.lower()
+        return "1" if token_string in lowered_collection else None
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 

@@ -1,11 +1,15 @@
 import cPickle
 import importlib
+import math
 
 from sklearn_crfsuite import CRF
 
+from snips_nlu.languages import Language
+from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import Tagging, TOKENS, TAGS
 from snips_nlu.slot_filler.feature_functions import TOKEN_NAME, \
     create_feature_function
+from snips_nlu.tokenization import Token
 from snips_nlu.utils import UnupdatableDict, instance_to_generic_dict
 
 
@@ -29,12 +33,13 @@ def get_features_from_signatures(signatures):
 
 
 class CRFTagger(object):
-    def __init__(self, crf_model, features_signatures, tagging, fitted=False):
+    def __init__(self, crf_model, features_signatures, tagging, language):
         self.crf_model = crf_model
         self.features_signatures = features_signatures
         self._features = None
         self.tagging = tagging
-        self.fitted = fitted
+        self.fitted = False
+        self.language = language
 
     @property
     def features(self):
@@ -49,14 +54,27 @@ class CRFTagger(object):
         features = self.compute_features(tokens)
         return self.crf_model.predict_single(features)
 
-    def fit(self, data):
+    def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]
-        self.crf_model.fit(X, Y)
+        self.crf_model = self.crf_model.fit(X, Y)
         self.fitted = True
+        if verbose:
+            feature_weights = self.crf_model.state_features_
+            feature_weights = sorted(
+                feature_weights.iteritems(),
+                key=lambda (feature, weight): math.fabs(weight),
+                reverse=True)
+            print "\nFeature weights: \n\n"
+            for (feat, tag), weight in feature_weights:
+                print "%s %s: %s" % (feat, tag, weight)
+
         return self
 
     def compute_features(self, tokens):
+        tokens = [Token(t.value, t.start, t.end,
+                        stem=stem(t.value, self.language, t.value))
+                  for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         for i in range(len(tokens)):
@@ -74,7 +92,8 @@ class CRFTagger(object):
             "crf_model": cPickle.dumps(self.crf_model),
             "features_signatures": self.features_signatures,
             "tagging": self.tagging.value,
-            "fitted": self.fitted
+            "fitted": self.fitted,
+            "language": self.language.iso_code
         })
         return obj_dict
 
@@ -83,7 +102,45 @@ class CRFTagger(object):
         crf_model = cPickle.loads(obj_dict["crf_model"])
         features_signatures = obj_dict["features_signatures"]
         tagging = Tagging(int(obj_dict["tagging"]))
+        language = Language.from_iso_code(obj_dict["language"])
         fitted = obj_dict["fitted"]
-        return cls(crf_model=crf_model,
-                   features_signatures=features_signatures,
-                   tagging=tagging, fitted=fitted)
+        self = cls(crf_model=crf_model,
+                   features_signatures=features_signatures, tagging=tagging,
+                   language=language)
+        self.fitted = fitted
+        return self
+
+    def __eq__(self, other):
+        if not isinstance(other, CRFTagger):
+            return False
+        self_model_state = self.crf_model.__getstate__()
+        other_model_state = other.crf_model.__getstate__()
+        self_model_state.pop('modelfile')
+        other_model_state.pop('modelfile')
+        return self.features_signatures == other.features_signatures \
+               and self.tagging == other.tagging \
+               and self.fitted == other.fitted \
+               and self.language == other.language \
+               and self_model_state == other_model_state
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+def process_transitions(transitions):
+    return [{"from": t[0], "to": t[1], "weight": w}
+            for t, w in transitions.iteritems()]
+
+
+def process_features(state_features):
+    return [{"feature": f[0], "tag": f[1], "weight": w}
+            for f, w in state_features.iteritems()]
+
+
+def extract_parameters(tagger):
+    info = tagger.info()
+
+    params = dict()
+    params["transitions"] = process_transitions(info.transitions)
+    params["features_weights"] = process_features()
+    return params

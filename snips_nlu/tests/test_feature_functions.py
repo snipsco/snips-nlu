@@ -9,6 +9,7 @@ from snips_nlu.slot_filler.feature_functions import (
 from snips_nlu.tokenization import tokenize
 from snips_nlu.languages import Language
 
+
 class TestFeatureFunctions(unittest.TestCase):
     def test_ngrams(self):
         # Given
@@ -141,7 +142,8 @@ class TestFeatureFunctions(unittest.TestCase):
         text = "i ll be there tomorrow at noon   is that ok?"
         tokens = tokenize(text)
         built_in = BuiltInEntity.DATETIME
-        feature_fn = get_built_in_annotation_fn(built_in, language)
+        feature_fn = get_built_in_annotation_fn(built_in.label,
+                                                language.iso_code)
         expected_features = [None, None, None, None, "1", "1", "1", None, None,
                              None]
 

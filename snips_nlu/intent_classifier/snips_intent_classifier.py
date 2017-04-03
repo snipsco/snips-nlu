@@ -24,14 +24,12 @@ def get_default_parameters():
 
 
 class SnipsIntentClassifier(IntentClassifier):
-    def __init__(self, language=None, classifier_args=get_default_parameters(),
-                 classifier=None, intent_list=None,
-                 featurizer=None):
-        self.language = language
+    def __init__(self, classifier_args=get_default_parameters()):
+        self.language = None
         self.classifier_args = classifier_args
-        self.classifier = classifier
-        self.intent_list = intent_list
-        self.featurizer = featurizer
+        self.classifier = None
+        self.intent_list = None
+        self.featurizer = None
 
     @property
     def fitted(self):
@@ -79,17 +77,16 @@ class SnipsIntentClassifier(IntentClassifier):
             "classifier_args": self.classifier_args,
             "classifier_pkl": cPickle.dumps(self.classifier),
             "intent_list": self.intent_list,
-            "language": self.language,
+            "language_code": self.language.iso_code,
             "featurizer": self.featurizer.to_dict()
         })
         return obj_dict
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return cls(
-            classifier_args=obj_dict['classifier_args'],
-            classifier=cPickle.loads(obj_dict['classifier_pkl']),
-            intent_list=obj_dict['intent_list'],
-            language=obj_dict['language'],
-            featurizer=Featurizer.from_dict(obj_dict['featurizer'])
-        )
+        classifier = cls(classifier_args=obj_dict['classifier_args'])
+        classifier.classifier = cPickle.loads(obj_dict['classifier_pkl'])
+        classifier.intent_list = obj_dict['intent_list']
+        classifier.language = Language.from_iso_code(obj_dict['language_code'])
+        classifier.featurizer = Featurizer.from_dict(obj_dict['featurizer'])
+        return classifier

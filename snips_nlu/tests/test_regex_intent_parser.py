@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from snips_nlu.intent_parser.regex_intent_parser import (
@@ -67,6 +68,11 @@ class TestRegexIntentParser(unittest.TestCase):
         parser_dict = parser.to_dict()
 
         # Then
+        try:
+            json.dumps(parser_dict)
+        except:
+            self.fail("Parser dict should be json serializable")
+
         expected_dict = {
             "@class_name": "RegexIntentParser",
             "@module_name": "snips_nlu.intent_parser.regex_intent_parser",

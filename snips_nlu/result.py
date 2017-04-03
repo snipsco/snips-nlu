@@ -44,12 +44,12 @@ class Result(_Result):
         else:
             parsed_intent = None
         if self.parsed_slots is not None:
-            parsed_entities = map(lambda slot: slot.as_dict(),
+            parsed_slots = map(lambda slot: slot.as_dict(),
                                   self.parsed_slots)
         else:
-            parsed_entities = None
+            parsed_slots = None
         return {
             TEXT: self.text,
             PARSED_INTENT: parsed_intent,
-            PARSED_SLOTS: parsed_entities
+            PARSED_SLOTS: parsed_slots
         }

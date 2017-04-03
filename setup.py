@@ -19,7 +19,7 @@ setup(name="snips_nlu",
           "scipy==0.19.0",
           "scikit-learn==0.18.1",
           "sklearn-crfsuite==0.3.5",
-          "snips-queries==0.1.0a1"
+          "snips-queries==0.3.0a1"
       ],
       packages=packages,
       package_data={

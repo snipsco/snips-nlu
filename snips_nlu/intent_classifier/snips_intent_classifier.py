@@ -61,7 +61,8 @@ class SnipsIntentClassifier(IntentClassifier):
             return None
 
         verb_stemmings = verbs_stems(self.language)
-        text_stem = ' '.join(unicode(verb_stemmings.get(word, word)) for word in text.split())
+        text_stem = ' '.join(
+            str(verb_stemmings.get(word, word)) for word in text.split())
 
         X = self.featurizer.transform([text_stem])
         proba_vect = self.classifier.predict_proba(X)

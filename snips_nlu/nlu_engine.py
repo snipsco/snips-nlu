@@ -39,6 +39,7 @@ def _parse(text, parsers, entities):
         valid_slot = []
         for s in slots:
             slot_value = s.value
+            # Check if the entity is from a custom intent
             if s.entity in entities:
                 entity = entities[s.entity]
                 if not entity[AUTOMATICALLY_EXTENSIBLE]:

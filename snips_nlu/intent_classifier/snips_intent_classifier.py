@@ -10,7 +10,7 @@ from snips_nlu.constants import LANGUAGE
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import verbs_stems
 from snips_nlu.result import IntentClassificationResult
-from snips_nlu.utils import instance_to_generic_dict
+from snips_nlu.utils import instance_to_generic_dict, ensure_string
 
 
 def get_default_parameters():
@@ -91,6 +91,7 @@ class SnipsIntentClassifier(IntentClassifier):
     @classmethod
     def from_dict(cls, obj_dict):
         classifier = cls(classifier_args=obj_dict['classifier_args'])
+        obj_dict['classifier_pkl'] = ensure_string(obj_dict['classifier_pkl'])
         classifier.classifier = cPickle.loads(obj_dict['classifier_pkl'])
         classifier.intent_list = obj_dict['intent_list']
         classifier.language = Language.from_iso_code(obj_dict['language_code'])

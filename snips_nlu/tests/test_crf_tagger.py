@@ -29,16 +29,16 @@ class TestCRFTagger(unittest.TestCase):
         ]
         tagging = Tagging.BILOU
         tagger = CRFTagger(crf_model, features_signatures, tagging,
-                           Language.ENG)
+                           Language.EN)
 
         # When
         tagger_dict = tagger.to_dict()
 
         # Then
         try:
-            json.dumps(tagger_dict)
+            json.dumps(tagger_dict).decode("utf8")
         except:
-            self.fail("Tagger dict should be json serializable")
+            self.fail("Tagger dict should be json serializable to utf-8")
 
         model_pkl = cPickle.dumps(crf_model)
         expected_dict = {
@@ -83,8 +83,14 @@ class TestCRFTagger(unittest.TestCase):
         ]
         tagging = Tagging.BILOU
         tagger = CRFTagger(crf_model, features_signatures, tagging,
-                           language=Language.ENG)
+                           language=Language.EN)
         tagger_dict = tagger.to_dict()
+        tagger_json = json.dumps(tagger_dict).decode("utf8")
+        try:
+            _ = CRFTagger.from_dict(json.loads(tagger_json))
+        except:
+            self.fail("Tagger should be deserializable from dict with "
+                      "unicode values")
 
         # When
         deserialized_tagger = CRFTagger.from_dict(tagger_dict)

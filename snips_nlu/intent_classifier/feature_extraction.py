@@ -5,16 +5,16 @@ from sklearn.feature_selection import chi2
 
 from intent_classifier_resources import get_stop_words
 from snips_nlu.languages import Language
+from snips_nlu.utils import ensure_string
 
 
 class Featurizer(object):
     def __init__(self, language,
                  count_vectorizer=CountVectorizer(ngram_range=(1, 1)),
-                 tfidf_transformer=TfidfTransformer(),
-                 best_features=None, pvalue_threshold=0.4):
+                 tfidf_transformer=TfidfTransformer(), pvalue_threshold=0.4):
         self.count_vectorizer = count_vectorizer
         self.tfidf_transformer = tfidf_transformer
-        self.best_features = best_features
+        self.best_features = None
         self.pvalue_threshold = pvalue_threshold
         self.language = language
 
@@ -64,10 +64,15 @@ class Featurizer(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return cls(
+        obj_dict['count_vectorizer'] = ensure_string(
+            obj_dict['count_vectorizer'])
+        obj_dict['tfidf_transformer'] = ensure_string(
+            obj_dict['tfidf_transformer'])
+        self = cls(
             language=Language.from_iso_code(obj_dict['language_code']),
             count_vectorizer=cPickle.loads(obj_dict['count_vectorizer']),
             tfidf_transformer=cPickle.loads(obj_dict['tfidf_transformer']),
-            best_features=obj_dict['best_features'],
             pvalue_threshold=obj_dict['pvalue_threshold']
         )
+        self.best_features = obj_dict["best_features"]
+        return self

@@ -44,8 +44,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
 
         mocked_builtin_parser = Mock()
-        builtin_intent_result = IntentClassificationResult(
-            intent_name='mocked_builtin_intent', probability=0.9)
+        builtin_intent_result = None
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities

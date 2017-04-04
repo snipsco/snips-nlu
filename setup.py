@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 packages = find_packages()
 
 setup(name="snips_nlu",
-      version="0.1.2",
+      version="0.2.0",
       description="",
       author="Clement Doumouro",
       author_email="clement.doumouro@snips.ai",

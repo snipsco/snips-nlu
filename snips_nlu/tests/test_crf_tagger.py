@@ -1,4 +1,3 @@
-import cPickle
 import json
 import unittest
 
@@ -7,6 +6,7 @@ from sklearn_crfsuite import CRF
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import Tagging
+from snips_nlu.utils import safe_pickle_dumps
 
 
 class TestCRFTagger(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestCRFTagger(unittest.TestCase):
         except:
             self.fail("Tagger dict should be json serializable to utf-8")
 
-        model_pkl = cPickle.dumps(crf_model)
+        model_pkl = safe_pickle_dumps(crf_model)
         expected_dict = {
             "@class_name": "CRFTagger",
             "@module_name": "snips_nlu.slot_filler.crf_tagger",

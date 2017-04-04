@@ -1,4 +1,3 @@
-import cPickle
 import json
 import unittest
 
@@ -6,6 +5,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.languages import Language
+from snips_nlu.utils import safe_pickle_dumps
 
 
 class TestFeatureExtraction(unittest.TestCase):
@@ -33,8 +33,8 @@ class TestFeatureExtraction(unittest.TestCase):
             self.fail("SnipsNLUEngine should be deserializable from dict with "
                       "unicode values")
 
-        count_vectorizer_pickled = cPickle.dumps(count_vectorizer)
-        tfidf_transformer_pickled = cPickle.dumps(tfidf_transformer)
+        count_vectorizer_pickled = safe_pickle_dumps(count_vectorizer)
+        tfidf_transformer_pickled = safe_pickle_dumps(tfidf_transformer)
         expected_serialized = {
             "language_code": "en",
             "count_vectorizer": count_vectorizer_pickled,

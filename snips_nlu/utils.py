@@ -1,3 +1,5 @@
+import base64
+import cPickle
 import importlib
 import os
 from collections import OrderedDict, namedtuple, Mapping
@@ -143,3 +145,11 @@ def ensure_string(string_or_unicode, encoding="utf8"):
     else:
         raise TypeError("Expected str or unicode, found %s"
                         % type(string_or_unicode))
+
+
+def safe_pickle_dumps(obj):
+    return base64.b64encode(cPickle.dumps(obj)).decode('ascii')
+
+
+def safe_pickle_loads(pkl_str):
+    return cPickle.loads(base64.b64decode(pkl_str))

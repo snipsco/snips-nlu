@@ -131,7 +131,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # When
         serialized_engine = engine.to_dict()
-        deserialized_engine = SnipsNLUEngine.from_dict(serialized_engine)
+        deserialized_engine = SnipsNLUEngine.load_from(
+            language='en',
+            customs=serialized_engine)
 
         # Then
         try:

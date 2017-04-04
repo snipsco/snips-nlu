@@ -91,7 +91,7 @@ class SnipsNLUEngine(NLUEngine):
         super(SnipsNLUEngine, self).__init__()
         self.custom_parsers = []
         self.builtin_parser = None
-        self.entities = None
+        self.entities = []
         self.language = None
 
     def parse(self, text):
@@ -136,28 +136,46 @@ class SnipsNLUEngine(NLUEngine):
         builtin intent parser. Thus this serialization, contains only the
         custom intent parsers.
         """
+        language_code = None
+        if self.language is not None:
+            language_code = self.language.iso_code
+
         return {
-            LANGUAGE: self.language.iso_code,
+            LANGUAGE: language_code,
             CUSTOM_PARSERS: [p.to_dict() for p in self.custom_parsers],
             BUILTIN_PARSER: None,
             ENTITIES: self.entities
         }
 
     @classmethod
-    def from_dict(cls, obj_dict, builtin_path=None, builtin_binary=None):
-        language = Language.from_iso_code(obj_dict[LANGUAGE])
-        custom_parsers = [instance_from_dict(d) for d in
-                          obj_dict[CUSTOM_PARSERS]]
+    def load_from(cls, language, customs=None, builtin_path=None,
+                  builtin_binary=None):
+        """
+        Create a `SnipsNLUEngine` from the following attributes
+        
+        :param language: ISO 639-1 language code
+        :param customs: A `dict` containing custom intents data
+        :param builtin_path: A directory path containing builtin intents data
+        :param builtin_binary: A `bytearray` containing builtin intents data
+        """
+        _language = Language.from_iso_code(language)
+        custom_parsers = []
+        entities = []
+        if customs is not None:
+            custom_parsers = [instance_from_dict(d) for d in
+                              customs[CUSTOM_PARSERS]]
+            entities = customs[ENTITIES]
         builtin_parser = None
         if builtin_path is not None or builtin_binary is not None:
-            builtin_parser = BuiltinIntentParser(language=language,
+            builtin_parser = BuiltinIntentParser(language=_language,
                                                  data_path=builtin_path,
                                                  data_binary=builtin_binary)
+
         self = cls()
-        self.language = language
+        self.language = _language
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
-        self.entities = obj_dict[ENTITIES]
+        self.entities = entities
         return self
 
     def __eq__(self, other):

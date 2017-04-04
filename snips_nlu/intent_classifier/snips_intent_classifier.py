@@ -8,8 +8,9 @@ from feature_extraction import Featurizer
 from intent_classifier import IntentClassifier
 from snips_nlu.constants import LANGUAGE
 from snips_nlu.languages import Language
+from snips_nlu.preprocessing import verbs_stems
 from snips_nlu.result import IntentClassificationResult
-from snips_nlu.utils import instance_to_generic_dict
+from snips_nlu.utils import instance_to_generic_dict, ensure_string
 
 
 def get_default_parameters():
@@ -59,7 +60,12 @@ class SnipsIntentClassifier(IntentClassifier):
         if len(text) == 0 or len(self.intent_list) == 0:
             return None
 
-        X = self.featurizer.transform([text])
+        verb_stemmings = verbs_stems(self.language)
+        stemmed_tokens = (verb_stemmings.get(token, token) for token in
+                          text.split())
+        text_stem = ' '.join(stemmed_tokens)
+
+        X = self.featurizer.transform([text_stem])
         proba_vect = self.classifier.predict_proba(X)
         predicted = np.argmax(proba_vect[0])
 
@@ -85,6 +91,7 @@ class SnipsIntentClassifier(IntentClassifier):
     @classmethod
     def from_dict(cls, obj_dict):
         classifier = cls(classifier_args=obj_dict['classifier_args'])
+        obj_dict['classifier_pkl'] = ensure_string(obj_dict['classifier_pkl'])
         classifier.classifier = cPickle.loads(obj_dict['classifier_pkl'])
         classifier.intent_list = obj_dict['intent_list']
         classifier.language = Language.from_iso_code(obj_dict['language_code'])

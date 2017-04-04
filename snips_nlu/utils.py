@@ -133,3 +133,13 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
 
 def get_resources_path(language):
     return os.path.join(RESOURCES_PATH, language.iso_code)
+
+
+def ensure_string(string_or_unicode, encoding="utf8"):
+    if isinstance(string_or_unicode, str):
+        return string_or_unicode
+    elif isinstance(string_or_unicode, unicode):
+        return string_or_unicode.encode(encoding)
+    else:
+        raise TypeError("Expected str or unicode, found %s"
+                        % type(string_or_unicode))

@@ -1,11 +1,14 @@
+import cPickle
 import json
 import unittest
 
 from mock import patch
 
 from snips_nlu.constants import INTENTS, LANGUAGE
+from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
+from snips_nlu.languages import Language
 from snips_nlu.tests.utils import EMPTY_DATASET, SAMPLE_DATASET
 from snips_nlu.utils import CLASS_NAME, MODULE_NAME
 
@@ -39,19 +42,21 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_intent = None
         self.assertEqual(intent, expected_intent)
 
-    @patch('cPickle.dumps')
+    @patch(
+        'snips_nlu.intent_classifier.feature_extraction.Featurizer.from_dict')
     @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer.to_dict')
     def test_should_be_serializable(self, mocked_featurizer_to_dict,
-                                    mocked_pickle):
+                                    mocked_featurizer_from_dict):
         # Given
         def mock_to_dict():
             return {"mocked_featurizer_key": "mocked_featurizer_value"}
 
-        def mock_pickle_dumps(obj):
-            return "mocked_pkl_string"
-
         mocked_featurizer_to_dict.side_effect = mock_to_dict
-        mocked_pickle.side_effect = mock_pickle_dumps
+
+        def mock_from_dict(obj_dict):
+            return Featurizer(Language.EN)
+
+        mocked_featurizer_from_dict.side_effect = mock_from_dict
 
         classifier_args = {
             "loss": 'log',
@@ -67,19 +72,27 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # When
         classifier_dict = intent_classifier.to_dict()
+        pickled_classifier = cPickle.dumps(intent_classifier.classifier)
 
         # Then
         try:
-            json.dumps(classifier_dict)
+            dumped = json.dumps(classifier_dict).encode("utf-8")
         except:
-            self.fail("IntentClassifier dict should be json serializable")
+            self.fail("SnipsIntentClassifier dict should be json serializable "
+                      "to utf-8")
+
+        try:
+            _ = SnipsIntentClassifier.from_dict(json.loads(dumped))
+        except:
+            self.fail("SnipsIntentClassifier should be deserializable from "
+                      "dict with unicode values")
 
         intent_list = [None] + SAMPLE_DATASET[INTENTS].keys()
         expected_dict = {
             CLASS_NAME: SnipsIntentClassifier.__name__,
             MODULE_NAME: SnipsIntentClassifier.__module__,
             "classifier_args": classifier_args,
-            "classifier_pkl": "mocked_pkl_string",
+            "classifier_pkl": pickled_classifier,
             "intent_list": intent_list,
             "language_code": SAMPLE_DATASET[LANGUAGE],
             "featurizer": mock_to_dict()

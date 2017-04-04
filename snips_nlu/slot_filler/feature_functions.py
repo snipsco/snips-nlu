@@ -99,6 +99,8 @@ def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
 
     features = default_features(language, use_stemming)
     for entity_name, entity in intent_entities.iteritems():
+        if len(entity[DATA]) == 0:
+            continue
         if entity[USE_SYNONYMS]:
             collection = [preprocess(s) for d in entity[DATA] for s in
                           d[SYNONYMS]]

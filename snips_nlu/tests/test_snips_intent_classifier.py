@@ -1,4 +1,3 @@
-import cPickle
 import json
 import unittest
 
@@ -10,7 +9,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import EMPTY_DATASET, SAMPLE_DATASET
-from snips_nlu.utils import CLASS_NAME, MODULE_NAME
+from snips_nlu.utils import CLASS_NAME, MODULE_NAME, safe_pickle_dumps
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):
@@ -72,7 +71,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # When
         classifier_dict = intent_classifier.to_dict()
-        pickled_classifier = cPickle.dumps(intent_classifier.classifier)
+        pickled_classifier = safe_pickle_dumps(intent_classifier.classifier)
 
         # Then
         try:

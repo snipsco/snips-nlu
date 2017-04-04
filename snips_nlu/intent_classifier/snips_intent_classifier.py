@@ -1,5 +1,3 @@
-import cPickle
-
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
@@ -10,7 +8,8 @@ from snips_nlu.constants import LANGUAGE
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import verbs_stems
 from snips_nlu.result import IntentClassificationResult
-from snips_nlu.utils import instance_to_generic_dict, ensure_string
+from snips_nlu.utils import (instance_to_generic_dict, ensure_string,
+                             safe_pickle_dumps, safe_pickle_loads)
 
 
 def get_default_parameters():
@@ -81,7 +80,7 @@ class SnipsIntentClassifier(IntentClassifier):
         obj_dict = instance_to_generic_dict(self)
         obj_dict.update({
             "classifier_args": self.classifier_args,
-            "classifier_pkl": cPickle.dumps(self.classifier),
+            "classifier_pkl": safe_pickle_dumps(self.classifier),
             "intent_list": self.intent_list,
             "language_code": self.language.iso_code,
             "featurizer": self.featurizer.to_dict()
@@ -92,7 +91,7 @@ class SnipsIntentClassifier(IntentClassifier):
     def from_dict(cls, obj_dict):
         classifier = cls(classifier_args=obj_dict['classifier_args'])
         obj_dict['classifier_pkl'] = ensure_string(obj_dict['classifier_pkl'])
-        classifier.classifier = cPickle.loads(obj_dict['classifier_pkl'])
+        classifier.classifier = safe_pickle_loads(obj_dict['classifier_pkl'])
         classifier.intent_list = obj_dict['intent_list']
         classifier.language = Language.from_iso_code(obj_dict['language_code'])
         classifier.featurizer = Featurizer.from_dict(obj_dict['featurizer'])

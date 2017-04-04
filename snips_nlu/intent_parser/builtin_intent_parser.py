@@ -15,10 +15,10 @@ class BuiltinIntentParser(IntentParser):
                                                data_binary=data_binary)
         else:
             raise AssertionError("Expected data_path or data_binary to "
-                                 "initialize a BuiltinIntentParser object, but "
-                                 "received two None arguments")
+                                 "initialize a BuiltinIntentParser object, but"
+                                 " received two None arguments")
 
-    def get_intent(self, text, threshold=0.):
+    def get_intent(self, text, threshold=0.55):
         result = self.parser.get_intent(text, threshold=threshold)
         if len(result) == 0:
             return None
@@ -37,7 +37,8 @@ class BuiltinIntentParser(IntentParser):
                            slot_chunk['range']['end']]
                     nlu_slot = ParsedSlot(match_range=rng,
                                           value=slot_chunk['value'],
-                                          entity=slot_name, slot_name=slot_name)
+                                          entity=slot_name,
+                                          slot_name=slot_name)
                     nlu_slots.append(nlu_slot)
         return nlu_slots
 

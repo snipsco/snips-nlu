@@ -99,9 +99,10 @@ class SnipsNLUEngine(NLUEngine):
         Parse the input text and returns a dictionary containing the most
         likely intent and slots.
         """
-        parsers = self.custom_parsers
         if self.builtin_parser is not None:
-            parsers.append(self.builtin_parser)
+            parsers = [self.builtin_parser] + self.custom_parsers
+        else:
+            parsers = self.custom_parsers
         return _parse(text, parsers, self.entities).as_dict()
 
     def fit(self, dataset):

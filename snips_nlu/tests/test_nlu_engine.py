@@ -135,9 +135,15 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         try:
-            json.dumps(serialized_engine)
+            dumped = json.dumps(serialized_engine).decode("utf8")
         except:
-            self.fail("NLU engine dict should be json serializable")
+            self.fail("NLU engine dict should be json serializable to utf8")
+
+        try:
+            _ = SnipsNLUEngine.from_dict(json.loads(dumped))
+        except:
+            self.fail("SnipsNLUEngine should be deserializable from dict with "
+                      "unicode values")
 
         self.assertEqual(deserialized_engine.parse(text), expected_parse)
 

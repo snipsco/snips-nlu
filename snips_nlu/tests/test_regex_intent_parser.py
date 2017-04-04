@@ -69,9 +69,9 @@ class TestRegexIntentParser(unittest.TestCase):
 
         # Then
         try:
-            json.dumps(parser_dict)
+            json.dumps(parser_dict).decode("utf-8")
         except:
-            self.fail("Parser dict should be json serializable")
+            self.fail("Parser dict should be json serializable in utf-8")
 
         expected_dict = {
             "@class_name": "RegexIntentParser",
@@ -135,6 +135,14 @@ class TestRegexIntentParser(unittest.TestCase):
             group_names_to_slot_names=group_names_to_slot_names,
             slot_names_to_entities=slot_names_to_entities
         )
+
+        try:
+            parser_json = json.dumps(parser_dict).decode("utf-8")
+            _ = RegexIntentParser.from_dict(json.loads(parser_json))
+        except:
+            self.fail("RegexIntentParser should be deserializable from dict "
+                      "with unicode values")
+
         self.assertEqual(parser, expected_parser)
 
     def test_should_deduplicate_overlapping_slots(self):

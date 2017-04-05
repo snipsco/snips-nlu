@@ -59,12 +59,16 @@ The NLU Engine can be initialized in two ways:
 
 - You can create an empty engine in order to fit it with a dataset afterwards:
     ```python
-    engine = SnipsNLUEngine()
+    engine = SnipsNLUEngine(language='en')
     ```
 
-- Or you can load an already trained engine from a dictionary:
+- Or you can load an already trained engine:
     ```python
-    engine = SnipsNLUEngine.from_dict(engine_dict)
+    engine = SnipsNLUEngine.load_from(
+          language='en', 
+          customs=customs_dict, 
+          builtin_path='path/to/builtin'
+        )
     ```
 
 ### Serialization

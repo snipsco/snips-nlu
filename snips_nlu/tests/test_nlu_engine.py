@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 from mock import Mock, patch, call
 
+from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from snips_nlu.slot_filler.feature_functions import BaseFeatureFunction
@@ -17,6 +18,8 @@ def mocked_default(_, use_stemming):
 class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_use_parsers_sequentially(self):
         # Given
+        language = Language.EN
+
         input_text = "hello world"
 
         mocked_parser1 = Mock()
@@ -43,16 +46,19 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
 
-        mocked_builtin_parser = Mock()
+        mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
+        mocked_builtin_parser.parser.language
+
         builtin_intent_result = None
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities
 
-        engine = SnipsNLUEngine()
-        engine.custom_parsers = [mocked_parser1, mocked_parser2]
-        engine.builtin_parser = mocked_builtin_parser
-        engine.entities = {"mocked_entity": {"automatically_extensible": True}}
+        mocked_entities = {"mocked_entity": {"automatically_extensible": True}}
+        engine = SnipsNLUEngine(
+            language, entities=mocked_entities,
+            custom_parsers=[mocked_parser1, mocked_parser2],
+            builtin_parser=mocked_builtin_parser)
 
         # When
         parse = engine.parse(input_text)
@@ -64,14 +70,14 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     def test_should_parse_with_builtin_when_no_custom(self):
         # When
-        mocked_builtin_parser = Mock()
+        language = Language.EN
+        mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
         builtin_intent_result = IntentClassificationResult(
             intent_name='mocked_builtin_intent', probability=0.9)
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities
-        engine = SnipsNLUEngine()
-        engine.builtin_parser = mocked_builtin_parser
+        engine = SnipsNLUEngine(language, builtin_parser=mocked_builtin_parser)
 
         # When
         text = "hello world"
@@ -84,6 +90,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     def test_should_parse_with_builtin_when_customs_return_nothing(self):
         # Given
+        language = Language.EN
         mocked_parser1 = Mock()
         mocked_parser1.get_intent.return_value = None
         mocked_parser1.get_slots.return_value = []
@@ -92,16 +99,16 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_parser2.get_intent.return_value = None
         mocked_parser2.get_slots.return_value = []
 
-        mocked_builtin_parser = Mock()
+        mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
         builtin_intent_result = IntentClassificationResult(
             intent_name='mocked_builtin_intent', probability=0.9)
         builtin_entities = []
         mocked_builtin_parser.get_intent.return_value = builtin_intent_result
         mocked_builtin_parser.get_slots.return_value = builtin_entities
 
-        engine = SnipsNLUEngine()
-        engine.custom_parsers = [mocked_parser1, mocked_parser2]
-        engine.builtin_parser = mocked_builtin_parser
+        engine = SnipsNLUEngine(
+            language, builtin_parser=mocked_builtin_parser,
+            custom_parsers=[mocked_parser1, mocked_parser2])
 
         # When
         text = "hello world"
@@ -111,27 +118,30 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertEqual(parse, Result(text, builtin_intent_result,
                                        builtin_entities).as_dict())
 
-    def test_should_not_fail_when_no_parsers(self):
+    def test_should_raise_error_when_no_parsers(self):
         # Given
-        engine = SnipsNLUEngine()
-
-        # When
+        language = Language.EN
+        engine = SnipsNLUEngine(language)
         text = "hello world"
-        parse = engine.parse(text)
 
-        # Then
-        self.assertEqual(parse, Result(text, None, None).as_dict())
+        # When/Then
+        with self.assertRaises(ValueError) as ctx:
+            parse = engine.parse(text)
+
+        self.assertEqual(ctx.exception.message,
+                         "NLUEngine as no built-in parser nor custom parsers")
 
     def test_should_be_serializable(self):
         # Given
-        engine = SnipsNLUEngine().fit(SAMPLE_DATASET)
+        language = Language.EN
+        engine = SnipsNLUEngine(language).fit(SAMPLE_DATASET)
         text = "this is a dummy_1 query with another dummy_2"
         expected_parse = engine.parse(text)
 
         # When
         serialized_engine = engine.to_dict()
         deserialized_engine = SnipsNLUEngine.load_from(
-            language='en',
+            language_code=language.iso_code,
             customs=serialized_engine)
 
         # Then
@@ -141,7 +151,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             self.fail("NLU engine dict should be json serializable to utf8")
 
         try:
-            _ = SnipsNLUEngine.load_from(language='en',
+            _ = SnipsNLUEngine.load_from(language_code=language.iso_code,
                                          customs=json.loads(dumped))
         except:
             self.fail("SnipsNLUEngine should be deserializable from dict with "
@@ -165,7 +175,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             return BaseFeatureFunction("token_is_in_%s" % collection_name, f)
 
         mocked_get_token.side_effect = mocked_get_token_is_in
-
+        language = Language.EN
         dataset = {
             "intents": {
                 "dummy_intent_1": {
@@ -233,11 +243,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "en"
+            "language": language.iso_code
         }
 
         # When
-        SnipsNLUEngine().fit(dataset)
+        SnipsNLUEngine(language).fit(dataset)
 
         np.random.seed(1)
         keep_prob = .5
@@ -270,6 +280,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                             mocked_crf_get_intent,
                                             mocked_crf_get_slots, _):
         # Given
+        language = Language.EN
         dataset = {
             "intents": {
                 "dummy_intent_1": {
@@ -325,7 +336,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "en"
+            "language": language.iso_code
         }
 
         def mocked_regex_intent(_):
@@ -348,7 +359,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_crf_get_intent.side_effect = mocked_crf_intent
         mocked_crf_get_slots.side_effect = mocked_crf_slots
 
-        engine = SnipsNLUEngine()
+        engine = SnipsNLUEngine(language)
         text = "dummy_3 dummy_4"
 
         # When
@@ -376,6 +387,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                                  mocked_crf_get_intent,
                                                  mocked_crf_get_slots, _):
         # Given
+        language = Language.EN
         dataset = {
             "intents": {
                 "dummy_intent_1": {
@@ -407,7 +419,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": "en"
+            "language": language.iso_code
         }
 
         def mocked_regex_intent(_):
@@ -425,7 +437,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_crf_get_intent.side_effect = mocked_crf_intent
         mocked_crf_get_slots.side_effect = mocked_crf_slots
 
-        engine = SnipsNLUEngine().fit(dataset)
+        engine = SnipsNLUEngine(language).fit(dataset)
         text = "dummy1_bis"
 
         # When

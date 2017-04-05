@@ -90,21 +90,42 @@ def snips_nlu_entities(dataset):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, language):
+    def __init__(self, language, builtin_parser=None, custom_parsers=None,
+                 entities=None):
         super(SnipsNLUEngine, self).__init__(language)
-        self.custom_parsers = []
-        self.builtin_parser = None
-        self.entities = []
+        self._builtin_parser = None
+        self.builtin_parser = builtin_parser
+        self.custom_parsers = custom_parsers
+        self.entities = entities
+
+    @property
+    def builtin_parser(self):
+        return self._builtin_parser
+
+    @builtin_parser.setter
+    def builtin_parser(self, value):
+        if value is not None \
+                and value.parser.language != self.language.iso_code:
+            raise ValueError(
+                "Built in parser language code ('%s') is different from "
+                "provided language code ('%s')"
+                % (value.parser.language, self.language.iso_code))
+        self._builtin_parser = value
 
     def parse(self, text):
         """
         Parse the input text and returns a dictionary containing the most
         likely intent and slots.
         """
+        if self.builtin_parser is None and self.custom_parsers is None:
+            raise ValueError("NLUEngine as no built-in parser nor "
+                             "custom parsers")
+        parsers = []
         if self.builtin_parser is not None:
-            parsers = [self.builtin_parser] + self.custom_parsers
-        else:
-            parsers = self.custom_parsers
+            parsers.append(self.builtin_parser)
+        if self.custom_parsers is not None:
+            parsers += self.custom_parsers
+
         return _parse(text, parsers, self.entities).as_dict()
 
     def fit(self, dataset):
@@ -161,8 +182,8 @@ class SnipsNLUEngine(NLUEngine):
         :param builtin_binary: A `bytearray` containing builtin intents data
         """
         language = Language.from_iso_code(language_code)
-        custom_parsers = []
-        entities = []
+        custom_parsers = None
+        entities = None
         if customs is not None:
             custom_parsers = [instance_from_dict(d) for d in
                               customs[CUSTOM_PARSERS]]
@@ -173,11 +194,8 @@ class SnipsNLUEngine(NLUEngine):
                                                  data_path=builtin_path,
                                                  data_binary=builtin_binary)
 
-        self = cls(language)
-        self.custom_parsers = custom_parsers
-        self.builtin_parser = builtin_parser
-        self.entities = entities
-        return self
+        return cls(language, builtin_parser=builtin_parser,
+                   custom_parsers=custom_parsers, entities=entities)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \

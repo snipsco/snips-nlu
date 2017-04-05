@@ -95,7 +95,6 @@ class SnipsNLUEngine(NLUEngine):
         self.custom_parsers = []
         self.builtin_parser = None
         self.entities = []
-        self.language = None
 
     def parse(self, text):
         """
@@ -151,17 +150,17 @@ class SnipsNLUEngine(NLUEngine):
         }
 
     @classmethod
-    def load_from(cls, language, customs=None, builtin_path=None,
+    def load_from(cls, language_code, customs=None, builtin_path=None,
                   builtin_binary=None):
         """
         Create a `SnipsNLUEngine` from the following attributes
         
-        :param language: ISO 639-1 language code
+        :param language_code: ISO 639-1 language code
         :param customs: A `dict` containing custom intents data
         :param builtin_path: A directory path containing builtin intents data
         :param builtin_binary: A `bytearray` containing builtin intents data
         """
-        language = Language.from_iso_code(language)
+        language = Language.from_iso_code(language_code)
         custom_parsers = []
         entities = []
         if customs is not None:

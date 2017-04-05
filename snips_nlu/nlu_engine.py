@@ -23,6 +23,9 @@ from snips_nlu.utils import instance_from_dict
 class NLUEngine(object):
     __metaclass__ = ABCMeta
 
+    def __init__(self, language):
+        self.language = language
+
     @abstractmethod
     def parse(self, text):
         pass
@@ -87,8 +90,8 @@ def snips_nlu_entities(dataset):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self):
-        super(SnipsNLUEngine, self).__init__()
+    def __init__(self, language):
+        super(SnipsNLUEngine, self).__init__(language)
         self.custom_parsers = []
         self.builtin_parser = None
         self.entities = []
@@ -114,7 +117,6 @@ class SnipsNLUEngine(NLUEngine):
         :return: A fitted SnipsNLUEngine
         """
         dataset = validate_and_format_dataset(dataset)
-        self.language = Language.from_iso_code(dataset[LANGUAGE])
         custom_parser = RegexIntentParser().fit(dataset)
         intent_classifier = SnipsIntentClassifier().fit(
             dataset)
@@ -159,7 +161,7 @@ class SnipsNLUEngine(NLUEngine):
         :param builtin_path: A directory path containing builtin intents data
         :param builtin_binary: A `bytearray` containing builtin intents data
         """
-        _language = Language.from_iso_code(language)
+        language = Language.from_iso_code(language)
         custom_parsers = []
         entities = []
         if customs is not None:
@@ -168,12 +170,11 @@ class SnipsNLUEngine(NLUEngine):
             entities = customs[ENTITIES]
         builtin_parser = None
         if builtin_path is not None or builtin_binary is not None:
-            builtin_parser = BuiltinIntentParser(language=_language,
+            builtin_parser = BuiltinIntentParser(language=language,
                                                  data_path=builtin_path,
                                                  data_binary=builtin_binary)
 
-        self = cls()
-        self.language = _language
+        self = cls(language)
         self.custom_parsers = custom_parsers
         self.builtin_parser = builtin_parser
         self.entities = entities

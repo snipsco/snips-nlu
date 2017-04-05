@@ -141,7 +141,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # When
         serialized_engine = engine.to_dict()
         deserialized_engine = SnipsNLUEngine.load_from(
-            language_code=language.iso_code,
+            language=language.iso_code,
             customs=serialized_engine)
 
         # Then
@@ -151,7 +151,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             self.fail("NLU engine dict should be json serializable to utf8")
 
         try:
-            _ = SnipsNLUEngine.load_from(language_code=language.iso_code,
+            _ = SnipsNLUEngine.load_from(language=language.iso_code,
                                          customs=json.loads(dumped))
         except:
             self.fail("SnipsNLUEngine should be deserializable from dict with "

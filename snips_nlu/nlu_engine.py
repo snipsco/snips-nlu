@@ -24,7 +24,22 @@ class NLUEngine(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, language):
+        self._language = None
         self.language = language
+
+    @property
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, value):
+        if isinstance(value, Language):
+            self._language = value
+        elif isinstance(value, (str, unicode)):
+            self._language = Language.from_iso_code(value)
+        else:
+            raise TypeError("Expected str, unicode or Language found '%s'"
+                            % type(value))
 
     @abstractmethod
     def parse(self, text):
@@ -171,17 +186,20 @@ class SnipsNLUEngine(NLUEngine):
         }
 
     @classmethod
-    def load_from(cls, language_code, customs=None, builtin_path=None,
+    def load_from(cls, language, customs=None, builtin_path=None,
                   builtin_binary=None):
         """
         Create a `SnipsNLUEngine` from the following attributes
         
-        :param language_code: ISO 639-1 language code
+        :param language: ISO 639-1 language code or Language instance
         :param customs: A `dict` containing custom intents data
         :param builtin_path: A directory path containing builtin intents data
         :param builtin_binary: A `bytearray` containing builtin intents data
         """
-        language = Language.from_iso_code(language_code)
+
+        if isinstance(language, (str, unicode)):
+            language = Language.from_iso_code(language)
+
         custom_parsers = None
         entities = None
         if customs is not None:

@@ -5,7 +5,7 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
-from snips_nlu.slot_filler.crf_utils import Tagging, TOKENS, TAGS
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)
 from snips_nlu.tokenization import Token
@@ -34,11 +34,12 @@ def get_features_from_signatures(signatures):
 
 
 class CRFTagger(object):
-    def __init__(self, crf_model, features_signatures, tagging, language):
+    def __init__(self, crf_model, features_signatures, tagging_scheme,
+                 language):
         self.crf_model = crf_model
         self.features_signatures = features_signatures
         self._features = None
-        self.tagging = tagging
+        self.tagging_scheme = tagging_scheme
         self.fitted = False
         self.language = language
 
@@ -101,7 +102,7 @@ class CRFTagger(object):
         obj_dict.update({
             "crf_model": safe_pickle_dumps(self.crf_model),
             "features_signatures": self.features_signatures,
-            "tagging": self.tagging.value,
+            "tagging_scheme": self.tagging_scheme.value,
             "fitted": self.fitted,
             "language": self.language.iso_code
         })
@@ -112,12 +113,12 @@ class CRFTagger(object):
         obj_dict["crf_model"] = ensure_string(obj_dict["crf_model"])
         crf_model = safe_pickle_loads(obj_dict["crf_model"])
         features_signatures = obj_dict["features_signatures"]
-        tagging = Tagging(int(obj_dict["tagging"]))
+        tagging_scheme = TaggingScheme(int(obj_dict["tagging_scheme"]))
         language = Language.from_iso_code(obj_dict["language"])
         fitted = obj_dict["fitted"]
         self = cls(crf_model=crf_model,
-                   features_signatures=features_signatures, tagging=tagging,
-                   language=language)
+                   features_signatures=features_signatures,
+                   tagging_scheme=tagging_scheme, language=language)
         self.fitted = fitted
         return self
 
@@ -129,7 +130,7 @@ class CRFTagger(object):
         self_model_state.pop('modelfile')
         other_model_state.pop('modelfile')
         return self.features_signatures == other.features_signatures \
-               and self.tagging == other.tagging \
+               and self.tagging_scheme == other.tagging_scheme \
                and self.fitted == other.fitted \
                and self.language == other.language \
                and self_model_state == other_model_state

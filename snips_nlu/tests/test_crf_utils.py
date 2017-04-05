@@ -4,7 +4,7 @@ from mock import patch
 
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
-    io_tags_to_slots, utterance_to_sample, Tagging, negative_tagging,
+    io_tags_to_slots, utterance_to_sample, TaggingScheme, negative_tagging,
     positive_tagging)
 from snips_nlu.slot_filler.crf_utils import (bio_tags_to_slots,
                                              bilou_tags_to_slots)
@@ -307,7 +307,7 @@ class TestCRFUtils(unittest.TestCase):
     @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
     def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
-        def mock_positive_tagging(tagging, slot_name, slot_size):
+        def mock_positive_tagging(tagging_scheme, slot_name, slot_size):
             return [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
 
         mocked_positive_tagging.side_effect = mock_positive_tagging
@@ -326,7 +326,7 @@ class TestCRFUtils(unittest.TestCase):
                            "tags": expected_tagging}
 
         # When
-        sample = utterance_to_sample(query_data, Tagging.IO)
+        sample = utterance_to_sample(query_data, TaggingScheme.IO)
 
         # Then
         self.assertEqual(sample, expected_sample)
@@ -336,7 +336,7 @@ class TestCRFUtils(unittest.TestCase):
                                                     mocked_positive_tagging):
 
         # Given
-        def mock_positive_tagging(tagging, slot_name, slot_size):
+        def mock_positive_tagging(tagging_scheme, slot_name, slot_size):
             return [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
 
         mocked_positive_tagging.side_effect = mock_positive_tagging
@@ -357,7 +357,7 @@ class TestCRFUtils(unittest.TestCase):
         expected_sample = {"tokens": expected_tokens, "tags": expected_tagging}
 
         # When
-        sample = utterance_to_sample(query_data, Tagging.IO)
+        sample = utterance_to_sample(query_data, TaggingScheme.IO)
 
         # Then
         mocked_positive_tagging.assert_called()
@@ -376,12 +376,12 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_positive_tagging_with_io(self):
         # Give
-        tagging = Tagging.IO
+        tagging_scheme = TaggingScheme.IO
         slot_name = "animal"
         slot_size = 3
 
         # When
-        tags = positive_tagging(tagging, slot_name, slot_size)
+        tags = positive_tagging(tagging_scheme, slot_name, slot_size)
 
         # Then
         t = INSIDE_PREFIX + slot_name
@@ -390,12 +390,12 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_positive_tagging_with_bio(self):
         # Give
-        tagging = Tagging.BIO
+        tagging_scheme = TaggingScheme.BIO
         slot_name = "animal"
         slot_size = 3
 
         # When
-        tags = positive_tagging(tagging, slot_name, slot_size)
+        tags = positive_tagging(tagging_scheme, slot_name, slot_size)
 
         # Then
         expected_tags = [BEGINNING_PREFIX + slot_name,
@@ -404,12 +404,12 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_positive_tagging_with_bilou(self):
         # Give
-        tagging = Tagging.BILOU
+        tagging_scheme = TaggingScheme.BILOU
         slot_name = "animal"
         slot_size = 3
 
         # When
-        tags = positive_tagging(tagging, slot_name, slot_size)
+        tags = positive_tagging(tagging_scheme, slot_name, slot_size)
 
         # Then
         expected_tags = [BEGINNING_PREFIX + slot_name,
@@ -418,12 +418,12 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_positive_tagging_with_bilou_unit(self):
         # Give
-        tagging = Tagging.BILOU
+        tagging_scheme = TaggingScheme.BILOU
         slot_name = "animal"
         slot_size = 1
 
         # When
-        tags = positive_tagging(tagging, slot_name, slot_size)
+        tags = positive_tagging(tagging_scheme, slot_name, slot_size)
 
         # Then
         expected_tags = [UNIT_PREFIX + slot_name]

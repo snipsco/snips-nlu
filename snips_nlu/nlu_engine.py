@@ -15,7 +15,7 @@ from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
-from snips_nlu.slot_filler.crf_utils import Tagging
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.utils import instance_from_dict
 
@@ -163,7 +163,7 @@ class SnipsNLUEngine(NLUEngine):
             features = crf_features(intent_custom_entities, use_stemming=False,
                                     language=self.language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        Tagging.BIO, self.language)
+                                        TaggingScheme.BIO, self.language)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
         return self

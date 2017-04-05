@@ -4,6 +4,11 @@ import unittest
 import numpy as np
 from mock import Mock, patch, call
 
+from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, UTTERANCES, DATA, \
+    TEXT, ENTITY, SLOT_NAME, ENTITIES, USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, \
+    VALUE, SYNONYMS, LANGUAGE
+from snips_nlu.dataset import validate_and_format_dataset
+
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
@@ -162,6 +167,116 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     @patch("snips_nlu.slot_filler.feature_functions.default_features",
            side_effect=mocked_default)
+    @patch("snips_nlu.slot_filler.feature_functions.get_token_is_in")
+    def test_should_add_custom_entity_in_collection_feature(
+            self, mocked_get_token, mocked_default_features):
+        np.random.seed(1)
+
+        # Given
+        def mocked_get_token_is_in(collection, collection_name,
+                                   use_stemming=False):
+            def f(index, cache):
+                return None
+
+            return BaseFeatureFunction("token_is_in_%s" % collection_name, f)
+
+        mocked_get_token.side_effect = mocked_get_token_is_in
+        language = Language.EN
+        dataset = validate_and_format_dataset({
+            "intents": {
+                "dummy_intent_1": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    UTTERANCES: [
+                        {
+                            DATA: [
+                                {
+                                    TEXT: "dummy_1",
+                                    ENTITY: "dummy_entity_1",
+                                    SLOT_NAME: "dummy_slot_name"
+                                },
+                                {
+                                    TEXT: " query."
+                                }
+                            ]
+                        },
+                        {
+                            DATA: [
+                                {
+                                    TEXT: "2 P.M",
+                                    ENTITY: "snips/datetime",
+                                    SLOT_NAME: "origin_time"
+                                },
+                                {
+                                    TEXT: "dummy_2",
+                                    ENTITY: "dummy_entity_2",
+                                    SLOT_NAME: "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            ENTITIES: {
+                "dummy_entity_1": {
+                    USE_SYNONYMS: True,
+                    AUTOMATICALLY_EXTENSIBLE: False,
+                    DATA: [
+                        {
+                            VALUE: "dummy1",
+                            SYNONYMS: [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        },
+                        {
+                            VALUE: "dummy2",
+                            SYNONYMS: [
+                                "dummy2",
+                                "dummy2_bis"
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    USE_SYNONYMS: False,
+                    AUTOMATICALLY_EXTENSIBLE: True,
+                    DATA: [
+                        {
+                            VALUE: "dummy2",
+                            SYNONYMS: [
+                                "dummy2"
+                            ]
+                        }
+                    ]
+                }
+            },
+            LANGUAGE: language.iso_code
+        })
+
+        # When
+        SnipsNLUEngine(language).fit(dataset)
+
+        np.random.seed(1)
+        keep_prob = .5
+        collection_1 = ["dummy1", "dummy1_bis", "dummy2", "dummy2_bis"]
+        length_collection_1 = int(keep_prob * len(collection_1))
+        collection_1 = np.random.choice(collection_1, length_collection_1,
+                                        replace=False).tolist()
+
+        collection_2 = ["dummy2"]
+
+        # Then
+        calls = [
+            call(collection=collection_1,
+                 collection_name="dummy_entity_1", use_stemming=False),
+            call(collection=collection_2, collection_name="dummy_entity_2",
+                 use_stemming=False),
+        ]
+
+        mocked_get_token.assert_has_calls(calls, any_order=True)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features",
+           side_effect=mocked_default)
     @patch("snips_nlu.intent_parser.crf_intent_parser.CRFIntentParser"
            ".get_slots")
     @patch("snips_nlu.intent_parser.crf_intent_parser.CRFIntentParser"
@@ -173,9 +288,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                             mocked_crf_get_slots, _):
         # Given
         language = Language.EN
-        dataset = {
+        dataset = validate_and_format_dataset({
             "intents": {
                 "dummy_intent_1": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -229,7 +345,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        }
+        })
 
         def mocked_regex_intent(_):
             return None
@@ -280,9 +396,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                                  mocked_crf_get_slots, _):
         # Given
         language = Language.EN
-        dataset = {
+        dataset = validate_and_format_dataset({
             "intents": {
                 "dummy_intent_1": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -312,7 +429,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        }
+        })
 
         def mocked_regex_intent(_):
             return None

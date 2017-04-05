@@ -30,7 +30,13 @@ def language_stems(language):
     return _LANGUAGE_STEMS[language.iso_code]
 
 
-def stem(string, language, *default):
+def stem(string, language):
+    tokens = string.split()
+    stemmed_tokens = [_stem(token, language, token) for token in tokens]
+    return ' '.join(stemmed_tokens)
+
+
+def _stem(string, language, *default):
     if len(default) == 0:
         return language_stems(language)[string]
     elif len(default) == 1:

@@ -1,11 +1,11 @@
 from abc import ABCMeta, abstractmethod
 
-from dataset import validate_and_format_dataset
+from dataset import validate_and_format_dataset, filter_dataset
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (
     USE_SYNONYMS, SYNONYMS, DATA, INTENTS, ENTITIES, UTTERANCES,
     LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE, ENTITY, BUILTIN_PARSER,
-    CUSTOM_PARSERS)
+    CUSTOM_PARSERS, CUSTOM_ENGINE)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -145,25 +145,26 @@ class SnipsNLUEngine(NLUEngine):
 
     def fit(self, dataset):
         """
-        Fit the engine with a dataset
-        :param dataset: A dictionary containing the data of the custom intents.
+        Fit the engine with a dataset and return it
+        :param dataset: A dictionary containing data of the custom and builtin 
+        intents.
         See https://github.com/snipsco/snips-nlu/blob/develop/README.md for
         details about the format.
         :return: A fitted SnipsNLUEngine
         """
         dataset = validate_and_format_dataset(dataset)
+        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         custom_parser = RegexIntentParser().fit(dataset)
-        intent_classifier = SnipsIntentClassifier().fit(
-            dataset)
         self.entities = snips_nlu_entities(dataset)
         taggers = dict()
-        for intent in dataset[INTENTS].keys():
-            intent_custom_entities = get_intent_custom_entities(dataset,
+        for intent in custom_dataset[INTENTS].keys():
+            intent_custom_entities = get_intent_custom_entities(custom_dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities,
                                     language=self.language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
                                         TaggingScheme.BIO, self.language)
+        intent_classifier = SnipsIntentClassifier(self.language)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
         return self

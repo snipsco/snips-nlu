@@ -1,12 +1,13 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from data_augmentation import augment_dataset, get_non_empty_intents
+from data_augmentation import augment_dataset, get_non_empty_intents, \
+    get_regularization_factor
 from feature_extraction import Featurizer
 from intent_classifier import IntentClassifier
 from snips_nlu.constants import LANGUAGE
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import verbs_stems
+from snips_nlu.preprocessing import verbs_stems, stem
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.utils import (instance_to_generic_dict, ensure_string,
                              safe_pickle_dumps, safe_pickle_loads)
@@ -24,28 +25,26 @@ def get_default_parameters():
 
 
 class SnipsIntentClassifier(IntentClassifier):
-    def __init__(self, classifier_args=get_default_parameters()):
-        self.language = None
+    def __init__(self, language, classifier_args=get_default_parameters()):
+        self.language = language
         self.classifier_args = classifier_args
         self.classifier = None
         self.intent_list = None
-        self.featurizer = None
+        self.featurizer = Featurizer(self.language)
 
     @property
     def fitted(self):
         return self.intent_list is not None
 
     def fit(self, dataset):
-        language = Language.from_iso_code(dataset[LANGUAGE])
-        self.language = language
-        self.featurizer = Featurizer(self.language)
         self.intent_list = get_non_empty_intents(dataset)
 
         if len(self.intent_list) > 0:
-            (queries, y), alpha = augment_dataset(dataset, self.language,
-                                                  self.intent_list)
+            queries, y = augment_dataset(dataset, self.language,
+                                         self.intent_list)
             self.featurizer = self.featurizer.fit(queries, y)
             X = self.featurizer.transform(queries)
+            alpha = get_regularization_factor(dataset)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
             self.intent_list = [None] + self.intent_list
@@ -59,12 +58,9 @@ class SnipsIntentClassifier(IntentClassifier):
         if len(text) == 0 or len(self.intent_list) == 0:
             return None
 
-        verb_stemmings = verbs_stems(self.language)
-        stemmed_tokens = (verb_stemmings.get(token, token) for token in
-                          text.split())
-        text_stem = ' '.join(stemmed_tokens)
+        stemmed_text = stem(text, self.language)
 
-        X = self.featurizer.transform([text_stem])
+        X = self.featurizer.transform([stemmed_text])
         proba_vect = self.classifier.predict_proba(X)
         predicted = np.argmax(proba_vect[0])
 
@@ -89,10 +85,11 @@ class SnipsIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        classifier = cls(classifier_args=obj_dict['classifier_args'])
+        language = Language.from_iso_code(obj_dict['language_code'])
+        classifier = cls(language=language,
+                         classifier_args=obj_dict['classifier_args'])
         obj_dict['classifier_pkl'] = ensure_string(obj_dict['classifier_pkl'])
         classifier.classifier = safe_pickle_loads(obj_dict['classifier_pkl'])
         classifier.intent_list = obj_dict['intent_list']
-        classifier.language = Language.from_iso_code(obj_dict['language_code'])
         classifier.featurizer = Featurizer.from_dict(obj_dict['featurizer'])
         return classifier

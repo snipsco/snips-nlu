@@ -1,8 +1,8 @@
 import numpy as np
 
 from intent_classifier_resources import get_subtitles
-from snips_nlu.constants import TEXT, DATA, INTENTS, UTTERANCES
-from snips_nlu.preprocessing import verbs_stems
+from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
+from snips_nlu.preprocessing import stem
 
 
 def get_non_empty_intents(dataset):
@@ -10,40 +10,37 @@ def get_non_empty_intents(dataset):
             len(data[UTTERANCES]) > 0]
 
 
+def get_regularization_factor(dataset):
+    intent_list = get_non_empty_intents(dataset)
+    avg_utterances = np.mean([len(dataset[INTENTS][intent][UTTERANCES]) for
+                             intent in intent_list])
+    total_utterances = sum(len(dataset[INTENTS][intent][UTTERANCES]) for
+                           intent in intent_list)
+    alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
+    return alpha
+
+
 def augment_dataset(dataset, language, intent_list):
-    intent_code = dict((intent, i + 1) for i, intent in enumerate(intent_list))
+    noise_class = 0
+    classes_mapping = {intent: i + 1 for i, intent in enumerate(intent_list)}
+    avg_utterances = np.mean([len(dataset[INTENTS][intent][UTTERANCES]) for
+                             intent in intent_list])
 
-    queries_per_intent = [len(dataset[INTENTS][intent][UTTERANCES]) for
-                          intent in intent_list]
-    mean_queries_per_intent = np.mean(queries_per_intent)
+    noise = list(get_subtitles(language))
+    noise_size = int(5 * avg_utterances)
+    noisy_utterances = np.random.choice(noise, size=noise_size, replace=False)
 
-    alpha = 1.0 / (4 * (sum(queries_per_intent) + 5 * mean_queries_per_intent))
-
-    data_noise_train = list(get_subtitles(language))
-    queries_noise = np.random.choice(data_noise_train,
-                                     size=int(5 * mean_queries_per_intent),
-                                     replace=False)
-
-    queries = []
-    y = []
+    augmented_utterances = []
+    utterance_classes = []
     for intent in intent_list:
         utterances = dataset[INTENTS][intent][UTTERANCES]
-        queries += [''.join([utterances[i][DATA][j][TEXT] for j in
-                             xrange(len(utterances[i][DATA]))]) for i in
-                    xrange(len(utterances))]
-        y += [intent_code[intent] for _ in xrange(len(utterances))]
+        augmented_utterances += [utterance[UTTERANCE_TEXT] for utterance in
+                                 utterances]
+        utterance_classes += [classes_mapping[intent] for _ in utterances]
 
-    queries += [query for query in queries_noise]
-    y += [0 for _ in xrange(len(queries_noise))]
+    augmented_utterances += list(noisy_utterances)
+    utterance_classes += [noise_class for _ in noisy_utterances]
+    stemmed_utterances = [stem(utterance, language) for utterance in
+                          augmented_utterances]
 
-    queries = np.array(queries)
-    y = np.array(y)
-
-    verb_stemmings = verbs_stems(language)
-    queries_stem = []
-    for query in queries:
-        stemmed_tokens = (verb_stemmings.get(token, token) for token in
-                          query.split())
-        queries_stem.append(' '.join(stemmed_tokens))
-
-    return (queries_stem, y), alpha
+    return stemmed_utterances, np.array(utterance_classes)

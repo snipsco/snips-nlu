@@ -23,7 +23,6 @@ def validate_and_format_dataset(dataset):
     validate_type(dataset[LANGUAGE], basestring)
     entities = set()
     for entity_name, entity in dataset[ENTITIES].iteritems():
-        validate_entity_name(entity_name)
         entities.add(entity_name)
         dataset[ENTITIES][entity_name] = validate_and_format_entity(entity)
     for intent_name, intent in dataset[INTENTS].iteritems():
@@ -56,13 +55,8 @@ def validate_intent(intent, entities):
                 if chunk[ENTITY] in BuiltInEntity.built_in_entity_by_label:
                     continue
                 else:
-                    validate_key(entities, chunk[ENTITY], object_label=ENTITIES)
-
-
-def validate_entity_name(name):
-    if not ENTITY_NAME_REGEX.match(name):
-        raise ValueError("Entity name must only contain [0-9a-zA-Z_],"
-                         " found '%s'" % name)
+                    validate_key(entities, chunk[ENTITY],
+                                 object_label=ENTITIES)
 
 
 def validate_and_format_entity(entity):

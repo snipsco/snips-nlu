@@ -3,6 +3,7 @@ import unittest
 
 import numpy as np
 
+
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE

@@ -11,7 +11,7 @@ setup(name="snips_nlu",
       download_url="",
       license="MIT",
       install_requires=[
-          "duckling==0.0.11",
+          "duckling==0.0.13",
           "pytest",
           "enum34",
           "mock",
@@ -19,14 +19,14 @@ setup(name="snips_nlu",
           "scipy==0.19.0",
           "scikit-learn==0.18.1",
           "sklearn-crfsuite==0.3.5",
-          "snips-queries==0.3.0a1"
+          "snips-queries==0.4.0"
       ],
       packages=packages,
       package_data={
           "": [
-              "snips-nlu-resources/eng/*",
-              "snips-nlu-resources/fra/*",
-              "snips-nlu-resources/spa/*",
+              "snips-nlu-resources/en/*",
+              "snips-nlu-resources/fr/*",
+              "snips-nlu-resources/sp/*",
               "tests/resources/*"
           ]},
       entry_points={},

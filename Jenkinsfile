@@ -3,6 +3,7 @@ def VENV = ". venv/bin/activate"
 
 node('jenkins-slave-generic') {
     stage('Checkout') {
+        deleteDir()
         checkout scm
         sh "git submodule update --init --recursive"
     }

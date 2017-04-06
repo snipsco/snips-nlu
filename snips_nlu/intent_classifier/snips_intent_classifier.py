@@ -1,13 +1,13 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from data_augmentation import augment_dataset, get_non_empty_intents, \
-    get_regularization_factor
+from data_augmentation import build_training_data, get_regularization_factor
 from feature_extraction import Featurizer
 from intent_classifier import IntentClassifier
-from snips_nlu.constants import LANGUAGE
+from snips_nlu.constants import CUSTOM_ENGINE, BUILTIN_ENGINE, INTENTS
+from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import verbs_stems, stem
+from snips_nlu.preprocessing import stem
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.utils import (instance_to_generic_dict, ensure_string,
                              safe_pickle_dumps, safe_pickle_loads)
@@ -37,17 +37,20 @@ class SnipsIntentClassifier(IntentClassifier):
         return self.intent_list is not None
 
     def fit(self, dataset):
-        self.intent_list = get_non_empty_intents(dataset)
-
-        if len(self.intent_list) > 0:
-            queries, y = augment_dataset(dataset, self.language,
-                                         self.intent_list)
-            self.featurizer = self.featurizer.fit(queries, y)
-            X = self.featurizer.transform(queries)
-            alpha = get_regularization_factor(dataset)
+        min_utterances = 1
+        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE, min_utterances)
+        builtin_dataset = filter_dataset(dataset, BUILTIN_ENGINE,
+                                         min_utterances)
+        self.intent_list = [None] + custom_dataset[INTENTS].keys()
+        if len(self.intent_list) > 1:
+            utterances, y = build_training_data(custom_dataset,
+                                                builtin_dataset,
+                                                self.language)
+            self.featurizer = self.featurizer.fit(utterances, y)
+            X = self.featurizer.transform(utterances)
+            alpha = get_regularization_factor(custom_dataset)
             self.classifier_args.update({'alpha': alpha})
             self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
-            self.intent_list = [None] + self.intent_list
         return self
 
     def get_intent(self, text):
@@ -55,7 +58,7 @@ class SnipsIntentClassifier(IntentClassifier):
             raise AssertionError('SnipsIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
 
-        if len(text) == 0 or len(self.intent_list) == 0:
+        if len(text) == 0 or len(self.intent_list) == 1:
             return None
 
         stemmed_text = stem(text, self.language)

@@ -92,12 +92,17 @@ def validate_language(language):
                          " found '%s'" % language)
 
 
-def filter_dataset(dataset, engine_type):
+def filter_dataset(dataset, engine_type=None, min_utterances=0):
     """
-    Return a deepcopy of the dataset containing only intents of `engine_type`
+    Return a deepcopy of the dataset filtered according to parameters
+    :param dataset: dataset to filter
+    :param engine_type: if not None, only keep intens of type `engine_type`  
+    :param min_utterances: keep intents having at least `min_utterances` 
     """
     _dataset = deepcopy(dataset)
     for intent_name, intent in dataset[INTENTS].iteritems():
-        if intent[ENGINE_TYPE] != engine_type:
-            _dataset.pop(intent_name)
+        if engine_type is not None and intent[ENGINE_TYPE] != engine_type:
+            _dataset[INTENTS].pop(intent_name)
+        elif len(intent[UTTERANCES]) < min_utterances:
+            _dataset[INTENTS].pop(intent_name)
     return _dataset

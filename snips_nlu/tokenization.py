@@ -1,5 +1,4 @@
 import re
-from collections import namedtuple
 
 from snips_nlu.utils import namedtuple_with_defaults
 

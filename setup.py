@@ -26,7 +26,7 @@ setup(name="snips_nlu",
           "": [
               "snips-nlu-resources/en/*",
               "snips-nlu-resources/fr/*",
-              "snips-nlu-resources/sp/*",
+              "snips-nlu-resources/es/*",
               "tests/resources/*"
           ]},
       entry_points={},

@@ -11,7 +11,7 @@ setup(name="snips_nlu",
       download_url="",
       license="MIT",
       install_requires=[
-          "duckling==0.0.13",
+          "duckling==0.0.14",
           "pytest",
           "enum34",
           "mock",

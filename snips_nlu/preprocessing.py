@@ -30,10 +30,11 @@ def language_stems(language):
     return _LANGUAGE_STEMS[language.iso_code]
 
 
-def stem(string, language, *default):
-    if len(default) == 0:
-        return language_stems(language)[string]
-    elif len(default) == 1:
-        return language_stems(language).get(string, default[0])
-    else:
-        raise ValueError("Can only have 0 or 1 default argument")
+def stem_sentence(string, language):
+    tokens = string.split()
+    stemmed_tokens = [stem(token, language) for token in tokens]
+    return ' '.join(stemmed_tokens)
+
+
+def stem(string, language):
+    return language_stems(language).get(string, string)

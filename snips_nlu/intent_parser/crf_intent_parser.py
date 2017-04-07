@@ -1,5 +1,7 @@
 from intent_parser import IntentParser
-from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY
+from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY, \
+    CUSTOM_ENGINE
+from snips_nlu.dataset import filter_dataset
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
@@ -58,12 +60,13 @@ class CRFIntentParser(IntentParser):
             slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
     def fit(self, dataset):
+        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.slot_name_to_entity_mapping = get_slot_name_to_entity_mapping(
-            dataset)
+            custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
-
-        for intent_name in dataset[INTENTS]:
-            intent_utterances = dataset[INTENTS][intent_name][UTTERANCES]
+        for intent_name in custom_dataset[INTENTS]:
+            intent_utterances = custom_dataset[INTENTS][intent_name][
+                UTTERANCES]
             tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
             crf_samples = [utterance_to_sample(u["data"], tagging_scheme)
                            for u in intent_utterances]

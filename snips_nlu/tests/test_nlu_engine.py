@@ -1,13 +1,13 @@
 import json
 import unittest
 
-import numpy as np
-from mock import Mock, patch, call
+from mock import Mock, patch
 
+from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from snips_nlu.slot_filler.feature_functions import BaseFeatureFunction
 from utils import SAMPLE_DATASET
 
 
@@ -48,7 +48,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
 
         mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
-        mocked_builtin_parser.parser.language
 
         builtin_intent_result = None
         builtin_entities = []
@@ -127,7 +126,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # When/Then
         with self.assertRaises(ValueError) as ctx:
-            parse = engine.parse(text)
+            engine.parse(text)
 
         self.assertEqual(ctx.exception.message,
                          "NLUEngine as no built-in parser nor custom parsers")
@@ -173,9 +172,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                             mocked_crf_get_slots, _):
         # Given
         language = Language.EN
-        dataset = {
+        dataset = validate_and_format_dataset({
             "intents": {
                 "dummy_intent_1": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -229,7 +229,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        }
+        })
 
         def mocked_regex_intent(_):
             return None
@@ -280,9 +280,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                                  mocked_crf_get_slots, _):
         # Given
         language = Language.EN
-        dataset = {
+        dataset = validate_and_format_dataset({
             "intents": {
                 "dummy_intent_1": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -312,7 +313,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        }
+        })
 
         def mocked_regex_intent(_):
             return None

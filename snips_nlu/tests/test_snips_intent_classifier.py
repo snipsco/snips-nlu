@@ -16,7 +16,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_should_get_intent(self):
         # Given
         dataset = SAMPLE_DATASET
-        classifier = SnipsIntentClassifier().fit(dataset)
+        classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
         text = "This is a dummy_3 query from another intent"
 
         # When
@@ -31,7 +31,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_should_get_none_if_empty_dataset(self):
         # Given
         dataset = EMPTY_DATASET
-        classifier = SnipsIntentClassifier().fit(dataset)
+        classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
         text = "this is a dummy query"
 
         # When
@@ -67,7 +67,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         }
 
         intent_classifier = SnipsIntentClassifier(
-            classifier_args=classifier_args).fit(SAMPLE_DATASET)
+            language=Language.EN, classifier_args=classifier_args).fit(
+            SAMPLE_DATASET)
 
         # When
         classifier_dict = intent_classifier.to_dict()

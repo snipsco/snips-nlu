@@ -4,12 +4,12 @@ from copy import deepcopy
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
-                                 LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE)
+                                 LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
+                                 ENGINE_TYPE, UTTERANCE_TEXT)
 from snips_nlu.languages import Language
 from utils import validate_type, validate_key, validate_keys
 
 INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
-ENTITY_NAME_REGEX = re.compile("^[\w]+$")
 
 
 def validate_and_format_dataset(dataset):
@@ -27,7 +27,7 @@ def validate_and_format_dataset(dataset):
         dataset[ENTITIES][entity_name] = validate_and_format_entity(entity)
     for intent_name, intent in dataset[INTENTS].iteritems():
         validate_intent_name(intent_name)
-        validate_intent(intent, entities)
+        validate_and_format_intent(intent, entities)
     validate_language(dataset[LANGUAGE])
     return dataset
 
@@ -38,8 +38,9 @@ def validate_intent_name(name):
                              "only use: [a-zA-Z0-9_- ]" % name)
 
 
-def validate_intent(intent, entities):
+def validate_and_format_intent(intent, entities):
     validate_type(intent, dict)
+    validate_key(intent, ENGINE_TYPE, object_label="intent dict")
     validate_key(intent, UTTERANCES, object_label="intent dict")
     validate_type(intent[UTTERANCES], list)
     for utterance in intent[UTTERANCES]:
@@ -57,6 +58,12 @@ def validate_intent(intent, entities):
                 else:
                     validate_key(entities, chunk[ENTITY],
                                  object_label=ENTITIES)
+        utterance[UTTERANCE_TEXT] = get_text_from_chunks(utterance[DATA])
+    return intent
+
+
+def get_text_from_chunks(chunks):
+    return ''.join(chunk[TEXT] for chunk in chunks)
 
 
 def validate_and_format_entity(entity):
@@ -81,3 +88,19 @@ def validate_language(language):
     if language not in Language.language_by_iso_code:
         raise ValueError("Language name must be ISO 639-1,"
                          " found '%s'" % language)
+
+
+def filter_dataset(dataset, engine_type=None, min_utterances=0):
+    """
+    Return a deepcopy of the dataset filtered according to parameters
+    :param dataset: dataset to filter
+    :param engine_type: if not None, only keep intens of type `engine_type`  
+    :param min_utterances: keep intents having at least `min_utterances` 
+    """
+    _dataset = deepcopy(dataset)
+    for intent_name, intent in dataset[INTENTS].iteritems():
+        if engine_type is not None and intent[ENGINE_TYPE] != engine_type:
+            _dataset[INTENTS].pop(intent_name)
+        elif len(intent[UTTERANCES]) < min_utterances:
+            _dataset[INTENTS].pop(intent_name)
+    return _dataset

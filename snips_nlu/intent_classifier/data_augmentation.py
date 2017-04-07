@@ -1,49 +1,62 @@
 import numpy as np
 
-from intent_classifier_resources import get_subtitles
-from snips_nlu.constants import TEXT, DATA, INTENTS, UTTERANCES
-from snips_nlu.preprocessing import verbs_stems
+from snips_nlu.intent_classifier.intent_classifier_resources import \
+    get_subtitles
+from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
+from snips_nlu.preprocessing import stem_sentence
 
 
-def get_non_empty_intents(dataset):
-    return [name for name, data in dataset[INTENTS].items() if
-            len(data[UTTERANCES]) > 0]
+def get_regularization_factor(dataset):
+    intents = dataset[INTENTS]
+    nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
+    avg_utterances = np.mean(nb_utterances)
+    total_utterances = sum(nb_utterances)
+    alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
+    return alpha
 
 
-def augment_dataset(dataset, language, intent_list):
-    intent_code = dict((intent, i + 1) for i, intent in enumerate(intent_list))
+def build_training_data(custom_dataset, builtin_dataset, language,
+                        noise_factor=5, use_stemming=True):
+    # Separating custom intents from builtin intents
+    custom_intents = custom_dataset[INTENTS]
+    builtin_intents = builtin_dataset[INTENTS]
+    all_intents = set(custom_intents.keys() + builtin_intents.keys())
 
-    queries_per_intent = [len(dataset[INTENTS][intent][UTTERANCES]) for
-                          intent in intent_list]
-    mean_queries_per_intent = np.mean(queries_per_intent)
+    # Creating class mapping
+    noise_class = 0
+    classes_mapping = {intent: i + 1 for i, intent in
+                       enumerate(custom_intents)}
+    classes_mapping.update({intent: noise_class for intent in builtin_intents})
 
-    alpha = 1.0 / (4 * (sum(queries_per_intent) + 5 * mean_queries_per_intent))
+    # Computing dataset statistics
+    nb_utterances = [len(intent[UTTERANCES]) for intent in
+                     custom_intents.values()]
+    avg_utterances = np.mean(nb_utterances)
+    max_utterances = max(nb_utterances)
 
-    data_noise_train = list(get_subtitles(language))
-    queries_noise = np.random.choice(data_noise_train,
-                                     size=int(5 * mean_queries_per_intent),
-                                     replace=False)
+    # Adding custom and builtin utterances
+    augmented_utterances = []
+    utterance_classes = []
+    for intent in all_intents:
+        if intent in builtin_intents:
+            utterances = builtin_dataset[INTENTS][intent][UTTERANCES][
+                         :max_utterances]
+        else:
+            utterances = custom_dataset[INTENTS][intent][UTTERANCES]
+        augmented_utterances += [utterance[UTTERANCE_TEXT] for utterance in
+                                 utterances]
+        utterance_classes += [classes_mapping[intent] for _ in utterances]
 
-    queries = []
-    y = []
-    for intent in intent_list:
-        utterances = dataset[INTENTS][intent][UTTERANCES]
-        queries += [''.join([utterances[i][DATA][j][TEXT] for j in
-                             xrange(len(utterances[i][DATA]))]) for i in
-                    xrange(len(utterances))]
-        y += [intent_code[intent] for _ in xrange(len(utterances))]
+    # Adding noise
+    noise = list(get_subtitles(language))
+    noise_size = min(int(noise_factor * avg_utterances), len(noise))
+    noisy_utterances = np.random.choice(noise, size=noise_size, replace=False)
+    augmented_utterances += list(noisy_utterances)
+    utterance_classes += [noise_class for _ in noisy_utterances]
 
-    queries += [query for query in queries_noise]
-    y += [0 for _ in xrange(len(queries_noise))]
+    # Stemming utterances
+    if use_stemming:
+        augmented_utterances = [stem_sentence(utterance, language) for
+                                utterance in augmented_utterances]
 
-    queries = np.array(queries)
-    y = np.array(y)
-
-    verb_stemmings = verbs_stems(language)
-    queries_stem = []
-    for query in queries:
-        stemmed_tokens = (verb_stemmings.get(token, token) for token in
-                          query.split())
-        queries_stem.append(' '.join(stemmed_tokens))
-
-    return (queries_stem, y), alpha
+    return augmented_utterances, np.array(utterance_classes)

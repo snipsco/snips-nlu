@@ -4,11 +4,15 @@ from sklearn.feature_selection import chi2
 from intent_classifier_resources import get_stop_words
 from snips_nlu.languages import Language
 from snips_nlu.utils import ensure_string, safe_pickle_dumps, safe_pickle_loads
+from snips_nlu.tokenization import tokenize_sklearn
 
 
 class Featurizer(object):
     def __init__(self, language,
+                 #count_vectorizer=CountVectorizer(ngram_range=(1, 1),
+                 #                                 encoding="utf-8"),
                  count_vectorizer=CountVectorizer(ngram_range=(1, 1),
+                                                  tokenizer=tokenize_sklearn,
                                                   encoding="utf-8"),
                  tfidf_transformer=TfidfTransformer(), pvalue_threshold=0.4):
         self.count_vectorizer = count_vectorizer

@@ -9,6 +9,7 @@ class Language(Enum):
     EN = {ISO_CODE: u"en", DUCKLING_CODE: u"en"}
     ES = {ISO_CODE: u"es", DUCKLING_CODE: u"es"}
     FR = {ISO_CODE: u"fr", DUCKLING_CODE: u"fr"}
+    DE = {ISO_CODE: u"de", DUCKLING_CODE: u"de"}
 
     @property
     def iso_code(self):

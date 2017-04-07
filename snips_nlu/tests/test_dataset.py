@@ -1,5 +1,6 @@
 import unittest
 
+from snips_nlu.constants import CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
 
 
@@ -10,10 +11,11 @@ class TestDataset(unittest.TestCase):
             "intents": {
                 "invalid/intent_name": {
                     "utterances": [],
+                    "engineType": CUSTOM_ENGINE
                 }
             },
             "entities": {},
-            "language": "en"
+            "language": "en",
         }
 
         # When/Then
@@ -37,7 +39,8 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ]
+                    ],
+                    "engineType": CUSTOM_ENGINE
                 }
             },
             "entities": {},
@@ -65,7 +68,8 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ]
+                    ],
+                    "engineType": CUSTOM_ENGINE
                 }
             },
             "entities": {
@@ -117,7 +121,7 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(ctx.exception.message,
                          "Language name must be ISO 639-1, found 'eng'")
 
-    def test_should_add_missing_value_to_synonyms(self):
+    def test_should_format_dataset(self):
         # Given
         dataset = {
             "intents": {
@@ -126,13 +130,17 @@ class TestDataset(unittest.TestCase):
                         {
                             "data": [
                                 {
+                                    "text": "this is ",
+                                },
+                                {
                                     "text": "entity 1",
                                     "entity": "entity1",
                                     "slot_name": "slot1"
                                 }
                             ]
                         }
-                    ]
+                    ],
+                    "engineType": CUSTOM_ENGINE
                 }
             },
             "entities": {
@@ -157,13 +165,18 @@ class TestDataset(unittest.TestCase):
                         {
                             "data": [
                                 {
+                                    "text": "this is ",
+                                },
+                                {
                                     "text": "entity 1",
                                     "entity": "entity1",
                                     "slot_name": "slot1"
                                 }
-                            ]
+                            ],
+                            "utterance_text": "this is entity 1"
                         }
-                    ]
+                    ],
+                    "engineType": CUSTOM_ENGINE
                 }
             },
             "entities": {

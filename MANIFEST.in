@@ -1,5 +1,0 @@
-graft snips_nlu/test/resources
-graft snips_nlu/snips-nlu-resources
-prune snips_nlu/snips-nlu-resources/scripts
-prune snips_nlu/snips-nlu-resources/.git
-exclude snips_nlu/snips-nlu-resources/.gitignore

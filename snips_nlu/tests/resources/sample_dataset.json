@@ -47,6 +47,7 @@
   },
   "intents": {
     "dummy_intent_2": {
+      "engineType": "regex",
       "utterances": [
         {
           "data": [
@@ -66,6 +67,7 @@
       ]
     },
     "dummy_intent_1": {
+      "engineType": "regex",
       "utterances": [
         {
           "data": [

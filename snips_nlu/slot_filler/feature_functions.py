@@ -20,8 +20,9 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features(language, use_stemming):
-    features_signatures = [
+def default_features(language, intent_entities, use_stemming,
+                     entities_offsets, entity_keep_prob):
+    features = [
         {
             "module_name": __name__,
             "factory_name": "get_ngram_fn",
@@ -76,7 +77,7 @@ def default_features(language, use_stemming):
 
     # Built-ins
     for entity in BuiltInEntity:
-        features_signatures.append(
+        features.append(
             {
                 "module_name": __name__,
                 "factory_name": "get_built_in_annotation_fn",
@@ -87,17 +88,13 @@ def default_features(language, use_stemming):
                 "offsets": [-2, -1, 0]
             }
         )
-    return features_signatures
 
-
-def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
-                 keep_prob=.5):
+    # Entity lookup
     if use_stemming:
-        preprocess = lambda s: stem(s, language, s)
+        preprocess = lambda string: stem(string, language)
     else:
-        preprocess = lambda s: s
+        preprocess = lambda string: string
 
-    features = default_features(language, use_stemming)
     for entity_name, entity in intent_entities.iteritems():
         if len(entity[DATA]) == 0:
             continue
@@ -106,7 +103,7 @@ def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
                           d[SYNONYMS]]
         else:
             collection = [preprocess(d[VALUE]) for d in entity[DATA]]
-        collection_size = max(int(keep_prob * len(collection)), 1)
+        collection_size = max(int(entity_keep_prob * len(collection)), 1)
         collection = np.random.choice(collection, collection_size,
                                       replace=False).tolist()
         features.append(
@@ -116,15 +113,31 @@ def crf_features(intent_entities, language, use_stemming, offsets=(-2, -1, 0),
                 "args": {"collection": collection,
                          "collection_name": entity_name,
                          "use_stemming": use_stemming},
-                "offsets": offsets
+                "offsets": entities_offsets
             }
         )
     return features
 
 
+def crf_features(intent_entities, language):
+    if language == Language.EN:
+        return default_features(language, intent_entities, use_stemming=False,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5)
+    elif language == Language.ES:
+        return default_features(language, intent_entities, use_stemming=True,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5)
+    elif language == Language.FR:
+        return default_features(language, intent_entities, use_stemming=True,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5)
+    else:
+        raise NotImplementedError("Feature function are not implemented for "
+                                  "%s" % language)
+
+
 # Helpers for base feature functions and factories
-
-
 def char_range_to_token_range(char_range, tokens_as_string):
     start, end = char_range
     # TODO: if possible avoid looping on the tokens for better efficiency

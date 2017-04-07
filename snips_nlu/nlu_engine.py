@@ -1,11 +1,11 @@
 from abc import ABCMeta, abstractmethod
 
-from dataset import validate_and_format_dataset
+from dataset import validate_and_format_dataset, filter_dataset
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (
     USE_SYNONYMS, SYNONYMS, DATA, INTENTS, ENTITIES, UTTERANCES,
     LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE, ENTITY, BUILTIN_PARSER,
-    CUSTOM_PARSERS)
+    CUSTOM_PARSERS, CUSTOM_ENGINE)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -15,13 +15,31 @@ from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
-from snips_nlu.slot_filler.crf_utils import Tagging
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.utils import instance_from_dict
 
 
 class NLUEngine(object):
     __metaclass__ = ABCMeta
+
+    def __init__(self, language):
+        self._language = None
+        self.language = language
+
+    @property
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, value):
+        if isinstance(value, Language):
+            self._language = value
+        elif isinstance(value, (str, unicode)):
+            self._language = Language.from_iso_code(value)
+        else:
+            raise TypeError("Expected str, unicode or Language found '%s'"
+                            % type(value))
 
     @abstractmethod
     def parse(self, text):
@@ -87,46 +105,66 @@ def snips_nlu_entities(dataset):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self):
-        super(SnipsNLUEngine, self).__init__()
-        self.custom_parsers = []
-        self.builtin_parser = None
-        self.entities = []
-        self.language = None
+    def __init__(self, language, builtin_parser=None, custom_parsers=None,
+                 entities=None):
+        super(SnipsNLUEngine, self).__init__(language)
+        self._builtin_parser = None
+        self.builtin_parser = builtin_parser
+        self.custom_parsers = custom_parsers
+        self.entities = entities
+
+    @property
+    def builtin_parser(self):
+        return self._builtin_parser
+
+    @builtin_parser.setter
+    def builtin_parser(self, value):
+        if value is not None \
+                and value.parser.language != self.language.iso_code:
+            raise ValueError(
+                "Built in parser language code ('%s') is different from "
+                "provided language code ('%s')"
+                % (value.parser.language, self.language.iso_code))
+        self._builtin_parser = value
 
     def parse(self, text):
         """
         Parse the input text and returns a dictionary containing the most
         likely intent and slots.
         """
+        if self.builtin_parser is None and self.custom_parsers is None:
+            raise ValueError("NLUEngine as no built-in parser nor "
+                             "custom parsers")
+        parsers = []
+        if self.custom_parsers is not None:
+            parsers += self.custom_parsers
         if self.builtin_parser is not None:
-            parsers = [self.builtin_parser] + self.custom_parsers
-        else:
-            parsers = self.custom_parsers
+            parsers.append(self.builtin_parser)
+
         return _parse(text, parsers, self.entities).as_dict()
 
     def fit(self, dataset):
         """
-        Fit the engine with a dataset
-        :param dataset: A dictionary containing the data of the custom intents.
+        Fit the engine with a dataset and return it
+        :param dataset: A dictionary containing data of the custom and builtin 
+        intents.
         See https://github.com/snipsco/snips-nlu/blob/develop/README.md for
         details about the format.
         :return: A fitted SnipsNLUEngine
         """
         dataset = validate_and_format_dataset(dataset)
-        self.language = Language.from_iso_code(dataset[LANGUAGE])
+        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         custom_parser = RegexIntentParser().fit(dataset)
-        intent_classifier = SnipsIntentClassifier().fit(
-            dataset)
         self.entities = snips_nlu_entities(dataset)
         taggers = dict()
-        for intent in dataset[INTENTS].keys():
-            intent_custom_entities = get_intent_custom_entities(dataset,
+        for intent in custom_dataset[INTENTS].keys():
+            intent_custom_entities = get_intent_custom_entities(custom_dataset,
                                                                 intent)
-            features = crf_features(intent_custom_entities, use_stemming=False,
+            features = crf_features(intent_custom_entities,
                                     language=self.language)
             taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        Tagging.BIO, self.language)
+                                        TaggingScheme.BIO, self.language)
+        intent_classifier = SnipsIntentClassifier(self.language)
         crf_parser = CRFIntentParser(intent_classifier, taggers).fit(dataset)
         self.custom_parsers = [custom_parser, crf_parser]
         return self
@@ -154,30 +192,29 @@ class SnipsNLUEngine(NLUEngine):
         """
         Create a `SnipsNLUEngine` from the following attributes
         
-        :param language: ISO 639-1 language code
+        :param language: ISO 639-1 language code or Language instance
         :param customs: A `dict` containing custom intents data
         :param builtin_path: A directory path containing builtin intents data
         :param builtin_binary: A `bytearray` containing builtin intents data
         """
-        _language = Language.from_iso_code(language)
-        custom_parsers = []
-        entities = []
+
+        if isinstance(language, (str, unicode)):
+            language = Language.from_iso_code(language)
+
+        custom_parsers = None
+        entities = None
         if customs is not None:
             custom_parsers = [instance_from_dict(d) for d in
                               customs[CUSTOM_PARSERS]]
             entities = customs[ENTITIES]
         builtin_parser = None
         if builtin_path is not None or builtin_binary is not None:
-            builtin_parser = BuiltinIntentParser(language=_language,
+            builtin_parser = BuiltinIntentParser(language=language,
                                                  data_path=builtin_path,
                                                  data_binary=builtin_binary)
 
-        self = cls()
-        self.language = _language
-        self.custom_parsers = custom_parsers
-        self.builtin_parser = builtin_parser
-        self.entities = entities
-        return self
+        return cls(language, builtin_parser=builtin_parser,
+                   custom_parsers=custom_parsers, entities=entities)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \

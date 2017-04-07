@@ -5,7 +5,7 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
-from snips_nlu.slot_filler.crf_utils import Tagging
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.utils import safe_pickle_dumps
 
 
@@ -27,8 +27,8 @@ class TestCRFTagger(unittest.TestCase):
                 "offsets": [-1, 0]
             }
         ]
-        tagging = Tagging.BILOU
-        tagger = CRFTagger(crf_model, features_signatures, tagging,
+        tagging_scheme = TaggingScheme.BILOU
+        tagger = CRFTagger(crf_model, features_signatures, tagging_scheme,
                            Language.EN)
 
         # When
@@ -58,7 +58,7 @@ class TestCRFTagger(unittest.TestCase):
                     'qual_name': 'snips_nlu.features.get_shape_ngram_fn'
                 }
             ],
-            "tagging": 2,
+            "tagging_scheme": 2,
             "fitted": False
         }
 
@@ -81,8 +81,8 @@ class TestCRFTagger(unittest.TestCase):
                 "offsets": [-1, 0]
             }
         ]
-        tagging = Tagging.BILOU
-        tagger = CRFTagger(crf_model, features_signatures, tagging,
+        tagging_scheme = TaggingScheme.BILOU
+        tagger = CRFTagger(crf_model, features_signatures, tagging_scheme,
                            language=Language.EN)
         tagger_dict = tagger.to_dict()
         tagger_json = json.dumps(tagger_dict).decode("utf8")

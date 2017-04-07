@@ -15,7 +15,7 @@ TOKENS = "tokens"
 
 
 @unique
-class Tagging(Enum):
+class TaggingScheme(Enum):
     IO = 0
     BIO = 1
     BILOU = 2
@@ -93,24 +93,24 @@ def io_tags_to_slots(tags, tokens):
     return slots
 
 
-def tags_to_slots(tokens, tags, tagging):
-    if tagging == Tagging.IO:
+def tags_to_slots(tokens, tags, tagging_scheme):
+    if tagging_scheme == TaggingScheme.IO:
         return io_tags_to_slots(tags, tokens)
-    elif tagging == Tagging.BIO:
+    elif tagging_scheme == TaggingScheme.BIO:
         return bio_tags_to_slots(tags, tokens)
-    elif tagging == Tagging.BILOU:
+    elif tagging_scheme == TaggingScheme.BILOU:
         return bilou_tags_to_slots(tags, tokens)
     else:
-        raise ValueError("Unknown tagging %s" % tagging)
+        raise ValueError("Unknown tagging scheme %s" % tagging_scheme)
 
 
-def positive_tagging(tagging, slot_name, slot_size):
-    if tagging == Tagging.IO:
+def positive_tagging(tagging_scheme, slot_name, slot_size):
+    if tagging_scheme == TaggingScheme.IO:
         tags = [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
-    elif tagging == Tagging.BIO:
+    elif tagging_scheme == TaggingScheme.BIO:
         tags = [BEGINNING_PREFIX + slot_name]
         tags += [INSIDE_PREFIX + slot_name for _ in xrange(1, slot_size)]
-    elif tagging == Tagging.BILOU:
+    elif tagging_scheme == TaggingScheme.BILOU:
         if slot_size == 1:
             tags = [UNIT_PREFIX + slot_name]
         else:
@@ -119,7 +119,7 @@ def positive_tagging(tagging, slot_name, slot_size):
                      for _ in xrange(1, slot_size - 1)]
             tags.append(LAST_PREFIX + slot_name)
     else:
-        raise ValueError("Invalid tagging %s" % tagging)
+        raise ValueError("Invalid tagging scheme %s" % tagging_scheme)
     return tags
 
 
@@ -127,7 +127,7 @@ def negative_tagging(size):
     return [OUTSIDE for _ in xrange(size)]
 
 
-def utterance_to_sample(query_data, tagging):
+def utterance_to_sample(query_data, tagging_scheme):
     tokens, tags = [], []
     current_length = 0
     for i, chunk in enumerate(query_data):
@@ -138,6 +138,6 @@ def utterance_to_sample(query_data, tagging):
         if SLOT_NAME not in chunk:
             tags += negative_tagging(len(chunk_tokens))
         else:
-            tags += positive_tagging(tagging, chunk[SLOT_NAME],
+            tags += positive_tagging(tagging_scheme, chunk[SLOT_NAME],
                                      len(chunk_tokens))
     return {TOKENS: tokens, TAGS: tags}

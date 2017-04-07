@@ -1,13 +1,19 @@
 import re
 import unittest
 
+import numpy as np
+
+
 from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
+    SYNONYMS, DATA, VALUE
+from snips_nlu.languages import Language
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_regex_match_fn, get_prefix_fn,
     get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME,
-    BaseFeatureFunction, get_token_is_in, get_built_in_annotation_fn)
+    BaseFeatureFunction, get_token_is_in, get_built_in_annotation_fn,
+    crf_features)
 from snips_nlu.tokenization import tokenize
-from snips_nlu.languages import Language
 
 
 class TestFeatureFunctions(unittest.TestCase):
@@ -194,6 +200,90 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
+
+    # @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    def test_crf_features(self, ):
+        def mocked_default(language, intent_entities, use_stemming,
+                           entities_offsets, entity_keep_prob):
+            return []
+
+        # mocked_default_features.side_effect = mocked_default
+
+        intent_entities = {
+            "dummy_entity_1": {
+                AUTOMATICALLY_EXTENSIBLE: False,
+                USE_SYNONYMS: True,
+                DATA: [
+                    {
+                        SYNONYMS: [
+                            "dummy_a",
+                            "dummy_a_bis"
+                        ],
+                        VALUE: "dummy_a"
+                    },
+                    {
+                        SYNONYMS: [
+                            "dummy_b",
+                            "dummy_b_bis"
+                        ],
+                        VALUE: "dummy_b"
+                    }
+                ]
+            },
+            "dummy_entity_2": {
+                AUTOMATICALLY_EXTENSIBLE: False,
+                USE_SYNONYMS: False,
+                DATA: [
+                    {
+                        SYNONYMS: [
+                            "dummy_c",
+                            "dummy_c_bis"
+                        ],
+                        VALUE: "dummy_c"
+                    }
+                ]
+            }
+        }
+
+        # When
+        np.random.seed(42)
+        keep_prob = 0.5
+        features_signatures = crf_features(
+            intent_entities=intent_entities,
+            language=Language.EN)
+
+        # Then
+        np.random.seed(42)
+        collection_1 = ['dummy_a', 'dummy_a_bis', 'dummy_b', 'dummy_b_bis']
+        collection_1_size = max(int(keep_prob * len(collection_1)), 1)
+        collection_1 = np.random.choice(collection_1, collection_1_size,
+                                        replace=False).tolist()
+        collection_2 = ['dummy_c']
+
+        expected_signatures = [
+            {
+                'args': {
+                    'collection': collection_1,
+                    'collection_name': 'dummy_entity_1',
+                    'use_stemming': False
+                },
+                'factory_name': 'get_token_is_in',
+                'module_name': 'snips_nlu.slot_filler.feature_functions',
+                'offsets': (-2, -1, 0)
+            },
+            {
+                'args': {
+                    'collection': collection_2,
+                    'collection_name': 'dummy_entity_2',
+                    'use_stemming': False
+                },
+                'factory_name': 'get_token_is_in',
+                'module_name': 'snips_nlu.slot_filler.feature_functions',
+                'offsets': (-2, -1, 0)
+            }
+        ]
+        for signature in expected_signatures:
+            self.assertIn(signature, features_signatures)
 
 
 if __name__ == '__main__':

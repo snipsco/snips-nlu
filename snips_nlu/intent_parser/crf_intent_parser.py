@@ -44,7 +44,8 @@ class CRFIntentParser(IntentParser):
         tagger = self.crf_taggers[intent]
 
         tags = tagger.get_tags(tokens)
-        slots = tags_to_slots(tokens, tags, tagging=tagger.tagging)
+        slots = tags_to_slots(tokens, tags,
+                              tagging_scheme=tagger.tagging_scheme)
         return [ParsedSlot(match_range=s["range"],
                            value=text[s["range"][0]:s["range"][1]],
                            entity=self.slot_name_to_entity_mapping[
@@ -63,8 +64,8 @@ class CRFIntentParser(IntentParser):
 
         for intent_name in dataset[INTENTS]:
             intent_utterances = dataset[INTENTS][intent_name][UTTERANCES]
-            tagging = self.crf_taggers[intent_name].tagging
-            crf_samples = [utterance_to_sample(u["data"], tagging)
+            tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
+            crf_samples = [utterance_to_sample(u["data"], tagging_scheme)
                            for u in intent_utterances]
             self.crf_taggers[intent_name] = self.crf_taggers[intent_name].fit(
                 crf_samples)
@@ -84,7 +85,8 @@ class CRFIntentParser(IntentParser):
     @classmethod
     def from_dict(cls, obj_dict):
         return cls(
-            intent_classifier=instance_from_dict(obj_dict["intent_classifier"]),
+            intent_classifier=instance_from_dict(
+                obj_dict["intent_classifier"]),
             crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)
                          for intent_name, tagger_dict in
                          obj_dict["crf_taggers"].iteritems()},

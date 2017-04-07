@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 packages = find_packages()
 
 setup(name="snips_nlu",
-      version="0.2.3",
+      version="0.3.0",
       description="",
       author="Clement Doumouro",
       author_email="clement.doumouro@snips.ai",
@@ -11,7 +11,7 @@ setup(name="snips_nlu",
       download_url="",
       license="MIT",
       install_requires=[
-          "duckling==0.0.13",
+          "duckling==0.0.14",
           "pytest",
           "enum34",
           "mock",

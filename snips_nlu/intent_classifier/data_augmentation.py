@@ -1,8 +1,8 @@
 import numpy as np
 
+from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
 from snips_nlu.intent_classifier.intent_classifier_resources import \
     get_subtitles
-from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
 from snips_nlu.preprocessing import stem_sentence
 
 

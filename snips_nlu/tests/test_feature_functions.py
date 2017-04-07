@@ -1,20 +1,18 @@
-import json
 import re
 import unittest
-import numpy as np
 
-from mock import patch
+import numpy as np
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE
+from snips_nlu.languages import Language
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_regex_match_fn, get_prefix_fn,
     get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME,
     BaseFeatureFunction, get_token_is_in, get_built_in_annotation_fn,
     crf_features)
 from snips_nlu.tokenization import tokenize
-from snips_nlu.languages import Language
 
 
 class TestFeatureFunctions(unittest.TestCase):
@@ -202,12 +200,13 @@ class TestFeatureFunctions(unittest.TestCase):
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
 
-    @patch("snips_nlu.slot_filler.feature_functions.default_features")
-    def test_crf_features(self, mocked_default_features):
-        def mocked_default(_, use_stemming):
+    # @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    def test_crf_features(self, ):
+        def mocked_default(language, intent_entities, use_stemming,
+                           entities_offsets, entity_keep_prob):
             return []
 
-        mocked_default_features.side_effect = mocked_default
+        # mocked_default_features.side_effect = mocked_default
 
         intent_entities = {
             "dummy_entity_1": {
@@ -250,10 +249,7 @@ class TestFeatureFunctions(unittest.TestCase):
         keep_prob = 0.5
         features_signatures = crf_features(
             intent_entities=intent_entities,
-            language=Language.EN.iso_code,
-            use_stemming=False,
-            offsets=(0,),
-            keep_prob=keep_prob)
+            language=Language.EN)
 
         # Then
         np.random.seed(42)
@@ -272,7 +268,7 @@ class TestFeatureFunctions(unittest.TestCase):
                 },
                 'factory_name': 'get_token_is_in',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
-                'offsets': (0,)
+                'offsets': (-2, -1, 0)
             },
             {
                 'args': {
@@ -282,10 +278,11 @@ class TestFeatureFunctions(unittest.TestCase):
                 },
                 'factory_name': 'get_token_is_in',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
-                'offsets': (0,)
+                'offsets': (-2, -1, 0)
             }
         ]
-        self.assertEqual(features_signatures, expected_signatures)
+        for signature in expected_signatures:
+            self.assertIn(signature, features_signatures)
 
 
 if __name__ == '__main__':

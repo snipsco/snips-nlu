@@ -3,7 +3,7 @@ import numpy as np
 from snips_nlu.intent_classifier.intent_classifier_resources import \
     get_subtitles
 from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
-from snips_nlu.preprocessing import stem
+from snips_nlu.preprocessing import stem_sentence
 
 
 def get_regularization_factor(dataset):
@@ -56,7 +56,7 @@ def build_training_data(custom_dataset, builtin_dataset, language,
 
     # Stemming utterances
     if use_stemming:
-        augmented_utterances = [stem(utterance, language) for utterance in
-                                augmented_utterances]
+        augmented_utterances = [stem_sentence(utterance, language) for
+                                utterance in augmented_utterances]
 
     return augmented_utterances, np.array(utterance_classes)

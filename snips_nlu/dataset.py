@@ -58,8 +58,6 @@ def validate_and_format_intent(intent, entities):
                 else:
                     validate_key(entities, chunk[ENTITY],
                                  object_label=ENTITIES)
-                    validate_key(entities, chunk[ENTITY],
-                                 object_label=ENTITIES)
         utterance[UTTERANCE_TEXT] = get_text_from_chunks(utterance[DATA])
     return intent
 

@@ -4,7 +4,7 @@ import math
 from sklearn_crfsuite import CRF
 
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import stem
+from snips_nlu.preprocessing import stem_sentence, stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)

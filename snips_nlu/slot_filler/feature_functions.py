@@ -91,9 +91,9 @@ def default_features(language, intent_entities, use_stemming,
 
     # Entity lookup
     if use_stemming:
-        preprocess = lambda s: stem(s, language, s)
+        preprocess = lambda string: stem(string, language)
     else:
-        preprocess = lambda s: s
+        preprocess = lambda string: string
 
     for entity_name, entity in intent_entities.iteritems():
         if len(entity[DATA]) == 0:

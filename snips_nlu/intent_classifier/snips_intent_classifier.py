@@ -7,7 +7,7 @@ from intent_classifier import IntentClassifier
 from snips_nlu.constants import CUSTOM_ENGINE, BUILTIN_ENGINE, INTENTS
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import stem
+from snips_nlu.preprocessing import stem_sentence
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.utils import (instance_to_generic_dict, ensure_string,
                              safe_pickle_dumps, safe_pickle_loads)
@@ -61,7 +61,7 @@ class SnipsIntentClassifier(IntentClassifier):
         if len(text) == 0 or len(self.intent_list) == 1:
             return None
 
-        stemmed_text = stem(text, self.language)
+        stemmed_text = stem_sentence(text, self.language)
 
         X = self.featurizer.transform([stemmed_text])
         proba_vect = self.classifier.predict_proba(X)

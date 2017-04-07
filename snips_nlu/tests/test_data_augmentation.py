@@ -74,7 +74,7 @@ class TestDataAugmentation(unittest.TestCase):
         expected_utterances += list(noisy_utterances)
         self.assertListEqual(utterances, expected_utterances)
 
-    @patch("snips_nlu.intent_classifier.data_augmentation.stem")
+    @patch("snips_nlu.intent_classifier.data_augmentation.stem_sentence")
     def test_should_build_training_data_with_stemming(self, mocked_stem):
         # Given
         dataset = SAMPLE_DATASET

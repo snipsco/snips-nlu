@@ -135,6 +135,10 @@ def crf_features(intent_entities, language):
         return default_features(language, intent_entities, use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
+    elif language == Language.DE:
+        return default_features(language, intent_entities, use_stemming=True,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5)
     elif language == Language.KO:
         features = default_features(language, intent_entities,
                                     use_stemming=False,

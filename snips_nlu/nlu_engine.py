@@ -136,10 +136,10 @@ class SnipsNLUEngine(NLUEngine):
             raise ValueError("NLUEngine as no built-in parser nor "
                              "custom parsers")
         parsers = []
-        if self.builtin_parser is not None:
-            parsers.append(self.builtin_parser)
         if self.custom_parsers is not None:
             parsers += self.custom_parsers
+        if self.builtin_parser is not None:
+            parsers.append(self.builtin_parser)
 
         return _parse(text, parsers, self.entities).as_dict()
 

@@ -1,11 +1,12 @@
 from intent_parser import IntentParser
-from snips_nlu.constants import DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY, \
-    CUSTOM_ENGINE
+from snips_nlu.constants import (DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY,
+                                 CUSTOM_ENGINE)
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample)
+from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import instance_to_generic_dict, instance_from_dict
 
@@ -22,11 +23,13 @@ def get_slot_name_to_entity_mapping(dataset):
 
 class CRFIntentParser(IntentParser):
     def __init__(self, intent_classifier, crf_taggers,
-                 slot_name_to_entity_mapping=None):
+                 slot_name_to_entity_mapping=None,
+                 n_augmented_queries=1000):
         super(CRFIntentParser, self).__init__()
         self.intent_classifier = intent_classifier
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
+        self.n_augmented_queries = n_augmented_queries
 
     def get_intent(self, text):
         if not self.fitted:
@@ -65,11 +68,11 @@ class CRFIntentParser(IntentParser):
             custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
         for intent_name in custom_dataset[INTENTS]:
-            intent_utterances = custom_dataset[INTENTS][intent_name][
-                UTTERANCES]
+            augmented_intent_utterances = augment_utterances(
+                dataset, intent_name, self.n_augmented_queries)
             tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
-            crf_samples = [utterance_to_sample(u["data"], tagging_scheme)
-                           for u in intent_utterances]
+            crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
+                           for u in augmented_intent_utterances]
             self.crf_taggers[intent_name] = self.crf_taggers[intent_name].fit(
                 crf_samples)
         return self
@@ -81,7 +84,8 @@ class CRFIntentParser(IntentParser):
             "crf_taggers": {intent_name: tagger.to_dict() for
                             intent_name, tagger in
                             self.crf_taggers.iteritems()},
-            "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping
+            "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
+            "n_augmented_queries": self.n_augmented_queries
         })
         return obj_dict
 
@@ -93,5 +97,7 @@ class CRFIntentParser(IntentParser):
             crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)
                          for intent_name, tagger_dict in
                          obj_dict["crf_taggers"].iteritems()},
-            slot_name_to_entity_mapping=obj_dict["slot_name_to_entity_mapping"]
+            slot_name_to_entity_mapping=obj_dict[
+                "slot_name_to_entity_mapping"],
+            n_augmented_queries=obj_dict["n_augmented_queries"]
         )

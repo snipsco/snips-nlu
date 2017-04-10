@@ -12,7 +12,7 @@ from utils import SAMPLE_DATASET
 
 
 def mocked_default(language, intent_entities, use_stemming,
-                   entities_offsets, entity_keep_prob):
+                   entities_offsets, entity_keep_prob, common_words=None):
     return []
 
 

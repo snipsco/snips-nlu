@@ -1,10 +1,11 @@
 import importlib
 import math
+from copy import deepcopy
 
 from sklearn_crfsuite import CRF
 
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import stem_sentence, stem
+from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)
@@ -12,6 +13,8 @@ from snips_nlu.tokenization import Token
 from snips_nlu.utils import (UnupdatableDict, instance_to_generic_dict,
                              ensure_string, safe_pickle_dumps,
                              safe_pickle_loads)
+
+POSSIBLE_SET_FEATURES = ["collection", "common_words"]
 
 
 def default_crf_model():
@@ -99,9 +102,17 @@ class CRFTagger(object):
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)
+        features_signatures = self.features_signatures
+
+        for signature in features_signatures:
+            for feat in POSSIBLE_SET_FEATURES:
+                if feat in signature["args"] and isinstance(
+                        signature["args"][feat], set):
+                    signature["args"][feat] = list(signature["args"][feat])
+
         obj_dict.update({
             "crf_model": safe_pickle_dumps(self.crf_model),
-            "features_signatures": self.features_signatures,
+            "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
             "fitted": self.fitted,
             "language": self.language.iso_code
@@ -110,9 +121,14 @@ class CRFTagger(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        obj_dict["crf_model"] = ensure_string(obj_dict["crf_model"])
-        crf_model = safe_pickle_loads(obj_dict["crf_model"])
-        features_signatures = obj_dict["features_signatures"]
+        crf_model = safe_pickle_loads(ensure_string(obj_dict["crf_model"]))
+        features_signatures = deepcopy(obj_dict["features_signatures"])
+        for signature in features_signatures:
+            for feat in POSSIBLE_SET_FEATURES:
+                if feat in signature["args"] and isinstance(
+                        signature["args"][feat], list):
+                    signature["args"][feat] = set(signature["args"][feat])
+
         tagging_scheme = TaggingScheme(int(obj_dict["tagging_scheme"]))
         language = Language.from_iso_code(obj_dict["language"])
         fitted = obj_dict["fitted"]

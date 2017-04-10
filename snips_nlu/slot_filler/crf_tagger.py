@@ -3,7 +3,6 @@ import math
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
-
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS
@@ -36,6 +35,16 @@ def get_features_from_signatures(signatures):
     return features
 
 
+def scaled_regularization(n_samples, n_reference=50):
+    c1, c2 = .0, .1
+
+    coef = n_samples / float(n_reference)
+    c1 *= coef
+    c2 *= coef
+
+    return c1, c2
+
+
 class CRFTagger(object):
     def __init__(self, crf_model, features_signatures, tagging_scheme,
                  language):
@@ -63,6 +72,9 @@ class CRFTagger(object):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]
         self.crf_model = self.crf_model.fit(X, Y)
+        c1, c2 = scaled_regularization(len(X))
+        self.crf_model.c1 = c1
+        self.crf_model.c2 = c2
         self.fitted = True
         if verbose:
             transition_features = self.crf_model.transition_features_

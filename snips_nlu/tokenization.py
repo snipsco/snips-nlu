@@ -13,5 +13,5 @@ def tokenize(string):
             for m in TOKEN_REGEX.finditer(string)]
 
 
-def tokenize_sklearn(string):
-    return [m.group() for m in TOKEN_REGEX.finditer(string)]
+def tokenize_light(string):
+    return [token[0] for token in tokenize(string)]

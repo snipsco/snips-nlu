@@ -2,8 +2,7 @@ import re
 from collections import namedtuple
 
 import numpy as np
-
-from crf_resources import get_word_clusters
+from crf_resources import get_word_clusters, get_gazetteer
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
@@ -23,20 +22,20 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features(language, intent_entities, use_stemming,
-                     entities_offsets, entity_keep_prob):
+def default_features(language, intent_entities, use_stemming, entities_offsets,
+                     entity_keep_prob, common_words=None):
     features = [
         {
             "module_name": __name__,
             "factory_name": "get_ngram_fn",
-            "args": {"n": 1, "common_words": None,
+            "args": {"n": 1, "common_words": common_words,
                      "use_stemming": use_stemming},
             "offsets": [-2, -1, 0, 1, 2]
         },
         {
             "module_name": __name__,
             "factory_name": "get_ngram_fn",
-            "args": {"n": 2, "common_words": None,
+            "args": {"n": 2, "common_words": common_words,
                      "use_stemming": use_stemming},
             "offsets": [-2, 1]
         },
@@ -122,11 +121,42 @@ def default_features(language, intent_entities, use_stemming,
     return features
 
 
+def en_features(intent_entities):
+    language = Language.EN
+    common_words = get_gazetteer(language, "top_10000_words")
+    features = default_features(language, intent_entities, use_stemming=True,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5, common_words=common_words)
+    gazetteer_names = ["pois", "cities_us", "cities_world",
+                       "countries", "regions", "states_us", "stop_words",
+                       "street_identifier"]
+    gazetteers = [(name, get_gazetteer(language, name))
+                  for name in gazetteer_names]
+    word_clusters = get_word_clusters(language)
+    features.append({
+        "module_name": __name__,
+        "factory_name": "get_token_is_in",
+        "args": {"collection": word_clusters,
+                 "collection_name": "brown_cluster",
+                 "use_stemming": False},
+        "offsets": (-2, -1, 0, 1)
+    })
+
+    for name, gazetteer in gazetteers:
+        features.append({
+            "module_name": __name__,
+            "factory_name": "get_token_is_in",
+            "args": {"collection": gazetteer,
+                     "collection_name": name,
+                     "use_stemming": True},
+            "offsets": (-2, -1, 0)
+        })
+    return features
+
+
 def crf_features(intent_entities, language):
     if language == Language.EN:
-        return default_features(language, intent_entities, use_stemming=False,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+        return en_features(intent_entities)
     elif language == Language.ES:
         return default_features(language, intent_entities, use_stemming=True,
                                 entities_offsets=(-2, -1, 0),

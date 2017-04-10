@@ -31,7 +31,9 @@ def get_word_clusters(language):
     return WORD_CLUSTERS
 
 
-GAZETTEERS_NAMES = ["top_10000_nouns"]
+GAZETTEERS_NAMES = ["top_10000_nouns", "pois", "cities_us", "cities_world",
+                    "countries", "regions", "states_us", "stop_words",
+                    "street_identifier", "top_10000_words"]
 
 GAZETTEERS = None
 
@@ -39,7 +41,8 @@ GAZETTEERS = None
 def get_gazetteers(language):
     global GAZETTEERS
     gazetteers_paths = dict(
-        (name, os.path.join(get_resources_path(language), "%s.txt" % name))
+        (name,
+         os.path.join(get_resources_path(language), "%s.txt" % name))
         for name in GAZETTEERS_NAMES)
     if GAZETTEERS is None:
         GAZETTEERS = dict()

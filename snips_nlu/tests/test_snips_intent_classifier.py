@@ -8,7 +8,7 @@ from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import EMPTY_DATASET, SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 from snips_nlu.utils import CLASS_NAME, MODULE_NAME, safe_pickle_dumps
 
 
@@ -30,7 +30,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     def test_should_get_none_if_empty_dataset(self):
         # Given
-        dataset = EMPTY_DATASET
+        dataset = empty_dataset(Language.EN)
         classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
         text = "this is a dummy query"
 

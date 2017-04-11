@@ -8,7 +8,7 @@ from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import EMPTY_DATASET, SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 from snips_nlu.utils import CLASS_NAME, MODULE_NAME, safe_pickle_dumps
 
 
@@ -30,7 +30,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     def test_should_get_none_if_empty_dataset(self):
         # Given
-        dataset = EMPTY_DATASET
+        dataset = empty_dataset(Language.EN)
         classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
         text = "this is a dummy query"
 
@@ -52,7 +52,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         mocked_featurizer_to_dict.side_effect = mock_to_dict
 
-        def mock_from_dict(obj_dict):
+        def mock_from_dict(_):
             return Featurizer(Language.EN)
 
         mocked_featurizer_from_dict.side_effect = mock_from_dict
@@ -87,7 +87,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             self.fail("SnipsIntentClassifier should be deserializable from "
                       "dict with unicode values")
 
-        intent_list = [None] + SAMPLE_DATASET[INTENTS].keys()
+        intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
             CLASS_NAME: SnipsIntentClassifier.__name__,
             MODULE_NAME: SnipsIntentClassifier.__module__,
@@ -97,7 +97,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "language_code": SAMPLE_DATASET[LANGUAGE],
             "featurizer": mock_to_dict()
         }
-        self.assertDictEqual(classifier_dict, expected_dict)
+        self.assertEqual(classifier_dict["intent_list"], expected_dict["intent_list"])
 
 
 if __name__ == '__main__':

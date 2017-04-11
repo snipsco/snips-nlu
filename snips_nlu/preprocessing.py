@@ -2,6 +2,7 @@ import glob
 import io
 import os
 
+from snips_nlu.languages import Language
 from snips_nlu.utils import RESOURCES_PATH
 
 _LANGUAGE_STEMS = dict()
@@ -26,7 +27,10 @@ def verbs_stems(language):
 def language_stems(language):
     global _LANGUAGE_STEMS
     if language.iso_code not in _LANGUAGE_STEMS:
-        _LANGUAGE_STEMS[language.iso_code] = verbs_stems(language)
+        if language == Language.KO:
+            _LANGUAGE_STEMS[language.iso_code] = dict()
+        else:
+            _LANGUAGE_STEMS[language.iso_code] = verbs_stems(language)
     return _LANGUAGE_STEMS[language.iso_code]
 
 

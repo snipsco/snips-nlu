@@ -12,6 +12,9 @@ from snips_nlu.constants import (USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE,
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 
+from snips_nlu.slot_filler.ko.specific_features_functions import \
+    language_specific_features as ko_features
+
 TOKEN_NAME = "token"
 LOWER_REGEX = re.compile(r"^[^A-Z]+$")
 UPPER_REGEX = re.compile(r"^[^a-z]+$")
@@ -133,9 +136,12 @@ def crf_features(intent_entities, language):
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.KO:
-        return default_features(language, intent_entities, use_stemming=False,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+        features = default_features(language, intent_entities,
+                                    use_stemming=False,
+                                    entities_offsets=(-2, -1, 0),
+                                    entity_keep_prob=.5)
+        features += ko_features(module_name=__name__)
+        return features
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)
@@ -180,6 +186,8 @@ def get_shape(string):
 
 
 def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
+    if chunk_size < 1:
+        raise ValueError("chunk size should be >= 1")
     if chunk_size > len(word):
         return None
     start = chunk_start - chunk_size if reverse else chunk_start

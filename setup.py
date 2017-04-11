@@ -13,7 +13,7 @@ setup(name="snips_nlu",
       install_requires=[
           "duckling==0.0.14",
           "pytest",
-          "enum34",
+          "enum34==1.1.6",
           "mock",
           "numpy==1.12.1",
           "scipy==0.19.0",

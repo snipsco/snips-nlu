@@ -50,7 +50,7 @@ class TestDataAugmentation(unittest.TestCase):
                                     "text": "this is ",
                                 },
                                 {
-                                    "text": "entity 11",
+                                    "text": "entity 2",
                                     "entity": "entity2",
                                     "slot_name": "slot1"
                                 },
@@ -145,7 +145,7 @@ class TestDataAugmentation(unittest.TestCase):
                     "slot_name": "slot1"
                 },
                 {
-                    "text": " right"
+                    "text": " right "
                 },
                 {
                     "text": "entity 2",
@@ -162,7 +162,9 @@ class TestDataAugmentation(unittest.TestCase):
         }
 
         # When
-        utterance = generate_utterance(context_iterator, entities_iterators)
+        utterance = generate_utterance(context_iterator, entities_iterators,
+                                       noise_iterator=(_ for _ in xrange(0)),
+                                       noise_prob=0)
 
         # Then
         expected_utterance = {
@@ -176,12 +178,87 @@ class TestDataAugmentation(unittest.TestCase):
                     "slot_name": "slot1"
                 },
                 {
-                    "text": " right"
+                    "text": " right "
                 },
                 {
                     "text": "entity two",
                     "entity": "entity2",
                     "slot_name": "slot1"
+                }
+            ]
+        }
+        self.assertEqual(utterance, expected_utterance)
+
+    @patch("random.random")
+    def test_generate_utterance_with_noise(self, mocked_random):
+        # Given
+        context = {
+            "data": [
+                {
+                    "text": "this is ",
+                },
+                {
+                    "text": "entity 11",
+                    "entity": "entity1",
+                    "slot_name": "slot1"
+                },
+                {
+                    "text": " right "
+                },
+                {
+                    "text": "entity 2",
+                    "entity": "entity2",
+                    "slot_name": "slot1"
+                }
+            ]
+        }
+        context_iterator = (context for _ in xrange(1))
+
+        entities_iterators = {
+            "entity1": ("entity one" for _ in xrange(1)),
+            "entity2": ("entity two" for _ in xrange(1)),
+        }
+        noise_iterator = (a for a in ("hi", "hello", "how", "are", "you"))
+
+        global SEED
+        SEED = 0
+
+        def random():
+            global SEED
+            SEED += 1
+            return 0.99 if SEED % 2 == 0 else 0.
+
+        mocked_random.side_effect = random
+
+        # When
+        utterance = generate_utterance(context_iterator, entities_iterators,
+                                       noise_iterator=noise_iterator,
+                                       noise_prob=0.5)
+
+        # Then
+        expected_utterance = {
+            "data": [
+                {
+                    "text": "this is ",
+                },
+                {
+                    "text": "entity one",
+                    "entity": "entity1",
+                    "slot_name": "slot1"
+                },
+                {
+                    "text": " hi"
+                },
+                {
+                    "text": " right "
+                },
+                {
+                    "text": "entity two",
+                    "entity": "entity2",
+                    "slot_name": "slot1"
+                },
+                {
+                    "text": " hello"
                 }
             ]
         }

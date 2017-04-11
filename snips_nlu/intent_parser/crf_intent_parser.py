@@ -23,13 +23,16 @@ def get_slot_name_to_entity_mapping(dataset):
 
 class CRFIntentParser(IntentParser):
     def __init__(self, intent_classifier, crf_taggers,
-                 slot_name_to_entity_mapping=None,
-                 n_augmented_queries=1000):
+                 slot_name_to_entity_mapping=None, n_augmented_queries=200,
+                 noise_prob=0.05, min_noise_size=1, max_noise_size=3):
         super(CRFIntentParser, self).__init__()
         self.intent_classifier = intent_classifier
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
         self.n_augmented_queries = n_augmented_queries
+        self.noise_prob = noise_prob
+        self.min_noise_size = min_noise_size
+        self.max_noise_size = max_noise_size
 
     def get_intent(self, text):
         if not self.fitted:
@@ -63,13 +66,21 @@ class CRFIntentParser(IntentParser):
             slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
     def fit(self, dataset):
+        tagger_languages = [tagger.language for tagger
+                            in self.crf_taggers.values()]
+        language = tagger_languages[0]
+        if not all(l == language for l in tagger_languages[1:]):
+            raise ValueError("Found taggers with different languages")
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.slot_name_to_entity_mapping = get_slot_name_to_entity_mapping(
             custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
         for intent_name in custom_dataset[INTENTS]:
             augmented_intent_utterances = augment_utterances(
-                dataset, intent_name, self.n_augmented_queries)
+                dataset, intent_name, language=language,
+                max_utterances=self.n_augmented_queries,
+                noise_prob=self.noise_prob, min_noise_size=self.min_noise_size,
+                max_noise_size=self.max_noise_size)
             tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
             crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
                            for u in augmented_intent_utterances]
@@ -85,7 +96,10 @@ class CRFIntentParser(IntentParser):
                             intent_name, tagger in
                             self.crf_taggers.iteritems()},
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "n_augmented_queries": self.n_augmented_queries
+            "n_augmented_queries": self.n_augmented_queries,
+            "noise_prob": self.noise_prob,
+            "min_noise_size": self.min_noise_size,
+            "max_noise_size": self.max_noise_size
         })
         return obj_dict
 
@@ -99,5 +113,8 @@ class CRFIntentParser(IntentParser):
                          obj_dict["crf_taggers"].iteritems()},
             slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
-            n_augmented_queries=obj_dict["n_augmented_queries"]
+            noise_prob=obj_dict["noise_prob"],
+            n_augmented_queries=obj_dict["n_augmented_queries"],
+            min_noise_size=obj_dict["min_noise_size"],
+            max_noise_size=obj_dict["max_noise_size"]
         )

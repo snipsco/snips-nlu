@@ -23,16 +23,20 @@ def build_training_data(custom_dataset, builtin_dataset, language,
     all_intents = set(custom_intents.keys() + builtin_intents.keys())
 
     # Creating class mapping
-    noise_class = 0
-    classes_mapping = {intent: i + 1 for i, intent in
-                       enumerate(custom_intents)}
+    intent_index = 0
+    classes_mapping = dict()
+    for intent in custom_intents:
+        classes_mapping[intent] = intent_index
+        intent_index += 1
+
+    noise_class = intent_index
+
     classes_mapping.update({intent: noise_class for intent in builtin_intents})
 
     # Computing dataset statistics
     nb_utterances = [len(intent[UTTERANCES]) for intent in
                      custom_intents.values()]
-    avg_utterances = np.mean(nb_utterances)
-    max_utterances = max(nb_utterances)
+    max_utterances = max(nb_utterances) if len(nb_utterances) > 0 else 0
 
     # Adding custom and builtin utterances
     augmented_utterances = []
@@ -48,15 +52,26 @@ def build_training_data(custom_dataset, builtin_dataset, language,
         utterance_classes += [classes_mapping[intent] for _ in utterances]
 
     # Adding noise
+    avg_utterances = np.mean(nb_utterances) if len(nb_utterances) > 0 else 0
     noise = list(get_subtitles(language))
     noise_size = min(int(noise_factor * avg_utterances), len(noise))
     noisy_utterances = np.random.choice(noise, size=noise_size, replace=False)
     augmented_utterances += list(noisy_utterances)
     utterance_classes += [noise_class for _ in noisy_utterances]
+    if len(noisy_utterances) > 0:
+        classes_mapping['noise'] = noise_class
 
     # Stemming utterances
     if use_stemming:
         augmented_utterances = [stem_sentence(utterance, language) for
                                 utterance in augmented_utterances]
 
-    return augmented_utterances, np.array(utterance_classes)
+    nb_classes = len(set(classes_mapping.values()))
+    intent_mapping = [None for _ in range(nb_classes)]
+    for intent, intent_class in classes_mapping.iteritems():
+        if intent_class == noise_class:
+            intent_mapping[intent_class] = None
+        else:
+            intent_mapping[intent_class] = intent
+
+    return augmented_utterances, np.array(utterance_classes), intent_mapping

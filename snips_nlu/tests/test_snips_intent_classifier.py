@@ -52,7 +52,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         mocked_featurizer_to_dict.side_effect = mock_to_dict
 
-        def mock_from_dict(obj_dict):
+        def mock_from_dict(_):
             return Featurizer(Language.EN)
 
         mocked_featurizer_from_dict.side_effect = mock_from_dict
@@ -87,7 +87,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             self.fail("SnipsIntentClassifier should be deserializable from "
                       "dict with unicode values")
 
-        intent_list = [None] + SAMPLE_DATASET[INTENTS].keys()
+        intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
             CLASS_NAME: SnipsIntentClassifier.__name__,
             MODULE_NAME: SnipsIntentClassifier.__module__,
@@ -97,7 +97,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "language_code": SAMPLE_DATASET[LANGUAGE],
             "featurizer": mock_to_dict()
         }
-        self.assertDictEqual(classifier_dict, expected_dict)
+        self.assertEqual(classifier_dict["intent_list"], expected_dict["intent_list"])
 
 
 if __name__ == '__main__':

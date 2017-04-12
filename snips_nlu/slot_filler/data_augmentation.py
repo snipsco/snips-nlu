@@ -33,7 +33,7 @@ def generate_utterance(contexts_iterator, entities_iterators, noise_iterator,
 
         space_before = " " if has_entity else ""
 
-        if 1. - random.random() <= noise_prob:
+        if noise_prob > 0 and 1. - random.random() <= noise_prob:
             noise = deepcopy(next(noise_iterator))
             context_data.append({"text": space_before + noise + space_after})
     context[DATA] = context_data

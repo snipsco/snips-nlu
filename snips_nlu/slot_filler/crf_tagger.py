@@ -72,10 +72,11 @@ class CRFTagger(object):
     def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]
-        self.crf_model = self.crf_model.fit(X, Y)
+
         c1, c2 = scaled_regularization(len(X))
         self.crf_model.c1 = c1
         self.crf_model.c2 = c2
+        self.crf_model = self.crf_model.fit(X, Y)
         self.fitted = True
         if verbose:
             transition_features = self.crf_model.transition_features_

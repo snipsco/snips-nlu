@@ -5,7 +5,7 @@ from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 ENGINE_TYPE, UTTERANCE_TEXT)
+                                 ENGINE_TYPE)
 from snips_nlu.languages import Language
 from utils import validate_type, validate_key, validate_keys
 
@@ -60,8 +60,6 @@ def validate_and_format_intent(intent, entities):
                                  object_label=ENTITIES)
                     add_entity_value_if_missing(chunk[TEXT],
                                                 entities[chunk[ENTITY]])
-
-        utterance[UTTERANCE_TEXT] = get_text_from_chunks(utterance[DATA])
     return intent
 
 

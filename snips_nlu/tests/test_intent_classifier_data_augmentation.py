@@ -5,9 +5,9 @@ from copy import deepcopy
 from mock import patch
 
 from snips_nlu.constants import (CUSTOM_ENGINE, BUILTIN_ENGINE, INTENTS,
-                                 UTTERANCES, UTTERANCE_TEXT, ENGINE_TYPE, DATA,
-                                 TEXT)
-from snips_nlu.dataset import filter_dataset, validate_and_format_dataset
+                                 UTTERANCES, ENGINE_TYPE, DATA, TEXT)
+from snips_nlu.dataset import filter_dataset, validate_and_format_dataset, \
+    get_text_from_chunks
 from snips_nlu.intent_classifier.data_augmentation import build_training_data
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
@@ -30,7 +30,8 @@ class TestDataAugmentation(unittest.TestCase):
                                                             noise_factor=0)
 
         # Then
-        expected_utterances = [utterance[UTTERANCE_TEXT] for intent in
+        expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
+                               in
                                dataset[INTENTS].values() for utterance in
                                intent[UTTERANCES]]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
@@ -64,9 +65,9 @@ class TestDataAugmentation(unittest.TestCase):
                                                             noise_factor=noise_factor)
 
         # Then
-        expected_utterances = [utterance[UTTERANCE_TEXT] for intent in
-                               dataset[INTENTS].values() for utterance in
-                               intent[UTTERANCES]]
+        expected_utterances = [get_text_from_chunks(utterance[DATA])
+                               for intent in dataset[INTENTS].values()
+                               for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(get_mocked_subtitles(Language.EN))
         noise_size = int(min(noise_factor * avg_utterances, len(noise)))
@@ -99,9 +100,9 @@ class TestDataAugmentation(unittest.TestCase):
                                                             noise_factor=0)
 
         # Then
-        expected_utterances = [utterance[UTTERANCE_TEXT] for intent in
-                               dataset[INTENTS].values() for utterance in
-                               intent[UTTERANCES]]
+        expected_utterances = [get_text_from_chunks(utterance[DATA])
+                               for intent in dataset[INTENTS].values()
+                               for utterance in intent[UTTERANCES]]
         expected_utterances = ["[STEMMED] %s" % utterance for utterance in
                                expected_utterances]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
@@ -159,12 +160,13 @@ class TestDataAugmentation(unittest.TestCase):
         # Then
         max_utterances = max(len(intent[UTTERANCES]) for intent in
                              custom_dataset[INTENTS].values())
-        expected_utterances = [utterance[UTTERANCE_TEXT] for intent in
-                               custom_dataset[INTENTS].values() for utterance
-                               in intent[UTTERANCES]]
-        expected_utterances += [utterance[UTTERANCE_TEXT] for intent in
-                                builtin_dataset[INTENTS].values() for utterance
-                                in intent[UTTERANCES][:max_utterances]]
+        expected_utterances = [get_text_from_chunks(utterance[DATA])
+                               for intent in custom_dataset[INTENTS].values()
+                               for utterance in intent[UTTERANCES]]
+        expected_utterances += [get_text_from_chunks(utterance[DATA])
+                                for intent in builtin_dataset[INTENTS].values()
+                                for utterance in
+                                intent[UTTERANCES][:max_utterances]]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1', None]
         self.assertItemsEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)

@@ -1,9 +1,21 @@
-def language_specific_features(module_name):
+from snips_nlu.languages import Language
+from snips_nlu.slot_filler.default.default_features_functions import \
+    default_features
+
+
+def language_specific_features(module_name, intent_entities):
     """
     :param module_name: name of the module in which feature functions are 
     defined 
+    :param intent_entities: dict containing entities for the related intent
     """
-    features = [
+    language = Language.KO
+    features = default_features(module_name, language, intent_entities,
+                                use_stemming=False,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5)
+
+    features += [
         {
             "module_name": module_name,
             "factory_name": "get_prefix_fn",

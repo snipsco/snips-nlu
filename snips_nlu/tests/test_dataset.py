@@ -348,7 +348,6 @@ class TestDataset(unittest.TestCase):
         dataset = validate_and_format_dataset(dataset)
 
         # Then
-        self.maxDiff = None
         self.assertEqual(dataset, expected_dataset)
 
 

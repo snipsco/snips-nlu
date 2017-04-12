@@ -1,16 +1,16 @@
 import re
 from collections import namedtuple
 
-import numpy as np
-from crf_resources import get_word_clusters, get_gazetteer
+from crf_resources import get_word_clusters
 from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
                        INSIDE_PREFIX)
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
-from snips_nlu.constants import (USE_SYNONYMS, SYNONYMS, DATA, MATCH_RANGE,
-                                 VALUE)
+from snips_nlu.constants import (MATCH_RANGE)
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import stem
-
+from snips_nlu.slot_filler.default.default_features_functions import \
+    default_features
+from snips_nlu.slot_filler.en.specific_features_functions import \
+    language_specific_features as en_features
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
 
@@ -22,160 +22,28 @@ TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def default_features(language, intent_entities, use_stemming, entities_offsets,
-                     entity_keep_prob, common_words=None):
-    features = [
-        {
-            "module_name": __name__,
-            "factory_name": "get_ngram_fn",
-            "args": {"n": 1, "common_words": common_words,
-                     "use_stemming": use_stemming},
-            "offsets": [-2, -1, 0, 1, 2]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "get_ngram_fn",
-            "args": {"n": 2, "common_words": common_words,
-                     "use_stemming": use_stemming},
-            "offsets": [-2, 1]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 1},
-            "offsets": [0]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 2},
-            "offsets": [-1, 0]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 3},
-            "offsets": [-1]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "is_digit",
-            "args": {},
-            "offsets": [-1, 0, 1]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "is_first",
-            "args": {},
-            "offsets": [-2, -1, 0]
-        },
-        {
-            "module_name": __name__,
-            "factory_name": "is_last",
-            "args": {},
-            "offsets": [0, 1, 2]
-        }
-    ]
-
-    # Built-ins
-    for entity in BuiltInEntity:
-        features.append(
-            {
-                "module_name": __name__,
-                "factory_name": "get_built_in_annotation_fn",
-                "args": {
-                    "built_in_entity_label": entity.label,
-                    "language_code": language.iso_code
-                },
-                "offsets": [-2, -1, 0]
-            }
-        )
-
-    # Entity lookup
-    if use_stemming:
-        preprocess = lambda string: stem(string, language)
-    else:
-        preprocess = lambda string: string
-
-    for entity_name, entity in intent_entities.iteritems():
-        if len(entity[DATA]) == 0:
-            continue
-        if entity[USE_SYNONYMS]:
-            collection = [preprocess(s) for d in entity[DATA] for s in
-                          d[SYNONYMS]]
-        else:
-            collection = [preprocess(d[VALUE]) for d in entity[DATA]]
-        collection_size = max(int(entity_keep_prob * len(collection)), 1)
-        collection = np.random.choice(collection, collection_size,
-                                      replace=False).tolist()
-        features.append(
-            {
-                "module_name": __name__,
-                "factory_name": "get_token_is_in",
-                "args": {"collection": collection,
-                         "collection_name": entity_name,
-                         "use_stemming": use_stemming},
-                "offsets": entities_offsets
-            }
-        )
-    return features
-
-
-def en_features(intent_entities):
-    language = Language.EN
-    common_words = get_gazetteer(language, "top_10000_words")
-    features = default_features(language, intent_entities, use_stemming=True,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5, common_words=common_words)
-    gazetteer_names = ["pois", "cities_us", "cities_world",
-                       "countries", "regions", "states_us", "stop_words",
-                       "street_identifier"]
-    gazetteers = [(name, get_gazetteer(language, name))
-                  for name in gazetteer_names]
-    word_clusters = get_word_clusters(language)
-    features.append({
-        "module_name": __name__,
-        "factory_name": "get_token_is_in",
-        "args": {"collection": word_clusters,
-                 "collection_name": "brown_cluster",
-                 "use_stemming": False},
-        "offsets": (-2, -1, 0, 1)
-    })
-
-    for name, gazetteer in gazetteers:
-        features.append({
-            "module_name": __name__,
-            "factory_name": "get_token_is_in",
-            "args": {"collection": gazetteer,
-                     "collection_name": name,
-                     "use_stemming": True},
-            "offsets": (-2, -1, 0)
-        })
-    return features
-
-
 def crf_features(intent_entities, language):
     if language == Language.EN:
-        return en_features(intent_entities)
+        return en_features(module_name=__name__,
+                           intent_entities=intent_entities)
     elif language == Language.ES:
-        return default_features(language, intent_entities, use_stemming=True,
+        return default_features(__name__, language, intent_entities,
+                                use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.FR:
-        return default_features(language, intent_entities, use_stemming=True,
+        return default_features(__name__, language, intent_entities,
+                                use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.DE:
-        return default_features(language, intent_entities, use_stemming=True,
+        return default_features(__name__, language, intent_entities,
+                                use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.KO:
-        features = default_features(language, intent_entities,
-                                    use_stemming=False,
-                                    entities_offsets=(-2, -1, 0),
-                                    entity_keep_prob=.5)
-        features += ko_features(module_name=__name__)
-        return features
+        return ko_features(module_name=__name__,
+                           intent_entities=intent_entities)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)

@@ -136,20 +136,12 @@ class CRFIntentParser(IntentParser):
                             intent_name, tagger in
                             self.crf_taggers.iteritems()},
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "data_augmentation_configs": {
-                l.iso_code: self.data_augmentation_config[l].to_dict()
-                for l in self.data_augmentation_config
-            }
+            "data_augmentation_config": self.data_augmentation_config.to_dict()
         })
         return obj_dict
 
     @classmethod
     def from_dict(cls, obj_dict):
-        data_augmentation_configs = {
-            Language.from_iso_code(l): DataAugmentationConfig.from_dict(
-                obj_dict["data_augmentation_configs"][l])
-            for l in obj_dict["data_augmentation_configs"]
-        }
         return cls(
             intent_classifier=instance_from_dict(
                 obj_dict["intent_classifier"]),
@@ -158,5 +150,6 @@ class CRFIntentParser(IntentParser):
                          obj_dict["crf_taggers"].iteritems()},
             slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
-            data_augmentation_configs=data_augmentation_configs
+            data_augmentation_config=DataAugmentationConfig.from_dict(
+                obj_dict["data_augmentation_config"])
         )

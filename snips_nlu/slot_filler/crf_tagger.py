@@ -3,6 +3,7 @@ import math
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
+
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS
@@ -114,7 +115,7 @@ class CRFTagger(object):
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)
-        features_signatures = self.features_signatures
+        features_signatures = deepcopy(self.features_signatures)
 
         for signature in features_signatures:
             for feat in POSSIBLE_SET_FEATURES:

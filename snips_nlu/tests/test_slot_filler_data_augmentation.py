@@ -3,9 +3,10 @@ import unittest
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.languages import Language
 from snips_nlu.slot_filler.data_augmentation import (
     get_contexts_iterator, get_intent_entities, get_entities_iterators,
-    generate_utterance)
+    generate_utterance, get_noise_iterator)
 
 
 def np_random_permutation(x):
@@ -263,3 +264,37 @@ class TestDataAugmentation(unittest.TestCase):
             ]
         }
         self.assertEqual(utterance, expected_utterance)
+
+    @patch("numpy.random.permutation", side_effect=np_random_permutation)
+    @patch("random.randint")
+    @patch("random.choice")
+    @patch("snips_nlu.slot_filler.data_augmentation.get_subtitles")
+    def test_get_noise_iterator(self, mocked_get_subtitles, mocked_choice,
+                                mocked_randint, _):
+        # Given
+        language = Language.EN
+        min_size, max_size = 2, 3
+
+        def subtitles(language):
+            return ["a b c d", "e", "f g h"]
+
+        mocked_get_subtitles.side_effect = subtitles
+
+        def choice(_):
+            return 2
+
+        mocked_choice.side_effect = choice
+
+        def randint(a, b):
+            return 0
+
+        mocked_randint.side_effect = randint
+
+        it = get_noise_iterator(language, min_size, max_size)
+
+        # When
+        seq = [next(it) for _ in xrange(3)]
+
+        # Then
+        expected_seq = ["a b", "f g", "a b"]
+        self.assertEqual(seq, expected_seq)

@@ -69,12 +69,14 @@ def get_intent_entities(dataset, intent_name):
 
 def get_noise_iterator(language, min_size, max_size):
     subtitles = get_subtitles(language)
-    subtitles_it = cycle(np.random.permutation(list(subtitles)))
-    for subtitle in subtitles_it:
+    tokenized_subtitles = [tokenize(s) for s in subtitles]
+    tokenized_subtitles = [t for t in tokenized_subtitles if
+                           len(t) >= max_size]
+    if len(tokenized_subtitles) == 0:
+        raise ValueError("Could not find long enought subtitles")
+    subtitles_it = cycle(np.random.permutation(tokenized_subtitles))
+    for tokens in subtitles_it:
         size = random.choice(range(min_size, max_size + 1))
-        tokens = tokenize(subtitle)
-        while len(tokens) < size:
-            tokens = tokenize(next(subtitles_it))
         start = random.randint(0, len(tokens) - size)
         yield " ".join(t.value.lower() for t in tokens[start:start + size])
 

@@ -265,7 +265,7 @@ class TestFeatureFunctions(unittest.TestCase):
                 'args': {
                     'collection': collection_1,
                     'collection_name': 'dummy_entity_1',
-                    'use_stemming': False
+                    'use_stemming': True
                 },
                 'factory_name': 'get_token_is_in',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
@@ -275,7 +275,7 @@ class TestFeatureFunctions(unittest.TestCase):
                 'args': {
                     'collection': collection_2,
                     'collection_name': 'dummy_entity_2',
-                    'use_stemming': False
+                    'use_stemming': True
                 },
                 'factory_name': 'get_token_is_in',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',

@@ -13,7 +13,7 @@ from snips_nlu.utils import (instance_to_generic_dict, instance_from_dict,
                              namedtuple_with_defaults)
 
 _DataAugmentationConfig = namedtuple_with_defaults(
-    'DataAugmentationConfig',
+    '_DataAugmentationConfig',
     'max_utterances noise_prob min_noise_size max_noise_size',
     {
         'max_utterances': 0,
@@ -54,17 +54,32 @@ def get_slot_name_to_entity_mapping(dataset):
 class CRFIntentParser(IntentParser):
     def __init__(self, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping=None,
-                 data_augmentation_configs=None):
+                 data_augmentation_config=None):
         super(CRFIntentParser, self).__init__()
+        self.language = None
         self.intent_classifier = intent_classifier
+        self._crf_taggers = None
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
-        if data_augmentation_configs is None:
-            data_augmentation_configs = {
-                language: default_data_augmentation_config(language)
-                for language in Language
-            }
-        self.data_augmentation_configs = data_augmentation_configs
+        if data_augmentation_config is None:
+            data_augmentation_config = default_data_augmentation_config(
+                self.language)
+        self.data_augmentation_config = data_augmentation_config
+
+    @property
+    def crf_taggers(self):
+        return self._crf_taggers
+
+    @crf_taggers.setter
+    def crf_taggers(self, value):
+        if len(value) == 0:
+            raise ValueError("Can't set empty crf_taggers")
+        first_language = value.values()[0].language
+        if len(value) > 1:
+            if any(t.language != first_language for t in value.values()[1:]):
+                raise ValueError("Found taggers with diff<erent languages")
+        self._crf_taggers = value
+        self.language = first_language
 
     def get_intent(self, text):
         if not self.fitted:
@@ -98,20 +113,14 @@ class CRFIntentParser(IntentParser):
             slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
     def fit(self, dataset):
-        tagger_languages = [tagger.language for tagger
-                            in self.crf_taggers.values()]
-        language = tagger_languages[0]
-        if not all(l == language for l in tagger_languages[1:]):
-            raise ValueError("Found taggers with different languages")
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.slot_name_to_entity_mapping = get_slot_name_to_entity_mapping(
             custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
-        data_augmentation_config = self.data_augmentation_configs[language]
         for intent_name in custom_dataset[INTENTS]:
             augmented_intent_utterances = augment_utterances(
-                dataset, intent_name, language=language,
-                **data_augmentation_config.to_dict())
+                dataset, intent_name, language=self.language,
+                **self.data_augmentation_config.to_dict())
             tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
             crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
                            for u in augmented_intent_utterances]
@@ -128,8 +137,8 @@ class CRFIntentParser(IntentParser):
                             self.crf_taggers.iteritems()},
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
             "data_augmentation_configs": {
-                l.iso_code: self.data_augmentation_configs[l].to_dict()
-                for l in self.data_augmentation_configs
+                l.iso_code: self.data_augmentation_config[l].to_dict()
+                for l in self.data_augmentation_config
             }
         })
         return obj_dict

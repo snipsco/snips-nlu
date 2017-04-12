@@ -121,85 +121,6 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(ctx.exception.message,
                          "Language name must be ISO 639-1, found 'eng'")
 
-    def test_should_format_dataset_by_adding_utterance_text(self):
-        # Given
-        dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "this is ",
-                                },
-                                {
-                                    "text": "entity 1",
-                                    "entity": "entity1",
-                                    "slot_name": "slot1"
-                                }
-                            ]
-                        }
-                    ],
-                    "engineType": CUSTOM_ENGINE
-                }
-            },
-            "entities": {
-                "entity1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": []
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False
-                }
-            },
-            "language": "en"
-        }
-
-        expected_dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "this is ",
-                                },
-                                {
-                                    "text": "entity 1",
-                                    "entity": "entity1",
-                                    "slot_name": "slot1"
-                                }
-                            ],
-                            "utterance_text": "this is entity 1"
-                        }
-                    ],
-                    "engineType": CUSTOM_ENGINE
-                }
-            },
-            "entities": {
-                "entity1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["entity 1"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False
-                }
-            },
-            "language": "en"
-        }
-
-        # When
-        dataset = validate_and_format_dataset(dataset)
-
-        # Then
-        self.assertEqual(dataset, expected_dataset)
-
     def test_should_format_dataset_by_adding_synonyms(self):
         # Given
         dataset = {
@@ -306,7 +227,6 @@ class TestDataset(unittest.TestCase):
                                     "slot_name": "slot1"
                                 }
                             ],
-                            "utterance_text": "this is alternative entity 1"
                         },
                         {
                             "data": [
@@ -319,7 +239,6 @@ class TestDataset(unittest.TestCase):
                                     "slot_name": "slot1"
                                 }
                             ],
-                            "utterance_text": "this is entity 1"
                         }
                     ],
                     "engineType": CUSTOM_ENGINE

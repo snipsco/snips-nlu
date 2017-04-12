@@ -1,6 +1,7 @@
 import numpy as np
 
-from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA
+from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.intent_classifier.intent_classifier_resources import \
     get_subtitles
 from snips_nlu.preprocessing import stem_sentence
@@ -47,8 +48,8 @@ def build_training_data(custom_dataset, builtin_dataset, language,
                          :max_utterances]
         else:
             utterances = custom_dataset[INTENTS][intent][UTTERANCES]
-        augmented_utterances += [utterance[UTTERANCE_TEXT] for utterance in
-                                 utterances]
+        augmented_utterances += [get_text_from_chunks(utterance[DATA]) for
+                                 utterance in utterances]
         utterance_classes += [classes_mapping[intent] for _ in utterances]
 
     # Adding noise

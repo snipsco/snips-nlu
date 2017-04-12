@@ -243,26 +243,28 @@ class TestDataAugmentation(unittest.TestCase):
                     "text": "this is ",
                 },
                 {
+                    "text": "hi "
+                },
+                {
                     "text": "entity one",
                     "entity": "entity1",
                     "slot_name": "slot1"
                 },
                 {
-                    "text": " hi"
-                },
-                {
                     "text": " right "
+                },
+
+                {
+                    "text": "hello "
                 },
                 {
                     "text": "entity two",
                     "entity": "entity2",
                     "slot_name": "slot1"
-                },
-                {
-                    "text": " hello"
                 }
             ]
         }
+
         self.assertEqual(utterance, expected_utterance)
 
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
@@ -296,5 +298,5 @@ class TestDataAugmentation(unittest.TestCase):
         seq = [next(it) for _ in xrange(3)]
 
         # Then
-        expected_seq = ["a b", "f g", "a b"]
+        expected_seq = ["a b", "e f", "a b"]
         self.assertEqual(seq, expected_seq)

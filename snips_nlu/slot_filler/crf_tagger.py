@@ -37,7 +37,7 @@ def get_features_from_signatures(signatures):
 
 
 def scaled_regularization(n_samples, n_reference=50):
-    c1, c2 = .25, .25
+    c1, c2 = .0, .0
 
     coef = n_samples / float(n_reference)
     c1 *= coef

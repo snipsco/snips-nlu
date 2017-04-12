@@ -27,7 +27,7 @@ def validate_and_format_dataset(dataset):
         dataset[ENTITIES][entity_name] = validate_and_format_entity(entity)
     for intent_name, intent in dataset[INTENTS].iteritems():
         validate_intent_name(intent_name)
-        validate_and_format_intent(intent, entities)
+        validate_and_format_intent(intent, dataset[ENTITIES])
     validate_language(dataset[LANGUAGE])
     return dataset
 
@@ -58,6 +58,9 @@ def validate_and_format_intent(intent, entities):
                 else:
                     validate_key(entities, chunk[ENTITY],
                                  object_label=ENTITIES)
+                    add_entity_value_if_missing(chunk[TEXT],
+                                                entities[chunk[ENTITY]])
+
         utterance[UTTERANCE_TEXT] = get_text_from_chunks(utterance[DATA])
     return intent
 
@@ -104,3 +107,11 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
         elif len(intent[UTTERANCES]) < min_utterances:
             _dataset[INTENTS].pop(intent_name)
     return _dataset
+
+
+def add_entity_value_if_missing(value, entity):
+    entity_values = set(v for entry in entity[DATA] for v in
+                        entry[SYNONYMS] + [entry[VALUE]])
+    if value in entity_values:
+        return
+    entity[DATA].append({VALUE: value, SYNONYMS: [value]})

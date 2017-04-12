@@ -2,13 +2,43 @@ from intent_parser import IntentParser
 from snips_nlu.constants import (DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY,
                                  CUSTOM_ENGINE)
 from snips_nlu.dataset import filter_dataset
+from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import instance_to_generic_dict, instance_from_dict
+from snips_nlu.utils import (instance_to_generic_dict, instance_from_dict,
+                             namedtuple_with_defaults)
+
+_DataAugmentationConfig = namedtuple_with_defaults(
+    'DataAugmentationConfig',
+    'max_utterances noise_prob min_noise_size max_noise_size',
+    {
+        'max_utterances': 0,
+        'noise_prob': 0.,
+        'min_noise_size': 0,
+        'max_noise_size': 0
+    }
+)
+
+
+class DataAugmentationConfig(_DataAugmentationConfig):
+    def to_dict(self):
+        return self._asdict()
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)
+
+
+def default_data_augmentation_config(language):
+    if language == Language.EN:
+        return DataAugmentationConfig(max_utterances=200, noise_prob=0.05,
+                                      min_noise_size=1, max_noise_size=3)
+    else:
+        return DataAugmentationConfig()
 
 
 def get_slot_name_to_entity_mapping(dataset):
@@ -23,16 +53,18 @@ def get_slot_name_to_entity_mapping(dataset):
 
 class CRFIntentParser(IntentParser):
     def __init__(self, intent_classifier, crf_taggers,
-                 slot_name_to_entity_mapping=None, n_augmented_queries=200,
-                 noise_prob=0.05, min_noise_size=1, max_noise_size=3):
+                 slot_name_to_entity_mapping=None,
+                 data_augmentation_configs=None):
         super(CRFIntentParser, self).__init__()
         self.intent_classifier = intent_classifier
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
-        self.n_augmented_queries = n_augmented_queries
-        self.noise_prob = noise_prob
-        self.min_noise_size = min_noise_size
-        self.max_noise_size = max_noise_size
+        if data_augmentation_configs is None:
+            data_augmentation_configs = {
+                language: default_data_augmentation_config(language)
+                for language in Language
+            }
+        self.data_augmentation_configs = data_augmentation_configs
 
     def get_intent(self, text):
         if not self.fitted:
@@ -75,12 +107,11 @@ class CRFIntentParser(IntentParser):
         self.slot_name_to_entity_mapping = get_slot_name_to_entity_mapping(
             custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
+        data_augmentation_config = self.data_augmentation_configs[language]
         for intent_name in custom_dataset[INTENTS]:
             augmented_intent_utterances = augment_utterances(
                 dataset, intent_name, language=language,
-                max_utterances=self.n_augmented_queries,
-                noise_prob=self.noise_prob, min_noise_size=self.min_noise_size,
-                max_noise_size=self.max_noise_size)
+                **data_augmentation_config.to_dict())
             tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
             crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
                            for u in augmented_intent_utterances]
@@ -96,15 +127,20 @@ class CRFIntentParser(IntentParser):
                             intent_name, tagger in
                             self.crf_taggers.iteritems()},
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "n_augmented_queries": self.n_augmented_queries,
-            "noise_prob": self.noise_prob,
-            "min_noise_size": self.min_noise_size,
-            "max_noise_size": self.max_noise_size
+            "data_augmentation_configs": {
+                l.iso_code: self.data_augmentation_configs[l].to_dict()
+                for l in self.data_augmentation_configs
+            }
         })
         return obj_dict
 
     @classmethod
     def from_dict(cls, obj_dict):
+        data_augmentation_configs = {
+            Language.from_iso_code(l): DataAugmentationConfig.from_dict(
+                obj_dict["data_augmentation_configs"][l])
+            for l in obj_dict["data_augmentation_configs"]
+        }
         return cls(
             intent_classifier=instance_from_dict(
                 obj_dict["intent_classifier"]),
@@ -113,8 +149,5 @@ class CRFIntentParser(IntentParser):
                          obj_dict["crf_taggers"].iteritems()},
             slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
-            noise_prob=obj_dict["noise_prob"],
-            n_augmented_queries=obj_dict["n_augmented_queries"],
-            min_noise_size=obj_dict["min_noise_size"],
-            max_noise_size=obj_dict["max_noise_size"]
+            data_augmentation_configs=data_augmentation_configs
         )

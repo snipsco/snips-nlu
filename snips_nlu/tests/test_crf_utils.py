@@ -2,12 +2,12 @@ import unittest
 
 from mock import patch
 
+from snips_nlu.constants import SLOT_NAME
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
-    io_tags_to_slots, utterance_to_sample, TaggingScheme, negative_tagging,
-    positive_tagging)
-from snips_nlu.slot_filler.crf_utils import (bio_tags_to_slots,
-                                             bilou_tags_to_slots)
+    utterance_to_sample, TaggingScheme, negative_tagging,
+    positive_tagging, end_of_bio_slot, start_of_bio_slot, RANGE,
+    start_of_bilou_slot, end_of_bilou_slot, tags_to_slots)
 from snips_nlu.tokenization import tokenize, Token
 
 
@@ -100,11 +100,12 @@ class TestCRFUtils(unittest.TestCase):
 
         for data in tags:
             # When
-            slots = io_tags_to_slots(data["tags"], tokenize(data["text"]))
+            slots = tags_to_slots(tokenize(data["text"]), data["tags"],
+                                  TaggingScheme.IO)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
-    def test_boi_tags_to_slots(self):
+    def test_bio_tags_to_slots(self):
         # Given
         slot_name = "animal"
         tags = [
@@ -125,8 +126,8 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (7, 16),
-                        "slot_name": slot_name
+                        RANGE: (7, 16),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -136,8 +137,8 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (7, 11),
-                        "slot_name": slot_name
+                        RANGE: (7, 11),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -146,8 +147,8 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 4),
-                        "slot_name": slot_name
+                        RANGE: (0, 4),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -157,8 +158,8 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 9),
-                        "slot_name": slot_name
+                        RANGE: (0, 9),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -171,12 +172,12 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 15),
-                        "slot_name": slot_name
+                        RANGE: (0, 15),
+                        SLOT_NAME: slot_name
                     },
                     {
-                        "range": (16, 25),
-                        "slot_name": slot_name
+                        RANGE: (16, 25),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -186,21 +187,39 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 4),
-                        "slot_name": slot_name
+                        RANGE: (0, 4),
+                        SLOT_NAME: slot_name
                     },
                     {
-                        "range": (5, 10),
-                        "slot_name": slot_name
+                        RANGE: (5, 10),
+                        SLOT_NAME: slot_name
+                    }
+                ]
+            },
+            {
+                "text": "blue bird and white bird",
+                "tags": [BEGINNING_PREFIX + slot_name,
+                         INSIDE_PREFIX + slot_name,
+                         OUTSIDE,
+                         INSIDE_PREFIX + slot_name,
+                         INSIDE_PREFIX + slot_name],
+                "expected_slots": [
+                    {
+                        RANGE: (0, 9),
+                        SLOT_NAME: slot_name
+                    },
+                    {
+                        RANGE: (14, 24),
+                        SLOT_NAME: slot_name
                     }
                 ]
             }
-
         ]
 
         for data in tags:
             # When
-            slots = bio_tags_to_slots(data["tags"], tokenize(data["text"]))
+            slots = tags_to_slots(tokenize(data["text"]), data["tags"],
+                                  TaggingScheme.BIO)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
@@ -225,8 +244,8 @@ class TestCRFUtils(unittest.TestCase):
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (7, 16),
-                        "slot_name": slot_name
+                        RANGE: (7, 16),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -236,8 +255,8 @@ class TestCRFUtils(unittest.TestCase):
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (7, 11),
-                        "slot_name": slot_name
+                        RANGE: (7, 11),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -246,8 +265,8 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [UNIT_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 4),
-                        "slot_name": slot_name
+                        RANGE: (0, 4),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -257,8 +276,8 @@ class TestCRFUtils(unittest.TestCase):
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 9),
-                        "slot_name": slot_name
+                        RANGE: (0, 9),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -271,12 +290,12 @@ class TestCRFUtils(unittest.TestCase):
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 15),
-                        "slot_name": slot_name
+                        RANGE: (0, 15),
+                        SLOT_NAME: slot_name
                     },
                     {
-                        "range": (16, 25),
-                        "slot_name": slot_name
+                        RANGE: (16, 25),
+                        SLOT_NAME: slot_name
                     }
                 ]
             },
@@ -286,21 +305,63 @@ class TestCRFUtils(unittest.TestCase):
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
                     {
-                        "range": (0, 4),
-                        "slot_name": slot_name
+                        RANGE: (0, 4),
+                        SLOT_NAME: slot_name
                     },
                     {
-                        "range": (5, 10),
-                        "slot_name": slot_name
+                        RANGE: (5, 10),
+                        SLOT_NAME: slot_name
                     }
                 ]
-            }
-
+            },
+            {
+                "text": "light bird bird blue bird",
+                "tags": [BEGINNING_PREFIX + slot_name,
+                         INSIDE_PREFIX + slot_name,
+                         UNIT_PREFIX + slot_name,
+                         BEGINNING_PREFIX + slot_name,
+                         INSIDE_PREFIX + slot_name],
+                "expected_slots": [
+                    {
+                        RANGE: (0, 10),
+                        SLOT_NAME: slot_name
+                    },
+                    {
+                        RANGE: (11, 15),
+                        SLOT_NAME: slot_name
+                    },
+                    {
+                        RANGE: (16, 25),
+                        SLOT_NAME: slot_name
+                    }
+                ]
+            },
+            {
+                "text": "bird bird bird",
+                "tags": [LAST_PREFIX + slot_name,
+                         BEGINNING_PREFIX + slot_name,
+                         UNIT_PREFIX + slot_name],
+                "expected_slots": [
+                    {
+                        RANGE: (0, 4),
+                        SLOT_NAME: slot_name
+                    },
+                    {
+                        RANGE: (5, 9),
+                        SLOT_NAME: slot_name
+                    },
+                    {
+                        "range": (10, 14),
+                        SLOT_NAME: slot_name
+                    }
+                ]
+            },
         ]
 
         for data in tags:
             # When
-            slots = bilou_tags_to_slots(data["tags"], tokenize(data["text"]))
+            slots = tags_to_slots(tokenize(data["text"]), data["tags"],
+                                  TaggingScheme.BILOU)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
@@ -389,7 +450,7 @@ class TestCRFUtils(unittest.TestCase):
         self.assertListEqual(tags, expected_tags)
 
     def test_positive_tagging_with_bio(self):
-        # Give
+        # Given
         tagging_scheme = TaggingScheme.BIO
         slot_name = "animal"
         slot_size = 3
@@ -403,7 +464,7 @@ class TestCRFUtils(unittest.TestCase):
         self.assertListEqual(tags, expected_tags)
 
     def test_positive_tagging_with_bilou(self):
-        # Give
+        # Given
         tagging_scheme = TaggingScheme.BILOU
         slot_name = "animal"
         slot_size = 3
@@ -417,7 +478,7 @@ class TestCRFUtils(unittest.TestCase):
         self.assertListEqual(tags, expected_tags)
 
     def test_positive_tagging_with_bilou_unit(self):
-        # Give
+        # Given
         tagging_scheme = TaggingScheme.BILOU
         slot_name = "animal"
         slot_size = 1
@@ -428,3 +489,192 @@ class TestCRFUtils(unittest.TestCase):
         # Then
         expected_tags = [UNIT_PREFIX + slot_name]
         self.assertListEqual(tags, expected_tags)
+
+    def test_start_of_bio_slot(self):
+        # Given
+        tags = [
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            INSIDE_PREFIX,
+            OUTSIDE,
+            INSIDE_PREFIX,
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            OUTSIDE,
+            INSIDE_PREFIX,
+            BEGINNING_PREFIX,
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            BEGINNING_PREFIX,
+            INSIDE_PREFIX,
+            INSIDE_PREFIX
+        ]
+
+        # When
+        starts_of_bio = [start_of_bio_slot(tags, i) for i in range(len(tags))]
+
+        # Then
+        expected_starts = [
+            False,
+            True,
+            False,
+            False,
+            True,
+            False,
+            True,
+            False,
+            True,
+            True,
+            False,
+            True,
+            True,
+            False,
+            False
+        ]
+
+        self.assertListEqual(starts_of_bio, expected_starts)
+
+    def test_end_of_bio_slot(self):
+        # Given
+        tags = [
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            INSIDE_PREFIX,
+            OUTSIDE,
+            INSIDE_PREFIX,
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            OUTSIDE,
+            INSIDE_PREFIX,
+            BEGINNING_PREFIX,
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            BEGINNING_PREFIX,
+            INSIDE_PREFIX,
+            INSIDE_PREFIX
+        ]
+
+        # When
+        ends_of_bio = [end_of_bio_slot(tags, i) for i in range(len(tags))]
+
+        # Then
+        expected_ends = [
+            False,
+            False,
+            True,
+            False,
+            True,
+            False,
+            True,
+            False,
+            True,
+            True,
+            False,
+            True,
+            False,
+            False,
+            True
+        ]
+
+        self.assertListEqual(ends_of_bio, expected_ends)
+
+    def test_start_of_bilou_slot(self):
+        # Given
+        tags = [
+            OUTSIDE,
+            LAST_PREFIX,
+            UNIT_PREFIX,
+            BEGINNING_PREFIX,
+            UNIT_PREFIX,
+            INSIDE_PREFIX,
+            LAST_PREFIX,
+            LAST_PREFIX,
+            UNIT_PREFIX,
+            UNIT_PREFIX,
+            LAST_PREFIX,
+            OUTSIDE,
+            LAST_PREFIX,
+            BEGINNING_PREFIX,
+            INSIDE_PREFIX,
+            INSIDE_PREFIX,
+            LAST_PREFIX
+        ]
+
+        # When
+        starts_of_bilou = [start_of_bilou_slot(tags, i) for i in
+                           range(len(tags))]
+
+        # Then
+        expected_starts = [
+            False,
+            True,
+            True,
+            True,
+            True,
+            True,
+            False,
+            True,
+            True,
+            True,
+            True,
+            False,
+            True,
+            True,
+            False,
+            False,
+            False
+        ]
+
+        self.assertListEqual(starts_of_bilou, expected_starts)
+
+    def test_end_of_bilou_slot(self):
+        # Given
+        tags = [
+            OUTSIDE,
+            LAST_PREFIX,
+            UNIT_PREFIX,
+            BEGINNING_PREFIX,
+            UNIT_PREFIX,
+            INSIDE_PREFIX,
+            LAST_PREFIX,
+            LAST_PREFIX,
+            UNIT_PREFIX,
+            UNIT_PREFIX,
+            LAST_PREFIX,
+            OUTSIDE,
+            INSIDE_PREFIX,
+            BEGINNING_PREFIX,
+            OUTSIDE,
+            BEGINNING_PREFIX,
+            INSIDE_PREFIX,
+            INSIDE_PREFIX,
+            LAST_PREFIX
+        ]
+
+        # When
+        ends_of_bilou = [end_of_bilou_slot(tags, i) for i in range(len(tags))]
+
+        # Then
+        expected_ends = [
+            False,
+            True,
+            True,
+            True,
+            True,
+            False,
+            True,
+            True,
+            True,
+            True,
+            True,
+            False,
+            True,
+            True,
+            False,
+            False,
+            False,
+            False,
+            True
+        ]
+
+        self.assertListEqual(ends_of_bilou, expected_ends)

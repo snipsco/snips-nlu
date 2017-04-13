@@ -95,7 +95,7 @@ def default_features(module_name, language, intent_entities, use_stemming, entit
         features.append(
             {
                 "module_name": module_name,
-                "factory_name": "get_token_is_in",
+                "factory_name": "get_token_is_in_fn",
                 "args": {"collection": collection,
                          "collection_name": entity_name,
                          "use_stemming": use_stemming},

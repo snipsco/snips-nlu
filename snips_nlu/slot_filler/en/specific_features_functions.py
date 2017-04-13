@@ -1,5 +1,6 @@
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_resources import get_gazetteer
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 
@@ -26,7 +27,9 @@ def language_specific_features(module_name, intent_entities):
             "module_name": module_name,
             "factory_name": "get_is_in_gazetteer_fn",
             "args": {"gazetteer_name": gazetteer_name,
-                     "language_code": language.iso_code},
+                     "language_code": language.iso_code,
+                     "tagging_scheme_code": TaggingScheme.BILOU.value,
+                     "use_stemming": False},
             "offsets": (-1, 0, 1)
         })
 

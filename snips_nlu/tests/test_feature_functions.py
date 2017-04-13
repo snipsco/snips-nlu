@@ -5,10 +5,10 @@ from mock import patch
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
-    SYNONYMS, DATA, VALUE
+    SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
-    LAST_PREFIX, BEGINNING_PREFIX
+    LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
@@ -82,12 +82,14 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_token_is_in(self):
         # Given
-        collection = {"bIrd"}
-        tokens = tokenize("i m a bird")
-        expected_features = [None, None, None, "1"]
+        collection = {"bIrd", "BLUE bird"}
+        tokens = tokenize("i m a blue bird")
+        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
         # When
+        scheme_code = TaggingScheme.BILOU.value
         feature_fn = get_token_is_in_fn(collection, "animal",
-                                        use_stemming=False)
+                                        use_stemming=False,
+                                        tagging_scheme_code=scheme_code)
 
         # Then
         self.assertEqual(expected_features,
@@ -103,7 +105,8 @@ class TestFeatureFunctions(unittest.TestCase):
         tokens = tokenize(text)
         feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
                                             Language.EN.iso_code,
-                                            TaggingScheme.BILOU.value)
+                                            TaggingScheme.BILOU.value,
+                                            use_stemming=False)
 
         # When
         features = [feature_fn.function(tokens, i) for i in
@@ -114,17 +117,29 @@ class TestFeatureFunctions(unittest.TestCase):
                              None, None, None, None, UNIT_PREFIX]
         self.assertListEqual(features, expected_features)
 
-    def test_get_built_in_annotation_fn(self):
+    @patch('snips_nlu.slot_filler.feature_functions.get_built_in_entities')
+    def test_get_built_in_annotation_fn(self, mocked_get_built_in_entities):
         # Given
-        language = "en"
-        language = Language.from_iso_code(language)
-        text = "i ll be there tomorrow at noon   is that ok?"
-        tokens = tokenize(text)
-        built_in = BuiltInEntity.DATETIME
-        feature_fn = get_built_in_annotation_fn(built_in.label,
-                                                language.iso_code)
-        expected_features = [None, None, None, None, "1", "1", "1", None, None,
-                             None]
+        input_text = u"i ll be there tomorrow at noon   is that ok"
+
+        def mocked_built_in_entities(text, language, scope):
+            if text == input_text:
+                return [
+                    {
+                        MATCH_RANGE: (14, 30),
+                        VALUE: u"tomorrow at noon",
+                        ENTITY: BuiltInEntity.DATETIME
+                    }
+                ]
+            return []
+
+        mocked_get_built_in_entities.side_effect = mocked_built_in_entities
+        tokens = tokenize(input_text)
+        feature_fn = get_built_in_annotation_fn(BuiltInEntity.DATETIME.label,
+                                                Language.EN.iso_code,
+                                                TaggingScheme.BILOU.value)
+        expected_features = [None, None, None, None, BEGINNING_PREFIX,
+                             INSIDE_PREFIX, LAST_PREFIX, None, None, None]
 
         # When
         features = [feature_fn.function(tokens, i)
@@ -229,9 +244,10 @@ class TestFeatureFunctions(unittest.TestCase):
         expected_signatures = [
             {
                 'args': {
-                    'collection': collection_1,
+                    'tokens_collection': collection_1,
                     'collection_name': 'dummy_entity_1',
-                    'use_stemming': True
+                    'use_stemming': True,
+                    'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
@@ -239,9 +255,10 @@ class TestFeatureFunctions(unittest.TestCase):
             },
             {
                 'args': {
-                    'collection': collection_2,
+                    'tokens_collection': collection_2,
                     'collection_name': 'dummy_entity_2',
-                    'use_stemming': True
+                    'use_stemming': True,
+                    'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',

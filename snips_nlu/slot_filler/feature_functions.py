@@ -201,25 +201,43 @@ def get_word_cluster_fn(cluster_name, language_code):
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
-def get_token_is_in_fn(collection, collection_name, use_stemming):
-    lowered_collection = set([c.lower() for c in collection])
+def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
+                       tagging_scheme_code, max_ngram_size=None):
+    lowered_collection = set([c.lower() for c in tokens_collection])
+    tagging_scheme = TaggingScheme(tagging_scheme_code)
+
+    def transform(token):
+        return token.stem if use_stemming else token.value
 
     def token_is_in(tokens, token_index):
-        token_string = tokens[token_index].stem.lower() if use_stemming \
-            else tokens[token_index].value.lower()
-        return "1" if token_string in lowered_collection else None
+        normalized_tokens = map(lambda t: transform(t).lower(), tokens)
+        ngrams = get_all_ngrams(normalized_tokens,
+                                max_ngram_size=max_ngram_size,
+                                keep_only_index=token_index)
+        ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
+        ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
+                        reverse=True)
+        for ngram in ngrams:
+            if ngram[NGRAM] in lowered_collection:
+                return get_scheme_prefix(token_index,
+                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         tagging_scheme)
+        return None
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
 def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
-                           max_ngram_size=None):
+                           use_stemming, max_ngram_size=None):
     language = Language.from_iso_code(language_code)
     gazetteer = get_gazetteer(language, gazetteer_name)
     tagging_scheme = TaggingScheme(tagging_scheme_code)
 
+    def transform(token):
+        return token.stem if use_stemming else token.value
+
     def is_in_gazetter(tokens, token_index):
-        normalized_tokens = map(lambda t: t.value.lower(), tokens)
+        normalized_tokens = map(lambda t: transform(t).lower(), tokens)
         ngrams = get_all_ngrams(normalized_tokens,
                                 max_ngram_size=max_ngram_size,
                                 keep_only_index=token_index)
@@ -237,24 +255,35 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
                                is_in_gazetter)
 
 
-def get_built_in_annotation_fn(built_in_entity_label, language_code):
+def get_built_in_annotation_fn(built_in_entity_label, language_code,
+                               tagging_scheme_code):
     language = Language.from_iso_code(language_code)
+    tagging_scheme = TaggingScheme(tagging_scheme_code)
     built_in_entity = BuiltInEntity.from_label(built_in_entity_label)
     feature_name = "built-in-%s" % built_in_entity.value["label"]
 
     def built_in_annotation(tokens, token_index):
         text = initial_string_from_tokens(tokens)
-
-        built_ins = get_built_in_entities(text, language,
-                                          scope=[built_in_entity])
         start = tokens[token_index].start
         end = tokens[token_index].end
-        for ent in built_ins:
-            range_start = ent[MATCH_RANGE][0]
-            range_end = ent[MATCH_RANGE][1]
-            if (range_start <= start < range_end) \
-                    and (range_start < end <= range_end):
-                return "1"
+
+        builtin_entities = get_built_in_entities(text, language,
+                                                 scope=[built_in_entity])
+
+        builtin_entities = filter(
+            lambda _ent: (_ent[MATCH_RANGE][0] <= start < _ent[MATCH_RANGE][
+                1]) and (_ent[MATCH_RANGE][0] < end <= _ent[MATCH_RANGE][1]),
+            builtin_entities)
+
+        for ent in builtin_entities:
+            entity_start = ent[MATCH_RANGE][0]
+            entity_end = ent[MATCH_RANGE][1]
+            indexes = []
+            for index, token in enumerate(tokens):
+                if (entity_start <= token.start < entity_end) \
+                        and (entity_start < token.end <= entity_end):
+                    indexes.append(index)
+            return get_scheme_prefix(token_index, indexes, tagging_scheme)
 
     return BaseFeatureFunction(feature_name, built_in_annotation)
 

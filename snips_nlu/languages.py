@@ -37,7 +37,7 @@ class Language(Enum):
             ent = cls.language_by_iso_code[iso_code]
         except KeyError:
             if default is None:
-                raise KeyError("Unknown entity '%s'" % iso_code)
+                raise KeyError("Unknown iso_code '%s'" % iso_code)
             else:
                 return default
         return ent
@@ -59,7 +59,7 @@ class Language(Enum):
             ent = cls.language_by_duckling_code[duckling_code]
         except KeyError:
             if default is None:
-                raise KeyError("Unknown duckling '%s'" % duckling_code)
+                raise KeyError("Unknown duckling_code '%s'" % duckling_code)
             else:
                 return default
         return ent

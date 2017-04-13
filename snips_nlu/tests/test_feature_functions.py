@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+from mock import patch
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
@@ -9,7 +10,8 @@ from snips_nlu.languages import Language
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
-    get_token_is_in_fn, get_built_in_annotation_fn, crf_features)
+    get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
+    get_is_in_gazetteer_fn)
 from snips_nlu.tokenization import tokenize
 
 
@@ -50,9 +52,6 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(expected_features, features)
 
-    # def test_shape_ngrams(self):
-    #     assert False
-
     def test_prefix(self):
         # Given
         tokens = tokenize("AbCde")
@@ -92,6 +91,24 @@ class TestFeatureFunctions(unittest.TestCase):
         self.assertEqual(expected_features,
                          [feature_fn.function(tokens, i)
                           for i in xrange(len(tokens))])
+
+    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
+    def test_is_in_gazetteer(self, mocked_get_gazetteer):
+        # Given
+        gazetteer = {"bird", "eagle", "blue bird"}
+        mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
+        text = "This is a blue bird flying"
+        tokens = tokenize(text)
+        feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
+                                            Language.EN.iso_code)
+
+        # When
+        features = [feature_fn.function(tokens, i) for i in
+                    xrange(len(tokens))]
+
+        # Then
+        expected_features = [None, None, None, "1", "1", None]
+        self.assertListEqual(features, expected_features)
 
     def test_get_built_in_annotation_fn(self):
         # Given

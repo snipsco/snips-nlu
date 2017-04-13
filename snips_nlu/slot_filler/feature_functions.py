@@ -1,14 +1,15 @@
 import re
 from collections import namedtuple
 
-from crf_resources import get_word_clusters
+from crf_resources import get_word_clusters, get_gazetteer
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
-from snips_nlu.constants import (MATCH_RANGE)
+from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
     language_specific_features as en_features
+from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
 
@@ -210,9 +211,18 @@ def get_token_is_in_fn(collection, collection_name, use_stemming):
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
-def get_is_in_gazetteer_fn(gazetteer_name, max_ngram_size=None):
+def get_is_in_gazetteer_fn(gazetteer_name, language_code, max_ngram_size=None):
+    language = Language.from_iso_code(language_code)
+    gazetteer = get_gazetteer(language, gazetteer_name)
+
     def is_in_gazetter(tokens, token_index):
-        pass
+        string_tokens = map(lambda t: t.value, tokens)
+        ngrams = get_all_ngrams(string_tokens, max_ngram_size=max_ngram_size,
+                                keep_only_index=token_index)
+        ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
+        if any(ngram[NGRAM] in gazetteer for ngram in ngrams):
+            return "1"
+        return None
 
     return BaseFeatureFunction("is_in_gazetteer_%s" % gazetteer_name,
                                is_in_gazetter)

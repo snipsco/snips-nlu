@@ -64,7 +64,7 @@ class TestFeaturesUtils(unittest.TestCase):
         tokens = ["this", "is", "a", "simple", "sentence"]
 
         # When
-        ngrams = get_all_ngrams(tokens, keep_only_index=2)
+        ngrams = get_all_ngrams(tokens, containing_index=2)
 
         # Then
         expected_ngrams = [

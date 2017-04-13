@@ -10,10 +10,11 @@ from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
     LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
-    char_range_to_token_range, get_prefix_fn, get_suffix_fn, get_ngram_fn,
+    get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
     get_is_in_gazetteer_fn)
+from snips_nlu.slot_filler.features_utils import char_range_to_token_range
 from snips_nlu.tokenization import tokenize
 
 

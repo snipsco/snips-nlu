@@ -1,4 +1,3 @@
-import re
 from collections import namedtuple
 
 from crf_resources import get_word_clusters, get_gazetteer
@@ -10,14 +9,12 @@ from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
     language_specific_features as en_features
-from snips_nlu.slot_filler.features_utils import get_all_ngrams
+from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape, \
+    get_word_chunk, initial_string_from_tokens
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
 
 TOKEN_NAME = "token"
-LOWER_REGEX = re.compile(r"^[^A-Z]+$")
-UPPER_REGEX = re.compile(r"^[^a-z]+$")
-TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
@@ -47,65 +44,6 @@ def crf_features(intent_entities, language):
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)
-
-
-# Helpers for base feature functions and factories
-def char_range_to_token_range(char_range, tokens_as_string):
-    start, end = char_range
-    # TODO: if possible avoid looping on the tokens for better efficiency
-    current_length = 0
-    token_start = None
-    for i, t in enumerate(tokens_as_string):
-        if current_length == start:
-            token_start = i
-            break
-        current_length += len(t) + 1
-    if token_start is None:
-        return
-
-    token_end = None
-    current_length -= 1  # Remove the last space
-    for i, t in enumerate(tokens_as_string[token_start:]):
-        current_length += len(t) + 1
-        if current_length == end:
-            token_end = token_start + i + 1
-            break
-    if token_end is None:
-        return
-    return token_start, token_end
-
-
-def get_shape(string):
-    if LOWER_REGEX.match(string):
-        shape = "xxx"
-    elif UPPER_REGEX.match(string):
-        shape = "XXX"
-    elif TITLE_REGEX.match(string):
-        shape = "Xxx"
-    else:
-        shape = "xX"
-    return shape
-
-
-def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
-    if chunk_size < 1:
-        raise ValueError("chunk size should be >= 1")
-    if chunk_size > len(word):
-        return None
-    start = chunk_start - chunk_size if reverse else chunk_start
-    end = chunk_start if reverse else chunk_start + chunk_size
-    return word[start:end]
-
-
-def initial_string_from_tokens(tokens):
-    current_index = 0
-    s = ""
-    for t in tokens:
-        if t.start > current_index:
-            s += " " * (t.start - current_index)
-        s += t.value
-        current_index = t.end
-    return s
 
 
 # Base feature functions and factories
@@ -213,7 +151,7 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
         normalized_tokens = map(lambda t: transform(t).lower(), tokens)
         ngrams = get_all_ngrams(normalized_tokens,
                                 max_ngram_size=max_ngram_size,
-                                keep_only_index=token_index)
+                                containing_index=token_index)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)
@@ -240,7 +178,7 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
         normalized_tokens = map(lambda t: transform(t).lower(), tokens)
         ngrams = get_all_ngrams(normalized_tokens,
                                 max_ngram_size=max_ngram_size,
-                                keep_only_index=token_index)
+                                containing_index=token_index)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)

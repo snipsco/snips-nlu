@@ -212,53 +212,6 @@ def get_token_is_in(collection, collection_name, use_stemming):
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
-def get_regex_match_fn(regex, match_name, use_bilou=False):
-    def regex_match(tokens, token_index):
-        text = " ".join(t.value for t in tokens).lower()
-
-        match = regex.search(text)
-        if match is None:
-            return
-
-        if token_index == 0:
-            token_start = 0
-        else:
-            token_start = len(" ".join(t.value for t in tokens[:token_index])
-                              ) + 1
-        token_end = token_start + len(tokens[token_index].value)
-
-        match_start = match.start()
-        match_end = match.end()
-        if not (match_start <= token_start <= match_end
-                and match_start <= token_end <= match_end):
-            return
-
-        match_token_range = char_range_to_token_range(
-            (match_start, match_end), [t.value for t in tokens])
-        if match_token_range is None:
-            return
-        match_token_start, match_token_end = match_token_range
-
-        token_position_in_match = token_index - match_token_start
-
-        if token_position_in_match == 0:
-            if use_bilou and token_index == match_token_end - 1:
-                feature = UNIT_PREFIX + match_name
-            else:
-                feature = BEGINNING_PREFIX + match_name
-        elif token_index == match_token_end - 1:
-            if use_bilou:
-                feature = LAST_PREFIX + match_name
-            else:
-                feature = INSIDE_PREFIX + match_name
-        else:
-            feature = INSIDE_PREFIX + match_name
-
-        return feature
-
-    return BaseFeatureFunction("match_%s" % match_name, regex_match)
-
-
 def get_built_in_annotation_fn(built_in_entity_label, language_code):
     language = Language.from_iso_code(language_code)
     built_in_entity = BuiltInEntity.from_label(built_in_entity_label)

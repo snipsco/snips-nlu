@@ -3,7 +3,6 @@ import unittest
 
 import numpy as np
 
-
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE
@@ -82,52 +81,6 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(prefix, expected_suffixes[i - 1])
 
-    def test_regex_match(self):
-        # Given
-        terms = ["bird cow rat", "dog pig", "cat"]
-        pattern = r"|".join(re.escape(t) for t in terms)
-        regex = re.compile(pattern, re.IGNORECASE)
-
-        texts = {
-            "there is nothing here": [None, None, None, None],
-            "there s a bird cow rat here": [None, None, None, "B-animal",
-                                            "I-animal", "I-animal", None],
-            "I m a cat": [None, None, None, "B-animal"]
-        }
-
-        # When
-        feature_fn = get_regex_match_fn(regex, "animal", use_bilou=False)
-
-        # Then
-        for text, features in texts.iteritems():
-            tokens = tokenize(text)
-            self.assertEqual(features,
-                             [feature_fn.function(tokens, i)
-                              for i in xrange(len(tokens))])
-
-    def test_regex_match_with_bilou(self):
-        # Given
-        terms = ["bird cow rat", "dog pig", "cat"]
-        pattern = r"|".join(re.escape(t) for t in terms)
-        regex = re.compile(pattern, re.IGNORECASE)
-
-        texts = {
-            "there is nothing here": [None, None, None, None],
-            "there s a bird cow rat here": [None, None, None, "B-animal",
-                                            "I-animal", "L-animal", None],
-            "I m a cat": [None, None, None, "U-animal"]
-        }
-
-        # When
-        feature_fn = get_regex_match_fn(regex, "animal", use_bilou=True)
-
-        # Then
-        for text, features in texts.iteritems():
-            tokens = tokenize(text)
-            self.assertEqual(features,
-                             [feature_fn.function(tokens, i)
-                              for i in xrange(len(tokens))])
-
     def test_token_is_in(self):
         # Given
         collection = {"bIrd"}
@@ -201,14 +154,7 @@ class TestFeatureFunctions(unittest.TestCase):
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
 
-    # @patch("snips_nlu.slot_filler.feature_functions.default_features")
-    def test_crf_features(self, ):
-        def mocked_default(language, intent_entities, use_stemming,
-                           entities_offsets, entity_keep_prob):
-            return []
-
-        # mocked_default_features.side_effect = mocked_default
-
+    def test_crf_features(self):
         intent_entities = {
             "dummy_entity_1": {
                 AUTOMATICALLY_EXTENSIBLE: False,

@@ -1,19 +1,31 @@
 from duckling import core
 from enum import Enum
 
-from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, LABEL, DUCKLING_DIM
 from utils import LimitedSizeDict, classproperty
 
 core.load()
 
-LABEL = "label"
-DUCKLING_DIM = "duckling_dim"
-
 
 class BuiltInEntity(Enum):
     DATETIME = {LABEL: "snips/datetime", DUCKLING_DIM: "time"}
+
     DURATION = {LABEL: "snips/duration", DUCKLING_DIM: "duration"}
+
+    TIME_CYCLE = {LABEL: "snips/time-cycle", DUCKLING_DIM: "cycle"}
+
     NUMBER = {LABEL: "snips/number", DUCKLING_DIM: "number"}
+
+    ORDINAL = {LABEL: "snips/ordinal", DUCKLING_DIM: "ordinal"}
+
+    TEMPERATURE = {LABEL: "snips/temperature", DUCKLING_DIM: "temperature"}
+
+    UNIT = {LABEL: "snips/unit", DUCKLING_DIM: "unit"}
+
+    AMOUNT_OF_MONEY = {
+        LABEL: "snips/amount-of-money",
+        DUCKLING_DIM: "amount-of-money"
+    }
 
     @property
     def label(self):
@@ -82,6 +94,10 @@ def get_built_in_entities(text, language, scope=None):
         dims = core.get_dims(language)
     else:
         dims = scope_to_dims(scope)
+
+    # Don't detect entities that are not BuiltInEntity
+    dims = [d for d in dims if
+            d in BuiltInEntity.built_in_entity_by_duckling_dim]
 
     if (text, language) not in _DUCKLING_CACHE:
         parse = core.parse(language, text)

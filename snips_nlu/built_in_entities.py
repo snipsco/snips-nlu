@@ -95,6 +95,10 @@ def get_built_in_entities(text, language, scope=None):
     else:
         dims = scope_to_dims(scope)
 
+    # Don't detect entities that are not BuiltInEntity
+    dims = [d for d in dims if
+            d in BuiltInEntity.built_in_entity_by_duckling_dim]
+
     if (text, language) not in _DUCKLING_CACHE:
         parse = core.parse(language, text)
         _DUCKLING_CACHE[(text, language)] = parse

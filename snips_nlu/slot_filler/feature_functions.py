@@ -2,8 +2,6 @@ import re
 from collections import namedtuple
 
 from crf_resources import get_word_clusters
-from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
-                       INSIDE_PREFIX)
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE)
 from snips_nlu.languages import Language
@@ -201,7 +199,7 @@ def get_word_cluster_fn(cluster_name, language_code):
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
-def get_token_is_in(collection, collection_name, use_stemming):
+def get_token_is_in_fn(collection, collection_name, use_stemming):
     lowered_collection = set([c.lower() for c in collection])
 
     def token_is_in(tokens, token_index):
@@ -210,6 +208,14 @@ def get_token_is_in(collection, collection_name, use_stemming):
         return "1" if token_string in lowered_collection else None
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
+
+
+def get_is_in_gazetteer_fn(gazetteer_name, max_ngram_size=None):
+    def is_in_gazetter(tokens, token_index):
+        pass
+
+    return BaseFeatureFunction("is_in_gazetteer_%s" % gazetteer_name,
+                               is_in_gazetter)
 
 
 def get_built_in_annotation_fn(built_in_entity_label, language_code):
@@ -225,8 +231,10 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code):
         start = tokens[token_index].start
         end = tokens[token_index].end
         for ent in built_ins:
-            if (ent[MATCH_RANGE][0] <= start < ent[MATCH_RANGE][1]
-                and ent[MATCH_RANGE][0] < end <= ent[MATCH_RANGE][1]):
+            range_start = ent[MATCH_RANGE][0]
+            range_end = ent[MATCH_RANGE][1]
+            if (range_start <= start < range_end) \
+                    and (range_start < end <= range_end):
                 return "1"
 
     return BaseFeatureFunction(feature_name, built_in_annotation)

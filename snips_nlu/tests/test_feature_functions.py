@@ -1,4 +1,3 @@
-import re
 import unittest
 
 import numpy as np
@@ -8,10 +7,9 @@ from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.feature_functions import (
-    char_range_to_token_range, get_regex_match_fn, get_prefix_fn,
-    get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME,
-    BaseFeatureFunction, get_token_is_in, get_built_in_annotation_fn,
-    crf_features)
+    char_range_to_token_range, get_prefix_fn, get_suffix_fn, get_ngram_fn,
+    create_feature_function, TOKEN_NAME, BaseFeatureFunction,
+    get_token_is_in_fn, get_built_in_annotation_fn, crf_features)
 from snips_nlu.tokenization import tokenize
 
 
@@ -87,7 +85,8 @@ class TestFeatureFunctions(unittest.TestCase):
         tokens = tokenize("i m a bird")
         expected_features = [None, None, None, "1"]
         # When
-        feature_fn = get_token_is_in(collection, "animal", use_stemming=False)
+        feature_fn = get_token_is_in_fn(collection, "animal",
+                                        use_stemming=False)
 
         # Then
         self.assertEqual(expected_features,

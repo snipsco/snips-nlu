@@ -5,6 +5,7 @@ from crf_resources import get_word_clusters, get_gazetteer
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
+from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
@@ -211,9 +212,11 @@ def get_token_is_in_fn(collection, collection_name, use_stemming):
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
-def get_is_in_gazetteer_fn(gazetteer_name, language_code, max_ngram_size=None):
+def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
+                           max_ngram_size=None):
     language = Language.from_iso_code(language_code)
     gazetteer = get_gazetteer(language, gazetteer_name)
+    tagging_scheme = TaggingScheme(tagging_scheme_code)
 
     def is_in_gazetter(tokens, token_index):
         normalized_tokens = map(lambda t: t.value.lower(), tokens)
@@ -221,8 +224,13 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, max_ngram_size=None):
                                 max_ngram_size=max_ngram_size,
                                 keep_only_index=token_index)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
-        if any(ngram[NGRAM] in gazetteer for ngram in ngrams):
-            return "1"
+        ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
+                        reverse=True)
+        for ngram in ngrams:
+            if ngram[NGRAM] in gazetteer:
+                return get_scheme_prefix(token_index,
+                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         tagging_scheme)
         return None
 
     return BaseFeatureFunction("is_in_gazetteer_%s" % gazetteer_name,

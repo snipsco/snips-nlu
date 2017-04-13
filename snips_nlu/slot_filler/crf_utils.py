@@ -163,3 +163,24 @@ def utterance_to_sample(query_data, tagging_scheme):
             tags += positive_tagging(tagging_scheme, chunk[SLOT_NAME],
                                      len(chunk_tokens))
     return {TOKENS: tokens, TAGS: tags}
+
+
+def get_scheme_prefix(index, indexes, tagging_scheme):
+    if tagging_scheme == TaggingScheme.IO:
+        return INSIDE_PREFIX
+    elif tagging_scheme == TaggingScheme.BIO:
+        if index == indexes[0]:
+            return BEGINNING_PREFIX
+        else:
+            return INSIDE_PREFIX
+    elif tagging_scheme == TaggingScheme.BILOU:
+        if len(indexes) == 1:
+            return UNIT_PREFIX
+        if index == indexes[0]:
+            return BEGINNING_PREFIX
+        if index == indexes[-1]:
+            return LAST_PREFIX
+        else:
+            return INSIDE_PREFIX
+    else:
+        raise ValueError("Invalid tagging scheme %s" % tagging_scheme)

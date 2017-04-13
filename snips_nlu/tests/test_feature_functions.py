@@ -7,6 +7,8 @@ from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE
 from snips_nlu.languages import Language
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
+    LAST_PREFIX, BEGINNING_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
     char_range_to_token_range, get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
@@ -97,17 +99,19 @@ class TestFeatureFunctions(unittest.TestCase):
         # Given
         gazetteer = {"bird", "eagle", "blue bird"}
         mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
-        text = "This is a blue bird flying"
+        text = "This is a blue bird flying next to an eagle"
         tokens = tokenize(text)
         feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
-                                            Language.EN.iso_code)
+                                            Language.EN.iso_code,
+                                            TaggingScheme.BILOU.value)
 
         # When
         features = [feature_fn.function(tokens, i) for i in
                     xrange(len(tokens))]
 
         # Then
-        expected_features = [None, None, None, "1", "1", None]
+        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX,
+                             None, None, None, None, UNIT_PREFIX]
         self.assertListEqual(features, expected_features)
 
     def test_get_built_in_annotation_fn(self):

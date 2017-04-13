@@ -36,8 +36,8 @@ def get_word_clusters(language):
 
 
 GAZETTEERS_NAMES = {
-    Language.EN: ["top_10000_nouns", "pois", "cities_us", "cities_world",
-                  "countries", "regions", "states_us", "stop_words",
+    Language.EN: ["top_10000_nouns", "cities_us", "cities_world",
+                  "countries", "states_us", "stop_words",
                   "street_identifier", "top_10000_words"]
 }
 

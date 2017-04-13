@@ -26,7 +26,7 @@ def get_word_clusters(language):
             with io.open(path, encoding="utf8") as f:
                 _word_clusters[name] = dict()
                 for l in f:
-                    split = l.rstrip().split("\t")
+                    split = l.rstrip().lower().split("\t")
                     normalized = " ".join(
                         [t.value for t in tokenize(split[0])])
                     if len(split) == 2:
@@ -57,10 +57,10 @@ def get_gazetteers(language):
             with io.open(path, encoding="utf8") as f:
                 _gazetteers[name] = set()
                 for l in f:
-                    stripped = l.strip()
-                    if len(stripped) > 0:
+                    normalized = l.strip().lower()
+                    if len(normalized) > 0:
                         normalized = " ".join(
-                            [t.value for t in tokenize(stripped)])
+                            [t.value for t in tokenize(normalized)])
                         _gazetteers[name].add(normalized)
 
     return GAZETTEERS[language]

@@ -229,7 +229,7 @@ class TestFeatureFunctions(unittest.TestCase):
                     'collection_name': 'dummy_entity_1',
                     'use_stemming': True
                 },
-                'factory_name': 'get_token_is_in',
+                'factory_name': 'get_token_is_in_fn',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             },
@@ -239,7 +239,7 @@ class TestFeatureFunctions(unittest.TestCase):
                     'collection_name': 'dummy_entity_2',
                     'use_stemming': True
                 },
-                'factory_name': 'get_token_is_in',
+                'factory_name': 'get_token_is_in_fn',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             }

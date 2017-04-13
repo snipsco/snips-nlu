@@ -216,8 +216,9 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, max_ngram_size=None):
     gazetteer = get_gazetteer(language, gazetteer_name)
 
     def is_in_gazetter(tokens, token_index):
-        string_tokens = map(lambda t: t.value, tokens)
-        ngrams = get_all_ngrams(string_tokens, max_ngram_size=max_ngram_size,
+        normalized_tokens = map(lambda t: t.value.lower(), tokens)
+        ngrams = get_all_ngrams(normalized_tokens,
+                                max_ngram_size=max_ngram_size,
                                 keep_only_index=token_index)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         if any(ngram[NGRAM] in gazetteer for ngram in ngrams):

@@ -4,10 +4,11 @@ from snips_nlu.constants import DATA, USE_SYNONYMS, SYNONYMS, VALUE
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.preprocessing import stem
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
 
-def default_features(module_name, language, intent_entities, use_stemming, entities_offsets,
-                     entity_keep_prob, common_words=None):
+def default_features(module_name, language, intent_entities, use_stemming,
+                     entities_offsets, entity_keep_prob, common_words=None):
     features = [
         {
             "module_name": module_name,
@@ -69,7 +70,8 @@ def default_features(module_name, language, intent_entities, use_stemming, entit
                 "factory_name": "get_built_in_annotation_fn",
                 "args": {
                     "built_in_entity_label": entity.label,
-                    "language_code": language.iso_code
+                    "language_code": language.iso_code,
+                    "tagging_scheme_code": TaggingScheme.BILOU.value
                 },
                 "offsets": [-2, -1, 0]
             }
@@ -95,10 +97,11 @@ def default_features(module_name, language, intent_entities, use_stemming, entit
         features.append(
             {
                 "module_name": module_name,
-                "factory_name": "get_token_is_in",
-                "args": {"collection": collection,
+                "factory_name": "get_token_is_in_fn",
+                "args": {"tokens_collection": collection,
                          "collection_name": entity_name,
-                         "use_stemming": use_stemming},
+                         "use_stemming": use_stemming,
+                         "tagging_scheme_code": TaggingScheme.BILOU.value},
                 "offsets": entities_offsets
             }
         )

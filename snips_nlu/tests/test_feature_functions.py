@@ -1,18 +1,20 @@
-import re
 import unittest
 
 import numpy as np
-
+from mock import patch
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
-    SYNONYMS, DATA, VALUE
+    SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.languages import Language
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
+    LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
-    char_range_to_token_range, get_regex_match_fn, get_prefix_fn,
-    get_suffix_fn, get_ngram_fn, create_feature_function, TOKEN_NAME,
-    BaseFeatureFunction, get_token_is_in, get_built_in_annotation_fn,
-    crf_features)
+    get_prefix_fn, get_suffix_fn, get_ngram_fn,
+    create_feature_function, TOKEN_NAME, BaseFeatureFunction,
+    get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
+    get_is_in_gazetteer_fn)
+from snips_nlu.slot_filler.features_utils import char_range_to_token_range
 from snips_nlu.tokenization import tokenize
 
 
@@ -53,9 +55,6 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(expected_features, features)
 
-    # def test_shape_ngrams(self):
-    #     assert False
-
     def test_prefix(self):
         # Given
         tokens = tokenize("AbCde")
@@ -82,76 +81,66 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(prefix, expected_suffixes[i - 1])
 
-    def test_regex_match(self):
-        # Given
-        terms = ["bird cow rat", "dog pig", "cat"]
-        pattern = r"|".join(re.escape(t) for t in terms)
-        regex = re.compile(pattern, re.IGNORECASE)
-
-        texts = {
-            "there is nothing here": [None, None, None, None],
-            "there s a bird cow rat here": [None, None, None, "B-animal",
-                                            "I-animal", "I-animal", None],
-            "I m a cat": [None, None, None, "B-animal"]
-        }
-
-        # When
-        feature_fn = get_regex_match_fn(regex, "animal", use_bilou=False)
-
-        # Then
-        for text, features in texts.iteritems():
-            tokens = tokenize(text)
-            self.assertEqual(features,
-                             [feature_fn.function(tokens, i)
-                              for i in xrange(len(tokens))])
-
-    def test_regex_match_with_bilou(self):
-        # Given
-        terms = ["bird cow rat", "dog pig", "cat"]
-        pattern = r"|".join(re.escape(t) for t in terms)
-        regex = re.compile(pattern, re.IGNORECASE)
-
-        texts = {
-            "there is nothing here": [None, None, None, None],
-            "there s a bird cow rat here": [None, None, None, "B-animal",
-                                            "I-animal", "L-animal", None],
-            "I m a cat": [None, None, None, "U-animal"]
-        }
-
-        # When
-        feature_fn = get_regex_match_fn(regex, "animal", use_bilou=True)
-
-        # Then
-        for text, features in texts.iteritems():
-            tokens = tokenize(text)
-            self.assertEqual(features,
-                             [feature_fn.function(tokens, i)
-                              for i in xrange(len(tokens))])
-
     def test_token_is_in(self):
         # Given
-        collection = {"bIrd"}
-        tokens = tokenize("i m a bird")
-        expected_features = [None, None, None, "1"]
+        collection = {"bIrd", "BLUE bird"}
+        tokens = tokenize("i m a blue bird")
+        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
         # When
-        feature_fn = get_token_is_in(collection, "animal", use_stemming=False)
+        scheme_code = TaggingScheme.BILOU.value
+        feature_fn = get_token_is_in_fn(collection, "animal",
+                                        use_stemming=False,
+                                        tagging_scheme_code=scheme_code)
 
         # Then
         self.assertEqual(expected_features,
                          [feature_fn.function(tokens, i)
                           for i in xrange(len(tokens))])
 
-    def test_get_built_in_annotation_fn(self):
+    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
+    def test_is_in_gazetteer(self, mocked_get_gazetteer):
         # Given
-        language = "en"
-        language = Language.from_iso_code(language)
-        text = "i ll be there tomorrow at noon   is that ok?"
+        gazetteer = {"bird", "eagle", "blue bird"}
+        mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
+        text = "This is a blue bird flying next to an eagle"
         tokens = tokenize(text)
-        built_in = BuiltInEntity.DATETIME
-        feature_fn = get_built_in_annotation_fn(built_in.label,
-                                                language.iso_code)
-        expected_features = [None, None, None, None, "1", "1", "1", None, None,
-                             None]
+        feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
+                                            Language.EN.iso_code,
+                                            TaggingScheme.BILOU.value,
+                                            use_stemming=False)
+
+        # When
+        features = [feature_fn.function(tokens, i) for i in
+                    xrange(len(tokens))]
+
+        # Then
+        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX,
+                             None, None, None, None, UNIT_PREFIX]
+        self.assertListEqual(features, expected_features)
+
+    @patch('snips_nlu.slot_filler.feature_functions.get_built_in_entities')
+    def test_get_built_in_annotation_fn(self, mocked_get_built_in_entities):
+        # Given
+        input_text = u"i ll be there tomorrow at noon   is that ok"
+
+        def mocked_built_in_entities(text, language, scope):
+            if text == input_text:
+                return [
+                    {
+                        MATCH_RANGE: (14, 30),
+                        VALUE: u"tomorrow at noon",
+                        ENTITY: BuiltInEntity.DATETIME
+                    }
+                ]
+            return []
+
+        mocked_get_built_in_entities.side_effect = mocked_built_in_entities
+        tokens = tokenize(input_text)
+        feature_fn = get_built_in_annotation_fn(BuiltInEntity.DATETIME.label,
+                                                Language.EN.iso_code,
+                                                TaggingScheme.BILOU.value)
+        expected_features = [None, None, None, None, BEGINNING_PREFIX,
+                             INSIDE_PREFIX, LAST_PREFIX, None, None, None]
 
         # When
         features = [feature_fn.function(tokens, i)
@@ -201,14 +190,7 @@ class TestFeatureFunctions(unittest.TestCase):
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
 
-    # @patch("snips_nlu.slot_filler.feature_functions.default_features")
-    def test_crf_features(self, ):
-        def mocked_default(language, intent_entities, use_stemming,
-                           entities_offsets, entity_keep_prob):
-            return []
-
-        # mocked_default_features.side_effect = mocked_default
-
+    def test_crf_features(self):
         intent_entities = {
             "dummy_entity_1": {
                 AUTOMATICALLY_EXTENSIBLE: False,
@@ -263,21 +245,23 @@ class TestFeatureFunctions(unittest.TestCase):
         expected_signatures = [
             {
                 'args': {
-                    'collection': collection_1,
+                    'tokens_collection': collection_1,
                     'collection_name': 'dummy_entity_1',
-                    'use_stemming': True
+                    'use_stemming': True,
+                    'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
-                'factory_name': 'get_token_is_in',
+                'factory_name': 'get_token_is_in_fn',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             },
             {
                 'args': {
-                    'collection': collection_2,
+                    'tokens_collection': collection_2,
                     'collection_name': 'dummy_entity_2',
-                    'use_stemming': True
+                    'use_stemming': True,
+                    'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
-                'factory_name': 'get_token_is_in',
+                'factory_name': 'get_token_is_in_fn',
                 'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             }

@@ -1,23 +1,20 @@
-import re
 from collections import namedtuple
 
-from crf_resources import get_word_clusters
-from crf_utils import (UNIT_PREFIX, BEGINNING_PREFIX, LAST_PREFIX,
-                       INSIDE_PREFIX)
+from crf_resources import get_word_clusters, get_gazetteer
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
-from snips_nlu.constants import (MATCH_RANGE)
+from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
+from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
     language_specific_features as en_features
+from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape, \
+    get_word_chunk, initial_string_from_tokens
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
 
 TOKEN_NAME = "token"
-LOWER_REGEX = re.compile(r"^[^A-Z]+$")
-UPPER_REGEX = re.compile(r"^[^a-z]+$")
-TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
 
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
@@ -47,65 +44,6 @@ def crf_features(intent_entities, language):
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)
-
-
-# Helpers for base feature functions and factories
-def char_range_to_token_range(char_range, tokens_as_string):
-    start, end = char_range
-    # TODO: if possible avoid looping on the tokens for better efficiency
-    current_length = 0
-    token_start = None
-    for i, t in enumerate(tokens_as_string):
-        if current_length == start:
-            token_start = i
-            break
-        current_length += len(t) + 1
-    if token_start is None:
-        return
-
-    token_end = None
-    current_length -= 1  # Remove the last space
-    for i, t in enumerate(tokens_as_string[token_start:]):
-        current_length += len(t) + 1
-        if current_length == end:
-            token_end = token_start + i + 1
-            break
-    if token_end is None:
-        return
-    return token_start, token_end
-
-
-def get_shape(string):
-    if LOWER_REGEX.match(string):
-        shape = "xxx"
-    elif UPPER_REGEX.match(string):
-        shape = "XXX"
-    elif TITLE_REGEX.match(string):
-        shape = "Xxx"
-    else:
-        shape = "xX"
-    return shape
-
-
-def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
-    if chunk_size < 1:
-        raise ValueError("chunk size should be >= 1")
-    if chunk_size > len(word):
-        return None
-    start = chunk_start - chunk_size if reverse else chunk_start
-    end = chunk_start if reverse else chunk_start + chunk_size
-    return word[start:end]
-
-
-def initial_string_from_tokens(tokens):
-    current_index = 0
-    s = ""
-    for t in tokens:
-        if t.start > current_index:
-            s += " " * (t.start - current_index)
-        s += t.value
-        current_index = t.end
-    return s
 
 
 # Base feature functions and factories
@@ -201,80 +139,89 @@ def get_word_cluster_fn(cluster_name, language_code):
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
-def get_token_is_in(collection, collection_name, use_stemming):
-    lowered_collection = set([c.lower() for c in collection])
+def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
+                       tagging_scheme_code, max_ngram_size=None):
+    lowered_collection = set([c.lower() for c in tokens_collection])
+    tagging_scheme = TaggingScheme(tagging_scheme_code)
+
+    def transform(token):
+        return token.stem if use_stemming else token.value
 
     def token_is_in(tokens, token_index):
-        token_string = tokens[token_index].stem.lower() if use_stemming \
-            else tokens[token_index].value.lower()
-        return "1" if token_string in lowered_collection else None
+        normalized_tokens = map(lambda t: transform(t).lower(), tokens)
+        ngrams = get_all_ngrams(normalized_tokens,
+                                max_ngram_size=max_ngram_size,
+                                containing_index=token_index)
+        ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
+        ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
+                        reverse=True)
+        for ngram in ngrams:
+            if ngram[NGRAM] in lowered_collection:
+                return get_scheme_prefix(token_index,
+                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         tagging_scheme)
+        return None
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
-def get_regex_match_fn(regex, match_name, use_bilou=False):
-    def regex_match(tokens, token_index):
-        text = " ".join(t.value for t in tokens).lower()
-
-        match = regex.search(text)
-        if match is None:
-            return
-
-        if token_index == 0:
-            token_start = 0
-        else:
-            token_start = len(" ".join(t.value for t in tokens[:token_index])
-                              ) + 1
-        token_end = token_start + len(tokens[token_index].value)
-
-        match_start = match.start()
-        match_end = match.end()
-        if not (match_start <= token_start <= match_end
-                and match_start <= token_end <= match_end):
-            return
-
-        match_token_range = char_range_to_token_range(
-            (match_start, match_end), [t.value for t in tokens])
-        if match_token_range is None:
-            return
-        match_token_start, match_token_end = match_token_range
-
-        token_position_in_match = token_index - match_token_start
-
-        if token_position_in_match == 0:
-            if use_bilou and token_index == match_token_end - 1:
-                feature = UNIT_PREFIX + match_name
-            else:
-                feature = BEGINNING_PREFIX + match_name
-        elif token_index == match_token_end - 1:
-            if use_bilou:
-                feature = LAST_PREFIX + match_name
-            else:
-                feature = INSIDE_PREFIX + match_name
-        else:
-            feature = INSIDE_PREFIX + match_name
-
-        return feature
-
-    return BaseFeatureFunction("match_%s" % match_name, regex_match)
-
-
-def get_built_in_annotation_fn(built_in_entity_label, language_code):
+def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
+                           use_stemming, max_ngram_size=None):
     language = Language.from_iso_code(language_code)
+    gazetteer = get_gazetteer(language, gazetteer_name)
+    tagging_scheme = TaggingScheme(tagging_scheme_code)
+
+    def transform(token):
+        return token.stem if use_stemming else token.value
+
+    def is_in_gazetter(tokens, token_index):
+        normalized_tokens = map(lambda t: transform(t).lower(), tokens)
+        ngrams = get_all_ngrams(normalized_tokens,
+                                max_ngram_size=max_ngram_size,
+                                containing_index=token_index)
+        ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
+        ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
+                        reverse=True)
+        for ngram in ngrams:
+            if ngram[NGRAM] in gazetteer:
+                return get_scheme_prefix(token_index,
+                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         tagging_scheme)
+        return None
+
+    return BaseFeatureFunction("is_in_gazetteer_%s" % gazetteer_name,
+                               is_in_gazetter)
+
+
+def get_built_in_annotation_fn(built_in_entity_label, language_code,
+                               tagging_scheme_code):
+    language = Language.from_iso_code(language_code)
+    tagging_scheme = TaggingScheme(tagging_scheme_code)
     built_in_entity = BuiltInEntity.from_label(built_in_entity_label)
     feature_name = "built-in-%s" % built_in_entity.value["label"]
 
     def built_in_annotation(tokens, token_index):
         text = initial_string_from_tokens(tokens)
-
-        built_ins = get_built_in_entities(text, language,
-                                          scope=[built_in_entity])
         start = tokens[token_index].start
         end = tokens[token_index].end
-        for ent in built_ins:
-            if (ent[MATCH_RANGE][0] <= start < ent[MATCH_RANGE][1]
-                and ent[MATCH_RANGE][0] < end <= ent[MATCH_RANGE][1]):
-                return "1"
+
+        builtin_entities = get_built_in_entities(text, language,
+                                                 scope=[built_in_entity])
+
+        builtin_entities = filter(
+            lambda _ent: (_ent[MATCH_RANGE][0] <= start < _ent[MATCH_RANGE][
+                1]) and (_ent[MATCH_RANGE][0] < end <= _ent[MATCH_RANGE][1]),
+            builtin_entities)
+
+        for ent in builtin_entities:
+            entity_start = ent[MATCH_RANGE][0]
+            entity_end = ent[MATCH_RANGE][1]
+            indexes = []
+            for index, token in enumerate(tokens):
+                if (entity_start <= token.start < entity_end) \
+                        and (entity_start < token.end <= entity_end):
+                    indexes.append(index)
+            return get_scheme_prefix(token_index, indexes, tagging_scheme)
 
     return BaseFeatureFunction(feature_name, built_in_annotation)
 

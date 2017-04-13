@@ -18,9 +18,8 @@ def language_specific_features(module_name, intent_entities):
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5, common_words=common_words)
 
-    gazetteer_names = ["pois", "cities_us", "cities_world", "countries",
-                       "regions", "states_us", "stop_words",
-                       "street_identifier"]
+    gazetteer_names = ["cities_us", "cities_world", "countries",
+                       "states_us", "street_identifier"]
 
     for gazetteer_name in gazetteer_names:
         features.append({

@@ -1,10 +1,12 @@
 import numpy as np
-
+from uuid import uuid4
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.intent_classifier.intent_classifier_resources import \
     get_subtitles
 from snips_nlu.preprocessing import stem_sentence
+
+NOISE_NAME = str(uuid4()).decode()
 
 
 def get_regularization_factor(dataset):
@@ -30,9 +32,11 @@ def build_training_data(custom_dataset, builtin_dataset, language,
         classes_mapping[intent] = intent_index
         intent_index += 1
 
-    noise_class = intent_index
+    for intent in builtin_intents:
+        classes_mapping[intent] = intent_index
+        intent_index += 1
 
-    classes_mapping.update({intent: noise_class for intent in builtin_intents})
+    noise_class = intent_index
 
     # Computing dataset statistics
     nb_utterances = [len(intent[UTTERANCES]) for intent in
@@ -60,7 +64,7 @@ def build_training_data(custom_dataset, builtin_dataset, language,
     augmented_utterances += list(noisy_utterances)
     utterance_classes += [noise_class for _ in noisy_utterances]
     if len(noisy_utterances) > 0:
-        classes_mapping['noise'] = noise_class
+        classes_mapping[NOISE_NAME] = noise_class
 
     # Stemming utterances
     if use_stemming:
@@ -68,9 +72,9 @@ def build_training_data(custom_dataset, builtin_dataset, language,
                                 utterance in augmented_utterances]
 
     nb_classes = len(set(classes_mapping.values()))
-    intent_mapping = [None for _ in range(nb_classes)]
+    intent_mapping = [None for _ in xrange(nb_classes)]
     for intent, intent_class in classes_mapping.iteritems():
-        if intent_class == noise_class:
+        if intent == NOISE_NAME or intent in builtin_intents:
             intent_mapping[intent_class] = None
         else:
             intent_mapping[intent_class] = intent

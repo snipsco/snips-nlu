@@ -167,7 +167,8 @@ class TestDataAugmentation(unittest.TestCase):
                                 for intent in builtin_dataset[INTENTS].values()
                                 for utterance in
                                 intent[UTTERANCES][:max_utterances]]
-        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1', None]
+        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1', None,
+                                   None]
         self.assertItemsEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -222,7 +223,7 @@ class TestDataAugmentation(unittest.TestCase):
 
         # Then
         expected_utterances = []
-        expected_intent_mapping = [None]
+        expected_intent_mapping = [None, None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 

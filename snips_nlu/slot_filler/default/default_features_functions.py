@@ -6,8 +6,6 @@ from snips_nlu.constants import DATA, USE_SYNONYMS, SYNONYMS, VALUE
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
-core.load()
-
 
 def default_features(module_name, language, intent_entities, use_stemming,
                      entities_offsets, entity_keep_prob, common_words=None):
@@ -76,7 +74,7 @@ def default_features(module_name, language, intent_entities, use_stemming,
                 "args": {
                     "built_in_entity_label": entity.label,
                     "language_code": language.iso_code,
-                "tagging_scheme_code": TaggingScheme.BILOU.value},
+                    "tagging_scheme_code": TaggingScheme.BILOU.value},
                 "offsets": [-2, -1, 0]
             }
         )

@@ -4,8 +4,6 @@ from enum import Enum
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, LABEL, DUCKLING_DIM
 from utils import LimitedSizeDict, classproperty
 
-core.load()
-
 
 class BuiltInEntity(Enum):
     DATETIME = {LABEL: "snips/datetime", DUCKLING_DIM: "time"}

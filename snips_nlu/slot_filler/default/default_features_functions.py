@@ -8,20 +8,29 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
 
 def default_features(module_name, language, intent_entities, use_stemming,
-                     entities_offsets, entity_keep_prob, common_words=None):
+                     entities_offsets, entity_keep_prob,
+                     common_words_gazetteer_name=None):
     features = [
         {
             "module_name": module_name,
             "factory_name": "get_ngram_fn",
-            "args": {"n": 1, "common_words": common_words,
-                     "use_stemming": use_stemming},
+            "args": {
+                "n": 1,
+                "use_stemming": use_stemming,
+                "language_code": language.iso_code,
+                "common_words_gazetteer_name": common_words_gazetteer_name
+            },
             "offsets": [-2, -1, 0, 1, 2]
         },
         {
             "module_name": module_name,
             "factory_name": "get_ngram_fn",
-            "args": {"n": 2, "common_words": common_words,
-                     "use_stemming": use_stemming},
+            "args": {
+                "n": 2,
+                "use_stemming": use_stemming,
+                "language_code": language.iso_code,
+                "common_words_gazetteer_name": common_words_gazetteer_name
+            },
             "offsets": [-2, 1]
         },
         {

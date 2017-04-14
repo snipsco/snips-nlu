@@ -36,19 +36,24 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(expected_features, features)
 
-    def test_ngrams_with_rare_word(self):
+    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
+    def test_ngrams_with_rare_word(self, mocked_get_gazetteer):
         # Given
+        def mocked_gazetteer(language, gazetteer_name):
+            return {"i", "love", "music"}
+
+        mocked_get_gazetteer.side_effect = mocked_gazetteer
         tokens = tokenize("I love house music")
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
             2: ["i love", "love rare_word", "rare_word music", None],
             3: ["i love rare_word", "love rare_word music", None, None]
         }
-        common_words = {"i", "love", "music"}
 
         for n, expected_features in ngrams.iteritems():
             ngrams_fn = get_ngram_fn(n, use_stemming=False,
-                                     common_words=common_words)
+                                     language_code=Language.EN.iso_code,
+                                     common_words_gazetteer_name='common')
             # When
             features = [ngrams_fn.function(tokens, i)
                         for i in xrange(len(tokens))]

@@ -41,16 +41,19 @@ class SnipsIntentClassifier(IntentClassifier):
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE, min_utterances)
         builtin_dataset = filter_dataset(dataset, BUILTIN_ENGINE,
                                          min_utterances)
-        self.intent_list = [None] + custom_dataset[INTENTS].keys()
-        if len(self.intent_list) > 1:
-            utterances, y = build_training_data(custom_dataset,
-                                                builtin_dataset,
-                                                self.language)
-            self.featurizer = self.featurizer.fit(utterances, y)
-            X = self.featurizer.transform(utterances)
-            alpha = get_regularization_factor(custom_dataset)
-            self.classifier_args.update({'alpha': alpha})
-            self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
+
+        utterances, y, intent_list = build_training_data(custom_dataset,
+                                                         builtin_dataset,
+                                                         self.language)
+        self.intent_list = intent_list
+        if len(self.intent_list) <= 1:
+            return self
+
+        self.featurizer = self.featurizer.fit(utterances, y)
+        X = self.featurizer.transform(utterances)
+        alpha = get_regularization_factor(custom_dataset)
+        self.classifier_args.update({'alpha': alpha})
+        self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
         return self
 
     def get_intent(self, text):
@@ -58,8 +61,11 @@ class SnipsIntentClassifier(IntentClassifier):
             raise AssertionError('SnipsIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
 
-        if len(text) == 0 or len(self.intent_list) == 1:
+        if len(text) == 0 or len(self.intent_list) == 0:
             return None
+
+        if len(self.intent_list) == 1:
+            return IntentClassificationResult(self.intent_list[0], 1.0)
 
         stemmed_text = stem_sentence(text, self.language)
 

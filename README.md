@@ -8,18 +8,21 @@ Python wheels of the `snips-nlu` package can be found on the nexus repository at
 
 You will need to be signed in to access the repo.
 
+You'll need the tensorflow C library installed, here are some commands to install it on various OSs :
+
+```bash
+$ brew install libtensorflow # macOS
+$ yaourt -S tensorflow # Arch Linux
+$ DEB=libtensorflow_1.0.1-snips-2_`dpkg --print-architecture`.deb \
+    && wget https://s3.amazonaws.com/snips/tensorflow-deb/$DEB \
+    && sudo dpkg -i $DEB # Ubuntu
+```
+
 ## Development
 
 ### Dependencies
 
-#### 1. Rust
-
-You need to have [Rust](https://www.rust-lang.org/en-US/install.html) installed, then do:
-
-#### 2. Snips Tensorflow build
-
-Follow installation instructions [here](https://github.com/snipsco/tensorflow-build).
-
+You'll need the tensorflow C library installed, refer to the previous section to install it
 
 ### Installation
 Create a virtual env:

@@ -1,9 +1,12 @@
 import numpy as np
-
+from uuid import uuid4
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA
+from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.intent_classifier.intent_classifier_resources import \
     get_subtitles
-from snips_nlu.constants import INTENTS, UTTERANCES, UTTERANCE_TEXT
 from snips_nlu.preprocessing import stem_sentence
+
+NOISE_NAME = str(uuid4()).decode()
 
 
 def get_regularization_factor(dataset):
@@ -23,16 +26,22 @@ def build_training_data(custom_dataset, builtin_dataset, language,
     all_intents = set(custom_intents.keys() + builtin_intents.keys())
 
     # Creating class mapping
-    noise_class = 0
-    classes_mapping = {intent: i + 1 for i, intent in
-                       enumerate(custom_intents)}
-    classes_mapping.update({intent: noise_class for intent in builtin_intents})
+    intent_index = 0
+    classes_mapping = dict()
+    for intent in custom_intents:
+        classes_mapping[intent] = intent_index
+        intent_index += 1
+
+    for intent in builtin_intents:
+        classes_mapping[intent] = intent_index
+        intent_index += 1
+
+    noise_class = intent_index
 
     # Computing dataset statistics
     nb_utterances = [len(intent[UTTERANCES]) for intent in
                      custom_intents.values()]
-    avg_utterances = np.mean(nb_utterances)
-    max_utterances = max(nb_utterances)
+    max_utterances = max(nb_utterances) if len(nb_utterances) > 0 else 0
 
     # Adding custom and builtin utterances
     augmented_utterances = []
@@ -43,20 +52,31 @@ def build_training_data(custom_dataset, builtin_dataset, language,
                          :max_utterances]
         else:
             utterances = custom_dataset[INTENTS][intent][UTTERANCES]
-        augmented_utterances += [utterance[UTTERANCE_TEXT] for utterance in
-                                 utterances]
+        augmented_utterances += [get_text_from_chunks(utterance[DATA]) for
+                                 utterance in utterances]
         utterance_classes += [classes_mapping[intent] for _ in utterances]
 
     # Adding noise
+    avg_utterances = np.mean(nb_utterances) if len(nb_utterances) > 0 else 0
     noise = list(get_subtitles(language))
     noise_size = min(int(noise_factor * avg_utterances), len(noise))
     noisy_utterances = np.random.choice(noise, size=noise_size, replace=False)
     augmented_utterances += list(noisy_utterances)
     utterance_classes += [noise_class for _ in noisy_utterances]
+    if len(noisy_utterances) > 0:
+        classes_mapping[NOISE_NAME] = noise_class
 
     # Stemming utterances
     if use_stemming:
         augmented_utterances = [stem_sentence(utterance, language) for
                                 utterance in augmented_utterances]
 
-    return augmented_utterances, np.array(utterance_classes)
+    nb_classes = len(set(classes_mapping.values()))
+    intent_mapping = [None for _ in xrange(nb_classes)]
+    for intent, intent_class in classes_mapping.iteritems():
+        if intent == NOISE_NAME or intent in builtin_intents:
+            intent_mapping[intent_class] = None
+        else:
+            intent_mapping[intent_class] = intent
+
+    return augmented_utterances, np.array(utterance_classes), intent_mapping

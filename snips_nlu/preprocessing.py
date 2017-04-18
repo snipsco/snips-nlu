@@ -14,7 +14,8 @@ def verbs_stems(language):
         return dict()
 
     verb_stemmings = dict()
-    lines = [l.strip() for l in io.open(stems_paths[0], encoding="utf8")]
+    with io.open(stems_paths[0], encoding="utf8") as f:
+        lines = [l.strip() for l in f]
     for line in lines:
         elements = line.split(';')
         verb_stemmings.update(
@@ -23,10 +24,28 @@ def verbs_stems(language):
     return verb_stemmings
 
 
+def word_inflections(language):
+    inflection_paths = glob.glob(os.path.join(RESOURCES_PATH,
+                                              language.iso_code,
+                                              "top_*_words_inflected.txt"))
+    if len(inflection_paths) == 0:
+        return dict()
+
+    inflections = dict()
+    with io.open(inflection_paths[0], encoding="utf8") as f:
+        lines = [l.strip() for l in f]
+
+    for line in lines:
+        elements = line.split(';')
+        inflections[elements[0]] = elements[1]
+    return inflections
+
+
 def language_stems(language):
     global _LANGUAGE_STEMS
     if language.iso_code not in _LANGUAGE_STEMS:
-        _LANGUAGE_STEMS[language.iso_code] = verbs_stems(language)
+        _LANGUAGE_STEMS[language.iso_code] = word_inflections(language)
+        _LANGUAGE_STEMS[language.iso_code].update(verbs_stems(language))
     return _LANGUAGE_STEMS[language.iso_code]
 
 

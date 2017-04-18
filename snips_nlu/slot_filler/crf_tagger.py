@@ -14,7 +14,7 @@ from snips_nlu.utils import (UnupdatableDict, instance_to_generic_dict,
                              ensure_string, safe_pickle_dumps,
                              safe_pickle_loads)
 
-POSSIBLE_SET_FEATURES = ["collection", "common_words"]
+POSSIBLE_SET_FEATURES = ["collection"]
 
 
 def default_crf_model():

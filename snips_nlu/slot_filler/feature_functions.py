@@ -4,6 +4,7 @@ from crf_resources import get_word_clusters, get_gazetteer
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
+from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
@@ -86,15 +87,26 @@ def get_suffix_fn(suffix_size):
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
 
-def get_ngram_fn(n, use_stemming, common_words=None):
+def get_ngram_fn(n, use_stemming, language_code=None,
+                 common_words_gazetteer_name=None):
     if n < 1:
         raise ValueError("n should be >= 1")
+
+    gazetteer = None
+    if common_words_gazetteer_name is not None:
+        if language_code is None:
+            raise ValueError("A language code must be provided in order to "
+                             "retrieve the corresponding gazetteer")
+        language = Language.from_iso_code(language_code)
+        gazetteer = get_gazetteer(language, common_words_gazetteer_name)
+        if use_stemming:
+            gazetteer = set(stem(w, language) for w in gazetteer)
 
     def ngram(tokens, token_index):
         max_len = len(tokens)
         end = token_index + n
         if 0 <= token_index < max_len and 0 < end <= max_len:
-            if common_words is None:
+            if gazetteer is None:
                 if use_stemming:
                     return " ".join(t.stem.lower()
                                     for t in tokens[token_index:end])
@@ -106,7 +118,7 @@ def get_ngram_fn(n, use_stemming, common_words=None):
                 for t in tokens[token_index:end]:
                     lowered = t.stem.lower() if use_stemming else \
                         t.value.lower()
-                    words.append(lowered if t.value.lower() in common_words
+                    words.append(lowered if t.value.lower() in gazetteer
                                  else "rare_word")
                 return " ".join(words)
         return None
@@ -169,6 +181,8 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
                            use_stemming, max_ngram_size=None):
     language = Language.from_iso_code(language_code)
     gazetteer = get_gazetteer(language, gazetteer_name)
+    if use_stemming:
+        gazetteer = set(stem(w, language) for w in gazetteer)
     tagging_scheme = TaggingScheme(tagging_scheme_code)
 
     def transform(token):

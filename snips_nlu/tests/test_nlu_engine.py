@@ -11,8 +11,8 @@ from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET
 
 
-def mocked_default(language, intent_entities, use_stemming,
-                   entities_offsets, entity_keep_prob, common_words=None):
+def mocked_default(language, intent_entities, use_stemming, entities_offsets,
+                   entity_keep_prob, common_words_gazetteer_name=None):
     return []
 
 

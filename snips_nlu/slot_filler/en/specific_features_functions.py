@@ -1,5 +1,4 @@
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_resources import get_gazetteer
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
@@ -12,11 +11,11 @@ def language_specific_features(module_name, intent_entities):
     :param intent_entities: dict containing entities for the related intent
     """
     language = Language.EN
-    common_words = get_gazetteer(language, "top_10000_words")
     features = default_features(module_name, language, intent_entities,
                                 use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5, common_words=common_words)
+                                entity_keep_prob=.5,
+                                common_words_gazetteer_name="top_10000_words")
 
     gazetteer_names = ["cities_us", "cities_world", "countries",
                        "states_us", "street_identifier"]

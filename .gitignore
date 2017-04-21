@@ -1,6 +1,5 @@
 *.cache
 *.py[cod]
-snips-queries-rust
 *.egg-info
 *build
 .idea

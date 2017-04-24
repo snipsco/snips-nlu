@@ -130,10 +130,15 @@ def positive_tagging(tagging_scheme, slot_name, slot_size):
     if tagging_scheme == TaggingScheme.IO:
         tags = [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
     elif tagging_scheme == TaggingScheme.BIO:
-        tags = [BEGINNING_PREFIX + slot_name]
-        tags += [INSIDE_PREFIX + slot_name for _ in xrange(1, slot_size)]
+        if slot_size > 0:
+            tags = [BEGINNING_PREFIX + slot_name]
+            tags += [INSIDE_PREFIX + slot_name for _ in xrange(1, slot_size)]
+        else:
+            tags = []
     elif tagging_scheme == TaggingScheme.BILOU:
-        if slot_size == 1:
+        if slot_size == 0:
+            tags = []
+        elif slot_size == 1:
             tags = [UNIT_PREFIX + slot_name]
         else:
             tags = [BEGINNING_PREFIX + slot_name]

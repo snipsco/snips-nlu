@@ -1,5 +1,11 @@
 def branchName = "${env.BRANCH_NAME}"
+def repoName = "snips_nlu"
 def VENV = ". venv/bin/activate"
+
+def version(path) {
+    readFile("${path}/__version__").split("\n")[0]
+}
+
 
 node('jenkins-slave-generic') {
     stage('Checkout') {
@@ -30,10 +36,14 @@ node('jenkins-slave-generic') {
             case "master":
                 deleteDir()
                 checkout scm
+                def rootPath = pwd()
+                def repoPath = "${rootPath}/${repoName}"
                 sh "git submodule update --init --recursive"
                 sh """
                 . venv/bin/activate
                 python setup.py bdist_wheel upload -r pypisnips
+                git tag ${version(repoPath)}
+                git push --tags
                 """
             default:
                 sh """

@@ -1,11 +1,15 @@
+from __future__ import unicode_literals
+
 import base64
 import cPickle
 import importlib
 import os
 from collections import OrderedDict, namedtuple, Mapping
 
+RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
+PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESOURCES_PATH = os.path.join(ROOT_PATH, "snips_nlu", "snips-nlu-resources")
+RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
 
 MODULE_NAME = "@module_name"
 CLASS_NAME = "@class_name"

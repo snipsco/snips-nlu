@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import unicode_literals
+
 import re
 
 from snips_nlu.utils import namedtuple_with_defaults
@@ -6,9 +8,9 @@ from snips_nlu.utils import namedtuple_with_defaults
 Token = namedtuple_with_defaults('Token', 'value start end stem', {
     'stem': None})
 
-CURRENCIES = u"$؋ƒ៛¥₡₱£€¢﷼₪₩₭₨₮₦₽฿₴₫"
+CURRENCIES = "$؋ƒ៛¥₡₱£€¢﷼₪₩₭₨₮₦₽฿₴₫"
 WORD_REGEX = re.compile(r"\w+", re.UNICODE)
-SYMBOL_REGEX = re.compile(r"[?!&%%%s]+" % CURRENCIES, re.UNICODE)
+SYMBOL_REGEX = re.compile(r"[?!&%{}]+".format(CURRENCIES), re.UNICODE)
 
 
 def tokenize(string):

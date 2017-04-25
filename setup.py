@@ -1,26 +1,37 @@
+import io
+
 from setuptools import setup, find_packages
 
 packages = find_packages()
 
+with io.open("__version__") as f:
+    version = f.readline().strip()
+
+required = [
+    "duckling==0.0.15",
+    "pytest",
+    "enum34==1.1.6",
+    "mock",
+    "numpy==1.12.1",
+    "scipy==0.19.0",
+    "scikit-learn==0.18.1",
+    "sklearn-crfsuite==0.3.5",
+    "snips-queries==0.4.0"
+]
+
+test_required = [
+    "semantic_version==2.6.0"
+]
+
 setup(name="snips_nlu",
-      version="0.3.1",
-      description="",
+      version=version,
       author="Clement Doumouro",
       author_email="clement.doumouro@snips.ai",
       url="",
       download_url="",
       license="MIT",
-      install_requires=[
-          "duckling==0.0.15",
-          "pytest",
-          "enum34==1.1.6",
-          "mock",
-          "numpy==1.12.1",
-          "scipy==0.19.0",
-          "scikit-learn==0.18.1",
-          "sklearn-crfsuite==0.3.5",
-          "snips-queries==0.4.0"
-      ],
+      install_requires=required,
+      extras_require={"test": test_required},
       packages=packages,
       package_data={
           "": [

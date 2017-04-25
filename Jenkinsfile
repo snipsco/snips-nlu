@@ -37,11 +37,12 @@ node('jenkins-slave-generic') {
                 deleteDir()
                 checkout scm
                 def rootPath = pwd()
+                def path = "${rootPath}/${packagePath}"
                 sh "git submodule update --init --recursive"
                 sh """
                 . venv/bin/activate
                 python setup.py bdist_wheel upload -r pypisnips
-                git tag ${version(packagePath)}
+                git tag ${version(path)}
                 git push --tags
                 """
             default:

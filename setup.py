@@ -1,10 +1,16 @@
 import io
+import os
 
 from setuptools import setup, find_packages
 
 packages = find_packages()
 
-with io.open("__version__") as f:
+PACKAGE_NAME = "snips_nlu"
+ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
+VERSION = "__version__"
+
+with io.open(os.path.join(PACKAGE_PATH, VERSION))as f:
     version = f.readline().strip()
 
 required = [
@@ -23,7 +29,7 @@ test_required = [
     "semantic_version==2.6.0"
 ]
 
-setup(name="snips_nlu",
+setup(name=PACKAGE_NAME,
       version=version,
       author="Clement Doumouro",
       author_email="clement.doumouro@snips.ai",
@@ -35,6 +41,7 @@ setup(name="snips_nlu",
       packages=packages,
       package_data={
           "": [
+              VERSION,
               "snips-nlu-resources/en/*",
               "snips-nlu-resources/fr/*",
               "snips-nlu-resources/es/*",

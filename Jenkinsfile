@@ -1,5 +1,5 @@
 def branchName = "${env.BRANCH_NAME}"
-def repoName = "snips_nlu"
+def packagePath = "snips_nlu/snips_nlu"
 def VENV = ". venv/bin/activate"
 
 def version(path) {
@@ -20,7 +20,7 @@ node('jenkins-slave-generic') {
     	sh """
     	${VENV}
     	echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-    	pip install -e .[test]
+    	pip install .[test]
     	"""
     }
 
@@ -37,12 +37,11 @@ node('jenkins-slave-generic') {
                 deleteDir()
                 checkout scm
                 def rootPath = pwd()
-                def repoPath = "${rootPath}/${repoName}"
                 sh "git submodule update --init --recursive"
                 sh """
                 . venv/bin/activate
                 python setup.py bdist_wheel upload -r pypisnips
-                git tag ${version(repoPath)}
+                git tag ${version(packagePath)}
                 git push --tags
                 """
             default:

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import io
 import os
 
@@ -33,8 +35,6 @@ setup(name=PACKAGE_NAME,
       version=version,
       author="Clement Doumouro",
       author_email="clement.doumouro@snips.ai",
-      url="",
-      download_url="",
       license="MIT",
       install_requires=required,
       extras_require={"test": test_required},

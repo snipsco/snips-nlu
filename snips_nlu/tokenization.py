@@ -1,3 +1,4 @@
+# coding=utf-8
 import re
 
 from snips_nlu.utils import namedtuple_with_defaults
@@ -5,12 +6,26 @@ from snips_nlu.utils import namedtuple_with_defaults
 Token = namedtuple_with_defaults('Token', 'value start end stem', {
     'stem': None})
 
-TOKEN_REGEX = re.compile(r"\w+", re.UNICODE)
+CURRENCIES = u"$؋ƒ៛¥₡₱£€¢﷼₪₩₭₨₮₦₽฿₴₫"
+WORD_REGEX = re.compile(r"\w+", re.UNICODE)
+SYMBOL_REGEX = re.compile(r"[?!&%%%s]+" % CURRENCIES, re.UNICODE)
 
 
 def tokenize(string):
-    return [Token(m.group(), m.start(), m.end())
-            for m in TOKEN_REGEX.finditer(string)]
+    return _tokenize(string, [WORD_REGEX, SYMBOL_REGEX])
+
+
+def _tokenize(string, regexes):
+    non_overlapping_tokens = []
+    for regex in regexes:
+        tokens = [Token(m.group(), m.start(), m.end())
+                  for m in regex.finditer(string)]
+        tokens = filter(
+            lambda s: all(s.start >= t.end or s.end <= t.start for t in
+                          non_overlapping_tokens),
+            tokens)
+        non_overlapping_tokens += tokens
+    return sorted(non_overlapping_tokens, key=lambda t: t.start)
 
 
 def tokenize_light(string):

@@ -1,11 +1,11 @@
 from abc import ABCMeta, abstractmethod
 
 from dataset import validate_and_format_dataset, filter_dataset
-from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities
 from snips_nlu.constants import (
     USE_SYNONYMS, SYNONYMS, DATA, INTENTS, ENTITIES, UTTERANCES,
     LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE, ENTITY, BUILTIN_PARSER,
-    CUSTOM_PARSERS, CUSTOM_ENGINE)
+    CUSTOM_PARSERS, CUSTOM_ENGINE, MATCH_RANGE)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -222,3 +222,18 @@ class SnipsNLUEngine(NLUEngine):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class BuiltInEntitiesNLUEngine(NLUEngine):
+    def __init__(self, language):
+        super(BuiltInEntitiesNLUEngine, self).__init__(language)
+
+    def parse(self, text):
+        built_in_entities = get_built_in_entities(text, self.language)
+        slots = None
+        if len(built_in_entities) > 0:
+            slots = [
+                ParsedSlot(match_range=e[MATCH_RANGE], value=e[VALUE],
+                           entity=e[ENTITY].label, slot_name=e[ENTITY].label)
+                for e in built_in_entities]
+        return Result(text, parsed_intent=None, parsed_slots=slots).as_dict()

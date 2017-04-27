@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import json
 import unittest
 
@@ -6,7 +8,7 @@ from mock import Mock, patch
 from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine, BuiltInEntitiesNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET
 
@@ -344,3 +346,49 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                      slot_name="dummy_slot_name")]) \
             .as_dict()
         self.assertEqual(result, expected_result)
+
+    def test_builtin_nlu_engine(self):
+        # Given
+        language = Language.EN
+        texts = [
+            "there is nothing here",
+            "Order me 2 book",
+            "can you join me at 2pm tomorrow?"
+        ]
+        engine = BuiltInEntitiesNLUEngine(language)
+
+        # When
+        results = [engine.parse(t) for t in texts]
+
+        # Then
+        expected_results = [
+            {
+                'intent': None,
+                'slots': None,
+                'text': 'there is nothing here'
+            },
+            {
+                'intent': None,
+                'slots': [
+                    {
+                        'range': [9, 10],
+                        'slot_name': 'snips/number',
+                        'value': '2'
+                    }
+                ],
+                'text': 'Order me 2 book'
+            },
+            {
+                'intent': None,
+                'slots': [
+                    {
+                        'range': [16, 31],
+                        'slot_name': 'snips/datetime',
+                        'value': 'at 2pm tomorrow'
+                    }
+                ],
+                'text': 'can you join me at 2pm tomorrow?'
+            }
+        ]
+
+        self.assertEqual(results, expected_results)

@@ -52,11 +52,11 @@ def get_slot_name_to_entity_mapping(dataset):
 
 
 class CRFIntentParser(IntentParser):
-    def __init__(self, intent_classifier, crf_taggers,
+    def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping=None,
                  data_augmentation_config=None):
         super(CRFIntentParser, self).__init__()
-        self.language = None
+        self.language = language
         self.intent_classifier = intent_classifier
         self._crf_taggers = None
         self.crf_taggers = crf_taggers
@@ -72,14 +72,9 @@ class CRFIntentParser(IntentParser):
 
     @crf_taggers.setter
     def crf_taggers(self, value):
-        if len(value) == 0:
-            raise ValueError("Can't set empty crf_taggers")
-        first_language = value.values()[0].language
-        if len(value) > 1:
-            if any(t.language != first_language for t in value.values()[1:]):
-                raise ValueError("Found taggers with diff<erent languages")
+        if any(t.language != self.language for t in value.values()):
+            raise ValueError("Found taggers with different languages")
         self._crf_taggers = value
-        self.language = first_language
 
     def get_intent(self, text):
         if not self.fitted:
@@ -131,6 +126,7 @@ class CRFIntentParser(IntentParser):
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)
         obj_dict.update({
+            "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
             "crf_taggers": {intent_name: tagger.to_dict() for
                             intent_name, tagger in
@@ -143,6 +139,7 @@ class CRFIntentParser(IntentParser):
     @classmethod
     def from_dict(cls, obj_dict):
         return cls(
+            language=Language.from_iso_code(obj_dict["language_code"]),
             intent_classifier=instance_from_dict(
                 obj_dict["intent_classifier"]),
             crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)

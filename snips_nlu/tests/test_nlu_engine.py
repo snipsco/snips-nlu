@@ -10,7 +10,7 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, BuiltInEntitiesNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from utils import SAMPLE_DATASET
+from utils import SAMPLE_DATASET, empty_dataset
 
 
 def mocked_default(language, intent_entities, use_stemming, entities_offsets,
@@ -132,6 +132,16 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         self.assertEqual(ctx.exception.message,
                          "NLUEngine as no built-in parser nor custom parsers")
+
+    def test_should_handle_empty_dataset(self):
+        # Given
+        engine = SnipsNLUEngine(Language.EN).fit(empty_dataset(Language.EN))
+
+        # When
+        result = engine.parse("hello world")
+
+        # Then
+        self.assertEqual(result, Result("hello world", None, None).as_dict())
 
     def test_should_be_serializable(self):
         # Given

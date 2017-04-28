@@ -1,6 +1,7 @@
 def branchName = "${env.BRANCH_NAME}"
 def packagePath = "snips_nlu"
 def VENV = ". venv/bin/activate"
+def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
 
 def version(path) {
     readFile("${path}/__version__").split("\n")[0]
@@ -15,7 +16,6 @@ node('jenkins-slave-generic') {
     }
 
     stage('Setup') {
-        def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
     	sh "virtualenv venv"
     	sh """
     	${VENV}

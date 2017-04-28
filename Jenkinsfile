@@ -40,14 +40,17 @@ node('jenkins-slave-generic') {
                 def path = "${rootPath}/${packagePath}"
                 sh "git submodule update --init --recursive"
                 sh """
-                . venv/bin/activate
+                virtualenv venv
+                ${VENV}
+                echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
+                pip install .
                 python setup.py bdist_wheel upload -r pypisnips
                 git tag ${version(path)}
                 git push --tags
                 """
             default:
                 sh """
-                . venv/bin/activate
+                ${VENV}
                 python setup.py bdist_wheel
                 """
         }

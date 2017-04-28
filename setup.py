@@ -10,7 +10,7 @@ ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
 VERSION = "__version__"
 
-with io.open(os.path.join(PACKAGE_PATH, VERSION))as f:
+with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 required = [

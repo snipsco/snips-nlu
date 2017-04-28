@@ -365,6 +365,20 @@ class TestCRFUtils(unittest.TestCase):
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
+    def test_positive_tagging_should_handle_zero_length(self):
+        # Given
+        slot_name = "animal"
+        slot_size = 0
+
+        # When
+        tags = []
+        for scheme in TaggingScheme:
+            tags.append(positive_tagging(scheme, slot_name, slot_size))
+
+        # Then
+        expected_tags = [[]] * len(TaggingScheme)
+        self.assertEqual(tags, expected_tags)
+
     @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
     def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
@@ -436,7 +450,7 @@ class TestCRFUtils(unittest.TestCase):
         self.assertListEqual(tagging, expected_tagging)
 
     def test_positive_tagging_with_io(self):
-        # Give
+        # Given
         tagging_scheme = TaggingScheme.IO
         slot_name = "animal"
         slot_size = 3

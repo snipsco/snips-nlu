@@ -1,16 +1,23 @@
+from copy import copy
+from itertools import permutations
+
 from intent_parser import IntentParser
+from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY,
-                                 CUSTOM_ENGINE)
+                                 CUSTOM_ENGINE, MATCH_RANGE)
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
-                                             utterance_to_sample)
+                                             utterance_to_sample,
+                                             positive_tagging)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import (instance_to_generic_dict, instance_from_dict,
                              namedtuple_with_defaults)
+
+from itertools import groupby
 
 _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
@@ -43,11 +50,13 @@ def default_data_augmentation_config(language):
 
 def get_slot_name_to_entity_mapping(dataset):
     slot_name_to_entity = dict()
-    for intent in dataset[INTENTS].values():
+    for intent_name, intent in dataset[INTENTS].iteritems():
+        _dict = dict()
+        slot_name_to_entity[intent_name] = _dict
         for utterance in intent[UTTERANCES]:
             for chunk in utterance[DATA]:
                 if SLOT_NAME in chunk:
-                    slot_name_to_entity[chunk[SLOT_NAME]] = chunk[ENTITY]
+                    _dict[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_to_entity
 
 
@@ -65,6 +74,7 @@ class CRFIntentParser(IntentParser):
             data_augmentation_config = default_data_augmentation_config(
                 self.language)
         self.data_augmentation_config = data_augmentation_config
+        self.intents_data_sizes = {intent: 0 for intent in self.crf_taggers}
 
     @property
     def crf_taggers(self):
@@ -90,17 +100,37 @@ class CRFIntentParser(IntentParser):
                              "`get_slots` is called")
         if intent not in self.crf_taggers:
             raise KeyError("Invalid intent '%s'" % intent)
+
         tokens = tokenize(text)
         tagger = self.crf_taggers[intent]
-
         tags = tagger.get_tags(tokens)
-        slots = tags_to_slots(tokens, tags,
-                              tagging_scheme=tagger.tagging_scheme)
-        return [ParsedSlot(match_range=s["range"],
-                           value=text[s["range"][0]:s["range"][1]],
-                           entity=self.slot_name_to_entity_mapping[
-                               s[SLOT_NAME]],
-                           slot_name=s[SLOT_NAME]) for s in slots]
+        slots = tags_to_slots(tokens, tags, tagger.tagging_scheme)
+        intent_slots_mapping = self.slot_name_to_entity_mapping[intent]
+        parsed_slots = [
+            ParsedSlot(match_range=slot["range"],
+                       value=text[slot["range"][0]:slot["range"][1]],
+                       entity=intent_slots_mapping[slot[SLOT_NAME]],
+                       slot_name=slot[SLOT_NAME])
+            for slot in slots
+        ]
+        all_intent_slots = intent_slots_mapping.keys()
+        found_slots = set(s[SLOT_NAME] for s in slots)
+        missing_slots = set(all_intent_slots).difference(found_slots)
+        missing_builtin_slots = [slot for slot in missing_slots
+                                 if intent_slots_mapping[slot] in
+                                 BuiltInEntity.built_in_entity_by_label]
+
+        if self.intents_data_sizes[intent] <= 20 \
+                and len(missing_builtin_slots) > 0:
+            scope = set(BuiltInEntity.from_label(intent_slots_mapping[slot])
+                        for slot in missing_builtin_slots)
+            builtin_entities = get_built_in_entities(text, self.language,
+                                                     list(scope))
+            parsed_slots = _augment_slots(text, intent_slots_mapping,
+                                          builtin_entities, missing_slots,
+                                          tokens, tags, tagger)
+
+        return parsed_slots
 
     @property
     def fitted(self):
@@ -109,6 +139,9 @@ class CRFIntentParser(IntentParser):
 
     def fit(self, dataset):
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
+        self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
+                                   for intent_name, intent
+                                   in custom_dataset[INTENTS].iteritems()}
         self.slot_name_to_entity_mapping = get_slot_name_to_entity_mapping(
             custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
@@ -150,3 +183,52 @@ class CRFIntentParser(IntentParser):
             data_augmentation_config=DataAugmentationConfig.from_dict(
                 obj_dict["data_augmentation_config"])
         )
+
+
+def _augment_slots(text, intent_slots_mapping, builtin_slots, missing_slots,
+                   tokens, tags, tagger):
+    augmented_tags = copy(tags)
+    grouped_entities = groupby(builtin_slots, key=lambda s: s[ENTITY])
+    for entity, spans in grouped_entities:
+        spans_ranges = [span[MATCH_RANGE] for span in spans]
+        token_indexes = _spans_to_token_indexes(spans_ranges, tokens)
+        related_slots = set(s for s in missing_slots
+                            if intent_slots_mapping[s] == entity.label)
+        slots_permutations = permutations(related_slots)
+        best_permutation_tags = None
+        best_permutation_score = None
+        for slots in slots_permutations:
+            updated_tags = copy(augmented_tags)
+            for slot_index, slot in enumerate(slots):
+                if slot_index >= len(token_indexes):
+                    break
+                _token_indexes = token_indexes[slot_index]
+                _tags = positive_tagging(tagger.tagging_scheme, slot,
+                                         len(token_indexes))
+                updated_tags[_token_indexes[0]:_token_indexes[-1] + 1] = _tags
+            score = tagger.get_sequence_probability(tokens, updated_tags)
+            if best_permutation_score is None \
+                    or score > best_permutation_score:
+                best_permutation_tags = updated_tags
+                best_permutation_score = score
+        augmented_tags = best_permutation_tags
+    augmented_slots = tags_to_slots(tokens, augmented_tags,
+                                    tagger.tagging_scheme)
+    return [
+        ParsedSlot(match_range=slot["range"],
+                   value=text[slot["range"][0]:slot["range"][1]],
+                   entity=intent_slots_mapping[slot[SLOT_NAME]],
+                   slot_name=slot[SLOT_NAME])
+        for slot in augmented_slots
+    ]
+
+
+def _spans_to_token_indexes(spans, tokens):
+    token_indexes = []
+    for span_start, span_end in spans:
+        indexes = []
+        for i, token in enumerate(tokens):
+            if span_end > token.start and span_start < token.end:
+                indexes.append(i)
+        token_indexes.append(indexes)
+    return token_indexes

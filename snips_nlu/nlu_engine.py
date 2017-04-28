@@ -157,7 +157,7 @@ class SnipsNLUEngine(NLUEngine):
         custom_parser = RegexIntentParser().fit(dataset)
         self.entities = snips_nlu_entities(dataset)
         taggers = dict()
-        for intent in custom_dataset[INTENTS].keys():
+        for intent in custom_dataset[INTENTS]:
             intent_custom_entities = get_intent_custom_entities(custom_dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities,

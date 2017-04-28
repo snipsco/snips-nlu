@@ -69,6 +69,11 @@ class CRFTagger(object):
         features = self.compute_features(tokens)
         return self.crf_model.predict_single(features)
 
+    def get_sequence_probability(self, tokens, labels):
+        features = self.compute_features(tokens)
+        self.crf_model.tagger_.set(features)
+        return self.crf_model.tagger_.probability(labels)
+
     def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]

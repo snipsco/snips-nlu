@@ -4,7 +4,7 @@ from sklearn.linear_model import SGDClassifier
 from data_augmentation import build_training_data, get_regularization_factor
 from feature_extraction import Featurizer
 from intent_classifier import IntentClassifier
-from snips_nlu.constants import CUSTOM_ENGINE, BUILTIN_ENGINE, INTENTS
+from snips_nlu.constants import CUSTOM_ENGINE, BUILTIN_ENGINE
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem_sentence
@@ -41,7 +41,6 @@ class SnipsIntentClassifier(IntentClassifier):
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE, min_utterances)
         builtin_dataset = filter_dataset(dataset, BUILTIN_ENGINE,
                                          min_utterances)
-
         utterances, y, intent_list = build_training_data(custom_dataset,
                                                          builtin_dataset,
                                                          self.language)
@@ -65,6 +64,8 @@ class SnipsIntentClassifier(IntentClassifier):
             return None
 
         if len(self.intent_list) == 1:
+            if self.intent_list[0] is None:
+                return None
             return IntentClassificationResult(self.intent_list[0], 1.0)
 
         stemmed_text = stem_sentence(text, self.language)

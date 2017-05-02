@@ -8,7 +8,7 @@ from mock import Mock, patch
 from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine, BuiltInEntitiesNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET, empty_dataset
 
@@ -338,48 +338,151 @@ class TestSnipsNLUEngine(unittest.TestCase):
             .as_dict()
         self.assertEqual(result, expected_result)
 
-    def test_builtin_nlu_engine(self):
+    @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_intent")
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".ProbabilisticIntentParser.get_intent")
+    def test_ui_parse_should_return_builtin(
+            self, mocked_probabilistic_get_intent,
+            mocked_regex_get_intent, mocked_default_features):
         # Given
+        mocked_default_features.return_value = []
+        mocked_probabilistic_get_intent.return_value = None
+        mocked_regex_get_intent.return_value = None
+
         language = Language.EN
-        texts = [
-            "there is nothing here",
-            "Order me 2 book",
-            "can you join me at 2pm tomorrow?"
-        ]
-        engine = BuiltInEntitiesNLUEngine(language)
+        dataset = validate_and_format_dataset({
+            "intents": {
+                "dummy_intent_1": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy 1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        })
+        engine = SnipsNLUEngine(language).fit(dataset)
 
         # When
-        results = [engine.parse(t) for t in texts]
+        text = "let's meet tomorrow at 3, what do you think?"
+        results = engine.ui_parse(text, intent="dummy_intent_1")
 
         # Then
-        expected_results = [
-            {
-                'intent': None,
-                'slots': None,
-                'text': 'there is nothing here'
+        expected_results = {
+            'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
+            'slots': [
+                {
+                    "range": [11, 24],
+                    "value": "tomorrow at 3",
+                    "slot_name": "snips/datetime"
+                }
+            ],
+            "text": text
+        }
+
+        self.assertEqual(results, expected_results)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_intent")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_slots")
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".ProbabilisticIntentParser.get_intent")
+    def test_ui_parse_should_return_custom_when_overlapping(
+            self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
+            mocked_regex_get_intent, mocked_default_features):
+
+        # Given
+        intent_name = "dummy_intent_1"
+        text = "let's meet tomorrow at 3, what do you think?"
+        mocked_default_features.return_value = []
+        mocked_probabilistic_get_intent.return_value = None
+        mocked_regex_get_intent.return_value = IntentClassificationResult(
+            intent_name=intent_name, probability=1.0)
+        range = [11, 24]
+        value = "tomorrow at 3"
+        entity = "my_datetime"
+        slot_name = "my_datetime"
+        mocked_regex_get_slots.return_value = [ParsedSlot(
+            range, value, entity, slot_name)]
+
+        language = Language.EN
+        dataset = validate_and_format_dataset({
+            "intents": {
+                intent_name: {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy 1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
             },
-            {
-                'intent': None,
-                'slots': [
-                    {
-                        'range': [9, 10],
-                        'slot_name': 'snips/number',
-                        'value': '2'
-                    }
-                ],
-                'text': 'Order me 2 book'
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1_bis"
+                            ]
+                        }
+                    ]
+                }
             },
-            {
-                'intent': None,
-                'slots': [
-                    {
-                        'range': [16, 31],
-                        'slot_name': 'snips/datetime',
-                        'value': 'at 2pm tomorrow'
-                    }
-                ],
-                'text': 'can you join me at 2pm tomorrow?'
-            }
-        ]
+            "language": language.iso_code
+        })
+        engine = SnipsNLUEngine(language).fit(dataset)
+
+        # When
+        results = engine.ui_parse(text, intent=intent_name)
+
+        # Then
+        expected_results = {
+            'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
+            'slots': [
+                {
+                    "range": [11, 24],
+                    "value": "tomorrow at 3",
+                    "slot_name": slot_name
+                }
+            ],
+            "text": text
+        }
 
         self.assertEqual(results, expected_results)

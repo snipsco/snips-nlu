@@ -45,7 +45,7 @@ class Result(_Result):
             parsed_intent = None
         if self.parsed_slots is not None:
             parsed_slots = map(lambda slot: slot.as_dict(),
-                                  self.parsed_slots)
+                               self.parsed_slots)
         else:
             parsed_slots = None
         return {
@@ -53,3 +53,6 @@ class Result(_Result):
             PARSED_INTENT: parsed_intent,
             PARSED_SLOTS: parsed_slots
         }
+
+    def is_empty(self):
+        return self.parsed_intent is None and self.parsed_slots is None

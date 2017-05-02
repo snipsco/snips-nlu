@@ -56,3 +56,7 @@ class Result(_Result):
 
     def is_empty(self):
         return self.parsed_intent is None and self.parsed_slots is None
+
+
+def empty_result(text):
+    return Result(text=text, parsed_intent=None, parsed_slots=None)

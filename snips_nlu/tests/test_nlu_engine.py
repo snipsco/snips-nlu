@@ -57,9 +57,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             rule_based_parser=mocked_parser1,
             probabilistic_parser=mocked_parser2,
             builtin_parser=mocked_builtin_parser,
-            intents_data_sizes={'mocked_intent1': 100, 'mocked_intent2': 100},
-            slot_name_mapping={'mocked_slot_name': 'mocked_entity'},
-            small_data_regime_threshold=5)
+            slot_name_mapping={'mocked_slot_name': 'mocked_entity'})
 
         # When
         parse = engine.parse(input_text)

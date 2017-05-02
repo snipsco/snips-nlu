@@ -6,7 +6,7 @@ from mock import MagicMock
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
-from snips_nlu.nlu_engine_utils import spans_to_tokens_indexes, augment_slots
+from snips_nlu.nlu_engine import augment_slots, spans_to_tokens_indexes
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, BEGINNING_PREFIX, \
     INSIDE_PREFIX

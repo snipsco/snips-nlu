@@ -1,12 +1,13 @@
 from abc import ABCMeta, abstractmethod
+from copy import copy
+from itertools import groupby, permutations
 
 from dataset import validate_and_format_dataset, filter_dataset
 from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-    ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, RULE_BASED_PARSER,
-    PROBABILISTIC_PARSER, INTENTS_DATA_SIZES, SLOT_NAME_MAPPING,
-    SMALL_DATA_REGIME_THRESHOLD)
+    ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
+    USE_SYNONYMS, SYNONYMS)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -14,14 +15,13 @@ from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine_utils import (augment_slots, get_slot_name_mapping,
-                                        get_intent_custom_entities,
-                                        snips_nlu_entities, empty_result)
-from snips_nlu.result import ParsedSlot
+from snips_nlu.result import ParsedSlot, empty_result
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
-from snips_nlu.slot_filler.crf_utils import TaggingScheme
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, positive_tagging, \
+    tags_to_slots
 from snips_nlu.slot_filler.feature_functions import crf_features
+from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import instance_from_dict
 
 
@@ -79,18 +79,18 @@ def _parse(text, parsers, entities):
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, builtin_parser=None, entities=None,
-                 intents_data_sizes=None, slot_name_mapping=None,
-                 small_data_regime_threshold=20):
+                 slot_name_mapping=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
         self._builtin_parser = None
         self.builtin_parser = builtin_parser
+        if entities is None:
+            entities = dict()
         self.entities = entities
-        self._intents_data_sizes = None
-        self.intents_data_sizes = intents_data_sizes
+        if slot_name_mapping is None:
+            slot_name_mapping = dict()
         self.slot_name_mapping = slot_name_mapping
-        self.small_data_regime_threshold = small_data_regime_threshold
 
     @property
     def parsers(self):
@@ -117,19 +117,6 @@ class SnipsNLUEngine(NLUEngine):
                 % (value.parser.language, self.language.iso_code))
         self._builtin_parser = value
 
-    @property
-    def intents_data_sizes(self):
-        return self._intents_data_sizes
-
-    @intents_data_sizes.setter
-    def intents_data_sizes(self, value):
-        if value is None:
-            self._intents_data_sizes = dict()
-        elif isinstance(value, dict):
-            self._intents_data_sizes = value
-        else:
-            raise TypeError("Expected dict but found %s: " % type(value))
-
     def parse(self, text):
         """
         Parse the input text and returns a dictionary containing the most
@@ -139,11 +126,7 @@ class SnipsNLUEngine(NLUEngine):
         if result.is_empty():
             return result.as_dict()
 
-        intent_name = result.parsed_intent.intent_name
-        intent_nb_utterances = self.intents_data_sizes.get(intent_name, None)
-        if intent_nb_utterances is not None \
-                and intent_nb_utterances <= self.small_data_regime_threshold:
-            result = self.augment_slots_with_builtin_entities(result)
+        result = self.augment_slots_with_builtin_entities(result)
         return result.as_dict()
 
     def augment_slots_with_builtin_entities(self, result):
@@ -151,7 +134,7 @@ class SnipsNLUEngine(NLUEngine):
             return result
 
         intent_name = result.parsed_intent.intent_name
-        intent_slots_mapping = self.slot_name_mapping[intent_name]
+        intent_slots_mapping = self.slot_name_mapping.get(intent_name, dict())
         all_intent_slots = intent_slots_mapping.keys()
         builtin_slots = set(s for s in all_intent_slots
                             if intent_slots_mapping[s] in
@@ -184,9 +167,6 @@ class SnipsNLUEngine(NLUEngine):
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.rule_based_parser = RegexIntentParser().fit(dataset)
         self.entities = snips_nlu_entities(dataset)
-        self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
-                                   for intent_name, intent
-                                   in custom_dataset[INTENTS].iteritems()}
         self.slot_name_mapping = get_slot_name_mapping(custom_dataset)
         taggers = dict()
         for intent in custom_dataset[INTENTS]:
@@ -220,13 +200,11 @@ class SnipsNLUEngine(NLUEngine):
 
         return {
             LANGUAGE: language_code,
-            RULE_BASED_PARSER: rule_based_parser_dict,
-            PROBABILISTIC_PARSER: probabilistic_parser_dict,
+            "rule_based_parser": rule_based_parser_dict,
+            "probabilistic_parser": probabilistic_parser_dict,
             BUILTIN_PARSER: None,
             ENTITIES: self.entities,
-            INTENTS_DATA_SIZES: self.intents_data_sizes,
-            SLOT_NAME_MAPPING: self.slot_name_mapping,
-            SMALL_DATA_REGIME_THRESHOLD: self.small_data_regime_threshold
+            "slot_name_mapping": self.slot_name_mapping,
         }
 
     @classmethod
@@ -248,18 +226,15 @@ class SnipsNLUEngine(NLUEngine):
         probabilistic_parser = None
         builtin_parser = None
         entities = None
-        intents_data_sizes = None
         slot_name_mapping = None
-        small_data_regime_threshold = None
 
         if customs is not None:
-            rule_based_parser = instance_from_dict(customs[RULE_BASED_PARSER])
+            rule_based_parser = instance_from_dict(
+                customs["rule_based_parser"])
             probabilistic_parser = instance_from_dict(
-                customs[PROBABILISTIC_PARSER])
+                customs["probabilistic_parser"])
             entities = customs[ENTITIES]
-            intents_data_sizes = customs[INTENTS_DATA_SIZES]
-            slot_name_mapping = customs[SLOT_NAME_MAPPING]
-            small_data_regime_threshold = customs[SMALL_DATA_REGIME_THRESHOLD]
+            slot_name_mapping = customs["slot_name_mapping"]
 
         if builtin_path is not None or builtin_binary is not None:
             builtin_parser = BuiltinIntentParser(language=language,
@@ -269,9 +244,7 @@ class SnipsNLUEngine(NLUEngine):
         return cls(language, rule_based_parser=rule_based_parser,
                    probabilistic_parser=probabilistic_parser,
                    builtin_parser=builtin_parser, entities=entities,
-                   intents_data_sizes=intents_data_sizes,
-                   slot_name_mapping=slot_name_mapping,
-                   small_data_regime_threshold=small_data_regime_threshold)
+                   slot_name_mapping=slot_name_mapping)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \
@@ -294,3 +267,95 @@ class BuiltInEntitiesNLUEngine(NLUEngine):
                            entity=e[ENTITY].label, slot_name=e[ENTITY].label)
                 for e in built_in_entities]
         return Result(text, parsed_intent=None, parsed_slots=slots).as_dict()
+
+
+def augment_slots(text, tagger, intent_slots_mapping, builtin_entities,
+                  missing_slots):
+    tokens = tokenize(text)
+    # TODO: Find a way to avoid tagging multiple times
+    tags = tagger.get_tags(tokens)
+    augmented_tags = tags
+    grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
+    for entity, matches in grouped_entities:
+        spans_ranges = [match[MATCH_RANGE] for match in matches]
+        tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
+        related_slots = set(s for s in missing_slots
+                            if intent_slots_mapping[s] == entity.label)
+        slots_permutations = permutations(related_slots)
+        best_updated_tags = augmented_tags
+        best_permutation_score = -1
+        for slots in slots_permutations:
+            updated_tags = copy(augmented_tags)
+            for slot_index, slot in enumerate(slots):
+                if slot_index >= len(tokens_indexes):
+                    break
+                indexes = tokens_indexes[slot_index]
+                sub_tags_sequence = positive_tagging(tagger.tagging_scheme,
+                                                     slot, len(indexes))
+                updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
+            score = tagger.get_sequence_probability(tokens, updated_tags)
+            if score > best_permutation_score:
+                best_updated_tags = updated_tags
+                best_permutation_score = score
+        augmented_tags = best_updated_tags
+    return tags_to_slots(text, tokens, augmented_tags, tagger.tagging_scheme,
+                         intent_slots_mapping)
+
+
+def spans_to_tokens_indexes(spans, tokens):
+    tokens_indexes = []
+    for span_start, span_end in spans:
+        indexes = []
+        for i, token in enumerate(tokens):
+            if span_end > token.start and span_start < token.end:
+                indexes.append(i)
+        tokens_indexes.append(indexes)
+    return tokens_indexes
+
+
+def get_slot_name_mapping(dataset):
+    """
+    Returns a dict which maps slot names to entities
+    """
+    slot_name_mapping = dict()
+    for intent_name, intent in dataset[INTENTS].iteritems():
+        _dict = dict()
+        slot_name_mapping[intent_name] = _dict
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if SLOT_NAME in chunk:
+                    _dict[chunk[SLOT_NAME]] = chunk[ENTITY]
+    return slot_name_mapping
+
+
+def get_intent_custom_entities(dataset, intent):
+    intent_entities = set()
+    for utterance in dataset[INTENTS][intent][UTTERANCES]:
+        for c in utterance[DATA]:
+            if ENTITY in c:
+                intent_entities.add(c[ENTITY])
+    custom_entities = dict()
+    for ent in intent_entities:
+        if ent not in BuiltInEntity.built_in_entity_by_label:
+            custom_entities[ent] = dataset[ENTITIES][ent]
+    return custom_entities
+
+
+def snips_nlu_entities(dataset):
+    entities = dict()
+    for entity_name, entity in dataset[ENTITIES].iteritems():
+        entity_data = dict()
+        use_synonyms = entity[USE_SYNONYMS]
+        automatically_extensible = entity[AUTOMATICALLY_EXTENSIBLE]
+        entity_data[AUTOMATICALLY_EXTENSIBLE] = automatically_extensible
+
+        entity_utterances = dict()
+        for data in entity[DATA]:
+            if use_synonyms:
+                for s in data[SYNONYMS]:
+                    entity_utterances[s] = data[VALUE]
+            else:
+                entity_utterances[data[VALUE]] = data[VALUE]
+        entity_data[UTTERANCES] = entity_utterances
+        entities[entity_name] = entity_data
+    return entities

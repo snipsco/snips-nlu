@@ -104,12 +104,14 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         pickled_classifier = safe_pickle_dumps(intent_classifier.classifier)
 
         # Then
+        # noinspection PyBroadException
         try:
             dumped = json.dumps(classifier_dict).encode("utf-8")
         except:
             self.fail("SnipsIntentClassifier dict should be json serializable "
                       "to utf-8")
 
+        # noinspection PyBroadException
         try:
             _ = SnipsIntentClassifier.from_dict(json.loads(dumped))
         except:

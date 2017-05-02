@@ -1,9 +1,11 @@
-import numpy as np
 from uuid import uuid4
+
+import numpy as np
+
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA
 from snips_nlu.dataset import get_text_from_chunks
-from snips_nlu.resources import get_subtitles
 from snips_nlu.preprocessing import stem_sentence
+from snips_nlu.resources import get_subtitles
 
 NOISE_NAME = str(uuid4()).decode()
 

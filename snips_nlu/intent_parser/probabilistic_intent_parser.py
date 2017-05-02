@@ -65,7 +65,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     def get_intent(self, text):
         if not self.fitted:
-            raise ValueError("CRFIntentParser must be fitted before "
+            raise ValueError("ProbabilisticIntentParser must be fitted before "
                              "`get_intent` is called")
         return self.intent_classifier.get_intent(text)
 

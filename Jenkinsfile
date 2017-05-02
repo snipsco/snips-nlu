@@ -1,6 +1,7 @@
 def branchName = "${env.BRANCH_NAME}"
-def packagePath = "snips_nlu/snips_nlu"
+def packagePath = "snips_nlu"
 def VENV = ". venv/bin/activate"
+
 
 def version(path) {
     readFile("${path}/__version__").split("\n")[0]
@@ -15,8 +16,8 @@ node('jenkins-slave-generic') {
     }
 
     stage('Setup') {
-        def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
     	sh "virtualenv venv"
+    	def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
     	sh """
     	${VENV}
     	echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
@@ -38,16 +39,24 @@ node('jenkins-slave-generic') {
                 checkout scm
                 def rootPath = pwd()
                 def path = "${rootPath}/${packagePath}"
+                def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
                 sh "git submodule update --init --recursive"
                 sh """
-                . venv/bin/activate
+                virtualenv venv
+                ${VENV}
+                echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
+                pip install .
                 python setup.py bdist_wheel upload -r pypisnips
                 git tag ${version(path)}
+                git remote rm origin
+                git remote add origin 'git@github.com:snipsco/snips-nlu.git'
+                git config --global user.email 'jenkins@snips.ai'
+                git config --global user.name 'Jenkins'
                 git push --tags
                 """
             default:
                 sh """
-                . venv/bin/activate
+                ${VENV}
                 python setup.py bdist_wheel
                 """
         }

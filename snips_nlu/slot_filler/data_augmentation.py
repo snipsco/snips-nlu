@@ -6,8 +6,7 @@ import numpy as np
 
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, USE_SYNONYMS,
                                  SYNONYMS, VALUE, TEXT, INTENTS, ENTITIES)
-from snips_nlu.intent_classifier.intent_classifier_resources import \
-    get_subtitles
+from snips_nlu.resources import get_subtitles
 from snips_nlu.tokenization import tokenize
 
 

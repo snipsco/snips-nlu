@@ -68,6 +68,7 @@ class TestRegexIntentParser(unittest.TestCase):
         parser_dict = parser.to_dict()
 
         # Then
+        # noinspection PyBroadException
         try:
             json.dumps(parser_dict).decode("utf-8")
         except:
@@ -136,6 +137,7 @@ class TestRegexIntentParser(unittest.TestCase):
             slot_names_to_entities=slot_names_to_entities
         )
 
+        # noinspection PyBroadException
         try:
             parser_json = json.dumps(parser_dict).decode("utf-8")
             _ = RegexIntentParser.from_dict(json.loads(parser_json))

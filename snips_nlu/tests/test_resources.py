@@ -1,7 +1,5 @@
 import unittest
 
-from snips_nlu.constants import (GAZETTEERS, STOP_WORDS, SUBTITLES,
-                                 WORD_CLUSTERS)
 from snips_nlu.languages import Language
 from snips_nlu.resources import RESOURCE_INDEX
 

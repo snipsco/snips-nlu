@@ -5,7 +5,8 @@ from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, RULE_BASED_PARSER,
-    PROBABILISTIC_PARSER)
+    PROBABILISTIC_PARSER, INTENTS_DATA_SIZES, SLOT_NAME_MAPPING,
+    SMALL_DATA_REGIME_THRESHOLD)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -21,7 +22,6 @@ from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
-from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import instance_from_dict
 
 
@@ -79,17 +79,18 @@ def _parse(text, parsers, entities):
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, builtin_parser=None, entities=None,
+                 intents_data_sizes=None, slot_name_mapping=None,
                  small_data_regime_threshold=20):
         super(SnipsNLUEngine, self).__init__(language)
-        self._builtin_parser = None
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
+        self._builtin_parser = None
         self.builtin_parser = builtin_parser
         self.entities = entities
+        self._intents_data_sizes = None
+        self.intents_data_sizes = intents_data_sizes
+        self.slot_name_mapping = slot_name_mapping
         self.small_data_regime_threshold = small_data_regime_threshold
-        self.intents_data_sizes = None
-        self.slot_name_mapping = None
-        self.intents_data_sizes = None
 
     @property
     def parsers(self):
@@ -116,6 +117,19 @@ class SnipsNLUEngine(NLUEngine):
                 % (value.parser.language, self.language.iso_code))
         self._builtin_parser = value
 
+    @property
+    def intents_data_sizes(self):
+        return self._intents_data_sizes
+
+    @intents_data_sizes.setter
+    def intents_data_sizes(self, value):
+        if value is None:
+            self._intents_data_sizes = dict()
+        elif isinstance(value, dict):
+            self._intents_data_sizes = value
+        else:
+            raise TypeError("Expected dict but found %s: " % type(value))
+
     def parse(self, text):
         """
         Parse the input text and returns a dictionary containing the most
@@ -123,11 +137,12 @@ class SnipsNLUEngine(NLUEngine):
         """
         result = _parse(text, self.parsers, self.entities)
         if result.is_empty():
-            return result
+            return result.as_dict()
 
         intent_name = result.parsed_intent.intent_name
-        intent_nb_utterances = self.intents_data_sizes[intent_name]
-        if intent_nb_utterances <= self.small_data_regime_threshold:
+        intent_nb_utterances = self.intents_data_sizes.get(intent_name, None)
+        if intent_nb_utterances is not None \
+                and intent_nb_utterances <= self.small_data_regime_threshold:
             result = self.augment_slots_with_builtin_entities(result)
         return result.as_dict()
 
@@ -148,13 +163,11 @@ class SnipsNLUEngine(NLUEngine):
 
         tagger = self.probabilistic_parser.crf_taggers[intent_name]
         text = result.text
-        tokens = tokenize(text)
-        tags = tagger.get_tags(tokens)
         scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
                  for slot in missing_builtin_slots]
         builtin_entities = get_built_in_entities(text, self.language, scope)
-        slots = augment_slots(text, tokens, tags, intent_slots_mapping,
-                              builtin_entities, missing_builtin_slots, tagger)
+        slots = augment_slots(text, tagger, intent_slots_mapping,
+                              builtin_entities, missing_builtin_slots)
         return Result(text, parsed_intent=result.parsed_intent,
                       parsed_slots=slots)
 
@@ -210,7 +223,10 @@ class SnipsNLUEngine(NLUEngine):
             RULE_BASED_PARSER: rule_based_parser_dict,
             PROBABILISTIC_PARSER: probabilistic_parser_dict,
             BUILTIN_PARSER: None,
-            ENTITIES: self.entities
+            ENTITIES: self.entities,
+            INTENTS_DATA_SIZES: self.intents_data_sizes,
+            SLOT_NAME_MAPPING: self.slot_name_mapping,
+            SMALL_DATA_REGIME_THRESHOLD: self.small_data_regime_threshold
         }
 
     @classmethod
@@ -232,12 +248,18 @@ class SnipsNLUEngine(NLUEngine):
         probabilistic_parser = None
         builtin_parser = None
         entities = None
+        intents_data_sizes = None
+        slot_name_mapping = None
+        small_data_regime_threshold = None
 
         if customs is not None:
             rule_based_parser = instance_from_dict(customs[RULE_BASED_PARSER])
             probabilistic_parser = instance_from_dict(
                 customs[PROBABILISTIC_PARSER])
             entities = customs[ENTITIES]
+            intents_data_sizes = customs[INTENTS_DATA_SIZES]
+            slot_name_mapping = customs[SLOT_NAME_MAPPING]
+            small_data_regime_threshold = customs[SMALL_DATA_REGIME_THRESHOLD]
 
         if builtin_path is not None or builtin_binary is not None:
             builtin_parser = BuiltinIntentParser(language=language,
@@ -246,7 +268,10 @@ class SnipsNLUEngine(NLUEngine):
 
         return cls(language, rule_based_parser=rule_based_parser,
                    probabilistic_parser=probabilistic_parser,
-                   builtin_parser=builtin_parser, entities=entities)
+                   builtin_parser=builtin_parser, entities=entities,
+                   intents_data_sizes=intents_data_sizes,
+                   slot_name_mapping=slot_name_mapping,
+                   small_data_regime_threshold=small_data_regime_threshold)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \

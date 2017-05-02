@@ -2,16 +2,20 @@ from copy import copy
 from itertools import groupby, permutations
 
 from snips_nlu.built_in_entities import BuiltInEntity
-from snips_nlu.constants import ENTITY, MATCH_RANGE, INTENTS, UTTERANCES, DATA, \
-    SLOT_NAME, ENTITIES, USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, SYNONYMS, \
-    VALUE
+from snips_nlu.constants import (ENTITY, MATCH_RANGE, INTENTS, UTTERANCES,
+                                 DATA, SLOT_NAME, ENTITIES, USE_SYNONYMS,
+                                 AUTOMATICALLY_EXTENSIBLE, SYNONYMS, VALUE)
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_utils import positive_tagging, tags_to_slots
+from snips_nlu.tokenization import tokenize
 
 
-def augment_slots(text, tokens, tags, intent_slots_mapping, builtin_entities,
-                  missing_slots, tagger):
-    augmented_tags = copy(tags)
+def augment_slots(text, tagger, intent_slots_mapping, builtin_entities,
+                  missing_slots):
+    tokens = tokenize(text)
+    # TODO: Find a way to avoid tagging multiple times
+    tags = tagger.get_tags(tokens)
+    augmented_tags = tags
     grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
     for entity, spans in grouped_entities:
         spans_ranges = [span[MATCH_RANGE] for span in spans]

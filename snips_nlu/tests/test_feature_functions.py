@@ -39,10 +39,9 @@ class TestFeatureFunctions(unittest.TestCase):
     @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
     def test_ngrams_with_rare_word(self, mocked_get_gazetteer):
         # Given
-        def mocked_gazetteer(language, gazetteer_name):
-            return {"i", "love", "music"}
+        mocked_gazetteer = {"i", "love", "music"}
 
-        mocked_get_gazetteer.side_effect = mocked_gazetteer
+        mocked_get_gazetteer.return_value = mocked_gazetteer
         tokens = tokenize("I love house music")
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
@@ -128,18 +127,15 @@ class TestFeatureFunctions(unittest.TestCase):
         # Given
         input_text = u"i ll be there tomorrow at noon   is that ok"
 
-        def mocked_built_in_entities(text, language, scope):
-            if text == input_text:
-                return [
-                    {
-                        MATCH_RANGE: (14, 30),
-                        VALUE: u"tomorrow at noon",
-                        ENTITY: BuiltInEntity.DATETIME
-                    }
-                ]
-            return []
+        mocked_built_in_entities = [
+            {
+                MATCH_RANGE: (14, 30),
+                VALUE: u"tomorrow at noon",
+                ENTITY: BuiltInEntity.DATETIME
+            }
+        ]
 
-        mocked_get_built_in_entities.side_effect = mocked_built_in_entities
+        mocked_get_built_in_entities.return_value = mocked_built_in_entities
         tokens = tokenize(input_text)
         feature_fn = get_built_in_annotation_fn(BuiltInEntity.DATETIME.label,
                                                 Language.EN.iso_code,
@@ -233,6 +229,7 @@ class TestFeatureFunctions(unittest.TestCase):
         }
 
         # When
+        # noinspection PyUnresolvedReferences
         np.random.seed(42)
         keep_prob = 0.5
         features_signatures = crf_features(
@@ -240,6 +237,7 @@ class TestFeatureFunctions(unittest.TestCase):
             language=Language.EN)
 
         # Then
+        # noinspection PyUnresolvedReferences
         np.random.seed(42)
         collection_1 = ['dummy_a', 'dummy_a_bis', 'dummy_b', 'dummy_b_bis']
         collection_1_size = max(int(keep_prob * len(collection_1)), 1)

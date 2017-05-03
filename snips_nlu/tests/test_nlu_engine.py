@@ -390,7 +390,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # When
         text = "let's meet tomorrow at 3, what do you think?"
-        results = engine.ui_parse(text, intent="dummy_intent_1")
+        results = engine.parse(text, intent="dummy_intent_1",
+                               force_builtin_entities=True)
 
         # Then
         expected_results = {
@@ -414,7 +415,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".RegexIntentParser.get_slots")
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
            ".ProbabilisticIntentParser.get_intent")
-    def test_ui_parse_should_return_custom_when_overlapping(
+    def test_parse_with_builtin_force_should_return_custom_when_overlapping(
             self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
             mocked_regex_get_intent, mocked_default_features):
 
@@ -470,7 +471,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         engine = SnipsNLUEngine(language).fit(dataset)
 
         # When
-        results = engine.ui_parse(text, intent=intent_name)
+        results = engine.parse(text, intent=intent_name,
+                               force_builtin_entities=True)
 
         # Then
         expected_results = {

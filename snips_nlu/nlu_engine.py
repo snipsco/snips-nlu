@@ -9,8 +9,7 @@ from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
-    USE_SYNONYMS, SYNONYMS, PARSED_SLOTS, PARSED_INTENT, PROBABILITY,
-    INTENT_NAME)
+    USE_SYNONYMS, SYNONYMS)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -96,6 +95,98 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
     return empty_result(text)
 
 
+def augment_slots(text, tagger, intent_slots_mapping, builtin_entities,
+                  missing_slots):
+    tokens = tokenize(text)
+    # TODO: Find a way to avoid tagging multiple times
+    tags = tagger.get_tags(tokens)
+    augmented_tags = tags
+    grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
+    for entity, matches in grouped_entities:
+        spans_ranges = [match[MATCH_RANGE] for match in matches]
+        tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
+        related_slots = set(s for s in missing_slots
+                            if intent_slots_mapping[s] == entity.label)
+        slots_permutations = permutations(related_slots)
+        best_updated_tags = augmented_tags
+        best_permutation_score = -1
+        for slots in slots_permutations:
+            updated_tags = copy(augmented_tags)
+            for slot_index, slot in enumerate(slots):
+                if slot_index >= len(tokens_indexes):
+                    break
+                indexes = tokens_indexes[slot_index]
+                sub_tags_sequence = positive_tagging(tagger.tagging_scheme,
+                                                     slot, len(indexes))
+                updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
+            score = tagger.get_sequence_probability(tokens, updated_tags)
+            if score > best_permutation_score:
+                best_updated_tags = updated_tags
+                best_permutation_score = score
+        augmented_tags = best_updated_tags
+    return tags_to_slots(text, tokens, augmented_tags, tagger.tagging_scheme,
+                         intent_slots_mapping)
+
+
+def spans_to_tokens_indexes(spans, tokens):
+    tokens_indexes = []
+    for span_start, span_end in spans:
+        indexes = []
+        for i, token in enumerate(tokens):
+            if span_end > token.start and span_start < token.end:
+                indexes.append(i)
+        tokens_indexes.append(indexes)
+    return tokens_indexes
+
+
+def get_slot_name_mapping(dataset):
+    """
+    Returns a dict which maps slot names to entities
+    """
+    slot_name_mapping = dict()
+    for intent_name, intent in dataset[INTENTS].iteritems():
+        _dict = dict()
+        slot_name_mapping[intent_name] = _dict
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if SLOT_NAME in chunk:
+                    _dict[chunk[SLOT_NAME]] = chunk[ENTITY]
+    return slot_name_mapping
+
+
+def get_intent_custom_entities(dataset, intent):
+    intent_entities = set()
+    for utterance in dataset[INTENTS][intent][UTTERANCES]:
+        for c in utterance[DATA]:
+            if ENTITY in c:
+                intent_entities.add(c[ENTITY])
+    custom_entities = dict()
+    for ent in intent_entities:
+        if ent not in BuiltInEntity.built_in_entity_by_label:
+            custom_entities[ent] = dataset[ENTITIES][ent]
+    return custom_entities
+
+
+def snips_nlu_entities(dataset):
+    entities = dict()
+    for entity_name, entity in dataset[ENTITIES].iteritems():
+        entity_data = dict()
+        use_synonyms = entity[USE_SYNONYMS]
+        automatically_extensible = entity[AUTOMATICALLY_EXTENSIBLE]
+        entity_data[AUTOMATICALLY_EXTENSIBLE] = automatically_extensible
+
+        entity_utterances = dict()
+        for data in entity[DATA]:
+            if use_synonyms:
+                for s in data[SYNONYMS]:
+                    entity_utterances[s] = data[VALUE]
+            else:
+                entity_utterances[data[VALUE]] = data[VALUE]
+        entity_data[UTTERANCES] = entity_utterances
+        entities[entity_name] = entity_data
+    return entities
+
+
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, builtin_parser=None, entities=None,
@@ -118,17 +209,6 @@ class SnipsNLUEngine(NLUEngine):
         self.intents_data_sizes = intents_data_sizes
 
     @property
-    def parsers(self):
-        parsers = []
-        if self.rule_based_parser is not None:
-            parsers.append(self.rule_based_parser)
-        if self.probabilistic_parser is not None:
-            parsers.append(self.probabilistic_parser)
-        if self.builtin_parser is not None:
-            parsers.append(self.builtin_parser)
-        return parsers
-
-    @property
     def builtin_parser(self):
         return self._builtin_parser
 
@@ -142,52 +222,64 @@ class SnipsNLUEngine(NLUEngine):
                 % (value.parser.language, self.language.iso_code))
         self._builtin_parser = value
 
-    def parse(self, text, intent=None):
+    def parse(self, text, intent=None, force_builtin_entities=False):
         """
         Parse the input text and returns a dictionary containing the most
         likely intent and slots.
+        If the intent is provided, intent classification is not performed.
+        If the builtin entity parsing is enforced, then the intent must be 
+        provided
         """
+        if force_builtin_entities:
+            if intent is None:
+                raise ValueError("If builtin entities parsing if enforced, "
+                                 "intent should be passed")
+            return self._parse_and_force_builtin_entities(
+                text, intent).as_dict()
+        else:
+            return self._parse(text, intent=intent).as_dict()
+
+    def _parse(self, text, intent=None):
         result = _parse(text, self.entities, self.rule_based_parser,
                         self.probabilistic_parser, self.builtin_parser,
                         intent)
         if result.is_empty():
-            return result.as_dict()
+            return result
 
         result = self.augment_slots_with_builtin_entities(result)
-        return result.as_dict()
+        return result
 
-    def ui_parse(self, text, intent):
+    def _parse_and_force_builtin_entities(self, text, intent):
         """
         Parse the input text for UI auto tagging and returns a dictionary  
         containing the most likely slots.
         """
-        result = self.parse(text, intent=intent)
+        result = self._parse(text, intent=intent)
         force_builtin_parsing = self.intents_data_sizes[intent] < \
                                 self.ui_builtin_parsing_threshold
-        slots = result[PARSED_SLOTS]
-        if force_builtin_parsing:
-            built_in_entities = get_built_in_entities(text, self.language)
-            if len(built_in_entities) > 0:
-                if slots is None:
-                    slots = built_in_entities
-                else:
-                    for slot in built_in_entities:
-                        if any(s[MATCH_RANGE][0] <= slot[MATCH_RANGE][0]
-                               and s[MATCH_RANGE][1] >= slot[MATCH_RANGE][1]
-                               for s in slots):
-                            continue
-                        slots.append(
-                            ParsedSlot(slot[MATCH_RANGE], slot[VALUE],
-                                       slot[ENTITY].label,
-                                       slot[ENTITY].label).as_dict())
-        parsed_intent = IntentClassificationResult(
-            result[PARSED_INTENT][INTENT_NAME],
-            result[PARSED_INTENT][PROBABILITY])
+        if not force_builtin_parsing:
+            return result
 
-        parsed_slots = [ParsedSlot(s[MATCH_RANGE], s[VALUE], s[SLOT_NAME],
-                                   s[SLOT_NAME]) for s in slots]
-        return Result(text, parsed_intent=parsed_intent,
-                      parsed_slots=parsed_slots).as_dict()
+        built_in_entities = get_built_in_entities(text, self.language)
+        if len(built_in_entities) == 0:
+            return result
+
+        slots = result.parsed_slots
+        if slots is None:
+            slots = [ParsedSlot(e[MATCH_RANGE], e[VALUE], e[ENTITY].label,
+                                e[ENTITY].label) for e in built_in_entities]
+        else:
+            for ent in built_in_entities:
+                if any(s.match_range[0] <= ent[MATCH_RANGE][1]
+                       and s.match_range[1] >= ent[MATCH_RANGE][0]
+                       for s in slots):
+                    continue
+                parsed_slot = ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
+                                         ent[ENTITY].label, ent[ENTITY].label)
+                slots.append(parsed_slot)
+        parsed_intent = IntentClassificationResult(
+            result.parsed_intent.intent_name, result.parsed_intent.probability)
+        return Result(text, parsed_intent=parsed_intent, parsed_slots=slots)
 
     def augment_slots_with_builtin_entities(self, result):
         if self.probabilistic_parser is None:
@@ -325,95 +417,3 @@ class SnipsNLUEngine(NLUEngine):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
-def augment_slots(text, tagger, intent_slots_mapping, builtin_entities,
-                  missing_slots):
-    tokens = tokenize(text)
-    # TODO: Find a way to avoid tagging multiple times
-    tags = tagger.get_tags(tokens)
-    augmented_tags = tags
-    grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
-    for entity, matches in grouped_entities:
-        spans_ranges = [match[MATCH_RANGE] for match in matches]
-        tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
-        related_slots = set(s for s in missing_slots
-                            if intent_slots_mapping[s] == entity.label)
-        slots_permutations = permutations(related_slots)
-        best_updated_tags = augmented_tags
-        best_permutation_score = -1
-        for slots in slots_permutations:
-            updated_tags = copy(augmented_tags)
-            for slot_index, slot in enumerate(slots):
-                if slot_index >= len(tokens_indexes):
-                    break
-                indexes = tokens_indexes[slot_index]
-                sub_tags_sequence = positive_tagging(tagger.tagging_scheme,
-                                                     slot, len(indexes))
-                updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
-            score = tagger.get_sequence_probability(tokens, updated_tags)
-            if score > best_permutation_score:
-                best_updated_tags = updated_tags
-                best_permutation_score = score
-        augmented_tags = best_updated_tags
-    return tags_to_slots(text, tokens, augmented_tags, tagger.tagging_scheme,
-                         intent_slots_mapping)
-
-
-def spans_to_tokens_indexes(spans, tokens):
-    tokens_indexes = []
-    for span_start, span_end in spans:
-        indexes = []
-        for i, token in enumerate(tokens):
-            if span_end > token.start and span_start < token.end:
-                indexes.append(i)
-        tokens_indexes.append(indexes)
-    return tokens_indexes
-
-
-def get_slot_name_mapping(dataset):
-    """
-    Returns a dict which maps slot names to entities
-    """
-    slot_name_mapping = dict()
-    for intent_name, intent in dataset[INTENTS].iteritems():
-        _dict = dict()
-        slot_name_mapping[intent_name] = _dict
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    _dict[chunk[SLOT_NAME]] = chunk[ENTITY]
-    return slot_name_mapping
-
-
-def get_intent_custom_entities(dataset, intent):
-    intent_entities = set()
-    for utterance in dataset[INTENTS][intent][UTTERANCES]:
-        for c in utterance[DATA]:
-            if ENTITY in c:
-                intent_entities.add(c[ENTITY])
-    custom_entities = dict()
-    for ent in intent_entities:
-        if ent not in BuiltInEntity.built_in_entity_by_label:
-            custom_entities[ent] = dataset[ENTITIES][ent]
-    return custom_entities
-
-
-def snips_nlu_entities(dataset):
-    entities = dict()
-    for entity_name, entity in dataset[ENTITIES].iteritems():
-        entity_data = dict()
-        use_synonyms = entity[USE_SYNONYMS]
-        automatically_extensible = entity[AUTOMATICALLY_EXTENSIBLE]
-        entity_data[AUTOMATICALLY_EXTENSIBLE] = automatically_extensible
-
-        entity_utterances = dict()
-        for data in entity[DATA]:
-            if use_synonyms:
-                for s in data[SYNONYMS]:
-                    entity_utterances[s] = data[VALUE]
-            else:
-                entity_utterances[data[VALUE]] = data[VALUE]
-        entity_data[UTTERANCES] = entity_utterances
-        entities[entity_name] = entity_data
-    return entities

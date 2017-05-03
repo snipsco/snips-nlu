@@ -35,6 +35,7 @@ class TestCRFTagger(unittest.TestCase):
         tagger_dict = tagger.to_dict()
 
         # Then
+        # noinspection PyBroadException
         try:
             json.dumps(tagger_dict).decode("utf8")
         except:
@@ -86,6 +87,7 @@ class TestCRFTagger(unittest.TestCase):
                            language=Language.EN)
         tagger_dict = tagger.to_dict()
         tagger_json = json.dumps(tagger_dict).decode("utf8")
+        # noinspection PyBroadException
         try:
             _ = CRFTagger.from_dict(json.loads(tagger_json))
         except:

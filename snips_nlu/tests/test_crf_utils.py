@@ -2,12 +2,12 @@ import unittest
 
 from mock import patch
 
-from snips_nlu.constants import SLOT_NAME
+from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
     utterance_to_sample, TaggingScheme, negative_tagging,
-    positive_tagging, end_of_bio_slot, start_of_bio_slot, RANGE,
-    start_of_bilou_slot, end_of_bilou_slot, tags_to_slots)
+    positive_tagging, end_of_bio_slot, start_of_bio_slot, start_of_bilou_slot,
+    end_of_bilou_slot, tags_to_slots)
 from snips_nlu.tokenization import tokenize, Token
 
 
@@ -15,6 +15,7 @@ class TestCRFUtils(unittest.TestCase):
     def test_io_tags_to_slots(self):
         # Given
         slot_name = "animal"
+        intent_slots_mapping = {"animal": "animal"}
         tags = [
             {
                 "text": "",
@@ -32,10 +33,12 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        "range": (7, 16),
-                        "slot_name": slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(7, 16),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -43,20 +46,24 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [OUTSIDE, OUTSIDE, OUTSIDE,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        "range": (7, 11),
-                        "slot_name": slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(7, 11),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
                 "text": "bird",
                 "tags": [INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        "range": (0, 4),
-                        "slot_name": slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 4),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -64,10 +71,12 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        "range": (0, 9),
-                        "slot_name": slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 9),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -78,10 +87,12 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        "range": (0, 25),
-                        "slot_name": slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 25),
+                        value="light blue bird blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -89,10 +100,12 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        "range": (0, 10),
-                        "slot_name": slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 10),
+                        value="bird birdy",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             }
 
@@ -100,14 +113,16 @@ class TestCRFUtils(unittest.TestCase):
 
         for data in tags:
             # When
-            slots = tags_to_slots(tokenize(data["text"]), data["tags"],
-                                  TaggingScheme.IO)
+            slots = tags_to_slots(data["text"], tokenize(data["text"]),
+                                  data["tags"], TaggingScheme.IO,
+                                  intent_slots_mapping)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
     def test_bio_tags_to_slots(self):
         # Given
         slot_name = "animal"
+        intent_slots_mapping = {"animal": "animal"}
         tags = [
             {
                 "text": "",
@@ -125,10 +140,12 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (7, 16),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(7, 16),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -136,20 +153,24 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [OUTSIDE, OUTSIDE, OUTSIDE,
                          BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (7, 11),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(7, 11),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
                 "text": "bird",
                 "tags": [BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 4),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 4),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -157,10 +178,12 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 9),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 9),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -171,14 +194,18 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 15),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (16, 25),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 15),
+                        value="light blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(16, 25),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -186,14 +213,18 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name,
                          BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 4),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (5, 10),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 4),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(5, 10),
+                        value="birdy",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -204,28 +235,34 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 9),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (14, 24),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 9),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(14, 24),
+                        value="white bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             }
         ]
 
         for data in tags:
             # When
-            slots = tags_to_slots(tokenize(data["text"]), data["tags"],
-                                  TaggingScheme.BIO)
+            slots = tags_to_slots(data["text"], tokenize(data["text"]),
+                                  data["tags"], TaggingScheme.BIO,
+                                  intent_slots_mapping)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
     def test_bilou_tags_to_slots(self):
         # Given
         slot_name = "animal"
+        intent_slots_mapping = {"animal": "animal"}
         tags = [
             {
                 "text": "",
@@ -243,10 +280,12 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (7, 16),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(7, 16),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -254,20 +293,24 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [OUTSIDE, OUTSIDE, OUTSIDE,
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (7, 11),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(7, 11),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
                 "text": "bird",
                 "tags": [UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 4),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 4),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -275,10 +318,12 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name,
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 9),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 9),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -289,14 +334,18 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 15),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (16, 25),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 15),
+                        value="light blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(16, 25),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -304,14 +353,18 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [UNIT_PREFIX + slot_name,
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 4),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (5, 10),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 4),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(5, 10),
+                        value="birdy",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -322,18 +375,24 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 10),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (11, 15),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (16, 25),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 10),
+                        value="light bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(11, 15),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(16, 25),
+                        value="blue bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
             {
@@ -342,26 +401,33 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    {
-                        RANGE: (0, 4),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        RANGE: (5, 9),
-                        SLOT_NAME: slot_name
-                    },
-                    {
-                        "range": (10, 14),
-                        SLOT_NAME: slot_name
-                    }
+                    ParsedSlot(
+                        match_range=(0, 4),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(5, 9),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    ),
+                    ParsedSlot(
+                        match_range=(10, 14),
+                        value="bird",
+                        entity=slot_name,
+                        slot_name=slot_name
+                    )
                 ]
             },
         ]
 
         for data in tags:
             # When
-            slots = tags_to_slots(tokenize(data["text"]), data["tags"],
-                                  TaggingScheme.BILOU)
+            slots = tags_to_slots(data["text"], tokenize(data["text"]),
+                                  data["tags"], TaggingScheme.BILOU,
+                                  intent_slots_mapping)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
@@ -372,18 +438,21 @@ class TestCRFUtils(unittest.TestCase):
 
         # When
         tags = []
+        # noinspection PyTypeChecker
         for scheme in TaggingScheme:
             tags.append(positive_tagging(scheme, slot_name, slot_size))
 
         # Then
+        # noinspection PyTypeChecker
         expected_tags = [[]] * len(TaggingScheme)
         self.assertEqual(tags, expected_tags)
 
     @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
     def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
-        def mock_positive_tagging(tagging_scheme, slot_name, slot_size):
-            return [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
+        # noinspection PyUnusedLocal
+        def mock_positive_tagging(tagging_scheme, slot, slot_size):
+            return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
         mocked_positive_tagging.side_effect = mock_positive_tagging
         slot_name = "animal"
@@ -411,8 +480,9 @@ class TestCRFUtils(unittest.TestCase):
                                                     mocked_positive_tagging):
 
         # Given
-        def mock_positive_tagging(tagging_scheme, slot_name, slot_size):
-            return [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
+        # noinspection PyUnusedLocal
+        def mock_positive_tagging(tagging_scheme, slot, slot_size):
+            return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
         mocked_positive_tagging.side_effect = mock_positive_tagging
         slot_name = "animal"

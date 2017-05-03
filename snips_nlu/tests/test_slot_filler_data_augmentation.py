@@ -277,20 +277,10 @@ class TestDataAugmentation(unittest.TestCase):
         language = Language.EN
         min_size, max_size = 2, 3
 
-        def subtitles(language):
-            return ["a b c d", "e", "f g h"]
-
-        mocked_get_subtitles.side_effect = subtitles
-
-        def choice(_):
-            return 2
-
-        mocked_choice.side_effect = choice
-
-        def randint(a, b):
-            return 0
-
-        mocked_randint.side_effect = randint
+        mocked_subtitles = ["a b c d", "e", "f g h"]
+        mocked_get_subtitles.return_value = mocked_subtitles
+        mocked_choice.return_value = 2
+        mocked_randint.return_value = 0
 
         it = get_noise_iterator(language, min_size, max_size)
 

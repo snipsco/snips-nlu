@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from crf_resources import get_word_clusters, get_gazetteer
+from snips_nlu.resources import get_word_clusters, get_gazetteer
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language

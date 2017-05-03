@@ -1,6 +1,7 @@
 from enum import Enum, unique
 
 from snips_nlu.constants import TEXT, SLOT_NAME
+from snips_nlu.result import ParsedSlot
 from snips_nlu.tokenization import tokenize, Token
 
 BEGINNING_PREFIX = u'B-'
@@ -114,16 +115,24 @@ def _tags_to_slots(tags, tokens, is_start_of_slot, is_end_of_slot):
     return slots
 
 
-def tags_to_slots(tokens, tags, tagging_scheme):
+def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
     if tagging_scheme == TaggingScheme.IO:
-        return _tags_to_slots(tags, tokens, start_of_io_slot, end_of_io_slot)
+        slots = _tags_to_slots(tags, tokens, start_of_io_slot, end_of_io_slot)
     elif tagging_scheme == TaggingScheme.BIO:
-        return _tags_to_slots(tags, tokens, start_of_bio_slot, end_of_bio_slot)
+        slots = _tags_to_slots(tags, tokens, start_of_bio_slot,
+                               end_of_bio_slot)
     elif tagging_scheme == TaggingScheme.BILOU:
-        return _tags_to_slots(tags, tokens, start_of_bilou_slot,
-                              end_of_bilou_slot)
+        slots = _tags_to_slots(tags, tokens, start_of_bilou_slot,
+                               end_of_bilou_slot)
     else:
         raise ValueError("Unknown tagging scheme %s" % tagging_scheme)
+    return [
+        ParsedSlot(match_range=slot["range"],
+                   value=text[slot["range"][0]:slot["range"][1]],
+                   entity=intent_slots_mapping[slot[SLOT_NAME]],
+                   slot_name=slot[SLOT_NAME])
+        for slot in slots
+    ]
 
 
 def positive_tagging(tagging_scheme, slot_name, slot_size):

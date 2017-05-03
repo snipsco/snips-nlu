@@ -1,8 +1,9 @@
 import json
 import unittest
 
-from snips_nlu.constants import (PARSED_INTENT, PARSED_SLOTS, TEXT, INTENT_NAME,
-                                 PROBABILITY, MATCH_RANGE, SLOT_NAME, VALUE)
+from snips_nlu.constants import (PARSED_INTENT, PARSED_SLOTS, TEXT,
+                                 INTENT_NAME, PROBABILITY, MATCH_RANGE,
+                                 SLOT_NAME, VALUE)
 from snips_nlu.result import Result, IntentClassificationResult, ParsedSlot
 
 
@@ -18,6 +19,7 @@ class TestResult(unittest.TestCase):
         result_dict = result.as_dict()
 
         # Then
+        # noinspection PyBroadException
         try:
             json.dumps(result_dict)
         except:

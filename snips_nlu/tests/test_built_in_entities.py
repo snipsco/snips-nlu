@@ -16,23 +16,22 @@ class TestBuiltInEntities(unittest.TestCase):
         language = Language.from_iso_code(language)
         text = "let's meet at 2p.m in the bronx"
 
-        def mocked_parse(module, text):
-            return [{
-                'body': u'at 2p.m.',
-                'dim': 'time',
-                'end': 17,
-                'value': {
-                    'values': [{'grain': 'hour', 'type': 'value',
-                                'value': '2017-03-29 14:00:00'},
-                               {'grain': 'hour', 'type': 'value',
-                                'value': '2017-03-30 14:00:00'},
-                               {'grain': 'hour', 'type': 'value',
-                                'value': '2017-03-31 14:00:00'}],
-                    'type': 'value',
-                    'grain': 'hour', 'value': '2017-03-27 14:00:00'},
-                'start': 9}]
+        mocked_parse = [{
+            'body': u'at 2p.m.',
+            'dim': 'time',
+            'end': 17,
+            'value': {
+                'values': [{'grain': 'hour', 'type': 'value',
+                            'value': '2017-03-29 14:00:00'},
+                           {'grain': 'hour', 'type': 'value',
+                            'value': '2017-03-30 14:00:00'},
+                           {'grain': 'hour', 'type': 'value',
+                            'value': '2017-03-31 14:00:00'}],
+                'type': 'value',
+                'grain': 'hour', 'value': '2017-03-27 14:00:00'},
+            'start': 9}]
 
-        mocked_duckling_parse.side_effect = mocked_parse
+        mocked_duckling_parse.return_value = mocked_parse
         expected_entities = [{MATCH_RANGE: (9, 17), VALUE: u'at 2p.m.',
                               ENTITY: BuiltInEntity.DATETIME}]
 
@@ -53,6 +52,7 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_built_in_label_uniqueness(self):
         # Given
+        # noinspection PyTypeChecker
         labels = [ent.value["label"] for ent in BuiltInEntity]
 
         # When
@@ -63,6 +63,7 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_built_in_label_duckling_dim_mapping(self):
         # Given
+        # noinspection PyTypeChecker
         duckling_names = [ent.value["duckling_dim"] for ent in BuiltInEntity]
 
         # When
@@ -78,11 +79,7 @@ class TestBuiltInEntities(unittest.TestCase):
         language = "en"
         language = Language.from_iso_code(language)
         text = "input text used twice"
-
-        def mocked_parse(module, text):
-            return []
-
-        mocked_duckling_parse.side_effect = mocked_parse
+        mocked_duckling_parse.return_value = []
 
         # When
         get_built_in_entities(text, language)

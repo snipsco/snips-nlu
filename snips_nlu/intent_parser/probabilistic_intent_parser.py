@@ -1,9 +1,7 @@
 from intent_parser import IntentParser
-from snips_nlu.constants import (DATA, INTENTS, SLOT_NAME, UTTERANCES, ENTITY,
-                                 CUSTOM_ENGINE)
+from snips_nlu.constants import (DATA, INTENTS, CUSTOM_ENGINE)
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
-from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample)
@@ -41,21 +39,10 @@ def default_data_augmentation_config(language):
         return DataAugmentationConfig()
 
 
-def get_slot_name_to_entity_mapping(dataset):
-    slot_name_to_entity = dict()
-    for intent in dataset[INTENTS].values():
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    slot_name_to_entity[chunk[SLOT_NAME]] = chunk[ENTITY]
-    return slot_name_to_entity
-
-
-class CRFIntentParser(IntentParser):
+class ProbabilisticIntentParser(IntentParser):
     def __init__(self, language, intent_classifier, crf_taggers,
-                 slot_name_to_entity_mapping=None,
-                 data_augmentation_config=None):
-        super(CRFIntentParser, self).__init__()
+                 slot_name_to_entity_mapping, data_augmentation_config=None):
+        super(ProbabilisticIntentParser, self).__init__()
         self.language = language
         self.intent_classifier = intent_classifier
         self._crf_taggers = None
@@ -78,7 +65,7 @@ class CRFIntentParser(IntentParser):
 
     def get_intent(self, text):
         if not self.fitted:
-            raise ValueError("CRFIntentParser must be fitted before "
+            raise ValueError("ProbabilisticIntentParser must be fitted before "
                              "`get_intent` is called")
         return self.intent_classifier.get_intent(text)
 
@@ -86,21 +73,20 @@ class CRFIntentParser(IntentParser):
         if intent is None:
             raise ValueError("intent can't be None")
         if not self.fitted:
-            raise ValueError("CRFIntentParser must be fitted before "
+            raise ValueError("ProbabilisticIntentParser must be fitted before "
                              "`get_slots` is called")
         if intent not in self.crf_taggers:
             raise KeyError("Invalid intent '%s'" % intent)
-        tokens = tokenize(text)
-        tagger = self.crf_taggers[intent]
 
+        tokens = tokenize(text)
+        if len(tokens) == 0:
+            return []
+        intent_slots_mapping = self.slot_name_to_entity_mapping[intent]
+        tagger = self.crf_taggers[intent]
         tags = tagger.get_tags(tokens)
-        slots = tags_to_slots(tokens, tags,
-                              tagging_scheme=tagger.tagging_scheme)
-        return [ParsedSlot(match_range=s["range"],
-                           value=text[s["range"][0]:s["range"][1]],
-                           entity=self.slot_name_to_entity_mapping[
-                               s[SLOT_NAME]],
-                           slot_name=s[SLOT_NAME]) for s in slots]
+        slots = tags_to_slots(text, tokens, tags, tagger.tagging_scheme,
+                              intent_slots_mapping)
+        return slots
 
     @property
     def fitted(self):
@@ -109,8 +95,6 @@ class CRFIntentParser(IntentParser):
 
     def fit(self, dataset):
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
-        self.slot_name_to_entity_mapping = get_slot_name_to_entity_mapping(
-            custom_dataset)
         self.intent_classifier = self.intent_classifier.fit(dataset)
         for intent_name in custom_dataset[INTENTS]:
             augmented_intent_utterances = augment_utterances(

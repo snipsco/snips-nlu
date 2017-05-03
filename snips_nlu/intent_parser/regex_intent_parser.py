@@ -1,10 +1,9 @@
-import operator
 import re
 
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
                                  ENTITY, CUSTOM_ENGINE)
-from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import (IntentClassificationResult,
@@ -86,8 +85,9 @@ def get_joined_entity_utterances(dataset):
                           for syn in entry[SYNONYMS]]
         else:
             utterances = [entry[VALUE] for entry in entity[DATA]]
+        utterances_patterns = [re.escape(e) for e in utterances]
         joined_entity_utterances[entity_name] = r"|".join(
-            sorted([re.escape(e) for e in utterances], key=len, reverse=True))
+            sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances
 
 
@@ -146,24 +146,12 @@ class RegexIntentParser(IntentParser):
         if not self.fitted:
             raise AssertionError("RegexIntentParser must be fitted before "
                                  "calling `get_entities`")
-        entities_per_intent = dict()
-        for intent in self.regexes_per_intent.keys():
-            entities_per_intent[intent] = self.get_slots(text, intent)
-
-        intents_probas = dict()
-        total_nb_entities = sum(
-            len(entities) for entities in entities_per_intent.values())
-        # TODO: handle intents without slots
-        if total_nb_entities == 0:
-            return None
-        for intent_name, entities in entities_per_intent.iteritems():
-            intents_probas[intent_name] = float(len(entities)) / float(
-                total_nb_entities)
-
-        top_intent, top_proba = max(intents_probas.items(),
-                                    key=operator.itemgetter(1))
-        return IntentClassificationResult(intent_name=top_intent,
-                                          probability=top_proba)
+        for intent, regexes in self.regexes_per_intent.iteritems():
+            for regex in regexes:
+                if regex.match(text) is not None:
+                    return IntentClassificationResult(intent_name=intent,
+                                                      probability=1.0)
+        return None
 
     def get_slots(self, text, intent=None):
         if not self.fitted:

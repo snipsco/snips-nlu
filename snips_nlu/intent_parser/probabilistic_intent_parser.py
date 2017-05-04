@@ -14,7 +14,7 @@ _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
     'max_utterances noise_prob min_noise_size max_noise_size',
     {
-        'max_utterances': 0,
+        'max_utterances': 200,
         'noise_prob': 0.,
         'min_noise_size': 0,
         'max_noise_size': 0
@@ -31,14 +31,6 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
-def default_data_augmentation_config(language):
-    if language == Language.EN:
-        return DataAugmentationConfig(max_utterances=200, noise_prob=0.05,
-                                      min_noise_size=1, max_noise_size=3)
-    else:
-        return DataAugmentationConfig()
-
-
 class ProbabilisticIntentParser(IntentParser):
     def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping, data_augmentation_config=None):
@@ -49,8 +41,7 @@ class ProbabilisticIntentParser(IntentParser):
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
         if data_augmentation_config is None:
-            data_augmentation_config = default_data_augmentation_config(
-                self.language)
+            data_augmentation_config = DataAugmentationConfig()
         self.data_augmentation_config = data_augmentation_config
 
     @property

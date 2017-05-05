@@ -496,7 +496,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = SAMPLE_DATASET
         naughty_strings_path = os.path.join(TEST_PATH, "resources",
                                             "naughty_strings.txt")
-        with io.open(naughty_strings_path) as f:
+        with io.open(naughty_strings_path, encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
@@ -517,7 +517,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         naughty_strings_path = os.path.join(TEST_PATH, "resources",
                                             "naughty_strings.txt")
-        with io.open(naughty_strings_path) as f:
+        with io.open(naughty_strings_path, encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
         utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
                       naughty_strings]

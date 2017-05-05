@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 
-from snips_nlu.built_in_entities import BuiltInEntity, is_built_in_entity
+from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
@@ -24,7 +24,7 @@ def validate_and_format_dataset(dataset):
     entities = set()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         entities.add(entity_name)
-        if is_built_in_entity(entity_name):
+        if is_builtin_entity(entity_name):
             validate_entity = validate_and_format_builtin_entity
         else:
             validate_entity = validate_and_format_custom_entity

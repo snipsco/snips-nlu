@@ -5,7 +5,8 @@ from copy import copy
 from itertools import groupby, permutations
 
 from dataset import validate_and_format_dataset, filter_dataset
-from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities
+from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities, \
+    is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
@@ -170,6 +171,8 @@ def get_intent_custom_entities(dataset, intent):
 def snips_nlu_entities(dataset):
     entities = dict()
     for entity_name, entity in dataset[ENTITIES].iteritems():
+        if is_builtin_entity(entity_name):
+            continue
         entity_data = dict()
         use_synonyms = entity[USE_SYNONYMS]
         automatically_extensible = entity[AUTOMATICALLY_EXTENSIBLE]

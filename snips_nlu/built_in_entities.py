@@ -106,5 +106,5 @@ def clear_cache():
     _DUCKLING_CACHE.clear()
 
 
-def is_built_in_entity(entity_label):
+def is_builtin_entity(entity_label):
     return entity_label in BuiltInEntity.built_in_entity_by_label

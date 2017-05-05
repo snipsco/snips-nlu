@@ -1,6 +1,6 @@
 import re
 
-from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
                                  ENTITY, CUSTOM_ENGINE)
@@ -80,6 +80,8 @@ def generate_regexes(intent_queries, joined_entity_utterances,
 def get_joined_entity_utterances(dataset):
     joined_entity_utterances = dict()
     for entity_name, entity in dataset[ENTITIES].iteritems():
+        if is_builtin_entity(entity_name):
+            continue
         if entity[USE_SYNONYMS]:
             utterances = [syn for entry in entity[DATA]
                           for syn in entry[SYNONYMS]]

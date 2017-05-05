@@ -1,16 +1,18 @@
 from __future__ import unicode_literals
 
+import io
 import json
+import os
 import unittest
 
 from mock import Mock, patch
 
-from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE
+from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from utils import SAMPLE_DATASET, empty_dataset
+from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
@@ -489,6 +491,59 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         self.assertEqual(results, expected_results)
 
+    def test_should_parse_naughty_strings(self):
+        # Given
+        dataset = SAMPLE_DATASET
+        naughty_strings_path = os.path.join(TEST_PATH, "resources",
+                                            "naughty_strings.txt")
+        with io.open(naughty_strings_path, encoding='utf8') as f:
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
+
+        # When
+        engine = SnipsNLUEngine(Language.EN).fit(dataset)
+
+        # Then
+        for s in naughty_strings:
+            raised = False
+            error = None
+            try:
+                engine.parse(s)
+            except Exception, e:
+                raised = True
+                error = e
+            self.assertFalse(raised, 'Exception raised: %s' % str(error))
+
+    def test_should_fit_with_naughty_strings(self):
+        # Given
+        naughty_strings_path = os.path.join(TEST_PATH, "resources",
+                                            "naughty_strings.txt")
+        with io.open(naughty_strings_path, encoding='utf8') as f:
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
+        utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
+                      naughty_strings]
+
+        # When
+        naughty_dataset = validate_and_format_dataset({
+            "intents": {
+                "naughty_intent": {
+                    "engineType": "regex",
+                    "utterances": utterances
+                }
+            },
+            "entities": dict(),
+            "language": "en"
+        })
+
+        # Then
+        error = None
+        raised = False
+        try:
+            SnipsNLUEngine(Language.EN).fit(naughty_dataset)
+        except Exception, e:
+            raised = True
+            error = e
+        self.assertFalse(raised, 'Exception raised: %s' % str(error))
+
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
         language = Language.EN
@@ -516,7 +571,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         })
 
         # When / Then
-        # try:
-        SnipsNLUEngine(language).fit(dataset)
-        # except:
-        #     self.fail("NLU engine should fit builtin")
+        try:
+            SnipsNLUEngine(language).fit(dataset)
+        except:
+            self.fail("NLU engine should fit builtin")

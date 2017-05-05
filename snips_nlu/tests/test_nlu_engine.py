@@ -495,9 +495,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         dataset = SAMPLE_DATASET
         naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.json")
+                                            "naughty_strings.txt")
         with io.open(naughty_strings_path) as f:
-            naughty_strings = json.load(f)
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
         engine = SnipsNLUEngine(Language.EN).fit(dataset)
@@ -516,9 +516,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_fit_with_naughty_strings(self):
         # Given
         naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.json")
+                                            "naughty_strings.txt")
         with io.open(naughty_strings_path) as f:
-            naughty_strings = json.load(f)
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
         utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
                       naughty_strings]
 

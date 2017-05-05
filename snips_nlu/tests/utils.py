@@ -11,7 +11,8 @@ SAMPLE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
 
 def empty_dataset(language):
     return validate_and_format_dataset(
-        {"intents": {}, "entities": {}, "language": language.iso_code})
+        {"intents": {}, "entities": {}, "language": language.iso_code,
+         "snips_nlu_version": "1.1.1"})
 
 
 with io.open(SAMPLE_DATASET_PATH) as dataset_file:

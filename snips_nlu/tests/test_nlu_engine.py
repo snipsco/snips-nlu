@@ -176,6 +176,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -281,6 +282,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -355,6 +357,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -436,6 +439,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 intent_name: {
                     ENGINE_TYPE: CUSTOM_ENGINE,

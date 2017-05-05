@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+
 import unittest
 
+from builtin_entities_ontology import get_ontology
 from mock import patch
 
 from snips_nlu.built_in_entities import (get_built_in_entities, BuiltInEntity,
@@ -17,7 +20,7 @@ class TestBuiltInEntities(unittest.TestCase):
         text = "let's meet at 2p.m in the bronx"
 
         mocked_parse = [{
-            'body': u'at 2p.m.',
+            'body': 'at 2p.m.',
             'dim': 'time',
             'end': 17,
             'value': {
@@ -88,3 +91,14 @@ class TestBuiltInEntities(unittest.TestCase):
         # Then
         mocked_duckling_parse.assert_called_once_with(language.duckling_code,
                                                       text)
+
+    def test_builtins_should_have_exactly_ontology_entities(self):
+        # Given
+        ontology = get_ontology()
+        ontology_entities = [e["label"] for e in ontology["entities"]]
+
+        # When
+        entities = [e.label for e in BuiltInEntity]
+
+        # Then
+        self.assertItemsEqual(ontology_entities, entities)

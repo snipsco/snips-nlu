@@ -1,5 +1,6 @@
 import unittest
 
+from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
 
@@ -268,6 +269,40 @@ class TestDataset(unittest.TestCase):
 
         # Then
         self.assertEqual(dataset, expected_dataset)
+
+    def test_should_not_require_data_for_builtin_entities(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "10p.m",
+                                    "entity": BuiltInEntity.DATETIME.label,
+                                    "slot_name": "startTime"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                BuiltInEntity.DATETIME.label: {}
+            },
+            "language": "en"
+        }
+
+        # When / Then
+        try:
+            validate_and_format_dataset(dataset)
+        except:
+            self.fail("Could not validate dataset")
 
 
 if __name__ == '__main__':

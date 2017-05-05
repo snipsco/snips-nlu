@@ -10,20 +10,7 @@ class BuiltInEntity(Enum):
 
     DURATION = {LABEL: "snips/duration", DUCKLING_DIM: "duration"}
 
-    TIME_CYCLE = {LABEL: "snips/time-cycle", DUCKLING_DIM: "cycle"}
-
     NUMBER = {LABEL: "snips/number", DUCKLING_DIM: "number"}
-
-    ORDINAL = {LABEL: "snips/ordinal", DUCKLING_DIM: "ordinal"}
-
-    TEMPERATURE = {LABEL: "snips/temperature", DUCKLING_DIM: "temperature"}
-
-    UNIT = {LABEL: "snips/unit", DUCKLING_DIM: "unit"}
-
-    AMOUNT_OF_MONEY = {
-        LABEL: "snips/amount-of-money",
-        DUCKLING_DIM: "amount-of-money"
-    }
 
     @property
     def label(self):
@@ -117,3 +104,7 @@ def get_built_in_entities(text, language, scope=None):
 
 def clear_cache():
     _DUCKLING_CACHE.clear()
+
+
+def is_built_in_entity(entity_label):
+    return entity_label in BuiltInEntity.built_in_entity_by_label

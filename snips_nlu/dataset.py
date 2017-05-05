@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 
-from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.built_in_entities import BuiltInEntity, is_built_in_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
@@ -24,7 +24,12 @@ def validate_and_format_dataset(dataset):
     entities = set()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         entities.add(entity_name)
-        dataset[ENTITIES][entity_name] = validate_and_format_entity(entity)
+        if is_built_in_entity(entity_name):
+            validate_entity = validate_and_format_builtin_entity
+        else:
+            validate_entity = validate_and_format_custom_entity
+        dataset[ENTITIES][entity_name] = validate_entity(entity)
+
     for intent_name, intent in dataset[INTENTS].iteritems():
         validate_intent_name(intent_name)
         validate_and_format_intent(intent, dataset[ENTITIES])
@@ -67,7 +72,7 @@ def get_text_from_chunks(chunks):
     return ''.join(chunk[TEXT] for chunk in chunks)
 
 
-def validate_and_format_entity(entity):
+def validate_and_format_custom_entity(entity):
     validate_type(entity, dict)
     mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA]
     validate_keys(entity, mandatory_keys, object_label="entity")
@@ -82,6 +87,11 @@ def validate_and_format_entity(entity):
         if entry[VALUE] not in entry[SYNONYMS]:
             entry[SYNONYMS].append(entry[VALUE])
 
+    return entity
+
+
+def validate_and_format_builtin_entity(entity):
+    validate_type(entity, dict)
     return entity
 
 

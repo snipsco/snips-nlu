@@ -4,6 +4,7 @@ from itertools import cycle
 
 import numpy as np
 
+from snips_nlu.built_in_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, USE_SYNONYMS,
                                  SYNONYMS, VALUE, TEXT, INTENTS, ENTITIES)
 from snips_nlu.resources import get_subtitles
@@ -17,10 +18,13 @@ def generate_utterance(contexts_iterator, entities_iterators, noise_iterator,
     for i, chunk in enumerate(context[DATA]):
         if ENTITY in chunk:
             has_entity = True
-            new_chunk = dict(chunk)
-            new_chunk[TEXT] = deepcopy(
-                next(entities_iterators[new_chunk[ENTITY]]))
-            context_data.append(new_chunk)
+            if not is_builtin_entity(chunk[ENTITY]):
+                new_chunk = dict(chunk)
+                new_chunk[TEXT] = deepcopy(
+                    next(entities_iterators[new_chunk[ENTITY]]))
+                context_data.append(new_chunk)
+            else:
+                context_data.append(chunk)
         else:
             has_entity = False
             context_data.append(chunk)
@@ -89,6 +93,7 @@ def augment_utterances(dataset, intent_name, language, max_utterances,
     noise_iterator = get_noise_iterator(language, min_noise_size,
                                         max_noise_size)
     intent_entities = get_intent_entities(dataset, intent_name)
+    intent_entities = [e for e in intent_entities if not is_builtin_entity(e)]
     entities_its = get_entities_iterators(dataset, intent_entities)
     generated_utterances = []
     while nb_to_generate > 0:

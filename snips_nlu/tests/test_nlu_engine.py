@@ -488,3 +488,35 @@ class TestSnipsNLUEngine(unittest.TestCase):
         }
 
         self.assertEqual(results, expected_results)
+
+    def test_engine_should_fit_with_builtins_entities(self):
+        # Given
+        language = Language.EN
+        dataset = validate_and_format_dataset({
+            "intents": {
+                "dummy": {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "10p.m.",
+                                    "entity": "snips/datetime",
+                                    "slot_name": "startTime"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "snips/datetime": {}
+            },
+            "language": language.iso_code
+        })
+
+        # When / Then
+        # try:
+        SnipsNLUEngine(language).fit(dataset)
+        # except:
+        #     self.fail("NLU engine should fit builtin")

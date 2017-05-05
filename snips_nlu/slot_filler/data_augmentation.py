@@ -33,8 +33,10 @@ def generate_utterance(contexts_iterator, entities_iterators, noise_iterator,
         space_before = " " if has_entity else ""
 
         if noise_prob > 0 and random.random() < noise_prob:
-            noise = deepcopy(next(noise_iterator))
-            context_data.append({"text": space_before + noise + space_after})
+            noise = deepcopy(next(noise_iterator, None))
+            if noise is not None:
+                context_data.append(
+                    {"text": space_before + noise + space_after})
     context[DATA] = context_data
     return context
 
@@ -81,19 +83,18 @@ def get_noise_iterator(language, min_size, max_size):
 def augment_utterances(dataset, intent_name, language, max_utterances,
                        noise_prob, min_noise_size, max_noise_size):
     utterances = dataset[INTENTS][intent_name][UTTERANCES]
-    if max_utterances < len(utterances):
-        return utterances
-
-    num_to_generate = max_utterances - len(utterances)
+    nb_utterances = len(utterances)
+    nb_to_generate = max(nb_utterances, max_utterances)
     contexts_it = get_contexts_iterator(utterances)
     noise_iterator = get_noise_iterator(language, min_noise_size,
                                         max_noise_size)
     intent_entities = get_intent_entities(dataset, intent_name)
     entities_its = get_entities_iterators(dataset, intent_entities)
+    generated_utterances = []
+    while nb_to_generate > 0:
+        generated_utterance = generate_utterance(contexts_it, entities_its,
+                                                 noise_iterator, noise_prob)
+        generated_utterances.append(generated_utterance)
+        nb_to_generate -= 1
 
-    while num_to_generate > 0:
-        utterances.append(generate_utterance(contexts_it, entities_its,
-                                             noise_iterator, noise_prob))
-        num_to_generate -= 1
-
-    return utterances
+    return generated_utterances

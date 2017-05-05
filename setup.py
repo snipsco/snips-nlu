@@ -22,7 +22,8 @@ required = [
     "scipy==0.19.0",
     "scikit-learn==0.18.1",
     "sklearn-crfsuite==0.3.5",
-    "snips-queries==0.4.0"
+    "snips-queries==0.4.0",
+    "builtin_entities_ontology==0.1.1"
 ]
 
 test_required = [

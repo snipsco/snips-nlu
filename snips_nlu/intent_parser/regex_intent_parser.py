@@ -1,15 +1,19 @@
+from __future__ import unicode_literals
+
 import re
 
-from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
+from snips_nlu.built_in_entities import is_builtin_entity, \
+    get_builtin_entities
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
-                                 ENTITY, CUSTOM_ENGINE)
+                                 ENTITY, CUSTOM_ENGINE, MATCH_RANGE)
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
-                              ParsedSlot)
-from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import instance_to_generic_dict
+                              ParsedSlot, Result)
+from snips_nlu.tokenization import tokenize, tokenize_light
+from snips_nlu.utils import instance_to_generic_dict, LimitedSizeDict
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -51,8 +55,7 @@ def query_to_pattern(query, joined_entity_utterances,
                      group_names_to_slot_names):
     pattern = r"^"
     for chunk in query[DATA]:
-        if SLOT_NAME in chunk and chunk[ENTITY] not in \
-                BuiltInEntity.built_in_entity_by_label:
+        if SLOT_NAME in chunk:
             max_index = generate_new_index(group_names_to_slot_names)
             slot_name = chunk[SLOT_NAME]
             entity = chunk[ENTITY]
@@ -81,12 +84,13 @@ def get_joined_entity_utterances(dataset):
     joined_entity_utterances = dict()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         if is_builtin_entity(entity_name):
-            continue
-        if entity[USE_SYNONYMS]:
-            utterances = [syn for entry in entity[DATA]
-                          for syn in entry[SYNONYMS]]
+            utterances = [get_builtin_entity_name(entity_name)]
         else:
-            utterances = [entry[VALUE] for entry in entity[DATA]]
+            if entity[USE_SYNONYMS]:
+                utterances = [syn for entry in entity[DATA]
+                              for syn in entry[SYNONYMS]]
+            else:
+                utterances = [entry[VALUE] for entry in entity[DATA]]
         utterances_patterns = [re.escape(e) for e in utterances]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
@@ -113,9 +117,40 @@ def deduplicate_overlapping_slots(slots):
     return deduplicated_slots
 
 
+def get_builtin_entity_name(entity_label):
+    return "".join(tokenize_light(entity_label))
+
+
+def preprocess_builtin_entities(utterance):
+    new_utterance = dict(utterance)
+    for i, chunk in enumerate(utterance[DATA]):
+        if ENTITY in chunk and is_builtin_entity(chunk[ENTITY]):
+            new_utterance[DATA][i][TEXT] = get_builtin_entity_name(
+                chunk[ENTITY])
+    return new_utterance
+
+
+def replace_builtin_entities(text, language):
+    builtin_entities = get_builtin_entities(text, language)
+    range_mapping = dict()
+    processed_text = ""
+    current_ix = 0
+    for ent in sorted(builtin_entities, key=lambda e: e[MATCH_RANGE][0]):
+        ent_start = ent[MATCH_RANGE][0]
+        processed_text += text[current_ix:ent_start]
+        new_text = get_builtin_entity_name(ent[ENTITY].label)
+        processed_text += new_text
+        new_range = (ent_start, ent_start + len(new_text))
+        current_ix = ent[MATCH_RANGE][1]
+        range_mapping[new_range] = ent[MATCH_RANGE]
+    processed_text += text[current_ix:]
+    return range_mapping, processed_text
+
+
 class RegexIntentParser(IntentParser):
-    def __init__(self, patterns=None, group_names_to_slot_names=None,
+    def __init__(self, language, patterns=None, group_names_to_slot_names=None,
                  slot_names_to_entities=None):
+        self.language = language
         self.regexes_per_intent = None
         if patterns is not None:
             self.regexes_per_intent = dict()
@@ -125,6 +160,7 @@ class RegexIntentParser(IntentParser):
                 self.regexes_per_intent[intent] = regexes
         self.group_names_to_slot_names = group_names_to_slot_names
         self.slot_names_to_entities = slot_names_to_entities
+        self._cache = LimitedSizeDict(size_limit=1000)
 
     @property
     def fitted(self):
@@ -137,7 +173,8 @@ class RegexIntentParser(IntentParser):
         joined_entity_utterances = get_joined_entity_utterances(dataset)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
         for intent_name, intent in dataset[INTENTS].iteritems():
-            utterances = intent[UTTERANCES]
+            utterances = [preprocess_builtin_entities(u)
+                          for u in intent[UTTERANCES]]
             regexes, self.group_names_to_slot_names = generate_regexes(
                 utterances, joined_entity_utterances,
                 self.group_names_to_slot_names)
@@ -148,12 +185,9 @@ class RegexIntentParser(IntentParser):
         if not self.fitted:
             raise AssertionError("RegexIntentParser must be fitted before "
                                  "calling `get_entities`")
-        for intent, regexes in self.regexes_per_intent.iteritems():
-            for regex in regexes:
-                if regex.match(text) is not None:
-                    return IntentClassificationResult(intent_name=intent,
-                                                      probability=1.0)
-        return None
+        if text not in self._cache:
+            self._parse(text)
+        return self._cache[text].parsed_intent
 
     def get_slots(self, text, intent=None):
         if not self.fitted:
@@ -162,21 +196,49 @@ class RegexIntentParser(IntentParser):
         if intent not in self.regexes_per_intent:
             raise KeyError("Intent not found in RegexIntentParser: %s"
                            % intent)
-        slots = []
-        for regex in self.regexes_per_intent[intent]:
-            match = regex.match(text)
-            if match is None:
-                continue
-            for group_name in match.groupdict():
-                slot_name = self.group_names_to_slot_names[group_name]
-                entity = self.slot_names_to_entities[slot_name]
-                rng = (match.start(group_name), match.end(group_name))
-                parsed_slot = ParsedSlot(match_range=rng,
-                                         value=match.group(group_name),
-                                         entity=entity,
-                                         slot_name=slot_name)
-                slots.append(parsed_slot)
-        return deduplicate_overlapping_slots(slots)
+        if text not in self._cache:
+            self._parse(text)
+        res = self._cache[text]
+        if intent is not None and res.parsed_intent is not None and \
+                        res.parsed_intent.intent_name != intent:
+            return []
+        return res.parsed_slots
+
+    def _parse(self, text):
+        if not self.fitted:
+            raise AssertionError("RegexIntentParser must be fitted before "
+                                 "calling `get_entities`")
+        ranges_mapping, processed_text = replace_builtin_entities(
+            text, self.language)
+
+        parsed_intent = None
+        parsed_slots = []
+        matched = False
+        for intent, regexes in self.regexes_per_intent.iteritems():
+            for regex in regexes:
+                match = regex.match(processed_text)
+                if match is not None:
+                    parsed_intent = IntentClassificationResult(
+                        intent_name=intent, probability=1.0)
+                    matched = True
+                    slots = []
+                    for group_name in match.groupdict():
+                        slot_name = self.group_names_to_slot_names[group_name]
+                        entity = self.slot_names_to_entities[slot_name]
+                        rng = (match.start(group_name), match.end(group_name))
+                        value = match.group(group_name)
+                        if rng in ranges_mapping:
+                            rng = ranges_mapping[rng]
+                            value = text[rng[0]:rng[1]]
+                        parsed_slot = ParsedSlot(
+                            match_range=rng, value=value, entity=entity,
+                            slot_name=slot_name)
+                        slots.append(parsed_slot)
+                    parsed_slots = deduplicate_overlapping_slots(slots)
+                    break
+            if matched:
+                break
+        self._cache[text] = Result(text, parsed_intent, parsed_slots)
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)
@@ -187,6 +249,7 @@ class RegexIntentParser(IntentParser):
             patterns = None
 
         obj_dict.update({
+            "language": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
@@ -196,8 +259,9 @@ class RegexIntentParser(IntentParser):
 
     @classmethod
     def from_dict(cls, obj_dict):
+        language = Language.from_iso_code(obj_dict["language"])
         patterns = obj_dict["patterns"]
         group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
         slot_names_to_entities = obj_dict["slot_names_to_entities"]
-        return cls(patterns, group_names_to_slot_names,
+        return cls(language, patterns, group_names_to_slot_names,
                    slot_names_to_entities)

@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
+from snips_nlu.built_in_entities import get_builtin_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
@@ -215,8 +215,8 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code,
         start = tokens[token_index].start
         end = tokens[token_index].end
 
-        builtin_entities = get_built_in_entities(text, language,
-                                                 scope=[built_in_entity])
+        builtin_entities = get_builtin_entities(text, language,
+                                                scope=[built_in_entity])
 
         builtin_entities = filter(
             lambda _ent: (_ent[MATCH_RANGE][0] <= start < _ent[MATCH_RANGE][

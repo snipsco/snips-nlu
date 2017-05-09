@@ -1,18 +1,109 @@
+from __future__ import unicode_literals
+
 import json
 import unittest
 
 from snips_nlu.intent_parser.regex_intent_parser import (
     RegexIntentParser, deduplicate_overlapping_slots)
+from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
-from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestRegexIntentParser(unittest.TestCase):
     def test_should_get_intent(self):
         # Given
-        dataset = SAMPLE_DATASET
-        parser = RegexIntentParser().fit(dataset)
-        text = "this is a dummy_a query with another dummy_c"
+        language = Language.EN
+        dataset = {
+            "entities": {
+                "dummy_entity_1": {
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "data": [
+                        {
+                            "synonyms": [
+                                "dummy_a",
+                                "dummy 2a",
+                                "dummy a",
+                                "2 dummy a"
+                            ],
+                            "value": "dummy_a"
+                        },
+                        {
+                            "synonyms": [
+                                "dummy_b",
+                                "dummy_bb",
+                                "dummy b"
+                            ],
+                            "value": "dummy_b"
+                        },
+                        {
+                            "synonyms": [
+                                "dummy d"
+                            ],
+                            "value": "dummy d"
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "data": [
+                        {
+                            "synonyms": [
+                                "dummy_c",
+                                "dummy_cc",
+                                "dummy c",
+                                "3p.m."
+                            ],
+                            "value": "dummy_c"
+                        }
+                    ]
+                },
+                "snips/datetime": {}
+            },
+            "intents": {
+                "dummy_intent_1": {
+                    "engineType": "regex",
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "This is a "
+                                },
+                                {
+                                    "text": "dummy_1",
+                                    "slot_name": "dummy_slot_name",
+                                    "entity": "dummy_entity_1"
+                                },
+                                {
+                                    "text": " query with another "
+                                },
+                                {
+                                    "text": "dummy_2",
+                                    "slot_name": "dummy_slot_name2",
+                                    "entity": "dummy_entity_2"
+                                },
+                                {
+                                    "text": " "
+                                },
+                                {
+                                    "text": "at 10p.m.",
+                                    "slot_name": "startTime",
+                                    "entity": "snips/datetime"
+                                },
+                                {
+                                    "text": " ok"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        }
+
+        parser = RegexIntentParser(language).fit(dataset)
+        text = "this is a dummy_a query with another dummy_c at 10p.m. ok"
 
         # When
         intent = parser.get_intent(text)
@@ -26,9 +117,97 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def test_should_get_slots(self):
         # Given
-        dataset = SAMPLE_DATASET
-        parser = RegexIntentParser().fit(dataset)
-        text = "this is a dummy_a query with another dummy_c"
+        language = Language.EN
+        dataset = dataset = {
+            "entities": {
+                "dummy_entity_1": {
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "data": [
+                        {
+                            "synonyms": [
+                                "dummy_a",
+                                "dummy 2a",
+                                "dummy a",
+                                "2 dummy a"
+                            ],
+                            "value": "dummy_a"
+                        },
+                        {
+                            "synonyms": [
+                                "dummy_b",
+                                "dummy_bb",
+                                "dummy b"
+                            ],
+                            "value": "dummy_b"
+                        },
+                        {
+                            "synonyms": [
+                                "dummy d"
+                            ],
+                            "value": "dummy d"
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "data": [
+                        {
+                            "synonyms": [
+                                "dummy_c",
+                                "dummy_cc",
+                                "dummy c",
+                                "3p.m."
+                            ],
+                            "value": "dummy_c"
+                        }
+                    ]
+                },
+                "snips/datetime": {}
+            },
+            "intents": {
+                "dummy_intent_1": {
+                    "engineType": "regex",
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "This is a "
+                                },
+                                {
+                                    "text": "dummy_1",
+                                    "slot_name": "dummy_slot_name",
+                                    "entity": "dummy_entity_1"
+                                },
+                                {
+                                    "text": " query with another "
+                                },
+                                {
+                                    "text": "dummy_2",
+                                    "slot_name": "dummy_slot_name2",
+                                    "entity": "dummy_entity_2"
+                                },
+                                {
+                                    "text": " "
+                                },
+                                {
+                                    "text": "at 10p.m.",
+                                    "slot_name": "startTime",
+                                    "entity": "snips/datetime"
+                                },
+                                {
+                                    "text": " ok"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        }
+        parser = RegexIntentParser(language).fit(dataset)
+        text = "this is a dummy_a query with another dummy_c at 10p.m. ok"
 
         # When
         slots = parser.get_slots(text, intent="dummy_intent_1")
@@ -38,12 +217,15 @@ class TestRegexIntentParser(unittest.TestCase):
             ParsedSlot(match_range=(10, 17), value="dummy_a",
                        entity="dummy_entity_1", slot_name="dummy_slot_name"),
             ParsedSlot(match_range=(37, 44), value="dummy_c",
-                       entity="dummy_entity_2", slot_name="dummy_slot_name2")
+                       entity="dummy_entity_2", slot_name="dummy_slot_name2"),
+            ParsedSlot(match_range=(45, 54), value="at 10p.m.",
+                       entity="snips/datetime", slot_name="startTime")
         ]
         self.assertItemsEqual(expected_slots, slots)
 
     def test_should_be_serializable(self):
         # Given
+        language = Language.EN
         patterns = {
             "intent_name": [
                 "(?P<hello_group>hello?)",
@@ -59,6 +241,7 @@ class TestRegexIntentParser(unittest.TestCase):
             "world_slot": "world_entity"
         }
         parser = RegexIntentParser(
+            language=language,
             patterns=patterns,
             group_names_to_slot_names=group_names_to_slot_names,
             slot_names_to_entities=slot_names_to_entities
@@ -77,6 +260,7 @@ class TestRegexIntentParser(unittest.TestCase):
         expected_dict = {
             "@class_name": "RegexIntentParser",
             "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
+            "language": "en",
             'group_names_to_slot_names': {
                 'hello_group': 'hello_slot',
                 'world_group': 'world_slot'
@@ -96,9 +280,11 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def test_should_be_deserializable(self):
         # Given
+        language = Language.EN
         parser_dict = {
             "@class_name": "RegexIntentParser",
             "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
+            "language": language.iso_code,
             'group_names_to_slot_names': {
                 'hello_group': 'hello_slot',
                 'world_group': 'world_slot'
@@ -132,6 +318,7 @@ class TestRegexIntentParser(unittest.TestCase):
             "world_slot": "world_entity"
         }
         expected_parser = RegexIntentParser(
+            language=language,
             patterns=patterns,
             group_names_to_slot_names=group_names_to_slot_names,
             slot_names_to_entities=slot_names_to_entities

@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
+from copy import copy
+from itertools import groupby, permutations
 
 from duckling import core
 
 from dataset import validate_and_format_dataset, filter_dataset
-from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities, \
+from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
@@ -22,7 +24,8 @@ from snips_nlu.result import ParsedSlot, empty_result, \
     IntentClassificationResult
 from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
-from snips_nlu.slot_filler.crf_utils import TaggingScheme
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, positive_tagging, \
+    tags_to_slots
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize
@@ -122,6 +125,50 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
             valid_slot.append(s)
         return Result(text, parsed_intent=res, parsed_slots=valid_slot)
     return empty_result(text)
+
+
+def augment_slots(text, tagger, intent_slots_mapping, builtin_entities,
+                  missing_slots):
+    tokens = tokenize(text)
+    # TODO: Find a way to avoid tagging multiple times
+    tags = tagger.get_tags(tokens)
+    augmented_tags = tags
+    grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
+    for entity, matches in grouped_entities:
+        spans_ranges = [match[MATCH_RANGE] for match in matches]
+        tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
+        related_slots = set(s for s in missing_slots
+                            if intent_slots_mapping[s] == entity.label)
+        slots_permutations = permutations(related_slots)
+        best_updated_tags = augmented_tags
+        best_permutation_score = -1
+        for slots in slots_permutations:
+            updated_tags = copy(augmented_tags)
+            for slot_index, slot in enumerate(slots):
+                if slot_index >= len(tokens_indexes):
+                    break
+                indexes = tokens_indexes[slot_index]
+                sub_tags_sequence = positive_tagging(tagger.tagging_scheme,
+                                                     slot, len(indexes))
+                updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
+            score = tagger.get_sequence_probability(tokens, updated_tags)
+            if score > best_permutation_score:
+                best_updated_tags = updated_tags
+                best_permutation_score = score
+        augmented_tags = best_updated_tags
+    return tags_to_slots(text, tokens, augmented_tags, tagger.tagging_scheme,
+                         intent_slots_mapping)
+
+
+def spans_to_tokens_indexes(spans, tokens):
+    tokens_indexes = []
+    for span_start, span_end in spans:
+        indexes = []
+        for i, token in enumerate(tokens):
+            if span_end > token.start and span_start < token.end:
+                indexes.append(i)
+        tokens_indexes.append(indexes)
+    return tokens_indexes
 
 
 def get_slot_name_mapping(dataset):
@@ -253,7 +300,7 @@ class SnipsNLUEngine(NLUEngine):
         slots = enrich_slots(slots, seen_entities_slots)
 
         # Add builtins entities
-        builtin_entities = get_built_in_entities(text, self.language,
+        builtin_entities = get_builtin_entities(text, self.language,
                                                  self.tagging_scope)
         builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
                                     ent[ENTITY].label, ent[ENTITY].label)
@@ -266,6 +313,31 @@ class SnipsNLUEngine(NLUEngine):
         return Result(text, parsed_intent=parsed_intent,
                       parsed_slots=slots).as_dict()
 
+    def augment_slots_with_builtin_entities(self, result):
+        if self.probabilistic_parser is None:
+            return result
+
+        intent_name = result.parsed_intent.intent_name
+        intent_slots_mapping = self.slot_name_mapping.get(intent_name, dict())
+        all_intent_slots = intent_slots_mapping.keys()
+        builtin_slots = set(s for s in all_intent_slots
+                            if intent_slots_mapping[s] in
+                            BuiltInEntity.built_in_entity_by_label)
+        found_slots = set(s.slot_name for s in result.parsed_slots)
+        missing_builtin_slots = set(builtin_slots).difference(found_slots)
+        if len(missing_builtin_slots) == 0:
+            return result
+
+        tagger = self.probabilistic_parser.crf_taggers[intent_name]
+        text = result.text
+        scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
+                 for slot in missing_builtin_slots]
+        builtin_entities = get_builtin_entities(text, self.language, scope)
+        slots = augment_slots(text, tagger, intent_slots_mapping,
+                              builtin_entities, missing_builtin_slots)
+        return Result(text, parsed_intent=result.parsed_intent,
+                      parsed_slots=slots)
+
     def fit(self, dataset):
         """
         Fit the engine with a dataset and return it
@@ -277,7 +349,7 @@ class SnipsNLUEngine(NLUEngine):
         """
         dataset = validate_and_format_dataset(dataset)
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
-        self.rule_based_parser = RegexIntentParser().fit(dataset)
+        self.rule_based_parser = RegexIntentParser(self.language).fit(dataset)
         self.entities = snips_nlu_entities(dataset)
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent

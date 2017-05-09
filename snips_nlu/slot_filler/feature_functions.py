@@ -1,10 +1,10 @@
 from collections import namedtuple
 
-from snips_nlu.resources import get_word_clusters, get_gazetteer
 from snips_nlu.built_in_entities import get_built_in_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
+from snips_nlu.resources import get_word_clusters, get_gazetteer
 from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
@@ -152,7 +152,7 @@ def get_word_cluster_fn(cluster_name, language_code):
 
 
 def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
-                       tagging_scheme_code, max_ngram_size=None):
+                       tagging_scheme_code):
     lowered_collection = set([c.lower() for c in tokens_collection])
     tagging_scheme = TaggingScheme(tagging_scheme_code)
 
@@ -161,9 +161,7 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
 
     def token_is_in(tokens, token_index):
         normalized_tokens = map(lambda t: transform(t).lower(), tokens)
-        ngrams = get_all_ngrams(normalized_tokens,
-                                max_ngram_size=max_ngram_size,
-                                containing_index=token_index)
+        ngrams = get_all_ngrams(normalized_tokens)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)
@@ -178,7 +176,7 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
 
 
 def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
-                           use_stemming, max_ngram_size=None):
+                           use_stemming):
     language = Language.from_iso_code(language_code)
     gazetteer = get_gazetteer(language, gazetteer_name)
     if use_stemming:
@@ -190,9 +188,7 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
 
     def is_in_gazetter(tokens, token_index):
         normalized_tokens = map(lambda t: transform(t).lower(), tokens)
-        ngrams = get_all_ngrams(normalized_tokens,
-                                max_ngram_size=max_ngram_size,
-                                containing_index=token_index)
+        ngrams = get_all_ngrams(normalized_tokens)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)

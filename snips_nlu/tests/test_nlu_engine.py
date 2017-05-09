@@ -898,10 +898,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         for s in naughty_strings:
-            # try:
-            engine.parse(s)
-            # except Exception, e:
-            #     self.fail('Exception raised: %s' % e.message)
+            try:
+                engine.parse(s)
+            except Exception, e:
+                self.fail('Exception raised: %s' % e.message)
 
     def test_should_fit_with_naughty_strings(self):
         # Given

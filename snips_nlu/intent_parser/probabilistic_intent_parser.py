@@ -85,6 +85,10 @@ class ProbabilisticIntentParser(IntentParser):
         slots = tags_to_slots(text, tokens, tags, tagger.tagging_scheme,
                               intent_slots_mapping)
 
+        # Remove slots corresponding to builtin entities
+        slots = [s for s in slots if intent_slots_mapping[s.slot_name] not in
+                 BuiltInEntity.built_in_entity_by_label]
+
         builtin_slots = set(s for s in intent_slots_mapping
                             if intent_slots_mapping[s] in
                             BuiltInEntity.built_in_entity_by_label)

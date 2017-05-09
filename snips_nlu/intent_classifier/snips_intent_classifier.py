@@ -93,7 +93,8 @@ class SnipsIntentClassifier(IntentClassifier):
         obj_dict = instance_to_generic_dict(self)
         obj_dict.update({
             "classifier_args": self.classifier_args,
-            "classifier_pkl": safe_pickle_dumps(self.classifier),
+            "coeffs": self.classifier.coef_.tolist(),
+            "intercept": self.classifier.intercept_.tolist(),
             "intent_list": self.intent_list,
             "language_code": self.language.iso_code,
             "featurizer": self.featurizer.to_dict()
@@ -103,10 +104,12 @@ class SnipsIntentClassifier(IntentClassifier):
     @classmethod
     def from_dict(cls, obj_dict):
         language = Language.from_iso_code(obj_dict['language_code'])
-        classifier = cls(language=language,
-                         classifier_args=obj_dict['classifier_args'])
-        obj_dict['classifier_pkl'] = ensure_string(obj_dict['classifier_pkl'])
-        classifier.classifier = safe_pickle_loads(obj_dict['classifier_pkl'])
+        classifier_args = obj_dict['classifier_args']
+        classifier = cls(language=language, classifier_args=classifier_args)
+        sgd_classifier = SGDClassifier(**classifier_args)
+        sgd_classifier.coef_ = np.array(obj_dict['coeffs'])
+        sgd_classifier.intercept_ = np.array(obj_dict['intercept'])
+        classifier.classifier = sgd_classifier
         classifier.intent_list = obj_dict['intent_list']
         classifier.featurizer = Featurizer.from_dict(obj_dict['featurizer'])
         return classifier

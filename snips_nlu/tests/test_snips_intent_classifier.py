@@ -101,10 +101,11 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         intent_classifier = SnipsIntentClassifier(
             language=Language.EN, classifier_args=classifier_args).fit(
             SAMPLE_DATASET)
+        coeffs = intent_classifier.classifier.coef_
+        intercept = intent_classifier.classifier.intercept_
 
         # When
         classifier_dict = intent_classifier.to_dict()
-        pickled_classifier = safe_pickle_dumps(intent_classifier.classifier)
 
         # Then
         # noinspection PyBroadException
@@ -126,7 +127,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             CLASS_NAME: SnipsIntentClassifier.__name__,
             MODULE_NAME: SnipsIntentClassifier.__module__,
             "classifier_args": classifier_args,
-            "classifier_pkl": pickled_classifier,
+            "coeffs": coeffs,
+            "intercept": intercept,
             "intent_list": intent_list,
             "language_code": SAMPLE_DATASET[LANGUAGE],
             "featurizer": mock_to_dict()

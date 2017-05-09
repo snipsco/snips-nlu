@@ -1,19 +1,18 @@
-from __future__ import unicode_literals
-
 import unittest
 
 from mock import MagicMock
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
-from snips_nlu.nlu_engine import augment_slots, spans_to_tokens_indexes
+from snips_nlu.intent_parser.probabilistic_intent_parser import (
+    augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser)
 from snips_nlu.result import ParsedSlot
-from snips_nlu.slot_filler.crf_utils import TaggingScheme, BEGINNING_PREFIX, \
-    INSIDE_PREFIX
-from snips_nlu.tokenization import Token
+from snips_nlu.slot_filler.crf_utils import (BEGINNING_PREFIX, INSIDE_PREFIX,
+                                             TaggingScheme)
+from snips_nlu.tokenization import Token, tokenize
 
 
-class TestNLUEngineUtils(unittest.TestCase):
+class TestProbabilisticIntentParser(unittest.TestCase):
     def test_spans_to_tokens_indexes(self):
         # Given
         spans = [
@@ -38,6 +37,7 @@ class TestNLUEngineUtils(unittest.TestCase):
     def test_augment_slots(self):
         # Given
         text = "Find me a flight before 10pm and after 8pm"
+        tokens = tokenize(text)
         intent_slots_mapping = {
             "start_date": "snips/datetime",
             "end_date": "snips/datetime",
@@ -56,37 +56,36 @@ class TestNLUEngineUtils(unittest.TestCase):
             }
         ]
 
-        def mocked_get_tags(tokens):
-            return ['O' for _ in tokens]
+        tags = ['O' for _ in tokens]
 
-        def mocked_sequence_probability(tokens, tags):
-            first_tags = ['O' for _ in tokens]
+        def mocked_sequence_probability(_tokens, _tags):
+            first_tags = ['O' for _ in _tokens]
             first_tags[4] = '%sstart_date' % BEGINNING_PREFIX
             first_tags[5] = '%sstart_date' % INSIDE_PREFIX
             first_tags[7] = '%send_date' % BEGINNING_PREFIX
             first_tags[8] = '%send_date' % INSIDE_PREFIX
 
-            second_tags = ['O' for _ in tokens]
+            second_tags = ['O' for _ in _tokens]
             second_tags[4] = '%send_date' % BEGINNING_PREFIX
             second_tags[5] = '%send_date' % INSIDE_PREFIX
             second_tags[7] = '%sstart_date' % BEGINNING_PREFIX
             second_tags[8] = '%sstart_date' % INSIDE_PREFIX
 
-            if tags == first_tags:
+            if _tags == first_tags:
                 return 0.6
-            if tags == second_tags:
+            if _tags == second_tags:
                 return 0.8
             else:
-                raise ValueError("Unexpected tag sequence: %s" % tags)
+                raise ValueError("Unexpected tag sequence: %s" % _tags)
 
         tagger = MagicMock()
-        tagger.get_tags = MagicMock(side_effect=mocked_get_tags)
         tagger.get_sequence_probability = MagicMock(
             side_effect=mocked_sequence_probability)
         tagger.tagging_scheme = TaggingScheme.BIO
 
         # When
-        augmented_slots = augment_slots(text, tagger, intent_slots_mapping,
+        augmented_slots = augment_slots(text, tokens, tags, tagger,
+                                        intent_slots_mapping,
                                         builtin_entities, missing_slots)
 
         # Then

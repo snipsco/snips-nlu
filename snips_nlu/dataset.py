@@ -118,8 +118,11 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
 
 
 def add_entity_value_if_missing(value, entity):
-    entity_values = set(v for entry in entity[DATA] for v in
-                        entry[SYNONYMS] + [entry[VALUE]])
+    if entity[USE_SYNONYMS]:
+        entity_values = set(v for entry in entity[DATA] for v in
+                            entry[SYNONYMS] + [entry[VALUE]])
+    else:
+        entity_values = set(entry[VALUE] for entry in entity[DATA])
     if value in entity_values:
         return
     entity[DATA].append({VALUE: value, SYNONYMS: [value]})

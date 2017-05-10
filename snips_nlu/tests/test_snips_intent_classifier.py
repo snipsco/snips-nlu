@@ -12,7 +12,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
-from snips_nlu.utils import CLASS_NAME, MODULE_NAME, safe_pickle_dumps
+from snips_nlu.utils import CLASS_NAME, MODULE_NAME
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):

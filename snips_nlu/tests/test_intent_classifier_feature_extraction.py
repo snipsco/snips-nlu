@@ -1,22 +1,29 @@
 import json
 import unittest
 
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-
-from snips_nlu.intent_classifier.feature_extraction import Featurizer
+from snips_nlu.intent_classifier.feature_extraction import (
+    Featurizer, default_tfidf_vectorizer)
 from snips_nlu.languages import Language
-from snips_nlu.utils import safe_pickle_dumps
 
 
 class TestFeatureExtraction(unittest.TestCase):
     def test_should_be_serializable(self):
         # Given
         language = Language.EN
-        count_vectorizer = CountVectorizer(ngram_range=(1, 1))
+        tfidf_vectorizer = default_tfidf_vectorizer()
+        pvalue_threshold = 0.42
+        featurizer = Featurizer(language, tfidf_vectorizer=tfidf_vectorizer,
+                                pvalue_threshold=pvalue_threshold)
+        queries = [
+            "hello world",
+            "beautiful world",
+            "hello here",
+            "bird birdy",
+            "beautiful bird"
+        ]
+        classes = [0, 0, 0, 1, 1]
 
-        tfidf_transformer = TfidfTransformer()
-        featurizer = Featurizer(language, count_vectorizer=count_vectorizer,
-                                tfidf_transformer=tfidf_transformer)
+        featurizer.fit(queries, classes)
 
         # When
         serialized_featurizer = featurizer.to_dict()
@@ -35,13 +42,49 @@ class TestFeatureExtraction(unittest.TestCase):
             self.fail("SnipsNLUEngine should be deserializable from dict with "
                       "unicode values")
 
-        count_vectorizer_pickled = safe_pickle_dumps(count_vectorizer)
-        tfidf_transformer_pickled = safe_pickle_dumps(tfidf_transformer)
+        stop_words = tfidf_vectorizer.stop_words
+        vocabulary = tfidf_vectorizer.vocabulary_
+        idf_diag = tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+        best_features = featurizer.best_features
         expected_serialized = {
             "language_code": "en",
-            "count_vectorizer": count_vectorizer_pickled,
-            "tfidf_transformer": tfidf_transformer_pickled,
-            "best_features": None,
-            "pvalue_threshold": 0.4
+            "tfidf_vectorizer_idf_diag": idf_diag,
+            "tfidf_vectorizer_stop_words": stop_words,
+            "tfidf_vectorizer_vocab": vocabulary,
+            "best_features": best_features,
+            "pvalue_threshold": pvalue_threshold
         }
         self.assertDictEqual(expected_serialized, serialized_featurizer)
+
+    def test_should_be_deserializable(self):
+        # Given
+        language = Language.EN
+        idf_diag = [1.52, 1.21, 1.04]
+        stop_words = ["the", "at"]
+        vocabulary = {"hello": 0, "beautiful": 1, "world": 2}
+        best_features = [0, 1]
+        pvalue_threshold = 0.4
+
+        featurizer_dict = {
+            "language_code": language.iso_code,
+            "tfidf_vectorizer_idf_diag": idf_diag,
+            "tfidf_vectorizer_stop_words": stop_words,
+            "tfidf_vectorizer_vocab": vocabulary,
+            "best_features": best_features,
+            "pvalue_threshold": pvalue_threshold
+        }
+
+        # When
+        featurizer = Featurizer.from_dict(featurizer_dict)
+
+        # Then
+        self.assertEqual(featurizer.language, language)
+        self.assertListEqual(
+            featurizer.tfidf_vectorizer._tfidf._idf_diag.data.tolist(),
+            idf_diag)
+        self.assertListEqual(featurizer.tfidf_vectorizer.stop_words,
+                             stop_words)
+        self.assertDictEqual(featurizer.tfidf_vectorizer.vocabulary_,
+                             vocabulary)
+        self.assertListEqual(featurizer.best_features, best_features)
+        self.assertEqual(featurizer.pvalue_threshold, pvalue_threshold)

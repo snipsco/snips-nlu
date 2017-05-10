@@ -14,7 +14,7 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 required = [
-    "duckling==0.0.18",
+    "duckling==0.0.15",
     "pytest",
     "enum34==1.1.6",
     "mock",

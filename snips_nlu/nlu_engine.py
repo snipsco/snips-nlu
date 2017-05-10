@@ -177,33 +177,19 @@ class SnipsNLUEngine(NLUEngine):
                 % (value.parser.language, self.language.iso_code))
         self._builtin_parser = value
 
-    def parse(self, text, intent=None, force_builtin_entities=False):
+    def parse(self, text, intent=None):
         """
         Parse the input text and returns a dictionary containing the most
         likely intent and slots.
-        If the intent is provided, intent classification is not performed.
-        If the builtin entity parsing is enforced, then the intent must be 
-        provided
         """
-        if force_builtin_entities:
-            if intent is None:
-                raise ValueError("If builtin entities parsing if enforced, "
-                                 "intent should be passed")
-            return self._parse_and_force_builtin_entities(
-                text, intent).as_dict()
-        else:
-            return self._parse(text, intent=intent).as_dict()
+        return self._parse(text, intent=intent).as_dict()
 
     def _parse(self, text, intent=None):
         return _parse(text, self.entities, self.rule_based_parser,
                       self.probabilistic_parser, self.builtin_parser,
                       intent)
 
-    def _parse_and_force_builtin_entities(self, text, intent):
-        """
-        Parse the input text for UI auto tagging and returns a dictionary  
-        containing the most likely slots.
-        """
+    def tag(self, text, intent):
         result = self._parse(text, intent=intent)
         force_builtin_parsing = self.intents_data_sizes[
                                     intent] < self.ui_builtin_parsing_threshold
@@ -229,7 +215,8 @@ class SnipsNLUEngine(NLUEngine):
                 slots.append(parsed_slot)
         parsed_intent = IntentClassificationResult(
             result.parsed_intent.intent_name, result.parsed_intent.probability)
-        return Result(text, parsed_intent=parsed_intent, parsed_slots=slots)
+        return Result(text, parsed_intent=parsed_intent,
+                      parsed_slots=slots).as_dict()
 
     def fit(self, dataset):
         """

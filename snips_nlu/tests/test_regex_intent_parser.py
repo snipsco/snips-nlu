@@ -92,8 +92,14 @@ class TestRegexIntentParser(unittest.TestCase):
                                     "entity": "snips/datetime"
                                 },
                                 {
-                                    "text": " ok"
+                                    "text": " or "
+                                },
+                                {
+                                    "text": "next monday",
+                                    "slot_name": "startTime",
+                                    "entity": "snips/datetime"
                                 }
+
                             ]
                         }
                     ]
@@ -103,7 +109,8 @@ class TestRegexIntentParser(unittest.TestCase):
         }
 
         parser = RegexIntentParser(language).fit(dataset)
-        text = "this is a dummy_a query with another dummy_c at 10p.m. ok"
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         intent = parser.get_intent(text)
@@ -118,7 +125,7 @@ class TestRegexIntentParser(unittest.TestCase):
     def test_should_get_slots(self):
         # Given
         language = Language.EN
-        dataset = dataset = {
+        dataset = {
             "entities": {
                 "dummy_entity_1": {
                     "automatically_extensible": False,
@@ -197,8 +204,14 @@ class TestRegexIntentParser(unittest.TestCase):
                                     "entity": "snips/datetime"
                                 },
                                 {
-                                    "text": " ok"
+                                    "text": " or "
+                                },
+                                {
+                                    "text": "next monday",
+                                    "slot_name": "startTime",
+                                    "entity": "snips/datetime"
                                 }
+
                             ]
                         }
                     ]
@@ -207,7 +220,8 @@ class TestRegexIntentParser(unittest.TestCase):
             "language": language.iso_code
         }
         parser = RegexIntentParser(language).fit(dataset)
-        text = "this is a dummy_a query with another dummy_c at 10p.m. ok"
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         slots = parser.get_slots(text, intent="dummy_intent_1")
@@ -219,6 +233,8 @@ class TestRegexIntentParser(unittest.TestCase):
             ParsedSlot(match_range=(37, 44), value="dummy_c",
                        entity="dummy_entity_2", slot_name="dummy_slot_name2"),
             ParsedSlot(match_range=(45, 54), value="at 10p.m.",
+                       entity="snips/datetime", slot_name="startTime"),
+            ParsedSlot(match_range=(58, 67), value="at 12p.m.",
                        entity="snips/datetime", slot_name="startTime")
         ]
         self.assertItemsEqual(expected_slots, slots)

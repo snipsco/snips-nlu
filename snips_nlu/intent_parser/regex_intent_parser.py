@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import re
+from copy import deepcopy
 
 from snips_nlu.built_in_entities import is_builtin_entity, \
     get_builtin_entities
@@ -118,11 +119,11 @@ def deduplicate_overlapping_slots(slots):
 
 
 def get_builtin_entity_name(entity_label):
-    return "".join(tokenize_light(entity_label))
+    return "%%%s%%" % "".join(tokenize_light(entity_label)).upper()
 
 
 def preprocess_builtin_entities(utterance):
-    new_utterance = dict(utterance)
+    new_utterance = deepcopy(utterance)
     for i, chunk in enumerate(utterance[DATA]):
         if ENTITY in chunk and is_builtin_entity(chunk[ENTITY]):
             new_utterance[DATA][i][TEXT] = get_builtin_entity_name(
@@ -132,17 +133,30 @@ def preprocess_builtin_entities(utterance):
 
 def replace_builtin_entities(text, language):
     builtin_entities = get_builtin_entities(text, language)
+    if len(builtin_entities) == 0:
+        return dict(), text
+
     range_mapping = dict()
     processed_text = ""
+    offset = 0
     current_ix = 0
-    for ent in sorted(builtin_entities, key=lambda e: e[MATCH_RANGE][0]):
+    builtin_entities = sorted(builtin_entities,
+                              key=lambda e: e[MATCH_RANGE][0])
+    for ent in builtin_entities:
         ent_start = ent[MATCH_RANGE][0]
+        ent_end = ent[MATCH_RANGE][1]
+        rng_start = ent_start + offset
+
         processed_text += text[current_ix:ent_start]
         new_text = get_builtin_entity_name(ent[ENTITY].label)
         processed_text += new_text
-        new_range = (ent_start, ent_start + len(new_text))
-        current_ix = ent[MATCH_RANGE][1]
+        offset += len(new_text) - len(ent[VALUE])
+
+        rng_end = ent_end + offset
+        new_range = (rng_start, rng_end)
         range_mapping[new_range] = ent[MATCH_RANGE]
+        current_ix = ent_end
+
     processed_text += text[current_ix:]
     return range_mapping, processed_text
 
@@ -186,7 +200,7 @@ class RegexIntentParser(IntentParser):
             raise AssertionError("RegexIntentParser must be fitted before "
                                  "calling `get_entities`")
         if text not in self._cache:
-            self._parse(text)
+            self._cache[text] = self._parse(text)
         return self._cache[text].parsed_intent
 
     def get_slots(self, text, intent=None):
@@ -197,7 +211,7 @@ class RegexIntentParser(IntentParser):
             raise KeyError("Intent not found in RegexIntentParser: %s"
                            % intent)
         if text not in self._cache:
-            self._parse(text)
+            self._cache[text] = self._parse(text)
         res = self._cache[text]
         if intent is not None and res.parsed_intent is not None and \
                         res.parsed_intent.intent_name != intent:
@@ -217,28 +231,29 @@ class RegexIntentParser(IntentParser):
         for intent, regexes in self.regexes_per_intent.iteritems():
             for regex in regexes:
                 match = regex.match(processed_text)
-                if match is not None:
-                    parsed_intent = IntentClassificationResult(
-                        intent_name=intent, probability=1.0)
-                    matched = True
-                    slots = []
-                    for group_name in match.groupdict():
-                        slot_name = self.group_names_to_slot_names[group_name]
-                        entity = self.slot_names_to_entities[slot_name]
-                        rng = (match.start(group_name), match.end(group_name))
-                        value = match.group(group_name)
-                        if rng in ranges_mapping:
-                            rng = ranges_mapping[rng]
-                            value = text[rng[0]:rng[1]]
-                        parsed_slot = ParsedSlot(
-                            match_range=rng, value=value, entity=entity,
-                            slot_name=slot_name)
-                        slots.append(parsed_slot)
-                    parsed_slots = deduplicate_overlapping_slots(slots)
-                    break
+                if match is  None:
+                    continue
+                parsed_intent = IntentClassificationResult(
+                    intent_name=intent, probability=1.0)
+                matched = True
+                slots = []
+                for group_name in match.groupdict():
+                    slot_name = self.group_names_to_slot_names[group_name]
+                    entity = self.slot_names_to_entities[slot_name]
+                    rng = (match.start(group_name), match.end(group_name))
+                    value = match.group(group_name)
+                    if rng in ranges_mapping:
+                        rng = ranges_mapping[rng]
+                        value = text[rng[0]:rng[1]]
+                    parsed_slot = ParsedSlot(
+                        match_range=rng, value=value, entity=entity,
+                        slot_name=slot_name)
+                    slots.append(parsed_slot)
+                parsed_slots = deduplicate_overlapping_slots(slots)
+                break
             if matched:
                 break
-        self._cache[text] = Result(text, parsed_intent, parsed_slots)
+        return Result(text, parsed_intent, parsed_slots)
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

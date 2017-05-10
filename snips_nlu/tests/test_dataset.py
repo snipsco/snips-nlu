@@ -357,7 +357,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
         }
 
         expected_dataset = {
@@ -408,7 +409,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
         }
 
         # When
@@ -443,7 +445,8 @@ class TestDataset(unittest.TestCase):
             "entities": {
                 BuiltInEntity.DATETIME.label: {}
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "0.1.0"
         }
 
         # When / Then

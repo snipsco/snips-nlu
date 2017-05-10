@@ -270,6 +270,114 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertEqual(dataset, expected_dataset)
 
+    def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
+            self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "alternative entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["entity 1", "alternative entity 1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en"
+        }
+
+        expected_dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "alternative entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ],
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ],
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["entity 1", "alternative entity 1"]
+                        },
+                        {
+                            "value": "alternative entity 1",
+                            "synonyms": ["alternative entity 1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en"
+        }
+
+        # When
+        dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        self.maxDiff = None
+        self.assertEqual(dataset, expected_dataset)
+
     def test_should_not_require_data_for_builtin_entities(self):
         # Given
         dataset = {

@@ -59,8 +59,7 @@ class TestCRFTagger(unittest.TestCase):
                     'qual_name': 'snips_nlu.features.get_shape_ngram_fn'
                 }
             ],
-            "tagging_scheme": 2,
-            "fitted": False
+            "tagging_scheme": 2
         }
 
         self.assertDictEqual(tagger_dict, expected_dict)

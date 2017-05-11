@@ -854,6 +854,20 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ParsedSlot((0, 2), "", "", ""),
                     ParsedSlot((6, 8), "", "", "")
                 ]
+            },
+            # Full overlap
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((4, 12), "", "", ""),
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ]
             }
         ]
 

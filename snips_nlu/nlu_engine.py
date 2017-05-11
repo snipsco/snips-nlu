@@ -66,16 +66,18 @@ def _tag_seen_entities(text, entities):
     for ngram in ngrams:
         ngram_slots = []
         str_ngram = ngram[NGRAM]
+        matched_several_entities = False
         for entity_name, entity_data in entities.iteritems():
             if str_ngram in entity_data[UTTERANCES]:
+                if len(ngram_slots) == 1:
+                    matched_several_entities = True
+                    break
                 rng = (tokens[min(ngram[TOKEN_INDEXES])].start,
                        tokens[max(ngram[TOKEN_INDEXES])].end)
                 value = entity_data[UTTERANCES][str_ngram]
                 ngram_slots.append(
                     ParsedSlot(rng, value, entity_name, entity_name))
-                if len(ngram_slots) > 1:
-                    break
-        if len(ngram_slots) == 1:
+        if not matched_several_entities:
             slots = enrich_slots(slots, ngram_slots)
 
     return slots
@@ -175,8 +177,8 @@ def snips_nlu_entities(dataset):
 def enrich_slots(slots, other_slots):
     enriched_slots = list(slots)
     for slot in other_slots:
-        if any((s.match_range[0] <= slot.match_range[0] < s.match_range[1])
-               or (s.match_range[0] < slot.match_range[1] <= s.match_range[1])
+        if any((slot.match_range[1] > s.match_range[0])
+               and (slot.match_range[0] < s.match_range[1])
                for s in enriched_slots):
             continue
         enriched_slots.append(slot)

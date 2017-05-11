@@ -65,17 +65,17 @@ def _tag_seen_entities(text, entities):
     slots = []
     for ngram in ngrams:
         ngram_slots = []
+        str_ngram = ngram[NGRAM]
         for entity_name, entity_data in entities.iteritems():
-            str_ngram = ngram[NGRAM]
             if str_ngram in entity_data[UTTERANCES]:
                 rng = (tokens[min(ngram[TOKEN_INDEXES])].start,
                        tokens[max(ngram[TOKEN_INDEXES])].end)
                 value = entity_data[UTTERANCES][str_ngram]
                 ngram_slots.append(
                     ParsedSlot(rng, value, entity_name, entity_name))
-        if len(ngram_slots) > 1:
-            continue
-        if len(ngram_slots) > 0:
+                if len(ngram_slots) > 1:
+                    break
+        if len(ngram_slots) == 1:
             slots = enrich_slots(slots, ngram_slots)
 
     return slots

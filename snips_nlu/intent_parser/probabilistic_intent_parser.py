@@ -1,3 +1,8 @@
+from __future__ import unicode_literals
+
+import io
+import json
+import os
 from copy import copy
 from itertools import groupby, permutations
 
@@ -14,7 +19,7 @@ from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import (instance_to_generic_dict, instance_from_dict,
-                             namedtuple_with_defaults)
+                             namedtuple_with_defaults, mkdir_p)
 
 _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
@@ -120,6 +125,31 @@ class ProbabilisticIntentParser(IntentParser):
             self.crf_taggers[intent_name] = self.crf_taggers[intent_name].fit(
                 crf_samples)
         return self
+
+    def save(self, directory_path):
+        if not os.path.isdir(directory_path):
+            mkdir_p(directory_path)
+
+        intent_classifier_config = {
+            "language_code": self.language.iso_code,
+            "intent_classifier": self.intent_classifier.to_dict(),
+            "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
+            "data_augmentation_config": self.data_augmentation_config.to_dict()
+        }
+        config_path = os.path.join(directory_path,
+                                   "intent_classifier_config.json")
+
+        with io.open(config_path, mode='w') as f:
+            json_config = json.dumps(intent_classifier_config,
+                                     indent=4).decode(encoding='utf8')
+            f.write(json_config)
+
+        taggers_directory = os.path.join(directory_path, "taggers")
+        if not os.path.isdir(taggers_directory):
+            mkdir_p(taggers_directory)
+        for intent, tagger in self.crf_taggers.iteritems():
+            tagger_directory = os.path.join(taggers_directory, intent)
+            tagger.save(tagger_directory)
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

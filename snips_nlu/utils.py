@@ -159,3 +159,17 @@ def safe_pickle_dumps(obj):
 
 def safe_pickle_loads(pkl_str):
     return cPickle.loads(base64.b64decode(pkl_str))
+
+
+def mkdir_p(path):
+    """
+    Reproduces the mkdir -p shell command
+    see http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python 
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise

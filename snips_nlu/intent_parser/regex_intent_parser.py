@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import io
+import json
 import re
 from copy import deepcopy
 
@@ -254,6 +256,22 @@ class RegexIntentParser(IntentParser):
             if matched:
                 break
         return Result(text, parsed_intent, parsed_slots)
+
+    def save(self, path):
+        patterns = None
+        if self.regexes_per_intent is not None:
+            patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
+                        self.regexes_per_intent.iteritems()}
+
+        parser_config_dict = {
+            "patterns": patterns,
+            "group_names_to_slot_names": self.group_names_to_slot_names,
+            "slot_names_to_entities": self.slot_names_to_entities
+        }
+
+        with io.open(path, mode='w') as f:
+            f.write(json.dumps(parser_config_dict, indent=4).decode(
+                encoding='utf8'))
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

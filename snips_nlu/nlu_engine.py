@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import io
+import json
+import os
 from abc import ABCMeta, abstractmethod
 
 from duckling import core
@@ -26,7 +29,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import instance_from_dict
+from snips_nlu.utils import instance_from_dict, mkdir_p
 
 
 class NLUEngine(object):
@@ -200,7 +203,7 @@ class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, builtin_parser=None, entities=None,
                  slot_name_mapping=None, tagging_threshold=None,
-                 intents_data_sizes=None):
+                 intents_data_sizes=None, serialization_path=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
@@ -223,6 +226,7 @@ class SnipsNLUEngine(NLUEngine):
             ent = BuiltInEntity.built_in_entity_by_duckling_dim.get(d, False)
             if ent and ent not in tagging_excluded_entities:
                 self.tagging_scope.append(ent)
+        self.serialization_path = serialization_path
 
     @property
     def builtin_parser(self):
@@ -299,13 +303,57 @@ class SnipsNLUEngine(NLUEngine):
             intent_custom_entities = get_intent_custom_entities(custom_dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, self.language)
-            taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        TaggingScheme.BIO, self.language)
+            crf_model_path = self.crf_model_filename(intent)
+            taggers[intent] = CRFTagger(default_crf_model(crf_model_path),
+                                        features, TaggingScheme.BIO,
+                                        self.language)
         intent_classifier = SnipsIntentClassifier(self.language)
         self.probabilistic_parser = ProbabilisticIntentParser(
             self.language, intent_classifier, taggers, self.slot_name_mapping)
         self.probabilistic_parser.fit(dataset)
         return self
+
+    def crf_model_filename(self, intent):
+        return os.path.join(
+            self.serialization_path, "model", "probabilistic_parser",
+            "taggers", intent, "%s_tagger.crfsuite" % intent)
+
+    def save(self):
+        if not os.path.isdir(self.serialization_path):
+            mkdir_p(self.serialization_path)
+
+        language_code = None
+        if self.language is not None:
+            language_code = self.language.iso_code
+
+        nlu_engine_config = {
+            LANGUAGE: language_code,
+            "slot_name_mapping": self.slot_name_mapping,
+            "tagging_threshold": self.tagging_threshold,
+            ENTITIES: self.entities,
+            "intents_data_sizes": self.intents_data_sizes
+        }
+
+        config_path = os.path.join(self.serialization_path,
+                                   'nlu_engine_config.json')
+
+        with io.open(config_path, mode='w') as f:
+            f.write(json.dumps(nlu_engine_config, indent=4).decode(
+                encoding='utf8'))
+
+        model_directory_path = os.path.join(self.serialization_path, 'model')
+        if not os.path.isdir(model_directory_path):
+            os.mkdir(model_directory_path)
+
+        if self.rule_based_parser is not None:
+            rule_based_parser_path = os.path.join(
+                model_directory_path, 'rule_based_parser_config.json')
+            self.rule_based_parser.save(rule_based_parser_path)
+
+        if self.probabilistic_parser is not None:
+            probabilistic_parser_directory = os.path.join(
+                model_directory_path, 'probabilistic_parser')
+            self.probabilistic_parser.save(probabilistic_parser_directory)
 
     def to_dict(self):
         """

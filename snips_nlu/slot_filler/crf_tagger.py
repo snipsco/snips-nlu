@@ -1,5 +1,10 @@
+from __future__ import unicode_literals
+
 import importlib
+import io
+import json
 import math
+import os
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
@@ -13,13 +18,19 @@ from snips_nlu.slot_filler.feature_functions import (
 from snips_nlu.tokenization import Token
 from snips_nlu.utils import (UnupdatableDict, instance_to_generic_dict,
                              ensure_string, safe_pickle_dumps,
-                             safe_pickle_loads)
+                             safe_pickle_loads, mkdir_p)
 
 POSSIBLE_SET_FEATURES = ["collection"]
 
 
-def default_crf_model():
-    return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False)
+def default_crf_model(model_filename=None):
+    if model_filename is not None:
+        directory, filename = os.path.split(model_filename)
+        if not os.path.isdir(directory):
+            mkdir_p(directory)
+
+    return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False,
+               model_filename=model_filename)
 
 
 def get_features_from_signatures(signatures):
@@ -139,6 +150,30 @@ class CRFTagger(object):
                     token_features[feature_name] = value
             features.append(token_features)
         return features
+
+    def save(self, directory_path):
+        if not os.path.isdir(directory_path):
+            mkdir_p(directory_path)
+
+        features_signatures = deepcopy(self.features_signatures)
+
+        for signature in features_signatures:
+            for feat in POSSIBLE_SET_FEATURES:
+                if feat in signature["args"] and isinstance(
+                        signature["args"][feat], set):
+                    signature["args"][feat] = list(signature["args"][feat])
+
+        config = {
+            "crf_model_file": self.crf_model.modelfile.name,
+            "features_signatures": features_signatures,
+            "tagging_scheme": self.tagging_scheme.value,
+            "language": self.language.iso_code
+        }
+
+        config_path = os.path.join(directory_path, "tagger_config.json")
+
+        with io.open(config_path, mode='w', encoding='utf8') as f:
+            f.write(json.dumps(config, indent=4).decode(encoding='utf8'))
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

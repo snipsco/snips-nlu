@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from duckling import core
 
 from dataset import validate_and_format_dataset, filter_dataset
-from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities, \
+from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
@@ -122,6 +122,17 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
             valid_slot.append(s)
         return Result(text, parsed_intent=res, parsed_slots=valid_slot)
     return empty_result(text)
+
+
+def spans_to_tokens_indexes(spans, tokens):
+    tokens_indexes = []
+    for span_start, span_end in spans:
+        indexes = []
+        for i, token in enumerate(tokens):
+            if span_end > token.start and span_start < token.end:
+                indexes.append(i)
+        tokens_indexes.append(indexes)
+    return tokens_indexes
 
 
 def get_slot_name_mapping(dataset):
@@ -253,7 +264,7 @@ class SnipsNLUEngine(NLUEngine):
         slots = enrich_slots(slots, seen_entities_slots)
 
         # Add builtins entities
-        builtin_entities = get_built_in_entities(text, self.language,
+        builtin_entities = get_builtin_entities(text, self.language,
                                                  self.tagging_scope)
         builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
                                     ent[ENTITY].label, ent[ENTITY].label)
@@ -277,7 +288,7 @@ class SnipsNLUEngine(NLUEngine):
         """
         dataset = validate_and_format_dataset(dataset)
         custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
-        self.rule_based_parser = RegexIntentParser().fit(dataset)
+        self.rule_based_parser = RegexIntentParser(self.language).fit(dataset)
         self.entities = snips_nlu_entities(dataset)
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent

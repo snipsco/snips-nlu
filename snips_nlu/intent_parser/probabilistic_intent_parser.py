@@ -2,7 +2,7 @@ from copy import copy
 from itertools import groupby, permutations
 
 from intent_parser import IntentParser
-from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities
+from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.constants import (DATA, INTENTS, CUSTOM_ENGINE, ENTITY,
                                  MATCH_RANGE)
 from snips_nlu.dataset import filter_dataset
@@ -97,7 +97,7 @@ class ProbabilisticIntentParser(IntentParser):
 
         scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
                  for slot in builtin_slots]
-        builtin_entities = get_built_in_entities(text, self.language, scope)
+        builtin_entities = get_builtin_entities(text, self.language, scope)
         slots = augment_slots(text, tokens, tags, tagger, intent_slots_mapping,
                               builtin_entities, builtin_slots)
         return slots

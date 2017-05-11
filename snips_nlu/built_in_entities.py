@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from duckling import core
 from enum import Enum
 
@@ -72,7 +74,7 @@ def scope_to_dims(scope):
 _DUCKLING_CACHE = LimitedSizeDict(size_limit=1000)
 
 
-def get_built_in_entities(text, language, scope=None):
+def get_builtin_entities(text, language, scope=None):
     global _DUCKLING_CACHE
     language = language.duckling_code
     if scope is None:

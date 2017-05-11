@@ -25,7 +25,7 @@ POSSIBLE_SET_FEATURES = ["collection"]
 
 def default_crf_model(model_filename=None):
     if model_filename is not None:
-        directory, filename = os.path.split(model_filename)
+        directory = os.path.dirname(model_filename)
         if not os.path.isdir(directory):
             mkdir_p(directory)
 
@@ -172,10 +172,11 @@ class CRFTagger(object):
             "language": self.language.iso_code
         }
 
+        config_json = json.dumps(config, indent=4).decode(encoding='utf8')
         config_path = os.path.join(directory_path, "tagger_config.json")
 
         with io.open(config_path, mode='w', encoding='utf8') as f:
-            f.write(json.dumps(config, indent=4).decode(encoding='utf8'))
+            f.write(config_json)
 
     @classmethod
     def load(cls, directory_path):

@@ -314,6 +314,8 @@ class SnipsNLUEngine(NLUEngine):
         return self
 
     def crf_model_filename(self, intent):
+        if self.serialization_path is None:
+            return None
         return os.path.join(
             self.serialization_path, "model", "probabilistic_parser",
             "taggers", intent, "%s_tagger.crfsuite" % intent)

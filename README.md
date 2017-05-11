@@ -49,9 +49,6 @@ Install the package in edition mode:
 
     pip install -e .
     
-Install the package in edition mode with test dependencies:
-
-    pip install -e .[test]
 
 As some dependencies are private, you will need a valid username/password to authenticate to the Nexus repository.
 

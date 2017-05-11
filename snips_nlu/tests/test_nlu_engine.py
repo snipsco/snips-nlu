@@ -176,6 +176,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -281,6 +282,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -355,6 +357,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         language = Language.EN
         dataset = validate_and_format_dataset({
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -467,7 +470,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "0.1.1"
         })
         engine = SnipsNLUEngine(language).fit(dataset)
 
@@ -559,7 +563,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "0.1.1"
         })
         engine = SnipsNLUEngine(language).fit(dataset)
 
@@ -656,7 +661,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "0.1.1"
         })
         engine = SnipsNLUEngine(language).fit(dataset)
 
@@ -752,7 +758,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "0.1.1"
         })
         engine = SnipsNLUEngine(language).fit(dataset)
 
@@ -918,7 +925,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "entities": dict(),
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
         })
 
         # Then
@@ -954,7 +962,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "entities": {
                 "snips/datetime": {}
             },
-            "language": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "0.0.1"
         })
 
         # When / Then

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import unittest
 
 from mock import patch
@@ -30,6 +32,7 @@ class TestDataAugmentation(unittest.TestCase):
     def test_entities_iterators(self, _):
         # Given
         dataset = {
+            "snips_nlu_version": "1.1.1",
             "intents": {
                 "intent1": {
                     "utterances": [

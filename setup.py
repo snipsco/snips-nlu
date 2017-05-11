@@ -23,10 +23,8 @@ required = [
     "scikit-learn==0.18.1",
     "sklearn-crfsuite==0.3.5",
     "snips-queries==0.4.0",
-    "builtin_entities_ontology==0.1.1"
-]
-
-test_required = [
+    "snips-queries==0.4.0",
+    "builtin_entities_ontology==0.1.1",
     "semantic_version==2.6.0"
 ]
 
@@ -36,7 +34,6 @@ setup(name=PACKAGE_NAME,
       author_email="clement.doumouro@snips.ai",
       license="MIT",
       install_requires=required,
-      extras_require={"test": test_required},
       packages=packages,
       package_data={
           "": [

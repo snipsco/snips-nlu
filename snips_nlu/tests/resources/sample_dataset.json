@@ -1,4 +1,5 @@
 {
+  "snips_nlu_version": "0.0.1",
   "entities": {
     "dummy_entity_1": {
       "automatically_extensible": false,

@@ -2,13 +2,15 @@ from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
 
+from duckling import core
+
 from dataset import validate_and_format_dataset, filter_dataset
 from snips_nlu.built_in_entities import BuiltInEntity, get_built_in_entities, \
     is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
-    USE_SYNONYMS, SYNONYMS)
+    USE_SYNONYMS, SYNONYMS, TOKEN_INDEXES, NGRAM)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
@@ -22,6 +24,8 @@ from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
+from snips_nlu.slot_filler.features_utils import get_all_ngrams
+from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import instance_from_dict
 
 
@@ -49,6 +53,34 @@ class NLUEngine(object):
     @abstractmethod
     def parse(self, text):
         pass
+
+
+def _tag_seen_entities(text, entities):
+    # TODO handle case properly but can be tricky with the synonyms mapping
+    tokens = tokenize(text)
+    ngrams = get_all_ngrams([t.value for t in tokens])
+    ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
+                    reverse=True)
+
+    slots = []
+    for ngram in ngrams:
+        ngram_slots = []
+        str_ngram = ngram[NGRAM]
+        matched_several_entities = False
+        for entity_name, entity_data in entities.iteritems():
+            if str_ngram in entity_data[UTTERANCES]:
+                if len(ngram_slots) == 1:
+                    matched_several_entities = True
+                    break
+                rng = (tokens[min(ngram[TOKEN_INDEXES])].start,
+                       tokens[max(ngram[TOKEN_INDEXES])].end)
+                value = entity_data[UTTERANCES][str_ngram]
+                ngram_slots.append(
+                    ParsedSlot(rng, value, entity_name, entity_name))
+        if not matched_several_entities:
+            slots = enrich_slots(slots, ngram_slots)
+
+    return slots
 
 
 def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
@@ -142,10 +174,21 @@ def snips_nlu_entities(dataset):
     return entities
 
 
+def enrich_slots(slots, other_slots):
+    enriched_slots = list(slots)
+    for slot in other_slots:
+        if any((slot.match_range[1] > s.match_range[0])
+               and (slot.match_range[0] < s.match_range[1])
+               for s in enriched_slots):
+            continue
+        enriched_slots.append(slot)
+    return enriched_slots
+
+
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, builtin_parser=None, entities=None,
-                 slot_name_mapping=None, ui_builtin_parsing_threshold=None,
+                 slot_name_mapping=None, tagging_threshold=None,
                  intents_data_sizes=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
@@ -158,10 +201,17 @@ class SnipsNLUEngine(NLUEngine):
         if slot_name_mapping is None:
             slot_name_mapping = dict()
         self.slot_name_mapping = slot_name_mapping
-        if ui_builtin_parsing_threshold is None:
-            ui_builtin_parsing_threshold = 5
-        self.ui_builtin_parsing_threshold = ui_builtin_parsing_threshold
+        if tagging_threshold is None:
+            tagging_threshold = 5
+        self.tagging_threshold = tagging_threshold
         self.intents_data_sizes = intents_data_sizes
+
+        self.tagging_scope = []
+        tagging_excluded_entities = {BuiltInEntity.NUMBER}
+        for d in core.get_dims(self.language.iso_code):
+            ent = BuiltInEntity.built_in_entity_by_duckling_dim.get(d, False)
+            if ent and ent not in tagging_excluded_entities:
+                self.tagging_scope.append(ent)
 
     @property
     def builtin_parser(self):
@@ -191,28 +241,26 @@ class SnipsNLUEngine(NLUEngine):
 
     def tag(self, text, intent):
         result = self._parse(text, intent=intent)
-        force_builtin_parsing = self.intents_data_sizes[
-                                    intent] < self.ui_builtin_parsing_threshold
-        if not force_builtin_parsing:
-            return result
-
-        built_in_entities = get_built_in_entities(text, self.language)
-        if len(built_in_entities) == 0:
+        enrich_results = self.intents_data_sizes[intent] < \
+                         self.tagging_threshold
+        if not enrich_results:
             return result
 
         slots = result.parsed_slots
-        if slots is None:
-            slots = [ParsedSlot(e[MATCH_RANGE], e[VALUE], e[ENTITY].label,
-                                e[ENTITY].label) for e in built_in_entities]
-        else:
-            for ent in built_in_entities:
-                if any(s.match_range[0] <= ent[MATCH_RANGE][1]
-                       and s.match_range[1] >= ent[MATCH_RANGE][0]
-                       for s in slots):
-                    continue
-                parsed_slot = ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
-                                         ent[ENTITY].label, ent[ENTITY].label)
-                slots.append(parsed_slot)
+
+        # Add slots seen in other queries from other intents
+        seen_entities_slots = _tag_seen_entities(text, self.entities)
+        slots = enrich_slots(slots, seen_entities_slots)
+
+        # Add builtins entities
+        builtin_entities = get_built_in_entities(text, self.language,
+                                                 self.tagging_scope)
+        builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
+                                    ent[ENTITY].label, ent[ENTITY].label)
+                         for ent in builtin_entities]
+        slots = enrich_slots(slots, builtin_slots)
+        slots = sorted(slots, key=lambda x: x.match_range[0])
+
         parsed_intent = IntentClassificationResult(
             result.parsed_intent.intent_name, result.parsed_intent.probability)
         return Result(text, parsed_intent=parsed_intent,
@@ -271,7 +319,7 @@ class SnipsNLUEngine(NLUEngine):
             "probabilistic_parser": probabilistic_parser_dict,
             BUILTIN_PARSER: None,
             "slot_name_mapping": self.slot_name_mapping,
-            "ui_builtin_parsing_threshold": self.ui_builtin_parsing_threshold,
+            "tagging_threshold": self.tagging_threshold,
             ENTITIES: self.entities,
             "intents_data_sizes": self.intents_data_sizes
         }
@@ -295,7 +343,7 @@ class SnipsNLUEngine(NLUEngine):
         probabilistic_parser = None
         builtin_parser = None
         entities = None
-        ui_builtin_parsing_threshold = None
+        tagging_threshold = None
         slot_name_mapping = None
         intent_data_size = None
 
@@ -305,8 +353,7 @@ class SnipsNLUEngine(NLUEngine):
             probabilistic_parser = instance_from_dict(
                 customs["probabilistic_parser"])
             entities = customs[ENTITIES]
-            ui_builtin_parsing_threshold = customs[
-                "ui_builtin_parsing_threshold"]
+            tagging_threshold = customs["tagging_threshold"]
             slot_name_mapping = customs["slot_name_mapping"]
             intent_data_size = customs["intents_data_sizes"]
 
@@ -320,7 +367,7 @@ class SnipsNLUEngine(NLUEngine):
                    builtin_parser=builtin_parser,
                    slot_name_mapping=slot_name_mapping,
                    entities=entities,
-                   ui_builtin_parsing_threshold=ui_builtin_parsing_threshold,
+                   tagging_threshold=tagging_threshold,
                    intents_data_sizes=intent_data_size)
 
     def __eq__(self, other):

@@ -10,7 +10,7 @@ from mock import Mock, patch
 from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH
 
@@ -416,7 +416,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".RegexIntentParser.get_slots")
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
            ".ProbabilisticIntentParser.get_intent")
-    def test_tag_with_builtin_force_should_return_custom_when_overlapping(
+    def test_tag_should_return_custom_over_builtin(
             self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
             mocked_regex_get_intent, mocked_default_features):
 
@@ -427,8 +427,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_probabilistic_get_intent.return_value = None
         mocked_regex_get_intent.return_value = IntentClassificationResult(
             intent_name=intent_name, probability=1.0)
-        range = [11, 24]
-        value = "tomorrow at 3"
+        range = [6, 24]
+        value = "meet tomorrow at 3"
         entity = "my_datetime"
         slot_name = "my_datetime"
         mocked_regex_get_slots.return_value = [ParsedSlot(
@@ -479,8 +479,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
             'slots': [
                 {
-                    "range": [11, 24],
-                    "value": "tomorrow at 3",
+                    "range": [6, 24],
+                    "value": "meet tomorrow at 3",
                     "slot_name": slot_name
                 }
             ],
@@ -488,6 +488,395 @@ class TestSnipsNLUEngine(unittest.TestCase):
         }
 
         self.assertEqual(results, expected_results)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_intent")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_slots")
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".ProbabilisticIntentParser.get_intent")
+    def test_tag_should_tag_seen_entities(
+            self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
+            mocked_regex_get_intent, mocked_default_features):
+
+        # Given
+        intent_name = "dummy_intent_1"
+        text = "let's meet tomorrow at 3 with dummy2 bis on time"
+        mocked_default_features.return_value = []
+        mocked_probabilistic_get_intent.return_value = None
+        mocked_regex_get_intent.return_value = IntentClassificationResult(
+            intent_name=intent_name, probability=1.0)
+        range = [11, 24]
+        value = "tomorrow at 3"
+        entity = "my_datetime"
+
+        mocked_regex_get_slots.return_value = [ParsedSlot(
+            range, value, entity, "my_datetime")]
+
+        language = Language.EN
+        dataset = validate_and_format_dataset({
+            "intents": {
+                intent_name: {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy 1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1 bis"
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2 bis"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        })
+        engine = SnipsNLUEngine(language).fit(dataset)
+
+        # When
+        results = engine.tag(text, intent=intent_name)
+
+        # Then
+        expected_results = {
+            'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
+            'slots': [
+                {
+                    "range": [11, 24],
+                    "value": "tomorrow at 3",
+                    "slot_name": "my_datetime"
+                },
+                {
+                    "range": [30, 40],
+                    "value": "dummy2",
+                    "slot_name": "dummy_entity_2"
+                }
+            ],
+            "text": text
+        }
+
+        self.assertEqual(results, expected_results)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_intent")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_slots")
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".ProbabilisticIntentParser.get_intent")
+    def test_tag_should_return_customs_over_seen_entities(
+            self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
+            mocked_regex_get_intent, mocked_default_features):
+
+        # Given
+        intent_name = "dummy_intent_1"
+        text = "let's meet tomorrow at 3 with dummy2 bis on time"
+        mocked_default_features.return_value = []
+        mocked_probabilistic_get_intent.return_value = None
+        mocked_regex_get_intent.return_value = IntentClassificationResult(
+            intent_name=intent_name, probability=1.0)
+        range = [30, 43]
+        value = "dummy2 bis on"
+        entity = "my_datetime"
+
+        mocked_regex_get_slots.return_value = [ParsedSlot(
+            range, value, entity, "my_datetime")]
+
+        language = Language.EN
+        dataset = validate_and_format_dataset({
+            "intents": {
+                intent_name: {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy 1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy1",
+                            "synonyms": [
+                                "dummy1",
+                                "dummy1 bis"
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2 bis"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        })
+        engine = SnipsNLUEngine(language).fit(dataset)
+
+        # When
+        results = engine.tag(text, intent=intent_name)
+
+        # Then
+        expected_results = {
+            'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
+            'slots': [
+                {
+                    "range": [11, 24],
+                    "value": "tomorrow at 3",
+                    "slot_name": "snips/datetime"
+                },
+                {
+                    "range": [30, 43],
+                    "value": "dummy2 bis on",
+                    "slot_name": "my_datetime"
+                }
+            ],
+            "text": text
+        }
+
+        self.assertEqual(results, expected_results)
+
+    @patch("snips_nlu.slot_filler.feature_functions.default_features")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_intent")
+    @patch("snips_nlu.intent_parser.regex_intent_parser"
+           ".RegexIntentParser.get_slots")
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".ProbabilisticIntentParser.get_intent")
+    def test_tag_should_not_return_ambiguous_seen_entities(
+            self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
+            mocked_regex_get_intent, mocked_default_features):
+
+        # Given
+        intent_name = "dummy_intent_1"
+        text = "let's meet tomorrow at 3 with dummy2 bis on time"
+        mocked_default_features.return_value = []
+        mocked_probabilistic_get_intent.return_value = None
+        mocked_regex_get_intent.return_value = IntentClassificationResult(
+            intent_name=intent_name, probability=1.0)
+        range = [25, 29]
+        value = "with"
+        entity = "my_datetime"
+
+        mocked_regex_get_slots.return_value = [ParsedSlot(
+            range, value, entity, "my_datetime")]
+
+        language = Language.EN
+        dataset = validate_and_format_dataset({
+            "intents": {
+                intent_name: {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "dummy 1",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "dummy_entity_1": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2",
+                            ]
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "data": [
+                        {
+                            "value": "dummy2",
+                            "synonyms": [
+                                "dummy2"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        })
+        engine = SnipsNLUEngine(language).fit(dataset)
+
+        # When
+        results = engine.tag(text, intent=intent_name)
+
+        # Then
+        expected_results = {
+            'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
+            'slots': [
+                {
+                    "range": [11, 24],
+                    "value": "tomorrow at 3",
+                    "slot_name": "snips/datetime"
+                },
+                {
+                    "range": [25, 29],
+                    "value": "with",
+                    "slot_name": "my_datetime"
+                }
+            ],
+            "text": text
+        }
+
+        self.assertEqual(results, expected_results)
+
+    def test_enrich_slots(self):
+        # Given
+        slots = [
+            # Adjacent
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((2, 6), "", "", ""),
+                    ParsedSlot((8, 10), "", "", "")
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", ""),
+                    ParsedSlot((2, 6), "", "", ""),
+                    ParsedSlot((8, 10), "", "", "")
+                ]
+            },
+            # Equality
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((6, 8), "", "", ""),
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ]
+            },
+            # Inclusion
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((5, 7), "", "", ""),
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ]
+            },
+            # Cross upper
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((7, 10), "", "", ""),
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ]
+            },
+            # Cross lower
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((5, 7), "", "", ""),
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ]
+            },
+            # Full overlap
+            {
+                "slots": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ],
+                "other_slots": [
+                    ParsedSlot((4, 12), "", "", ""),
+                ],
+                "enriched": [
+                    ParsedSlot((0, 2), "", "", ""),
+                    ParsedSlot((6, 8), "", "", "")
+                ]
+            }
+        ]
+
+        for data in slots:
+            # When
+            enriched = enrich_slots(data["slots"], data["other_slots"])
+
+            # Then
+            self.assertEqual(enriched, data["enriched"])
 
     def test_should_parse_naughty_strings(self):
         # Given

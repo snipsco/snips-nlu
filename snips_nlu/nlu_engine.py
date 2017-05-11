@@ -269,7 +269,7 @@ class SnipsNLUEngine(NLUEngine):
 
         # Add builtins entities
         builtin_entities = get_builtin_entities(text, self.language,
-                                                 self.tagging_scope)
+                                                self.tagging_scope)
         builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
                                     ent[ENTITY].label, ent[ENTITY].label)
                          for ent in builtin_entities]
@@ -354,6 +354,42 @@ class SnipsNLUEngine(NLUEngine):
             probabilistic_parser_directory = os.path.join(
                 model_directory_path, 'probabilistic_parser')
             self.probabilistic_parser.save(probabilistic_parser_directory)
+
+    @classmethod
+    def load(cls, directory_path):
+        config_path = os.path.join(directory_path, 'nlu_engine_config.json')
+        with io.open(config_path) as f:
+            nlu_engine_config = json.load(f)
+
+        language = Language.from_iso_code(nlu_engine_config[LANGUAGE])
+        slot_name_mapping = nlu_engine_config["slot_name_mapping"]
+        tagging_threshold = nlu_engine_config["tagging_threshold"]
+        entities = nlu_engine_config[ENTITIES]
+        intents_data_sizes = nlu_engine_config["intents_data_sizes"]
+
+        model_directory_path = os.path.join(directory_path, 'model')
+        rule_based_parser_path = os.path.join(
+            model_directory_path, 'rule_based_parser_config.json')
+        probabilistic_parser_directory = os.path.join(
+            model_directory_path, 'probabilistic_parser')
+
+        rule_based_parser = None
+        probabilistic_parser = None
+
+        if os.path.exists(rule_based_parser_path):
+            rule_based_parser = RegexIntentParser.load(rule_based_parser_path)
+
+        if os.path.isdir(probabilistic_parser_directory):
+            probabilistic_parser = ProbabilisticIntentParser.load(
+                probabilistic_parser_directory)
+
+        return SnipsNLUEngine(
+            language=language, rule_based_parser=rule_based_parser,
+            probabilistic_parser=probabilistic_parser, entities=entities,
+            slot_name_mapping=slot_name_mapping,
+            tagging_threshold=tagging_threshold,
+            intents_data_sizes=intents_data_sizes
+        )
 
     def to_dict(self):
         """

@@ -233,7 +233,7 @@ class RegexIntentParser(IntentParser):
         for intent, regexes in self.regexes_per_intent.iteritems():
             for regex in regexes:
                 match = regex.match(processed_text)
-                if match is  None:
+                if match is None:
                     continue
                 parsed_intent = IntentClassificationResult(
                     intent_name=intent, probability=1.0)
@@ -264,6 +264,7 @@ class RegexIntentParser(IntentParser):
                         self.regexes_per_intent.iteritems()}
 
         parser_config_dict = {
+            "language": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
@@ -272,6 +273,18 @@ class RegexIntentParser(IntentParser):
         with io.open(path, mode='w') as f:
             f.write(json.dumps(parser_config_dict, indent=4).decode(
                 encoding='utf8'))
+
+    @classmethod
+    def load(cls, path):
+        with io.open(path) as f:
+            parser_config_dict = json.load(f)
+        language = Language.from_iso_code(parser_config_dict["language"])
+        patterns = parser_config_dict["patterns"]
+        group_names_to_slot_names = parser_config_dict[
+            "group_names_to_slot_names"]
+        slot_names_to_entities = parser_config_dict["slot_names_to_entities"]
+        return cls(language, patterns, group_names_to_slot_names,
+                   slot_names_to_entities)
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

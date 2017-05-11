@@ -90,16 +90,14 @@ class SnipsIntentClassifier(IntentClassifier):
         return IntentClassificationResult(intent_name, prob)
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
-        obj_dict.update({
+        return {
             "classifier_args": self.classifier_args,
             "coeffs": self.classifier.coef_.tolist(),
             "intercept": self.classifier.intercept_.tolist(),
             "intent_list": self.intent_list,
             "language_code": self.language.iso_code,
             "featurizer": self.featurizer.to_dict()
-        })
-        return obj_dict
+        }
 
     @classmethod
     def from_dict(cls, obj_dict):

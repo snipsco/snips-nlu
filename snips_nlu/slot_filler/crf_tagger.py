@@ -163,8 +163,10 @@ class CRFTagger(object):
                         signature["args"][feat], set):
                     signature["args"][feat] = list(signature["args"][feat])
 
+        crf_model_filename = os.path.basename(self.crf_model.modelfile.name)
+
         config = {
-            "crf_model_file": self.crf_model.modelfile.name,
+            "crf_model_filename": crf_model_filename,
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
             "language": self.language.iso_code
@@ -174,6 +176,22 @@ class CRFTagger(object):
 
         with io.open(config_path, mode='w', encoding='utf8') as f:
             f.write(json.dumps(config, indent=4).decode(encoding='utf8'))
+
+    @classmethod
+    def load(cls, directory_path):
+        config_path = os.path.join(directory_path, "tagger_config.json")
+        with io.open(config_path, encoding='utf8') as f:
+            tagger_config = json.load(f)
+
+        features_signatures = tagger_config["features_signatures"]
+        tagging_scheme = TaggingScheme(int(tagger_config["tagging_scheme"]))
+        language = Language.from_iso_code(tagger_config["language"])
+        crf_model_filename = os.path.join(directory_path,
+                                          tagger_config["crf_model_filename"])
+
+        return cls(CRF(model_filename=crf_model_filename),
+                   features_signatures=features_signatures,
+                   tagging_scheme=tagging_scheme, language=language)
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

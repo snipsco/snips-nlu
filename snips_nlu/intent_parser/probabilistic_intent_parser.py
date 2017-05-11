@@ -11,6 +11,8 @@ from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.constants import (DATA, INTENTS, CUSTOM_ENGINE, ENTITY,
                                  MATCH_RANGE)
 from snips_nlu.dataset import filter_dataset
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
@@ -150,6 +152,31 @@ class ProbabilisticIntentParser(IntentParser):
         for intent, tagger in self.crf_taggers.iteritems():
             tagger_directory = os.path.join(taggers_directory, intent)
             tagger.save(tagger_directory)
+
+    @classmethod
+    def load(cls, directory_path):
+        config_path = os.path.join(directory_path,
+                                   "intent_classifier_config.json")
+
+        with io.open(config_path) as f:
+            parser_config = json.load(f)
+
+        taggers = dict()
+        taggers_directory = os.path.join(directory_path, "taggers")
+        for intent in os.listdir(taggers_directory):
+            tagger_directory = os.path.join(taggers_directory, intent)
+            taggers[intent] = CRFTagger.load(tagger_directory)
+
+        return cls(
+            language=Language.from_iso_code(parser_config["language_code"]),
+            intent_classifier=SnipsIntentClassifier.from_dict(
+                parser_config["intent_classifier"]),
+            crf_taggers=taggers,
+            slot_name_to_entity_mapping=parser_config[
+                "slot_name_to_entity_mapping"],
+            data_augmentation_config=DataAugmentationConfig.from_dict(
+                parser_config["data_augmentation_config"])
+        )
 
     def to_dict(self):
         obj_dict = instance_to_generic_dict(self)

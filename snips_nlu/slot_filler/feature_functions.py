@@ -22,26 +22,21 @@ BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 def crf_features(intent_entities, language):
     if language == Language.EN:
-        return en_features(module_name=__name__,
-                           intent_entities=intent_entities)
+        return en_features(intent_entities=intent_entities)
     elif language == Language.ES:
-        return default_features(__name__, language, intent_entities,
-                                use_stemming=True,
+        return default_features(language, intent_entities, use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.FR:
-        return default_features(__name__, language, intent_entities,
-                                use_stemming=True,
+        return default_features(language, intent_entities, use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.DE:
-        return default_features(__name__, language, intent_entities,
-                                use_stemming=True,
+        return default_features(language, intent_entities, use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.KO:
-        return ko_features(module_name=__name__,
-                           intent_entities=intent_entities)
+        return ko_features(intent_entities=intent_entities)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)

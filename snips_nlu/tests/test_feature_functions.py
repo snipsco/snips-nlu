@@ -254,7 +254,6 @@ class TestFeatureFunctions(unittest.TestCase):
                     'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
-                'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             },
             {
@@ -265,7 +264,6 @@ class TestFeatureFunctions(unittest.TestCase):
                     'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
-                'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             }
         ]

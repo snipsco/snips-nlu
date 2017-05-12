@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import importlib
 import io
 import json
 import math
@@ -9,6 +8,7 @@ from copy import deepcopy
 
 from sklearn_crfsuite import CRF
 
+import snips_nlu.slot_filler.feature_functions
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
@@ -16,8 +16,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)
 from snips_nlu.tokenization import Token
-from snips_nlu.utils import (UnupdatableDict, instance_to_generic_dict,
-                             ensure_string, safe_pickle_dumps,
+from snips_nlu.utils import (UnupdatableDict, ensure_string, safe_pickle_dumps,
                              safe_pickle_loads, mkdir_p)
 
 POSSIBLE_SET_FEATURES = ["collection"]
@@ -37,8 +36,8 @@ def get_features_from_signatures(signatures):
     features = dict()
     for signature in signatures:
         factory_name = signature["factory_name"]
-        module_name = signature["module_name"]
-        factory = getattr(importlib.import_module(module_name), factory_name)
+        factory = getattr(snips_nlu.slot_filler.feature_functions,
+                          factory_name)
         fn = factory(**(signature["args"]))
         for offset in signature["offsets"]:
             feature_name, feature_fn = create_feature_function(fn, offset)
@@ -195,7 +194,6 @@ class CRFTagger(object):
                    tagging_scheme=tagging_scheme, language=language)
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
         features_signatures = deepcopy(self.features_signatures)
 
         for signature in features_signatures:
@@ -204,13 +202,12 @@ class CRFTagger(object):
                         signature["args"][feat], set):
                     signature["args"][feat] = list(signature["args"][feat])
 
-        obj_dict.update({
+        return {
             "crf_model": safe_pickle_dumps(self.crf_model),
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
             "language": self.language.iso_code
-        })
-        return obj_dict
+        }
 
     @classmethod
     def from_dict(cls, obj_dict):

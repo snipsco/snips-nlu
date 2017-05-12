@@ -320,6 +320,9 @@ class SnipsNLUEngine(NLUEngine):
             "taggers", intent, "%s_tagger.crfsuite" % intent)
 
     def save(self):
+        if self.serialization_path is None:
+            raise AssertionError("A serialization path must be provide to "
+                                 "serialize a SnipsNLUEngine")
         if not os.path.isdir(self.serialization_path):
             mkdir_p(self.serialization_path)
 

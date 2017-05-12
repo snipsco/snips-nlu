@@ -185,6 +185,18 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                           "model")
         self.assertTrue(os.path.isdir(expected_model_dir))
 
+    def test_should_not_be_saveable_when_no_serialization_path(self):
+        # Given
+        engine = SnipsNLUEngine(Language.EN).fit(SAMPLE_DATASET)
+
+        # Then
+        with self.assertRaises(Exception) as context:
+            engine.save()
+
+        error = "A serialization path must be provide to serialize a " \
+                "SnipsNLUEngine"
+        self.assertTrue(error in context.exception)
+
     @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.load')
     @patch('snips_nlu.nlu_engine.RegexIntentParser.load')
     def test_should_be_loadable(self, mock_rule_based_parser_load,

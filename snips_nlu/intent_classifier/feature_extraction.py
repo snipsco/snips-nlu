@@ -29,7 +29,7 @@ class Featurizer(object):
         self.language = language
 
     def fit(self, queries, y):
-        if len("".join("".join(tokenize_light(q)) for q in queries)) == 0:
+        if all(len("".join(tokenize_light(q))) == 0 for q in queries):
             return None
         X_train_counts = self.count_vectorizer.fit_transform(
             query.encode('utf-8') for query in queries)

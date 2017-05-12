@@ -198,6 +198,13 @@ def enrich_slots(slots, other_slots):
     return enriched_slots
 
 
+def crf_model_filename(engine_path, intent):
+    if engine_path is None:
+        return None
+    return os.path.join(engine_path, "model", "probabilistic_parser",
+                        "taggers", intent, "%s_tagger.crfsuite" % intent)
+
+
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, builtin_parser=None, entities=None,
@@ -254,6 +261,10 @@ class SnipsNLUEngine(NLUEngine):
                       intent)
 
     def tag(self, text, intent):
+        """
+        Parse the input text conditionally to the knowledge of `intent`.
+        This method is more aggressive (less conservative) than `parse`.
+        """
         result = self._parse(text, intent=intent)
         enrich_results = self.intents_data_sizes[
                              intent] < self.tagging_threshold
@@ -302,7 +313,8 @@ class SnipsNLUEngine(NLUEngine):
             intent_custom_entities = get_intent_custom_entities(custom_dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, self.language)
-            crf_model_path = self.crf_model_filename(intent)
+            crf_model_path = crf_model_filename(self.serialization_path,
+                                                intent)
             taggers[intent] = CRFTagger(default_crf_model(crf_model_path),
                                         features, TaggingScheme.BIO,
                                         self.language)
@@ -312,14 +324,15 @@ class SnipsNLUEngine(NLUEngine):
         self.probabilistic_parser.fit(dataset)
         return self
 
-    def crf_model_filename(self, intent):
-        if self.serialization_path is None:
-            return None
-        return os.path.join(
-            self.serialization_path, "model", "probabilistic_parser",
-            "taggers", intent, "%s_tagger.crfsuite" % intent)
-
     def save(self):
+        """
+        Persists the SnipsNLUEngine instance in the directory provided at 
+        initialization with `serialization_path`
+        This persistence is meant to be cross-platform
+        
+        NB: this directory can be safely moved and reloaded from another 
+        location
+        """
         if self.serialization_path is None:
             raise AssertionError("A serialization path must be provide to "
                                  "serialize a SnipsNLUEngine")
@@ -361,6 +374,9 @@ class SnipsNLUEngine(NLUEngine):
 
     @classmethod
     def load(cls, directory_path):
+        """
+        Loads a SnipsNLUEngine instance from a directory path.
+        """
         config_path = os.path.join(directory_path, 'nlu_engine_config.json')
         with io.open(config_path) as f:
             nlu_engine_config = json.load(f)

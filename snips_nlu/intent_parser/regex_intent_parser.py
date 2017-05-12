@@ -16,7 +16,7 @@ from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import instance_to_generic_dict, LimitedSizeDict
+from snips_nlu.utils import LimitedSizeDict
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -215,8 +215,8 @@ class RegexIntentParser(IntentParser):
         if text not in self._cache:
             self._cache[text] = self._parse(text)
         res = self._cache[text]
-        if intent is not None and res.parsed_intent is not None and \
-                        res.parsed_intent.intent_name != intent:
+        if intent is not None and res.parsed_intent is not None \
+                and res.parsed_intent.intent_name != intent:
             return []
         return res.parsed_slots
 
@@ -287,21 +287,18 @@ class RegexIntentParser(IntentParser):
                    slot_names_to_entities)
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
         if self.regexes_per_intent is not None:
             patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
                         self.regexes_per_intent.iteritems()}
         else:
             patterns = None
 
-        obj_dict.update({
+        return {
             "language": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
-        })
-
-        return obj_dict
+        }
 
     @classmethod
     def from_dict(cls, obj_dict):

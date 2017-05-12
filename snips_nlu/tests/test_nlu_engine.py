@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import io
 import json
 import os
+import shutil
 import unittest
 
 from mock import Mock, patch
@@ -12,10 +13,21 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH
+from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
+    def setUp(self):
+        fixtures_directory = os.path.join(TEST_PATH, "fixtures", "nlu_engine")
+        self.expected_engine_directory = os.path.join(fixtures_directory,
+                                                      "expected_output")
+        self.actual_engine_directory = os.path.join(fixtures_directory,
+                                                    "actual_output")
+
+    def tearDown(self):
+        if os.path.isdir(self.actual_engine_directory):
+            shutil.rmtree(self.actual_engine_directory)
+
     def test_should_use_parsers_sequentially(self):
         # Given
         language = Language.EN
@@ -159,6 +171,127 @@ class TestSnipsNLUEngine(unittest.TestCase):
                       "unicode values")
 
         self.assertEqual(deserialized_engine.parse(text), expected_parse)
+
+    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.save')
+    @patch('snips_nlu.nlu_engine.RegexIntentParser.save')
+    def test_should_be_saveable(self, mock_rule_based_parser_save,
+                                mock_probabilistic_parser_save):
+        # Given
+        language = Language.EN
+        engine = SnipsNLUEngine(
+            language, serialization_path=self.actual_engine_directory).fit(
+            BEVERAGE_DATASET)
+
+        # When
+        engine.save()
+
+        # Then
+        model_directory_path = os.path.join(self.actual_engine_directory,
+                                            "model")
+
+        rule_base_parser_config_path = os.path.join(
+            model_directory_path, 'rule_based_parser_config.json')
+        mock_rule_based_parser_save.assert_called_once_with(
+            rule_base_parser_config_path)
+
+        probabilistic_parser_config_path = os.path.join(
+            model_directory_path, 'probabilistic_parser')
+        mock_probabilistic_parser_save.assert_called_once_with(
+            probabilistic_parser_config_path)
+
+        expected_config_path = os.path.join(self.expected_engine_directory,
+                                            "nlu_engine_config.json")
+        with io.open(expected_config_path) as f:
+            expected_config = json.load(f)
+
+        actual_config_path = os.path.join(self.actual_engine_directory,
+                                          "nlu_engine_config.json")
+        with io.open(actual_config_path) as f:
+            actual_config = json.load(f)
+
+        self.assertDictEqual(actual_config, expected_config)
+
+        expected_model_dir = os.path.join(self.actual_engine_directory,
+                                          "model")
+        self.assertTrue(os.path.isdir(expected_model_dir))
+
+    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.load')
+    @patch('snips_nlu.nlu_engine.RegexIntentParser.load')
+    def test_should_be_loadable(self, mock_rule_based_parser_load,
+                                mock_probabilistic_parser_load):
+        # When
+        engine = SnipsNLUEngine.load(self.expected_engine_directory)
+
+        # Then
+        expected_intents_data_sizes = {
+            "MakeCoffee": 7,
+            "MakeTea": 4
+        }
+        expected_slot_name_mapping = {
+            "MakeCoffee": {
+                "number_of_cups": "snips/number"
+            },
+            "MakeTea": {
+                "number_of_cups": "snips/number",
+                "beverage_temperature": "Temperature"
+            }
+        }
+        expected_entities = {
+            "Temperature": {
+                "automatically_extensible": True,
+                "utterances": {
+                    "boiling": "hot",
+                    "cold": "cold",
+                    "hot": "hot",
+                    "iced": "cold"
+                }
+            }
+        }
+
+        rule_based_parser_config_path = os.path.join(
+            self.expected_engine_directory, "model",
+            "rule_based_parser_config.json")
+
+        mock_rule_based_parser_load.assert_called_once_with(
+            rule_based_parser_config_path)
+
+        probabilistic_parser_config_path = os.path.join(
+            self.expected_engine_directory, "model", "probabilistic_parser")
+
+        mock_probabilistic_parser_load.assert_called_once_with(
+            probabilistic_parser_config_path)
+
+        self.assertEqual(engine.language, Language.EN)
+        self.assertDictEqual(engine.intents_data_sizes,
+                             expected_intents_data_sizes)
+        self.assertEqual(engine.tagging_threshold, 5)
+        self.assertDictEqual(engine.slot_name_mapping,
+                             expected_slot_name_mapping)
+        self.assertDictEqual(engine.entities, expected_entities)
+
+    def test_end_to_end_serialization(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        engine = SnipsNLUEngine(
+            Language.EN, serialization_path=self.actual_engine_directory).fit(
+            dataset)
+        text = "Give me 3 cups of hot tea please"
+
+        # When
+        engine.save()
+        engine = SnipsNLUEngine.load(self.actual_engine_directory)
+        result = engine.parse(text)
+
+        # Then
+        expected_slots = [
+            ParsedSlot((8, 9), '3', 'snips/number',
+                       'number_of_cups').as_dict(),
+            ParsedSlot((18, 21), 'hot', 'Temperature',
+                       'beverage_temperature').as_dict()
+        ]
+        self.assertEqual(result['text'], text)
+        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
+        self.assertListEqual(result['slots'], expected_slots)
 
     @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch(
@@ -430,12 +563,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_probabilistic_get_intent.return_value = None
         mocked_regex_get_intent.return_value = IntentClassificationResult(
             intent_name=intent_name, probability=1.0)
-        range = [6, 24]
+        rng = [6, 24]
         value = "meet tomorrow at 3"
         entity = "my_datetime"
         slot_name = "my_datetime"
         mocked_regex_get_slots.return_value = [ParsedSlot(
-            range, value, entity, slot_name)]
+            rng, value, entity, slot_name)]
 
         language = Language.EN
         dataset = validate_and_format_dataset({
@@ -511,12 +644,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_probabilistic_get_intent.return_value = None
         mocked_regex_get_intent.return_value = IntentClassificationResult(
             intent_name=intent_name, probability=1.0)
-        range = [11, 24]
+        rng = [11, 24]
         value = "tomorrow at 3"
         entity = "my_datetime"
 
         mocked_regex_get_slots.return_value = [ParsedSlot(
-            range, value, entity, "my_datetime")]
+            rng, value, entity, "my_datetime")]
 
         language = Language.EN
         dataset = validate_and_format_dataset({
@@ -609,12 +742,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_probabilistic_get_intent.return_value = None
         mocked_regex_get_intent.return_value = IntentClassificationResult(
             intent_name=intent_name, probability=1.0)
-        range = [30, 43]
+        rng = [30, 43]
         value = "dummy2 bis on"
         entity = "my_datetime"
 
         mocked_regex_get_slots.return_value = [ParsedSlot(
-            range, value, entity, "my_datetime")]
+            rng, value, entity, "my_datetime")]
 
         language = Language.EN
         dataset = validate_and_format_dataset({
@@ -707,12 +840,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_probabilistic_get_intent.return_value = None
         mocked_regex_get_intent.return_value = IntentClassificationResult(
             intent_name=intent_name, probability=1.0)
-        range = [25, 29]
+        rng = [25, 29]
         value = "with"
         entity = "my_datetime"
 
         mocked_regex_get_slots.return_value = [ParsedSlot(
-            range, value, entity, "my_datetime")]
+            rng, value, entity, "my_datetime")]
 
         language = Language.EN
         dataset = validate_and_format_dataset({
@@ -963,6 +1096,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         })
 
         # When / Then
+        # noinspection PyBroadException
         try:
             SnipsNLUEngine(language).fit(dataset)
         except:

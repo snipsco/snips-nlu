@@ -1,0 +1,40 @@
+{
+    "patterns": {
+        "MakeCoffee": [
+            "^give\\ me\\ (?P<group_5>\\%SNIPSNUMBER\\%)\\ coffees\\ please$", 
+            "^Make\\ me\\ (?P<group_6>\\%SNIPSNUMBER\\%)\\ cup\\ of\\ coffee$", 
+            "^Brew\\ me\\ (?P<group_1>\\%SNIPSNUMBER\\%)\\ cups$", 
+            "^make\\ me\\ (?P<group_2>\\%SNIPSNUMBER\\%)\\ cups$", 
+            "^Brew\\ (?P<group_3>\\%SNIPSNUMBER\\%)\\ coffee\\ cups$", 
+            "^Make\\ me\\ (?P<group_4>\\%SNIPSNUMBER\\%)\\ cups\\ of\\ coffee$", 
+            "^Make\\ me\\ (?P<group_0>\\%SNIPSNUMBER\\%)\\ cups\\ of\\ coffee$"
+        ], 
+        "MakeTea": [
+            "^Please\\,\\ can\\ I\\ get\\ (?P<group_9>\\%SNIPSNUMBER\\%)\\ (?P<group_10>boiling|cold|iced|hot)\\ teas\\ \\?$", 
+            "^Make\\ (?P<group_7>\\%SNIPSNUMBER\\%)\\ (?P<group_8>boiling|cold|iced|hot)\\ teas$", 
+            "^Prepare\\ (?P<group_11>\\%SNIPSNUMBER\\%)\\ cups\\ of\\ (?P<group_12>boiling|cold|iced|hot)\\ tea$", 
+            "^Make\\ me\\ (?P<group_13>\\%SNIPSNUMBER\\%)\\ tea$"
+        ]
+    }, 
+    "group_names_to_slot_names": {
+        "group_3": "snips/number", 
+        "group_2": "snips/number", 
+        "group_1": "snips/number", 
+        "group_0": "snips/number", 
+        "group_7": "snips/number", 
+        "group_6": "snips/number", 
+        "group_5": "snips/number", 
+        "group_4": "snips/number", 
+        "group_9": "snips/number", 
+        "group_8": "Temperature", 
+        "group_13": "snips/number", 
+        "group_12": "Temperature", 
+        "group_11": "snips/number", 
+        "group_10": "Temperature"
+    }, 
+    "slot_names_to_entities": {
+        "snips/number": "snips/number", 
+        "Temperature": "Temperature"
+    }, 
+    "language": "en"
+}

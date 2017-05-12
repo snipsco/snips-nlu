@@ -29,7 +29,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import instance_from_dict, mkdir_p
+from snips_nlu.utils import mkdir_p
 
 
 class NLUEngine(object):
@@ -256,8 +256,8 @@ class SnipsNLUEngine(NLUEngine):
 
     def tag(self, text, intent):
         result = self._parse(text, intent=intent)
-        enrich_results = self.intents_data_sizes[intent] < \
-                         self.tagging_threshold
+        enrich_results = self.intents_data_sizes[
+                             intent] < self.tagging_threshold
         if not enrich_results:
             return result
 
@@ -445,9 +445,9 @@ class SnipsNLUEngine(NLUEngine):
         intent_data_size = None
 
         if customs is not None:
-            rule_based_parser = instance_from_dict(
+            rule_based_parser = RegexIntentParser.from_dict(
                 customs["rule_based_parser"])
-            probabilistic_parser = instance_from_dict(
+            probabilistic_parser = ProbabilisticIntentParser.from_dict(
                 customs["probabilistic_parser"])
             entities = customs[ENTITIES]
             tagging_threshold = customs["tagging_threshold"]

@@ -352,8 +352,6 @@ class TestRegexIntentParser(unittest.TestCase):
             self.fail("Parser dict should be json serializable in utf-8")
 
         expected_dict = {
-            "@class_name": "RegexIntentParser",
-            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
             "language": "en",
             'group_names_to_slot_names': {
                 'hello_group': 'hello_slot',
@@ -376,8 +374,6 @@ class TestRegexIntentParser(unittest.TestCase):
         # Given
         language = Language.EN
         parser_dict = {
-            "@class_name": "RegexIntentParser",
-            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
             "language": language.iso_code,
             'group_names_to_slot_names': {
                 'hello_group': 'hello_slot',

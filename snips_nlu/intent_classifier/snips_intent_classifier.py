@@ -9,8 +9,6 @@ from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem_sentence
 from snips_nlu.result import IntentClassificationResult
-from snips_nlu.utils import (instance_to_generic_dict, ensure_string,
-                             safe_pickle_dumps, safe_pickle_loads)
 
 
 def get_default_parameters():

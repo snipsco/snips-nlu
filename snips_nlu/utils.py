@@ -11,25 +11,6 @@ PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
 
-MODULE_NAME = "@module_name"
-CLASS_NAME = "@class_name"
-
-
-def instance_from_dict(obj_dict):
-    if obj_dict is None:
-        return None
-    module = obj_dict[MODULE_NAME]
-    class_name = obj_dict[CLASS_NAME]
-    obj_class = getattr(importlib.import_module(module), class_name)
-    return obj_class.from_dict(obj_dict)
-
-
-def instance_to_generic_dict(obj):
-    return {
-        CLASS_NAME: obj.__class__.__name__,
-        MODULE_NAME: obj.__class__.__module__
-    }
-
 
 class abstractclassmethod(classmethod):
     __isabstractmethod__ = True

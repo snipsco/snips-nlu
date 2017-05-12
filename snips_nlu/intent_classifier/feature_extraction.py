@@ -1,10 +1,12 @@
+from __future__ import unicode_literals
+
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_selection import chi2
 
-from snips_nlu.resources import get_stop_words
 from snips_nlu.languages import Language
-from snips_nlu.utils import ensure_string, safe_pickle_dumps, safe_pickle_loads
+from snips_nlu.resources import get_stop_words
 from snips_nlu.tokenization import tokenize_light
+from snips_nlu.utils import ensure_string, safe_pickle_dumps, safe_pickle_loads
 
 
 def default_count_vectorizer():
@@ -27,6 +29,8 @@ class Featurizer(object):
         self.language = language
 
     def fit(self, queries, y):
+        if len("".join("".join(tokenize_light(q)) for q in queries)) == 0:
+            return None
         X_train_counts = self.count_vectorizer.fit_transform(
             query.encode('utf-8') for query in queries)
         list_index_words = {self.count_vectorizer.vocabulary_[x]: x for x in

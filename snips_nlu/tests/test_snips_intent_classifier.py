@@ -1,9 +1,12 @@
+from __future__ import unicode_literals
+
 import json
 import unittest
 
 from mock import patch
 
 from snips_nlu.constants import INTENTS, LANGUAGE
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
@@ -130,6 +133,67 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         }
         self.assertEqual(classifier_dict["intent_list"],
                          expected_dict["intent_list"])
+
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier"
+           ".build_training_data")
+    def test_empty_vocabulary_should_fit_and_return_none_intent(
+            self, mocked_build_training):
+        # Given
+        language = Language.EN
+        dataset = {
+            "snips_nlu_version": "0.0.1",
+            "entities": {
+                "dummy_entity_1": {
+                    "automatically_extensible": True,
+                    "use_synonyms": False,
+                    "data": [
+                        {
+                            "value": "...",
+                            "synonyms": [],
+                        }
+                    ]
+                }
+            },
+            "intents": {
+                "dummy_intent_1": {
+                    "engineType": "regex",
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "...",
+                                    "slot_name": "dummy_slot_name",
+                                    "entity": "dummy_entity_1"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        }
+        dataset = validate_and_format_dataset(dataset)
+
+        classifier_args = {
+            "loss": 'log',
+            "penalty": 'l2',
+            "class_weight": 'balanced',
+            "n_iter": 5,
+            "random_state": 42,
+            "n_jobs": -1
+        }
+        text = " "
+        noise_size = 6
+        utterance = [text] + [text] * noise_size
+        labels = [1] + [None] * noise_size
+        intent_list = ["dummy_intent_1", None]
+        mocked_build_training.return_value = utterance, labels, intent_list
+
+        # When / Then
+        intent_classifier = SnipsIntentClassifier(
+            language=Language.EN, classifier_args=classifier_args).fit(dataset)
+        intent = intent_classifier.get_intent("no intent there")
+        self.assertEqual(intent, None)
 
 
 if __name__ == '__main__':

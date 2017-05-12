@@ -49,6 +49,9 @@ class SnipsIntentClassifier(IntentClassifier):
             return self
 
         self.featurizer = self.featurizer.fit(utterances, y)
+        if self.featurizer is None:
+            return self
+
         X = self.featurizer.transform(utterances)
         alpha = get_regularization_factor(custom_dataset)
         self.classifier_args.update({'alpha': alpha})
@@ -61,6 +64,10 @@ class SnipsIntentClassifier(IntentClassifier):
                                  'fitted before `get_intent` can be called')
 
         if len(text) == 0 or len(self.intent_list) == 0:
+            return None
+
+        if len(text) == 0 or len(self.intent_list) == 0 or \
+                        self.featurizer is None:
             return None
 
         if len(self.intent_list) == 1:

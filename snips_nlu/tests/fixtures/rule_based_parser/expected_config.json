@@ -1,0 +1,17 @@
+{
+    "language": "en",
+    "group_names_to_slot_names": {
+        "hello_group": "hello_slot",
+        "world_group": "world_slot"
+    },
+    "patterns": {
+        "intent_name": [
+            "(?P<hello_group>hello?)",
+            "(?P<world_group>world$)"
+        ]
+    },
+    "slot_names_to_entities": {
+        "hello_slot": "hello_entity",
+        "world_slot": "world_entity"
+    }
+}

@@ -1,15 +1,30 @@
 from __future__ import unicode_literals
 
+import io
 import json
+import os
 import unittest
 
 from snips_nlu.intent_parser.regex_intent_parser import (
     RegexIntentParser, deduplicate_overlapping_slots)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
+from snips_nlu.tests.utils import TEST_PATH
 
 
 class TestRegexIntentParser(unittest.TestCase):
+    def setUp(self):
+        fixtures_directory = os.path.join(TEST_PATH, "fixtures",
+                                          "rule_based_parser")
+        self.expected_parser_path = os.path.join(fixtures_directory,
+                                                 "expected_config.json")
+        self.actual_parser_path = os.path.join(fixtures_directory,
+                                               "actual_config.json")
+
+    def tearDown(self):
+        if os.path.exists(self.actual_parser_path):
+            os.remove(self.actual_parser_path)
+
     def test_should_get_intent(self):
         # Given
         language = Language.EN
@@ -238,6 +253,69 @@ class TestRegexIntentParser(unittest.TestCase):
                        entity="snips/datetime", slot_name="startTime")
         ]
         self.assertItemsEqual(expected_slots, slots)
+
+    def test_should_be_saveable(self):
+        # Given
+        language = Language.EN
+        patterns = {
+            "intent_name": [
+                "(?P<hello_group>hello?)",
+                "(?P<world_group>world$)"
+            ]
+        }
+        group_names_to_slot_names = {
+            "hello_group": "hello_slot",
+            "world_group": "world_slot"
+        }
+        slot_names_to_entities = {
+            "hello_slot": "hello_entity",
+            "world_slot": "world_entity"
+        }
+        parser = RegexIntentParser(
+            language=language,
+            patterns=patterns,
+            group_names_to_slot_names=group_names_to_slot_names,
+            slot_names_to_entities=slot_names_to_entities
+        )
+
+        # When
+        parser.save(self.actual_parser_path)
+
+        # Then
+        with io.open(self.expected_parser_path) as f:
+            expected_dict = json.load(f)
+        with io.open(self.actual_parser_path) as f:
+            actual_dict = json.load(f)
+
+        self.assertDictEqual(actual_dict, expected_dict)
+
+    def test_should_be_loadable(self):
+        # When
+        parser = RegexIntentParser.load(self.expected_parser_path)
+
+        # Then
+        patterns = {
+            "intent_name": [
+                "(?P<hello_group>hello?)",
+                "(?P<world_group>world$)"
+            ]
+        }
+        group_names_to_slot_names = {
+            "hello_group": "hello_slot",
+            "world_group": "world_slot"
+        }
+        slot_names_to_entities = {
+            "hello_slot": "hello_entity",
+            "world_slot": "world_entity"
+        }
+        expected_parser = RegexIntentParser(
+            language=Language.EN,
+            patterns=patterns,
+            group_names_to_slot_names=group_names_to_slot_names,
+            slot_names_to_entities=slot_names_to_entities
+        )
+
+        self.assertEqual(parser, expected_parser)
 
     def test_should_be_serializable(self):
         # Given

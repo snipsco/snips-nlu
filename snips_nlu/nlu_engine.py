@@ -12,11 +12,10 @@ from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-    ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
+    ENTITY, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
     USE_SYNONYMS, SYNONYMS, TOKEN_INDEXES, NGRAM)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
-from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
@@ -392,84 +391,3 @@ class SnipsNLUEngine(NLUEngine):
             tagging_threshold=tagging_threshold,
             intents_data_sizes=intents_data_sizes
         )
-
-    def to_dict(self):
-        """
-        Serialize the SnipsNLUEngine to a json dict, after having reset the
-        builtin intent parser. Thus this serialization, contains only the
-        custom intent parsers.
-        """
-        language_code = None
-        if self.language is not None:
-            language_code = self.language.iso_code
-
-        rule_based_parser_dict = None
-        probabilistic_parser_dict = None
-        if self.rule_based_parser is not None:
-            rule_based_parser_dict = self.rule_based_parser.to_dict()
-        if self.probabilistic_parser is not None:
-            probabilistic_parser_dict = self.probabilistic_parser.to_dict()
-
-        return {
-            LANGUAGE: language_code,
-            "rule_based_parser": rule_based_parser_dict,
-            "probabilistic_parser": probabilistic_parser_dict,
-            BUILTIN_PARSER: None,
-            "slot_name_mapping": self.slot_name_mapping,
-            "tagging_threshold": self.tagging_threshold,
-            ENTITIES: self.entities,
-            "intents_data_sizes": self.intents_data_sizes
-        }
-
-    @classmethod
-    def load_from(cls, language, customs=None, builtin_path=None,
-                  builtin_binary=None):
-        """
-        Create a `SnipsNLUEngine` from the following attributes
-        
-        :param language: ISO 639-1 language code or Language instance
-        :param customs: A `dict` containing custom intents data
-        :param builtin_path: A directory path containing builtin intents data
-        :param builtin_binary: A `bytearray` containing builtin intents data
-        """
-
-        if isinstance(language, (str, unicode)):
-            language = Language.from_iso_code(language)
-
-        rule_based_parser = None
-        probabilistic_parser = None
-        builtin_parser = None
-        entities = None
-        tagging_threshold = None
-        slot_name_mapping = None
-        intent_data_size = None
-
-        if customs is not None:
-            rule_based_parser = RegexIntentParser.from_dict(
-                customs["rule_based_parser"])
-            probabilistic_parser = ProbabilisticIntentParser.from_dict(
-                customs["probabilistic_parser"])
-            entities = customs[ENTITIES]
-            tagging_threshold = customs["tagging_threshold"]
-            slot_name_mapping = customs["slot_name_mapping"]
-            intent_data_size = customs["intents_data_sizes"]
-
-        if builtin_path is not None or builtin_binary is not None:
-            builtin_parser = BuiltinIntentParser(language=language,
-                                                 data_path=builtin_path,
-                                                 data_binary=builtin_binary)
-
-        return cls(language, rule_based_parser=rule_based_parser,
-                   probabilistic_parser=probabilistic_parser,
-                   builtin_parser=builtin_parser,
-                   slot_name_mapping=slot_name_mapping,
-                   entities=entities,
-                   tagging_threshold=tagging_threshold,
-                   intents_data_sizes=intent_data_size)
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and \
-               self.to_dict() == other.to_dict()
-
-    def __ne__(self, other):
-        return not self.__eq__(other)

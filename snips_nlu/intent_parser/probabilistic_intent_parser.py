@@ -175,32 +175,6 @@ class ProbabilisticIntentParser:
                 parser_config["data_augmentation_config"])
         )
 
-    def to_dict(self):
-        return {
-            "language_code": self.language.iso_code,
-            "intent_classifier": self.intent_classifier.to_dict(),
-            "crf_taggers": {intent_name: tagger.to_dict() for
-                            intent_name, tagger in
-                            self.crf_taggers.iteritems()},
-            "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "data_augmentation_config": self.data_augmentation_config.to_dict()
-        }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(
-            language=Language.from_iso_code(obj_dict["language_code"]),
-            intent_classifier=SnipsIntentClassifier.from_dict(
-                obj_dict["intent_classifier"]),
-            crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)
-                         for intent_name, tagger_dict in
-                         obj_dict["crf_taggers"].iteritems()},
-            slot_name_to_entity_mapping=obj_dict[
-                "slot_name_to_entity_mapping"],
-            data_augmentation_config=DataAugmentationConfig.from_dict(
-                obj_dict["data_augmentation_config"])
-        )
-
 
 def augment_slots(text, tokens, tags, tagger, intent_slots_mapping,
                   builtin_entities, missing_slots):

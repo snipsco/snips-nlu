@@ -286,32 +286,11 @@ class RegexIntentParser:
         return cls(language, patterns, group_names_to_slot_names,
                    slot_names_to_entities)
 
-    def to_dict(self):
-        if self.regexes_per_intent is not None:
-            patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
-                        self.regexes_per_intent.iteritems()}
-        else:
-            patterns = None
-
-        return {
-            "language": self.language.iso_code,
-            "patterns": patterns,
-            "group_names_to_slot_names": self.group_names_to_slot_names,
-            "slot_names_to_entities": self.slot_names_to_entities
-        }
     def __eq__(self, other):
         if not isinstance(other, RegexIntentParser):
             return False
         # noinspection PyProtectedMember
         return self._as_dict() == other._as_dict()
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        language = Language.from_iso_code(obj_dict["language"])
-        patterns = obj_dict["patterns"]
-        group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
-        slot_names_to_entities = obj_dict["slot_names_to_entities"]
-        return cls(language, patterns, group_names_to_slot_names,
-                   slot_names_to_entities)
     def __ne__(self, other):
         return not self.__eq__(other)

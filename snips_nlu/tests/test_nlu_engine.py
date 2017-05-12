@@ -142,36 +142,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.assertEqual(result, Result("hello world", None, None).as_dict())
 
-    def test_should_be_serializable(self):
-        # Given
-        language = Language.EN
-        engine = SnipsNLUEngine(language).fit(SAMPLE_DATASET)
-        text = "this is a dummy_1 query with another dummy_2"
-        expected_parse = engine.parse(text)
-
-        # When
-        serialized_engine = engine.to_dict()
-        deserialized_engine = SnipsNLUEngine.load_from(
-            language=language.iso_code,
-            customs=serialized_engine)
-
-        # Then
-        # noinspection PyBroadException
-        try:
-            dumped = json.dumps(serialized_engine).decode("utf8")
-        except:
-            self.fail("NLU engine dict should be json serializable to utf8")
-
-        # noinspection PyBroadException
-        try:
-            _ = SnipsNLUEngine.load_from(language=language.iso_code,
-                                         customs=json.loads(dumped))
-        except:
-            self.fail("SnipsNLUEngine should be deserializable from dict with "
-                      "unicode values")
-
-        self.assertEqual(deserialized_engine.parse(text), expected_parse)
-
     @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.save')
     @patch('snips_nlu.nlu_engine.RegexIntentParser.save')
     def test_should_be_saveable(self, mock_rule_based_parser_save,

@@ -16,8 +16,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)
 from snips_nlu.tokenization import Token
-from snips_nlu.utils import (UnupdatableDict, ensure_string, safe_pickle_dumps,
-                             safe_pickle_loads, mkdir_p)
+from snips_nlu.utils import (UnupdatableDict, mkdir_p)
 
 POSSIBLE_SET_FEATURES = ["collection"]
 
@@ -192,39 +191,6 @@ class CRFTagger(object):
         return cls(CRF(model_filename=crf_model_filename),
                    features_signatures=features_signatures,
                    tagging_scheme=tagging_scheme, language=language)
-
-    def to_dict(self):
-        features_signatures = deepcopy(self.features_signatures)
-
-        for signature in features_signatures:
-            for feat in POSSIBLE_SET_FEATURES:
-                if feat in signature["args"] and isinstance(
-                        signature["args"][feat], set):
-                    signature["args"][feat] = list(signature["args"][feat])
-
-        return {
-            "crf_model": safe_pickle_dumps(self.crf_model),
-            "features_signatures": features_signatures,
-            "tagging_scheme": self.tagging_scheme.value,
-            "language": self.language.iso_code
-        }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        crf_model = safe_pickle_loads(ensure_string(obj_dict["crf_model"]))
-        features_signatures = deepcopy(obj_dict["features_signatures"])
-        for signature in features_signatures:
-            for feat in POSSIBLE_SET_FEATURES:
-                if feat in signature["args"] and isinstance(
-                        signature["args"][feat], list):
-                    signature["args"][feat] = set(signature["args"][feat])
-
-        tagging_scheme = TaggingScheme(int(obj_dict["tagging_scheme"]))
-        language = Language.from_iso_code(obj_dict["language"])
-        self = cls(crf_model=crf_model,
-                   features_signatures=features_signatures,
-                   tagging_scheme=tagging_scheme, language=language)
-        return self
 
     def __eq__(self, other):
         if not isinstance(other, CRFTagger):

@@ -15,8 +15,7 @@ from snips_nlu.tokenization import tokenize
 
 class TestCRFTagger(unittest.TestCase):
     def setUp(self):
-        fixtures_directory = os.path.join(TEST_PATH, "fixtures",
-                                          "crf_tagger")
+        fixtures_directory = os.path.join(TEST_PATH, "fixtures", "crf_tagger")
         self.expected_tagger_directory = os.path.join(fixtures_directory,
                                                       "expected_output")
         self.actual_tagger_directory = os.path.join(fixtures_directory,

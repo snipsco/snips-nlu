@@ -12,7 +12,6 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
-from snips_nlu.utils import CLASS_NAME, MODULE_NAME
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):
@@ -72,22 +71,12 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_intent = None
         self.assertEqual(intent, expected_intent)
 
-    @patch(
-        'snips_nlu.intent_classifier.feature_extraction.Featurizer.from_dict')
-    @patch(
-        'snips_nlu.intent_classifier.feature_extraction.Featurizer.to_dict')
-    def test_should_be_serializable(self, mocked_featurizer_to_dict,
-                                    mocked_featurizer_from_dict):
+    @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer.to_dict')
+    def test_should_be_serializable(self, mock_to_dict):
         # Given
-        def mock_to_dict():
-            return {"mocked_featurizer_key": "mocked_featurizer_value"}
+        mocked_dict = {"mocked_featurizer_key": "mocked_featurizer_value"}
 
-        mocked_featurizer_to_dict.side_effect = mock_to_dict
-
-        def mock_from_dict(_):
-            return Featurizer(Language.EN)
-
-        mocked_featurizer_from_dict.side_effect = mock_from_dict
+        mock_to_dict.return_value = mocked_dict
 
         classifier_args = {
             "loss": 'log',
@@ -101,8 +90,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         intent_classifier = SnipsIntentClassifier(
             language=Language.EN, classifier_args=classifier_args).fit(
             SAMPLE_DATASET)
-        coeffs = intent_classifier.classifier.coef_
-        intercept = intent_classifier.classifier.intercept_
+        coeffs = intent_classifier.classifier.coef_.tolist()
+        intercept = intent_classifier.classifier.intercept_.tolist()
 
         # When
         classifier_dict = intent_classifier.to_dict()
@@ -110,31 +99,72 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # Then
         # noinspection PyBroadException
         try:
-            dumped = json.dumps(classifier_dict).encode("utf-8")
+            json.dumps(classifier_dict).encode("utf-8")
         except:
             self.fail("SnipsIntentClassifier dict should be json serializable "
                       "to utf-8")
 
-        # noinspection PyBroadException
-        try:
-            _ = SnipsIntentClassifier.from_dict(json.loads(dumped))
-        except:
-            self.fail("SnipsIntentClassifier should be deserializable from "
-                      "dict with unicode values")
-
         intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
-            CLASS_NAME: SnipsIntentClassifier.__name__,
-            MODULE_NAME: SnipsIntentClassifier.__module__,
             "classifier_args": classifier_args,
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
             "language_code": SAMPLE_DATASET[LANGUAGE],
-            "featurizer": mock_to_dict()
+            "featurizer": mocked_dict
         }
-        self.assertEqual(classifier_dict["intent_list"],
-                         expected_dict["intent_list"])
+        self.assertEqual(classifier_dict, expected_dict)
+
+    @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer'
+           '.from_dict')
+    def should_be_deserializable(self, mock_from_dict):
+        # Given
+        mocked_featurizer = Featurizer(Language.EN)
+        mock_from_dict.return_value = mocked_featurizer
+
+        classifier_args = {
+            "loss": 'log',
+            "penalty": 'l2',
+            "class_weight": 'balanced',
+            "n_iter": 5,
+            "random_state": 42,
+            "n_jobs": -1
+        }
+        language = Language.EN
+        intent_list = ["MakeCoffee", "MakeTea", None]
+
+        coeffs = [
+            [1.23, 4.5],
+            [6.7, 8.90],
+            [1.01, 2.345],
+        ]
+
+        intercept = [
+            0.34,
+            0.41,
+            -0.98
+        ]
+
+        classifier_dict = {
+            "classifier_args": classifier_args,
+            "coeffs": coeffs,
+            "intercept": intercept,
+            "intent_list": intent_list,
+            "language_code": language.iso_code,
+            "featurizer": dict()
+        }
+
+        # When
+        classifier = SnipsIntentClassifier.from_dict(classifier_dict)
+
+        # Then
+        self.assertEqual(classifier.language, language)
+        self.assertDictEqual(classifier.classifier_args, classifier_args)
+        self.assertEqual(classifier.intent_list, intent_list)
+        self.assertIsNotNone(classifier.featurizer)
+        self.assertListEqual(classifier.classifier.coef_.tolist(), coeffs)
+        self.assertListEqual(classifier.classifier.intercept_.tolist(),
+                             intercept)
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
            ".build_training_data")

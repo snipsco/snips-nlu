@@ -1,0 +1,26 @@
+{
+    "crf_model_filename": "model.crfsuite", 
+    "features_signatures": [
+        {
+            "args": {
+                "n": 1
+            }, 
+            "factory_name": "get_shape_ngram_fn", 
+            "offsets": [
+                0
+            ]
+        }, 
+        {
+            "args": {
+                "n": 2
+            }, 
+            "factory_name": "get_shape_ngram_fn", 
+            "offsets": [
+                -1, 
+                0
+            ]
+        }
+    ], 
+    "language": "en", 
+    "tagging_scheme": 2
+}

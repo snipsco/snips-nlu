@@ -1,0 +1,398 @@
+{
+  "snips_nlu_version": "0.4.1",
+  "language": "en",
+  "intents": {
+    "MakeCoffee": {
+      "engineType": "regex",
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "Make me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "five thousands and one",
+              "range": {
+                "start": 8,
+                "end": 30
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " cups of coffee",
+              "range": {
+                "start": 30,
+                "end": 45
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Brew me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "two hundreds",
+              "range": {
+                "start": 8,
+                "end": 20
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " cups",
+              "range": {
+                "start": 20,
+                "end": 25
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "make me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "twenty three",
+              "range": {
+                "start": 8,
+                "end": 20
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " cups",
+              "range": {
+                "start": 20,
+                "end": 25
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Brew ",
+              "range": {
+                "start": 0,
+                "end": 5
+              }
+            },
+            {
+              "text": "four",
+              "range": {
+                "start": 5,
+                "end": 9
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " coffee cups",
+              "range": {
+                "start": 9,
+                "end": 21
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Make me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "12",
+              "range": {
+                "start": 8,
+                "end": 10
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " cups of coffee",
+              "range": {
+                "start": 10,
+                "end": 25
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "give me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "six",
+              "range": {
+                "start": 8,
+                "end": 11
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " coffees please",
+              "range": {
+                "start": 11,
+                "end": 26
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Make me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "one",
+              "range": {
+                "start": 8,
+                "end": 11
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " cup of coffee",
+              "range": {
+                "start": 11,
+                "end": 25
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "MakeTea": {
+      "engineType": "regex",
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "Make ",
+              "range": {
+                "start": 0,
+                "end": 5
+              }
+            },
+            {
+              "text": "twenty two",
+              "range": {
+                "start": 5,
+                "end": 15
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " ",
+              "range": {
+                "start": 15,
+                "end": 16
+              }
+            },
+            {
+              "text": "iced",
+              "range": {
+                "start": 16,
+                "end": 20
+              },
+              "slot_name": "beverage_temperature",
+              "entity": "Temperature",
+              "id": "entity_H1PpjZQlZ"
+            },
+            {
+              "text": " teas",
+              "range": {
+                "start": 20,
+                "end": 25
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Please, can I get ",
+              "range": {
+                "start": 0,
+                "end": 18
+              }
+            },
+            {
+              "text": "five",
+              "range": {
+                "start": 18,
+                "end": 22
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " ",
+              "range": {
+                "start": 22,
+                "end": 23
+              }
+            },
+            {
+              "text": "cold",
+              "range": {
+                "start": 23,
+                "end": 27
+              },
+              "slot_name": "beverage_temperature",
+              "entity": "Temperature",
+              "id": "entity_H1PpjZQlZ"
+            },
+            {
+              "text": " teas ?",
+              "range": {
+                "start": 27,
+                "end": 34
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Prepare ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "three",
+              "range": {
+                "start": 8,
+                "end": 13
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " cups of ",
+              "range": {
+                "start": 13,
+                "end": 22
+              }
+            },
+            {
+              "text": "hot",
+              "range": {
+                "start": 22,
+                "end": 25
+              },
+              "slot_name": "beverage_temperature",
+              "entity": "Temperature",
+              "id": "entity_H1PpjZQlZ"
+            },
+            {
+              "text": " tea",
+              "range": {
+                "start": 25,
+                "end": 29
+              }
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Make me ",
+              "range": {
+                "start": 0,
+                "end": 8
+              }
+            },
+            {
+              "text": "one",
+              "range": {
+                "start": 8,
+                "end": 11
+              },
+              "slot_name": "number_of_cups",
+              "entity": "snips/number",
+              "id": "numbers.number"
+            },
+            {
+              "text": " tea",
+              "range": {
+                "start": 11,
+                "end": 15
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "entities": {
+    "snips/number": {},
+    "Temperature": {
+      "use_synonyms": true,
+      "automatically_extensible": true,
+      "data": [
+        {
+          "value": "cold",
+          "synonyms": [
+            "cold",
+            "iced"
+          ]
+        },
+        {
+          "value": "hot",
+          "synonyms": [
+            "hot",
+            "boiling"
+          ]
+        }
+      ]
+    }
+  }
+}

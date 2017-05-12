@@ -1,0 +1,16 @@
+{
+  "data_augmentation_config": {
+    "max_utterances": 200,
+    "noise_prob": 0.0,
+    "min_noise_size": 0,
+    "max_noise_size": 0
+  },
+  "intent_classifier": {
+    "mocked_dict_key": "mocked_dict_value"
+  },
+  "slot_name_to_entity_mapping": {
+    "beverage_temperature": "Temperature",
+    "number_of_cups": "snips/number"
+  },
+  "language_code": "en"
+}

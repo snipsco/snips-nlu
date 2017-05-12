@@ -20,8 +20,7 @@ from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              positive_tagging)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import (instance_to_generic_dict, instance_from_dict,
-                             namedtuple_with_defaults, mkdir_p)
+from snips_nlu.utils import (namedtuple_with_defaults, mkdir_p)
 
 _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
@@ -132,18 +131,18 @@ class ProbabilisticIntentParser(IntentParser):
         if not os.path.isdir(directory_path):
             mkdir_p(directory_path)
 
-        intent_classifier_config = {
+        parser_config = {
             "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
             "data_augmentation_config": self.data_augmentation_config.to_dict()
         }
         config_path = os.path.join(directory_path,
-                                   "intent_classifier_config.json")
+                                   "probabilistic_parser_config.json")
 
         with io.open(config_path, mode='w') as f:
-            json_config = json.dumps(intent_classifier_config,
-                                     indent=4).decode(encoding='utf8')
+            json_config = json.dumps(parser_config, indent=4).decode(
+                encoding='utf8')
             f.write(json_config)
 
         taggers_directory = os.path.join(directory_path, "taggers")
@@ -156,7 +155,7 @@ class ProbabilisticIntentParser(IntentParser):
     @classmethod
     def load(cls, directory_path):
         config_path = os.path.join(directory_path,
-                                   "intent_classifier_config.json")
+                                   "probabilistic_parser_config.json")
 
         with io.open(config_path) as f:
             parser_config = json.load(f)
@@ -179,8 +178,7 @@ class ProbabilisticIntentParser(IntentParser):
         )
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
-        obj_dict.update({
+        return {
             "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
             "crf_taggers": {intent_name: tagger.to_dict() for
@@ -188,14 +186,13 @@ class ProbabilisticIntentParser(IntentParser):
                             self.crf_taggers.iteritems()},
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
             "data_augmentation_config": self.data_augmentation_config.to_dict()
-        })
-        return obj_dict
+        }
 
     @classmethod
     def from_dict(cls, obj_dict):
         return cls(
             language=Language.from_iso_code(obj_dict["language_code"]),
-            intent_classifier=instance_from_dict(
+            intent_classifier=SnipsIntentClassifier.from_dict(
                 obj_dict["intent_classifier"]),
             crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)
                          for intent_name, tagger_dict in

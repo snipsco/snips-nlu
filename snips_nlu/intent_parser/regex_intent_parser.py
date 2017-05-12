@@ -11,7 +11,6 @@ from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
                                  ENTITY, CUSTOM_ENGINE, MATCH_RANGE)
 from snips_nlu.dataset import filter_dataset
-from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
@@ -95,6 +94,7 @@ def get_joined_entity_utterances(dataset):
             else:
                 utterances = [entry[VALUE] for entry in entity[DATA]]
         utterances_patterns = [re.escape(e) for e in utterances]
+        # noinspection PyTypeChecker
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances
@@ -163,7 +163,7 @@ def replace_builtin_entities(text, language):
     return range_mapping, processed_text
 
 
-class RegexIntentParser(IntentParser):
+class RegexIntentParser:
     def __init__(self, language, patterns=None, group_names_to_slot_names=None,
                  slot_names_to_entities=None):
         self.language = language
@@ -257,21 +257,21 @@ class RegexIntentParser(IntentParser):
                 break
         return Result(text, parsed_intent, parsed_slots)
 
-    def save(self, path):
+    def _as_dict(self):
         patterns = None
         if self.regexes_per_intent is not None:
             patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
                         self.regexes_per_intent.iteritems()}
-
-        parser_config_dict = {
+        return {
             "language": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
         }
 
+    def save(self, path):
         with io.open(path, mode='w') as f:
-            f.write(json.dumps(parser_config_dict, indent=4).decode(
+            f.write(json.dumps(self._as_dict(), indent=4).decode(
                 encoding='utf8'))
 
     @classmethod
@@ -299,6 +299,11 @@ class RegexIntentParser(IntentParser):
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
         }
+    def __eq__(self, other):
+        if not isinstance(other, RegexIntentParser):
+            return False
+        # noinspection PyProtectedMember
+        return self._as_dict() == other._as_dict()
 
     @classmethod
     def from_dict(cls, obj_dict):
@@ -308,3 +313,5 @@ class RegexIntentParser(IntentParser):
         slot_names_to_entities = obj_dict["slot_names_to_entities"]
         return cls(language, patterns, group_names_to_slot_names,
                    slot_names_to_entities)
+    def __ne__(self, other):
+        return not self.__eq__(other)

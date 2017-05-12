@@ -1,11 +1,10 @@
 from snips_queries.intent_parser import IntentParser as _BuiltinIntentParser
 
 from snips_nlu.constants import BUILTIN_PATH, BUILTIN_BINARY, LANGUAGE
-from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 
 
-class BuiltinIntentParser(IntentParser):
+class BuiltinIntentParser:
     def __init__(self, language, data_path=None, data_binary=None):
         if data_path is not None:
             self.parser = _BuiltinIntentParser(language=language.duckling_code,

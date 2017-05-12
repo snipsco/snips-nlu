@@ -3,7 +3,6 @@ from sklearn.linear_model import SGDClassifier
 
 from data_augmentation import build_training_data, get_regularization_factor
 from feature_extraction import Featurizer
-from intent_classifier import IntentClassifier
 from snips_nlu.constants import CUSTOM_ENGINE, BUILTIN_ENGINE
 from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
@@ -22,7 +21,7 @@ def get_default_parameters():
     }
 
 
-class SnipsIntentClassifier(IntentClassifier):
+class SnipsIntentClassifier:
     def __init__(self, language, classifier_args=get_default_parameters()):
         self.language = language
         self.classifier_args = classifier_args

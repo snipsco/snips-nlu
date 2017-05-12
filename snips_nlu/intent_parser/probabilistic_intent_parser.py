@@ -6,7 +6,6 @@ import os
 from copy import copy
 from itertools import groupby, permutations
 
-from intent_parser import IntentParser
 from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.constants import (DATA, INTENTS, CUSTOM_ENGINE, ENTITY,
                                  MATCH_RANGE)
@@ -43,10 +42,9 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
-class ProbabilisticIntentParser(IntentParser):
+class ProbabilisticIntentParser:
     def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping, data_augmentation_config=None):
-        super(ProbabilisticIntentParser, self).__init__()
         self.language = language
         self.intent_classifier = intent_classifier
         self._crf_taggers = None

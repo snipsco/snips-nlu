@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
 
-import io
-import json
-import os
 from copy import copy
 from itertools import groupby, permutations
 
@@ -18,7 +15,7 @@ from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              positive_tagging)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import (namedtuple_with_defaults, mkdir_p)
+from snips_nlu.utils import (namedtuple_with_defaults)
 
 _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
@@ -123,54 +120,33 @@ class ProbabilisticIntentParser:
                 crf_samples)
         return self
 
-    def save(self, directory_path):
-        if not os.path.isdir(directory_path):
-            mkdir_p(directory_path)
+    def to_dict(self):
+        taggers = {intent: tagger.to_dict()
+                   for intent, tagger in self.crf_taggers.iteritems()}
 
-        parser_config = {
+        return {
             "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "data_augmentation_config": self.data_augmentation_config.to_dict()
+            "data_augmentation_config":
+                self.data_augmentation_config.to_dict(),
+            "taggers": taggers
         }
-        config_path = os.path.join(directory_path,
-                                   "probabilistic_parser_config.json")
-
-        with io.open(config_path, mode='w') as f:
-            json_config = json.dumps(parser_config, indent=4).decode(
-                encoding='utf8')
-            f.write(json_config)
-
-        taggers_directory = os.path.join(directory_path, "taggers")
-        if not os.path.isdir(taggers_directory):
-            mkdir_p(taggers_directory)
-        for intent, tagger in self.crf_taggers.iteritems():
-            tagger_directory = os.path.join(taggers_directory, intent)
-            tagger.save(tagger_directory)
 
     @classmethod
-    def load(cls, directory_path):
-        config_path = os.path.join(directory_path,
-                                   "probabilistic_parser_config.json")
-
-        with io.open(config_path) as f:
-            parser_config = json.load(f)
-
-        taggers = dict()
-        taggers_directory = os.path.join(directory_path, "taggers")
-        for intent in os.listdir(taggers_directory):
-            tagger_directory = os.path.join(taggers_directory, intent)
-            taggers[intent] = CRFTagger.load(tagger_directory)
+    def from_dict(cls, parser_dict):
+        taggers = {intent: CRFTagger.from_dict(tagger_dict) for
+                   intent, tagger_dict in parser_dict["tagger"].iteritems()}
 
         return cls(
-            language=Language.from_iso_code(parser_config["language_code"]),
+            language=Language.from_iso_code(parser_dict["language_code"]),
             intent_classifier=SnipsIntentClassifier.from_dict(
-                parser_config["intent_classifier"]),
+                parser_dict["intent_classifier"]),
             crf_taggers=taggers,
-            slot_name_to_entity_mapping=parser_config[
+            slot_name_to_entity_mapping=parser_dict[
                 "slot_name_to_entity_mapping"],
             data_augmentation_config=DataAugmentationConfig.from_dict(
-                parser_config["data_augmentation_config"])
+                parser_dict["data_augmentation_config"])
         )
 
 

@@ -1,18 +1,15 @@
 from __future__ import unicode_literals
 
-import io
-import json
-import os
 from abc import ABCMeta, abstractmethod
 
 from duckling import core
 
-from dataset import validate_and_format_dataset, filter_dataset
+from dataset import validate_and_format_dataset
 from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-    ENTITY, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
+    ENTITY, MATCH_RANGE, DATA, SLOT_NAME,
     USE_SYNONYMS, SYNONYMS, TOKEN_INDEXES, NGRAM)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
@@ -28,7 +25,6 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import mkdir_p
 
 
 class NLUEngine(object):
@@ -195,18 +191,11 @@ def enrich_slots(slots, other_slots):
     return enriched_slots
 
 
-def crf_model_filename(engine_path, intent):
-    if engine_path is None:
-        return None
-    return os.path.join(engine_path, "model", "probabilistic_parser",
-                        "taggers", intent, "%s_tagger.crfsuite" % intent)
-
-
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
                  slot_name_mapping=None, tagging_threshold=None,
-                 intents_data_sizes=None, serialization_path=None):
+                 intents_data_sizes=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
@@ -227,7 +216,6 @@ class SnipsNLUEngine(NLUEngine):
             ent = BuiltInEntity.built_in_entity_by_duckling_dim.get(d, False)
             if ent and ent not in tagging_excluded_entities:
                 self.tagging_scope.append(ent)
-        self.serialization_path = serialization_path
 
     def parse(self, text, intent=None):
         """
@@ -292,95 +280,55 @@ class SnipsNLUEngine(NLUEngine):
             intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, self.language)
-            crf_model_path = crf_model_filename(self.serialization_path,
-                                                intent)
-            taggers[intent] = CRFTagger(default_crf_model(crf_model_path),
-                                        features, TaggingScheme.BIO,
-                                        self.language)
+            taggers[intent] = CRFTagger(default_crf_model(), features,
+                                        TaggingScheme.BIO, self.language)
         intent_classifier = SnipsIntentClassifier(self.language)
         self.probabilistic_parser = ProbabilisticIntentParser(
             self.language, intent_classifier, taggers, self.slot_name_mapping)
         self.probabilistic_parser.fit(dataset)
         return self
 
-    def save(self):
+    def to_dict(self):
         """
-        Persists the SnipsNLUEngine instance in the directory provided at 
-        initialization with `serialization_path`
-        This persistence is meant to be cross-platform
-        
-        NB: this directory can be safely moved and reloaded from another 
-        location
+        Serialize the nlu engine into a python dictionary
         """
-        if self.serialization_path is None:
-            raise AssertionError("A serialization path must be provide to "
-                                 "serialize a SnipsNLUEngine")
-        if not os.path.isdir(self.serialization_path):
-            mkdir_p(self.serialization_path)
+        model_dict = dict()
+        if self.rule_based_parser is not None:
+            model_dict["rule_based_parser"] = self.rule_based_parser.to_dict()
+        if self.probabilistic_parser is not None:
+            model_dict["probabilistic_parser"] = \
+                self.probabilistic_parser.to_dict()
 
-        language_code = None
-        if self.language is not None:
-            language_code = self.language.iso_code
-
-        nlu_engine_config = {
-            LANGUAGE: language_code,
+        return {
+            LANGUAGE: self.language.iso_code,
             "slot_name_mapping": self.slot_name_mapping,
             "tagging_threshold": self.tagging_threshold,
             ENTITIES: self.entities,
-            "intents_data_sizes": self.intents_data_sizes
+            "intents_data_sizes": self.intents_data_sizes,
+            "model": model_dict
         }
 
-        config_path = os.path.join(self.serialization_path,
-                                   'nlu_engine_config.json')
-
-        with io.open(config_path, mode='w') as f:
-            f.write(json.dumps(nlu_engine_config, indent=4).decode(
-                encoding='utf8'))
-
-        model_directory_path = os.path.join(self.serialization_path, 'model')
-        if not os.path.isdir(model_directory_path):
-            os.mkdir(model_directory_path)
-
-        if self.rule_based_parser is not None:
-            rule_based_parser_path = os.path.join(
-                model_directory_path, 'rule_based_parser_config.json')
-            self.rule_based_parser.save(rule_based_parser_path)
-
-        if self.probabilistic_parser is not None:
-            probabilistic_parser_directory = os.path.join(
-                model_directory_path, 'probabilistic_parser')
-            self.probabilistic_parser.save(probabilistic_parser_directory)
-
     @classmethod
-    def load(cls, directory_path):
+    def load(cls, nlu_engine_dict):
         """
-        Loads a SnipsNLUEngine instance from a directory path.
+        Loads a SnipsNLUEngine instance from a python dictionary.
         """
-        config_path = os.path.join(directory_path, 'nlu_engine_config.json')
-        with io.open(config_path) as f:
-            nlu_engine_config = json.load(f)
-
-        language = Language.from_iso_code(nlu_engine_config[LANGUAGE])
-        slot_name_mapping = nlu_engine_config["slot_name_mapping"]
-        tagging_threshold = nlu_engine_config["tagging_threshold"]
-        entities = nlu_engine_config[ENTITIES]
-        intents_data_sizes = nlu_engine_config["intents_data_sizes"]
-
-        model_directory_path = os.path.join(directory_path, 'model')
-        rule_based_parser_path = os.path.join(
-            model_directory_path, 'rule_based_parser_config.json')
-        probabilistic_parser_directory = os.path.join(
-            model_directory_path, 'probabilistic_parser')
+        language = Language.from_iso_code(nlu_engine_dict[LANGUAGE])
+        slot_name_mapping = nlu_engine_dict["slot_name_mapping"]
+        tagging_threshold = nlu_engine_dict["tagging_threshold"]
+        entities = nlu_engine_dict[ENTITIES]
+        intents_data_sizes = nlu_engine_dict["intents_data_sizes"]
 
         rule_based_parser = None
         probabilistic_parser = None
 
-        if os.path.exists(rule_based_parser_path):
-            rule_based_parser = RegexIntentParser.load(rule_based_parser_path)
+        if "rule_based_parser" in nlu_engine_dict["model"]:
+            rule_based_parser = RegexIntentParser.from_dict(
+                nlu_engine_dict["model"]["rule_based_parser"])
 
-        if os.path.isdir(probabilistic_parser_directory):
-            probabilistic_parser = ProbabilisticIntentParser.load(
-                probabilistic_parser_directory)
+        if "probabilistic_parser" in nlu_engine_dict["model"]:
+            probabilistic_parser = ProbabilisticIntentParser.from_dict(
+                nlu_engine_dict["model"]["probabilistic_parser"])
 
         return SnipsNLUEngine(
             language=language, rule_based_parser=rule_based_parser,

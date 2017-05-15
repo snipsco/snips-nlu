@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import io
-import json
 import re
 from copy import deepcopy
 
@@ -255,7 +253,7 @@ class RegexIntentParser:
                 break
         return Result(text, parsed_intent, parsed_slots)
 
-    def _as_dict(self):
+    def to_dict(self):
         patterns = None
         if self.regexes_per_intent is not None:
             patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
@@ -267,28 +265,19 @@ class RegexIntentParser:
             "slot_names_to_entities": self.slot_names_to_entities
         }
 
-    def save(self, path):
-        with io.open(path, mode='w') as f:
-            f.write(json.dumps(self._as_dict(), indent=4).decode(
-                encoding='utf8'))
-
     @classmethod
-    def load(cls, path):
-        with io.open(path) as f:
-            parser_config_dict = json.load(f)
-        language = Language.from_iso_code(parser_config_dict["language"])
-        patterns = parser_config_dict["patterns"]
-        group_names_to_slot_names = parser_config_dict[
-            "group_names_to_slot_names"]
-        slot_names_to_entities = parser_config_dict["slot_names_to_entities"]
+    def from_dict(cls, parser_dict):
+        language = Language.from_iso_code(parser_dict["language"])
+        patterns = parser_dict["patterns"]
+        group_names_to_slot_names = parser_dict["group_names_to_slot_names"]
+        slot_names_to_entities = parser_dict["slot_names_to_entities"]
         return cls(language, patterns, group_names_to_slot_names,
                    slot_names_to_entities)
 
     def __eq__(self, other):
         if not isinstance(other, RegexIntentParser):
             return False
-        # noinspection PyProtectedMember
-        return self._as_dict() == other._as_dict()
+        return self.to_dict() == other.to_dict()
 
     def __ne__(self, other):
         return not self.__eq__(other)

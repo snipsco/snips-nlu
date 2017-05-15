@@ -107,9 +107,13 @@ class ProbabilisticIntentParser:
         return self.intent_classifier.fitted and all(
             slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
-    def fit(self, dataset):
+    def fit(self, dataset, intents=None):
+        if intents is None:
+            intents = set(dataset[INTENTS].keys())
         self.intent_classifier = self.intent_classifier.fit(dataset)
         for intent_name in dataset[INTENTS]:
+            if intent_name not in intents:
+                continue
             augmented_intent_utterances = augment_utterances(
                 dataset, intent_name, language=self.language,
                 **self.data_augmentation_config.to_dict())

@@ -209,7 +209,7 @@ class SnipsNLUEngine(NLUEngine):
             tagging_threshold = 5
         self.tagging_threshold = tagging_threshold
         self.intents_data_sizes = intents_data_sizes
-
+        self._pre_trained_taggers = dict()
         self.tagging_scope = []
         tagging_excluded_entities = {BuiltInEntity.NUMBER}
         for d in core.get_dims(self.language.iso_code):
@@ -259,15 +259,36 @@ class SnipsNLUEngine(NLUEngine):
         return Result(text, parsed_intent=parsed_intent,
                       parsed_slots=slots).as_dict()
 
-    def fit(self, dataset):
+    def fit(self, dataset, intents=None):
+
         """
-        Fit the engine with a dataset and return it
-        :param dataset: A dictionary containing data of the custom and builtin 
-        intents.
-        See https://github.com/snipsco/snips-nlu/blob/develop/README.md for
-        details about the format.
-        :return: A fitted SnipsNLUEngine
+        Fit the NLU engine.
+
+        Parameters
+        ----------
+        - dataset: dict containing intents and entities data
+        - intents: list of intents to train. If `None`, all intents will 
+        be trained. This parameter allows to have pre-trained intents.
+
+        Returns
+        -------
+        The same object, trained
         """
+        all_intents = set(dataset[INTENTS].keys())
+        if intents is None:
+            intents = all_intents
+        else:
+            intents = set(intents)
+
+        implicit_pretrained_intents = all_intents.difference(intents)
+        actual_pretrained_intents = set(self._pre_trained_taggers.keys())
+        missing_intents = implicit_pretrained_intents.difference(
+            actual_pretrained_intents)
+
+        if len(missing_intents) > 0:
+            raise ValueError(
+                "These intents must be trained: %s" % missing_intents)
+
         dataset = validate_and_format_dataset(dataset)
         self.rule_based_parser = RegexIntentParser(self.language).fit(dataset)
         self.entities = snips_nlu_entities(dataset)
@@ -280,13 +301,24 @@ class SnipsNLUEngine(NLUEngine):
             intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, self.language)
-            taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        TaggingScheme.BIO, self.language)
+            if intent in self._pre_trained_taggers:
+                tagger = self._pre_trained_taggers[intent]
+            else:
+                tagger = CRFTagger(default_crf_model(), features,
+                                   TaggingScheme.BIO, self.language)
+            taggers[intent] = tagger
         intent_classifier = SnipsIntentClassifier(self.language)
         self.probabilistic_parser = ProbabilisticIntentParser(
             self.language, intent_classifier, taggers, self.slot_name_mapping)
-        self.probabilistic_parser.fit(dataset)
+        self.probabilistic_parser.fit(dataset, intents=intents)
+        self._pre_trained_taggers = taggers
         return self
+
+    def add_pretrained_model(self, intent, model_data):
+        tagger = CRFTagger.from_dict(model_data)
+        if self.probabilistic_parser is not None:
+            self.probabilistic_parser.crf_taggers[intent] = tagger
+        self._pre_trained_taggers[intent] = tagger
 
     def to_dict(self):
         """

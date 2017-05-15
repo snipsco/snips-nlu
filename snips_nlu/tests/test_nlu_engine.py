@@ -4,7 +4,7 @@ import io
 import os
 import unittest
 
-from mock import Mock, patch
+from mock import Mock, patch, call
 
 from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
@@ -184,6 +184,43 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # When
         engine_dict = engine.to_dict()
         engine = SnipsNLUEngine.from_dict(engine_dict)
+        result = engine.parse(text)
+
+        # Then
+        expected_slots = [
+            ParsedSlot((8, 9), '3', 'snips/number',
+                       'number_of_cups').as_dict(),
+            ParsedSlot((18, 21), 'hot', 'Temperature',
+                       'beverage_temperature').as_dict()
+        ]
+        self.assertEqual(result['text'], text)
+        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
+        self.assertListEqual(result['slots'], expected_slots)
+
+    def test_should_fail_when_missing_intents(self):
+        # Given
+        incomplete_intents = {"MakeCoffee"}
+        engine = SnipsNLUEngine(Language.EN)
+
+        # Then
+        with self.assertRaises(Exception) as context:
+            engine.fit(BEVERAGE_DATASET, intents=incomplete_intents)
+
+        self.assertTrue("These intents must be trained: set([u'MakeTea'])"
+                        in context.exception)
+
+    def test_should_use_pretrained_intent(self):
+        # Given
+        text = "Give me 3 cups of hot tea please"
+        trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
+        trained_tagger = trained_engine.probabilistic_parser.crf_taggers[
+            "MakeTea"]
+        trained_tagger_data = trained_tagger.to_dict()
+
+        # When
+        engine = SnipsNLUEngine(Language.EN)
+        engine.add_pretrained_model("MakeTea", trained_tagger_data)
+        engine.fit(BEVERAGE_DATASET, intents=["MakeCoffee"])
         result = engine.parse(text)
 
         # Then

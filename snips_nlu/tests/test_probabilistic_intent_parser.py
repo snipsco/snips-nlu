@@ -103,6 +103,36 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         ]
         self.assertListEqual(augmented_slots, expected_slots)
 
+    def test_should_fit_only_selected_intents(self):
+        # Given
+        intents = {"MakeTea"}
+        language = Language.EN
+        intent_classifier = SnipsIntentClassifier(language)
+        tagging_scheme = TaggingScheme.BIO
+        mock_coffee_tagger = MagicMock()
+        mock_coffee_tagger.tagging_scheme = tagging_scheme
+        mock_tea_tagger = MagicMock()
+        mock_tea_tagger.tagging_scheme = tagging_scheme
+        taggers = {
+            "MakeCoffee": mock_coffee_tagger,
+            "MakeTea": mock_tea_tagger
+        }
+        slot_name_to_entity_mapping = {
+            "beverage_temperature": "Temperature",
+            "number_of_cups": "snips/number"
+        }
+        parser = ProbabilisticIntentParser(
+            language=language, intent_classifier=intent_classifier,
+            crf_taggers=taggers,
+            slot_name_to_entity_mapping=slot_name_to_entity_mapping)
+
+        # When
+        parser.fit(BEVERAGE_DATASET, intents)
+
+        # Then
+        self.assertFalse(mock_coffee_tagger.fit.called)
+        self.assertTrue(mock_tea_tagger.fit.called)
+
     @patch('snips_nlu.slot_filler.crf_tagger.CRFTagger.fit')
     @patch('snips_nlu.slot_filler.crf_tagger.CRFTagger.to_dict')
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'

@@ -1,9 +1,7 @@
 from __future__ import unicode_literals
 
 import io
-import json
 import os
-import shutil
 import unittest
 
 from mock import Mock, patch
@@ -17,17 +15,6 @@ from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
-    def setUp(self):
-        fixtures_directory = os.path.join(TEST_PATH, "fixtures", "nlu_engine")
-        self.expected_engine_directory = os.path.join(fixtures_directory,
-                                                      "expected_output")
-        self.actual_engine_directory = os.path.join(fixtures_directory,
-                                                    "actual_output")
-
-    def tearDown(self):
-        if os.path.isdir(self.actual_engine_directory):
-            shutil.rmtree(self.actual_engine_directory)
-
     def test_should_use_parsers_sequentially(self):
         # Given
         language = Language.EN
@@ -82,74 +69,77 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.assertEqual(result, Result("hello world", None, None).as_dict())
 
-    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.save')
-    @patch('snips_nlu.nlu_engine.RegexIntentParser.save')
-    def test_should_be_saveable(self, mock_rule_based_parser_save,
-                                mock_probabilistic_parser_save):
+    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.to_dict')
+    @patch('snips_nlu.nlu_engine.RegexIntentParser.to_dict')
+    def test_should_be_serializable(self, mock_rule_based_parser_to_dict,
+                                    mock_probabilistic_parser_to_dict):
         # Given
         language = Language.EN
-        engine = SnipsNLUEngine(
-            language, serialization_path=self.actual_engine_directory).fit(
-            BEVERAGE_DATASET)
+
+        mocked_rule_based_parser_dict = {
+            "mocked_ruled_based_parser_key": "mocked_ruled_based_parser_value"}
+        mock_rule_based_parser_to_dict.return_value = \
+            mocked_rule_based_parser_dict
+        mocked_proba_parser_dict = {
+            "mocked_proba_based_parser_key": "mocked_proba_parser_value"}
+        mock_probabilistic_parser_to_dict.return_value = \
+            mocked_proba_parser_dict
+        engine = SnipsNLUEngine(language).fit(BEVERAGE_DATASET)
 
         # When
-        engine.save()
+        actual_engine_dict = engine.to_dict()
 
         # Then
-        model_directory_path = os.path.join(self.actual_engine_directory,
-                                            "model")
-
-        rule_base_parser_config_path = os.path.join(
-            model_directory_path, 'rule_based_parser_config.json')
-        mock_rule_based_parser_save.assert_called_once_with(
-            rule_base_parser_config_path)
-
-        probabilistic_parser_config_path = os.path.join(
-            model_directory_path, 'probabilistic_parser')
-        mock_probabilistic_parser_save.assert_called_once_with(
-            probabilistic_parser_config_path)
-
-        expected_config_path = os.path.join(self.expected_engine_directory,
-                                            "nlu_engine_config.json")
-        with io.open(expected_config_path) as f:
-            expected_config = json.load(f)
-
-        actual_config_path = os.path.join(self.actual_engine_directory,
-                                          "nlu_engine_config.json")
-        with io.open(actual_config_path) as f:
-            actual_config = json.load(f)
-
-        self.assertDictEqual(actual_config, expected_config)
-
-        expected_model_dir = os.path.join(self.actual_engine_directory,
-                                          "model")
-        self.assertTrue(os.path.isdir(expected_model_dir))
-
-    def test_should_not_be_saveable_when_no_serialization_path(self):
-        # Given
-        engine = SnipsNLUEngine(Language.EN).fit(SAMPLE_DATASET)
-
-        # Then
-        with self.assertRaises(Exception) as context:
-            engine.save()
-
-        error = "A serialization path must be provide to serialize a " \
-                "SnipsNLUEngine"
-        self.assertTrue(error in context.exception)
-
-    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.load')
-    @patch('snips_nlu.nlu_engine.RegexIntentParser.load')
-    def test_should_be_loadable(self, mock_rule_based_parser_load,
-                                mock_probabilistic_parser_load):
-        # When
-        engine = SnipsNLUEngine.load(self.expected_engine_directory)
-
-        # Then
-        expected_intents_data_sizes = {
-            "MakeCoffee": 7,
-            "MakeTea": 4
+        expected_engine_dict = {
+            "slot_name_mapping": {
+                "MakeCoffee": {
+                    "number_of_cups": "snips/number"
+                },
+                "MakeTea": {
+                    "number_of_cups": "snips/number",
+                    "beverage_temperature": "Temperature"
+                }
+            },
+            "entities": {
+                "Temperature": {
+                    "automatically_extensible": True,
+                    "utterances": {
+                        "boiling": "hot",
+                        "cold": "cold",
+                        "hot": "hot",
+                        "iced": "cold"
+                    }
+                }
+            },
+            "tagging_threshold": 5,
+            "intents_data_sizes": {
+                "MakeCoffee": 7,
+                "MakeTea": 4
+            },
+            "language": "en",
+            "model": {
+                "rule_based_parser": mocked_rule_based_parser_dict,
+                "probabilistic_parser": mocked_proba_parser_dict
+            }
         }
-        expected_slot_name_mapping = {
+
+        self.assertDictEqual(actual_engine_dict, expected_engine_dict)
+
+    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.from_dict')
+    @patch('snips_nlu.nlu_engine.RegexIntentParser.from_dict')
+    def test_should_be_deserializable(self, mock_rule_based_parser_from_dict,
+                                      mock_probabilistic_parser_from_dict):
+        # When
+        mocked_rule_based_parser_dict = {
+            "mocked_ruled_based_parser_key": "mocked_ruled_based_parser_value"}
+        mocked_proba_parser_dict = {
+            "mocked_proba_based_parser_key": "mocked_proba_parser_value"}
+        entities = {"Temperature": {"automatically_extensible": True,
+                                    "utterances": {"boiling": "hot",
+                                                   "cold": "cold",
+                                                   "hot": "hot",
+                                                   "iced": "cold"}}}
+        slot_name_mapping = {
             "MakeCoffee": {
                 "number_of_cups": "snips/number"
             },
@@ -158,50 +148,42 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 "beverage_temperature": "Temperature"
             }
         }
-        expected_entities = {
-            "Temperature": {
-                "automatically_extensible": True,
-                "utterances": {
-                    "boiling": "hot",
-                    "cold": "cold",
-                    "hot": "hot",
-                    "iced": "cold"
-                }
+        intents_data_sizes = {"MakeCoffee": 7, "MakeTea": 4}
+        engine_dict = {
+            "slot_name_mapping": slot_name_mapping,
+            "entities": entities,
+            "tagging_threshold": 5,
+            "intents_data_sizes": intents_data_sizes,
+            "language": "en",
+            "model": {
+                "rule_based_parser": mocked_rule_based_parser_dict,
+                "probabilistic_parser": mocked_proba_parser_dict
             }
         }
+        engine = SnipsNLUEngine.from_dict(engine_dict)
 
-        rule_based_parser_config_path = os.path.join(
-            self.expected_engine_directory, "model",
-            "rule_based_parser_config.json")
+        # Then
+        mock_rule_based_parser_from_dict.assert_called_once_with(
+            mocked_rule_based_parser_dict)
 
-        mock_rule_based_parser_load.assert_called_once_with(
-            rule_based_parser_config_path)
-
-        probabilistic_parser_config_path = os.path.join(
-            self.expected_engine_directory, "model", "probabilistic_parser")
-
-        mock_probabilistic_parser_load.assert_called_once_with(
-            probabilistic_parser_config_path)
+        mock_probabilistic_parser_from_dict.assert_called_once_with(
+            mocked_proba_parser_dict)
 
         self.assertEqual(engine.language, Language.EN)
-        self.assertDictEqual(engine.intents_data_sizes,
-                             expected_intents_data_sizes)
+        self.assertDictEqual(engine.intents_data_sizes, intents_data_sizes)
         self.assertEqual(engine.tagging_threshold, 5)
-        self.assertDictEqual(engine.slot_name_mapping,
-                             expected_slot_name_mapping)
-        self.assertDictEqual(engine.entities, expected_entities)
+        self.assertDictEqual(engine.slot_name_mapping, slot_name_mapping)
+        self.assertDictEqual(engine.entities, entities)
 
     def test_end_to_end_serialization(self):
         # Given
         dataset = BEVERAGE_DATASET
-        engine = SnipsNLUEngine(
-            Language.EN, serialization_path=self.actual_engine_directory).fit(
-            dataset)
+        engine = SnipsNLUEngine(Language.EN).fit(dataset)
         text = "Give me 3 cups of hot tea please"
 
         # When
-        engine.save()
-        engine = SnipsNLUEngine.load(self.actual_engine_directory)
+        engine_dict = engine.to_dict()
+        engine = SnipsNLUEngine.from_dict(engine_dict)
         result = engine.parse(text)
 
         # Then

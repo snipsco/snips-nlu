@@ -309,7 +309,7 @@ class SnipsNLUEngine(NLUEngine):
         }
 
     @classmethod
-    def load(cls, nlu_engine_dict):
+    def from_dict(cls, nlu_engine_dict):
         """
         Loads a SnipsNLUEngine instance from a python dictionary.
         """

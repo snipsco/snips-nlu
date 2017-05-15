@@ -7,7 +7,7 @@ from snips_nlu.dataset import validate_and_format_dataset
 TEST_PATH = os.path.dirname(os.path.abspath(__file__))
 SAMPLE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
                                    "sample_dataset.json")
-BEVERAGE_DATASET_PATH = os.path.join(TEST_PATH, "fixtures",
+BEVERAGE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
                                      "beverage_dataset.json")
 
 

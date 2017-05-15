@@ -25,8 +25,6 @@ def default_crf_model(model_filename=None):
         directory = os.path.dirname(model_filename)
         if not os.path.isdir(directory):
             mkdir_p(directory)
-    else:
-        model_filename = ""
 
     return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False,
                model_filename=model_filename)

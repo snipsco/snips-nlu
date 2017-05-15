@@ -1,36 +1,21 @@
 from __future__ import unicode_literals
 
-import io
-import json
-import os
-import shutil
 import unittest
+
+from mock import patch
 
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
-from snips_nlu.tests.utils import TEST_PATH
 from snips_nlu.tokenization import tokenize
 
 
 class TestCRFTagger(unittest.TestCase):
-    def setUp(self):
-        fixtures_directory = os.path.join(TEST_PATH, "fixtures", "crf_tagger")
-        self.expected_tagger_directory = os.path.join(fixtures_directory,
-                                                      "expected_output")
-        self.actual_tagger_directory = os.path.join(fixtures_directory,
-                                                    "actual_output")
-
-    def tearDown(self):
-        if os.path.isdir(self.actual_tagger_directory):
-            shutil.rmtree(self.actual_tagger_directory)
-
-    def test_should_be_saveable(self):
+    @patch('snips_nlu.slot_filler.crf_tagger.safe_pickle_dumps')
+    def test_should_be_serializable(self, mock_pkl_dumps):
         # Given
-        crf_model_filename = os.path.join(self.actual_tagger_directory,
-                                          "model.crfsuite")
-        crf_model = default_crf_model(model_filename=crf_model_filename)
-
+        mock_pkl_dumps.return_value = "mocked_crf_pkl"
+        crf_model = default_crf_model()
         features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",
@@ -60,25 +45,72 @@ class TestCRFTagger(unittest.TestCase):
         tagger.fit(data)
 
         # When
-        tagger.save(self.actual_tagger_directory)
+        actual_tagger_dict = tagger.to_dict()
 
         # Then
-        with io.open(os.path.join(self.expected_tagger_directory,
-                                  "tagger_config.json")) as f:
-            expected_config = json.load(f)
+        expected_tagger_dict = {
+            "crf_model_pkl": "mocked_crf_pkl",
+            "features_signatures": [
+                {
+                    "args": {
+                        "n": 1
+                    },
+                    "factory_name": "get_shape_ngram_fn",
+                    "offsets": [
+                        0
+                    ]
+                },
+                {
+                    "args": {
+                        "n": 2
+                    },
+                    "factory_name": "get_shape_ngram_fn",
+                    "offsets": [
+                        -1,
+                        0
+                    ]
+                }
+            ],
+            "language": "en",
+            "tagging_scheme": 2
+        }
+        self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
 
-        with io.open(os.path.join(self.actual_tagger_directory,
-                                  "tagger_config.json")) as f:
-            actual_config = json.load(f)
-
-        self.assertTrue(os.path.exists(crf_model_filename))
-        self.assertDictEqual(actual_config, expected_config)
-
-    def test_should_be_loadable(self):
+    @patch('snips_nlu.slot_filler.crf_tagger.safe_pickle_loads')
+    def test_should_be_deserializable(self, mock_pkl_loads):
+        # Given
+        mock_pkl_loads.return_value = None
+        tagger_dict = {
+            "crf_model_pkl": "mocked_crf_pkl",
+            "features_signatures": [
+                {
+                    "args": {
+                        "n": 1
+                    },
+                    "factory_name": "get_shape_ngram_fn",
+                    "offsets": [
+                        0
+                    ]
+                },
+                {
+                    "args": {
+                        "n": 2
+                    },
+                    "factory_name": "get_shape_ngram_fn",
+                    "offsets": [
+                        -1,
+                        0
+                    ]
+                }
+            ],
+            "language": "en",
+            "tagging_scheme": 2
+        }
         # When
-        tagger = CRFTagger.load(self.expected_tagger_directory)
+        tagger = CRFTagger.from_dict(tagger_dict)
 
         # Then
+        mock_pkl_loads.assert_called_once_with("mocked_crf_pkl")
         expected_features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",
@@ -92,13 +124,9 @@ class TestCRFTagger(unittest.TestCase):
             }
         ]
         expected_tagging_scheme = TaggingScheme.BILOU
-        expected_crf_model_filename = os.path.join(
-            self.expected_tagger_directory, "model.crfsuite")
         expected_language = Language.EN
 
         self.assertListEqual(tagger.features_signatures,
                              expected_features_signatures)
         self.assertEqual(tagger.tagging_scheme, expected_tagging_scheme)
-        self.assertEqual(tagger.crf_model.modelfile.name,
-                         expected_crf_model_filename)
         self.assertEqual(tagger.language, expected_language)

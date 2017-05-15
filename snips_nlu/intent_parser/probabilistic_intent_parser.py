@@ -136,7 +136,7 @@ class ProbabilisticIntentParser:
     @classmethod
     def from_dict(cls, parser_dict):
         taggers = {intent: CRFTagger.from_dict(tagger_dict) for
-                   intent, tagger_dict in parser_dict["tagger"].iteritems()}
+                   intent, tagger_dict in parser_dict["taggers"].iteritems()}
 
         return cls(
             language=Language.from_iso_code(parser_dict["language_code"]),

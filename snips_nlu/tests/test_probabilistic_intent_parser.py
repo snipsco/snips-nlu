@@ -1,7 +1,3 @@
-import io
-import json
-import os
-import shutil
 import unittest
 
 from mock import MagicMock, patch, call
@@ -18,23 +14,11 @@ from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import (BEGINNING_PREFIX, INSIDE_PREFIX,
                                              TaggingScheme)
-from snips_nlu.tests.utils import BEVERAGE_DATASET, TEST_PATH
+from snips_nlu.tests.utils import BEVERAGE_DATASET
 from snips_nlu.tokenization import Token, tokenize
 
 
 class TestProbabilisticIntentParser(unittest.TestCase):
-    def setUp(self):
-        fixtures_directory = os.path.join(TEST_PATH, "fixtures",
-                                          "probabilistic_parser")
-        self.expected_parser_directory = os.path.join(fixtures_directory,
-                                                      "expected_output")
-        self.actual_parser_directory = os.path.join(fixtures_directory,
-                                                    "actual_output")
-
-    def tearDown(self):
-        if os.path.isdir(self.actual_parser_directory):
-            shutil.rmtree(self.actual_parser_directory)
-
     def test_spans_to_tokens_indexes(self):
         # Given
         spans = [
@@ -120,13 +104,15 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         self.assertListEqual(augmented_slots, expected_slots)
 
     @patch('snips_nlu.slot_filler.crf_tagger.CRFTagger.fit')
-    @patch('snips_nlu.slot_filler.crf_tagger.CRFTagger.save')
+    @patch('snips_nlu.slot_filler.crf_tagger.CRFTagger.to_dict')
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.SnipsIntentClassifier.to_dict')
-    def test_should_be_saveable(self, mock_classifier_to_dict,
-                                mock_tagger_save, mock_tagger_fit):
+    def test_should_be_serializable(self, mock_classifier_to_dict,
+                                    mock_tagger_to_dict, mock_tagger_fit):
         # Given
         language = Language.EN
+        mock_tagger_to_dict.return_value = {
+            "mocked_tagger_key": "mocked_tagger_value"}
         mock_classifier_to_dict.return_value = {
             "mocked_dict_key": "mocked_dict_value"}
         intent_classifier = SnipsIntentClassifier(language)
@@ -150,12 +136,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         tagging_scheme = TaggingScheme.BIO
 
-        taggers_directory = os.path.join(self.actual_parser_directory,
-                                         "taggers")
-        make_coffee_crf = default_crf_model(
-            os.path.join(taggers_directory, "MakeCoffee", "model.crfsuite"))
-        make_tea_crf = default_crf_model(
-            os.path.join(taggers_directory, "MakeTea", "model.crfsuite"))
+        make_coffee_crf = default_crf_model()
+        make_tea_crf = default_crf_model()
         make_coffee_tagger = CRFTagger(make_coffee_crf, features_signatures,
                                        tagging_scheme, language)
         make_tea_tagger = CRFTagger(make_tea_crf, features_signatures,
@@ -173,53 +155,72 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         parser.fit(BEVERAGE_DATASET)
 
         # When
-        parser.save(self.actual_parser_directory)
+        actual_parser_dict = parser.to_dict()
 
         # Then
-        make_coffee_dir = os.path.join(taggers_directory, "MakeCoffee")
-        make_tea_dir = os.path.join(taggers_directory, "MakeTea")
-        calls = [call(make_coffee_dir), call(make_tea_dir)]
-        mock_tagger_save.assert_has_calls(calls, any_order=True)
-        expected_config_path = os.path.join(self.expected_parser_directory,
-                                            "probabilistic_parser_config.json")
-        with io.open(expected_config_path) as f:
-            expected_config = json.load(f)
-
-        actual_config_path = os.path.join(self.actual_parser_directory,
-                                          "probabilistic_parser_config.json")
-        with io.open(actual_config_path) as f:
-            actual_config = json.load(f)
-
-        self.assertDictEqual(actual_config, expected_config)
-
-        taggers_dir_exist = os.path.isdir(taggers_directory)
-        self.assertTrue(taggers_dir_exist)
-
-        if taggers_dir_exist:
-            intents_dirs = os.listdir(taggers_directory)
-            self.assertItemsEqual(intents_dirs, ["MakeCoffee", "MakeTea"])
+        expected_parser_dict = {
+            "data_augmentation_config": {
+                "max_utterances": 200,
+                "noise_prob": 0.0,
+                "min_noise_size": 0,
+                "max_noise_size": 0
+            },
+            "intent_classifier": {
+                "mocked_dict_key": "mocked_dict_value"
+            },
+            "slot_name_to_entity_mapping": {
+                "beverage_temperature": "Temperature",
+                "number_of_cups": "snips/number"
+            },
+            "language_code": "en",
+            "taggers": {
+                "MakeCoffee": {"mocked_tagger_key": "mocked_tagger_value"},
+                "MakeTea": {"mocked_tagger_key": "mocked_tagger_value"}
+            }
+        }
+        self.assertDictEqual(actual_parser_dict, expected_parser_dict)
 
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.SnipsIntentClassifier.from_dict')
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.CRFTagger')
-    def test_should_be_loadable(self, mock_tagger, mock_classifier_from_dict):
+    def test_should_be_deserializable(self, mock_tagger,
+                                      mock_classifier_from_dict):
         # When
         language = Language.EN
         mocked_tagger = MagicMock()
-        mock_tagger.load.return_value = mocked_tagger
+        mock_tagger.from_dict.return_value = mocked_tagger
         mocked_tagger.language = language
-        parser = ProbabilisticIntentParser.load(self.expected_parser_directory)
+        parser_dict = {
+            "data_augmentation_config": {
+                "max_utterances": 200,
+                "noise_prob": 0.0,
+                "min_noise_size": 0,
+                "max_noise_size": 0
+            },
+            "intent_classifier": {
+                "mocked_dict_key": "mocked_dict_value"
+            },
+            "slot_name_to_entity_mapping": {
+                "beverage_temperature": "Temperature",
+                "number_of_cups": "snips/number"
+            },
+            "language_code": "en",
+            "taggers": {
+                "MakeCoffee": {"mocked_tagger_key1": "mocked_tagger_value1"},
+                "MakeTea": {"mocked_tagger_key2": "mocked_tagger_value2"}
+            }
+        }
+
+        # When
+        parser = ProbabilisticIntentParser.from_dict(parser_dict)
 
         # Then
         mock_classifier_from_dict.assert_called_once_with(
             {"mocked_dict_key": "mocked_dict_value"})
-        taggers_directory = os.path.join(self.expected_parser_directory,
-                                         "taggers")
-        make_coffee_dir = os.path.join(taggers_directory, "MakeCoffee")
-        make_tea_dir = os.path.join(taggers_directory, "MakeTea")
-        calls = [call(make_coffee_dir), call(make_tea_dir)]
-        mock_tagger.load.assert_has_calls(calls, any_order=True)
+        calls = [call({"mocked_tagger_key1": "mocked_tagger_value1"}),
+                 call({"mocked_tagger_key2": "mocked_tagger_value2"})]
+        mock_tagger.from_dict.assert_has_calls(calls, any_order=True)
 
         expected_slot_name_to_entity_mapping = {
             "beverage_temperature": "Temperature",

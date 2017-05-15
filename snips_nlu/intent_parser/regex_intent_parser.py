@@ -9,8 +9,7 @@ from snips_nlu.built_in_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
-                                 ENTITY, CUSTOM_ENGINE, MATCH_RANGE)
-from snips_nlu.dataset import filter_dataset
+                                 ENTITY, MATCH_RANGE)
 from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
@@ -183,7 +182,6 @@ class RegexIntentParser:
         return self.regexes_per_intent is not None
 
     def fit(self, dataset):
-        dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = get_joined_entity_utterances(dataset)

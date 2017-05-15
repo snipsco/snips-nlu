@@ -3,8 +3,6 @@ from sklearn.linear_model import SGDClassifier
 
 from data_augmentation import build_training_data, get_regularization_factor
 from feature_extraction import Featurizer
-from snips_nlu.constants import CUSTOM_ENGINE, BUILTIN_ENGINE
-from snips_nlu.dataset import filter_dataset
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem_sentence
 from snips_nlu.result import IntentClassificationResult
@@ -34,12 +32,7 @@ class SnipsIntentClassifier:
         return self.intent_list is not None
 
     def fit(self, dataset):
-        min_utterances = 1
-        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE, min_utterances)
-        builtin_dataset = filter_dataset(dataset, BUILTIN_ENGINE,
-                                         min_utterances)
-        utterances, y, intent_list = build_training_data(custom_dataset,
-                                                         builtin_dataset,
+        utterances, y, intent_list = build_training_data(dataset,
                                                          self.language)
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
@@ -50,7 +43,7 @@ class SnipsIntentClassifier:
             return self
 
         X = self.featurizer.transform(utterances)
-        alpha = get_regularization_factor(custom_dataset)
+        alpha = get_regularization_factor(dataset)
         self.classifier_args.update({'alpha': alpha})
         self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
         return self
@@ -63,8 +56,8 @@ class SnipsIntentClassifier:
         if len(text) == 0 or len(self.intent_list) == 0:
             return None
 
-        if len(text) == 0 or len(self.intent_list) == 0 or \
-                        self.featurizer is None:
+        if len(text) == 0 or len(self.intent_list) == 0 \
+                or self.featurizer is None:
             return None
 
         if len(self.intent_list) == 1:

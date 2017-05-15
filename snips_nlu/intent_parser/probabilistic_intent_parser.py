@@ -7,9 +7,8 @@ from copy import copy
 from itertools import groupby, permutations
 
 from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
-from snips_nlu.constants import (DATA, INTENTS, CUSTOM_ENGINE, ENTITY,
+from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE)
-from snips_nlu.dataset import filter_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
@@ -112,9 +111,8 @@ class ProbabilisticIntentParser:
             slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
     def fit(self, dataset):
-        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.intent_classifier = self.intent_classifier.fit(dataset)
-        for intent_name in custom_dataset[INTENTS]:
+        for intent_name in dataset[INTENTS]:
             augmented_intent_utterances = augment_utterances(
                 dataset, intent_name, language=self.language,
                 **self.data_augmentation_config.to_dict())

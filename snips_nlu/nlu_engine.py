@@ -86,16 +86,13 @@ def _tag_seen_entities(text, entities):
 
 
 def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
-           builtin_parser=None, intent=None):
+           intent=None):
     parsers = []
     if rule_based_parser is not None:
         parsers.append(rule_based_parser)
     if probabilistic_parser is not None:
         parsers.append(probabilistic_parser)
 
-    if intent is None and builtin_parser is not None:  # if the intent is given
-        #  it's a custom intent
-        parsers.append(builtin_parser)
     if len(parsers) == 0:
         return empty_result(text)
 
@@ -207,14 +204,12 @@ def crf_model_filename(engine_path, intent):
 
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
-                 probabilistic_parser=None, builtin_parser=None, entities=None,
+                 probabilistic_parser=None, entities=None,
                  slot_name_mapping=None, tagging_threshold=None,
                  intents_data_sizes=None, serialization_path=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
-        self._builtin_parser = None
-        self.builtin_parser = builtin_parser
         if entities is None:
             entities = dict()
         self.entities = entities
@@ -234,20 +229,6 @@ class SnipsNLUEngine(NLUEngine):
                 self.tagging_scope.append(ent)
         self.serialization_path = serialization_path
 
-    @property
-    def builtin_parser(self):
-        return self._builtin_parser
-
-    @builtin_parser.setter
-    def builtin_parser(self, value):
-        if value is not None \
-                and value.parser.language != self.language.iso_code:
-            raise ValueError(
-                "Built in parser language code ('%s') is different from "
-                "provided language code ('%s')"
-                % (value.parser.language, self.language.iso_code))
-        self._builtin_parser = value
-
     def parse(self, text, intent=None):
         """
         Parse the input text and returns a dictionary containing the most
@@ -257,8 +238,7 @@ class SnipsNLUEngine(NLUEngine):
 
     def _parse(self, text, intent=None):
         return _parse(text, self.entities, self.rule_based_parser,
-                      self.probabilistic_parser, self.builtin_parser,
-                      intent)
+                      self.probabilistic_parser, intent)
 
     def tag(self, text, intent):
         """
@@ -301,16 +281,15 @@ class SnipsNLUEngine(NLUEngine):
         :return: A fitted SnipsNLUEngine
         """
         dataset = validate_and_format_dataset(dataset)
-        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.rule_based_parser = RegexIntentParser(self.language).fit(dataset)
         self.entities = snips_nlu_entities(dataset)
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent
-                                   in custom_dataset[INTENTS].iteritems()}
-        self.slot_name_mapping = get_slot_name_mapping(custom_dataset)
+                                   in dataset[INTENTS].iteritems()}
+        self.slot_name_mapping = get_slot_name_mapping(dataset)
         taggers = dict()
-        for intent in custom_dataset[INTENTS]:
-            intent_custom_entities = get_intent_custom_entities(custom_dataset,
+        for intent in dataset[INTENTS]:
+            intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, self.language)
             crf_model_path = crf_model_filename(self.serialization_path,

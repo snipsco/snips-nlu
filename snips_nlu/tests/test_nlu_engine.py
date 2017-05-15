@@ -57,20 +57,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 return intent_entities2_empty
 
         mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
-
-        mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
-
-        builtin_intent_result = None
-        builtin_entities = []
-        mocked_builtin_parser.get_intent.return_value = builtin_intent_result
-        mocked_builtin_parser.get_slots.return_value = builtin_entities
-
         mocked_entities = {"mocked_entity": {"automatically_extensible": True}}
         engine = SnipsNLUEngine(
             language, entities=mocked_entities,
             rule_based_parser=mocked_parser1,
             probabilistic_parser=mocked_parser2,
-            builtin_parser=mocked_builtin_parser,
             slot_name_mapping={'mocked_slot_name': 'mocked_entity'})
 
         # When
@@ -80,57 +71,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_parse = Result(input_text, intent_result2,
                                 intent_entities2).as_dict()
         self.assertEqual(parse, expected_parse)
-
-    def test_should_parse_with_builtin_when_no_custom(self):
-        # When
-        language = Language.EN
-        mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
-        builtin_intent_result = IntentClassificationResult(
-            intent_name='mocked_builtin_intent', probability=0.9)
-        builtin_entities = []
-        mocked_builtin_parser.get_intent.return_value = builtin_intent_result
-        mocked_builtin_parser.get_slots.return_value = builtin_entities
-        engine = SnipsNLUEngine(language, builtin_parser=mocked_builtin_parser)
-
-        # When
-        text = "hello world"
-        parse = engine.parse(text)
-
-        # Then
-        self.assertEqual(parse,
-                         Result(text, builtin_intent_result,
-                                builtin_entities).as_dict())
-
-    def test_should_parse_with_builtin_when_customs_return_nothing(self):
-        # Given
-        language = Language.EN
-        mocked_parser1 = Mock()
-        mocked_parser1.get_intent.return_value = None
-        mocked_parser1.get_slots.return_value = []
-
-        mocked_parser2 = Mock()
-        mocked_parser2.get_intent.return_value = None
-        mocked_parser2.get_slots.return_value = []
-
-        mocked_builtin_parser = Mock(parser=Mock(language=language.iso_code))
-        builtin_intent_result = IntentClassificationResult(
-            intent_name='mocked_builtin_intent', probability=0.9)
-        builtin_entities = []
-        mocked_builtin_parser.get_intent.return_value = builtin_intent_result
-        mocked_builtin_parser.get_slots.return_value = builtin_entities
-
-        engine = SnipsNLUEngine(
-            language, builtin_parser=mocked_builtin_parser,
-            rule_based_parser=mocked_parser1,
-            probabilistic_parser=mocked_parser2)
-
-        # When
-        text = "hello world"
-        parse = engine.parse(text)
-
-        # Then
-        self.assertEqual(parse, Result(text, builtin_intent_result,
-                                       builtin_entities).as_dict())
 
     def test_should_handle_empty_dataset(self):
         # Given
@@ -534,7 +474,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".RegexIntentParser.get_slots")
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
            ".ProbabilisticIntentParser.get_intent")
-    def test_tag_should_return_custom_over_builtin(
+    def test_tag_should_return_custom_entity_over_builtin(
             self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
             mocked_regex_get_intent, mocked_default_features):
 

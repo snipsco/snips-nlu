@@ -43,34 +43,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_intent = None
         self.assertEqual(intent, expected_intent)
 
-    def test_should_get_none_if_only_builtin_intents(self):
-        # Given
-        language = Language.EN
-        dataset = {
-            "intents": {
-                "GetWeather": {
-                    "engineType": "tensorflow",
-                    "utterances": [
-                        {
-                            "data": "Is the weather gonna get better next"
-                                    " week in Paris?"
-                        }
-                    ]
-                }
-            },
-            "entities": {},
-            "language": language.iso_code
-        }
-        classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
-        text = "this is a dummy query"
-
-        # When
-        intent = classifier.get_intent(text)
-
-        # Then
-        expected_intent = None
-        self.assertEqual(intent, expected_intent)
-
     @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer.to_dict')
     def test_should_be_serializable(self, mock_to_dict):
         # Given

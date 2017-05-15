@@ -179,7 +179,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         make_coffee_dir = os.path.join(taggers_directory, "MakeCoffee")
         make_tea_dir = os.path.join(taggers_directory, "MakeTea")
         calls = [call(make_coffee_dir), call(make_tea_dir)]
-        mock_tagger_save.assert_has_calls(calls)
+        mock_tagger_save.assert_has_calls(calls, any_order=True)
         expected_config_path = os.path.join(self.expected_parser_directory,
                                             "probabilistic_parser_config.json")
         with io.open(expected_config_path) as f:
@@ -197,7 +197,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         if taggers_dir_exist:
             intents_dirs = os.listdir(taggers_directory)
-            self.assertListEqual(intents_dirs, ["MakeCoffee", "MakeTea"])
+            self.assertItemsEqual(intents_dirs, ["MakeCoffee", "MakeTea"])
 
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.SnipsIntentClassifier.from_dict')
@@ -219,7 +219,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         make_coffee_dir = os.path.join(taggers_directory, "MakeCoffee")
         make_tea_dir = os.path.join(taggers_directory, "MakeTea")
         calls = [call(make_coffee_dir), call(make_tea_dir)]
-        mock_tagger.load.assert_has_calls(calls)
+        mock_tagger.load.assert_has_calls(calls, any_order=True)
 
         expected_slot_name_to_entity_mapping = {
             "beverage_temperature": "Temperature",
@@ -241,5 +241,5 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         self.assertEqual(parser.data_augmentation_config,
                          expected_data_augmentation_config)
         self.assertIsNotNone(parser.intent_classifier)
-        self.assertListEqual(parser.crf_taggers.keys(),
-                             ["MakeCoffee", "MakeTea"])
+        self.assertItemsEqual(parser.crf_taggers.keys(),
+                              ["MakeCoffee", "MakeTea"])

@@ -19,43 +19,28 @@ def get_regularization_factor(dataset):
     return alpha
 
 
-def build_training_data(custom_dataset, builtin_dataset, language,
+def build_training_data(dataset, language,
                         noise_factor=5, use_stemming=True):
-    # Separating custom intents from builtin intents
-    custom_intents = custom_dataset[INTENTS]
-    builtin_intents = builtin_dataset[INTENTS]
-    all_intents = set(custom_intents.keys() + builtin_intents.keys())
-
     # Creating class mapping
+    intents = dataset[INTENTS]
     intent_index = 0
     classes_mapping = dict()
-    for intent in custom_intents:
-        classes_mapping[intent] = intent_index
-        intent_index += 1
-
-    for intent in builtin_intents:
+    for intent in intents:
         classes_mapping[intent] = intent_index
         intent_index += 1
 
     noise_class = intent_index
 
     # Computing dataset statistics
-    nb_utterances = [len(intent[UTTERANCES]) for intent in
-                     custom_intents.values()]
-    max_utterances = max(nb_utterances) if len(nb_utterances) > 0 else 0
+    nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
 
-    # Adding custom and builtin utterances
     augmented_utterances = []
     utterance_classes = []
-    for intent in all_intents:
-        if intent in builtin_intents:
-            utterances = builtin_dataset[INTENTS][intent][UTTERANCES][
-                         :max_utterances]
-        else:
-            utterances = custom_dataset[INTENTS][intent][UTTERANCES]
+    for intent_name, intent in intents.iteritems():
+        utterances = intent[UTTERANCES]
         augmented_utterances += [get_text_from_chunks(utterance[DATA]) for
                                  utterance in utterances]
-        utterance_classes += [classes_mapping[intent] for _ in utterances]
+        utterance_classes += [classes_mapping[intent_name] for _ in utterances]
 
     # Adding noise
     avg_utterances = np.mean(nb_utterances) if len(nb_utterances) > 0 else 0
@@ -75,7 +60,7 @@ def build_training_data(custom_dataset, builtin_dataset, language,
     nb_classes = len(set(classes_mapping.values()))
     intent_mapping = [None for _ in xrange(nb_classes)]
     for intent, intent_class in classes_mapping.iteritems():
-        if intent == NOISE_NAME or intent in builtin_intents:
+        if intent == NOISE_NAME:
             intent_mapping[intent_class] = None
         else:
             intent_mapping[intent_class] = intent

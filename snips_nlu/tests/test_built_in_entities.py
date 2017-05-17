@@ -5,7 +5,7 @@ import unittest
 from builtin_entities_ontology import get_ontology
 from mock import patch
 
-from snips_nlu.built_in_entities import (get_built_in_entities, BuiltInEntity,
+from snips_nlu.built_in_entities import (get_builtin_entities, BuiltInEntity,
                                          scope_to_dims, clear_cache)
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.languages import Language
@@ -39,7 +39,7 @@ class TestBuiltInEntities(unittest.TestCase):
                               ENTITY: BuiltInEntity.DATETIME}]
 
         # When
-        entities = get_built_in_entities(text, language)
+        entities = get_builtin_entities(text, language)
         self.assertEqual(expected_entities, entities)
 
     def test_scope_to_dims(self):
@@ -55,7 +55,6 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_built_in_label_uniqueness(self):
         # Given
-        # noinspection PyTypeChecker
         labels = [ent.value["label"] for ent in BuiltInEntity]
 
         # When
@@ -66,7 +65,6 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_built_in_label_duckling_dim_mapping(self):
         # Given
-        # noinspection PyTypeChecker
         duckling_names = [ent.value["duckling_dim"] for ent in BuiltInEntity]
 
         # When
@@ -85,8 +83,8 @@ class TestBuiltInEntities(unittest.TestCase):
         mocked_duckling_parse.return_value = []
 
         # When
-        get_built_in_entities(text, language)
-        get_built_in_entities(text, language)
+        get_builtin_entities(text, language)
+        get_builtin_entities(text, language)
 
         # Then
         mocked_duckling_parse.assert_called_once_with(language.duckling_code,

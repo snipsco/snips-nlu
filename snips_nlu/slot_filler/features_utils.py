@@ -1,17 +1,26 @@
+from __future__ import unicode_literals
+
 import re
 from copy import copy
 
 from snips_nlu.constants import NGRAM, TOKEN_INDEXES
+from snips_nlu.utils import LimitedSizeDict
+
+_NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
 
 
-def get_all_ngrams(tokens, max_ngram_size=None, containing_index=None):
-    if max_ngram_size is None:
-        max_ngram_size = len(tokens)
+def get_all_ngrams(tokens):
+    key = "<||>".join(tokens)
+    if key not in _NGRAMS_CACHE:
+        ngrams = _get_all_ngrams(tokens)
+        _NGRAMS_CACHE[key] = ngrams
+    return _NGRAMS_CACHE[key]
+
+
+def _get_all_ngrams(tokens):
+    max_ngram_size = len(tokens)
     max_start = len(tokens) - 1
     min_end = 0
-    if containing_index is not None:
-        max_start = containing_index
-        min_end = containing_index
 
     ngrams = []
     for start in xrange(max_start + 1):

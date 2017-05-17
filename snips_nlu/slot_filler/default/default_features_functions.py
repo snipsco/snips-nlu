@@ -7,12 +7,11 @@ from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
 
-def default_features(module_name, language, intent_entities, use_stemming,
+def default_features(language, intent_entities, use_stemming,
                      entities_offsets, entity_keep_prob,
                      common_words_gazetteer_name=None):
     features = [
         {
-            "module_name": module_name,
             "factory_name": "get_ngram_fn",
             "args": {
                 "n": 1,
@@ -23,7 +22,6 @@ def default_features(module_name, language, intent_entities, use_stemming,
             "offsets": [-2, -1, 0, 1, 2]
         },
         {
-            "module_name": module_name,
             "factory_name": "get_ngram_fn",
             "args": {
                 "n": 2,
@@ -34,37 +32,31 @@ def default_features(module_name, language, intent_entities, use_stemming,
             "offsets": [-2, 1]
         },
         {
-            "module_name": module_name,
             "factory_name": "get_shape_ngram_fn",
             "args": {"n": 1},
             "offsets": [0]
         },
         {
-            "module_name": module_name,
             "factory_name": "get_shape_ngram_fn",
             "args": {"n": 2},
             "offsets": [-1, 0]
         },
         {
-            "module_name": module_name,
             "factory_name": "get_shape_ngram_fn",
             "args": {"n": 3},
             "offsets": [-1]
         },
         {
-            "module_name": module_name,
             "factory_name": "is_digit",
             "args": {},
             "offsets": [-1, 0, 1]
         },
         {
-            "module_name": module_name,
             "factory_name": "is_first",
             "args": {},
             "offsets": [-2, -1, 0]
         },
         {
-            "module_name": module_name,
             "factory_name": "is_last",
             "args": {},
             "offsets": [0, 1, 2]
@@ -78,7 +70,6 @@ def default_features(module_name, language, intent_entities, use_stemming,
         entity = BuiltInEntity.from_duckling_dim(dim)
         features.append(
             {
-                "module_name": module_name,
                 "factory_name": "get_built_in_annotation_fn",
                 "args": {
                     "built_in_entity_label": entity.label,
@@ -89,10 +80,8 @@ def default_features(module_name, language, intent_entities, use_stemming,
         )
 
     # Entity lookup
-    if use_stemming:
-        preprocess = lambda string: stem(string, language)
-    else:
-        preprocess = lambda string: string
+    def preprocess(string):
+        return stem(string, language) if use_stemming else string
 
     for entity_name, entity in intent_entities.iteritems():
         if len(entity[DATA]) == 0:
@@ -107,7 +96,6 @@ def default_features(module_name, language, intent_entities, use_stemming,
                                       replace=False).tolist()
         features.append(
             {
-                "module_name": module_name,
                 "factory_name": "get_token_is_in_fn",
                 "args": {"tokens_collection": collection,
                          "collection_name": entity_name,

@@ -1,8 +1,11 @@
+from __future__ import unicode_literals
+
 import unittest
 
 from snips_nlu.built_in_entities import BuiltInEntity
 from snips_nlu.constants import CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestDataset(unittest.TestCase):
@@ -17,6 +20,7 @@ class TestDataset(unittest.TestCase):
             },
             "entities": {},
             "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -45,7 +49,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "entities": {},
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -80,7 +85,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -99,7 +105,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -113,7 +120,8 @@ class TestDataset(unittest.TestCase):
         dataset = {
             "intents": {},
             "entities": {},
-            "language": "eng"
+            "language": "eng",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -138,7 +146,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         expected_dataset = {
@@ -155,7 +164,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When
@@ -196,7 +206,7 @@ class TestDataset(unittest.TestCase):
                         }
                     ],
                     "engineType": CUSTOM_ENGINE
-                }
+                },
             },
             "entities": {
                 "entity1": {
@@ -210,7 +220,8 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         expected_dataset = {
@@ -261,13 +272,152 @@ class TestDataset(unittest.TestCase):
                     "automatically_extensible": False
                 }
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
         }
 
         # When
         dataset = validate_and_format_dataset(dataset)
 
         # Then
+        self.assertEqual(dataset, expected_dataset)
+
+    def test_dataset_should_require_nlu_version(self):
+        # Given
+        dataset = dict(SAMPLE_DATASET)
+
+        # When
+        dataset.pop("snips_nlu_version")
+
+        # Then
+        with self.assertRaises(KeyError) as ctx:
+            validate_and_format_dataset(dataset)
+        expected_exception_message = "Expected dataset to have key:" \
+                                     " 'snips_nlu_version'"
+        self.assertEqual(ctx.exception.message, expected_exception_message)
+
+    def test_dataset_require_semantic_version(self):
+        # Given
+        dataset = dict(SAMPLE_DATASET)
+
+        # When
+        dataset["snips_nlu_version"] = "1.1.1.1.1.1.1.1.1.1"
+
+        # Then
+        with self.assertRaises(ValueError) as ctx:
+            validate_and_format_dataset(dataset)
+        expected_exception_message = "Invalid version string:" \
+                                     " u'1.1.1.1.1.1.1.1.1.1'"
+        self.assertEqual(ctx.exception.message, expected_exception_message)
+
+    def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
+            self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "alternative entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["entity 1", "alternative entity 1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        expected_dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "alternative entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ],
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ],
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["entity 1", "alternative entity 1"]
+                        },
+                        {
+                            "value": "alternative entity 1",
+                            "synonyms": ["alternative entity 1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        # When
+        dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        self.maxDiff = None
         self.assertEqual(dataset, expected_dataset)
 
     def test_should_not_require_data_for_builtin_entities(self):
@@ -295,7 +445,8 @@ class TestDataset(unittest.TestCase):
             "entities": {
                 BuiltInEntity.DATETIME.label: {}
             },
-            "language": "en"
+            "language": "en",
+            "snips_nlu_version": "0.1.0"
         }
 
         # When / Then

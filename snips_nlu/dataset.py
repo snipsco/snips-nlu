@@ -1,11 +1,15 @@
+from __future__ import unicode_literals
+
 import re
 from copy import deepcopy
+
+from semantic_version import Version
 
 from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 ENGINE_TYPE)
+                                 ENGINE_TYPE, SNIPS_NLU_VERSION)
 from snips_nlu.languages import Language
 from utils import validate_type, validate_key, validate_keys
 
@@ -15,9 +19,10 @@ INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
 def validate_and_format_dataset(dataset):
     dataset = deepcopy(dataset)
     validate_type(dataset, dict)
-    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
+    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE, SNIPS_NLU_VERSION]
     for key in mandatory_keys:
         validate_key(dataset, key, object_label="dataset")
+    Version(dataset[SNIPS_NLU_VERSION])  # Check that the version is semantic
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
     validate_type(dataset[LANGUAGE], basestring)
@@ -118,8 +123,11 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
 
 
 def add_entity_value_if_missing(value, entity):
-    entity_values = set(v for entry in entity[DATA] for v in
-                        entry[SYNONYMS] + [entry[VALUE]])
+    if entity[USE_SYNONYMS]:
+        entity_values = set(v for entry in entity[DATA] for v in
+                            entry[SYNONYMS] + [entry[VALUE]])
+    else:
+        entity_values = set(entry[VALUE] for entry in entity[DATA])
     if value in entity_values:
         return
     entity[DATA].append({VALUE: value, SYNONYMS: [value]})

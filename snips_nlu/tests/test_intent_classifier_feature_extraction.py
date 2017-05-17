@@ -29,13 +29,11 @@ class TestFeatureExtraction(unittest.TestCase):
         serialized_featurizer = featurizer.to_dict()
 
         # Then
-        # noinspection PyBroadException
         try:
             dumped = json.dumps(serialized_featurizer).decode("utf8")
         except:
             self.fail("Featurizer dict should be json serializable to utf8")
 
-        # noinspection PyBroadException
         try:
             _ = Featurizer.from_dict(json.loads(dumped))
         except:

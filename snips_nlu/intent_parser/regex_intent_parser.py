@@ -91,7 +91,6 @@ def get_joined_entity_utterances(dataset):
             else:
                 utterances = [entry[VALUE] for entry in entity[DATA]]
         utterances_patterns = [re.escape(e) for e in utterances]
-        # noinspection PyTypeChecker
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances

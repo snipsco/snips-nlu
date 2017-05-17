@@ -1037,7 +1037,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         })
 
         # When / Then
-        # noinspection PyBroadException
         try:
             SnipsNLUEngine(language).fit(dataset)
         except:

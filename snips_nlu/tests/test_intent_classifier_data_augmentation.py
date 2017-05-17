@@ -41,7 +41,6 @@ class TestDataAugmentation(unittest.TestCase):
         avg_utterances = np.mean(nb_utterances)
 
         # When
-        # noinspection PyUnresolvedReferences
         np.random.seed(42)
         noise_factor = 2
         utterances, y, intent_mapping = build_training_data(
@@ -52,10 +51,8 @@ class TestDataAugmentation(unittest.TestCase):
         expected_utterances = [get_text_from_chunks(utterance[DATA])
                                for intent in dataset[INTENTS].values()
                                for utterance in intent[UTTERANCES]]
-        # noinspection PyUnresolvedReferences
         np.random.seed(42)
         noise = list(mocked_subtitles)
-        # noinspection PyTypeChecker
         noise_size = int(min(noise_factor * avg_utterances, len(noise)))
         noisy_utterances = np.random.choice(noise, size=noise_size,
                                             replace=False)

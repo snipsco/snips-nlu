@@ -26,7 +26,6 @@ class Featurizer(object):
     def fit(self, queries, y):
         if all(len("".join(tokenize_light(q))) == 0 for q in queries):
             return None
-        # noinspection PyPep8Naming
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             query.encode('utf-8') for query in queries)
         list_index_words = {self.tfidf_vectorizer.vocabulary_[x]: x for x in
@@ -52,7 +51,6 @@ class Featurizer(object):
 
         return self
 
-    # noinspection PyPep8Naming
     def transform(self, queries):
         X_train_tfidf = self.tfidf_vectorizer.transform(queries)
         X = X_train_tfidf[:, self.best_features]
@@ -62,7 +60,6 @@ class Featurizer(object):
         return self.fit(queries, y).transform(queries)
 
     def to_dict(self):
-        # noinspection PyProtectedMember
         idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
         return {
             'language_code': self.language.iso_code,

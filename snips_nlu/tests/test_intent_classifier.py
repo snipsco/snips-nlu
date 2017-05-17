@@ -69,7 +69,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        # noinspection PyBroadException
         try:
             json.dumps(classifier_dict).encode("utf-8")
         except:

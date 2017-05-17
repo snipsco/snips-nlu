@@ -19,7 +19,6 @@ class TestResult(unittest.TestCase):
         result_dict = result.as_dict()
 
         # Then
-        # noinspection PyBroadException
         try:
             json.dumps(result_dict)
         except:

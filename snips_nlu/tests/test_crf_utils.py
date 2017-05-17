@@ -438,19 +438,16 @@ class TestCRFUtils(unittest.TestCase):
 
         # When
         tags = []
-        # noinspection PyTypeChecker
         for scheme in TaggingScheme:
             tags.append(positive_tagging(scheme, slot_name, slot_size))
 
         # Then
-        # noinspection PyTypeChecker
         expected_tags = [[]] * len(TaggingScheme)
         self.assertEqual(tags, expected_tags)
 
     @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
     def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
-        # noinspection PyUnusedLocal
         def mock_positive_tagging(tagging_scheme, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
@@ -480,7 +477,6 @@ class TestCRFUtils(unittest.TestCase):
                                                     mocked_positive_tagging):
 
         # Given
-        # noinspection PyUnusedLocal
         def mock_positive_tagging(tagging_scheme, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 

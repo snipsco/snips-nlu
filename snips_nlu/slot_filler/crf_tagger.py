@@ -103,7 +103,6 @@ class CRFTagger(object):
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
-    # noinspection PyPep8Naming
     def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]

@@ -7,14 +7,12 @@ from snips_nlu.built_in_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
-                                 ENTITY, CUSTOM_ENGINE, MATCH_RANGE)
-from snips_nlu.dataset import filter_dataset
-from snips_nlu.intent_parser.intent_parser import IntentParser
+                                 ENTITY, MATCH_RANGE)
 from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import instance_to_generic_dict, LimitedSizeDict
+from snips_nlu.utils import LimitedSizeDict
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -161,7 +159,7 @@ def replace_builtin_entities(text, language):
     return range_mapping, processed_text
 
 
-class RegexIntentParser(IntentParser):
+class RegexIntentParser(object):
     def __init__(self, language, patterns=None, group_names_to_slot_names=None,
                  slot_names_to_entities=None):
         self.language = language
@@ -181,7 +179,6 @@ class RegexIntentParser(IntentParser):
         return self.regexes_per_intent is not None
 
     def fit(self, dataset):
-        dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = get_joined_entity_utterances(dataset)
@@ -213,8 +210,8 @@ class RegexIntentParser(IntentParser):
         if text not in self._cache:
             self._cache[text] = self._parse(text)
         res = self._cache[text]
-        if intent is not None and res.parsed_intent is not None and \
-                        res.parsed_intent.intent_name != intent:
+        if intent is not None and res.parsed_intent is not None \
+                and res.parsed_intent.intent_name != intent:
             return []
         return res.parsed_slots
 
@@ -231,7 +228,7 @@ class RegexIntentParser(IntentParser):
         for intent, regexes in self.regexes_per_intent.iteritems():
             for regex in regexes:
                 match = regex.match(processed_text)
-                if match is  None:
+                if match is None:
                     continue
                 parsed_intent = IntentClassificationResult(
                     intent_name=intent, probability=1.0)
@@ -256,21 +253,16 @@ class RegexIntentParser(IntentParser):
         return Result(text, parsed_intent, parsed_slots)
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
+        patterns = None
         if self.regexes_per_intent is not None:
             patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
                         self.regexes_per_intent.iteritems()}
-        else:
-            patterns = None
-
-        obj_dict.update({
+        return {
             "language": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
-        })
-
-        return obj_dict
+        }
 
     @classmethod
     def from_dict(cls, obj_dict):
@@ -280,3 +272,11 @@ class RegexIntentParser(IntentParser):
         slot_names_to_entities = obj_dict["slot_names_to_entities"]
         return cls(language, patterns, group_names_to_slot_names,
                    slot_names_to_entities)
+
+    def __eq__(self, other):
+        if not isinstance(other, RegexIntentParser):
+            return False
+        return self.to_dict() == other.to_dict()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

@@ -9,11 +9,9 @@ class TestLanguage(unittest.TestCase):
         language = Language
 
         # When
-        # noinspection PyTypeChecker
         nb_lang = len(set([lang.value['iso'] for lang in language]))
 
         # Then
-        # noinspection PyTypeChecker
         expected_nb_lang = len(Language)
 
         self.assertEqual(nb_lang, expected_nb_lang)

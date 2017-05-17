@@ -229,7 +229,6 @@ class TestFeatureFunctions(unittest.TestCase):
         }
 
         # When
-        # noinspection PyUnresolvedReferences
         np.random.seed(42)
         keep_prob = 0.5
         features_signatures = crf_features(
@@ -237,7 +236,6 @@ class TestFeatureFunctions(unittest.TestCase):
             language=Language.EN)
 
         # Then
-        # noinspection PyUnresolvedReferences
         np.random.seed(42)
         collection_1 = ['dummy_a', 'dummy_a_bis', 'dummy_b', 'dummy_b_bis']
         collection_1_size = max(int(keep_prob * len(collection_1)), 1)
@@ -254,7 +252,6 @@ class TestFeatureFunctions(unittest.TestCase):
                     'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
-                'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             },
             {
@@ -265,7 +262,6 @@ class TestFeatureFunctions(unittest.TestCase):
                     'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
-                'module_name': 'snips_nlu.slot_filler.feature_functions',
                 'offsets': (-2, -1, 0)
             }
         ]

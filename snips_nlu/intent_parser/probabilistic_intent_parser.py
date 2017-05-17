@@ -1,11 +1,13 @@
+from __future__ import unicode_literals
+
 from copy import copy
 from itertools import groupby, permutations
 
-from intent_parser import IntentParser
 from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
-from snips_nlu.constants import (DATA, INTENTS, CUSTOM_ENGINE, ENTITY,
+from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE)
-from snips_nlu.dataset import filter_dataset
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
@@ -13,8 +15,7 @@ from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              positive_tagging)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import (instance_to_generic_dict, instance_from_dict,
-                             namedtuple_with_defaults)
+from snips_nlu.utils import (namedtuple_with_defaults)
 
 _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
@@ -37,10 +38,9 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
-class ProbabilisticIntentParser(IntentParser):
+class ProbabilisticIntentParser(object):
     def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping, data_augmentation_config=None):
-        super(ProbabilisticIntentParser, self).__init__()
         self.language = language
         self.intent_classifier = intent_classifier
         self._crf_taggers = None
@@ -107,10 +107,13 @@ class ProbabilisticIntentParser(IntentParser):
         return self.intent_classifier.fitted and all(
             slot_filler.fitted for slot_filler in self.crf_taggers.values())
 
-    def fit(self, dataset):
-        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
+    def fit(self, dataset, intents=None):
+        if intents is None:
+            intents = set(dataset[INTENTS].keys())
         self.intent_classifier = self.intent_classifier.fit(dataset)
-        for intent_name in custom_dataset[INTENTS]:
+        for intent_name in dataset[INTENTS]:
+            if intent_name not in intents:
+                continue
             augmented_intent_utterances = augment_utterances(
                 dataset, intent_name, language=self.language,
                 **self.data_augmentation_config.to_dict())
@@ -122,27 +125,28 @@ class ProbabilisticIntentParser(IntentParser):
         return self
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
-        obj_dict.update({
+        taggers = {intent: tagger.to_dict()
+                   for intent, tagger in self.crf_taggers.iteritems()}
+
+        return {
             "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
-            "crf_taggers": {intent_name: tagger.to_dict() for
-                            intent_name, tagger in
-                            self.crf_taggers.iteritems()},
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "data_augmentation_config": self.data_augmentation_config.to_dict()
-        })
-        return obj_dict
+            "data_augmentation_config":
+                self.data_augmentation_config.to_dict(),
+            "taggers": taggers
+        }
 
     @classmethod
     def from_dict(cls, obj_dict):
+        taggers = {intent: CRFTagger.from_dict(tagger_dict) for
+                   intent, tagger_dict in obj_dict["taggers"].iteritems()}
+
         return cls(
             language=Language.from_iso_code(obj_dict["language_code"]),
-            intent_classifier=instance_from_dict(
+            intent_classifier=SnipsIntentClassifier.from_dict(
                 obj_dict["intent_classifier"]),
-            crf_taggers={intent_name: CRFTagger.from_dict(tagger_dict)
-                         for intent_name, tagger_dict in
-                         obj_dict["crf_taggers"].iteritems()},
+            crf_taggers=taggers,
             slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
             data_augmentation_config=DataAugmentationConfig.from_dict(

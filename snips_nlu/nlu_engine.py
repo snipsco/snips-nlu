@@ -4,16 +4,15 @@ from abc import ABCMeta, abstractmethod
 
 from duckling import core
 
-from dataset import validate_and_format_dataset, filter_dataset
+from dataset import validate_and_format_dataset
 from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-    ENTITY, BUILTIN_PARSER, CUSTOM_ENGINE, MATCH_RANGE, DATA, SLOT_NAME,
+    ENTITY, MATCH_RANGE, DATA, SLOT_NAME,
     USE_SYNONYMS, SYNONYMS, TOKEN_INDEXES, NGRAM)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
-from snips_nlu.intent_parser.builtin_intent_parser import BuiltinIntentParser
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
@@ -26,7 +25,6 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import instance_from_dict
 
 
 class NLUEngine(object):
@@ -84,16 +82,13 @@ def _tag_seen_entities(text, entities):
 
 
 def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
-           builtin_parser=None, intent=None):
+           intent=None):
     parsers = []
     if rule_based_parser is not None:
         parsers.append(rule_based_parser)
     if probabilistic_parser is not None:
         parsers.append(probabilistic_parser)
 
-    if intent is None and builtin_parser is not None:  # if the intent is given
-        #  it's a custom intent
-        parsers.append(builtin_parser)
     if len(parsers) == 0:
         return empty_result(text)
 
@@ -198,14 +193,12 @@ def enrich_slots(slots, other_slots):
 
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
-                 probabilistic_parser=None, builtin_parser=None, entities=None,
+                 probabilistic_parser=None, entities=None,
                  slot_name_mapping=None, tagging_threshold=None,
                  intents_data_sizes=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
-        self._builtin_parser = None
-        self.builtin_parser = builtin_parser
         if entities is None:
             entities = dict()
         self.entities = entities
@@ -216,27 +209,13 @@ class SnipsNLUEngine(NLUEngine):
             tagging_threshold = 5
         self.tagging_threshold = tagging_threshold
         self.intents_data_sizes = intents_data_sizes
-
+        self._pre_trained_taggers = dict()
         self.tagging_scope = []
         tagging_excluded_entities = {BuiltInEntity.NUMBER}
         for d in core.get_dims(self.language.iso_code):
             ent = BuiltInEntity.built_in_entity_by_duckling_dim.get(d, False)
             if ent and ent not in tagging_excluded_entities:
                 self.tagging_scope.append(ent)
-
-    @property
-    def builtin_parser(self):
-        return self._builtin_parser
-
-    @builtin_parser.setter
-    def builtin_parser(self, value):
-        if value is not None \
-                and value.parser.language != self.language.iso_code:
-            raise ValueError(
-                "Built in parser language code ('%s') is different from "
-                "provided language code ('%s')"
-                % (value.parser.language, self.language.iso_code))
-        self._builtin_parser = value
 
     def parse(self, text, intent=None):
         """
@@ -247,13 +226,16 @@ class SnipsNLUEngine(NLUEngine):
 
     def _parse(self, text, intent=None):
         return _parse(text, self.entities, self.rule_based_parser,
-                      self.probabilistic_parser, self.builtin_parser,
-                      intent)
+                      self.probabilistic_parser, intent)
 
     def tag(self, text, intent):
+        """
+        Parse the input text conditionally to the knowledge of `intent`.
+        This method is more aggressive (less conservative) than `parse`.
+        """
         result = self._parse(text, intent=intent)
-        enrich_results = self.intents_data_sizes[intent] < \
-                         self.tagging_threshold
+        enrich_results = self.intents_data_sizes[
+                             intent] < self.tagging_threshold
         if not enrich_results:
             return result
 
@@ -265,7 +247,7 @@ class SnipsNLUEngine(NLUEngine):
 
         # Add builtins entities
         builtin_entities = get_builtin_entities(text, self.language,
-                                                 self.tagging_scope)
+                                                self.tagging_scope)
         builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
                                     ent[ENTITY].label, ent[ENTITY].label)
                          for ent in builtin_entities]
@@ -277,113 +259,113 @@ class SnipsNLUEngine(NLUEngine):
         return Result(text, parsed_intent=parsed_intent,
                       parsed_slots=slots).as_dict()
 
-    def fit(self, dataset):
+    def fit(self, dataset, intents=None):
+
         """
-        Fit the engine with a dataset and return it
-        :param dataset: A dictionary containing data of the custom and builtin 
-        intents.
-        See https://github.com/snipsco/snips-nlu/blob/develop/README.md for
-        details about the format.
-        :return: A fitted SnipsNLUEngine
+        Fit the NLU engine.
+
+        Parameters
+        ----------
+        - dataset: dict containing intents and entities data
+        - intents: list of intents to train. If `None`, all intents will 
+        be trained. This parameter allows to have pre-trained intents.
+
+        Returns
+        -------
+        The same object, trained
         """
+        all_intents = set(dataset[INTENTS].keys())
+        if intents is None:
+            intents = all_intents
+        else:
+            intents = set(intents)
+
+        implicit_pretrained_intents = all_intents.difference(intents)
+        actual_pretrained_intents = set(self._pre_trained_taggers.keys())
+        missing_intents = implicit_pretrained_intents.difference(
+            actual_pretrained_intents)
+
+        if len(missing_intents) > 0:
+            raise ValueError(
+                "These intents must be trained: %s" % missing_intents)
+
         dataset = validate_and_format_dataset(dataset)
-        custom_dataset = filter_dataset(dataset, CUSTOM_ENGINE)
         self.rule_based_parser = RegexIntentParser(self.language).fit(dataset)
         self.entities = snips_nlu_entities(dataset)
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent
-                                   in custom_dataset[INTENTS].iteritems()}
-        self.slot_name_mapping = get_slot_name_mapping(custom_dataset)
+                                   in dataset[INTENTS].iteritems()}
+        self.slot_name_mapping = get_slot_name_mapping(dataset)
         taggers = dict()
-        for intent in custom_dataset[INTENTS]:
-            intent_custom_entities = get_intent_custom_entities(custom_dataset,
+        for intent in dataset[INTENTS]:
+            intent_custom_entities = get_intent_custom_entities(dataset,
                                                                 intent)
             features = crf_features(intent_custom_entities, self.language)
-            taggers[intent] = CRFTagger(default_crf_model(), features,
-                                        TaggingScheme.BIO, self.language)
+            if intent in self._pre_trained_taggers:
+                tagger = self._pre_trained_taggers[intent]
+            else:
+                tagger = CRFTagger(default_crf_model(), features,
+                                   TaggingScheme.BIO, self.language)
+            taggers[intent] = tagger
         intent_classifier = SnipsIntentClassifier(self.language)
         self.probabilistic_parser = ProbabilisticIntentParser(
             self.language, intent_classifier, taggers, self.slot_name_mapping)
-        self.probabilistic_parser.fit(dataset)
+        self.probabilistic_parser.fit(dataset, intents=intents)
+        self._pre_trained_taggers = taggers
         return self
+
+    def add_pretrained_model(self, intent, model_data):
+        tagger = CRFTagger.from_dict(model_data)
+        if self.probabilistic_parser is not None:
+            self.probabilistic_parser.crf_taggers[intent] = tagger
+        self._pre_trained_taggers[intent] = tagger
 
     def to_dict(self):
         """
-        Serialize the SnipsNLUEngine to a json dict, after having reset the
-        builtin intent parser. Thus this serialization, contains only the
-        custom intent parsers.
+        Serialize the nlu engine into a python dictionary
         """
-        language_code = None
-        if self.language is not None:
-            language_code = self.language.iso_code
-
-        rule_based_parser_dict = None
-        probabilistic_parser_dict = None
+        model_dict = dict()
         if self.rule_based_parser is not None:
-            rule_based_parser_dict = self.rule_based_parser.to_dict()
+            model_dict["rule_based_parser"] = self.rule_based_parser.to_dict()
         if self.probabilistic_parser is not None:
-            probabilistic_parser_dict = self.probabilistic_parser.to_dict()
+            model_dict["probabilistic_parser"] = \
+                self.probabilistic_parser.to_dict()
 
         return {
-            LANGUAGE: language_code,
-            "rule_based_parser": rule_based_parser_dict,
-            "probabilistic_parser": probabilistic_parser_dict,
-            BUILTIN_PARSER: None,
+            LANGUAGE: self.language.iso_code,
             "slot_name_mapping": self.slot_name_mapping,
             "tagging_threshold": self.tagging_threshold,
             ENTITIES: self.entities,
-            "intents_data_sizes": self.intents_data_sizes
+            "intents_data_sizes": self.intents_data_sizes,
+            "model": model_dict
         }
 
     @classmethod
-    def load_from(cls, language, customs=None, builtin_path=None,
-                  builtin_binary=None):
+    def from_dict(cls, obj_dict):
         """
-        Create a `SnipsNLUEngine` from the following attributes
-        
-        :param language: ISO 639-1 language code or Language instance
-        :param customs: A `dict` containing custom intents data
-        :param builtin_path: A directory path containing builtin intents data
-        :param builtin_binary: A `bytearray` containing builtin intents data
+        Loads a SnipsNLUEngine instance from a python dictionary.
         """
-
-        if isinstance(language, (str, unicode)):
-            language = Language.from_iso_code(language)
+        language = Language.from_iso_code(obj_dict[LANGUAGE])
+        slot_name_mapping = obj_dict["slot_name_mapping"]
+        tagging_threshold = obj_dict["tagging_threshold"]
+        entities = obj_dict[ENTITIES]
+        intents_data_sizes = obj_dict["intents_data_sizes"]
 
         rule_based_parser = None
         probabilistic_parser = None
-        builtin_parser = None
-        entities = None
-        tagging_threshold = None
-        slot_name_mapping = None
-        intent_data_size = None
 
-        if customs is not None:
-            rule_based_parser = instance_from_dict(
-                customs["rule_based_parser"])
-            probabilistic_parser = instance_from_dict(
-                customs["probabilistic_parser"])
-            entities = customs[ENTITIES]
-            tagging_threshold = customs["tagging_threshold"]
-            slot_name_mapping = customs["slot_name_mapping"]
-            intent_data_size = customs["intents_data_sizes"]
+        if "rule_based_parser" in obj_dict["model"]:
+            rule_based_parser = RegexIntentParser.from_dict(
+                obj_dict["model"]["rule_based_parser"])
 
-        if builtin_path is not None or builtin_binary is not None:
-            builtin_parser = BuiltinIntentParser(language=language,
-                                                 data_path=builtin_path,
-                                                 data_binary=builtin_binary)
+        if "probabilistic_parser" in obj_dict["model"]:
+            probabilistic_parser = ProbabilisticIntentParser.from_dict(
+                obj_dict["model"]["probabilistic_parser"])
 
-        return cls(language, rule_based_parser=rule_based_parser,
-                   probabilistic_parser=probabilistic_parser,
-                   builtin_parser=builtin_parser,
-                   slot_name_mapping=slot_name_mapping,
-                   entities=entities,
-                   tagging_threshold=tagging_threshold,
-                   intents_data_sizes=intent_data_size)
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and \
-               self.to_dict() == other.to_dict()
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        return SnipsNLUEngine(
+            language=language, rule_based_parser=rule_based_parser,
+            probabilistic_parser=probabilistic_parser, entities=entities,
+            slot_name_mapping=slot_name_mapping,
+            tagging_threshold=tagging_threshold,
+            intents_data_sizes=intents_data_sizes
+        )

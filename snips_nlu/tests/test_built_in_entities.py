@@ -55,7 +55,6 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_built_in_label_uniqueness(self):
         # Given
-        # noinspection PyTypeChecker
         labels = [ent.value["label"] for ent in BuiltInEntity]
 
         # When
@@ -66,7 +65,6 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_built_in_label_duckling_dim_mapping(self):
         # Given
-        # noinspection PyTypeChecker
         duckling_names = [ent.value["duckling_dim"] for ent in BuiltInEntity]
 
         # When

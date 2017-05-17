@@ -1,9 +1,12 @@
-import importlib
+from __future__ import unicode_literals
+
 import math
+import os
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
 
+import snips_nlu.slot_filler.feature_functions
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
@@ -11,23 +14,28 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)
 from snips_nlu.tokenization import Token
-from snips_nlu.utils import (UnupdatableDict, instance_to_generic_dict,
-                             ensure_string, safe_pickle_dumps,
+from snips_nlu.utils import (UnupdatableDict, mkdir_p, safe_pickle_dumps,
                              safe_pickle_loads)
 
 POSSIBLE_SET_FEATURES = ["collection"]
 
 
-def default_crf_model():
-    return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False)
+def default_crf_model(model_filename=None):
+    if model_filename is not None:
+        directory = os.path.dirname(model_filename)
+        if not os.path.isdir(directory):
+            mkdir_p(directory)
+
+    return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False,
+               model_filename=model_filename)
 
 
 def get_features_from_signatures(signatures):
     features = dict()
     for signature in signatures:
         factory_name = signature["factory_name"]
-        module_name = signature["module_name"]
-        factory = getattr(importlib.import_module(module_name), factory_name)
+        factory = getattr(snips_nlu.slot_filler.feature_functions,
+                          factory_name)
         fn = factory(**(signature["args"]))
         for offset in signature["offsets"]:
             feature_name, feature_fn = create_feature_function(fn, offset)
@@ -95,7 +103,6 @@ class CRFTagger(object):
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
-    # noinspection PyPep8Naming
     def fit(self, data, verbose=False):
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [sample[TAGS] for sample in data]
@@ -141,7 +148,6 @@ class CRFTagger(object):
         return features
 
     def to_dict(self):
-        obj_dict = instance_to_generic_dict(self)
         features_signatures = deepcopy(self.features_signatures)
 
         for signature in features_signatures:
@@ -150,30 +156,23 @@ class CRFTagger(object):
                         signature["args"][feat], set):
                     signature["args"][feat] = list(signature["args"][feat])
 
-        obj_dict.update({
-            "crf_model": safe_pickle_dumps(self.crf_model),
+        return {
+            "crf_model_pkl": safe_pickle_dumps(self.crf_model),
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
             "language": self.language.iso_code
-        })
-        return obj_dict
+        }
 
     @classmethod
-    def from_dict(cls, obj_dict):
-        crf_model = safe_pickle_loads(ensure_string(obj_dict["crf_model"]))
-        features_signatures = deepcopy(obj_dict["features_signatures"])
-        for signature in features_signatures:
-            for feat in POSSIBLE_SET_FEATURES:
-                if feat in signature["args"] and isinstance(
-                        signature["args"][feat], list):
-                    signature["args"][feat] = set(signature["args"][feat])
+    def from_dict(cls, tagger_config):
+        features_signatures = tagger_config["features_signatures"]
+        tagging_scheme = TaggingScheme(int(tagger_config["tagging_scheme"]))
+        language = Language.from_iso_code(tagger_config["language"])
+        crf_model = safe_pickle_loads(tagger_config["crf_model_pkl"])
 
-        tagging_scheme = TaggingScheme(int(obj_dict["tagging_scheme"]))
-        language = Language.from_iso_code(obj_dict["language"])
-        self = cls(crf_model=crf_model,
+        return cls(crf_model=crf_model,
                    features_signatures=features_signatures,
                    tagging_scheme=tagging_scheme, language=language)
-        return self
 
     def __eq__(self, other):
         if not isinstance(other, CRFTagger):

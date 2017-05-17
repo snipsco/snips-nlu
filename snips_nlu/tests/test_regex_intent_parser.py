@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import json
 import unittest
 
 from snips_nlu.intent_parser.regex_intent_parser import (
@@ -264,61 +263,53 @@ class TestRegexIntentParser(unittest.TestCase):
         )
 
         # When
-        parser_dict = parser.to_dict()
+        actual_dict = parser.to_dict()
 
         # Then
-        # noinspection PyBroadException
-        try:
-            json.dumps(parser_dict).decode("utf-8")
-        except:
-            self.fail("Parser dict should be json serializable in utf-8")
-
         expected_dict = {
-            "@class_name": "RegexIntentParser",
-            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
             "language": "en",
-            'group_names_to_slot_names': {
-                'hello_group': 'hello_slot',
-                'world_group': 'world_slot'
+            "group_names_to_slot_names": {
+                "hello_group": "hello_slot",
+                "world_group": "world_slot"
             },
-            'patterns': {
-                'intent_name': [
-                    '(?P<hello_group>hello?)',
-                    '(?P<world_group>world$)'
+            "patterns": {
+                "intent_name": [
+                    "(?P<hello_group>hello?)",
+                    "(?P<world_group>world$)"
                 ]
             },
-            'slot_names_to_entities': {
-                'hello_slot': 'hello_entity',
-                'world_slot': 'world_entity'
+            "slot_names_to_entities": {
+                "hello_slot": "hello_entity",
+                "world_slot": "world_entity"
             }
         }
-        self.assertDictEqual(parser_dict, expected_dict)
+
+        self.assertDictEqual(actual_dict, expected_dict)
 
     def test_should_be_deserializable(self):
         # Given
-        language = Language.EN
         parser_dict = {
-            "@class_name": "RegexIntentParser",
-            "@module_name": "snips_nlu.intent_parser.regex_intent_parser",
-            "language": language.iso_code,
-            'group_names_to_slot_names': {
-                'hello_group': 'hello_slot',
-                'world_group': 'world_slot'
+            "language": "en",
+            "group_names_to_slot_names": {
+                "hello_group": "hello_slot",
+                "world_group": "world_slot"
             },
-            'patterns': {
-                'intent_name': [
-                    '(?P<hello_group>hello?)',
-                    '(?P<world_group>world$)'
+            "patterns": {
+                "intent_name": [
+                    "(?P<hello_group>hello?)",
+                    "(?P<world_group>world$)"
                 ]
             },
-            'slot_names_to_entities': {
-                'hello_slot': 'hello_entity',
-                'world_slot': 'world_entity'
+            "slot_names_to_entities": {
+                "hello_slot": "hello_entity",
+                "world_slot": "world_entity"
             }
         }
 
         # When
         parser = RegexIntentParser.from_dict(parser_dict)
+
+        # Then
         patterns = {
             "intent_name": [
                 "(?P<hello_group>hello?)",
@@ -334,19 +325,11 @@ class TestRegexIntentParser(unittest.TestCase):
             "world_slot": "world_entity"
         }
         expected_parser = RegexIntentParser(
-            language=language,
+            language=Language.EN,
             patterns=patterns,
             group_names_to_slot_names=group_names_to_slot_names,
             slot_names_to_entities=slot_names_to_entities
         )
-
-        # noinspection PyBroadException
-        try:
-            parser_json = json.dumps(parser_dict).decode("utf-8")
-            _ = RegexIntentParser.from_dict(json.loads(parser_json))
-        except:
-            self.fail("RegexIntentParser should be deserializable from dict "
-                      "with unicode values")
 
         self.assertEqual(parser, expected_parser)
 

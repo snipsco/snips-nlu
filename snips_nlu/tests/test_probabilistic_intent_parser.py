@@ -111,8 +111,10 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         tagging_scheme = TaggingScheme.BIO
         mock_coffee_tagger = MagicMock()
         mock_coffee_tagger.tagging_scheme = tagging_scheme
+        mock_coffee_tagger.language = language
         mock_tea_tagger = MagicMock()
         mock_tea_tagger.tagging_scheme = tagging_scheme
+        mock_tea_tagger.language = language
         taggers = {
             "MakeCoffee": mock_coffee_tagger,
             "MakeTea": mock_tea_tagger

@@ -159,7 +159,7 @@ def replace_builtin_entities(text, language):
     return range_mapping, processed_text
 
 
-class RegexIntentParser:
+class RegexIntentParser(object):
     def __init__(self, language, patterns=None, group_names_to_slot_names=None,
                  slot_names_to_entities=None):
         self.language = language
@@ -265,11 +265,11 @@ class RegexIntentParser:
         }
 
     @classmethod
-    def from_dict(cls, parser_dict):
-        language = Language.from_iso_code(parser_dict["language"])
-        patterns = parser_dict["patterns"]
-        group_names_to_slot_names = parser_dict["group_names_to_slot_names"]
-        slot_names_to_entities = parser_dict["slot_names_to_entities"]
+    def from_dict(cls, obj_dict):
+        language = Language.from_iso_code(obj_dict["language"])
+        patterns = obj_dict["patterns"]
+        group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
+        slot_names_to_entities = obj_dict["slot_names_to_entities"]
         return cls(language, patterns, group_names_to_slot_names,
                    slot_names_to_entities)
 

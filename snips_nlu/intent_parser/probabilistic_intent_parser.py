@@ -38,7 +38,7 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
-class ProbabilisticIntentParser:
+class ProbabilisticIntentParser(object):
     def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping, data_augmentation_config=None):
         self.language = language
@@ -138,19 +138,19 @@ class ProbabilisticIntentParser:
         }
 
     @classmethod
-    def from_dict(cls, parser_dict):
+    def from_dict(cls, obj_dict):
         taggers = {intent: CRFTagger.from_dict(tagger_dict) for
-                   intent, tagger_dict in parser_dict["taggers"].iteritems()}
+                   intent, tagger_dict in obj_dict["taggers"].iteritems()}
 
         return cls(
-            language=Language.from_iso_code(parser_dict["language_code"]),
+            language=Language.from_iso_code(obj_dict["language_code"]),
             intent_classifier=SnipsIntentClassifier.from_dict(
-                parser_dict["intent_classifier"]),
+                obj_dict["intent_classifier"]),
             crf_taggers=taggers,
-            slot_name_to_entity_mapping=parser_dict[
+            slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
             data_augmentation_config=DataAugmentationConfig.from_dict(
-                parser_dict["data_augmentation_config"])
+                obj_dict["data_augmentation_config"])
         )
 
 

@@ -19,7 +19,7 @@ def get_default_parameters():
     }
 
 
-class SnipsIntentClassifier:
+class SnipsIntentClassifier(object):
     def __init__(self, language, classifier_args=get_default_parameters()):
         self.language = language
         self.classifier_args = classifier_args

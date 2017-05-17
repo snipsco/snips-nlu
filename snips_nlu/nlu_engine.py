@@ -341,26 +341,26 @@ class SnipsNLUEngine(NLUEngine):
         }
 
     @classmethod
-    def from_dict(cls, nlu_engine_dict):
+    def from_dict(cls, obj_dict):
         """
         Loads a SnipsNLUEngine instance from a python dictionary.
         """
-        language = Language.from_iso_code(nlu_engine_dict[LANGUAGE])
-        slot_name_mapping = nlu_engine_dict["slot_name_mapping"]
-        tagging_threshold = nlu_engine_dict["tagging_threshold"]
-        entities = nlu_engine_dict[ENTITIES]
-        intents_data_sizes = nlu_engine_dict["intents_data_sizes"]
+        language = Language.from_iso_code(obj_dict[LANGUAGE])
+        slot_name_mapping = obj_dict["slot_name_mapping"]
+        tagging_threshold = obj_dict["tagging_threshold"]
+        entities = obj_dict[ENTITIES]
+        intents_data_sizes = obj_dict["intents_data_sizes"]
 
         rule_based_parser = None
         probabilistic_parser = None
 
-        if "rule_based_parser" in nlu_engine_dict["model"]:
+        if "rule_based_parser" in obj_dict["model"]:
             rule_based_parser = RegexIntentParser.from_dict(
-                nlu_engine_dict["model"]["rule_based_parser"])
+                obj_dict["model"]["rule_based_parser"])
 
-        if "probabilistic_parser" in nlu_engine_dict["model"]:
+        if "probabilistic_parser" in obj_dict["model"]:
             probabilistic_parser = ProbabilisticIntentParser.from_dict(
-                nlu_engine_dict["model"]["probabilistic_parser"])
+                obj_dict["model"]["probabilistic_parser"])
 
         return SnipsNLUEngine(
             language=language, rule_based_parser=rule_based_parser,

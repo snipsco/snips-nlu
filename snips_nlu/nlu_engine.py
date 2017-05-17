@@ -239,11 +239,8 @@ class SnipsNLUEngine(NLUEngine):
         if not enrich_results:
             return result
 
-        slots = result.parsed_slots
-
         # Add slots seen in other queries from other intents
         seen_entities_slots = _tag_seen_entities(text, self.entities)
-        slots = enrich_slots(slots, seen_entities_slots)
 
         # Add builtins entities
         builtin_entities = get_builtin_entities(text, self.language,
@@ -251,7 +248,11 @@ class SnipsNLUEngine(NLUEngine):
         builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
                                     ent[ENTITY].label, ent[ENTITY].label)
                          for ent in builtin_entities]
-        slots = enrich_slots(slots, builtin_slots)
+        slots = enrich_slots(seen_entities_slots, builtin_slots)
+
+        # Add current model results
+        slots = enrich_slots(slots, result.parsed_slots)
+
         slots = sorted(slots, key=lambda x: x.match_range[0])
 
         parsed_intent = IntentClassificationResult(

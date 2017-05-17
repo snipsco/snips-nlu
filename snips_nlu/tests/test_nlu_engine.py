@@ -493,7 +493,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".RegexIntentParser.get_slots")
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
            ".ProbabilisticIntentParser.get_intent")
-    def test_tag_should_return_custom_entity_over_builtin(
+    def test_tag_should_return_builtin_over_custom(
             self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
             mocked_regex_get_intent, mocked_default_features):
 
@@ -557,9 +557,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
             'intent': {'intent_name': 'dummy_intent_1', 'probability': 1.0},
             'slots': [
                 {
-                    "range": [6, 24],
-                    "value": "meet tomorrow at 3",
-                    "slot_name": slot_name
+                    "range": [11, 24],
+                    "value": "tomorrow at 3",
+                    "slot_name": "snips/datetime"
                 }
             ],
             "text": text
@@ -652,7 +652,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 {
                     "range": [11, 24],
                     "value": "tomorrow at 3",
-                    "slot_name": "my_datetime"
+                    "slot_name": "snips/datetime"
                 },
                 {
                     "range": [30, 40],
@@ -672,7 +672,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".RegexIntentParser.get_slots")
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
            ".ProbabilisticIntentParser.get_intent")
-    def test_tag_should_return_customs_over_seen_entities(
+    def test_tag_should_return_seen_entities_over_customs(
             self, mocked_probabilistic_get_intent, mocked_regex_get_slots,
             mocked_regex_get_intent, mocked_default_features):
 
@@ -753,9 +753,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     "slot_name": "snips/datetime"
                 },
                 {
-                    "range": [30, 43],
-                    "value": "dummy2 bis on",
-                    "slot_name": "my_datetime"
+                    "range": [30, 40],
+                    "value": "dummy2",
+                    "slot_name": "dummy_entity_2"
                 }
             ],
             "text": text

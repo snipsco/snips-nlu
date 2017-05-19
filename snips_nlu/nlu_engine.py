@@ -5,11 +5,10 @@ from abc import ABCMeta, abstractmethod
 from duckling import core
 
 from dataset import validate_and_format_dataset
-from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities, \
-    is_builtin_entity
+from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-    ENTITY, MATCH_RANGE, DATA, SLOT_NAME,
+    ENTITY, DATA, SLOT_NAME,
     USE_SYNONYMS, SYNONYMS, TOKEN_INDEXES, NGRAM)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
@@ -194,8 +193,7 @@ def enrich_slots(slots, other_slots):
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
-                 slot_name_mapping=None, tagging_threshold=None,
-                 intents_data_sizes=None):
+                 slot_name_mapping=None, intents_data_sizes=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
@@ -205,9 +203,6 @@ class SnipsNLUEngine(NLUEngine):
         if slot_name_mapping is None:
             slot_name_mapping = dict()
         self.slot_name_mapping = slot_name_mapping
-        if tagging_threshold is None:
-            tagging_threshold = 5
-        self.tagging_threshold = tagging_threshold
         self.intents_data_sizes = intents_data_sizes
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
@@ -227,38 +222,6 @@ class SnipsNLUEngine(NLUEngine):
     def _parse(self, text, intent=None):
         return _parse(text, self.entities, self.rule_based_parser,
                       self.probabilistic_parser, intent)
-
-    def tag(self, text, intent):
-        """
-        Parse the input text conditionally to the knowledge of `intent`.
-        This method is more aggressive (less conservative) than `parse`.
-        """
-        result = self._parse(text, intent=intent)
-        enrich_results = self.intents_data_sizes[
-                             intent] < self.tagging_threshold
-        if not enrich_results:
-            return result
-
-        # Add slots seen in other queries from other intents
-        seen_entities_slots = _tag_seen_entities(text, self.entities)
-
-        # Add builtins entities
-        builtin_entities = get_builtin_entities(text, self.language,
-                                                self.tagging_scope)
-        builtin_slots = [ParsedSlot(ent[MATCH_RANGE], ent[VALUE],
-                                    ent[ENTITY].label, ent[ENTITY].label)
-                         for ent in builtin_entities]
-        slots = enrich_slots(seen_entities_slots, builtin_slots)
-
-        # Add current model results
-        slots = enrich_slots(slots, result.parsed_slots)
-
-        slots = sorted(slots, key=lambda x: x.match_range[0])
-
-        parsed_intent = IntentClassificationResult(
-            result.parsed_intent.intent_name, result.parsed_intent.probability)
-        return Result(text, parsed_intent=parsed_intent,
-                      parsed_slots=slots).as_dict()
 
     def fit(self, dataset, intents=None):
 
@@ -335,7 +298,6 @@ class SnipsNLUEngine(NLUEngine):
         return {
             LANGUAGE: self.language.iso_code,
             "slot_name_mapping": self.slot_name_mapping,
-            "tagging_threshold": self.tagging_threshold,
             ENTITIES: self.entities,
             "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict
@@ -348,7 +310,6 @@ class SnipsNLUEngine(NLUEngine):
         """
         language = Language.from_iso_code(obj_dict[LANGUAGE])
         slot_name_mapping = obj_dict["slot_name_mapping"]
-        tagging_threshold = obj_dict["tagging_threshold"]
         entities = obj_dict[ENTITIES]
         intents_data_sizes = obj_dict["intents_data_sizes"]
 
@@ -367,6 +328,5 @@ class SnipsNLUEngine(NLUEngine):
             language=language, rule_based_parser=rule_based_parser,
             probabilistic_parser=probabilistic_parser, entities=entities,
             slot_name_mapping=slot_name_mapping,
-            tagging_threshold=tagging_threshold,
             intents_data_sizes=intents_data_sizes
         )

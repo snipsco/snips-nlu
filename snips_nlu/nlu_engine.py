@@ -193,8 +193,7 @@ def enrich_slots(slots, other_slots):
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
-                 slot_name_mapping=None, tagging_threshold=5,
-                 intents_data_sizes=None):
+                 slot_name_mapping=None, intents_data_sizes=None):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
@@ -204,7 +203,6 @@ class SnipsNLUEngine(NLUEngine):
         if slot_name_mapping is None:
             slot_name_mapping = dict()
         self.slot_name_mapping = slot_name_mapping
-        self.tagging_threshold = tagging_threshold
         self.intents_data_sizes = intents_data_sizes
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
@@ -300,7 +298,6 @@ class SnipsNLUEngine(NLUEngine):
         return {
             LANGUAGE: self.language.iso_code,
             "slot_name_mapping": self.slot_name_mapping,
-            "tagging_threshold": self.tagging_threshold,
             ENTITIES: self.entities,
             "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict
@@ -313,7 +310,6 @@ class SnipsNLUEngine(NLUEngine):
         """
         language = Language.from_iso_code(obj_dict[LANGUAGE])
         slot_name_mapping = obj_dict["slot_name_mapping"]
-        tagging_threshold = obj_dict["tagging_threshold"]
         entities = obj_dict[ENTITIES]
         intents_data_sizes = obj_dict["intents_data_sizes"]
 
@@ -332,6 +328,5 @@ class SnipsNLUEngine(NLUEngine):
             language=language, rule_based_parser=rule_based_parser,
             probabilistic_parser=probabilistic_parser, entities=entities,
             slot_name_mapping=slot_name_mapping,
-            tagging_threshold=tagging_threshold,
             intents_data_sizes=intents_data_sizes
         )

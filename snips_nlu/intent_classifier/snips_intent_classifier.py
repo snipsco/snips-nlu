@@ -54,7 +54,7 @@ class SnipsIntentClassifier(object):
                                  'fitted before `get_intent` can be called')
 
         if len(text) == 0 or len(self.intent_list) == 0 \
-                or self.featurizer is None:
+                or self.featurizer is None or self.classifier is None:
             return None
 
         if len(self.intent_list) == 1:
@@ -100,12 +100,12 @@ class SnipsIntentClassifier(object):
         language = Language.from_iso_code(obj_dict['language_code'])
         classifier_args = obj_dict['classifier_args']
         classifier = cls(language=language, classifier_args=classifier_args)
-        sgd_classifier = SGDClassifier(**classifier_args)
+        sgd_classifier = None
         coeffs = obj_dict['coeffs']
-        if coeffs is not None:
-            sgd_classifier.coef_ = np.array(coeffs)
         intercept = obj_dict['intercept']
-        if intercept is not None:
+        if coeffs is not None and intercept is not None:
+            sgd_classifier = SGDClassifier(**classifier_args)
+            sgd_classifier.coef_ = np.array(coeffs)
             sgd_classifier.intercept_ = np.array(intercept)
         classifier.classifier = sgd_classifier
         classifier.intent_list = obj_dict['intent_list']

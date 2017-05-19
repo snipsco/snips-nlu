@@ -111,7 +111,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     }
                 }
             },
-            "tagging_threshold": 5,
             "intents_data_sizes": {
                 "MakeCoffee": 7,
                 "MakeTea": 4
@@ -152,7 +151,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         engine_dict = {
             "slot_name_mapping": slot_name_mapping,
             "entities": entities,
-            "tagging_threshold": 5,
             "intents_data_sizes": intents_data_sizes,
             "language": "en",
             "model": {
@@ -171,7 +169,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         self.assertEqual(engine.language, Language.EN)
         self.assertDictEqual(engine.intents_data_sizes, intents_data_sizes)
-        self.assertEqual(engine.tagging_threshold, 5)
         self.assertDictEqual(engine.slot_name_mapping, slot_name_mapping)
         self.assertDictEqual(engine.entities, entities)
 

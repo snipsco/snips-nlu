@@ -53,9 +53,6 @@ class SnipsIntentClassifier(object):
             raise AssertionError('SnipsIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
 
-        if len(text) == 0 or len(self.intent_list) == 0:
-            return None
-
         if len(text) == 0 or len(self.intent_list) == 0 \
                 or self.featurizer is None:
             return None
@@ -80,13 +77,22 @@ class SnipsIntentClassifier(object):
         return IntentClassificationResult(intent_name, prob)
 
     def to_dict(self):
+        featurizer_dict = None
+        if self.featurizer is not None:
+            featurizer_dict = self.featurizer.to_dict()
+        coeffs = None
+        intercept = None
+        if self.classifier is not None:
+            coeffs = self.classifier.coef_.tolist()
+            intercept = self.classifier.intercept_.tolist()
+
         return {
             "classifier_args": self.classifier_args,
-            "coeffs": self.classifier.coef_.tolist(),
-            "intercept": self.classifier.intercept_.tolist(),
+            "coeffs": coeffs,
+            "intercept": intercept,
             "intent_list": self.intent_list,
             "language_code": self.language.iso_code,
-            "featurizer": self.featurizer.to_dict()
+            "featurizer": featurizer_dict
         }
 
     @classmethod
@@ -95,9 +101,15 @@ class SnipsIntentClassifier(object):
         classifier_args = obj_dict['classifier_args']
         classifier = cls(language=language, classifier_args=classifier_args)
         sgd_classifier = SGDClassifier(**classifier_args)
-        sgd_classifier.coef_ = np.array(obj_dict['coeffs'])
-        sgd_classifier.intercept_ = np.array(obj_dict['intercept'])
+        coeffs = obj_dict['coeffs']
+        if coeffs is not None:
+            sgd_classifier.coef_ = np.array(coeffs)
+        intercept = obj_dict['intercept']
+        if intercept is not None:
+            sgd_classifier.intercept_ = np.array(intercept)
         classifier.classifier = sgd_classifier
         classifier.intent_list = obj_dict['intent_list']
-        classifier.featurizer = Featurizer.from_dict(obj_dict['featurizer'])
+        featurizer = obj_dict['featurizer']
+        if featurizer is not None:
+            classifier.featurizer = Featurizer.from_dict(featurizer)
         return classifier

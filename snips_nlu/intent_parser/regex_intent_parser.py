@@ -178,12 +178,19 @@ class RegexIntentParser(object):
     def fitted(self):
         return self.regexes_per_intent is not None
 
-    def fit(self, dataset):
+    def fit(self, dataset, intents=None):
+        if intents is None:
+            intents_to_train = dataset[INTENTS].keys()
+        else:
+            intents_to_train = list(intents)
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = get_joined_entity_utterances(dataset)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
         for intent_name, intent in dataset[INTENTS].iteritems():
+            if intent_name not in intents_to_train:
+                self.regexes_per_intent[intent_name] = []
+                continue
             utterances = [preprocess_builtin_entities(u)
                           for u in intent[UTTERANCES]]
             regexes, self.group_names_to_slot_names = generate_regexes(

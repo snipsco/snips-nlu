@@ -115,6 +115,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 "MakeCoffee": 7,
                 "MakeTea": 4
             },
+            "regex_threshold": 50,
             "language": "en",
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
@@ -148,10 +149,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
             }
         }
         intents_data_sizes = {"MakeCoffee": 7, "MakeTea": 4}
+        regex_threshold = 50
         engine_dict = {
             "slot_name_mapping": slot_name_mapping,
             "entities": entities,
             "intents_data_sizes": intents_data_sizes,
+            "regex_threshold": regex_threshold,
             "language": "en",
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
@@ -594,3 +597,39 @@ class TestSnipsNLUEngine(unittest.TestCase):
             SnipsNLUEngine(language).fit(dataset)
         except:
             self.fail("NLU engine should fit builtin")
+
+    def test_should_not_create_regex_when_having_enough_data(self):
+        # Given
+        language = Language.EN
+        regex_threshold = 5
+        intent_name = "dummy"
+        dataset = validate_and_format_dataset({
+            "intents": {
+                intent_name: {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                                      {
+                                          "data": [
+                                              {
+                                                  "text": "10p.m.",
+                                                  "entity": "snips/datetime",
+                                                  "slot_name": "startTime"
+                                              }
+                                          ]
+                                      }
+                                  ] * regex_threshold
+                }
+            },
+            "entities": {
+                "snips/datetime": {}
+            },
+            "language": language.iso_code,
+            "snips_nlu_version": "0.0.1"
+        })
+        # When
+        engine = SnipsNLUEngine(
+            language, regex_threshold=regex_threshold).fit(dataset)
+
+        # Then
+        self.assertEqual(
+            len(engine.rule_based_parser.regexes_per_intent[intent_name]), 0)

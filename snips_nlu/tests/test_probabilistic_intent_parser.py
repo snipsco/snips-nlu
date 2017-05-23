@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import unittest
 
 from mock import MagicMock, patch, call
@@ -8,7 +10,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
-    DataAugmentationConfig)
+    DataAugmentationConfig, capitalize, capitalize_utterances)
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
@@ -276,3 +278,100 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         self.assertIsNotNone(parser.intent_classifier)
         self.assertItemsEqual(parser.crf_taggers.keys(),
                               ["MakeCoffee", "MakeTea"])
+
+    def test_capitalize(self):
+        # Given
+        language = Language.EN
+        texts = [
+            ("university of new york", "University of New York"),
+            ("JOHN'S SMITH", "John s Smith"),
+            ("is that it", "is that it")
+        ]
+
+        # When
+        capitalized_texts = [capitalize(text[0], language) for text in texts]
+
+        # Then
+        expected_capitalized_texts = [text[1] for text in texts]
+        self.assertSequenceEqual(capitalized_texts, expected_capitalized_texts)
+
+    def test_should_capitalize_only_right_entities(self):
+        # Given
+        language = Language.EN
+        ratio = 1
+        capitalization_threshold = .1
+        utterances = [
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "university of new york",
+                        "entity": "university"
+                    },
+                    {
+                        "text": " right now or "
+                    },
+                    {
+                        "text": "university of London",
+                        "entity": "university"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "john's smith house",
+                        "entity": "someOneHouse"
+                    },
+                    {
+                        "text": " right now"
+                    }
+                ]
+            }
+        ]
+
+        # When
+        capitalized_utterances = capitalize_utterances(
+            utterances, language, ratio, capitalization_threshold)
+
+        # Then
+        expected_utterances = [
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "University of New York",
+                        "entity": "university"
+                    },
+                    {
+                        "text": " right now or "
+                    },
+                    {
+                        "text": "University of London",
+                        "entity": "university"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "john's smith house",
+                        "entity": "someOneHouse"
+                    },
+                    {
+                        "text": " right now"
+                    }
+                ]
+            }
+        ]
+        self.assertEqual(capitalized_utterances, expected_utterances)

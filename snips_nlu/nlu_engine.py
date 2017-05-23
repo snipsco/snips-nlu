@@ -13,7 +13,7 @@ from snips_nlu.constants import (
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
-    ProbabilisticIntentParser
+    ProbabilisticIntentParser, fit_tagger, DataAugmentationConfig
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \
@@ -144,6 +144,16 @@ def get_slot_name_mapping(dataset):
     return slot_name_mapping
 
 
+def get_intent_slot_name_mapping(dataset, intent):
+    slot_name_mapping = dict()
+    intent_data = dataset[INTENTS][intent]
+    for utterance in intent_data[UTTERANCES]:
+        for chunk in utterance[DATA]:
+            if SLOT_NAME in chunk:
+                slot_name_mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
+    return slot_name_mapping
+
+
 def get_intent_custom_entities(dataset, intent):
     intent_entities = set()
     for utterance in dataset[INTENTS][intent][UTTERANCES]:
@@ -193,7 +203,8 @@ def enrich_slots(slots, other_slots):
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
-                 slot_name_mapping=None, intents_data_sizes=None):
+                 slot_name_mapping=None, intents_data_sizes=None,
+                 regex_threshold=50):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
@@ -204,6 +215,7 @@ class SnipsNLUEngine(NLUEngine):
             slot_name_mapping = dict()
         self.slot_name_mapping = slot_name_mapping
         self.intents_data_sizes = intents_data_sizes
+        self.regex_threshold = regex_threshold
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
         tagging_excluded_entities = {BuiltInEntity.NUMBER}
@@ -254,7 +266,13 @@ class SnipsNLUEngine(NLUEngine):
                 "These intents must be trained: %s" % missing_intents)
 
         dataset = validate_and_format_dataset(dataset)
-        self.rule_based_parser = RegexIntentParser(self.language).fit(dataset)
+
+        regex_intents = [intent_name for intent_name, intent
+                         in dataset[INTENTS].iteritems()
+                         if len(intent[UTTERANCES]) < self.regex_threshold]
+
+        self.rule_based_parser = RegexIntentParser(self.language).fit(
+            dataset, intents=regex_intents)
         self.entities = snips_nlu_entities(dataset)
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent
@@ -278,7 +296,18 @@ class SnipsNLUEngine(NLUEngine):
         self._pre_trained_taggers = taggers
         return self
 
-    def add_pretrained_model(self, intent, model_data):
+    def get_fitted_tagger(self, dataset, intent):
+        intent_custom_entities = get_intent_custom_entities(dataset, intent)
+        features = crf_features(intent_custom_entities, self.language)
+        tagger = CRFTagger(default_crf_model(), features, TaggingScheme.BIO,
+                           self.language)
+        if self.probabilistic_parser is not None:
+            config = self.probabilistic_parser.data_augmentation_config
+        else:
+            config = DataAugmentationConfig()
+        return fit_tagger(tagger, dataset, intent, self.language, config)
+
+    def add_fitted_tagger(self, intent, model_data):
         tagger = CRFTagger.from_dict(model_data)
         if self.probabilistic_parser is not None:
             self.probabilistic_parser.crf_taggers[intent] = tagger
@@ -300,7 +329,8 @@ class SnipsNLUEngine(NLUEngine):
             "slot_name_mapping": self.slot_name_mapping,
             ENTITIES: self.entities,
             "intents_data_sizes": self.intents_data_sizes,
-            "model": model_dict
+            "model": model_dict,
+            "regex_threshold": self.regex_threshold
         }
 
     @classmethod
@@ -312,6 +342,7 @@ class SnipsNLUEngine(NLUEngine):
         slot_name_mapping = obj_dict["slot_name_mapping"]
         entities = obj_dict[ENTITIES]
         intents_data_sizes = obj_dict["intents_data_sizes"]
+        regex_threshold = obj_dict["regex_threshold"]
 
         rule_based_parser = None
         probabilistic_parser = None
@@ -328,5 +359,6 @@ class SnipsNLUEngine(NLUEngine):
             language=language, rule_based_parser=rule_based_parser,
             probabilistic_parser=probabilistic_parser, entities=entities,
             slot_name_mapping=slot_name_mapping,
-            intents_data_sizes=intents_data_sizes
+            intents_data_sizes=intents_data_sizes,
+            regex_threshold=regex_threshold
         )

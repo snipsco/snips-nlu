@@ -2,10 +2,13 @@ from __future__ import unicode_literals
 
 import unittest
 
+from snips_nlu.constants import INTENTS
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.regex_intent_parser import (
     RegexIntentParser, deduplicate_overlapping_slots)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
+from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestRegexIntentParser(unittest.TestCase):
@@ -393,3 +396,19 @@ class TestRegexIntentParser(unittest.TestCase):
             ),
         ]
         self.assertSequenceEqual(deduplicated_slots, expected_slots)
+
+    def test_should_train_only_specified_intents(self):
+        # Given
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        language = Language.EN
+        intents = ["dummy_intent_1"]
+
+        # When
+        parser = RegexIntentParser(language).fit(dataset, intents=intents)
+
+        # Then
+        self.assertGreater(len(parser.regexes_per_intent[intents[0]]), 0)
+        for intent_name in dataset[INTENTS]:
+            if intent_name not in intents:
+                self.assertEqual(len(parser.regexes_per_intent[intent_name]),
+                                 0)

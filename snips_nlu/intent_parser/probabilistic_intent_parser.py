@@ -38,6 +38,17 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
+def fit_tagger(tagger, dataset, intent_name, language,
+               data_augmentation_config):
+    augmented_intent_utterances = augment_utterances(
+        dataset, intent_name, language=language,
+        **data_augmentation_config.to_dict())
+    tagging_scheme = tagger.tagging_scheme
+    crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
+                   for u in augmented_intent_utterances]
+    return tagger.fit(crf_samples)
+
+
 class ProbabilisticIntentParser(object):
     def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping, data_augmentation_config=None):
@@ -114,14 +125,9 @@ class ProbabilisticIntentParser(object):
         for intent_name in dataset[INTENTS]:
             if intent_name not in intents:
                 continue
-            augmented_intent_utterances = augment_utterances(
-                dataset, intent_name, language=self.language,
-                **self.data_augmentation_config.to_dict())
-            tagging_scheme = self.crf_taggers[intent_name].tagging_scheme
-            crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
-                           for u in augmented_intent_utterances]
-            self.crf_taggers[intent_name] = self.crf_taggers[intent_name].fit(
-                crf_samples)
+            self.crf_taggers[intent_name] = fit_tagger(
+                self.crf_taggers[intent_name], dataset, intent_name,
+                self.language, self.data_augmentation_config)
         return self
 
     def to_dict(self):

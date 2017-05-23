@@ -6,7 +6,8 @@ import unittest
 
 from mock import Mock, patch
 
-from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT
+from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT, \
+    INTENTS, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
@@ -209,7 +210,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertTrue("These intents must be trained: set([u'MakeTea'])"
                         in context.exception)
 
-    def test_should_use_pretrained_intent(self):
+    def test_should_use_fitted_tagger(self):
         # Given
         text = "Give me 3 cups of hot tea please"
         trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
@@ -219,7 +220,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # When
         engine = SnipsNLUEngine(Language.EN)
-        engine.add_pretrained_model("MakeTea", trained_tagger_data)
+        engine.add_fitted_tagger("MakeTea", trained_tagger_data)
         engine.fit(BEVERAGE_DATASET, intents=["MakeCoffee"])
         result = engine.parse(text)
 
@@ -633,3 +634,29 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.assertEqual(
             len(engine.rule_based_parser.regexes_per_intent[intent_name]), 0)
+
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
+           "augment_utterances")
+    def test_get_fitted_tagger_should_return_same_tagger_as_fit(
+            self, mocked_augment_utterances):
+        # Given
+        def augment_utterances(dataset, intent_name, language, max_utterances,
+                               noise_prob, min_noise_size, max_noise_size):
+            return dataset[INTENTS][intent_name][UTTERANCES]
+
+        mocked_augment_utterances.side_effect = augment_utterances
+
+        intent = "MakeCoffee"
+        trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
+
+        # When
+        engine = SnipsNLUEngine(Language.EN)
+        tagger = engine.get_fitted_tagger(BEVERAGE_DATASET, intent)
+
+        # Then
+        expected_tagger = trained_engine.probabilistic_parser.crf_taggers[
+            intent]
+        self.assertEqual(tagger.crf_model.state_features_,
+                         expected_tagger.crf_model.state_features_)
+        self.assertEqual(tagger.crf_model.transition_features_,
+                         expected_tagger.crf_model.transition_features_)

@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from semantic_version import Version
 
-from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
+from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,

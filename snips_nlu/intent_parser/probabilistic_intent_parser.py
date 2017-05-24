@@ -5,7 +5,7 @@ from collections import defaultdict
 from copy import copy, deepcopy
 from itertools import groupby, permutations
 
-from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
+from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE, TEXT)
 from snips_nlu.intent_classifier.snips_intent_classifier import \

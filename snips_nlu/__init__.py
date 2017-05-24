@@ -2,12 +2,9 @@ import io
 import os
 
 import builtin_entities_ontology
-from duckling import core
 
 from snips_nlu.resources import load_resources
 from snips_nlu.utils import ROOT_PATH, PACKAGE_NAME
-
-core.load()
 
 VERSION_FILE_NAME = "__version__"
 

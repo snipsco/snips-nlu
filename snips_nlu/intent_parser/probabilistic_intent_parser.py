@@ -1,20 +1,23 @@
 from __future__ import unicode_literals
 
-from copy import copy
+import random
+from collections import defaultdict
+from copy import copy, deepcopy
 from itertools import groupby, permutations
 
 from snips_nlu.built_in_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
-                                 MATCH_RANGE)
+                                 MATCH_RANGE, TEXT)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
+from snips_nlu.resources import get_stop_words
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample,
                                              positive_tagging)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
-from snips_nlu.tokenization import tokenize
+from snips_nlu.tokenization import tokenize, tokenize_light
 from snips_nlu.utils import (namedtuple_with_defaults)
 
 _DataAugmentationConfig = namedtuple_with_defaults(
@@ -38,11 +41,64 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
+def capitalization_ratios(utterances):
+    capitalizations = defaultdict(dict)
+    for utterance in utterances:
+        for chunk in utterance[DATA]:
+            if ENTITY in chunk:
+                if "count" not in capitalizations[chunk[ENTITY]]:
+                    capitalizations[chunk[ENTITY]]["count"] = 0
+                    capitalizations[chunk[ENTITY]]["capitalized"] = 0
+                tokens = tokenize_light(chunk[TEXT])
+                for t in tokens:
+                    capitalizations[chunk[ENTITY]]["count"] += 1
+                    if t.isupper() or t.istitle():
+                        capitalizations[chunk[ENTITY]]["capitalized"] += 1
+
+    capitalizations = {
+        k: v["capitalized"] / float(v["count"]) if v["count"] > 0 else 0
+        for k, v in capitalizations.iteritems()
+    }
+    return capitalizations
+
+
+def capitalize(text, language):
+    tokens = tokenize_light(text)
+    return " ".join(t.title() if t.lower() not in get_stop_words(language)
+                    else t.lower() for t in tokens)
+
+
+def capitalize_utterances(utterances, language, ratio=.2,
+                          capitalization_threshold=.1):
+    # TODO: put it in a capitalization config in the probabilistic parser
+    # but it breaks serialization -> wait for it
+
+    ratios = capitalization_ratios(utterances)
+
+    entity_to_capitalize = set()
+    for entity, capitalization_ratio in ratios.iteritems():
+        if capitalization_ratio > capitalization_threshold:
+            entity_to_capitalize.add(entity)
+
+    capitalized_utterances = []
+    for utterance in utterances:
+        capitalized_utterance = deepcopy(utterance)
+        for i, chunk in enumerate(capitalized_utterance[DATA]):
+            if ENTITY in chunk and chunk[ENTITY] in entity_to_capitalize and \
+                            random.random() < ratio:
+                capitalized_utterance[DATA][i][TEXT] = capitalize(
+                    chunk[TEXT], language)
+        capitalized_utterances.append(capitalized_utterance)
+    return capitalized_utterances
+
+
 def fit_tagger(tagger, dataset, intent_name, language,
                data_augmentation_config):
     augmented_intent_utterances = augment_utterances(
         dataset, intent_name, language=language,
         **data_augmentation_config.to_dict())
+    augmented_intent_utterances = capitalize_utterances(
+        augmented_intent_utterances, language)
     tagging_scheme = tagger.tagging_scheme
     crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
                    for u in augmented_intent_utterances]

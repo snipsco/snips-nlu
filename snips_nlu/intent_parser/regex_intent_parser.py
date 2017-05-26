@@ -12,7 +12,7 @@ from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import LimitedSizeDict
+from snips_nlu.utils import LimitedSizeDict, regex_escape
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -62,7 +62,7 @@ def query_to_pattern(query, joined_entity_utterances,
             pattern += r"(?P<%s>%s)" % (
                 max_index, joined_entity_utterances[entity])
         else:
-            pattern += re.escape(chunk[TEXT])
+            pattern += regex_escape(chunk[TEXT])
 
     return pattern + r"$", group_names_to_slot_names
 
@@ -90,7 +90,7 @@ def get_joined_entity_utterances(dataset):
                               for syn in entry[SYNONYMS]]
             else:
                 utterances = [entry[VALUE] for entry in entity[DATA]]
-        utterances_patterns = [re.escape(e) for e in utterances]
+        utterances_patterns = [regex_escape(e) for e in utterances]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances

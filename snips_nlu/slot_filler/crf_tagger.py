@@ -1,7 +1,10 @@
 from __future__ import unicode_literals
 
+import base64
+import io
 import math
 import os
+import tempfile
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
@@ -14,8 +17,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME, create_feature_function)
 from snips_nlu.tokenization import Token
-from snips_nlu.utils import (UnupdatableDict, mkdir_p, safe_pickle_dumps,
-                             safe_pickle_loads)
+from snips_nlu.utils import (UnupdatableDict, mkdir_p)
 
 POSSIBLE_SET_FEATURES = ["collection"]
 
@@ -157,7 +159,7 @@ class CRFTagger(object):
                     signature["args"][feat] = list(signature["args"][feat])
 
         return {
-            "crf_model_pkl": safe_pickle_dumps(self.crf_model),
+            "crf_model_data": serialize_crf_model(self.crf_model),
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
             "language": self.language.iso_code
@@ -168,24 +170,24 @@ class CRFTagger(object):
         features_signatures = tagger_config["features_signatures"]
         tagging_scheme = TaggingScheme(int(tagger_config["tagging_scheme"]))
         language = Language.from_iso_code(tagger_config["language"])
-        crf_model = safe_pickle_loads(tagger_config["crf_model_pkl"])
-
-        return cls(crf_model=crf_model,
-                   features_signatures=features_signatures,
+        crf = deserialize_crf_model(tagger_config["crf_model_data"])
+        return cls(crf_model=crf, features_signatures=features_signatures,
                    tagging_scheme=tagging_scheme, language=language)
 
-    def __eq__(self, other):
-        if not isinstance(other, CRFTagger):
-            return False
-        self_model_state = self.crf_model.__getstate__()
-        other_model_state = other.crf_model.__getstate__()
-        self_model_state.pop('modelfile')
-        other_model_state.pop('modelfile')
-        return \
-            self.features_signatures == other.features_signatures \
-            and self.tagging_scheme == other.tagging_scheme \
-            and self.language == other.language \
-            and self_model_state == other_model_state
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
+def serialize_crf_model(crf_model):
+    with io.open(crf_model.modelfile.name, mode='rb') as f:
+        crfsuite_data = base64.b64encode(f.read()).decode('ascii')
+    return crfsuite_data
+
+
+def deserialize_crf_model(crf_model_data):
+    b64_data = base64.b64decode(crf_model_data)
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(b64_data)
+        f.flush()
+        crf = CRF(model_filename=f.name)
+        # We need this line in order to initialize the tagger while the
+        # tempfile still exists
+        _ = crf.tagger_
+    return crf

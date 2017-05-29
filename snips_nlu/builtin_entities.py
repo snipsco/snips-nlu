@@ -144,7 +144,11 @@ class RustlingParser(object):
     def parse(self, text):
         text = text.lower()  # Rustling only work with lowercase
         if text not in self._cache:
-            self._cache[text] = self.parser.parse(text)
+            try:
+                parser_result = self.parser.parse(text)
+            except RustlingError:
+                parser_result = []
+            self._cache[text] = parser_result
         return self._cache[text]
 
     def supports_dim_kind(self, dim_kind):

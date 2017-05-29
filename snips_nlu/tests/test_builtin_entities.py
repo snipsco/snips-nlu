@@ -21,26 +21,13 @@ class TestBuiltInEntities(unittest.TestCase):
         text = "let's meet at 2p.m in the bronx"
         parser = RustlingParser(language)
 
-        expected_parse = [
-            {
-                "char_range": {"start": 11, "end": 18},
-                "value": {
-                    "grain": "hour",
-                    "type": "value",
-                    "precision": "exact",
-                    "value": "2017-05-24 14:00:00 +02:00"
-                },
-                "latent": False,
-                "dim": "time"
-            }
-        ]
-
-        # When
-        parse = parser.parse(text)
-            
-
         # Then
-        self.assertEqual(parse, expected_parse)
+        try:
+            parse = parser.parse(text)
+        except RustlingError as e:
+            self.fail("Rustling failed with RustingError: %s" % e)
+        except Exception as e:
+            self.fail("Rustling failed with error: %s" % e)
 
     @patch("snips_nlu.builtin_entities.RustlingParser.parse")
     def test_get_builtin_entities(self, mocked_parse):

@@ -100,6 +100,7 @@ def default_features(language, intent_entities, use_stemming,
                 "args": {"tokens_collection": collection,
                          "collection_name": entity_name,
                          "use_stemming": use_stemming,
+                         "language_code": language.iso_code,
                          "tagging_scheme_code": TaggingScheme.BILOU.value},
                 "offsets": entities_offsets
             }

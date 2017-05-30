@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import io
 import os
 import unittest
+from copy import deepcopy
 
 from mock import Mock, patch
 
@@ -660,3 +661,40 @@ class TestSnipsNLUEngine(unittest.TestCase):
                          expected_tagger.crf_model.state_features_)
         self.assertEqual(tagger.crf_model.transition_features_,
                          expected_tagger.crf_model.transition_features_)
+
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
+           "ProbabilisticIntentParser.get_slots")
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
+           "ProbabilisticIntentParser.get_intent")
+    def test_parse_should_call_probabilistic_intent_parser_when_given_intent(
+            self, mocked_probabilistic_get_intent,
+            mocked_probabilistic_get_slots):
+        # Given
+        language = Language.EN
+        dataset = deepcopy(SAMPLE_DATASET)
+        dataset["entities"]["dummy_entity_1"][
+            "automatically_extensible"] = True
+        dataset = validate_and_format_dataset(dataset)
+        engine = SnipsNLUEngine(language).fit(dataset)
+        intent = "dummy_intent_1"
+        text = "This is another weird weird query"
+
+        intent_classif_result = IntentClassificationResult(intent, .8)
+        expected_intent_classif_result = IntentClassificationResult(intent,
+                                                                    1.0)
+        mocked_probabilistic_get_intent.return_value = intent_classif_result
+
+        parsed_slots = [ParsedSlot(match_range=(16, 27), value="weird weird",
+                                   entity="dummy_entity_1",
+                                   slot_name="dummy_slot_name")]
+        mocked_probabilistic_get_slots.return_value = parsed_slots
+
+        # When
+        parse = engine.parse(text, intent=intent)
+
+        # Then
+        mocked_probabilistic_get_intent.assert_called_once()
+        mocked_probabilistic_get_slots.assert_called_once()
+        expected_parse = Result(text, expected_intent_classif_result,
+                                parsed_slots).as_dict()
+        self.assertEqual(parse, expected_parse)

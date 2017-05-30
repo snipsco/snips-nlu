@@ -11,10 +11,11 @@ Token = namedtuple_with_defaults('Token', 'value start end stem', {
 CURRENCIES = "$؋ƒ៛¥₡₱£€¢﷼₪₩₭₨₮₦₽฿₴₫"
 WORD_REGEX = re.compile(r"\w+", re.UNICODE)
 SYMBOL_REGEX = re.compile(r"[?!&%{}]+".format(CURRENCIES), re.UNICODE)
+REGEXES_LIST = [WORD_REGEX, SYMBOL_REGEX]
 
 
 def tokenize(string):
-    return _tokenize(string, [WORD_REGEX, SYMBOL_REGEX])
+    return _tokenize(string, REGEXES_LIST)
 
 
 def _tokenize(string, regexes):

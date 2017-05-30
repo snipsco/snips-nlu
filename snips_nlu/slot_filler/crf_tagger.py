@@ -136,8 +136,8 @@ class CRFTagger(object):
 
     def compute_features(self, tokens):
         tokens = [
-            Token(t.value, t.start, t.end, stem=stem(t.value, self.language))
-            for t in tokens]
+            Token(t.value, t.start, t.end,
+                  stem=stem(t.value.lower(), self.language)) for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         for i in range(len(tokens)):

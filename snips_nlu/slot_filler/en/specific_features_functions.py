@@ -30,7 +30,8 @@ def language_specific_features(intent_entities):
     features.append({
         "factory_name": "get_word_cluster_fn",
         "args": {"cluster_name": "brown_clusters",
-                 "language_code": language.iso_code},
+                 "language_code": language.iso_code,
+                 "use_stemming": False},
         "offsets": (-2, -1, 0, 1)
     })
 

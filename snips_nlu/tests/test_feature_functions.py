@@ -94,7 +94,8 @@ class TestFeatureFunctions(unittest.TestCase):
         scheme_code = TaggingScheme.BILOU.value
         feature_fn = get_token_is_in_fn(collection, "animal",
                                         use_stemming=False,
-                                        tagging_scheme_code=scheme_code)
+                                        tagging_scheme_code=scheme_code,
+                                        language_code='en')
 
         # Then
         self.assertEqual(expected_features,
@@ -249,6 +250,7 @@ class TestFeatureFunctions(unittest.TestCase):
                     'tokens_collection': collection_1,
                     'collection_name': 'dummy_entity_1',
                     'use_stemming': True,
+                    'language_code': 'en',
                     'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',
@@ -259,6 +261,7 @@ class TestFeatureFunctions(unittest.TestCase):
                     'tokens_collection': collection_2,
                     'collection_name': 'dummy_entity_2',
                     'use_stemming': True,
+                    'language_code': 'en',
                     'tagging_scheme_code': TaggingScheme.BILOU.value
                 },
                 'factory_name': 'get_token_is_in_fn',

@@ -5,10 +5,11 @@ import unittest
 from snips_nlu.constants import INTENTS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.regex_intent_parser import (
-    RegexIntentParser, deduplicate_overlapping_slots)
+    RegexIntentParser, deduplicate_overlapping_slots, IGNORED_CHARACTERS)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
+from snips_nlu.tokenization import tokenize
 
 
 class TestRegexIntentParser(unittest.TestCase):
@@ -215,31 +216,76 @@ class TestRegexIntentParser(unittest.TestCase):
                                 }
 
                             ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "This, is, a "
+                                },
+                                {
+                                    "text": "dummy_1",
+                                    "slot_name": "dummy_slot_name",
+                                    "entity": "dummy_entity_1"
+                                }
+                            ]
                         }
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "1.0.1"
         }
+        dataset = validate_and_format_dataset(dataset)
+
         parser = RegexIntentParser(language).fit(dataset)
-        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
-               "at 12p.m."
-
-        # When
-        slots = parser.get_slots(text, intent="dummy_intent_1")
-
-        # Then
-        expected_slots = [
-            ParsedSlot(match_range=(10, 17), value="dummy_a",
-                       entity="dummy_entity_1", slot_name="dummy_slot_name"),
-            ParsedSlot(match_range=(37, 44), value="dummy_c",
-                       entity="dummy_entity_2", slot_name="dummy_slot_name2"),
-            ParsedSlot(match_range=(45, 54), value="at 10p.m.",
-                       entity="snips/datetime", slot_name="startTime"),
-            ParsedSlot(match_range=(58, 67), value="at 12p.m.",
-                       entity="snips/datetime", slot_name="startTime")
+        texts = [
+            (
+                "this is a dummy a query with another dummy_c at 10p.m. or at"
+                " 12p.m.",
+                [
+                    ParsedSlot(match_range=(10, 17), value="dummy a",
+                               entity="dummy_entity_1",
+                               slot_name="dummy_slot_name"),
+                    ParsedSlot(match_range=(37, 44), value="dummy_c",
+                               entity="dummy_entity_2",
+                               slot_name="dummy_slot_name2"),
+                    ParsedSlot(match_range=(45, 54), value="at 10p.m.",
+                               entity="snips/datetime", slot_name="startTime"),
+                    ParsedSlot(match_range=(58, 67), value="at 12p.m.",
+                               entity="snips/datetime", slot_name="startTime")
+                ]
+            ),
+            (
+                "this, is,, a, dummy a query with another dummy_c at 10pm or "
+                "at 12p.m.",
+                [
+                    ParsedSlot(match_range=(14, 21), value="dummy a",
+                               entity="dummy_entity_1",
+                               slot_name="dummy_slot_name"),
+                    ParsedSlot(match_range=(41, 48), value="dummy_c",
+                               entity="dummy_entity_2",
+                               slot_name="dummy_slot_name2"),
+                    ParsedSlot(match_range=(49, 56), value="at 10pm",
+                               entity="snips/datetime", slot_name="startTime"),
+                    ParsedSlot(match_range=(60, 69), value="at 12p.m.",
+                               entity="snips/datetime", slot_name="startTime")
+                ]
+            ),
+            (
+                "this is a dummy b",
+                [
+                    ParsedSlot(match_range=(10, 17), value="dummy b",
+                               entity="dummy_entity_1",
+                               slot_name="dummy_slot_name")
+                ]
+            )
         ]
-        self.assertItemsEqual(expected_slots, slots)
+
+        for text, expected_slots in texts:
+            # When
+            slots = parser.get_slots(text, intent="dummy_intent_1")
+            # Then
+            self.assertItemsEqual(expected_slots, slots)
 
     def test_should_be_serializable(self):
         # Given
@@ -412,3 +458,13 @@ class TestRegexIntentParser(unittest.TestCase):
             if intent_name not in intents:
                 self.assertEqual(len(parser.regexes_per_intent[intent_name]),
                                  0)
+
+    def test_ignored_characters_should_be_tokenized(self):
+        # Given
+        text = IGNORED_CHARACTERS
+
+        # When
+        tokens = tokenize(text)
+
+        # Then
+        self.assertEqual(len(tokens), 0)

@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 
 from dataset import validate_and_format_dataset
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity, \
-    _SUPPORTED_DIM_KINDS_BY_LANGUAGE
+    _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME,
@@ -224,7 +224,7 @@ class SnipsNLUEngine(NLUEngine):
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
         tagging_excluded_entities = {BuiltInEntity.NUMBER}
-        for d in _SUPPORTED_DIM_KINDS_BY_LANGUAGE[self.language]:
+        for d in _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language]:
             ent = BuiltInEntity.built_in_entity_by_rustling_dim_kind.get(
                 d, False)
             if ent and ent not in tagging_excluded_entities:

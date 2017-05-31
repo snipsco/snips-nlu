@@ -2,14 +2,14 @@ from __future__ import unicode_literals
 
 import unittest
 
+import rustling
 from builtin_entities_ontology import get_ontology
 from mock import patch
 from rustling import RustlingError
-from rustling import RustlingParser as _RustlingParser
 
 from snips_nlu.builtin_entities import (
     get_builtin_entities, BuiltInEntity, scope_to_dim_kinds,
-    RUSTLING_DIM_KINDS, _RUSTLING_PARSERS, RustlingParser)
+    RUSTLING_ENTITIES, RustlingParser)
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.languages import Language
 
@@ -66,14 +66,20 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_scope_to_dim_kinds(self):
         # Given
-        scope = [BuiltInEntity.DATETIME, BuiltInEntity.NUMBER]
-        expected_dim_kinds = ["time", "number"]
+        scope = [entity for entity in BuiltInEntity]
+        expected_dim_kinds = [
+            "time",
+            "number",
+            "amount-of-money",
+            "temperature",
+            "duration"
+        ]
 
         # When
         dims = scope_to_dim_kinds(scope)
 
         # Then
-        self.assertEqual(expected_dim_kinds, dims)
+        self.assertItemsEqual(expected_dim_kinds, dims)
 
     def test_built_in_label_uniqueness(self):
         # Given
@@ -109,30 +115,27 @@ class TestBuiltInEntities(unittest.TestCase):
 
     def test_entities_rustling_dim_kinds_should_exist(self):
         # Given
-        text = "dummy text"
-        language = "EN"
-        parser = _RustlingParser(language)
+        supported_dim_kinds_by_language = rustling.all_configs()
 
         for ent in BuiltInEntity:
             # When / Then
-            try:
-                parser.parse_with_kind_order(
-                    text, [ent.rustling_dim_kind.title()])
-            except RustlingError():
-                self.fail("Unknown Rustling dimension '%s'" % ent.rustling_dim)
+            for language in ent.supported_languages:
+                language_entities = supported_dim_kinds_by_language[
+                    language.rustling_code.lower()]
+                if ent.rustling_dim_kind not in language_entities:
+                    self.fail(
+                        "Unknown Rustling dimension '%s'" % ent.rustling_dim)
 
     def test_rustling_dim_kinds_should_exist(self):
         # Given
-        kinds = RUSTLING_DIM_KINDS
-        text = "dummy text"
-        language = "EN"
-        parser = _RustlingParser(language)
+        supported_dim_kinds_by_language = rustling.all_configs()
+        kinds = RUSTLING_ENTITIES
 
         for k in kinds:
             # When / Then
-            try:
-                parser.parse_with_kind_order(text, [k.title()])
-            except RustlingError:
+            if not any((k.rustling_dim_kind in language_dim_kinds)
+                       for language_dim_kinds
+                       in supported_dim_kinds_by_language.values()):
                 self.fail("Unknown Rustling dimension kind '%s'" % k)
 
     def test_get_builtin_entities_should_support_all_languages(self):
@@ -146,20 +149,3 @@ class TestBuiltInEntities(unittest.TestCase):
             except:
                 self.fail("get_builtin_entities does not support %s"
                           % l.iso_code)
-
-    def test_builtin_entities_supported_languages_should_be_supported(self):
-        # Given
-        text = ""
-
-        for entity in BuiltInEntity:
-            for language in entity.supported_languages:
-                if language in _RUSTLING_PARSERS:
-                    # When / Then
-                    try:
-                        rust_parser = _RUSTLING_PARSERS[language].parser
-                        rust_parser.parse_with_kind_order(
-                            text, [entity.rustling_dim_kind.title()])
-                    except RustlingError:
-                        self.fail("Built in entity '%s' has '%s' as supported "
-                                  "language, this dims kind is not supported "
-                                  "in rustling")

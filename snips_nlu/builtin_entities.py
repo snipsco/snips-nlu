@@ -2,9 +2,9 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
+import rustling
 from enum import Enum
-from rustling import RustlingError
-from rustling import RustlingParser as _RustlingParser
+from rustling import RustlingParser as _RustlingParser, RustlingError
 
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, LABEL, \
     RUSTLING_DIM_KIND, SUPPORTED_LANGUAGES
@@ -15,17 +15,7 @@ from utils import LimitedSizeDict, classproperty
 class BuiltInEntity(Enum):
     NUMBER = {
         LABEL: "snips/number",
-        RUSTLING_DIM_KIND: "number",
-        SUPPORTED_LANGUAGES: {
-            Language.EN,
-            Language.FR,
-            Language.ES
-        }
-    }
-
-    ORDINAL = {
-        LABEL: "snips/ordinal",
-        RUSTLING_DIM_KIND: "ordinal",
+        RUSTLING_DIM_KIND: "Number",
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
@@ -35,7 +25,7 @@ class BuiltInEntity(Enum):
 
     TEMPERATURE = {
         LABEL: "snips/temperature",
-        RUSTLING_DIM_KIND: "temperature",
+        RUSTLING_DIM_KIND: "Temperature",
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
@@ -45,7 +35,7 @@ class BuiltInEntity(Enum):
 
     DATETIME = {
         LABEL: "snips/datetime",
-        RUSTLING_DIM_KIND: "time",
+        RUSTLING_DIM_KIND: "Time",
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
@@ -55,11 +45,19 @@ class BuiltInEntity(Enum):
 
     DURATION = {
         LABEL: "snips/duration",
-        RUSTLING_DIM_KIND: "duration",
+        RUSTLING_DIM_KIND: "Duration",
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
             Language.ES
+        }
+    }
+
+    AMOUNT_OF_MONEY = {
+        LABEL: "snips/amountOfMoney",
+        RUSTLING_DIM_KIND: "AmountOfMoney",
+        SUPPORTED_LANGUAGES: {
+            Language.EN
         }
     }
 
@@ -122,15 +120,43 @@ class BuiltInEntity(Enum):
         return ent
 
 
-def scope_to_dim_kinds(scope):
-    return [entity.rustling_dim_kind for entity in scope]
+_RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = {
+    Language.from_rustling_code(k.upper()): set(
+        BuiltInEntity.from_rustling_dim_kind(e) for e in v)
+    for k, v in rustling.all_configs().iteritems()
+}
 
-
-_SUPPORTED_DIM_KINDS_BY_LANGUAGE = defaultdict(set)
+_SUPPORTED_BUILTINS_BY_LANGUAGE = defaultdict(set)
 for entity in BuiltInEntity:
     for language in entity.supported_languages:
-        _SUPPORTED_DIM_KINDS_BY_LANGUAGE[language].add(
-            entity.rustling_dim_kind)
+        if not entity in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[language]:
+            raise KeyError("Found '%s' in supported languages of '%s' but, "
+                           "'%s' is not supported in rustling.all_configs()" %
+                           (language, entity, language))
+        _SUPPORTED_BUILTINS_BY_LANGUAGE[language].add(entity)
+
+RUSTLING_ENTITIES = set(
+    kind for kinds in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE.values()
+    for kind in kinds)
+
+_ENTITY_TO_PARSED_DIM_KIND = dict()
+for entity in RUSTLING_ENTITIES:
+    parsed_dim_kind_name = ""
+    for i, char in enumerate(entity.rustling_dim_kind):
+        lowered = char.lower()
+        if lowered != char and i != 0:
+            parsed_dim_kind_name += "-"
+        parsed_dim_kind_name += lowered
+    _ENTITY_TO_PARSED_DIM_KIND[entity] = parsed_dim_kind_name
+
+_PARSED_DIM_KIND_TO_ENTITY = {
+    v: k
+    for k, v in _ENTITY_TO_PARSED_DIM_KIND.iteritems()
+}
+
+
+def scope_to_dim_kinds(scope):
+    return [_ENTITY_TO_PARSED_DIM_KIND[entity] for entity in scope]
 
 
 class RustlingParser(object):
@@ -139,7 +165,7 @@ class RustlingParser(object):
         self.parser = _RustlingParser(language.rustling_code)
         self._cache = LimitedSizeDict(size_limit=1000)
         self.supported_entities = set(
-            _SUPPORTED_DIM_KINDS_BY_LANGUAGE[self.language])
+            _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language])
 
     def parse(self, text):
         text = text.lower()  # Rustling only work with lowercase
@@ -151,8 +177,8 @@ class RustlingParser(object):
             self._cache[text] = parser_result
         return self._cache[text]
 
-    def supports_dim_kind(self, dim_kind):
-        return dim_kind in self.supported_entities
+    def supports_entity(self, entity):
+        return entity in self.supported_entities
 
 
 _RUSTLING_PARSERS = dict()
@@ -164,14 +190,6 @@ for language in Language:
 
 RUSTLING_SUPPORTED_LANGUAGES = set(_RUSTLING_PARSERS.keys())
 
-RUSTLING_DIM_KINDS = {
-    "number",
-    "ordinal",
-    "temperature",
-    "time",
-    "duration"
-}
-
 
 def get_builtin_entities(text, language, scope=None):
     global _RUSTLING_CACHE
@@ -182,21 +200,21 @@ def get_builtin_entities(text, language, scope=None):
         return []
 
     if scope is None:
-        dim_kinds = set(RUSTLING_DIM_KINDS)
+        entities = set(RUSTLING_ENTITIES)
     else:
-        dim_kinds = scope_to_dim_kinds(scope)
+        entities = scope_to_dim_kinds(scope)
 
     # Don't detect entities that are not supportBuiltInEntity
-    dim_kinds = [d for d in dim_kinds if parser.supports_dim_kind(d)]
-
+    entities = [e for e in entities if parser.supports_entity(e)]
+    entities_parsed_dims = set(_ENTITY_TO_PARSED_DIM_KIND[e] for e in entities)
     parsed_entities = []
     for ent in parser.parse(text):
-        if ent["dim"] in dim_kinds:
+        if ent["dim"] in entities_parsed_dims:
             parsed_entity = {
                 MATCH_RANGE: (ent["char_range"]["start"],
                               ent["char_range"]["end"]),
                 VALUE: ent["value"],
-                ENTITY: BuiltInEntity.from_rustling_dim_kind(ent["dim"])
+                ENTITY: _PARSED_DIM_KIND_TO_ENTITY[ent["dim"]]
             }
             parsed_entities.append(parsed_entity)
     return parsed_entities

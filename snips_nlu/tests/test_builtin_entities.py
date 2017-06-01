@@ -5,7 +5,6 @@ import unittest
 import rustling
 from builtin_entities_ontology import get_ontology
 from mock import patch
-from rustling import RustlingError
 
 from snips_nlu.builtin_entities import (
     get_builtin_entities, BuiltInEntity, scope_to_dim_kinds,
@@ -18,16 +17,25 @@ class TestBuiltInEntities(unittest.TestCase):
     def test_rustling_parser_should_parse(self):
         # Given
         language = Language.EN
-        text = "let's meet at 2p.m in the bronx"
+        text = "we'll be 2 at the meeting"
         parser = RustlingParser(language)
 
-        # Then
-        try:
-            parse = parser.parse(text)
-        except RustlingError as e:
-            self.fail("Rustling failed with RustingError: %s" % e)
-        except Exception as e:
-            self.fail("Rustling failed with error: %s" % e)
+        # When / Then
+        parse = parser.parse(text)
+
+        expected_parse = [
+            {
+                "char_range": {
+                    "start": 9, "end": 10
+                }, "dim": "Number",
+                "latent": False,
+                "value": {
+                    "type": "value",
+                    "value": 2
+                }
+            }
+        ]
+        self.assertEqual(parse, expected_parse)
 
     @patch("snips_nlu.builtin_entities.RustlingParser.parse")
     def test_get_builtin_entities(self, mocked_parse):
@@ -44,7 +52,7 @@ class TestBuiltInEntities(unittest.TestCase):
                     'precision': 'exact',
                     'value': '2017-05-24 14:00:00 +02:00'
                 },
-                "dim": "time"
+                "dim": "Time"
             }
         ]
 
@@ -68,11 +76,12 @@ class TestBuiltInEntities(unittest.TestCase):
         # Given
         scope = [entity for entity in BuiltInEntity]
         expected_dim_kinds = [
-            "time",
-            "number",
-            "amount-of-money",
-            "temperature",
-            "duration"
+            "Time",
+            "Number",
+            "Ordinal",
+            "AmountOfMoney",
+            "Temperature",
+            "Duration"
         ]
 
         # When

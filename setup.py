@@ -21,9 +21,9 @@ required = [
     "scipy==0.19.0",
     "scikit-learn==0.18.1",
     "sklearn-crfsuite==0.3.5",
-    "builtin_entities_ontology==0.2.2",
+    "builtin_entities_ontology==0.2.3",
     "semantic_version==2.6.0",
-    "rustling==1.3",
+    "rustling==2.0",
 ]
 
 setup(name=PACKAGE_NAME,

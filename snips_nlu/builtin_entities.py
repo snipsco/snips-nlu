@@ -23,6 +23,16 @@ class BuiltInEntity(Enum):
         }
     }
 
+    ORDINAL = {
+        LABEL: "snips/ordinal",
+        RUSTLING_DIM_KIND: "Ordinal",
+        SUPPORTED_LANGUAGES: {
+            Language.EN,
+            Language.FR,
+            Language.ES
+        }
+    }
+
     TEMPERATURE = {
         LABEL: "snips/temperature",
         RUSTLING_DIM_KIND: "Temperature",
@@ -139,24 +149,11 @@ RUSTLING_ENTITIES = set(
     kind for kinds in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE.values()
     for kind in kinds)
 
-_ENTITY_TO_PARSED_DIM_KIND = dict()
-for entity in RUSTLING_ENTITIES:
-    parsed_dim_kind_name = ""
-    for i, char in enumerate(entity.rustling_dim_kind):
-        lowered = char.lower()
-        if lowered != char and i != 0:
-            parsed_dim_kind_name += "-"
-        parsed_dim_kind_name += lowered
-    _ENTITY_TO_PARSED_DIM_KIND[entity] = parsed_dim_kind_name
-
-_PARSED_DIM_KIND_TO_ENTITY = {
-    v: k
-    for k, v in _ENTITY_TO_PARSED_DIM_KIND.iteritems()
-}
+_DIM_KIND_TO_ENTITY = {e.rustling_dim_kind: e for e in RUSTLING_ENTITIES}
 
 
 def scope_to_dim_kinds(scope):
-    return [_ENTITY_TO_PARSED_DIM_KIND[entity] for entity in scope]
+    return [entity.rustling_dim_kind for entity in scope]
 
 
 class RustlingParser(object):
@@ -171,7 +168,7 @@ class RustlingParser(object):
         text = text.lower()  # Rustling only work with lowercase
         if text not in self._cache:
             try:
-                parser_result = self.parser.parse(text)
+                parser_result = self.parser.parse(text, remove_overlap=True)
             except RustlingError:
                 parser_result = []
             self._cache[text] = parser_result
@@ -200,13 +197,11 @@ def get_builtin_entities(text, language, scope=None):
         return []
 
     if scope is None:
-        entities = set(RUSTLING_ENTITIES)
-    else:
-        entities = scope_to_dim_kinds(scope)
+        scope = set(RUSTLING_ENTITIES)
 
     # Don't detect entities that are not supportBuiltInEntity
-    entities = [e for e in entities if parser.supports_entity(e)]
-    entities_parsed_dims = set(_ENTITY_TO_PARSED_DIM_KIND[e] for e in entities)
+    entities = [e for e in scope if parser.supports_entity(e)]
+    entities_parsed_dims = set(e.rustling_dim_kind for e in entities)
     parsed_entities = []
     for ent in parser.parse(text):
         if ent["dim"] in entities_parsed_dims:
@@ -214,7 +209,7 @@ def get_builtin_entities(text, language, scope=None):
                 MATCH_RANGE: (ent["char_range"]["start"],
                               ent["char_range"]["end"]),
                 VALUE: ent["value"],
-                ENTITY: _PARSED_DIM_KIND_TO_ENTITY[ent["dim"]]
+                ENTITY: _DIM_KIND_TO_ENTITY[ent["dim"]]
             }
             parsed_entities.append(parsed_entity)
     return parsed_entities

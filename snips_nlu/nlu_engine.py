@@ -2,10 +2,9 @@ from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
 
-from duckling import core
-
 from dataset import validate_and_format_dataset
-from snips_nlu.built_in_entities import BuiltInEntity, is_builtin_entity
+from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity, \
+    _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME,
@@ -91,15 +90,21 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
     if len(parsers) == 0:
         return empty_result(text)
 
+    result = empty_result(text) if intent is None else Result(
+        text, parsed_intent=IntentClassificationResult(intent, 1.0),
+        parsed_slots=[])
+
     for parser in parsers:
-        if intent is None:
-            res = parser.get_intent(text)
-            if res is None:
+        res = parser.get_intent(text)
+        if res is None:
+            continue
+
+        intent_name = res.intent_name
+        if intent is not None:
+            if intent_name != intent:
                 continue
-            intent_name = res.intent_name
-        else:
-            res = IntentClassificationResult(intent, 1.0)
-            intent_name = intent
+            res = IntentClassificationResult(intent_name, 1.0)
+
         valid_slot = []
         slots = parser.get_slots(text, intent_name)
         for s in slots:
@@ -115,7 +120,7 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
                            s.slot_name)
             valid_slot.append(s)
         return Result(text, parsed_intent=res, parsed_slots=valid_slot)
-    return empty_result(text)
+    return result
 
 
 def spans_to_tokens_indexes(spans, tokens):
@@ -219,8 +224,9 @@ class SnipsNLUEngine(NLUEngine):
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
         tagging_excluded_entities = {BuiltInEntity.NUMBER}
-        for d in core.get_dims(self.language.iso_code):
-            ent = BuiltInEntity.built_in_entity_by_duckling_dim.get(d, False)
+        for d in _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language]:
+            ent = BuiltInEntity.built_in_entity_by_rustling_dim_kind.get(
+                d, False)
             if ent and ent not in tagging_excluded_entities:
                 self.tagging_scope.append(ent)
 

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import re
 from copy import deepcopy
 
-from snips_nlu.built_in_entities import is_builtin_entity, \
+from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
@@ -12,10 +12,13 @@ from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import LimitedSizeDict
+from snips_nlu.utils import LimitedSizeDict, regex_escape
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
+SPACE = " "
+WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
+IGNORED_CHARACTERS = "%s.,;/:+*-`\"(){}" % WHITE_SPACES
 
 
 def get_index(index):
@@ -51,20 +54,21 @@ def get_slot_names_mapping(dataset):
 
 
 def query_to_pattern(query, joined_entity_utterances,
-                     group_names_to_slot_names):
-    pattern = r"^"
-    for chunk in query[DATA]:
+                     group_names_to_slot_names, ):
+    pattern = []
+    for i, chunk in enumerate(query[DATA]):
         if SLOT_NAME in chunk:
             max_index = generate_new_index(group_names_to_slot_names)
             slot_name = chunk[SLOT_NAME]
             entity = chunk[ENTITY]
             group_names_to_slot_names[max_index] = slot_name
-            pattern += r"(?P<%s>%s)" % (
-                max_index, joined_entity_utterances[entity])
+            pattern.append(
+                r"(?P<%s>%s)" % (max_index, joined_entity_utterances[entity]))
         else:
-            pattern += re.escape(chunk[TEXT])
-
-    return pattern + r"$", group_names_to_slot_names
+            tokens = tokenize_light(chunk[TEXT])
+            pattern += [regex_escape(t) for t in tokens]
+    pattern = r"^" + (r"[%s]+" % IGNORED_CHARACTERS).join(pattern) + r"$"
+    return pattern, group_names_to_slot_names
 
 
 def generate_regexes(intent_queries, joined_entity_utterances,
@@ -90,7 +94,7 @@ def get_joined_entity_utterances(dataset):
                               for syn in entry[SYNONYMS]]
             else:
                 utterances = [entry[VALUE] for entry in entity[DATA]]
-        utterances_patterns = [re.escape(e) for e in utterances]
+        utterances_patterns = [regex_escape(e) for e in utterances]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances
@@ -146,10 +150,12 @@ def replace_builtin_entities(text, language):
         rng_start = ent_start + offset
 
         processed_text += text[current_ix:ent_start]
-        new_text = get_builtin_entity_name(ent[ENTITY].label)
-        processed_text += new_text
-        offset += len(new_text) - len(ent[VALUE])
 
+        entity_text = get_builtin_entity_name(ent[ENTITY].label)
+        offset += len(entity_text) - (
+            ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0])
+
+        processed_text += entity_text
         rng_end = ent_end + offset
         new_range = (rng_start, rng_end)
         range_mapping[new_range] = ent[MATCH_RANGE]

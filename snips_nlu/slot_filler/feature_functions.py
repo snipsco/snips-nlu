@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from snips_nlu.built_in_entities import get_builtin_entities, BuiltInEntity
+from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
@@ -136,18 +136,20 @@ def get_shape_ngram_fn(n):
     return BaseFeatureFunction("shape_ngram_%s" % n, shape_ngram)
 
 
-def get_word_cluster_fn(cluster_name, language_code):
+def get_word_cluster_fn(cluster_name, language_code, use_stemming):
     language = Language.from_iso_code(language_code)
 
     def word_cluster(tokens, token_index):
-        return get_word_clusters(language)[cluster_name].get(
-            tokens[token_index].value.lower(), None)
+        normalized_value = tokens[token_index].stem if use_stemming \
+            else tokens[token_index].value.lower()
+        return get_word_clusters(language)[cluster_name].get(normalized_value,
+                                                             None)
 
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
 def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
-                       tagging_scheme_code):
+                       tagging_scheme_code, language_code):
     lowered_collection = set([c.lower() for c in tokens_collection])
     tagging_scheme = TaggingScheme(tagging_scheme_code)
 

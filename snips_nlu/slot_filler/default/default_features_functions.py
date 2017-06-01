@@ -1,7 +1,7 @@
 import numpy as np
-from duckling import core
 
-from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.builtin_entities import BuiltInEntity, \
+    _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import DATA, USE_SYNONYMS, SYNONYMS, VALUE
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
@@ -64,10 +64,10 @@ def default_features(language, intent_entities, use_stemming,
     ]
 
     # Built-ins
-    for dim in core.get_dims(language.iso_code):
-        if dim not in BuiltInEntity.built_in_entity_by_duckling_dim:
+    for dim in _SUPPORTED_BUILTINS_BY_LANGUAGE[language]:
+        if dim not in BuiltInEntity.built_in_entity_by_rustling_dim_kind:
             continue
-        entity = BuiltInEntity.from_duckling_dim(dim)
+        entity = BuiltInEntity.from_rustling_dim_kind(dim)
         features.append(
             {
                 "factory_name": "get_built_in_annotation_fn",
@@ -100,6 +100,7 @@ def default_features(language, intent_entities, use_stemming,
                 "args": {"tokens_collection": collection,
                          "collection_name": entity_name,
                          "use_stemming": use_stemming,
+                         "language_code": language.iso_code,
                          "tagging_scheme_code": TaggingScheme.BILOU.value},
                 "offsets": entities_offsets
             }

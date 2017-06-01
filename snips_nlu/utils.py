@@ -10,6 +10,8 @@ RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
 PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
+REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
+               '^', '$', '#', '&', '-', '~'}
 
 
 class abstractclassmethod(classmethod):
@@ -154,3 +156,26 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+
+def regex_escape(s):
+    """
+    Escapes all regular expression meta characters in `text`.
+    
+    The string returned may be safely used as a literal in a regular
+    expression.
+     
+    This function is more precise than `re.escape`, the latter escapes 
+    all non-alphanumeric characters which can cause cross-platform 
+    compatibility issues.
+    
+    References:
+    https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
+    https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
+    """
+    escaped_string = ""
+    for c in s:
+        if c in REGEX_PUNCT:
+            escaped_string += "\\"
+        escaped_string += c
+    return escaped_string

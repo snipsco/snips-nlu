@@ -4,7 +4,7 @@ from itertools import cycle
 
 import numpy as np
 
-from snips_nlu.built_in_entities import is_builtin_entity
+from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, USE_SYNONYMS,
                                  SYNONYMS, VALUE, TEXT, INTENTS, ENTITIES)
 from snips_nlu.resources import get_subtitles

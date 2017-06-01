@@ -11,10 +11,10 @@ from snips_nlu.tokenization import tokenize
 
 
 class TestCRFTagger(unittest.TestCase):
-    @patch('snips_nlu.slot_filler.crf_tagger.safe_pickle_dumps')
-    def test_should_be_serializable(self, mock_pkl_dumps):
+    @patch('snips_nlu.slot_filler.crf_tagger.serialize_crf_model')
+    def test_should_be_serializable(self, mock_serialize_crf_model):
         # Given
-        mock_pkl_dumps.return_value = "mocked_crf_pkl"
+        mock_serialize_crf_model.return_value = "mocked_crf_model_data"
         crf_model = default_crf_model()
         features_signatures = [
             {
@@ -49,7 +49,7 @@ class TestCRFTagger(unittest.TestCase):
 
         # Then
         expected_tagger_dict = {
-            "crf_model_pkl": "mocked_crf_pkl",
+            "crf_model_data": "mocked_crf_model_data",
             "features_signatures": [
                 {
                     "args": {
@@ -76,12 +76,12 @@ class TestCRFTagger(unittest.TestCase):
         }
         self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
 
-    @patch('snips_nlu.slot_filler.crf_tagger.safe_pickle_loads')
-    def test_should_be_deserializable(self, mock_pkl_loads):
+    @patch('snips_nlu.slot_filler.crf_tagger.deserialize_crf_model')
+    def test_should_be_deserializable(self, mock_deserialize_crf_model):
         # Given
-        mock_pkl_loads.return_value = None
+        mock_deserialize_crf_model.return_value = None
         tagger_dict = {
-            "crf_model_pkl": "mocked_crf_pkl",
+            "crf_model_data": "mocked_crf_model_data",
             "features_signatures": [
                 {
                     "args": {
@@ -110,7 +110,8 @@ class TestCRFTagger(unittest.TestCase):
         tagger = CRFTagger.from_dict(tagger_dict)
 
         # Then
-        mock_pkl_loads.assert_called_once_with("mocked_crf_pkl")
+        mock_deserialize_crf_model.assert_called_once_with(
+            "mocked_crf_model_data")
         expected_features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SAMPLE_DATASET

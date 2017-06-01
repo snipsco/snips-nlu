@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import re
 from copy import deepcopy
 
-from snips_nlu.built_in_entities import is_builtin_entity, \
+from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, SLOT_NAME, UTTERANCES, VALUE,

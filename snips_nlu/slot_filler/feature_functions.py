@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from snips_nlu.built_in_entities import get_builtin_entities, BuiltInEntity
+from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem

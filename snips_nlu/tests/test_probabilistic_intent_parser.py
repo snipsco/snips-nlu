@@ -4,7 +4,7 @@ import unittest
 
 from mock import MagicMock, patch, call
 
-from snips_nlu.built_in_entities import BuiltInEntity
+from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier

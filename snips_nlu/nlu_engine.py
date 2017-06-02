@@ -205,6 +205,9 @@ def enrich_slots(slots, other_slots):
     return enriched_slots
 
 
+TAGGING_EXCLUDED_ENTITIES = {BuiltInEntity.NUMBER}
+
+
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
@@ -223,11 +226,8 @@ class SnipsNLUEngine(NLUEngine):
         self.regex_threshold = regex_threshold
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
-        tagging_excluded_entities = {BuiltInEntity.NUMBER}
-        for d in _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language]:
-            ent = BuiltInEntity.built_in_entity_by_rustling_dim_kind.get(
-                d, False)
-            if ent and ent not in tagging_excluded_entities:
+        for ent in _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language]:
+            if ent and ent not in TAGGING_EXCLUDED_ENTITIES:
                 self.tagging_scope.append(ent)
 
     def parse(self, text, intent=None):

@@ -8,15 +8,6 @@ Python wheels of the `snips-nlu` package can be found on the nexus repository at
 
 You will need to be signed in to access the repo.
 
-You'll need the tensorflow C library installed, here are some commands to install it on various OSs :
-
-```bash
-$ brew install libtensorflow # macOS
-$ yaourt -S tensorflow # Arch Linux
-$ DEB=libtensorflow_1.0.1-snips-2_`dpkg --print-architecture`.deb \
-    && wget https://s3.amazonaws.com/snips/tensorflow-deb/$DEB \
-    && sudo dpkg -i $DEB # Ubuntu
-```
 
 ## Development
 
@@ -68,17 +59,13 @@ The NLU Engine can be initialized in two ways:
 
 - Or you can load an already trained engine:
     ```python
-    engine = SnipsNLUEngine.load_from(
-          language='en', 
-          customs=customs_dict, 
-          builtin_path='path/to/builtin'
-        )
+    engine = SnipsNLUEngine.from_dict(engine_as_dict)
     ```
 
 ### Serialization
 The NLU Engine has an API that allows to persist the object as a dictionary:
 ```python
-engine_dict = engine.to_dict()
+engine_as_dict = engine.to_dict()
 ```
 
 ### Parsing

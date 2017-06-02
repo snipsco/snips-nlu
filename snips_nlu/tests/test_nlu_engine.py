@@ -7,11 +7,14 @@ from copy import deepcopy
 
 from mock import Mock, patch
 
+from snips_nlu.builtin_entities import (
+    _SUPPORTED_BUILTINS_BY_LANGUAGE)
 from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT, \
     INTENTS, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
+from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots, \
+    TAGGING_EXCLUDED_ENTITIES
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
 
@@ -698,3 +701,18 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_parse = Result(text, expected_intent_classif_result,
                                 parsed_slots).as_dict()
         self.assertEqual(parse, expected_parse)
+
+    def test_nlu_engine_should_correct_tagging_scope(self):
+        for language in Language:
+            # Given
+            engine = SnipsNLUEngine(language)
+            entities = deepcopy(_SUPPORTED_BUILTINS_BY_LANGUAGE[language])
+            for ent in TAGGING_EXCLUDED_ENTITIES:
+                if ent in entities:
+                    entities.remove(ent)
+
+            # When
+            scope = engine.tagging_scope
+
+            # Then
+            self.assertItemsEqual(scope, engine.tagging_scope)

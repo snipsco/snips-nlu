@@ -278,6 +278,14 @@ class TestRegexIntentParser(unittest.TestCase):
                                entity="dummy_entity_1",
                                slot_name="dummy_slot_name")
                 ]
+            ),
+            (
+                " this is a dummy b ",
+                [
+                    ParsedSlot(match_range=(11, 18), value="dummy b",
+                               entity="dummy_entity_1",
+                               slot_name="dummy_slot_name")
+                ]
             )
         ]
 

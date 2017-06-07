@@ -19,6 +19,7 @@ GROUP_NAME_SEPARATOR = "_"
 SPACE = " "
 WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
 IGNORED_CHARACTERS = "%s.,;/:+*-`\"(){}" % WHITE_SPACES
+IGNORED_CHARACTERS_PATTERN = r"[%s]*" % IGNORED_CHARACTERS
 
 
 def get_index(index):
@@ -67,7 +68,9 @@ def query_to_pattern(query, joined_entity_utterances,
         else:
             tokens = tokenize_light(chunk[TEXT])
             pattern += [regex_escape(t) for t in tokens]
-    pattern = r"^" + (r"[%s]+" % IGNORED_CHARACTERS).join(pattern) + r"$"
+    pattern = r"^%s%s%s$" % (IGNORED_CHARACTERS_PATTERN,
+                             IGNORED_CHARACTERS_PATTERN.join(pattern),
+                             IGNORED_CHARACTERS_PATTERN)
     return pattern, group_names_to_slot_names
 
 

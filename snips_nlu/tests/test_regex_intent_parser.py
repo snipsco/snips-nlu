@@ -5,11 +5,12 @@ import unittest
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.constants import INTENTS, MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.constants import INTENTS, MATCH_RANGE, VALUE, ENTITY, DATA, \
+    TEXT, SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.regex_intent_parser import (
     RegexIntentParser, deduplicate_overlapping_slots, IGNORED_CHARACTERS,
-    replace_builtin_entities)
+    replace_builtin_entities, preprocess_builtin_entities)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
@@ -75,7 +76,7 @@ class TestRegexIntentParser(unittest.TestCase):
                         {
                             "data": [
                                 {
-                                    "text": "This is a "
+                                    "text": "This is a first "
                                 },
                                 {
                                     "text": "dummy_1",
@@ -83,7 +84,7 @@ class TestRegexIntentParser(unittest.TestCase):
                                     "entity": "dummy_entity_1"
                                 },
                                 {
-                                    "text": " query with another "
+                                    "text": " query with a second "
                                 },
                                 {
                                     "text": "dummy_2",
@@ -116,8 +117,8 @@ class TestRegexIntentParser(unittest.TestCase):
         }
 
         parser = RegexIntentParser(language).fit(dataset)
-        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
-               "at 12p.m."
+        text = "this is a first dummy_a query with a second dummy_c at " \
+               "10p.m. or at 12p.m."
 
         # When
         intent = parser.get_intent(text)
@@ -512,3 +513,54 @@ class TestRegexIntentParser(unittest.TestCase):
 
         self.assertDictEqual(expected_mapping, range_mapping)
         self.assertEqual(expected_processed_text, processed_text)
+
+    def test_should_preprocess_builtin_entities(self):
+        # Given
+        language = Language.EN
+        utterance = {
+            DATA: [
+                {
+                    TEXT: "Be the first to choose the "
+                },
+                {
+                    TEXT: "second option",
+                    SLOT_NAME: "option",
+                    ENTITY: "option_entity"
+                },
+                {
+                    TEXT: " at "
+                },
+                {
+                    TEXT: "9pm",
+                    SLOT_NAME: "choosing time",
+                    ENTITY: "snips/datetime"
+                },
+            ]
+        }
+
+        # When
+        processed_utterance = preprocess_builtin_entities(utterance, language)
+
+        # Then
+        expected_utterance = {
+            DATA: [
+                {
+                    TEXT: "Be %SNIPSORDINAL% to choose the "
+                },
+                {
+                    TEXT: "%SNIPSORDINAL% option",
+                    SLOT_NAME: "option",
+                    ENTITY: "option_entity"
+                },
+                {
+                    TEXT: " at "
+                },
+                {
+                    TEXT: "%SNIPSDATETIME%",
+                    SLOT_NAME: "choosing time",
+                    ENTITY: "snips/datetime"
+                },
+            ]
+        }
+
+        self.assertDictEqual(expected_utterance, processed_utterance)

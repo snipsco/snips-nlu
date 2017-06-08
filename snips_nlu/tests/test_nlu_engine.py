@@ -49,7 +49,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 return intent_entities2_empty
 
         mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
-        mocked_entities = {"mocked_entity": {"automatically_extensible": True}}
+        mocked_entities = {
+            "mocked_entity": {
+                "automatically_extensible": True,
+                "utterances": dict()
+            }
+        }
         engine = SnipsNLUEngine(
             language, entities=mocked_entities,
             rule_based_parser=mocked_parser1,

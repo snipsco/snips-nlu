@@ -2,10 +2,14 @@ from __future__ import unicode_literals
 
 import unittest
 
-from snips_nlu.constants import INTENTS
+from mock import patch
+
+from snips_nlu.builtin_entities import BuiltInEntity
+from snips_nlu.constants import INTENTS, MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.regex_intent_parser import (
-    RegexIntentParser, deduplicate_overlapping_slots, IGNORED_CHARACTERS)
+    RegexIntentParser, deduplicate_overlapping_slots, IGNORED_CHARACTERS,
+    replace_builtin_entities)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
@@ -476,3 +480,35 @@ class TestRegexIntentParser(unittest.TestCase):
 
         # Then
         self.assertEqual(len(tokens), 0)
+
+    @patch('snips_nlu.intent_parser.regex_intent_parser.get_builtin_entities')
+    def test_should_replace_builtin_entities(self, mock_get_builtin_entities):
+        # Given
+        text = "Be the first to be there at 9pm"
+        mock_get_builtin_entities.return_value = [
+            {
+                MATCH_RANGE: (7, 12),
+                VALUE: "first",
+                ENTITY: BuiltInEntity.ORDINAL
+            },
+            {
+                MATCH_RANGE: (28, 31),
+                VALUE: "9pm",
+                ENTITY: BuiltInEntity.DATETIME
+            }
+        ]
+
+        # When
+        range_mapping, processed_text = replace_builtin_entities(
+            text=text, language=Language.EN)
+
+        # Then
+        expected_mapping = {
+            (7, 21): (7, 12),
+            (37, 52): (28, 31)
+        }
+        expected_processed_text = \
+            "Be the %SNIPSORDINAL% to be there at %SNIPSDATETIME%"
+
+        self.assertDictEqual(expected_mapping, range_mapping)
+        self.assertEqual(expected_processed_text, processed_text)

@@ -112,10 +112,10 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
             # Check if the entity is from a custom intent
             if s.entity in entities:
                 entity = entities[s.entity]
-                if not entity[AUTOMATICALLY_EXTENSIBLE]:
-                    if s.value not in entity[UTTERANCES]:
-                        continue
+                if s.value in entity[UTTERANCES]:
                     slot_value = entity[UTTERANCES][s.value]
+                elif not entity[AUTOMATICALLY_EXTENSIBLE]:
+                    continue
             s = ParsedSlot(s.match_range, slot_value, s.entity,
                            s.slot_name)
             valid_slot.append(s)

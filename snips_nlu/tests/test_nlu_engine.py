@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 import io
@@ -689,7 +690,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         parsed_slots = [ParsedSlot(match_range=(16, 27), value="weird weird",
                                    entity="dummy_entity_1",
-                                   slot_name="dummy_slot_name")]
+                                   slot_name="dummy slot nàme")]
         mocked_probabilistic_get_slots.return_value = parsed_slots
 
         # When

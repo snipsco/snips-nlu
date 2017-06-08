@@ -17,10 +17,10 @@ def empty_dataset(language):
          "snips_nlu_version": "1.1.1"})
 
 
-with io.open(SAMPLE_DATASET_PATH) as dataset_file:
+with io.open(SAMPLE_DATASET_PATH, encoding='utf8') as dataset_file:
     SAMPLE_DATASET = json.load(dataset_file)
 
-with io.open(BEVERAGE_DATASET_PATH) as dataset_file:
+with io.open(BEVERAGE_DATASET_PATH, encoding='utf8') as dataset_file:
     BEVERAGE_DATASET = json.load(dataset_file)
 
 SAMPLE_DATASET = validate_and_format_dataset(SAMPLE_DATASET)

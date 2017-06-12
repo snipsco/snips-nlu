@@ -19,7 +19,7 @@ GROUP_NAME_SEPARATOR = "_"
 SPACE = " "
 WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
 IGNORED_CHARACTERS = "%s.,;/:+*-`\"(){}" % WHITE_SPACES
-IGNORED_CHARACTERS_PATTERN = r"[%s]*" % IGNORED_CHARACTERS
+IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(IGNORED_CHARACTERS)
 
 
 def get_index(index):

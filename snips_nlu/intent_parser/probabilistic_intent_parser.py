@@ -68,7 +68,7 @@ def capitalize(text, language):
                     else t.lower() for t in tokens)
 
 
-def capitalize_utterances(utterances, language, ratio=.2,
+def capitalize_utterances(utterances, language, ratio=.0,
                           capitalization_threshold=.1):
     # TODO: put it in a capitalization config in the probabilistic parser
     # but it breaks serialization -> wait for it

@@ -88,11 +88,9 @@ def load_clusters():
                 with io.open(path, encoding="utf8") as f:
                     _word_clusters[name] = dict()
                     for l in f:
-                        split = l.rstrip().lower().split("\t")
-                        normalized = " ".join(
-                            [t.value for t in tokenize(split[0])])
+                        split = l.rstrip().split("\t")
                         if len(split) == 2:
-                            _word_clusters[name][normalized] = split[1]
+                            _word_clusters[name][split[0]] = split[1]
 
 
 def get_word_clusters(language):

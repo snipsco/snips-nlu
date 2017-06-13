@@ -100,7 +100,7 @@ def get_ngram_fn(n, use_stemming, language_code=None,
     def ngram(tokens, token_index):
         max_len = len(tokens)
         end = token_index + n
-        if 0 <= token_index < max_len and 0 < end <= max_len:
+        if 0 <= token_index < max_len and end <= max_len:
             if gazetteer is None:
                 if use_stemming:
                     return " ".join(t.stem.lower()
@@ -113,7 +113,7 @@ def get_ngram_fn(n, use_stemming, language_code=None,
                 for t in tokens[token_index:end]:
                     lowered = t.stem.lower() if use_stemming else \
                         t.value.lower()
-                    words.append(lowered if t.value.lower() in gazetteer
+                    words.append(lowered if lowered in gazetteer
                                  else "rare_word")
                 return " ".join(words)
         return None
@@ -128,7 +128,7 @@ def get_shape_ngram_fn(n):
     def shape_ngram(tokens, token_index):
         max_len = len(tokens)
         end = token_index + n
-        if 0 <= token_index < max_len and 0 <= end < max_len:
+        if 0 <= token_index < max_len and end <= max_len:
             return " ".join(get_shape(t.value)
                             for t in tokens[token_index:end])
         return None

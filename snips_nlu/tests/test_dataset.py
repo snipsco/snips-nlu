@@ -139,7 +139,7 @@ class TestDataset(unittest.TestCase):
                     "data": [
                         {
                             "value": "entity 1",
-                            "synonyms": []
+                            "synonyms": ["entity 2"]
                         }
                     ],
                     "use_synonyms": True,
@@ -157,7 +157,7 @@ class TestDataset(unittest.TestCase):
                     "data": [
                         {
                             "value": "entity 1",
-                            "synonyms": ["entity 1"]
+                            "synonyms": ["entity 2", "entity 1"]
                         }
                     ],
                     "use_synonyms": True,
@@ -454,6 +454,114 @@ class TestDataset(unittest.TestCase):
             validate_and_format_dataset(dataset)
         except:
             self.fail("Could not validate dataset")
+
+    def test_should_remove_empty_entities_value_and_empty_synonyms(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": [""]
+                        },
+                        {
+                            "value": "",
+                            "synonyms": []
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        expected_dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "this is ",
+                                },
+                                {
+                                    "text": "entity 1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["entity 1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        # When
+        dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        self.assertEqual(dataset, expected_dataset)
 
 
 if __name__ == '__main__':

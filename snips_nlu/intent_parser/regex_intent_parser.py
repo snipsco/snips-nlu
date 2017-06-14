@@ -98,6 +98,7 @@ def get_joined_entity_utterances(dataset):
             else:
                 utterances = [entry[VALUE] for entry in entity[DATA]]
         utterances_patterns = [regex_escape(e) for e in utterances]
+        utterances_patterns = [p for p in utterances_patterns if len(p) > 0]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances

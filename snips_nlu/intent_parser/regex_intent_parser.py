@@ -98,6 +98,7 @@ def get_joined_entity_utterances(dataset):
             else:
                 utterances = [entry[VALUE] for entry in entity[DATA]]
         utterances_patterns = [regex_escape(e) for e in utterances]
+        utterances_patterns = [p for p in utterances_patterns if len(p) > 0]
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances
@@ -127,12 +128,12 @@ def get_builtin_entity_name(entity_label):
     return "%%%s%%" % "".join(tokenize_light(entity_label)).upper()
 
 
-def preprocess_builtin_entities(utterance):
+def preprocess_builtin_entities(utterance, language):
     new_utterance = deepcopy(utterance)
     for i, chunk in enumerate(utterance[DATA]):
-        if ENTITY in chunk and is_builtin_entity(chunk[ENTITY]):
-            new_utterance[DATA][i][TEXT] = get_builtin_entity_name(
-                chunk[ENTITY])
+        _, processed_chunk_text = replace_builtin_entities(chunk[TEXT],
+                                                           language)
+        new_utterance[DATA][i][TEXT] = processed_chunk_text
     return new_utterance
 
 
@@ -200,7 +201,7 @@ class RegexIntentParser(object):
             if intent_name not in intents_to_train:
                 self.regexes_per_intent[intent_name] = []
                 continue
-            utterances = [preprocess_builtin_entities(u)
+            utterances = [preprocess_builtin_entities(u, self.language)
                           for u in intent[UTTERANCES]]
             regexes, self.group_names_to_slot_names = generate_regexes(
                 utterances, joined_entity_utterances,

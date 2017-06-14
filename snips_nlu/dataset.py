@@ -84,14 +84,19 @@ def validate_and_format_custom_entity(entity):
     validate_type(entity[USE_SYNONYMS], bool)
     validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool)
     validate_type(entity[DATA], list)
+    valid_entity_data = []
     for entry in entity[DATA]:
         validate_type(entry, dict)
         validate_keys(entry, [VALUE, SYNONYMS],
                       object_label="entity entry")
+        if len(entry[VALUE]) == 0:
+            continue
+        entry[SYNONYMS] = [s for s in entry[SYNONYMS] if len(s) > 0]
         validate_type(entry[SYNONYMS], list)
         if entry[VALUE] not in entry[SYNONYMS]:
             entry[SYNONYMS].append(entry[VALUE])
-
+        valid_entity_data.append(entry)
+    entity[DATA] = valid_entity_data
     return entity
 
 
@@ -123,6 +128,8 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
 
 
 def add_entity_value_if_missing(value, entity):
+    if len(value) == 0:
+        return
     if entity[USE_SYNONYMS]:
         entity_values = set(v for entry in entity[DATA] for v in
                             entry[SYNONYMS] + [entry[VALUE]])

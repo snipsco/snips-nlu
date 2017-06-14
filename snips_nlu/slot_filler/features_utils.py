@@ -101,7 +101,6 @@ def initial_string_from_tokens(tokens):
         current_index = t.end
     return s
 
-
-LOWER_REGEX = re.compile(r"^[^A-Z]+$")
-UPPER_REGEX = re.compile(r"^[^a-z]+$")
-TITLE_REGEX = re.compile(r"^[A-Z][^A-Z]+$")
+LOWER_REGEX = re.compile(r"^[a-z]+$")
+UPPER_REGEX = re.compile(r"^[A-Z]+$")
+TITLE_REGEX = re.compile(r"^[A-Z][a-z]+$")

@@ -1,4 +1,4 @@
-# Snips NLU (0.8.2)
+# Snips NLU (0.8.6)
 
 [![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/snips-nlu/master)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/view/Branches/job/master)
 
@@ -8,21 +8,7 @@ Python wheels of the `snips-nlu` package can be found on the nexus repository at
 
 You will need to be signed in to access the repo.
 
-You'll need the tensorflow C library installed, here are some commands to install it on various OSs :
-
-```bash
-$ brew install libtensorflow # macOS
-$ yaourt -S tensorflow # Arch Linux
-$ DEB=libtensorflow_1.0.1-snips-2_`dpkg --print-architecture`.deb \
-    && wget https://s3.amazonaws.com/snips/tensorflow-deb/$DEB \
-    && sudo dpkg -i $DEB # Ubuntu
-```
-
 ## Development
-
-### Dependencies
-
-You'll need the tensorflow C library installed, refer to the previous section to install it
 
 ### Installation
 Create a virtual env:
@@ -68,17 +54,13 @@ The NLU Engine can be initialized in two ways:
 
 - Or you can load an already trained engine:
     ```python
-    engine = SnipsNLUEngine.load_from(
-          language='en', 
-          customs=customs_dict, 
-          builtin_path='path/to/builtin'
-        )
+    engine = SnipsNLUEngine.from_dict(engine_as_dict)
     ```
 
 ### Serialization
 The NLU Engine has an API that allows to persist the object as a dictionary:
 ```python
-engine_dict = engine.to_dict()
+engine_as_dict = engine.to_dict()
 ```
 
 ### Parsing
@@ -93,14 +75,24 @@ engine_dict = engine.to_dict()
 #     }
 #     "slots": [
 #         {
-#             "value": "on",
+#             "value": {
+#                 "kind": "Custom",
+#                 "value": "on"
+#             },
+#             "raw_value": "on",
 #             "range": [5, 7],
-#             "slot_name": "on_off",
+#             "entity": "on_off"
+#             "slot_name": "light_on_off",
 #         },
 #         {
-#             "value": "kitchen",
+#             "value": {
+#                 "kind": "Custom",
+#                 "value": "kitchen"
+#             },
+#             "raw_value": "kitchen",
 #             "range": [25, 32],
-#             "slot_name": "room",
+#             "entity": "light",
+#             "slot_name": "light_room",
 #         }
 #     ]
 # }

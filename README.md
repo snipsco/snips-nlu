@@ -1,6 +1,8 @@
-# Snips NLU (0.8.6)
+# Snips NLU (0.8.7)
 
 [![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/snips-nlu/master)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/view/Branches/job/master)
+
+**Model Version (0.8.5)**
 
 ## Production Use
 
@@ -106,3 +108,12 @@ engine.fitted # True
 ```
 
 where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)
+
+### Versioning
+The NLU Engine has a separated versioning for the underlying model:
+``` python
+import snips_nlu
+
+model_version = snips_nlu.__model_version__
+python_package_version = snips_nlu.__version__
+```

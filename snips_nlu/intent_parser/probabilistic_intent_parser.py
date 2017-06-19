@@ -159,8 +159,7 @@ class ProbabilisticIntentParser(object):
         if len(builtin_slot_names) == 0:
             return slots
 
-        # Remove slots corresponding to builtin entities
-        slots = [s for s in slots if s.slot_name not in builtin_slot_names]
+        # Replace tags corresponding to builtin entities by outside tags
         tags = replace_builtin_tags(tags, builtin_slot_names)
 
         scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])

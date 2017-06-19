@@ -15,7 +15,8 @@ from snips_nlu.resources import get_stop_words
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample,
-                                             positive_tagging)
+                                             positive_tagging, OUTSIDE,
+                                             tag_name_to_slot_name)
 from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize, tokenize_light
 from snips_nlu.utils import (namedtuple_with_defaults)
@@ -152,21 +153,21 @@ class ProbabilisticIntentParser(object):
         slots = tags_to_slots(text, tokens, tags, tagger.tagging_scheme,
                               intent_slots_mapping)
 
-        # Remove slots corresponding to builtin entities
-        slots = [s for s in slots if intent_slots_mapping[s.slot_name] not in
-                 BuiltInEntity.built_in_entity_by_label]
-
-        builtin_slots = set(s for s in intent_slots_mapping
-                            if intent_slots_mapping[s] in
-                            BuiltInEntity.built_in_entity_by_label)
-        if len(builtin_slots) == 0:
+        builtin_slot_names = set(slot_name for (slot_name, entity) in
+                                 intent_slots_mapping.iteritems() if entity
+                                 in BuiltInEntity.built_in_entity_by_label)
+        if len(builtin_slot_names) == 0:
             return slots
 
+        # Remove slots corresponding to builtin entities
+        slots = [s for s in slots if s.slot_name not in builtin_slot_names]
+        tags = replace_builtin_tags(tags, builtin_slot_names)
+
         scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
-                 for slot in builtin_slots]
+                 for slot in builtin_slot_names]
         builtin_entities = get_builtin_entities(text, self.language, scope)
         slots = augment_slots(text, tokens, tags, tagger, intent_slots_mapping,
-                              builtin_entities, builtin_slots)
+                              builtin_entities, builtin_slot_names)
         return slots
 
     @property
@@ -214,6 +215,20 @@ class ProbabilisticIntentParser(object):
             data_augmentation_config=DataAugmentationConfig.from_dict(
                 obj_dict["data_augmentation_config"])
         )
+
+
+def replace_builtin_tags(tags, builtin_slot_names):
+    new_tags = []
+    for tag in tags:
+        if tag == OUTSIDE:
+            new_tags.append(tag)
+        else:
+            slot_name = tag_name_to_slot_name(tag)
+            if slot_name in builtin_slot_names:
+                new_tags.append(OUTSIDE)
+            else:
+                new_tags.append(tag)
+    return new_tags
 
 
 def augment_slots(text, tokens, tags, tagger, intent_slots_mapping,

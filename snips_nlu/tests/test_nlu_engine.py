@@ -8,10 +8,9 @@ from copy import deepcopy
 
 from mock import Mock, patch
 
-from snips_nlu.builtin_entities import (
-    _SUPPORTED_BUILTINS_BY_LANGUAGE)
-from snips_nlu.constants import ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT, \
-    INTENTS, UTTERANCES
+from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
+from snips_nlu.constants import (ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT,
+                                 INTENTS, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots, \

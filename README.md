@@ -77,23 +77,13 @@ engine_as_dict = engine.to_dict()
 #     }
 #     "slots": [
 #         {
-#             "value": {
-#                 "kind": "Custom",
-#                 "value": "on"
-#             },
-#             "raw_value": "on",
+#             "value": "on"
 #             "range": [5, 7],
-#             "entity": "on_off"
 #             "slot_name": "light_on_off",
 #         },
 #         {
-#             "value": {
-#                 "kind": "Custom",
-#                 "value": "kitchen"
-#             },
-#             "raw_value": "kitchen",
+#             "value": "kitchen"
 #             "range": [25, 32],
-#             "entity": "light",
 #             "slot_name": "light_room",
 #         }
 #     ]
@@ -102,9 +92,7 @@ engine_as_dict = engine.to_dict()
 
 ### Training
 ``` python
-engine.fitted # False
-engine.fit(dataset) 
-engine.fitted # True
+engine.fit(dataset)
 ```
 
 where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)

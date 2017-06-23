@@ -1,7 +1,6 @@
 import numpy as np
 
-from snips_nlu.builtin_entities import BuiltInEntity, \
-    _SUPPORTED_BUILTINS_BY_LANGUAGE
+from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import DATA, USE_SYNONYMS, SYNONYMS, VALUE
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
@@ -64,10 +63,7 @@ def default_features(language, intent_entities, use_stemming,
     ]
 
     # Built-ins
-    for dim in _SUPPORTED_BUILTINS_BY_LANGUAGE[language]:
-        if dim not in BuiltInEntity.built_in_entity_by_rustling_dim_kind:
-            continue
-        entity = BuiltInEntity.from_rustling_dim_kind(dim)
+    for entity in _SUPPORTED_BUILTINS_BY_LANGUAGE[language]:
         features.append(
             {
                 "factory_name": "get_built_in_annotation_fn",

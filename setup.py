@@ -16,14 +16,14 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
 required = [
     "pytest",
     "enum34==1.1.6",
-    "mock",
+    "mock==2.0.0",
     "numpy==1.12.1",
     "scipy==0.19.0",
     "scikit-learn==0.18.1",
     "sklearn-crfsuite==0.3.5",
-    "builtin_entities_ontology==0.2.3",
+    "builtin_entities_ontology==0.3.1",
     "semantic_version==2.6.0",
-    "rustling==2.0",
+    "rustling==3.0",
 ]
 
 setup(name=PACKAGE_NAME,

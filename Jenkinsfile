@@ -26,10 +26,18 @@ node('jenkins-slave-generic') {
     }
 
     stage('Tests') {
-        sh """
-        ${VENV}
-        python -m unittest discover
-        """
+        if(branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master") {
+            sh """
+            ${VENV}
+            python -m unittest discover
+            python -m unittest discover -p 'integration_test*.py'
+            """
+        } else {
+            sh """
+            ${VENV}
+            python -m unittest discover
+            """
+        }
     }
 
     stage('Publish') {

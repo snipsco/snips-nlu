@@ -19,7 +19,8 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
-            Language.ES
+            Language.ES,
+            Language.KO
         }
     }
 
@@ -29,7 +30,8 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
-            Language.ES
+            Language.ES,
+            Language.KO
         }
     }
 
@@ -49,7 +51,8 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
-            Language.ES
+            Language.ES,
+            Language.KO
         }
     }
 
@@ -59,7 +62,8 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
-            Language.ES
+            Language.ES,
+            Language.KO
         }
     }
 

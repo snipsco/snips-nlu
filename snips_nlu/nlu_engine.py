@@ -303,6 +303,7 @@ class SnipsNLUEngine(NLUEngine):
         return self
 
     def get_fitted_tagger(self, dataset, intent):
+        dataset = validate_and_format_dataset(dataset)
         intent_custom_entities = get_intent_custom_entities(dataset, intent)
         features = crf_features(intent_custom_entities, self.language)
         tagger = CRFTagger(default_crf_model(), features, TaggingScheme.BIO,

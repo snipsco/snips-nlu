@@ -20,7 +20,8 @@ class BuiltInEntity(Enum):
             Language.EN,
             Language.FR,
             Language.ES,
-            Language.KO
+            Language.KO,
+            Language.DE
         }
     }
 
@@ -31,7 +32,8 @@ class BuiltInEntity(Enum):
             Language.EN,
             Language.FR,
             Language.ES,
-            Language.KO
+            Language.KO,
+            Language.DE
         }
     }
 
@@ -41,7 +43,8 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.EN,
             Language.FR,
-            Language.ES
+            Language.ES,
+            Language.KO
         }
     }
 
@@ -52,7 +55,8 @@ class BuiltInEntity(Enum):
             Language.EN,
             Language.FR,
             Language.ES,
-            Language.KO
+            Language.KO,
+            Language.DE
         }
     }
 
@@ -63,7 +67,8 @@ class BuiltInEntity(Enum):
             Language.EN,
             Language.FR,
             Language.ES,
-            Language.KO
+            Language.KO,
+            Language.DE
         }
     }
 
@@ -71,7 +76,8 @@ class BuiltInEntity(Enum):
         LABEL: "snips/amountOfMoney",
         RUSTLING_DIM_KIND: "AmountOfMoney",
         SUPPORTED_LANGUAGES: {
-            Language.EN
+            Language.EN,
+            Language.KO
         }
     }
 

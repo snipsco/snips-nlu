@@ -180,8 +180,12 @@ class CRFTagger(object):
 
 
 def serialize_crf_model(crf_model):
+    # Make sure there is an existing filename
+    crf_model.modelfile.ensure_name()
     with io.open(crf_model.modelfile.name, mode='rb') as f:
         crfsuite_data = base64.b64encode(f.read()).decode('ascii')
+    # Clean up temp file afterwards
+    crf_model.modelfile.cleanup()
     return crfsuite_data
 
 

@@ -246,6 +246,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     def test_should_be_serializable_after_fitted_tagger_is_added(self):
         # Given
+        text = "Give me 3 cups of hot tea please"
         trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
         taggers = trained_engine.probabilistic_parser.crf_taggers
         trained_tagger_coffee = taggers["MakeCoffee"]
@@ -258,8 +259,21 @@ class TestSnipsNLUEngine(unittest.TestCase):
         engine.add_fitted_tagger("MakeCoffee", trained_tagger_data_coffee)
         engine.add_fitted_tagger("MakeTea", trained_tagger_data_tea)
         engine.fit(BEVERAGE_DATASET, intents=[])
+
+        # Then
         try:
-            engine.to_dict()
+            engine_dict = engine.to_dict()
+            new_engine = SnipsNLUEngine.from_dict(engine_dict)
+            result = new_engine.parse(text)
+            expected_slots = [
+                ParsedSlot((8, 9), '3', 'snips/number',
+                           'number_of_cups').as_dict(),
+                ParsedSlot((18, 21), 'hot', 'Temperature',
+                           'beverage_temperature').as_dict()
+            ]
+            self.assertEqual(result['text'], text)
+            self.assertEqual(result['intent']['intent_name'], 'MakeTea')
+            self.assertListEqual(result['slots'], expected_slots)
         except Exception, e:
             self.fail('Exception raised: %s' % e.message)
 

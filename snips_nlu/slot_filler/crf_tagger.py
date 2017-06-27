@@ -178,29 +178,27 @@ class CRFTagger(object):
         return cls(crf_model=crf, features_signatures=features_signatures,
                    tagging_scheme=tagging_scheme, language=language)
 
+    def __del__(self):
+        if self.crf_model.modelfile.auto \
+                or self.crf_model.modelfile.name is None:
+            return
+        try:
+            os.remove(self.crf_model.modelfile.name)
+        except OSError:
+            pass
+
 
 def serialize_crf_model(crf_model):
-    # Make sure there is an existing filename
-    crf_model.modelfile.ensure_name()
     with io.open(crf_model.modelfile.name, mode='rb') as f:
         crfsuite_data = base64.b64encode(f.read()).decode('ascii')
-    # Clean up temp file afterwards
-    crf_model.modelfile.cleanup()
     return crfsuite_data
 
 
 def deserialize_crf_model(crf_model_data):
     b64_data = base64.b64decode(crf_model_data)
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",
+                                     delete=False) as f:
         f.write(b64_data)
         f.flush()
         crf = CRF(model_filename=f.name)
-        # We need this line in order to initialize the tagger while the
-        # tempfile still exists
-        _ = crf.tagger_
-        # We then need to set a new file resource for the `modelfile` attribute
-        # to make sure the model can still be serialized after
-        crf.modelfile = FileResource(suffix=".crfsuite", prefix="model")
-        crf.modelfile.ensure_name()
-
     return crf

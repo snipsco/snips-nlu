@@ -8,6 +8,7 @@ import tempfile
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
+from sklearn_crfsuite._fileresource import FileResource
 
 import snips_nlu.slot_filler.feature_functions
 from snips_nlu.languages import Language
@@ -76,7 +77,8 @@ class CRFTagger(object):
     @property
     def labels(self):
         if self.crf_model.tagger_ is not None:
-            return [label.decode('utf8') for label in self.crf_model.tagger_.labels()]
+            return [label.decode('utf8') for label in
+                    self.crf_model.tagger_.labels()]
         else:
             return []
 
@@ -88,7 +90,8 @@ class CRFTagger(object):
         if not self.fitted:
             raise AssertionError("Model must be fitted before using predict")
         features = self.compute_features(tokens)
-        return [tag.decode('utf8') for tag in self.crf_model.predict_single(features)]
+        return [tag.decode('utf8') for tag in
+                self.crf_model.predict_single(features)]
 
     def get_sequence_probability(self, tokens, labels):
         if not self.fitted:
@@ -177,8 +180,12 @@ class CRFTagger(object):
 
 
 def serialize_crf_model(crf_model):
+    # Make sure there is an existing filename
+    crf_model.modelfile.ensure_name()
     with io.open(crf_model.modelfile.name, mode='rb') as f:
         crfsuite_data = base64.b64encode(f.read()).decode('ascii')
+    # Clean up temp file afterwards
+    crf_model.modelfile.cleanup()
     return crfsuite_data
 
 
@@ -191,4 +198,9 @@ def deserialize_crf_model(crf_model_data):
         # We need this line in order to initialize the tagger while the
         # tempfile still exists
         _ = crf.tagger_
+        # We then need to set a new file resource for the `modelfile` attribute
+        # to make sure the model can still be serialized after
+        crf.modelfile = FileResource(suffix=".crfsuite", prefix="model")
+        crf.modelfile.ensure_name()
+
     return crf

@@ -17,16 +17,18 @@ def language_specific_features(intent_entities):
                                 common_words_gazetteer_name="top_10000_words")
 
     gazetteer_names = ["cities_france", "cities_world", "countries",
-                       "departments_france", "departments_france",
+                       "departements_france", "regions_france",
                        "street_identifier"]
 
     for gazetteer_name in gazetteer_names:
         features.append({
             "factory_name": "get_is_in_gazetteer_fn",
-            "args": {"gazetteer_name": gazetteer_name,
-                     "language_code": language.iso_code,
-                     "tagging_scheme_code": TaggingScheme.BILOU.value,
-                     "use_stemming": False},
+            "args": {
+                "gazetteer_name": gazetteer_name,
+                "language_code": language.iso_code,
+                "tagging_scheme_code": TaggingScheme.BILOU.value,
+                "use_stemming": False
+            },
             "offsets": (-1, 0, 1)
         })
 

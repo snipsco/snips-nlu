@@ -13,8 +13,7 @@ def language_specific_features(intent_entities):
     language = Language.DE
     features = default_features(language, intent_entities, use_stemming=True,
                                 entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5,
-                                common_words_gazetteer_name="top_10000_words")
+                                entity_keep_prob=.5)
 
     gazetteer_names = ["cities_germany", "cities_world", "countries",
                        "lander_germany", "street_identifier"]
@@ -22,19 +21,13 @@ def language_specific_features(intent_entities):
     for gazetteer_name in gazetteer_names:
         features.append({
             "factory_name": "get_is_in_gazetteer_fn",
-            "args": {"gazetteer_name": gazetteer_name,
-                     "language_code": language.iso_code,
-                     "tagging_scheme_code": TaggingScheme.BILOU.value,
-                     "use_stemming": False},
+            "args": {
+                "gazetteer_name": gazetteer_name,
+                "language_code": language.iso_code,
+                "tagging_scheme_code": TaggingScheme.BILOU.value,
+                "use_stemming": False
+            },
             "offsets": (-1, 0, 1)
         })
-
-    features.append({
-        "factory_name": "get_word_cluster_fn",
-        "args": {"cluster_name": "brown_clusters",
-                 "language_code": language.iso_code,
-                 "use_stemming": False},
-        "offsets": (-2, -1, 0, 1)
-    })
 
     return features

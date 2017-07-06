@@ -754,3 +754,22 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
             # Then
             self.assertItemsEqual(scope, engine.tagging_scope)
+
+
+    def test_nlu_engine_should_train_and_parse_in_all_languages(self):
+        # Given
+        text = "brew me an expresso"
+        dataset = deepcopy(BEVERAGE_DATASET)
+        for l in Language:
+            engine = SnipsNLUEngine(l)
+
+            # When / Then
+            try:
+                engine = engine.fit(dataset)
+            except:
+                self.fail("Could not fit engine in %s" % l.iso_code)
+
+            try:
+                engine.parse(text)
+            except:
+                self.fail("Could not parse in %s" % l.iso_code)

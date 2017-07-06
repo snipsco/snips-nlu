@@ -9,7 +9,11 @@ from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
+    language_specific_features as de_features
+from snips_nlu.slot_filler.en.specific_features_functions import \
     language_specific_features as en_features
+from snips_nlu.slot_filler.en.specific_features_functions import \
+    language_specific_features as fr_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape, \
     get_word_chunk, initial_string_from_tokens
 from snips_nlu.slot_filler.ko.specific_features_functions import \
@@ -28,13 +32,9 @@ def crf_features(intent_entities, language):
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5)
     elif language == Language.FR:
-        return default_features(language, intent_entities, use_stemming=True,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+        return fr_features(intent_entities)
     elif language == Language.DE:
-        return default_features(language, intent_entities, use_stemming=True,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+        return de_features(intent_entities)
     elif language == Language.KO:
         return ko_features(intent_entities=intent_entities)
     else:

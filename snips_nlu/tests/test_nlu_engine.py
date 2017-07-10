@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import io
 import os
+import traceback as tb
 import unittest
 from copy import deepcopy
 
@@ -754,3 +755,23 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
             # Then
             self.assertItemsEqual(scope, engine.tagging_scope)
+
+    def test_nlu_engine_should_train_and_parse_in_all_languages(self):
+        # Given
+        text = "brew me an expresso"
+        dataset = deepcopy(BEVERAGE_DATASET)
+        for l in Language:
+            engine = SnipsNLUEngine(l)
+
+            # When / Then
+            try:
+                engine = engine.fit(dataset)
+            except Exception:
+                self.fail("Could not fit engine in '%s': %s"
+                          % (l.iso_code, tb.format_exc()))
+
+            try:
+                engine.parse(text)
+            except Exception:
+                self.fail("Could not fit engine in '%s': %s"
+                          % (l.iso_code, tb.format_exc()))

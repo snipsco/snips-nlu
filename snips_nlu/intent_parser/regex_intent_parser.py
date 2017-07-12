@@ -78,8 +78,12 @@ def get_queries_with_unique_context(intent_queries):
     contexts = set()
     queries = []
     for query in intent_queries:
-        context = " ".join(chunk[TEXT] for chunk in query[DATA]
-                           if ENTITY not in chunk)
+        context = ""
+        for chunk in query[DATA]:
+            if ENTITY not in chunk:
+                context += chunk[TEXT]
+            else:
+                context += get_builtin_entity_name(chunk[ENTITY])
         if context not in contexts:
             queries.append(query)
     return queries

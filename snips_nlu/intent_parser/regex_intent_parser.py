@@ -74,11 +74,23 @@ def query_to_pattern(query, joined_entity_utterances,
     return pattern, group_names_to_slot_names
 
 
+def get_queries_with_unique_context(intent_queries):
+    contexts = set()
+    queries = []
+    for query in intent_queries:
+        context = " ".join(chunk[TEXT] for chunk in query[DATA]
+                           if ENTITY not in chunk)
+        if context not in contexts:
+            queries.append(query)
+    return queries
+
+
 def generate_regexes(intent_queries, joined_entity_utterances,
                      group_names_to_labels):
+    queries = get_queries_with_unique_context(intent_queries)
     # Join all the entities utterances with a "|" to create the patterns
     patterns = set()
-    for query in intent_queries:
+    for query in queries:
         pattern, group_names_to_labels = query_to_pattern(
             query, joined_entity_utterances, group_names_to_labels)
         patterns.add(pattern)

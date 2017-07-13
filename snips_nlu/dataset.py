@@ -87,14 +87,15 @@ def validate_and_format_custom_entity(entity):
     valid_entity_data = []
     for entry in entity[DATA]:
         validate_type(entry, dict)
-        validate_keys(entry, [VALUE, SYNONYMS],
-                      object_label="entity entry")
-        if len(entry[VALUE]) == 0:
+        validate_keys(entry, [VALUE, SYNONYMS], object_label="entity entry")
+        if len(entry[VALUE].strip()) == 0:
             continue
-        entry[SYNONYMS] = [s for s in entry[SYNONYMS] if len(s) > 0]
+        entry[VALUE] = entry[VALUE].strip()
+        entry[SYNONYMS] = [s.strip().lower() for s in entry[SYNONYMS]
+                           if len(s.strip()) > 0]
         validate_type(entry[SYNONYMS], list)
-        if entry[VALUE] not in entry[SYNONYMS]:
-            entry[SYNONYMS].append(entry[VALUE])
+        if entry[VALUE].lower() not in entry[SYNONYMS]:
+            entry[SYNONYMS].append(entry[VALUE].lower())
         valid_entity_data.append(entry)
     entity[DATA] = valid_entity_data
     return entity
@@ -128,13 +129,14 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
 
 
 def add_entity_value_if_missing(value, entity):
-    if len(value) == 0:
+    normalized_value = value.lower().strip()
+    if len(normalized_value) == 0:
         return
     if entity[USE_SYNONYMS]:
-        entity_values = set(v for entry in entity[DATA] for v in
-                            entry[SYNONYMS] + [entry[VALUE]])
+        entity_values = set(v for entry in entity[DATA]
+                            for v in entry[SYNONYMS])
     else:
         entity_values = set(entry[VALUE] for entry in entity[DATA])
-    if value in entity_values:
+    if normalized_value in entity_values:
         return
-    entity[DATA].append({VALUE: value, SYNONYMS: [value]})
+    entity[DATA].append({VALUE: value, SYNONYMS: [normalized_value]})

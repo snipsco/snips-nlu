@@ -179,7 +179,7 @@ class CRFTagger(object):
                    tagging_scheme=tagging_scheme, language=language)
 
     def __del__(self):
-        if self.crf_model.modelfile.auto \
+        if self.crf_model is None or self.crf_model.modelfile.auto \
                 or self.crf_model.modelfile.name is None:
             return
         try:

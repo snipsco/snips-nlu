@@ -6,16 +6,16 @@ from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_word_clusters, get_gazetteer
 from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
-from snips_nlu.slot_filler.default.default_features_functions import \
-    default_features
 from snips_nlu.slot_filler.de.specific_features_functions import \
     language_specific_features as de_features
+from snips_nlu.slot_filler.default.default_features_functions import \
+    default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
     language_specific_features as en_features
-from snips_nlu.slot_filler.fr.specific_features_functions import \
-    language_specific_features as fr_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape, \
     get_word_chunk, initial_string_from_tokens
+from snips_nlu.slot_filler.fr.specific_features_functions import \
+    language_specific_features as fr_features
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
 
@@ -165,7 +165,7 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
         for ngram in ngrams:
             if ngram[NGRAM] in lowered_collection:
                 return get_scheme_prefix(token_index,
-                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         sorted(ngram[TOKEN_INDEXES]),
                                          tagging_scheme)
         return None
 
@@ -192,7 +192,7 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
         for ngram in ngrams:
             if ngram[NGRAM] in gazetteer:
                 return get_scheme_prefix(token_index,
-                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         sorted(ngram[TOKEN_INDEXES]),
                                          tagging_scheme)
         return None
 

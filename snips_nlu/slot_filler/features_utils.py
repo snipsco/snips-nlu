@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
 import re
-from copy import copy
 
-from snips_nlu.constants import NGRAM, TOKEN_INDEXES
+from nlu_utils import compute_all_ngrams
+
 from snips_nlu.utils import LimitedSizeDict
 
 _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
@@ -12,36 +12,9 @@ _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
 def get_all_ngrams(tokens):
     key = "<||>".join(tokens)
     if key not in _NGRAMS_CACHE:
-        ngrams = _get_all_ngrams(tokens)
+        ngrams = compute_all_ngrams(tokens, len(tokens))
         _NGRAMS_CACHE[key] = ngrams
     return _NGRAMS_CACHE[key]
-
-
-def _get_all_ngrams(tokens):
-    max_ngram_size = len(tokens)
-    max_start = len(tokens) - 1
-    min_end = 0
-
-    ngrams = []
-    for start in xrange(max_start + 1):
-        local_ngrams = []
-        last_ngram_item = None
-        _min_end = max(start, min_end)
-        _max_end = min(len(tokens), _min_end + max_ngram_size)
-        for end in xrange(_min_end, _max_end):
-            if last_ngram_item is not None:
-                indexes = copy(last_ngram_item[TOKEN_INDEXES])
-                indexes.add(end)
-                last_ngram = last_ngram_item[NGRAM]
-                ngram = "%s %s" % (last_ngram, tokens[end])
-            else:
-                indexes = set(xrange(start, end + 1))
-                ngram = " ".join(tokens[start:end + 1])
-            ngram_item = {NGRAM: ngram, TOKEN_INDEXES: indexes}
-            last_ngram_item = ngram_item
-            local_ngrams.append(ngram_item)
-        ngrams += local_ngrams
-    return ngrams
 
 
 def char_range_to_token_range(char_range, tokens_as_string):
@@ -100,6 +73,7 @@ def initial_string_from_tokens(tokens):
         s += t.value
         current_index = t.end
     return s
+
 
 LOWER_REGEX = re.compile(r"^[a-z]+$")
 UPPER_REGEX = re.compile(r"^[A-Z]+$")

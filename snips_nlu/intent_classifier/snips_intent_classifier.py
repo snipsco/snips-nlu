@@ -1,4 +1,5 @@
 import numpy as np
+from nlu_utils import normalize
 from sklearn.linear_model import SGDClassifier
 
 from data_augmentation import build_training_data, get_regularization_factor
@@ -62,9 +63,10 @@ class SnipsIntentClassifier(object):
                 return None
             return IntentClassificationResult(self.intent_list[0], 1.0)
 
-        stemmed_text = stem_sentence(text, self.language)
+        normalized_text = normalize(text)
+        normalized_text = stem_sentence(normalized_text, self.language)
 
-        X = self.featurizer.transform([stemmed_text])
+        X = self.featurizer.transform([normalized_text])
         proba_vect = self.classifier.predict_proba(X)
         predicted = np.argmax(proba_vect[0])
 

@@ -1,3 +1,6 @@
+# coding=utf-8
+from __future__ import unicode_literals
+
 import unittest
 
 import numpy as np
@@ -42,7 +45,7 @@ class TestFeatureFunctions(unittest.TestCase):
         mocked_gazetteer = {"i", "love", "music"}
 
         mocked_get_gazetteer.return_value = mocked_gazetteer
-        tokens = tokenize("I love house music")
+        tokens = tokenize("I love house Müsic")
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
             2: ["i love", "love rare_word", "rare_word music", None],
@@ -87,8 +90,8 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_token_is_in(self):
         # Given
-        collection = {"bIrd", "BLUE bird"}
-        tokens = tokenize("i m a blue bird")
+        collection = {"bird", "blue bird"}
+        tokens = tokenize("i m a Blue bÏrd")
         expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
         # When
         scheme_code = TaggingScheme.BILOU.value
@@ -107,7 +110,7 @@ class TestFeatureFunctions(unittest.TestCase):
         # Given
         gazetteer = {"bird", "eagle", "blue bird"}
         mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
-        text = "This is a blue bird flying next to an eagle"
+        text = "This is a Blue bÏrd flying next to an eagle"
         tokens = tokenize(text)
         feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
                                             Language.EN.iso_code,

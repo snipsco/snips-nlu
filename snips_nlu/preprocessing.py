@@ -2,6 +2,8 @@ import glob
 import io
 import os
 
+from nlu_utils import normalize
+
 from snips_nlu.utils import RESOURCES_PATH
 
 _LANGUAGE_STEMS = dict()
@@ -18,9 +20,9 @@ def verbs_lexemes(language):
         lines = [l.strip() for l in f]
     for line in lines:
         elements = line.split(';')
-        verb = elements[0]
+        verb = normalize(elements[0])
         lexemes = elements[1].split(',')
-        verb_lexemes.update({lexeme: verb for lexeme in lexemes})
+        verb_lexemes.update({normalize(lexeme): verb for lexeme in lexemes})
     return verb_lexemes
 
 
@@ -37,7 +39,7 @@ def word_inflections(language):
 
     for line in lines:
         elements = line.split(';')
-        inflections[elements[0]] = elements[1]
+        inflections[normalize(elements[0])] = normalize(elements[1])
     return inflections
 
 

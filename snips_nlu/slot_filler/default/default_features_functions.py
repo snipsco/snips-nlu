@@ -1,5 +1,7 @@
 import numpy as np
 
+from nlu_utils import normalize
+
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import DATA, USE_SYNONYMS, SYNONYMS, VALUE
 from snips_nlu.preprocessing import stem
@@ -77,7 +79,8 @@ def default_features(language, intent_entities, use_stemming,
 
     # Entity lookup
     def preprocess(string):
-        return stem(string, language) if use_stemming else string
+        normalized = normalize(string)
+        return stem(normalized, language) if use_stemming else normalized
 
     for entity_name, entity in intent_entities.iteritems():
         if len(entity[DATA]) == 0:

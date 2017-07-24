@@ -1,7 +1,10 @@
+from __future__ import unicode_literals
+
 import unittest
 
 import numpy as np
 from mock import patch
+from nlu_utils import normalize
 
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA
 from snips_nlu.dataset import get_text_from_chunks
@@ -25,6 +28,7 @@ class TestDataAugmentation(unittest.TestCase):
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
                                in dataset[INTENTS].values() for utterance in
                                intent[UTTERANCES]]
+        expected_utterances = [normalize(u) for u in expected_utterances]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
@@ -51,13 +55,14 @@ class TestDataAugmentation(unittest.TestCase):
         expected_utterances = [get_text_from_chunks(utterance[DATA])
                                for intent in dataset[INTENTS].values()
                                for utterance in intent[UTTERANCES]]
+        expected_utterances = [normalize(u) for u in expected_utterances]
         np.random.seed(42)
         noise = list(mocked_subtitles)
         noise_size = int(min(noise_factor * avg_utterances, len(noise)))
         noisy_utterances = np.random.choice(noise, size=noise_size,
                                             replace=False)
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1', None]
+        expected_intent_mapping = ['dummy_intent_2', 'dummy_intent_1', None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -79,9 +84,9 @@ class TestDataAugmentation(unittest.TestCase):
         expected_utterances = [get_text_from_chunks(utterance[DATA])
                                for intent in dataset[INTENTS].values()
                                for utterance in intent[UTTERANCES]]
-        expected_utterances = ["[STEMMED] %s" % utterance for utterance in
-                               expected_utterances]
-        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
+        expected_utterances = [normalize(u) for u in expected_utterances]
+        expected_utterances = ["[STEMMED] %s" % u for u in expected_utterances]
+        expected_intent_mapping = ['dummy_intent_2', 'dummy_intent_1']
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 

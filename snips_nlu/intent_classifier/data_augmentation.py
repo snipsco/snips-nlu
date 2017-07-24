@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import numpy as np
+from nlu_utils import normalize
 
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA
 from snips_nlu.dataset import get_text_from_chunks
@@ -19,8 +20,7 @@ def get_regularization_factor(dataset):
     return alpha
 
 
-def build_training_data(dataset, language,
-                        noise_factor=5, use_stemming=True):
+def build_training_data(dataset, language, noise_factor=5, use_stemming=True):
     # Creating class mapping
     intents = dataset[INTENTS]
     intent_index = 0
@@ -51,6 +51,10 @@ def build_training_data(dataset, language,
     utterance_classes += [noise_class for _ in noisy_utterances]
     if len(noisy_utterances) > 0:
         classes_mapping[NOISE_NAME] = noise_class
+
+    # Normalizing utterances
+    augmented_utterances = [normalize(utterance) for
+                            utterance in augmented_utterances]
 
     # Stemming utterances
     if use_stemming:

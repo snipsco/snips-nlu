@@ -1,3 +1,6 @@
+# coding=utf-8
+from __future__ import unicode_literals
+
 import unittest
 
 import numpy as np
@@ -87,8 +90,8 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_token_is_in(self):
         # Given
-        collection = {"bIrd", "BLUE bird"}
-        tokens = tokenize("i m a blue bird")
+        collection = {"bird", "blue bird"}
+        tokens = tokenize("i m a Blue bÏrd")
         expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
         # When
         scheme_code = TaggingScheme.BILOU.value

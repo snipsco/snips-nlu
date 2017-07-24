@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import io
 import os
 
+from nlu_utils import normalize
+
 from snips_nlu.constants import (STOP_WORDS, SUBTITLES,
                                  WORD_CLUSTERS, GAZETTEERS)
 from snips_nlu.languages import Language
@@ -73,7 +75,7 @@ def load_stop_words():
                 get_resources_path(language),
                 RESOURCE_INDEX[language][STOP_WORDS])
             with io.open(stop_words_file_path, encoding='utf8') as f:
-                lines = [l.strip() for l in f]
+                lines = [normalize(l) for l in f]
                 _STOP_WORDS[language] = set(l for l in lines if len(l) > 0)
 
 
@@ -132,7 +134,7 @@ def load_gazetteers():
             with io.open(path, encoding="utf8") as f:
                 _gazetteers[name] = set()
                 for l in f:
-                    normalized = l.strip().lower()
+                    normalized = normalize(l)
                     if len(normalized) > 0:
                         normalized = " ".join(
                             [t.value for t in tokenize(normalized)])

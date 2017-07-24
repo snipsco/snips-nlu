@@ -45,7 +45,7 @@ class TestFeatureFunctions(unittest.TestCase):
         mocked_gazetteer = {"i", "love", "music"}
 
         mocked_get_gazetteer.return_value = mocked_gazetteer
-        tokens = tokenize("I love house music")
+        tokens = tokenize("I love house Müsic")
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
             2: ["i love", "love rare_word", "rare_word music", None],
@@ -110,7 +110,7 @@ class TestFeatureFunctions(unittest.TestCase):
         # Given
         gazetteer = {"bird", "eagle", "blue bird"}
         mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
-        text = "This is a blue bird flying next to an eagle"
+        text = "This is a Blue bÏrd flying next to an eagle"
         tokens = tokenize(text)
         feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
                                             Language.EN.iso_code,

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import re
 from copy import deepcopy
 
+from nlu_utils import normalize
 from semantic_version import Version
 
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
@@ -91,11 +92,12 @@ def validate_and_format_custom_entity(entity):
         if len(entry[VALUE].strip()) == 0:
             continue
         entry[VALUE] = entry[VALUE].strip()
-        entry[SYNONYMS] = [s.strip().lower() for s in entry[SYNONYMS]
+        entry[SYNONYMS] = [normalize(s) for s in entry[SYNONYMS]
                            if len(s.strip()) > 0]
         validate_type(entry[SYNONYMS], list)
-        if entry[VALUE].lower() not in entry[SYNONYMS]:
-            entry[SYNONYMS].append(entry[VALUE].lower())
+        normalized_value = normalize(entry[VALUE])
+        if normalized_value not in entry[SYNONYMS]:
+            entry[SYNONYMS].append(normalized_value)
         valid_entity_data.append(entry)
     entity[DATA] = valid_entity_data
     return entity
@@ -129,7 +131,7 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
 
 
 def add_entity_value_if_missing(value, entity):
-    normalized_value = value.lower().strip()
+    normalized_value = normalize(value)
     if len(normalized_value) == 0:
         return
     if entity[USE_SYNONYMS]:

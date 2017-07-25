@@ -14,22 +14,22 @@ class TestFeaturesUtils(unittest.TestCase):
 
         # Then
         expected_ngrams = [
-            {NGRAM: 'this', TOKEN_INDEXES: {0}},
-            {NGRAM: 'this is', TOKEN_INDEXES: {0, 1}},
-            {NGRAM: 'this is a', TOKEN_INDEXES: {0, 1, 2}},
-            {NGRAM: 'this is a simple', TOKEN_INDEXES: {0, 1, 2, 3}},
+            {NGRAM: 'this', TOKEN_INDEXES: [0]},
+            {NGRAM: 'this is', TOKEN_INDEXES: [0, 1]},
+            {NGRAM: 'this is a', TOKEN_INDEXES: [0, 1, 2]},
+            {NGRAM: 'this is a simple', TOKEN_INDEXES: [0, 1, 2, 3]},
             {NGRAM: 'this is a simple sentence',
-             TOKEN_INDEXES: {0, 1, 2, 3, 4}},
-            {NGRAM: 'is', TOKEN_INDEXES: {1}},
-            {NGRAM: 'is a', TOKEN_INDEXES: {1, 2}},
-            {NGRAM: 'is a simple', TOKEN_INDEXES: {1, 2, 3}},
-            {NGRAM: 'is a simple sentence', TOKEN_INDEXES: {1, 2, 3, 4}},
-            {NGRAM: 'a', TOKEN_INDEXES: {2}},
-            {NGRAM: 'a simple', TOKEN_INDEXES: {2, 3}},
-            {NGRAM: 'a simple sentence', TOKEN_INDEXES: {2, 3, 4}},
-            {NGRAM: 'simple', TOKEN_INDEXES: {3}},
-            {NGRAM: 'simple sentence', TOKEN_INDEXES: {3, 4}},
-            {NGRAM: 'sentence', TOKEN_INDEXES: {4}}
+             TOKEN_INDEXES: [0, 1, 2, 3, 4]},
+            {NGRAM: 'is', TOKEN_INDEXES: [1]},
+            {NGRAM: 'is a', TOKEN_INDEXES: [1, 2]},
+            {NGRAM: 'is a simple', TOKEN_INDEXES: [1, 2, 3]},
+            {NGRAM: 'is a simple sentence', TOKEN_INDEXES: [1, 2, 3, 4]},
+            {NGRAM: 'a', TOKEN_INDEXES: [2]},
+            {NGRAM: 'a simple', TOKEN_INDEXES: [2, 3]},
+            {NGRAM: 'a simple sentence', TOKEN_INDEXES: [2, 3, 4]},
+            {NGRAM: 'simple', TOKEN_INDEXES: [3]},
+            {NGRAM: 'simple sentence', TOKEN_INDEXES: [3, 4]},
+            {NGRAM: 'sentence', TOKEN_INDEXES: [4]}
         ]
 
         self.assertListEqual(expected_ngrams, ngrams)

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from collections import namedtuple
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
@@ -6,16 +8,16 @@ from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_word_clusters, get_gazetteer
 from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
-from snips_nlu.slot_filler.default.default_features_functions import \
-    default_features
 from snips_nlu.slot_filler.de.specific_features_functions import \
     language_specific_features as de_features
+from snips_nlu.slot_filler.default.default_features_functions import \
+    default_features
 from snips_nlu.slot_filler.en.specific_features_functions import \
     language_specific_features as en_features
-from snips_nlu.slot_filler.fr.specific_features_functions import \
-    language_specific_features as fr_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape, \
     get_word_chunk, initial_string_from_tokens
+from snips_nlu.slot_filler.fr.specific_features_functions import \
+    language_specific_features as fr_features
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
 
@@ -68,16 +70,17 @@ def is_last():
 
 def get_prefix_fn(prefix_size):
     def prefix(tokens, token_index):
-        return get_word_chunk(tokens[token_index].value.lower(), prefix_size,
-                              0)
+        return get_word_chunk(tokens[token_index].normalized_value,
+                              prefix_size, 0)
 
     return BaseFeatureFunction("prefix-%s" % prefix_size, prefix)
 
 
 def get_suffix_fn(suffix_size):
     def suffix(tokens, token_index):
-        return get_word_chunk(tokens[token_index].value.lower(), suffix_size,
-                              len(tokens[token_index].value), reverse=True)
+        return get_word_chunk(tokens[token_index].normalized_value,
+                              suffix_size, len(tokens[token_index].value),
+                              reverse=True)
 
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
@@ -103,17 +106,15 @@ def get_ngram_fn(n, use_stemming, language_code=None,
         if 0 <= token_index < max_len and end <= max_len:
             if gazetteer is None:
                 if use_stemming:
-                    return " ".join(t.stem.lower()
-                                    for t in tokens[token_index:end])
+                    return " ".join(t.stem for t in tokens[token_index:end])
                 else:
-                    return " ".join(t.value.lower()
+                    return " ".join(t.normalized_value
                                     for t in tokens[token_index:end])
             else:
                 words = []
                 for t in tokens[token_index:end]:
-                    lowered = t.stem.lower() if use_stemming else \
-                        t.value.lower()
-                    words.append(lowered if lowered in gazetteer
+                    normalized = t.stem if use_stemming else t.normalized_value
+                    words.append(normalized if normalized in gazetteer
                                  else "rare_word")
                 return " ".join(words)
         return None
@@ -141,7 +142,7 @@ def get_word_cluster_fn(cluster_name, language_code, use_stemming):
 
     def word_cluster(tokens, token_index):
         normalized_value = tokens[token_index].stem if use_stemming \
-            else tokens[token_index].value.lower()
+            else tokens[token_index].normalized_value
         return get_word_clusters(language)[cluster_name].get(normalized_value,
                                                              None)
 
@@ -150,22 +151,25 @@ def get_word_cluster_fn(cluster_name, language_code, use_stemming):
 
 def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
                        tagging_scheme_code, language_code):
-    lowered_collection = set([c.lower() for c in tokens_collection])
+    if use_stemming:
+        language = Language.from_iso_code(language_code)
+        tokens_collection = set(
+            [stem(c, language) for c in tokens_collection])
     tagging_scheme = TaggingScheme(tagging_scheme_code)
 
     def transform(token):
-        return token.stem if use_stemming else token.value
+        return token.stem if use_stemming else token.normalized_value
 
     def token_is_in(tokens, token_index):
-        normalized_tokens = map(lambda t: transform(t).lower(), tokens)
+        normalized_tokens = map(transform, tokens)
         ngrams = get_all_ngrams(normalized_tokens)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)
         for ngram in ngrams:
-            if ngram[NGRAM] in lowered_collection:
+            if ngram[NGRAM] in tokens_collection:
                 return get_scheme_prefix(token_index,
-                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         sorted(ngram[TOKEN_INDEXES]),
                                          tagging_scheme)
         return None
 
@@ -181,10 +185,10 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
     tagging_scheme = TaggingScheme(tagging_scheme_code)
 
     def transform(token):
-        return token.stem if use_stemming else token.value
+        return token.stem if use_stemming else token.normalized_value
 
     def is_in_gazetter(tokens, token_index):
-        normalized_tokens = map(lambda t: transform(t).lower(), tokens)
+        normalized_tokens = map(transform, tokens)
         ngrams = get_all_ngrams(normalized_tokens)
         ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
@@ -192,7 +196,7 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
         for ngram in ngrams:
             if ngram[NGRAM] in gazetteer:
                 return get_scheme_prefix(token_index,
-                                         sorted(list(ngram[TOKEN_INDEXES])),
+                                         sorted(ngram[TOKEN_INDEXES]),
                                          tagging_scheme)
         return None
 

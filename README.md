@@ -1,4 +1,4 @@
-# Snips NLU (0.8.13)
+# Snips NLU (0.8.14)
 
 [![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/snips-nlu/master)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/view/Branches/job/master)
 

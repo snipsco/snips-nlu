@@ -8,7 +8,6 @@ import tempfile
 from copy import deepcopy
 
 from sklearn_crfsuite import CRF
-from sklearn_crfsuite._fileresource import FileResource
 
 import snips_nlu.slot_filler.feature_functions
 from snips_nlu.languages import Language
@@ -141,7 +140,8 @@ class CRFTagger(object):
     def compute_features(self, tokens):
         tokens = [
             Token(t.value, t.start, t.end,
-                  stem=stem(t.value.lower(), self.language)) for t in tokens]
+                  stem=stem(t.normalized_value, self.language))
+            for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         for i in range(len(tokens)):

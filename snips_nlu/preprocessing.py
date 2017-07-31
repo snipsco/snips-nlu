@@ -54,7 +54,7 @@ def language_stems(language):
 def stem_sentence(string, language):
     tokens = string.split()
     stemmed_tokens = [stem(token, language) for token in tokens]
-    return ' '.join(stemmed_tokens)
+    return language.default_sep.join(stemmed_tokens)
 
 
 def stem(string, language):

@@ -39,6 +39,10 @@ def crf_features(intent_entities, language):
         return de_features(intent_entities)
     elif language == Language.KO:
         return ko_features(intent_entities=intent_entities)
+    elif language == Language.ZH:
+        return default_features(language, intent_entities, use_stemming=True,
+                                entities_offsets=(-2, -1, 0),
+                                entity_keep_prob=.5)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)

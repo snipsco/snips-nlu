@@ -58,6 +58,10 @@ RESOURCE_INDEX = {
         ],
         STOP_WORDS: "stop_words.txt",
         SUBTITLES: "subtitles.txt",
+    },
+    Language.ZH: {
+        STOP_WORDS: "stop_words.txt",
+        SUBTITLES: "subtitles.txt"
     }
 }
 
@@ -136,8 +140,8 @@ def load_gazetteers():
                 for l in f:
                     normalized = normalize(l)
                     if len(normalized) > 0:
-                        normalized = " ".join(
-                            [t.value for t in tokenize(normalized)])
+                        normalized = language.default_sep.join(
+                            [t.value for t in tokenize(normalized, language)])
                         _gazetteers[name].add(normalized)
 
 

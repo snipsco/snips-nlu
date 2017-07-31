@@ -1,8 +1,18 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+from jieba import Tokenizer
 from nlu_utils import (tokenize as _tokenize,
-                       tokenize_light as _tokenize_light, normalize)
+                       tokenize_light as _tokenize_light,
+                       normalize)
+
+from snips_nlu.languages import Language
+
+JIEBA_TOKENIZER = Tokenizer()
+
+
+def initialize_jieba_tokenizer():
+    JIEBA_TOKENIZER.check_initialized()
 
 
 class Token(object):
@@ -24,22 +34,34 @@ class Token(object):
     def __eq__(self, other):
         if type(other) != type(self):
             return False
-        return self.value == other.value and \
-               self.start == other.start and \
-               self.end == other.end and \
-               self.stem == other.stem
+        return (self.value == other.value
+                and self.start == other.start
+                and self.end == other.end
+                and self.stem == other.stem)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
 
-def tokenize(string):
-    return [
-        Token(
-            value=token["value"],
-            start=token["char_range"]["start"],
-            end=token["char_range"]["end"])
-        for token in _tokenize(string)]
+def tokenize(string, language):
+    if language == Language.ZH:
+        if not isinstance(string, unicode):
+            string = string.decode("utf8")
+        jiebla_tokens = JIEBA_TOKENIZER.tokenize(string)
+        tokens = [Token(value=value, start=start, end=end)
+                  for value, start, end in jiebla_tokens
+                  if value.strip() not in language.punctuation]
+    else:
+        tokens = [Token(value=token["value"],
+                        start=token["char_range"]["start"],
+                        end=token["char_range"]["end"])
+                  for token in _tokenize(string)]
+    return tokens
 
 
-tokenize_light = _tokenize_light
+def tokenize_light(string, language):
+    if language == Language.ZH:
+        tokenized_string = "".join(t.value for t in tokenize(string, language))
+    else:
+        tokenized_string = _tokenize_light(string)
+    return tokenized_string

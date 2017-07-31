@@ -6,7 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.languages import Language
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.tokenization import tokenize
 
 
 class TestFeaturizer(unittest.TestCase):
@@ -15,8 +15,9 @@ class TestFeaturizer(unittest.TestCase):
         language = Language.EN
         pvalue_threshold = 0.51
         stop_words = ["the", "is"]
-        tfidf_vectorizer = TfidfVectorizer(tokenizer=tokenize_light,
-                                           stop_words=stop_words)
+        tfidf_vectorizer = TfidfVectorizer(
+            tokenizer=lambda x: [t.value for t in tokenize(x, language)],
+            stop_words=stop_words)
         featurizer = Featurizer(language, tfidf_vectorizer, pvalue_threshold)
         queries = [
             "hello beautiful world",

@@ -13,6 +13,7 @@ from snips_nlu.tokenization import tokenize
 class TestCRFTagger(unittest.TestCase):
     @patch('snips_nlu.slot_filler.crf_tagger.serialize_crf_model')
     def test_should_be_serializable(self, mock_serialize_crf_model):
+        language = Language.EN
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
         crf_model = default_crf_model()
@@ -31,11 +32,11 @@ class TestCRFTagger(unittest.TestCase):
         tagging_scheme = TaggingScheme.BILOU
         data = [
             {
-                "tokens": tokenize("I love blue birds"),
+                "tokens": tokenize("I love blue birds", language),
                 "tags": ["O", "O", "B-COLOR", "O"]
             },
             {
-                "tokens": tokenize("I like red birds"),
+                "tokens": tokenize("I like red birds", language),
                 "tags": ["O", "O", "B-COLOR", "O"]
             }
         ]

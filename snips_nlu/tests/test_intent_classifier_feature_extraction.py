@@ -10,7 +10,7 @@ class TestFeatureExtraction(unittest.TestCase):
     def test_should_be_serializable(self):
         # Given
         language = Language.EN
-        tfidf_vectorizer = default_tfidf_vectorizer()
+        tfidf_vectorizer = default_tfidf_vectorizer(language)
         pvalue_threshold = 0.42
         featurizer = Featurizer(language, tfidf_vectorizer=tfidf_vectorizer,
                                 pvalue_threshold=pvalue_threshold)

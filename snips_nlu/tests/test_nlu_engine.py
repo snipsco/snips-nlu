@@ -825,3 +825,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             except Exception:
                 self.fail("Could not fit engine in '%s': %s"
                           % (l.iso_code, tb.format_exc()))
+
+
+if __name__ == '__main__':
+    ""

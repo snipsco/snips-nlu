@@ -16,10 +16,6 @@ from snips_nlu.utils import LimitedSizeDict, regex_escape
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
-SPACE = " "
-WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
-IGNORED_CHARACTERS = "%s.,;/:+*-`\"(){}" % WHITE_SPACES
-IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(IGNORED_CHARACTERS)
 
 
 def get_index(index):
@@ -55,7 +51,7 @@ def get_slot_names_mapping(dataset):
 
 
 def query_to_pattern(query, joined_entity_utterances,
-                     group_names_to_slot_names, ):
+                     group_names_to_slot_names, language):
     pattern = []
     for i, chunk in enumerate(query[DATA]):
         if SLOT_NAME in chunk:
@@ -66,11 +62,11 @@ def query_to_pattern(query, joined_entity_utterances,
             pattern.append(
                 r"(?P<%s>%s)" % (max_index, joined_entity_utterances[entity]))
         else:
-            tokens = tokenize_light(chunk[TEXT])
+            tokens = tokenize_light(chunk[TEXT], language)
             pattern += [regex_escape(t) for t in tokens]
-    pattern = r"^%s%s%s$" % (IGNORED_CHARACTERS_PATTERN,
-                             IGNORED_CHARACTERS_PATTERN.join(pattern),
-                             IGNORED_CHARACTERS_PATTERN)
+    pattern = r"^%s%s%s$" % (language.ignored_characters_pattern,
+                             language.ignored_characters_pattern.join(pattern),
+                             language.ignored_characters_pattern)
     return pattern, group_names_to_slot_names
 
 
@@ -90,13 +86,13 @@ def get_queries_with_unique_context(intent_queries):
 
 
 def generate_regexes(intent_queries, joined_entity_utterances,
-                     group_names_to_labels):
+                     group_names_to_labels, language):
     queries = get_queries_with_unique_context(intent_queries)
     # Join all the entities utterances with a "|" to create the patterns
     patterns = set()
     for query in queries:
         pattern, group_names_to_labels = query_to_pattern(
-            query, joined_entity_utterances, group_names_to_labels)
+            query, joined_entity_utterances, group_names_to_labels, language)
         patterns.add(pattern)
     regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
     return regexes, group_names_to_labels
@@ -120,7 +116,7 @@ def get_joined_entity_utterances(dataset):
     return joined_entity_utterances
 
 
-def deduplicate_overlapping_slots(slots):
+def deduplicate_overlapping_slots(slots, language):
     deduplicated_slots = []
     for slot in slots:
         is_overlapping = False
@@ -128,8 +124,8 @@ def deduplicate_overlapping_slots(slots):
             if slot.match_range[1] > dedup_slot.match_range[0] \
                     and slot.match_range[0] < dedup_slot.match_range[1]:
                 is_overlapping = True
-                tokens = tokenize(slot.value)
-                dedup_tokens = tokenize(dedup_slot.value)
+                tokens = tokenize(slot.value, language)
+                dedup_tokens = tokenize(dedup_slot.value, language)
                 if len(tokens) > len(dedup_tokens):
                     deduplicated_slots[slot_index] = slot
                 elif len(tokens) == len(dedup_tokens) \
@@ -141,7 +137,10 @@ def deduplicate_overlapping_slots(slots):
 
 
 def get_builtin_entity_name(entity_label):
-    return "%%%s%%" % "".join(tokenize_light(entity_label)).upper()
+    # This is a hack, here we don't care what language is actually used to
+    # tokenize
+    return "%%%s%%" % "".join(
+        tokenize_light(entity_label, Language.EN)).upper()
 
 
 def preprocess_builtin_entities(utterance, language):
@@ -221,7 +220,7 @@ class RegexIntentParser(object):
                           for u in intent[UTTERANCES]]
             regexes, self.group_names_to_slot_names = generate_regexes(
                 utterances, joined_entity_utterances,
-                self.group_names_to_slot_names)
+                self.group_names_to_slot_names, self.language)
             self.regexes_per_intent[intent_name] = regexes
         return self
 
@@ -279,7 +278,8 @@ class RegexIntentParser(object):
                         match_range=rng, value=value, entity=entity,
                         slot_name=slot_name)
                     slots.append(parsed_slot)
-                parsed_slots = deduplicate_overlapping_slots(slots)
+                parsed_slots = deduplicate_overlapping_slots(
+                    slots, self.language)
                 break
             if matched:
                 break

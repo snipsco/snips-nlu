@@ -1,7 +1,10 @@
+from __future__ import unicode_literals
+
 import unittest
 
 from mock import patch
 
+from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
@@ -14,6 +17,7 @@ from snips_nlu.tokenization import tokenize, Token
 class TestCRFUtils(unittest.TestCase):
     def test_io_tags_to_slots(self):
         # Given
+        language = Language.EN
         slot_name = "animal"
         intent_slots_mapping = {"animal": "animal"}
         tags = [
@@ -113,7 +117,8 @@ class TestCRFUtils(unittest.TestCase):
 
         for data in tags:
             # When
-            slots = tags_to_slots(data["text"], tokenize(data["text"]),
+            slots = tags_to_slots(
+                data["text"], tokenize(data["text"], language),
                                   data["tags"], TaggingScheme.IO,
                                   intent_slots_mapping)
             # Then
@@ -121,6 +126,7 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_bio_tags_to_slots(self):
         # Given
+        language = Language.EN
         slot_name = "animal"
         intent_slots_mapping = {"animal": "animal"}
         tags = [
@@ -253,7 +259,8 @@ class TestCRFUtils(unittest.TestCase):
 
         for data in tags:
             # When
-            slots = tags_to_slots(data["text"], tokenize(data["text"]),
+            slots = tags_to_slots(
+                data["text"], tokenize(data["text"], language),
                                   data["tags"], TaggingScheme.BIO,
                                   intent_slots_mapping)
             # Then
@@ -261,6 +268,7 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_bilou_tags_to_slots(self):
         # Given
+        language = Language.EN
         slot_name = "animal"
         intent_slots_mapping = {"animal": "animal"}
         tags = [
@@ -425,9 +433,10 @@ class TestCRFUtils(unittest.TestCase):
 
         for data in tags:
             # When
-            slots = tags_to_slots(data["text"], tokenize(data["text"]),
-                                  data["tags"], TaggingScheme.BILOU,
-                                  intent_slots_mapping)
+            slots = tags_to_slots(
+                data["text"], tokenize(data["text"], language),
+                data["tags"], TaggingScheme.BILOU,
+                intent_slots_mapping)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
@@ -448,6 +457,8 @@ class TestCRFUtils(unittest.TestCase):
     @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
     def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
+        language = Language.EN
+
         def mock_positive_tagging(tagging_scheme, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
@@ -467,7 +478,7 @@ class TestCRFUtils(unittest.TestCase):
                            "tags": expected_tagging}
 
         # When
-        sample = utterance_to_sample(query_data, TaggingScheme.IO)
+        sample = utterance_to_sample(query_data, TaggingScheme.IO, language)
 
         # Then
         self.assertEqual(sample, expected_sample)
@@ -477,6 +488,8 @@ class TestCRFUtils(unittest.TestCase):
                                                     mocked_positive_tagging):
 
         # Given
+        language = Language.EN
+
         def mock_positive_tagging(tagging_scheme, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
@@ -498,7 +511,7 @@ class TestCRFUtils(unittest.TestCase):
         expected_sample = {"tokens": expected_tokens, "tags": expected_tagging}
 
         # When
-        sample = utterance_to_sample(query_data, TaggingScheme.IO)
+        sample = utterance_to_sample(query_data, TaggingScheme.IO, language)
 
         # Then
         mocked_positive_tagging.assert_called()

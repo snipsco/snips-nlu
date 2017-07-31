@@ -24,7 +24,8 @@ from snips_nlu.tokenization import tokenize
 class TestFeatureFunctions(unittest.TestCase):
     def test_ngrams(self):
         # Given
-        tokens = tokenize("I love house music")
+        language = Language.EN
+        tokens = tokenize("I love house music", language)
         ngrams = {
             1: ["i", "love", "house", "music"],
             2: ["i love", "love house", "house music", None],
@@ -45,7 +46,8 @@ class TestFeatureFunctions(unittest.TestCase):
         mocked_gazetteer = {"i", "love", "music"}
 
         mocked_get_gazetteer.return_value = mocked_gazetteer
-        tokens = tokenize("I love house Müsic")
+        language = Language.EN
+        tokens = tokenize("I love house Müsic", language)
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
             2: ["i love", "love rare_word", "rare_word music", None],
@@ -54,7 +56,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
         for n, expected_features in ngrams.iteritems():
             ngrams_fn = get_ngram_fn(n, use_stemming=False,
-                                     language_code=Language.EN.iso_code,
+                                     language_code=language.iso_code,
                                      common_words_gazetteer_name='common')
             # When
             features = [ngrams_fn.function(tokens, i)
@@ -64,7 +66,8 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_prefix(self):
         # Given
-        tokens = tokenize("AbCde")
+        language = Language.EN
+        tokens = tokenize("AbCde", language)
         token = tokens[0]
         expected_prefixes = ["a", "ab", "abc", "abcd", "abcde", None]
 
@@ -77,7 +80,8 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_suffix(self):
         # Given
-        tokens = tokenize("AbCde")
+        language = Language.EN
+        tokens = tokenize("AbCde", language)
         token = tokens[0]
         expected_suffixes = ["e", "de", "cde", "bcde", "abcde", None]
 
@@ -90,8 +94,9 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_token_is_in(self):
         # Given
+        language = Language.EN
         collection = {"bird", "blue bird"}
-        tokens = tokenize("i m a Blue bÏrd")
+        tokens = tokenize("i m a Blue bÏrd", language)
         expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
         # When
         scheme_code = TaggingScheme.BILOU.value
@@ -138,9 +143,10 @@ class TestFeatureFunctions(unittest.TestCase):
         gazetteer = {"bird", "eagle", "blue bird"}
         mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
         text = "This is a Blue bÏrd flying next to an eagle"
-        tokens = tokenize(text)
+        language = Language.EN
+        tokens = tokenize(text, language=language)
         feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
-                                            Language.EN.iso_code,
+                                            language.iso_code,
                                             TaggingScheme.BILOU.value,
                                             use_stemming=False)
 
@@ -156,6 +162,7 @@ class TestFeatureFunctions(unittest.TestCase):
     @patch('snips_nlu.slot_filler.feature_functions.get_builtin_entities')
     def test_get_built_in_annotation_fn(self, mocked_get_builtin_entities):
         # Given
+        language = Language.EN
         input_text = u"i ll be there tomorrow at noon   is that ok"
 
         mocked_built_in_entities = [
@@ -167,7 +174,7 @@ class TestFeatureFunctions(unittest.TestCase):
         ]
 
         mocked_get_builtin_entities.return_value = mocked_built_in_entities
-        tokens = tokenize(input_text)
+        tokens = tokenize(input_text, language)
         feature_fn = get_built_in_annotation_fn(BuiltInEntity.DATETIME.label,
                                                 Language.EN.iso_code,
                                                 TaggingScheme.BILOU.value)
@@ -200,11 +207,12 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_create_feature_function(self):
         # Given
+        language = Language.EN
         name = "position"
         base_feature_function = BaseFeatureFunction(
             name, lambda _, token_index: token_index + 1)
 
-        tokens = tokenize("a b c")
+        tokens = tokenize("a b c", language)
         expected_features = {
             0: ("position", [1, 2, 3]),
             -1: ("position[-1]", [None, 1, 2]),

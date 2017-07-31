@@ -45,8 +45,9 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
     def test_augment_slots(self):
         # Given
+        language = Language.EN
         text = "Find me a flight before 10pm and after 8pm"
-        tokens = tokenize(text)
+        tokens = tokenize(text, language)
         intent_slots_mapping = {
             "start_date": "snips/datetime",
             "end_date": "snips/datetime",

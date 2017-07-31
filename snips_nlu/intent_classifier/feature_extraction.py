@@ -8,23 +8,26 @@ from sklearn.feature_selection import chi2
 
 from snips_nlu.languages import Language
 from snips_nlu.resources import get_stop_words
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.tokenization import tokenize_light, tokenize
 
 
-def default_tfidf_vectorizer():
-    return TfidfVectorizer(tokenizer=tokenize_light)
+def default_tfidf_vectorizer(language):
+    return TfidfVectorizer(
+        tokenizer=lambda x: [t.value for t in tokenize(x, language)])
 
 
 class Featurizer(object):
-    def __init__(self, language, tfidf_vectorizer=default_tfidf_vectorizer(),
-                 pvalue_threshold=0.4):
+    def __init__(self, language, tfidf_vectorizer=None, pvalue_threshold=0.4):
+        self.language = language
+        if tfidf_vectorizer is None:
+            tfidf_vectorizer = default_tfidf_vectorizer(self.language)
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = None
         self.pvalue_threshold = pvalue_threshold
-        self.language = language
 
     def fit(self, queries, y):
-        if all(len("".join(tokenize_light(q))) == 0 for q in queries):
+        if all(len("".join(tokenize_light(q, self.language))) == 0
+               for q in queries):
             return None
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             query.encode('utf-8') for query in queries)
@@ -72,7 +75,8 @@ class Featurizer(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        tfidf_vectorizer = default_tfidf_vectorizer()
+        language = Language.from_iso_code(obj_dict['language_code'])
+        tfidf_vectorizer = default_tfidf_vectorizer(language)
         tfidf_vectorizer.vocabulary_ = obj_dict['tfidf_vectorizer_vocab']
         tfidf_vectorizer.stop_words = obj_dict['tfidf_vectorizer_stop_words']
         idf_diag_data = np.array(obj_dict['tfidf_vectorizer_idf_diag'])
@@ -85,7 +89,7 @@ class Featurizer(object):
         tfidf_transformer._idf_diag = idf_diag
         tfidf_vectorizer._tfidf = tfidf_transformer
         self = cls(
-            language=Language.from_iso_code(obj_dict['language_code']),
+            language=language,
             tfidf_vectorizer=tfidf_vectorizer,
             pvalue_threshold=obj_dict['pvalue_threshold']
         )

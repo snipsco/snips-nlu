@@ -166,11 +166,11 @@ def negative_tagging(size):
     return [OUTSIDE for _ in xrange(size)]
 
 
-def utterance_to_sample(query_data, tagging_scheme):
+def utterance_to_sample(query_data, tagging_scheme, language):
     tokens, tags = [], []
     current_length = 0
     for i, chunk in enumerate(query_data):
-        chunk_tokens = tokenize(chunk[TEXT])
+        chunk_tokens = tokenize(chunk[TEXT], language)
         tokens += [Token(t.value, current_length + t.start,
                          current_length + t.end) for t in chunk_tokens]
         current_length += len(chunk[TEXT])

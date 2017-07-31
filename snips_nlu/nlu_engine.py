@@ -11,7 +11,7 @@ from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity, \
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME,
-    USE_SYNONYMS, SYNONYMS, TOKEN_INDEXES, NGRAM)
+    USE_SYNONYMS, SYNONYMS)
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
@@ -25,8 +25,6 @@ from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
-from snips_nlu.slot_filler.features_utils import get_all_ngrams
-from snips_nlu.tokenization import tokenize
 
 
 class NLUEngine(object):
@@ -53,34 +51,6 @@ class NLUEngine(object):
     @abstractmethod
     def parse(self, text):
         pass
-
-
-def _tag_seen_entities(text, entities):
-    # TODO handle case properly but can be tricky with the synonyms mapping
-    tokens = tokenize(text)
-    ngrams = get_all_ngrams([t.value for t in tokens])
-    ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
-                    reverse=True)
-
-    slots = []
-    for ngram in ngrams:
-        ngram_slots = []
-        str_ngram = ngram[NGRAM]
-        matched_several_entities = False
-        for entity_name, entity_data in entities.iteritems():
-            if str_ngram in entity_data[UTTERANCES]:
-                if len(ngram_slots) == 1:
-                    matched_several_entities = True
-                    break
-                rng = (tokens[min(ngram[TOKEN_INDEXES])].start,
-                       tokens[max(ngram[TOKEN_INDEXES])].end)
-                value = entity_data[UTTERANCES][str_ngram]
-                ngram_slots.append(
-                    ParsedSlot(rng, value, entity_name, entity_name))
-        if not matched_several_entities:
-            slots = enrich_slots(slots, ngram_slots)
-
-    return slots
 
 
 def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,

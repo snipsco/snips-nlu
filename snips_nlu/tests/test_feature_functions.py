@@ -33,7 +33,8 @@ class TestFeatureFunctions(unittest.TestCase):
         }
 
         for n, expected_features in ngrams.iteritems():
-            ngrams_fn = get_ngram_fn(n, use_stemming=False)
+            ngrams_fn = get_ngram_fn(n, use_stemming=False,
+                                     language_code=language.iso_code)
             # When
             features = [ngrams_fn.function(tokens, i)
                         for i in xrange(len(tokens))]

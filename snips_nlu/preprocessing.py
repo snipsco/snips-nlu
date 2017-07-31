@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import glob
 import io
 import os
@@ -53,7 +55,7 @@ def language_stems(language):
 
 
 def stem(string, language):
-    tokens = tokenize_light(string)
+    tokens = tokenize_light(string, language)
     stemmed_tokens = [_stem(token, language) for token in tokens]
     return ' '.join(stemmed_tokens)
 

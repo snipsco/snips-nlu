@@ -34,21 +34,6 @@ def default_features(language, intent_entities, use_stemming,
             "offsets": [-2, 1]
         },
         {
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 1},
-            "offsets": [0]
-        },
-        {
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 2},
-            "offsets": [-1, 0]
-        },
-        {
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 3},
-            "offsets": [-1]
-        },
-        {
             "factory_name": "is_digit",
             "args": {},
             "offsets": [-1, 0, 1]
@@ -106,3 +91,23 @@ def default_features(language, intent_entities, use_stemming,
             }
         )
     return features
+
+
+def default_shape_ngram_features(language):
+    return [
+        {
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 1, "language_code": language.iso_code},
+            "offsets": [0]
+        },
+        {
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 2, "language_code": language.iso_code},
+            "offsets": [-1, 0]
+        },
+        {
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 3, "language_code": language.iso_code},
+            "offsets": [-1]
+        }
+    ]

@@ -61,7 +61,15 @@ RESOURCE_INDEX = {
     },
     Language.ZH: {
         STOP_WORDS: "stop_words.txt",
-        SUBTITLES: "subtitles.txt"
+        SUBTITLES: "subtitles.txt",
+        GAZETTEERS: [
+            "cities_china.txt",
+            "cities_world.txt",
+            "countries.txt",
+            "provinces_china.txt",
+            "street_identifier.txt",
+            "top_10000_words.txt"
+        ],
     }
 }
 

@@ -17,7 +17,26 @@ def language_specific_features(intent_entities):
                                 common_words_gazetteer_name="top_10000_words")
 
     gazetteer_names = ["cities_china", "cities_world", "countries",
-                       "provinces_china", "street_identifier"]
+                       "provinces_china", "street_identifier", "numerals"]
+
+    suffix_features = [
+        {
+            "factory_name": "get_suffix_fn",
+            "args": {
+                "suffix_size": 1
+            },
+            "offsets": (-1, 0, 1)
+        },
+        {
+            "factory_name": "get_suffix_fn",
+            "args": {
+                "suffix_size": 2
+            },
+            "offsets": (-1, 0, 1)
+        }
+    ]
+
+    features += suffix_features
 
     for gazetteer_name in gazetteer_names:
         features.append({

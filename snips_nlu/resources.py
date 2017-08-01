@@ -68,7 +68,8 @@ RESOURCE_INDEX = {
             "countries.txt",
             "provinces_china.txt",
             "street_identifier.txt",
-            "top_10000_words.txt"
+            "top_10000_words.txt",
+            "numerals.txt"
         ],
     }
 }

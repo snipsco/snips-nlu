@@ -97,7 +97,6 @@ def get_ngram_fn(n, use_stemming, language_code,
 
     gazetteer = None
     if common_words_gazetteer_name is not None:
-
         gazetteer = get_gazetteer(language, common_words_gazetteer_name)
         if use_stemming:
             gazetteer = set(stem(w, language) for w in gazetteer)

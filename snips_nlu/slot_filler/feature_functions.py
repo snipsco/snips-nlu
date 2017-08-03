@@ -89,6 +89,11 @@ def get_suffix_fn(suffix_size):
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
 
+def get_length_fn():
+    return BaseFeatureFunction(
+        "length", lambda tokens, token_index: len(tokens[token_index].value))
+
+
 def get_ngram_fn(n, use_stemming, language_code,
                  common_words_gazetteer_name=None):
     language = Language.from_iso_code(language_code)

@@ -16,7 +16,7 @@ from snips_nlu.slot_filler.feature_functions import (
     get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
-    get_is_in_gazetteer_fn)
+    get_is_in_gazetteer_fn, get_length_fn)
 from snips_nlu.tokenization import tokenize
 
 
@@ -134,6 +134,19 @@ class TestFeatureFunctions(unittest.TestCase):
             prefix = suffix_fn.function(tokens, 0)
             # Then
             self.assertEqual(prefix, expected_suffixes[i - 1])
+
+    def test_length(self):
+        # Given
+        language = Language.EN
+        tokens = tokenize("i'm here dude", language)
+
+        # When
+        fn = get_length_fn().function
+        tokens_length = [fn(tokens, i) for i in xrange(len(tokens))]
+
+        # Then
+        expected_tokens_lengths = [1, 1, 4, 4]
+        self.assertSequenceEqual(tokens_length, expected_tokens_lengths)
 
     def test_token_is_in(self):
         # Given
@@ -311,7 +324,7 @@ class TestFeatureFunctions(unittest.TestCase):
         np.random.seed(42)
         keep_prob = 0.5
         features_signatures = crf_features(intent_entities=intent_entities,
-            language=language)
+                                           language=language)
 
         # Then
         np.random.seed(42)

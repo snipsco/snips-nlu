@@ -19,20 +19,56 @@ def language_specific_features(intent_entities):
     gazetteer_names = ["cities_china", "cities_world", "countries",
                        "provinces_china", "street_identifier", "numerals"]
 
+    features.append(
+        {
+            "factory_name": "get_length_fn",
+            "offsets": (0,),
+            "args": {}
+        }
+    )
+
     suffix_features = [
+        {
+            "factory_name": "get_prefix_fn",
+            "args": {
+                "prefix_size": 1
+            },
+            "offsets": (0,)
+        },
+        {
+            "factory_name": "get_prefix_fn",
+            "args": {
+                "prefix_size": 2
+            },
+            "offsets": (0,)
+        },
         {
             "factory_name": "get_suffix_fn",
             "args": {
                 "suffix_size": 1
             },
-            "offsets": (-1, 0, 1)
+            "offsets": (-1, 0)
         },
         {
             "factory_name": "get_suffix_fn",
             "args": {
                 "suffix_size": 2
             },
-            "offsets": (-1, 0, 1)
+            "offsets": (-1, 0)
+        },
+        {
+            "factory_name": "get_suffix_fn",
+            "args": {
+                "suffix_size": 3
+            },
+            "offsets": (0,)
+        },
+        {
+            "factory_name": "get_suffix_fn",
+            "args": {
+                "suffix_size": 4
+            },
+            "offsets": (0,)
         }
     ]
 

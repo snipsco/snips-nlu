@@ -53,10 +53,10 @@
               "id": "numbers.number"
             },
             {
-              "text": " cups",
+              "text": " coffee cups",
               "range": {
                 "start": 20,
-                "end": 25
+                "end": 32
               }
             }
           ]
@@ -81,10 +81,10 @@
               "id": "numbers.number"
             },
             {
-              "text": " cups",
+              "text": " cups of coffee",
               "range": {
                 "start": 20,
-                "end": 25
+                "end": 35
               }
             }
           ]

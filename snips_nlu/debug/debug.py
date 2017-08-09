@@ -11,12 +11,13 @@ from snips_nlu import SnipsNLUEngine
 from snips_nlu.languages import Language
 
 
-def debug_training(dataset_path):
+def debug_training(dataset_path, text=None):
     with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
         dataset = json.load(f)
     language = Language.from_iso_code(dataset["language"])
     engine = SnipsNLUEngine(language).fit(dataset)
-    pprint(engine)
+    if text is not None:
+        pprint(engine.parse(text))
 
 
 def debug_inference(engine_path, text):
@@ -40,7 +41,7 @@ def main_debug():
     args = vars(parser.parse_args())
     mode = args.pop("mode")
     if mode == "training":
-        debug_training(args["path"])
+        debug_training(*args.values())
     elif mode == "inference":
         debug_inference(*args.values())
     else:

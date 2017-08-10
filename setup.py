@@ -45,6 +45,10 @@ setup(name=PACKAGE_NAME,
               "snips-nlu-resources/ko/*",
               "tests/resources/*"
           ]},
-      entry_points={},
+      entry_points={
+          "console_scripts": [
+              "train-assistant=snips_nlu.nlu_engine:main_create_and_train_engine"
+          ]
+      },
       include_package_data=True,
       zip_safe=False)

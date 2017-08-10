@@ -37,7 +37,7 @@ def main_debug():
     parser = argparse.ArgumentParser(description="Debug snippets")
     parser.add_argument("mode", type=unicode,
                         choices=["training", "inference"],
-                        help="'train' to debug training and 'inference to "
+                        help="'training' to debug training and 'inference to "
                              "debug inference'")
     parser.add_argument("path", type=unicode,
                         help="Path to the dataset or trained assistant")

@@ -12,6 +12,8 @@ from snips_nlu.languages import Language
 
 
 def debug_training(dataset_path, text=None):
+    if isinstance(text, str):
+        text = text.decode("utf8")
     with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
         dataset = json.load(f)
     language = Language.from_iso_code(dataset["language"])
@@ -21,6 +23,8 @@ def debug_training(dataset_path, text=None):
 
 
 def debug_inference(engine_path, text):
+    if isinstance(text, str):
+        text = text.decode("utf8")
     with io.open(os.path.abspath(engine_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
     engine = SnipsNLUEngine.from_dict(engine_dict)

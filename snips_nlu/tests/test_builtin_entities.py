@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import traceback as tb
 import unittest
 
 import rustling
@@ -156,5 +157,18 @@ class TestBuiltInEntities(unittest.TestCase):
             try:
                 get_builtin_entities(text, l)
             except:
-                self.fail("get_builtin_entities does not support %s"
-                          % l.iso_code)
+                self.fail("get_builtin_entities does not support %s."
+                          "\n%s" % (l.iso_code, tb.format_exc()))
+
+    def test_get_builtin_entities_should_respect_scope(self):
+        # Given
+        language = Language.EN
+        text = "meet me at 10 p.m."
+
+        # When
+        scope = [BuiltInEntity.NUMBER]
+        parse = get_builtin_entities(text, language, scope=scope)
+
+        # Then
+        self.assertEqual(len(parse), 1)
+        self.assertEqual(parse[0][ENTITY], BuiltInEntity.NUMBER)

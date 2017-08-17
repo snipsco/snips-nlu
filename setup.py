@@ -15,7 +15,6 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
 required = [
-    "pytest",
     "enum34==1.1.6",
     "mock==2.0.0",
     "numpy==1.12.1",

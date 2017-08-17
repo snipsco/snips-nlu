@@ -24,7 +24,7 @@ required = [
     "sklearn-crfsuite==0.3.5",
     "builtin_entities_ontology==0.4.2",
     "semantic_version==2.6.0",
-    "rustling==5.0",
+    "rustling==6.1",
     "nlu_utils==0.2.0"
 ]
 

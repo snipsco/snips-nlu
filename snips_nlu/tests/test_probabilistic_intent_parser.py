@@ -299,7 +299,14 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         # Given
         language = Language.EN
         ratio = 1
-        capitalization_threshold = .1
+        entities = {
+            "someOneHouse": {
+                "capitalize": False
+            },
+            "university": {
+                "capitalize": True
+            }
+        }
         utterances = [
             {
                 "data": [
@@ -337,7 +344,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         # When
         capitalized_utterances = capitalize_utterances(
-            utterances, language, ratio, capitalization_threshold)
+            utterances, entities, language, ratio)
 
         # Then
         expected_utterances = [

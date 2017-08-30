@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 import unittest
@@ -138,7 +139,7 @@ class TestDataset(unittest.TestCase):
                 "entity1": {
                     "data": [
                         {
-                            "value": "entity 1",
+                            "value": "Entity_1",
                             "synonyms": ["entity 2"]
                         }
                     ],
@@ -156,23 +157,26 @@ class TestDataset(unittest.TestCase):
                 "entity1": {
                     "data": [
                         {
-                            "value": "entity 1",
-                            "synonyms": ["entity 2", "entity 1"]
+                            "value": "Entity_1",
+                            "synonyms": ["entity 2", "entity_1"]
                         }
                     ],
                     "use_synonyms": True,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "capitalize": True
                 }
             },
             "language": "en",
             "snips_nlu_version": "1.1.1"
         }
+        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(dataset)
+        dataset = validate_and_format_dataset(
+            dataset, capitalization_threshold=capitalization_threshold)
 
         # Then
-        self.assertEqual(dataset, expected_dataset)
+        self.assertDictEqual(dataset, expected_dataset)
 
     def test_should_format_dataset_by_adding_entity_values(self):
         # Given
@@ -269,15 +273,18 @@ class TestDataset(unittest.TestCase):
                         }
                     ],
                     "use_synonyms": True,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "capitalize": False
                 }
             },
             "language": "en",
             "snips_nlu_version": "1.1.1"
         }
+        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(dataset)
+        dataset = validate_and_format_dataset(
+            dataset, capitalization_threshold=capitalization_threshold)
 
         # Then
         self.assertEqual(dataset, expected_dataset)
@@ -406,15 +413,18 @@ class TestDataset(unittest.TestCase):
                         }
                     ],
                     "use_synonyms": False,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "capitalize": False
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
         }
+        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(dataset)
+        dataset = validate_and_format_dataset(
+            dataset, capitalization_threshold)
 
         # Then
         self.maxDiff = None
@@ -549,6 +559,7 @@ class TestDataset(unittest.TestCase):
                             "synonyms": ["entity 1"]
                         }
                     ],
+                    "capitalize": False,
                     "use_synonyms": False,
                     "automatically_extensible": False
                 }
@@ -556,12 +567,267 @@ class TestDataset(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "0.0.1"
         }
+        capitalization_threshold = .1
+
+        # When
+        dataset = validate_and_format_dataset(
+            dataset, capitalization_threshold)
+
+        # Then
+        self.assertEqual(dataset, expected_dataset)
+
+    def test_should_add_capitalize_field(self):
+        # Given
+        capitalization_threshold = .3
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "My entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot0"
+                                },
+                                {
+                                    "text": "entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot2"
+                                },
+                                {
+                                    "text": "entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot2"
+                                },
+                                {
+                                    "text": "entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot3"
+                                },
+                                {
+                                    "text": "My entity2",
+                                    "entity": "entity2",
+                                    "slot_name": "slot1"
+                                },
+                                {
+                                    "text": "myentity2",
+                                    "entity": "entity2",
+                                    "slot_name": "slot1"
+                                },
+                                {
+                                    "text": "m_entity3",
+                                    "entity": "entity3",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [],
+                    "use_synonyms": False,
+                    "automatically_extensible": True
+                },
+                "entity2": {
+                    "data": [],
+                    "use_synonyms": False,
+                    "automatically_extensible": True
+                },
+                "entity3": {
+                    "data": [
+                        {
+                            "value": "Entity3",
+                            "synonyms": ["entity3"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": True
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        expected_dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "My entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot0"
+                                },
+                                {
+                                    "text": "entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot2"
+                                },
+                                {
+                                    "text": "entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot2"
+                                },
+                                {
+                                    "text": "entity1",
+                                    "entity": "entity1",
+                                    "slot_name": "slot3"
+                                },
+                                {
+                                    "text": "My entity2",
+                                    "entity": "entity2",
+                                    "slot_name": "slot1"
+                                },
+                                {
+                                    "text": "myentity2",
+                                    "entity": "entity2",
+                                    "slot_name": "slot1"
+                                },
+                                {
+                                    "text": "m_entity3",
+                                    "entity": "entity3",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "My entity1",
+                            "synonyms": ["my entity1"]
+                        },
+                        {
+                            "value": "entity1",
+                            "synonyms": ["entity1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "capitalize": False
+                },
+                "entity2": {
+                    "data": [
+                        {
+                            "value": "My entity2",
+                            "synonyms": ["my entity2"]
+
+                        },
+                        {
+                            "value": "myentity2",
+                            "synonyms": ["myentity2"]
+
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "capitalize": True
+                },
+                "entity3": {
+                    "data": [
+                        {
+                            "value": "Entity3",
+                            "synonyms": ["entity3"]
+                        },
+                        {
+                            "value": "m_entity3",
+                            "synonyms": ["m_entity3"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "capitalize": True
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        # When
+        dataset = validate_and_format_dataset(
+            dataset, capitalization_threshold)
+
+        # Then
+        self.assertDictEqual(dataset, expected_dataset)
+
+    def test_should_normalize_synonyms(self):
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "éNtity",
+                                    "entity": "entity1",
+                                    "slot_name": "startTime"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [],
+                    "use_synonyms": True,
+                    "automatically_extensible": True
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.1.0"
+        }
+
+        expected_dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "éNtity",
+                                    "entity": "entity1",
+                                    "slot_name": "startTime"
+                                }
+                            ]
+                        }
+                    ],
+                    "engineType": CUSTOM_ENGINE
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "éNtity",
+                            "synonyms": ["entity"]
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": True,
+                    "capitalize": False
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.1.0"
+        }
 
         # When
         dataset = validate_and_format_dataset(dataset)
 
         # Then
-        self.assertEqual(dataset, expected_dataset)
+        self.assertDictEqual(dataset, expected_dataset)
 
 
 if __name__ == '__main__':

@@ -11,26 +11,33 @@ from snips_nlu import SnipsNLUEngine
 from snips_nlu.languages import Language
 
 
-def debug_training(dataset_path, text=None):
-    if isinstance(text, str):
-        text = text.decode("utf8")
+def debug_training(dataset_path):
     with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
         dataset = json.load(f)
     language = Language.from_iso_code(dataset["language"])
     engine = SnipsNLUEngine(language).fit(dataset)
-    if text is not None:
-        pprint(engine.parse(text))
+
+    while True:
+        query = raw_input("Enter a query (type 'q' to quit): ").strip()
+        if isinstance(query, str):
+            query = query.decode("utf8")
+        if query == "q":
+            break
+        pprint(engine.parse(query))
 
 
-def debug_inference(engine_path, text):
-    if isinstance(text, str):
-        text = text.decode("utf8")
+def debug_inference(engine_path):
     with io.open(os.path.abspath(engine_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
     engine = SnipsNLUEngine.from_dict(engine_dict)
-    parse = engine.parse(text)
-    print("Text: %s" % text)
-    pprint("Parse: %s" % parse)
+
+    while True:
+        query = raw_input("Enter a query (type 'q' to quit): ").strip()
+        if isinstance(query, str):
+            query = query.decode("utf8")
+        if query == "q":
+            break
+        pprint(engine.parse(query))
 
 
 def main_debug():
@@ -41,7 +48,6 @@ def main_debug():
                              "debug inference'")
     parser.add_argument("path", type=unicode,
                         help="Path to the dataset or trained assistant")
-    parser.add_argument("--text", required=False, help="Input to parse")
     args = vars(parser.parse_args())
     mode = args.pop("mode")
     if mode == "training":

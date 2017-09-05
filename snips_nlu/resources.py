@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import glob
 import io
 import os
 
@@ -9,7 +10,7 @@ from snips_nlu.constants import (STOP_WORDS, SUBTITLES,
                                  WORD_CLUSTERS, GAZETTEERS)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import get_resources_path
+from snips_nlu.utils import get_resources_path, RESOURCES_PATH
 
 RESOURCE_INDEX = {
     Language.EN: {
@@ -66,6 +67,7 @@ _SUBTITLES = dict()
 _GAZETTEERS = dict()
 _WORD_CLUSTERS = dict()
 _GAZETTEERS_REGEXES = dict()
+_LANGUAGE_STEMS = dict()
 
 
 def load_stop_words():
@@ -149,8 +151,54 @@ def get_gazetteer(language, gazetteer_name):
     return get_gazetteers(language)[gazetteer_name]
 
 
+def verbs_lexemes(language):
+    stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language.iso_code,
+                                         "top_*_verbs_lexemes.txt"))
+    if len(stems_paths) == 0:
+        return dict()
+
+    verb_lexemes = dict()
+    with io.open(stems_paths[0], encoding="utf8") as f:
+        lines = [l.strip() for l in f]
+    for line in lines:
+        elements = line.split(';')
+        verb = normalize(elements[0])
+        lexemes = elements[1].split(',')
+        verb_lexemes.update({normalize(lexeme): verb for lexeme in lexemes})
+    return verb_lexemes
+
+
+def word_inflections(language):
+    inflection_paths = glob.glob(os.path.join(RESOURCES_PATH,
+                                              language.iso_code,
+                                              "top_*_words_inflected.txt"))
+    if len(inflection_paths) == 0:
+        return dict()
+
+    inflections = dict()
+    with io.open(inflection_paths[0], encoding="utf8") as f:
+        lines = [l.strip() for l in f]
+
+    for line in lines:
+        elements = line.split(';')
+        inflections[normalize(elements[0])] = normalize(elements[1])
+    return inflections
+
+
+def load_stems():
+    global _LANGUAGE_STEMS
+    for language in Language:
+        _LANGUAGE_STEMS[language] = word_inflections(language)
+        _LANGUAGE_STEMS[language].update(verbs_lexemes(language))
+
+
+def get_stems():
+    return _LANGUAGE_STEMS
+
+
 def load_resources():
     load_clusters()
     load_gazetteers()
     load_stop_words()
     load_subtitles()
+    load_stems()

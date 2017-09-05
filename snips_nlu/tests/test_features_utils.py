@@ -1,7 +1,10 @@
+# coding=utf-8
+from __future__ import unicode_literals
+
 import unittest
 
 from snips_nlu.constants import NGRAM, TOKEN_INDEXES
-from snips_nlu.slot_filler.features_utils import get_all_ngrams
+from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape
 
 
 class TestFeaturesUtils(unittest.TestCase):
@@ -33,3 +36,19 @@ class TestFeaturesUtils(unittest.TestCase):
         ]
 
         self.assertListEqual(expected_ngrams, ngrams)
+
+    def test_get_shape(self):
+        # Given
+        data = [
+            ("tragédie", "xxx"),
+            ("Tragédie", "Xxx"),
+            ("TRAGÉDIE", "XXX"),
+            ("traGédie", "xX")
+        ]
+
+        for text, expected_capitalization in data:
+            # When
+            capitalization = get_shape(text)
+
+            # Then
+            self.assertEqual(capitalization, expected_capitalization)

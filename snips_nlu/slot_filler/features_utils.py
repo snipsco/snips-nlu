@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import re
-
 from nlu_utils import compute_all_ngrams
 
 from snips_nlu.utils import LimitedSizeDict
@@ -43,11 +41,12 @@ def char_range_to_token_range(char_range, tokens_as_string):
 
 
 def get_shape(string):
-    if LOWER_REGEX.match(string):
+    if string.islower():
         shape = "xxx"
-    elif UPPER_REGEX.match(string):
+    elif string.isupper():
         shape = "XXX"
-    elif TITLE_REGEX.match(string):
+    # Hack for Rust parallelism (we could use istitle but it does not exists)
+    elif len(string) > 1 and string[0].isupper() and string[1:].islower():
         shape = "Xxx"
     else:
         shape = "xX"
@@ -73,8 +72,3 @@ def initial_string_from_tokens(tokens):
         s += t.value
         current_index = t.end
     return s
-
-
-LOWER_REGEX = re.compile(r"^[a-z]+$")
-UPPER_REGEX = re.compile(r"^[A-Z]+$")
-TITLE_REGEX = re.compile(r"^[A-Z][a-z]+$")

@@ -10,7 +10,7 @@ from mock import patch
 from snips_nlu.constants import CUSTOM_ENGINE
 from snips_nlu.intent_classifier import feature_extraction
 from snips_nlu.intent_classifier.feature_extraction import (
-    Featurizer, default_tfidf_vectorizer, get_utterances_entities)
+    Featurizer, default_tfidf_vectorizer, get_utterances_features)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 
@@ -70,15 +70,17 @@ class TestFeatureExtraction(unittest.TestCase):
         idf_diag = tfidf_vectorizer._tfidf._idf_diag.data.tolist()
 
         best_features = featurizer.best_features
-        entity_utterances_to_entity_names = {"entity1": ["entity2"]}
+        entity_utterances_to_feature_names = {
+            "entity1": ["entityfeatureentity2"]
+        }
 
         expected_serialized = {
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
             "pvalue_threshold": pvalue_threshold,
-            "entity_utterances_to_entity_names":
-                entity_utterances_to_entity_names
+            "entity_utterances_to_feature_names":
+                entity_utterances_to_feature_names
         }
         self.assertDictEqual(expected_serialized, serialized_featurizer)
 
@@ -92,15 +94,17 @@ class TestFeatureExtraction(unittest.TestCase):
 
         best_features = [0, 1]
         pvalue_threshold = 0.4
-        entity_utterances_to_entity_names = {"entity_1": ["entity_1"]}
+        entity_utterances_to_feature_names = {
+            "entity_1": ["entityfeatureentity_1"]
+        }
 
         featurizer_dict = {
             "language_code": language.iso_code,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
             "pvalue_threshold": pvalue_threshold,
-            "entity_utterances_to_entity_names":
-                entity_utterances_to_entity_names
+            "entity_utterances_to_feature_names":
+                entity_utterances_to_feature_names
         }
 
         # When
@@ -117,10 +121,10 @@ class TestFeatureExtraction(unittest.TestCase):
         self.assertEqual(featurizer.pvalue_threshold, pvalue_threshold)
 
         self.assertDictEqual(
-            featurizer.entity_utterances_to_entity_names,
+            featurizer.entity_utterances_to_feature_names,
             {
                 k: set(v) for k, v
-                in entity_utterances_to_entity_names.iteritems()
+                in entity_utterances_to_feature_names.iteritems()
             })
 
     def test_get_utterances_entities(self):
@@ -167,18 +171,18 @@ class TestFeatureExtraction(unittest.TestCase):
         }
 
         # When
-        utterance_to_entity_names = get_utterances_entities(dataset)
+        utterance_to_feature_names = get_utterances_features(dataset)
 
         # Then
         expected_utterance_to_entity_names = {
-            "entity 1": {"entity1", "entity2"},
-            "éntity 1": {"entity1"},
-            "Éntity_2": {"entity2"},
-            "Éntity 2": {"entity2"},
-            "Alternative entity 2": {"entity2"}
+            "entity 1": {"entityfeatureentity1", "entityfeatureentity2"},
+            "éntity 1": {"entityfeatureentity1"},
+            "Éntity_2": {"entityfeatureentity2"},
+            "Éntity 2": {"entityfeatureentity2"},
+            "Alternative entity 2": {"entityfeatureentity2"}
         }
         self.assertDictEqual(
-            utterance_to_entity_names, expected_utterance_to_entity_names)
+            utterance_to_feature_names, expected_utterance_to_entity_names)
 
     @patch("snips_nlu.intent_classifier.feature_extraction.get_word_clusters")
     @patch("snips_nlu.intent_classifier.feature_extraction.stem")

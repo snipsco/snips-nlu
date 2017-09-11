@@ -11,7 +11,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
     DataAugmentationConfig, capitalize, capitalize_utterances,
-    generate_random_slots_names, generate_slots_permutations)
+    generate_slots_permutations)
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
@@ -434,24 +434,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             }
         ]
         self.assertEqual(capitalized_utterances, expected_utterances)
-
-    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
-           ".generate_random_string")
-    def test_generate_random_slots_names(self, mocked_generate_random_string):
-        # Given
-        def mocked_random_string(size, chars=""):
-            return "a" * size
-
-        mocked_generate_random_string.side_effect = mocked_random_string
-        n_builtins = 3
-        possible_slots = ["slot1", "slot3", "slot11"]
-
-        # When
-        slot_names = generate_random_slots_names(n_builtins, possible_slots)
-
-        # Then
-        expected_slot_names = ["aaaaaaa", "aaaaaaa1", "aaaaaaa11"]
-        self.assertItemsEqual(slot_names, expected_slot_names)
 
     def test_generate_slots_permutations(self):
         # Given

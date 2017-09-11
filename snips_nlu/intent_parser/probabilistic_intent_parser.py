@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import random
-import string
 from collections import defaultdict
 from copy import copy, deepcopy
 from itertools import groupby, permutations
@@ -211,34 +210,22 @@ def replace_builtin_tags(tags, builtin_slot_names):
     return new_tags
 
 
-def generate_random_string(size, chars=string.ascii_uppercase + string.digits):
-    return "".join(random.choice(chars) for _ in range(size))
-
-
-def generate_random_slots_names(n_detected_builtins, possible_slots_names):
-    if n_detected_builtins == 0:
-        return []
-    max_slot_name_len = max((len(name) for name in possible_slots_names))
-    seed_slot_name = generate_random_string(max_slot_name_len + 1)
-    random_slot_names = {seed_slot_name}
-    while len(random_slot_names) < n_detected_builtins:
-        new_name = seed_slot_name + "1"
-        random_slot_names.add(seed_slot_name)
-        seed_slot_name = new_name
-    return list(random_slot_names)
-
-
 def generate_slots_permutations(n_detected_builtins, possible_slots_names):
     if n_detected_builtins == 0:
         return []
-    none_slots_names = generate_random_slots_names(n_detected_builtins,
-                                                   possible_slots_names)
+    # Add n_detected_builtins "O" slots to the possible slots.
+    # It's possible that out of the detected builtins the CRF choose that
+    # none of them are likely to be an actually slot, these combination
+    # must be taken into account
+    permutation_pool = range(len(possible_slots_names) + n_detected_builtins)
+
     # Generate all permutations
-    perms = [p for p in permutations(possible_slots_names + none_slots_names,
-                                     n_detected_builtins)]
-    # Replace the None slot by "O"
-    perms = [tuple(OUTSIDE if s in none_slots_names else s for s in p)
-             for p in perms]
+    perms = [p for p in permutations(permutation_pool, n_detected_builtins)]
+
+    # Replace the indices greater than possible_slots_names by "O"
+    perms = [tuple(possible_slots_names[i] if i < len(possible_slots_names)
+                   else OUTSIDE for i in p) for p in perms]
+
     # Make the permutations unique
     return list(set(perms))
 

@@ -3,15 +3,27 @@ from __future__ import unicode_literals
 import json
 import unittest
 
+import numpy as np
 from mock import patch
+from nlu_utils import normalize
 
-from snips_nlu.constants import INTENTS, LANGUAGE
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.constants import INTENTS, LANGUAGE, DATA, UTTERANCES
+from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier
+    SnipsIntentClassifier, build_training_data
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
+
+
+def np_random_permutation(x):
+    return x
+
+
+def get_mocked_augment_utterances(dataset, intent_name, language,
+                                  max_utterances, noise_prob,
+                                  min_noise_size, max_noise_size):
+    return dataset[INTENTS][intent_name][UTTERANCES]
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):
@@ -198,6 +210,107 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(intent, None)
 
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier"
+           ".augment_utterances")
+    def test_should_build_training_data_with_no_stemming_no_noise(
+            self, mocked_augment_utterances):
+        # Given
+        dataset = SAMPLE_DATASET
+        mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
-if __name__ == '__main__':
-    unittest.main()
+        # When
+        utterances, y, intent_mapping = build_training_data(dataset,
+                                                            Language.EN,
+                                                            use_stemming=False,
+                                                            noise_factor=0)
+
+        # Then
+        expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
+                               in dataset[INTENTS].values() for utterance in
+                               intent[UTTERANCES]]
+        expected_utterances = [normalize(u) for u in expected_utterances]
+        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
+        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(intent_mapping, expected_intent_mapping)
+
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_subtitles")
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier"
+           ".augment_utterances")
+    def test_should_build_training_data_with_noise(
+            self, mocked_augment_utterances, mocked_get_subtitles):
+        # Given
+        mocked_subtitles = set("mocked_subtitle_%s" % i for i in xrange(100))
+        mocked_get_subtitles.return_value = mocked_subtitles
+        mocked_augment_utterances.side_effect = get_mocked_augment_utterances
+
+        dataset = SAMPLE_DATASET
+        nb_utterances = [len(intent[UTTERANCES]) for intent in
+                         dataset[INTENTS].values()]
+        avg_utterances = np.mean(nb_utterances)
+
+        # When
+        np.random.seed(42)
+        noise_factor = 2
+        utterances, y, intent_mapping = build_training_data(
+            dataset, Language.EN, use_stemming=False,
+            noise_factor=noise_factor)
+
+        # Then
+        expected_utterances = [get_text_from_chunks(utterance[DATA])
+                               for intent in dataset[INTENTS].values()
+                               for utterance in intent[UTTERANCES]]
+        expected_utterances = [normalize(u) for u in expected_utterances]
+        np.random.seed(42)
+        noise = list(mocked_subtitles)
+        noise_size = int(min(noise_factor * avg_utterances, len(noise)))
+        noisy_utterances = np.random.choice(noise, size=noise_size,
+                                            replace=False)
+        expected_utterances += list(noisy_utterances)
+        expected_intent_mapping = ['dummy_intent_2', 'dummy_intent_1', None]
+        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(intent_mapping, expected_intent_mapping)
+
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier"
+           ".augment_utterances")
+    @patch("snips_nlu.preprocessing.stem_sentence")
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.stem_sentence")
+    def test_should_build_training_data_with_stemming(
+            self, mocked_stem_1, mocked_stem_2, mocked_augment_utterances):
+        # Given
+        dataset = SAMPLE_DATASET
+
+        def get_mocked_stem(string, _):
+            return "[STEMMED] %s" % string
+
+        mocked_stem_1.side_effect = get_mocked_stem
+        mocked_stem_2.side_effect = get_mocked_stem
+        mocked_augment_utterances.side_effect = get_mocked_augment_utterances
+
+        # When
+        utterances, y, intent_mapping = build_training_data(
+            dataset, Language.EN, use_stemming=True, noise_factor=0)
+
+        # Then
+        expected_utterances = [get_text_from_chunks(utterance[DATA])
+                               for intent in dataset[INTENTS].values()
+                               for utterance in intent[UTTERANCES]]
+        expected_utterances = [normalize(u) for u in expected_utterances]
+        expected_utterances = ["[STEMMED] %s" % u for u in expected_utterances]
+        expected_intent_mapping = ['dummy_intent_2', 'dummy_intent_1']
+        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(intent_mapping, expected_intent_mapping)
+
+    def test_should_build_training_data_with_no_data(self):
+        # Given
+        language = Language.EN
+        dataset = empty_dataset(language)
+
+        # When
+        utterances, y, intent_mapping = build_training_data(
+            dataset, language, use_stemming=False, noise_factor=0)
+
+        # Then
+        expected_utterances = []
+        expected_intent_mapping = []
+        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(intent_mapping, expected_intent_mapping)

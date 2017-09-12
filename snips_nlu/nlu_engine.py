@@ -15,7 +15,8 @@ from snips_nlu.constants import (
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
-    ProbabilisticIntentParser, fit_tagger, DataAugmentationConfig
+    ProbabilisticIntentParser, fit_tagger
+from snips_nlu.data_augmentation import DataAugmentationConfig
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \

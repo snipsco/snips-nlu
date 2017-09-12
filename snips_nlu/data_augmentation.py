@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import random
 from copy import deepcopy
 from itertools import cycle
@@ -9,6 +11,27 @@ from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, USE_SYNONYMS,
                                  SYNONYMS, VALUE, TEXT, INTENTS, ENTITIES)
 from snips_nlu.resources import get_subtitles
 from snips_nlu.tokenization import tokenize
+from snips_nlu.utils import namedtuple_with_defaults
+
+_DataAugmentationConfig = namedtuple_with_defaults(
+    '_DataAugmentationConfig',
+    'max_utterances noise_prob min_noise_size max_noise_size',
+    {
+        'max_utterances': 200,
+        'noise_prob': 0.,
+        'min_noise_size': 0,
+        'max_noise_size': 0
+    }
+)
+
+
+class DataAugmentationConfig(_DataAugmentationConfig):
+    def to_dict(self):
+        return self._asdict()
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)
 
 
 def generate_utterance(contexts_iterator, entities_iterators, noise_iterator,

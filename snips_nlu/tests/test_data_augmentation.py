@@ -4,11 +4,11 @@ import unittest
 
 from mock import patch
 
-from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.languages import Language
-from snips_nlu.slot_filler.data_augmentation import (
+from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_intent_entities, get_entities_iterators,
     generate_utterance, get_noise_iterator)
+from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.languages import Language
 
 
 def np_random_permutation(x):
@@ -273,7 +273,7 @@ class TestDataAugmentation(unittest.TestCase):
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     @patch("random.randint")
     @patch("random.choice")
-    @patch("snips_nlu.slot_filler.data_augmentation.get_subtitles")
+    @patch("snips_nlu.data_augmentation.get_subtitles")
     def test_get_noise_iterator(self, mocked_get_subtitles, mocked_choice,
                                 mocked_randint, _):
         # Given

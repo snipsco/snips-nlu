@@ -261,22 +261,24 @@ class TestSnipsNLUEngine(unittest.TestCase):
         engine.add_fitted_tagger("MakeTea", trained_tagger_data_tea)
         engine.fit(BEVERAGE_DATASET, intents=[])
 
-        # Then
         try:
             engine_dict = engine.to_dict()
             new_engine = SnipsNLUEngine.from_dict(engine_dict)
-            result = new_engine.parse(text)
-            expected_slots = [
-                ParsedSlot((8, 9), '3', 'snips/number',
-                           'number_of_cups').as_dict(),
-                ParsedSlot((18, 21), 'hot', 'Temperature',
-                           'beverage_temperature').as_dict()
-            ]
-            self.assertEqual(result['text'], text)
-            self.assertEqual(result['intent']['intent_name'], 'MakeTea')
-            self.assertListEqual(result['slots'], expected_slots)
         except Exception, e:
-            self.fail('Exception raised: %s' % e.message)
+            self.fail('Exception raised: %s\n%s' %
+                      (e.message, tb.format_exc()))
+        result = new_engine.parse(text)
+
+        # Then
+        expected_slots = [
+            ParsedSlot((8, 9), '3', 'snips/number',
+                       'number_of_cups').as_dict(),
+            ParsedSlot((18, 21), 'hot', 'Temperature',
+                       'beverage_temperature').as_dict()
+        ]
+        self.assertEqual(result['text'], text)
+        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
+        self.assertListEqual(result['slots'], expected_slots)
 
     @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch(

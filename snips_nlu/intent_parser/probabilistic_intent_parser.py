@@ -8,6 +8,8 @@ from itertools import groupby, permutations
 from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE, TEXT)
+from snips_nlu.data_augmentation import augment_utterances, \
+    DataAugmentationConfig
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
@@ -17,29 +19,7 @@ from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample,
                                              positive_tagging, OUTSIDE,
                                              tag_name_to_slot_name)
-from snips_nlu.slot_filler.data_augmentation import augment_utterances
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import (namedtuple_with_defaults)
-
-_DataAugmentationConfig = namedtuple_with_defaults(
-    '_DataAugmentationConfig',
-    'max_utterances noise_prob min_noise_size max_noise_size',
-    {
-        'max_utterances': 200,
-        'noise_prob': 0.,
-        'min_noise_size': 0,
-        'max_noise_size': 0
-    }
-)
-
-
-class DataAugmentationConfig(_DataAugmentationConfig):
-    def to_dict(self):
-        return self._asdict()
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
 
 def capitalization_ratios(utterances):

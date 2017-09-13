@@ -126,7 +126,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 "MakeCoffee": 7,
                 "MakeTea": 4
             },
-            "regex_threshold": 50,
+            "num_entities_threshold": 200,
+            "num_queries_threshold": 50,
             "language": "en",
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
@@ -160,12 +161,14 @@ class TestSnipsNLUEngine(unittest.TestCase):
             }
         }
         intents_data_sizes = {"MakeCoffee": 7, "MakeTea": 4}
-        regex_threshold = 50
+        num_queries_threshold = 50
+        num_entities_threshold = 200
         engine_dict = {
             "slot_name_mapping": slot_name_mapping,
             "entities": entities,
             "intents_data_sizes": intents_data_sizes,
-            "regex_threshold": regex_threshold,
+            "num_entities_threshold": num_entities_threshold,
+            "num_queries_threshold": num_queries_threshold,
             "language": "en",
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
@@ -576,8 +579,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         for s in naughty_strings:
             try:
                 engine.parse(s)
-            except Exception, e:
-                self.fail('Exception raised: %s' % e.message)
+            except Exception:
+                trace = tb.format_exc()
+                self.fail('Exception raised:\n %s' % trace)
 
     def test_should_fit_with_naughty_strings(self):
         # Given
@@ -602,14 +606,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
         })
 
         # Then
-        error = None
-        raised = False
         try:
             SnipsNLUEngine(Language.EN).fit(naughty_dataset)
-        except Exception, e:
-            raised = True
-            error = e
-        self.assertFalse(raised, 'Exception raised: %s' % str(error))
+        except Exception:
+            trace = tb.format_exc()
+            self.fail('Exception raised:\n %s' % trace)
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
@@ -644,10 +645,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
         except:
             self.fail("NLU engine should fit builtin")
 
-    def test_should_not_create_regex_when_having_enough_data(self):
+    def test_should_not_create_regex_when_having_enough_queries(self):
         # Given
         language = Language.EN
-        regex_threshold = 5
+        num_queries_threshold = 5
         intent_name = "dummy"
         dataset = validate_and_format_dataset({
             "intents": {
@@ -663,7 +664,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                               }
                                           ]
                                       }
-                                  ] * regex_threshold
+                                  ] * num_queries_threshold
                 }
             },
             "entities": {
@@ -674,7 +675,54 @@ class TestSnipsNLUEngine(unittest.TestCase):
         })
         # When
         engine = SnipsNLUEngine(
-            language, regex_threshold=regex_threshold).fit(dataset)
+            language, num_queries_threshold=num_queries_threshold).fit(dataset)
+
+        # Then
+        self.assertEqual(
+            len(engine.rule_based_parser.regexes_per_intent[intent_name]), 0)
+
+    def test_should_not_create_regex_when_having_enough_entities(self):
+        # Given
+        language = Language.EN
+        num_entities_threshold = 10
+        intent_name = "dummy"
+        dataset = validate_and_format_dataset({
+            "intents": {
+                intent_name: {
+                    ENGINE_TYPE: CUSTOM_ENGINE,
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "a_time",
+                                    "entity": "time",
+                                    "slot_name": "startTime"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "time": {
+                    "use_synonyms": True,
+                    "automatically_extensible": True,
+                    "data": [
+                        {
+                            "synonyms": [str(i) for i in
+                                         xrange(1, num_entities_threshold)],
+                            "value": "0"
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code,
+            "snips_nlu_version": "0.0.1"
+        })
+        # When
+        engine = SnipsNLUEngine(
+            language, num_entities_threshold=num_entities_threshold).fit(
+            dataset)
 
         # Then
         self.assertEqual(

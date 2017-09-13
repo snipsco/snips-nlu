@@ -212,11 +212,26 @@ def enrich_slots(slots, other_slots):
 TAGGING_EXCLUDED_ENTITIES = {BuiltInEntity.NUMBER}
 
 
+def is_trainable_regex_intent(intent, entities, num_queries_threshold,
+                              num_entities_threshold):
+    if len(intent[UTTERANCES]) >= num_queries_threshold:
+        return False
+
+    intent_entities = set(chunk[ENTITY] for query in intent[UTTERANCES]
+                          for chunk in query[DATA] if ENTITY in chunk)
+    intent_entities = [ent for ent in intent_entities
+                       if not is_builtin_entity(ent)]
+    if sum(len(entities[entity_name][UTTERANCES])
+           for entity_name in intent_entities) > num_entities_threshold:
+        return False
+    return True
+
+
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
                  slot_name_mapping=None, intents_data_sizes=None,
-                 regex_threshold=50):
+                 num_queries_threshold=50, num_entities_threshold=200):
         super(SnipsNLUEngine, self).__init__(language)
         self.rule_based_parser = rule_based_parser
         self.probabilistic_parser = probabilistic_parser
@@ -227,7 +242,8 @@ class SnipsNLUEngine(NLUEngine):
             slot_name_mapping = dict()
         self.slot_name_mapping = slot_name_mapping
         self.intents_data_sizes = intents_data_sizes
-        self.regex_threshold = regex_threshold
+        self.num_queries_threshold = num_queries_threshold
+        self.num_entities_threshold = num_entities_threshold
         self._pre_trained_taggers = dict()
         self.tagging_scope = []
         for ent in _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language]:
@@ -277,13 +293,17 @@ class SnipsNLUEngine(NLUEngine):
 
         dataset = validate_and_format_dataset(dataset)
 
-        regex_intents = [intent_name for intent_name, intent
-                         in dataset[INTENTS].iteritems()
-                         if len(intent[UTTERANCES]) < self.regex_threshold]
+        self.entities = snips_nlu_entities(dataset)
+
+        regex_intents = [
+            intent_name for intent_name, intent in dataset[INTENTS].iteritems()
+            if is_trainable_regex_intent(intent, self.entities,
+                                         self.num_queries_threshold,
+                                         self.num_entities_threshold)]
 
         self.rule_based_parser = RegexIntentParser(self.language).fit(
             dataset, intents=regex_intents)
-        self.entities = snips_nlu_entities(dataset)
+
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent
                                    in dataset[INTENTS].iteritems()}
@@ -341,7 +361,8 @@ class SnipsNLUEngine(NLUEngine):
             ENTITIES: self.entities,
             "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict,
-            "regex_threshold": self.regex_threshold
+            "num_queries_threshold": self.num_queries_threshold,
+            "num_entities_threshold": self.num_entities_threshold
         }
 
     @classmethod
@@ -353,7 +374,8 @@ class SnipsNLUEngine(NLUEngine):
         slot_name_mapping = obj_dict["slot_name_mapping"]
         entities = obj_dict[ENTITIES]
         intents_data_sizes = obj_dict["intents_data_sizes"]
-        regex_threshold = obj_dict["regex_threshold"]
+        num_queries_threshold = obj_dict["num_queries_threshold"]
+        num_entities_threshold = obj_dict["num_entities_threshold"]
 
         rule_based_parser = None
         probabilistic_parser = None
@@ -371,7 +393,8 @@ class SnipsNLUEngine(NLUEngine):
             probabilistic_parser=probabilistic_parser, entities=entities,
             slot_name_mapping=slot_name_mapping,
             intents_data_sizes=intents_data_sizes,
-            regex_threshold=regex_threshold
+            num_queries_threshold=num_queries_threshold,
+            num_entities_threshold=num_entities_threshold
         )
 
 

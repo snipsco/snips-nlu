@@ -136,6 +136,9 @@ def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
 
 
 def positive_tagging(tagging_scheme, slot_name, slot_size):
+    if slot_name == OUTSIDE:
+        return [OUTSIDE for _ in xrange(slot_size)]
+
     if tagging_scheme == TaggingScheme.IO:
         tags = [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
     elif tagging_scheme == TaggingScheme.BIO:

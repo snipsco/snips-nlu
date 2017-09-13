@@ -10,7 +10,8 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
-    DataAugmentationConfig, capitalize, capitalize_utterances)
+    DataAugmentationConfig, capitalize, capitalize_utterances,
+    generate_slots_permutations)
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
@@ -67,22 +68,82 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         tags = ['O' for _ in tokens]
 
         def mocked_sequence_probability(_tokens, _tags):
-            first_tags = ['O' for _ in _tokens]
-            first_tags[4] = '%sstart_date' % BEGINNING_PREFIX
-            first_tags[5] = '%sstart_date' % INSIDE_PREFIX
-            first_tags[7] = '%send_date' % BEGINNING_PREFIX
-            first_tags[8] = '%send_date' % INSIDE_PREFIX
+            tags_1 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      '%sstart_date' % BEGINNING_PREFIX,
+                      '%sstart_date' % INSIDE_PREFIX,
+                      'O',
+                      '%send_date' % BEGINNING_PREFIX,
+                      '%send_date' % INSIDE_PREFIX]
 
-            second_tags = ['O' for _ in _tokens]
-            second_tags[4] = '%send_date' % BEGINNING_PREFIX
-            second_tags[5] = '%send_date' % INSIDE_PREFIX
-            second_tags[7] = '%sstart_date' % BEGINNING_PREFIX
-            second_tags[8] = '%sstart_date' % INSIDE_PREFIX
+            tags_2 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      '%send_date' % BEGINNING_PREFIX,
+                      '%send_date' % INSIDE_PREFIX,
+                      'O',
+                      '%sstart_date' % BEGINNING_PREFIX,
+                      '%sstart_date' % INSIDE_PREFIX]
 
-            if _tags == first_tags:
+            tags_3 = ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O']
+
+            tags_4 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      'O',
+                      'O',
+                      'O',
+                      '%sstart_date' % BEGINNING_PREFIX,
+                      '%sstart_date' % INSIDE_PREFIX]
+
+            tags_5 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      'O',
+                      'O',
+                      'O',
+                      '%send_date' % BEGINNING_PREFIX,
+                      '%send_date' % INSIDE_PREFIX]
+
+            tags_6 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      '%sstart_date' % BEGINNING_PREFIX,
+                      '%sstart_date' % INSIDE_PREFIX,
+                      'O',
+                      'O',
+                      'O']
+
+            tags_7 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      '%send_date' % BEGINNING_PREFIX,
+                      '%send_date' % INSIDE_PREFIX,
+                      'O',
+                      'O',
+                      'O']
+
+            if _tags == tags_1:
                 return 0.6
-            if _tags == second_tags:
+            elif _tags == tags_2:
                 return 0.8
+            elif _tags == tags_3:
+                return 0.2
+            elif _tags == tags_4:
+                return 0.2
+            elif _tags == tags_5:
+                return 0.99
+            elif _tags == tags_6:
+                return 0.0
+            elif _tags == tags_7:
+                return 0.0
             else:
                 raise ValueError("Unexpected tag sequence: %s" % _tags)
 
@@ -98,10 +159,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         # Then
         expected_slots = [
-            ParsedSlot(value='before 10pm', match_range=(17, 28),
-                       entity='snips/datetime', slot_name='end_date'),
             ParsedSlot(value='after 8pm', match_range=(33, 42),
-                       entity='snips/datetime', slot_name='start_date')
+                       entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
 
@@ -375,3 +434,58 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             }
         ]
         self.assertEqual(capitalized_utterances, expected_utterances)
+
+    def test_generate_slots_permutations(self):
+        # Given
+        possible_slots = ["slot1", "slot22"]
+        configs = [
+            {
+                "n_builtins_in_sentence": 0,
+                "slots": []
+            },
+            {
+                "n_builtins_in_sentence": 1,
+                "slots": [
+                    ("slot1",),
+                    ("slot22",),
+                    ("O",)
+                ]
+            },
+            {
+                "n_builtins_in_sentence": 2,
+                "slots": [
+                    ("slot1", "slot22"),
+                    ("slot22", "slot1"),
+                    ("slot1", "O"),
+                    ("O", "slot1"),
+                    ("slot22", "O"),
+                    ("O", "slot22"),
+                    ("O", "O")
+                ]
+            },
+            {
+                "n_builtins_in_sentence": 3,
+                "slots": [
+                    ("slot1", "slot22", "O"),
+                    ("slot22", "slot1", "O"),
+                    ("slot22", "O", "slot1"),
+                    ("slot1", "O", "slot22"),
+                    ("O", "slot22", "slot1"),
+                    ("O", "slot1", "slot22"),
+                    ("O", "O", "slot1"),
+                    ("O", "O", "slot22"),
+                    ("O", "slot1", "O"),
+                    ("O", "slot22", "O"),
+                    ("slot1", "O", "O"),
+                    ("slot22", "O", "O"),
+                    ("O", "O", "O")
+                ]
+            }
+        ]
+
+        for conf in configs:
+            # When
+            slots = generate_slots_permutations(conf["n_builtins_in_sentence"],
+                                                possible_slots)
+            # Then
+            self.assertItemsEqual(conf["slots"], slots)

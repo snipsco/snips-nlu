@@ -210,19 +210,40 @@ def replace_builtin_tags(tags, builtin_slot_names):
     return new_tags
 
 
+def generate_slots_permutations(n_detected_builtins, possible_slots_names):
+    if n_detected_builtins == 0:
+        return []
+    # Add n_detected_builtins "O" slots to the possible slots.
+    # It's possible that out of the detected builtins the CRF choose that
+    # none of them are likely to be an actually slot, these combination
+    # must be taken into account
+    permutation_pool = range(len(possible_slots_names) + n_detected_builtins)
+
+    # Generate all permutations
+    perms = [p for p in permutations(permutation_pool, n_detected_builtins)]
+
+    # Replace the indices greater than possible_slots_names by "O"
+    perms = [tuple(possible_slots_names[i] if i < len(possible_slots_names)
+                   else OUTSIDE for i in p) for p in perms]
+
+    # Make the permutations unique
+    return list(set(perms))
+
+
 def augment_slots(text, tokens, tags, tagger, intent_slots_mapping,
-                  builtin_entities, missing_slots):
+                  builtin_entities, builtin_slots_names):
     augmented_tags = tags
     grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
     for entity, matches in grouped_entities:
         spans_ranges = [match[MATCH_RANGE] for match in matches]
+        num_possible_builtins = len(spans_ranges)
         tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
-        related_slots = set(s for s in missing_slots
-                            if intent_slots_mapping[s] == entity.label)
-        slots_permutations = permutations(related_slots)
+        related_slots = list(set(s for s in builtin_slots_names
+                                 if intent_slots_mapping[s] == entity.label))
         best_updated_tags = augmented_tags
         best_permutation_score = -1
-        for slots in slots_permutations:
+        for slots in generate_slots_permutations(num_possible_builtins,
+                                                 related_slots):
             updated_tags = copy(augmented_tags)
             for slot_index, slot in enumerate(slots):
                 if slot_index >= len(tokens_indexes):

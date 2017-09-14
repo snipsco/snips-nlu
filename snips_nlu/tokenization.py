@@ -61,7 +61,7 @@ def tokenize(string, language):
 
 def tokenize_light(string, language):
     if language == Language.ZH:
-        tokenized_string = "".join(t.value for t in tokenize(string, language))
+        tokenized_string = [t.value for t in tokenize(string, language)]
     else:
         tokenized_string = _tokenize_light(string)
     return tokenized_string

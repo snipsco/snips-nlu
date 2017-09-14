@@ -93,5 +93,6 @@ class TestTokenization(unittest.TestCase):
         tokenized_light = tokenize_light(s, language)
 
         # Then
-        expected_s = "我要去乌克兰我能知道那的天气预报吗"
+        expected_s = ["我要", "去", "乌克兰", "我能", "知道", "那", "的", "天气预报",
+                      "吗"]
         self.assertEqual(tokenized_light, expected_s)

@@ -16,7 +16,6 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
 
 required = [
     "enum34==1.1.6",
-    "mock==2.0.0",
     "numpy==1.12.1",
     "scipy==0.19.0",
     "scikit-learn==0.18.1",
@@ -27,12 +26,20 @@ required = [
     "nlu_utils==0.2.0"
 ]
 
+extras_require = {
+    "test": [
+        "mock==2.0.0",
+        "nlu_metrics==0.3.2",
+    ]
+}
+
 setup(name=PACKAGE_NAME,
       version=version,
       author="Clement Doumouro",
       author_email="clement.doumouro@snips.ai",
       license="MIT",
       install_requires=required,
+      extras_require=extras_require,
       packages=packages,
       package_data={
           "": [
@@ -42,7 +49,6 @@ setup(name=PACKAGE_NAME,
               "snips-nlu-resources/es/*",
               "snips-nlu-resources/de/*",
               "snips-nlu-resources/ko/*",
-              "tests/resources/*"
           ]},
       entry_points={
           "console_scripts": [

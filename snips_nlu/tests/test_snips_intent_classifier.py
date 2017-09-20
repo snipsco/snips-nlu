@@ -81,12 +81,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        try:
-            json.dumps(classifier_dict).encode("utf-8")
-        except:
-            self.fail("SnipsIntentClassifier dict should be json serializable "
-                      "to utf-8")
-
         intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
             "classifier_args": classifier_args,
@@ -272,8 +266,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
            ".augment_utterances")
-    @patch("snips_nlu.preprocessing.stem_sentence")
-    @patch("snips_nlu.intent_classifier.snips_intent_classifier.stem_sentence")
+    @patch("snips_nlu.preprocessing.stem")
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.stem")
     def test_should_build_training_data_with_stemming(
             self, mocked_stem_1, mocked_stem_2, mocked_augment_utterances):
         # Given

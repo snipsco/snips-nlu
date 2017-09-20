@@ -1,5 +1,4 @@
 import numpy as np
-
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE

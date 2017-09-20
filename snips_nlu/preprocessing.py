@@ -4,6 +4,7 @@ import os
 
 from nlu_utils import normalize
 
+from snips_nlu.tokenization import tokenize_light
 from snips_nlu.utils import RESOURCES_PATH
 
 _LANGUAGE_STEMS = dict()
@@ -51,11 +52,11 @@ def language_stems(language):
     return _LANGUAGE_STEMS[language.iso_code]
 
 
-def stem_sentence(string, language):
-    tokens = string.split()
-    stemmed_tokens = [stem(token, language) for token in tokens]
+def stem(string, language):
+    tokens = tokenize_light(string)
+    stemmed_tokens = [_stem(token, language) for token in tokens]
     return ' '.join(stemmed_tokens)
 
 
-def stem(string, language):
+def _stem(string, language):
     return language_stems(language).get(string, string)

@@ -16,15 +16,15 @@ from snips_nlu.slot_filler.feature_functions import (
     get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
-    get_is_in_gazetteer_fn)
-from snips_nlu.slot_filler.features_utils import char_range_to_token_range
+    get_is_in_gazetteer_fn, get_length_fn)
 from snips_nlu.tokenization import tokenize
 
 
 class TestFeatureFunctions(unittest.TestCase):
     def test_ngrams(self):
         # Given
-        tokens = tokenize("I love house music")
+        language = Language.EN
+        tokens = tokenize("I love house music", language)
         ngrams = {
             1: ["i", "love", "house", "music"],
             2: ["i love", "love house", "house music", None],
@@ -32,7 +32,27 @@ class TestFeatureFunctions(unittest.TestCase):
         }
 
         for n, expected_features in ngrams.iteritems():
-            ngrams_fn = get_ngram_fn(n, use_stemming=False)
+            ngrams_fn = get_ngram_fn(n, use_stemming=False,
+                                     language_code=language.iso_code)
+            # When
+            features = [ngrams_fn.function(tokens, i)
+                        for i in xrange(len(tokens))]
+            # Then
+            self.assertEqual(expected_features, features)
+
+    def test_chinese_ngrams(self):
+        # Given
+        language = Language.ZH
+        tokens = tokenize("我喜欢流行音乐", language)
+        ngrams = {
+            1: ["我", "喜欢", "流行音乐"],
+            2: ["我喜欢", "喜欢流行音乐", None],
+            3: ["我喜欢流行音乐", None, None]
+        }
+
+        for n, expected_features in ngrams.iteritems():
+            ngrams_fn = get_ngram_fn(n, use_stemming=False,
+                                     language_code=language.iso_code)
             # When
             features = [ngrams_fn.function(tokens, i)
                         for i in xrange(len(tokens))]
@@ -45,7 +65,8 @@ class TestFeatureFunctions(unittest.TestCase):
         mocked_gazetteer = {"i", "love", "music"}
 
         mocked_get_gazetteer.return_value = mocked_gazetteer
-        tokens = tokenize("I love house Müsic")
+        language = Language.EN
+        tokens = tokenize("I love house Müsic", language)
         ngrams = {
             1: ["i", "love", "rare_word", "music"],
             2: ["i love", "love rare_word", "rare_word music", None],
@@ -54,7 +75,31 @@ class TestFeatureFunctions(unittest.TestCase):
 
         for n, expected_features in ngrams.iteritems():
             ngrams_fn = get_ngram_fn(n, use_stemming=False,
-                                     language_code=Language.EN.iso_code,
+                                     language_code=language.iso_code,
+                                     common_words_gazetteer_name='common')
+            # When
+            features = [ngrams_fn.function(tokens, i)
+                        for i in xrange(len(tokens))]
+            # Then
+            self.assertEqual(expected_features, features)
+
+    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
+    def test_chinese_ngrams_with_rare_word(self, mocked_get_gazetteer):
+        # Given
+        mocked_gazetteer = {"我", "喜欢"}
+
+        mocked_get_gazetteer.return_value = mocked_gazetteer
+        language = Language.ZH
+        tokens = tokenize("我喜欢流行音乐", language)
+        ngrams = {
+            1: ["我", "喜欢", "rare_word"],
+            2: ["我喜欢", "喜欢rare_word", None],
+            3: ["我喜欢rare_word", None, None]
+        }
+
+        for n, expected_features in ngrams.iteritems():
+            ngrams_fn = get_ngram_fn(n, use_stemming=False,
+                                     language_code=language.iso_code,
                                      common_words_gazetteer_name='common')
             # When
             features = [ngrams_fn.function(tokens, i)
@@ -64,7 +109,8 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_prefix(self):
         # Given
-        tokens = tokenize("AbCde")
+        language = Language.EN
+        tokens = tokenize("AbCde", language)
         token = tokens[0]
         expected_prefixes = ["a", "ab", "abc", "abcd", "abcde", None]
 
@@ -77,7 +123,8 @@ class TestFeatureFunctions(unittest.TestCase):
 
     def test_suffix(self):
         # Given
-        tokens = tokenize("AbCde")
+        language = Language.EN
+        tokens = tokenize("AbCde", language)
         token = tokens[0]
         expected_suffixes = ["e", "de", "cde", "bcde", "abcde", None]
 
@@ -88,14 +135,46 @@ class TestFeatureFunctions(unittest.TestCase):
             # Then
             self.assertEqual(prefix, expected_suffixes[i - 1])
 
+    def test_length(self):
+        # Given
+        language = Language.EN
+        tokens = tokenize("i'm here dude", language)
+
+        # When
+        fn = get_length_fn().function
+        tokens_length = [fn(tokens, i) for i in xrange(len(tokens))]
+
+        # Then
+        expected_tokens_lengths = [1, 1, 4, 4]
+        self.assertSequenceEqual(tokens_length, expected_tokens_lengths)
+
     def test_token_is_in(self):
         # Given
+        language = Language.EN
         collection = {"bird", "blue bird"}
-        tokens = tokenize("i m a Blue bÏrd")
+        tokens = tokenize("i m a Blue bÏrd", language)
         expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
         # When
         scheme_code = TaggingScheme.BILOU.value
         feature_fn = get_token_is_in_fn(collection, "animal",
+                                        use_stemming=False,
+                                        tagging_scheme_code=scheme_code,
+                                        language_code='en')
+
+        # Then
+        self.assertEqual(expected_features,
+                         [feature_fn.function(tokens, i)
+                          for i in xrange(len(tokens))])
+
+    def test_chinese_token_is_in(self):
+        # Given
+        language = Language.ZH
+        collection = {"花", "红花"}
+        tokens = tokenize("这是一朵红花", language)
+        expected_features = [None, None, UNIT_PREFIX]
+        # When
+        scheme_code = TaggingScheme.BILOU.value
+        feature_fn = get_token_is_in_fn(collection, "flower",
                                         use_stemming=False,
                                         tagging_scheme_code=scheme_code,
                                         language_code='en')
@@ -111,9 +190,10 @@ class TestFeatureFunctions(unittest.TestCase):
         gazetteer = {"bird", "eagle", "blue bird"}
         mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
         text = "This is a Blue bÏrd flying next to an eagle"
-        tokens = tokenize(text)
+        language = Language.EN
+        tokens = tokenize(text, language=language)
         feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
-                                            Language.EN.iso_code,
+                                            language.iso_code,
                                             TaggingScheme.BILOU.value,
                                             use_stemming=False)
 
@@ -126,9 +206,31 @@ class TestFeatureFunctions(unittest.TestCase):
                              None, None, None, None, UNIT_PREFIX]
         self.assertListEqual(features, expected_features)
 
+    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
+    def test_chinese_is_in_gazetteer(self, mocked_get_gazetteer):
+        # Given
+        gazetteer = {"花", "红花", "蓝花"}
+        mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
+        text = "红花旁边有一朵蓝花"
+        language = Language.ZH
+        tokens = tokenize(text, language=language)
+        feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
+                                            language.iso_code,
+                                            TaggingScheme.BILOU.value,
+                                            use_stemming=False)
+
+        # When
+        features = [feature_fn.function(tokens, i) for i in
+                    xrange(len(tokens))]
+
+        # Then
+        expected_features = [UNIT_PREFIX, None, None, None, UNIT_PREFIX]
+        self.assertListEqual(features, expected_features)
+
     @patch('snips_nlu.slot_filler.feature_functions.get_builtin_entities')
     def test_get_built_in_annotation_fn(self, mocked_get_builtin_entities):
         # Given
+        language = Language.EN
         input_text = u"i ll be there tomorrow at noon   is that ok"
 
         mocked_built_in_entities = [
@@ -140,7 +242,7 @@ class TestFeatureFunctions(unittest.TestCase):
         ]
 
         mocked_get_builtin_entities.return_value = mocked_built_in_entities
-        tokens = tokenize(input_text)
+        tokens = tokenize(input_text, language)
         feature_fn = get_built_in_annotation_fn(BuiltInEntity.DATETIME.label,
                                                 Language.EN.iso_code,
                                                 TaggingScheme.BILOU.value)
@@ -154,30 +256,14 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         self.assertEqual(features, expected_features)
 
-    def test_char_range_to_token_range(self):
-        # Given
-        text = "I'm here for eating"
-        tokens = text.split()
-        char_to_token_range = {
-            (0, 3): (0, 1),
-            (5, 6): None,
-            (4, 8): (1, 2),
-            (5, 11): None,
-            (4, 12): (1, 3),
-            (13, 19): (3, 4)
-        }
-        # When/Then
-        for char_range, token_range in char_to_token_range.iteritems():
-            self.assertEqual(char_range_to_token_range(char_range, tokens),
-                             token_range)
-
     def test_create_feature_function(self):
         # Given
+        language = Language.EN
         name = "position"
         base_feature_function = BaseFeatureFunction(
             name, lambda _, token_index: token_index + 1)
 
-        tokens = tokenize("a b c")
+        tokens = tokenize("a b c", language)
         expected_features = {
             0: ("position", [1, 2, 3]),
             -1: ("position[-1]", [None, 1, 2]),
@@ -196,6 +282,8 @@ class TestFeatureFunctions(unittest.TestCase):
             self.assertEqual(feats, expected_feats)
 
     def test_crf_features(self):
+        # Given
+        language = Language.EN
         intent_entities = {
             "dummy_entity_1": {
                 AUTOMATICALLY_EXTENSIBLE: False,
@@ -235,9 +323,8 @@ class TestFeatureFunctions(unittest.TestCase):
         # When
         np.random.seed(42)
         keep_prob = 0.5
-        features_signatures = crf_features(
-            intent_entities=intent_entities,
-            language=Language.EN)
+        features_signatures = crf_features(intent_entities=intent_entities,
+                                           language=language)
 
         # Then
         np.random.seed(42)

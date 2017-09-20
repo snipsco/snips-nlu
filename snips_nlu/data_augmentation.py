@@ -9,6 +9,7 @@ import numpy as np
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, USE_SYNONYMS,
                                  SYNONYMS, VALUE, TEXT, INTENTS, ENTITIES)
+from snips_nlu.languages import NON_SEGMENTED_LANGUAGES
 from snips_nlu.resources import get_subtitles
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import namedtuple_with_defaults
@@ -100,11 +101,12 @@ def get_noise_iterator(language, min_size, max_size):
     subtitles_it = cycle(np.random.permutation(list(subtitles)))
     for subtitle in subtitles_it:
         size = random.choice(range(min_size, max_size + 1))
-        tokens = tokenize(subtitle)
+        tokens = tokenize(subtitle, language)
         while len(tokens) < size:
-            tokens += tokenize(next(subtitles_it))
+            tokens += tokenize(next(subtitles_it), language)
         start = random.randint(0, len(tokens) - size)
-        yield " ".join(t.value.lower() for t in tokens[start:start + size])
+        yield language.default_sep.join(
+            t.value.lower() for t in tokens[start:start + size])
 
 
 def augment_utterances(dataset, intent_name, language, max_utterances,

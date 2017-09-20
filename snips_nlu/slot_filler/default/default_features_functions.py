@@ -1,5 +1,6 @@
-import numpy as np
+from __future__ import unicode_literals
 
+import numpy as np
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
@@ -31,21 +32,6 @@ def default_features(language, intent_entities, use_stemming,
                 "common_words_gazetteer_name": common_words_gazetteer_name
             },
             "offsets": [-2, 1]
-        },
-        {
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 1},
-            "offsets": [0]
-        },
-        {
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 2},
-            "offsets": [-1, 0]
-        },
-        {
-            "factory_name": "get_shape_ngram_fn",
-            "args": {"n": 3},
-            "offsets": [-1]
         },
         {
             "factory_name": "is_digit",
@@ -105,3 +91,23 @@ def default_features(language, intent_entities, use_stemming,
             }
         )
     return features
+
+
+def default_shape_ngram_features(language):
+    return [
+        {
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 1, "language_code": language.iso_code},
+            "offsets": [0]
+        },
+        {
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 2, "language_code": language.iso_code},
+            "offsets": [-1, 0]
+        },
+        {
+            "factory_name": "get_shape_ngram_fn",
+            "args": {"n": 3, "language_code": language.iso_code},
+            "offsets": [-1]
+        }
+    ]

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import io
 import json
 import os
@@ -9,6 +11,8 @@ SAMPLE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
                                    "sample_dataset.json")
 BEVERAGE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
                                      "beverage_dataset.json")
+CHINESE_SAMPLE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
+                                           "chinese_sample_dataset.json")
 
 
 def empty_dataset(language):
@@ -23,5 +27,9 @@ with io.open(SAMPLE_DATASET_PATH, encoding='utf8') as dataset_file:
 with io.open(BEVERAGE_DATASET_PATH, encoding='utf8') as dataset_file:
     BEVERAGE_DATASET = json.load(dataset_file)
 
+with io.open(CHINESE_SAMPLE_DATASET_PATH, encoding='utf8') as dataset_file:
+    CHINESE_SAMPLE_DATASET = json.load(dataset_file)
+
 SAMPLE_DATASET = validate_and_format_dataset(SAMPLE_DATASET)
 BEVERAGE_DATASET = validate_and_format_dataset(BEVERAGE_DATASET)
+CHINESE_SAMPLE_DATASET = validate_and_format_dataset(CHINESE_SAMPLE_DATASET)

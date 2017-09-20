@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
-    default_features
+    default_features, default_shape_ngram_features
 
 
 def language_specific_features(intent_entities):
@@ -15,7 +15,7 @@ def language_specific_features(intent_entities):
                                 entities_offsets=(-2, -1, 0),
                                 entity_keep_prob=.5,
                                 common_words_gazetteer_name="top_10000_words")
-
+    features += default_shape_ngram_features(language)
     gazetteer_names = ["cities_france", "cities_world", "countries",
                        "departements_france", "regions_france",
                        "street_identifier"]

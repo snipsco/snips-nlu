@@ -58,6 +58,19 @@ RESOURCE_INDEX = {
         ],
         STOP_WORDS: "stop_words.txt",
         SUBTITLES: "subtitles.txt",
+    },
+    Language.ZH: {
+        STOP_WORDS: "stop_words.txt",
+        SUBTITLES: "subtitles.txt",
+        GAZETTEERS: [
+            "cities_china.txt",
+            "cities_world.txt",
+            "countries.txt",
+            "provinces_china.txt",
+            "street_identifier.txt",
+            "top_10000_words.txt",
+            "numerals.txt"
+        ],
     }
 }
 
@@ -114,7 +127,8 @@ def load_clusters():
                     for l in f:
                         split = l.rstrip().split("\t")
                         if len(split) == 2:
-                            _word_clusters[name][split[0]] = split[1]
+                            normalized = normalize(split[0])
+                            _word_clusters[name][normalized] = split[1]
 
 
 def get_word_clusters(language):
@@ -136,8 +150,8 @@ def load_gazetteers():
                 for l in f:
                     normalized = normalize(l)
                     if len(normalized) > 0:
-                        normalized = " ".join(
-                            [t.value for t in tokenize(normalized)])
+                        normalized = language.default_sep.join(
+                            [t.value for t in tokenize(normalized, language)])
                         _gazetteers[name].add(normalized)
 
 

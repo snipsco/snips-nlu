@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 import json
@@ -13,7 +14,8 @@ from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier, build_training_data
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
+from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset, \
+    CHINESE_SAMPLE_DATASET
 
 
 def np_random_permutation(x):
@@ -27,7 +29,7 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):
-    def test_should_get_intent(self):
+    def test_intent_classifier_should_get_intent(self):
         # Given
         dataset = SAMPLE_DATASET
         classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
@@ -39,6 +41,21 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # Then
         expected_intent = "dummy_intent_2"
+
+        self.assertEqual(intent, expected_intent)
+
+    def test_chinese_intent_classifier_should_get_intent(self):
+        # Given
+        dataset = CHINESE_SAMPLE_DATASET
+        classifier = SnipsIntentClassifier(language=Language.ZH).fit(dataset)
+        text = "桌子上有一只猪"
+
+        # When
+        res = classifier.get_intent(text)
+        intent = res[0]
+
+        # Then
+        expected_intent = "animalIntent"
 
         self.assertEqual(intent, expected_intent)
 

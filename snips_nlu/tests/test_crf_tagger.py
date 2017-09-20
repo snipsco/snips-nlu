@@ -74,7 +74,7 @@ class TestCRFTagger(unittest.TestCase):
                     ]
                 }
             ],
-            "language": "en",
+            "language_code": "en",
             "tagging_scheme": 2
         }
         self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
@@ -109,7 +109,7 @@ class TestCRFTagger(unittest.TestCase):
                     ]
                 }
             ],
-            "language": "en",
+            "language_code": "en",
             "tagging_scheme": 2
         }
         # When

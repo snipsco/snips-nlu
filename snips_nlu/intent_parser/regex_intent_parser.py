@@ -291,7 +291,7 @@ class RegexIntentParser(object):
             patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
                         self.regexes_per_intent.iteritems()}
         return {
-            "language": self.language.iso_code,
+            "language_code": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
@@ -299,7 +299,7 @@ class RegexIntentParser(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        language = Language.from_iso_code(obj_dict["language"])
+        language = Language.from_iso_code(obj_dict["language_code"])
         patterns = obj_dict["patterns"]
         group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
         slot_names_to_entities = obj_dict["slot_names_to_entities"]

@@ -113,7 +113,7 @@ class TestRegexIntentParser(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language_code": language.iso_code
         }
 
         parser = RegexIntentParser(language).fit(dataset)
@@ -377,7 +377,7 @@ class TestRegexIntentParser(unittest.TestCase):
 
         # Then
         expected_dict = {
-            "language": "en",
+            "language_code": "en",
             "group_names_to_slot_names": {
                 "hello_group": "hello_slot",
                 "world_group": "world_slot"
@@ -399,7 +399,7 @@ class TestRegexIntentParser(unittest.TestCase):
     def test_should_be_deserializable(self):
         # Given
         parser_dict = {
-            "language": "en",
+            "language_code": "en",
             "group_names_to_slot_names": {
                 "hello_group": "hello_slot",
                 "world_group": "world_slot"

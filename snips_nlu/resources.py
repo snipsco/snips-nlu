@@ -127,7 +127,8 @@ def load_clusters():
                     for l in f:
                         split = l.rstrip().split("\t")
                         if len(split) == 2:
-                            _word_clusters[name][split[0]] = split[1]
+                            normalized = normalize(split[0])
+                            _word_clusters[name][normalized] = split[1]
 
 
 def get_word_clusters(language):

@@ -272,8 +272,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
            ".augment_utterances")
-    @patch("snips_nlu.preprocessing.stem_sentence")
-    @patch("snips_nlu.intent_classifier.snips_intent_classifier.stem_sentence")
+    @patch("snips_nlu.preprocessing.stem")
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.stem")
     def test_should_build_training_data_with_stemming(
             self, mocked_stem_1, mocked_stem_2, mocked_augment_utterances):
         # Given

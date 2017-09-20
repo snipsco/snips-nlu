@@ -29,17 +29,6 @@ class TestFeatureExtraction(unittest.TestCase):
         serialized_featurizer = featurizer.to_dict()
 
         # Then
-        try:
-            dumped = json.dumps(serialized_featurizer).decode("utf8")
-        except:
-            self.fail("Featurizer dict should be json serializable to utf8")
-
-        try:
-            _ = Featurizer.from_dict(json.loads(dumped))
-        except:
-            self.fail("SnipsNLUEngine should be deserializable from dict with "
-                      "unicode values")
-
         stop_words = tfidf_vectorizer.stop_words
         vocabulary = tfidf_vectorizer.vocabulary_
         idf_diag = tfidf_vectorizer._tfidf._idf_diag.data.tolist()

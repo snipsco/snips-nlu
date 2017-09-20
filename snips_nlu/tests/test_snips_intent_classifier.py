@@ -81,12 +81,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        try:
-            json.dumps(classifier_dict).encode("utf-8")
-        except:
-            self.fail("SnipsIntentClassifier dict should be json serializable "
-                      "to utf-8")
-
         intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
             "classifier_args": classifier_args,

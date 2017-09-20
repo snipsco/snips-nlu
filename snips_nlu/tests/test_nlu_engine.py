@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import io
+import json
 import os
 import traceback as tb
 import unittest
@@ -201,6 +202,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
+        try:
+            json.dumps(engine_dict).encode("utf-8")
+        except:
+            self.fail("SnipsNLUEngine dict should be json serializable "
+                      "to utf-8")
         expected_slots = [
             ParsedSlot((8, 9), '3', 'snips/number',
                        'number_of_cups').as_dict(),

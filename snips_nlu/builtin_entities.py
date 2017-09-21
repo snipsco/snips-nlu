@@ -140,11 +140,15 @@ class BuiltInEntity(Enum):
         return ent
 
 
-_RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = {
-    Language.from_rustling_code(k.upper()): set(
-        BuiltInEntity.from_rustling_dim_kind(e) for e in v)
-    for k, v in rustling.all_configs().iteritems()
-}
+_RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = dict()
+
+for k, v in rustling.all_configs().iteritems():
+    try:
+        language = Language.from_rustling_code(k.upper())
+    except KeyError:
+        continue
+    _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[language] = \
+        set(BuiltInEntity.from_rustling_dim_kind(e) for e in v)
 
 _SUPPORTED_BUILTINS_BY_LANGUAGE = defaultdict(set)
 for entity in BuiltInEntity:

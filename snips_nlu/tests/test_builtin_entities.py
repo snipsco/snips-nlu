@@ -131,7 +131,7 @@ class TestBuiltInEntities(unittest.TestCase):
             # When / Then
             for language in ent.supported_languages:
                 language_entities = supported_dim_kinds_by_language[
-                    language.rustling_code.lower()]
+                    language.rustling_code]
                 if ent.rustling_dim_kind not in language_entities:
                     self.fail(
                         "Unknown Rustling dimension '%s'" % ent.rustling_dim)

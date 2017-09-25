@@ -174,10 +174,11 @@ class TestFeatureFunctions(unittest.TestCase):
                 return "bird_stemmed"
             else:
                 return string
+
         mocked_stem.side_effect = stem_mocked
         language = Language.EN
         collection = {"bird_stemmed", "blue bird_stemmed"}
-        tokens = tokenize("i m a Blue bÏrdy")
+        tokens = tokenize("i m a Blue bÏrdy", language)
         for token in tokens:
             token.stem = stem_mocked(token.normalized_value, language)
         expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]

@@ -22,12 +22,12 @@ MANDARIN_IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(
 
 
 class Language(Enum):
-    EN = {ISO_CODE: "en", RUSTLING_CODE: "EN"}
-    ES = {ISO_CODE: "es", RUSTLING_CODE: "ES"}
-    FR = {ISO_CODE: "fr", RUSTLING_CODE: "FR"}
-    DE = {ISO_CODE: "de", RUSTLING_CODE: "DE"}
-    KO = {ISO_CODE: "ko", RUSTLING_CODE: "KO"}
-    ZH = {ISO_CODE: "zh", RUSTLING_CODE: "ZH"}
+    EN = {ISO_CODE: "en", RUSTLING_CODE: "en"}
+    ES = {ISO_CODE: "es", RUSTLING_CODE: "es"}
+    FR = {ISO_CODE: "fr", RUSTLING_CODE: "fr"}
+    DE = {ISO_CODE: "de", RUSTLING_CODE: "de"}
+    KO = {ISO_CODE: "ko", RUSTLING_CODE: "ko"}
+    ZH = {ISO_CODE: "zh", RUSTLING_CODE: "zh"}
 
     @property
     def iso_code(self):
@@ -101,6 +101,3 @@ class Language(Enum):
             return MANDARIN_IGNORED_CHARACTERS_PATTERN
         else:
             return COMMONLY_IGNORED_CHARACTERS_PATTERN
-
-
-NON_SEGMENTED_LANGUAGES = {Language.ZH}

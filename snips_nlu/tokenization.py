@@ -55,7 +55,7 @@ def tokenize(string, language):
         tokens = [Token(value=token["value"],
                         start=token["char_range"]["start"],
                         end=token["char_range"]["end"])
-                  for token in _tokenize(string)]
+                  for token in _tokenize(string, language.iso_code)]
     return tokens
 
 
@@ -63,5 +63,5 @@ def tokenize_light(string, language):
     if language == Language.ZH:
         tokenized_string = [t.value for t in tokenize(string, language)]
     else:
-        tokenized_string = _tokenize_light(string)
+        tokenized_string = _tokenize_light(string, language.iso_code)
     return tokenized_string

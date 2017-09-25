@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import json
 import re
 from copy import deepcopy
 
@@ -31,6 +32,7 @@ def extract_queries_entities(dataset):
 
 def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     dataset = deepcopy(dataset)
+    dataset = json.loads(json.dumps(dataset))
     validate_type(dataset, dict)
     mandatory_keys = [INTENTS, ENTITIES, LANGUAGE, SNIPS_NLU_VERSION]
     for key in mandatory_keys:
@@ -39,7 +41,7 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
     validate_type(dataset[LANGUAGE], basestring)
-    language = dataset[LANGUAGE]
+    language = Language.from_iso_code(dataset[LANGUAGE])
 
     for intent_name, intent in dataset[INTENTS].iteritems():
         validate_intent_name(intent_name)

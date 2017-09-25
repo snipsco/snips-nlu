@@ -18,8 +18,12 @@ def default_tfidf_vectorizer(language):
 
 
 def get_tokens_clusters(tokens, language, cluster_name):
-    return [get_word_clusters(language)[cluster_name][t] for t in tokens
-            if t in get_word_clusters(language)[cluster_name]]
+    tokens_clusters = []
+    for t in tokens:
+        cluster = get_word_clusters(language)[cluster_name].get(t, False)
+        if cluster:
+            tokens_clusters.append(cluster)
+    return tokens_clusters
 
 
 def entity_name_to_feature(entity_name, language):

@@ -25,5 +25,5 @@ class TestLanguage(unittest.TestCase):
             sep = l.default_sep
 
             # Then
-            expected_sep = "" if l == Language.ZH else " "
+            expected_sep = " "
             self.assertEqual(sep, expected_sep)

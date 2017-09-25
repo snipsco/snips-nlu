@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import unittest
 
 from snips_nlu.languages import Language
-from snips_nlu.tokenization import tokenize, Token, tokenize_light
+from snips_nlu.tokenization import tokenize, Token
 
 
 class TestTokenization(unittest.TestCase):
@@ -61,38 +61,3 @@ class TestTokenization(unittest.TestCase):
             Token(value='!!', start=5, end=7, stem=None)
         ]
         self.assertListEqual(tokens, expected_tokens)
-
-    def test_should_tokenize_chinese(self):
-        # Given
-        language = Language.ZH
-        s = "我要去乌克兰，我能知道那边的天气预报吗!"
-
-        # When
-        tokens = tokenize(s, language)
-
-        # Then
-        expected_tokens = [
-            Token("我要", 0, 2),
-            Token("去", 2, 3),
-            Token("乌克兰", 3, 6),
-            Token("我能", 7, 9),
-            Token("知道", 9, 11),
-            Token("那边", 11, 13),
-            Token("的", 13, 14),
-            Token("天气预报", 14, 18),
-            Token("吗", 18, 19)
-        ]
-        self.assertSequenceEqual(tokens, expected_tokens)
-
-    def test_should_tokenize_light_chinese(self):
-        # Given
-        language = Language.ZH
-        s = "我要去乌克兰，我能知道那的天气预报吗!"
-
-        # When
-        tokenized_light = tokenize_light(s, language)
-
-        # Then
-        expected_s = ["我要", "去", "乌克兰", "我能", "知道", "那", "的", "天气预报",
-                      "吗"]
-        self.assertEqual(tokenized_light, expected_s)

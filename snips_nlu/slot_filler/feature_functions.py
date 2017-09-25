@@ -20,8 +20,6 @@ from snips_nlu.slot_filler.fr.specific_features_functions import \
     language_specific_features as fr_features
 from snips_nlu.slot_filler.ko.specific_features_functions import \
     language_specific_features as ko_features
-from snips_nlu.slot_filler.zh.specific_features_functions import \
-    language_specific_features as zh_features
 
 TOKEN_NAME = "token"
 
@@ -41,8 +39,6 @@ def crf_features(intent_entities, language):
         return de_features(intent_entities)
     elif language == Language.KO:
         return ko_features(intent_entities=intent_entities)
-    elif language == Language.ZH:
-        return zh_features(intent_entities=intent_entities)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)

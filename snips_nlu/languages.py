@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import string
 
 from enum import Enum
-from zhon import hanzi
 
 from utils import classproperty, regex_escape
 
@@ -15,11 +14,6 @@ COMMONLY_IGNORED_CHARACTERS = "%s%s" % (WHITE_SPACES, string.punctuation)
 COMMONLY_IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(
     COMMONLY_IGNORED_CHARACTERS)
 
-MANDARIN_PUNCTUATION = hanzi.punctuation + string.punctuation
-MANDARIN_IGNORED_CHARACTERS = "%s%s" % (WHITE_SPACES, MANDARIN_PUNCTUATION)
-MANDARIN_IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(
-    MANDARIN_IGNORED_CHARACTERS)
-
 
 class Language(Enum):
     EN = {ISO_CODE: "en", RUSTLING_CODE: "en"}
@@ -27,7 +21,6 @@ class Language(Enum):
     FR = {ISO_CODE: "fr", RUSTLING_CODE: "fr"}
     DE = {ISO_CODE: "de", RUSTLING_CODE: "de"}
     KO = {ISO_CODE: "ko", RUSTLING_CODE: "ko"}
-    ZH = {ISO_CODE: "zh", RUSTLING_CODE: "zh"}
 
     @property
     def iso_code(self):
@@ -83,21 +76,12 @@ class Language(Enum):
 
     @property
     def default_sep(self):
-        if self == Language.ZH:
-            return ""
-        else:
-            return " "
+        return " "
 
     @property
     def punctuation(self):
-        if self == Language.ZH:
-            return MANDARIN_PUNCTUATION
-        else:
-            return string.punctuation
+        return string.punctuation
 
     @property
     def ignored_characters_pattern(self):
-        if self == Language.ZH:
-            return MANDARIN_IGNORED_CHARACTERS_PATTERN
-        else:
-            return COMMONLY_IGNORED_CHARACTERS_PATTERN
+        return COMMONLY_IGNORED_CHARACTERS_PATTERN

@@ -14,7 +14,7 @@ from snips_nlu.intent_parser.regex_intent_parser import (
     replace_builtin_entities, preprocess_builtin_entities)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
-from snips_nlu.tests.utils import SAMPLE_DATASET, CHINESE_SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestRegexIntentParser(unittest.TestCase):
@@ -297,54 +297,6 @@ class TestRegexIntentParser(unittest.TestCase):
         for text, expected_slots in texts:
             # When
             slots = parser.get_slots(text, intent="dummy_intent_1")
-            # Then
-            self.assertItemsEqual(expected_slots, slots)
-
-    def test_should_get_chinese_intent(self):
-        # Given
-        language = Language.ZH
-        dataset = validate_and_format_dataset(CHINESE_SAMPLE_DATASET)
-        parser = RegexIntentParser(language).fit(dataset)
-
-        text = "草地上，有一只麻雀"
-
-        # When
-        intent = parser.get_intent(text)
-
-        # Then
-        probability = 1.0
-        expected_intent = IntentClassificationResult(
-            intent_name="animalIntent", probability=probability)
-
-        self.assertEqual(intent, expected_intent)
-
-    def test_should_get_chinese_slots(self):
-        # Given
-        language = Language.ZH
-        dataset = CHINESE_SAMPLE_DATASET
-        parser = RegexIntentParser(language).fit(dataset)
-
-        texts = [
-            ("草地上，有一只麻雀",
-             [
-                 ParsedSlot(match_range=(0, 3), value="草地上",
-                            entity="locationEntity", slot_name="location"),
-                 ParsedSlot(match_range=(7, 9), value="麻雀",
-                            entity="animalEntity", slot_name="animal")
-             ]
-             ),
-            ("草地上有一只比目鱼",
-             [
-                 ParsedSlot(match_range=(0, 3), value="草地上",
-                            entity="locationEntity", slot_name="location"),
-                 ParsedSlot(match_range=(6, 9), value="比目鱼",
-                            entity="animalEntity", slot_name="animal")
-             ])
-        ]
-
-        for text, expected_slots in texts:
-            # When
-            slots = parser.get_slots(text, intent="animalIntent")
             # Then
             self.assertItemsEqual(expected_slots, slots)
 

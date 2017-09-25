@@ -23,11 +23,9 @@ required = [
     "builtin_entities_ontology==0.4.2",
     "semantic_version==2.6.0",
     "rustling==7.0",
-    "nlu_utils==0.2.0"
+    "nlu_utils==0.2.0",
     "rustling==6.1",
-    "nlu_utils==0.5.0",
-    "jieba==0.38",
-    "zhon==1.1.5"
+    "nlu_utils==0.5.0"
 ]
 
 extras_require = {

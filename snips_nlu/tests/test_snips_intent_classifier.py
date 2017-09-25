@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import json
 import unittest
 
 import numpy as np
@@ -14,8 +13,7 @@ from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier, build_training_data
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset, \
-    CHINESE_SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 
 
 def np_random_permutation(x):
@@ -41,21 +39,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # Then
         expected_intent = "dummy_intent_2"
-
-        self.assertEqual(intent, expected_intent)
-
-    def test_chinese_intent_classifier_should_get_intent(self):
-        # Given
-        dataset = CHINESE_SAMPLE_DATASET
-        classifier = SnipsIntentClassifier(language=Language.ZH).fit(dataset)
-        text = "桌子上有一只猪"
-
-        # When
-        res = classifier.get_intent(text)
-        intent = res[0]
-
-        # Then
-        expected_intent = "animalIntent"
 
         self.assertEqual(intent, expected_intent)
 

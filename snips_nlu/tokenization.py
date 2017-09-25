@@ -1,16 +1,9 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from jieba import Tokenizer
 from nlu_utils import (tokenize as _tokenize,
                        tokenize_light as _tokenize_light,
                        normalize)
-
-JIEBA_TOKENIZER = Tokenizer()
-
-
-def initialize_jieba_tokenizer():
-    JIEBA_TOKENIZER.check_initialized()
 
 
 class Token(object):

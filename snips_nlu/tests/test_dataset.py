@@ -126,10 +126,9 @@ class TestDataset(unittest.TestCase):
         }
 
         # When/Then
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
-                         "Language name must be ISO 639-1, found 'eng'")
+        self.assertEqual(ctx.exception.message, "Unknown iso_code 'eng'")
 
     def test_should_format_dataset_by_adding_synonyms(self):
         # Given

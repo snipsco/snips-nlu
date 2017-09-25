@@ -28,7 +28,8 @@ def export_feature(language_code, output_path):
 
     features = dict()
     for sentence in sentences:
-        features[sentence] = tagger.compute_features(tokenize(sentence))
+        features[sentence] = tagger.compute_features(
+            tokenize(sentence, language))
 
     with io.open(output_path, "w", encoding="utf8") as f:
         data = json.dumps(features, indent=2).decode("utf8")

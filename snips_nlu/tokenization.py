@@ -2,7 +2,8 @@
 from __future__ import unicode_literals
 
 from nlu_utils import (tokenize as _tokenize,
-                       tokenize_light as _tokenize_light, normalize)
+                       tokenize_light as _tokenize_light,
+                       normalize)
 
 
 class Token(object):
@@ -24,22 +25,23 @@ class Token(object):
     def __eq__(self, other):
         if type(other) != type(self):
             return False
-        return self.value == other.value and \
-               self.start == other.start and \
-               self.end == other.end and \
-               self.stem == other.stem
+        return (self.value == other.value
+                and self.start == other.start
+                and self.end == other.end
+                and self.stem == other.stem)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
 
-def tokenize(string):
-    return [
-        Token(
-            value=token["value"],
-            start=token["char_range"]["start"],
-            end=token["char_range"]["end"])
-        for token in _tokenize(string)]
+def tokenize(string, language):
+    tokens = [Token(value=token["value"],
+                    start=token["char_range"]["start"],
+                    end=token["char_range"]["end"])
+              for token in _tokenize(string, language.iso_code)]
+    return tokens
 
 
-tokenize_light = _tokenize_light
+def tokenize_light(string, language):
+    tokenized_string = _tokenize_light(string, language.iso_code)
+    return tokenized_string

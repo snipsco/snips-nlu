@@ -166,14 +166,14 @@ class CRFTagger(object):
             "crf_model_data": serialize_crf_model(self.crf_model),
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
-            "language": self.language.iso_code
+            "language_code": self.language.iso_code
         }
 
     @classmethod
     def from_dict(cls, tagger_config):
         features_signatures = tagger_config["features_signatures"]
         tagging_scheme = TaggingScheme(int(tagger_config["tagging_scheme"]))
-        language = Language.from_iso_code(tagger_config["language"])
+        language = Language.from_iso_code(tagger_config["language_code"])
         crf = deserialize_crf_model(tagger_config["crf_model_data"])
         return cls(crf_model=crf, features_signatures=features_signatures,
                    tagging_scheme=tagging_scheme, language=language)

@@ -1,10 +1,18 @@
 from __future__ import unicode_literals
 
+import string
+
 from enum import Enum
 
-from utils import classproperty
+from utils import classproperty, regex_escape
 
 ISO_CODE, RUSTLING_CODE = "iso", "rustling_code"
+
+SPACE = " "
+WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
+COMMONLY_IGNORED_CHARACTERS = "%s%s" % (WHITE_SPACES, string.punctuation)
+COMMONLY_IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(
+    COMMONLY_IGNORED_CHARACTERS)
 
 
 class Language(Enum):
@@ -65,3 +73,15 @@ class Language(Enum):
             else:
                 return default
         return ent
+
+    @property
+    def default_sep(self):
+        return " "
+
+    @property
+    def punctuation(self):
+        return string.punctuation
+
+    @property
+    def ignored_characters_pattern(self):
+        return COMMONLY_IGNORED_CHARACTERS_PATTERN

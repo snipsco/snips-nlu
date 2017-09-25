@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 import unittest
@@ -9,12 +10,11 @@ from snips_nlu.constants import INTENTS, MATCH_RANGE, VALUE, ENTITY, DATA, \
     TEXT, SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.regex_intent_parser import (
-    RegexIntentParser, deduplicate_overlapping_slots, IGNORED_CHARACTERS,
+    RegexIntentParser, deduplicate_overlapping_slots,
     replace_builtin_entities, preprocess_builtin_entities)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
-from snips_nlu.tokenization import tokenize
 
 
 class TestRegexIntentParser(unittest.TestCase):
@@ -113,7 +113,7 @@ class TestRegexIntentParser(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language_code": language.iso_code
         }
 
         parser = RegexIntentParser(language).fit(dataset)
@@ -329,7 +329,7 @@ class TestRegexIntentParser(unittest.TestCase):
 
         # Then
         expected_dict = {
-            "language": "en",
+            "language_code": "en",
             "group_names_to_slot_names": {
                 "hello_group": "hello_slot",
                 "world_group": "world_slot"
@@ -351,7 +351,7 @@ class TestRegexIntentParser(unittest.TestCase):
     def test_should_be_deserializable(self):
         # Given
         parser_dict = {
-            "language": "en",
+            "language_code": "en",
             "group_names_to_slot_names": {
                 "hello_group": "hello_slot",
                 "world_group": "world_slot"
@@ -397,6 +397,7 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def test_should_deduplicate_overlapping_slots(self):
         # Given
+        language = Language.EN
         slots = [
             ParsedSlot(
                 [3, 7],
@@ -431,7 +432,7 @@ class TestRegexIntentParser(unittest.TestCase):
         ]
 
         # When
-        deduplicated_slots = deduplicate_overlapping_slots(slots)
+        deduplicated_slots = deduplicate_overlapping_slots(slots, language)
 
         # Then
         expected_slots = [
@@ -471,16 +472,6 @@ class TestRegexIntentParser(unittest.TestCase):
             if intent_name not in intents:
                 self.assertEqual(len(parser.regexes_per_intent[intent_name]),
                                  0)
-
-    def test_ignored_characters_should_be_tokenized(self):
-        # Given
-        text = IGNORED_CHARACTERS
-
-        # When
-        tokens = tokenize(text)
-
-        # Then
-        self.assertEqual(len(tokens), 0)
 
     @patch('snips_nlu.intent_parser.regex_intent_parser.get_builtin_entities')
     def test_should_replace_builtin_entities(self, mock_get_builtin_entities):

@@ -43,9 +43,10 @@ class DataAugmentationConfig(_DataAugmentationConfig):
 
 
 def capitalize(text, language):
-    tokens = tokenize_light(text)
-    return " ".join(t.title() if t.lower() not in get_stop_words(language)
-                    else t.lower() for t in tokens)
+    tokens = tokenize_light(text, language)
+    return language.default_sep.join(
+        t.title() if t.lower() not in get_stop_words(language)
+        else t.lower() for t in tokens)
 
 
 def capitalize_utterances(utterances, entities, language, ratio=.2):
@@ -78,8 +79,9 @@ def fit_tagger(tagger, dataset, intent_name, language,
     augmented_intent_utterances = capitalize_utterances(
         augmented_intent_utterances, dataset[ENTITIES], language)
     tagging_scheme = tagger.tagging_scheme
-    crf_samples = [utterance_to_sample(u[DATA], tagging_scheme)
-                   for u in augmented_intent_utterances]
+    crf_samples = [
+        utterance_to_sample(u[DATA], tagging_scheme, tagger.language)
+        for u in augmented_intent_utterances]
     return tagger.fit(crf_samples)
 
 
@@ -120,7 +122,7 @@ class ProbabilisticIntentParser(object):
         if intent not in self.crf_taggers:
             raise KeyError("Invalid intent '%s'" % intent)
 
-        tokens = tokenize(text)
+        tokens = tokenize(text, self.language)
         if len(tokens) == 0:
             return []
 

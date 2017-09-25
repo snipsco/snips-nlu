@@ -1,6 +1,6 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
-import json
 import unittest
 
 import numpy as np
@@ -27,7 +27,7 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):
-    def test_should_get_intent(self):
+    def test_intent_classifier_should_get_intent(self):
         # Given
         dataset = SAMPLE_DATASET
         classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)

@@ -218,4 +218,3 @@ class Featurizer(object):
             best_features=obj_dict['best_features']
         )
         return self
-

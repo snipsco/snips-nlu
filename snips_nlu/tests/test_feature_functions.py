@@ -105,6 +105,33 @@ class TestFeatureFunctions(unittest.TestCase):
                          [feature_fn.function(tokens, i)
                           for i in xrange(len(tokens))])
 
+    @patch('snips_nlu.preprocessing.stem')
+    def test_token_is_in_with_stemming(self, mocked_stem):
+        # Given
+        def stem_mocked(string, _):
+            if string.startswith("bird"):
+                return "bird_stemmed"
+            else:
+                return string
+        mocked_stem.side_effect = stem_mocked
+        language = Language.EN
+        collection = {"bird_stemmed", "blue bird_stemmed"}
+        tokens = tokenize("i m a Blue bÏrdy")
+        for token in tokens:
+            token.stem = stem_mocked(token.normalized_value, language)
+        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX]
+        # When
+        scheme_code = TaggingScheme.BILOU.value
+        feature_fn = get_token_is_in_fn(collection, "animal",
+                                        use_stemming=True,
+                                        tagging_scheme_code=scheme_code,
+                                        language_code=language.iso_code)
+
+        # Then
+        self.assertEqual(expected_features,
+                         [feature_fn.function(tokens, i)
+                          for i in xrange(len(tokens))])
+
     @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
     def test_is_in_gazetteer(self, mocked_get_gazetteer):
         # Given

@@ -13,7 +13,7 @@ from snips_nlu.data_augmentation import augment_utterances, \
     DataAugmentationConfig
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import Language
-from snips_nlu.preprocessing import stem_sentence
+from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_subtitles
 from snips_nlu.result import IntentClassificationResult
 
@@ -73,7 +73,7 @@ def build_training_data(dataset, language, noise_factor=5, use_stemming=True,
 
     # Stemming utterances
     if use_stemming:
-        augmented_utterances = [stem_sentence(utterance, language) for
+        augmented_utterances = [stem(utterance, language) for
                                 utterance in augmented_utterances]
 
     nb_classes = len(set(classes_mapping.values()))
@@ -145,7 +145,7 @@ class SnipsIntentClassifier(object):
             return IntentClassificationResult(self.intent_list[0], 1.0)
 
         normalized_text = normalize(text)
-        normalized_text = stem_sentence(normalized_text, self.language)
+        normalized_text = stem(normalized_text, self.language)
 
         X = self.featurizer.transform([normalized_text])
         proba_vect = self.classifier.predict_proba(X)

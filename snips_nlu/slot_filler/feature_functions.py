@@ -151,11 +151,8 @@ def get_word_cluster_fn(cluster_name, language_code, use_stemming):
 
 def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
                        tagging_scheme_code, language_code):
-    if use_stemming:
-        language = Language.from_iso_code(language_code)
-        tokens_collection = set(
-            [stem(c, language) for c in tokens_collection])
     tagging_scheme = TaggingScheme(tagging_scheme_code)
+    tokens_collection = set(tokens_collection)
 
     def transform(token):
         return token.stem if use_stemming else token.normalized_value

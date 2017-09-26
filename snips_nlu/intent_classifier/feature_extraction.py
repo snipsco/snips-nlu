@@ -60,19 +60,18 @@ def get_dataset_entities_features(normalized_stemmed_tokens,
     ngrams = get_all_ngrams(normalized_stemmed_tokens)
     entity_features = []
     for ngram in ngrams:
-        entity_features += [
-            entity_name_to_feature(name) for name in
-            entity_utterances_to_entity_names.get(ngram[NGRAM], [])]
+        entity_features += entity_utterances_to_entity_names.get(
+            ngram[NGRAM], [])
     return entity_features
 
 
-def preprocess_query(query, language, entity_utterances_to_entity_name):
+def preprocess_query(query, language, entity_utterances_to_features_names):
     query_tokens = tokenize_light(query, language)
     word_clusters_features = get_word_cluster_features(query_tokens, language)
     normalized_stemmed_tokens = [normalize_stem(t, language)
                                  for t in query_tokens]
     entities_features = get_dataset_entities_features(
-        normalized_stemmed_tokens, entity_utterances_to_entity_name)
+        normalized_stemmed_tokens, entity_utterances_to_features_names)
 
     features = language.default_sep.join(normalized_stemmed_tokens)
     if len(entities_features):
@@ -82,8 +81,8 @@ def preprocess_query(query, language, entity_utterances_to_entity_name):
     return features
 
 
-def get_utterances_entities(dataset):
-    entities_utterances = defaultdict(set)
+def get_utterances_to_features_names(dataset):
+    utterances_to_features = defaultdict(set)
     for entity_name, entity_data in dataset[ENTITIES].iteritems():
         if is_builtin_entity(entity_name):
             continue
@@ -93,8 +92,8 @@ def get_utterances_entities(dataset):
         else:
             utterances = [ent[VALUE] for ent in entity_data[DATA]]
         for u in utterances:
-            entities_utterances[u].add(entity_name)
-    return dict(entities_utterances)
+            utterances_to_features[u].add(entity_name_to_feature(entity_name))
+    return dict(utterances_to_features)
 
 
 def deserialize_tfidf_vectorizer(vectorizer_dict, language):
@@ -116,33 +115,34 @@ CLUSTER_USED_PER_LANGUAGES = {}
 
 class Featurizer(object):
     def __init__(self, language, tfidf_vectorizer=None, best_features=None,
-                 entity_utterances_to_entity_names=None, pvalue_threshold=0.4):
+                 entity_utterances_to_feature_names=None,
+                 pvalue_threshold=0.4):
         self.language = language
         if tfidf_vectorizer is None:
             tfidf_vectorizer = default_tfidf_vectorizer(self.language)
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
         self.pvalue_threshold = pvalue_threshold
-        self.entity_utterances_to_entity_names = \
-            entity_utterances_to_entity_names
+        self.entity_utterances_to_feature_names = \
+            entity_utterances_to_feature_names
 
     def preprocess_queries(self, queries):
         preprocessed_queries = []
         for q in queries:
             processed_query = preprocess_query(
-                q, self.language, self.entity_utterances_to_entity_names)
+                q, self.language, self.entity_utterances_to_feature_names)
             processed_query = processed_query.encode("utf8")
             preprocessed_queries.append(processed_query)
         return preprocessed_queries
 
     def fit(self, dataset, queries, y):
-        utterance_entities = get_utterances_entities(dataset)
-        entities = defaultdict(set)
-        for u, entities_names in utterance_entities.iteritems():
-            key = normalize_stem(u, self.language)
-            entities[key].update(set(entities_names))
-
-        self.entity_utterances_to_entity_names = entities
+        utterances_to_features = get_utterances_to_features_names(dataset)
+        normalized_utterances_to_features = defaultdict(set)
+        for k, v in utterances_to_features.iteritems():
+            normalized_utterances_to_features[
+                normalize_stem(k, self.language)].update(v)
+        self.entity_utterances_to_feature_names = dict(
+            normalized_utterances_to_features)
 
         if all(len("".join(tokenize_light(q, self.language))) == 0
                for q in queries):
@@ -190,14 +190,14 @@ class Featurizer(object):
         }
         entity_utterances_to_entity_names = {
             k: list(v)
-            for k, v in self.entity_utterances_to_entity_names.iteritems()
+            for k, v in self.entity_utterances_to_feature_names.iteritems()
         }
         return {
             'language_code': self.language.iso_code,
             'tfidf_vectorizer': tfidf_vectorizer,
             'best_features': self.best_features,
             'pvalue_threshold': self.pvalue_threshold,
-            'entity_utterances_to_entity_names':
+            'entity_utterances_to_feature_names':
                 entity_utterances_to_entity_names
         }
 
@@ -208,13 +208,13 @@ class Featurizer(object):
             obj_dict["tfidf_vectorizer"], language)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
-            obj_dict['entity_utterances_to_entity_names'].iteritems()
+            obj_dict['entity_utterances_to_feature_names'].iteritems()
         }
         self = cls(
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
             pvalue_threshold=obj_dict['pvalue_threshold'],
-            entity_utterances_to_entity_names=entity_utterances_to_entity_names,
+            entity_utterances_to_feature_names=entity_utterances_to_entity_names,
             best_features=obj_dict['best_features']
         )
         return self

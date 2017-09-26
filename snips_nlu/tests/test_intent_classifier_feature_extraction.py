@@ -8,14 +8,13 @@ import unittest
 from mock import patch
 
 from snips_nlu.constants import CUSTOM_ENGINE
-from snips_nlu.intent_classifier import feature_extraction
 from snips_nlu.intent_classifier.feature_extraction import (
-    Featurizer, default_tfidf_vectorizer, get_utterances_features)
+    Featurizer, default_tfidf_vectorizer, get_utterances_to_features_names)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 
 
-class TestFeatureExtraction(unittest.TestCase):
+class TestIntentClassifierFeatureExtraction(unittest.TestCase):
     @patch("snips_nlu.intent_classifier.feature_extraction."
            "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
     def test_should_be_serializable(self):
@@ -171,7 +170,7 @@ class TestFeatureExtraction(unittest.TestCase):
         }
 
         # When
-        utterance_to_feature_names = get_utterances_features(dataset)
+        utterance_to_feature_names = get_utterances_to_features_names(dataset)
 
         # Then
         expected_utterance_to_entity_names = {
@@ -186,6 +185,8 @@ class TestFeatureExtraction(unittest.TestCase):
 
     @patch("snips_nlu.intent_classifier.feature_extraction.get_word_clusters")
     @patch("snips_nlu.intent_classifier.feature_extraction.stem")
+    @patch("snips_nlu.intent_classifier.feature_extraction."
+           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
     def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
         # Given
         language = Language.EN
@@ -204,10 +205,6 @@ class TestFeatureExtraction(unittest.TestCase):
         def stem_function(text, language):
             return language.default_sep.join(
                 [_stem(t) for t in tokenize_light(text, language)])
-
-        feature_extraction.CLUSTER_USED_PER_LANGUAGES = {
-            Language.EN: "brown_clusters"
-        }
 
         mocked_word_cluster.return_value = {
             "brown_clusters": {

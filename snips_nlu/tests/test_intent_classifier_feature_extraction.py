@@ -168,9 +168,11 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "0.0.1"
         }
+        language = Language.EN
 
         # When
-        utterance_to_feature_names = get_utterances_to_features_names(dataset)
+        utterance_to_feature_names = get_utterances_to_features_names(
+            dataset, language)
 
         # Then
         expected_utterance_to_entity_names = {

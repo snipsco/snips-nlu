@@ -70,7 +70,7 @@ def query_to_pattern(query, joined_entity_utterances,
     return pattern, group_names_to_slot_names
 
 
-def get_queries_with_unique_context(intent_queries):
+def get_queries_with_unique_context(intent_queries, language):
     contexts = set()
     queries = []
     for query in intent_queries:
@@ -79,7 +79,7 @@ def get_queries_with_unique_context(intent_queries):
             if ENTITY not in chunk:
                 context += chunk[TEXT]
             else:
-                context += get_builtin_entity_name(chunk[ENTITY])
+                context += get_builtin_entity_name(chunk[ENTITY], language)
         if context not in contexts:
             queries.append(query)
     return queries
@@ -87,7 +87,7 @@ def get_queries_with_unique_context(intent_queries):
 
 def generate_regexes(intent_queries, joined_entity_utterances,
                      group_names_to_labels, language):
-    queries = get_queries_with_unique_context(intent_queries)
+    queries = get_queries_with_unique_context(intent_queries, language)
     # Join all the entities utterances with a "|" to create the patterns
     patterns = set()
     for query in queries:
@@ -98,11 +98,11 @@ def generate_regexes(intent_queries, joined_entity_utterances,
     return regexes, group_names_to_labels
 
 
-def get_joined_entity_utterances(dataset):
+def get_joined_entity_utterances(dataset, language):
     joined_entity_utterances = dict()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         if is_builtin_entity(entity_name):
-            utterances = [get_builtin_entity_name(entity_name)]
+            utterances = [get_builtin_entity_name(entity_name, language)]
         else:
             if entity[USE_SYNONYMS]:
                 utterances = [syn for entry in entity[DATA]
@@ -136,11 +136,9 @@ def deduplicate_overlapping_slots(slots, language):
     return deduplicated_slots
 
 
-def get_builtin_entity_name(entity_label):
-    # This is a hack, here we don't care what language is actually used to
-    # tokenize
+def get_builtin_entity_name(entity_label, language):
     return "%%%s%%" % "".join(
-        tokenize_light(entity_label, Language.EN)).upper()
+        tokenize_light(entity_label, language)).upper()
 
 
 def preprocess_builtin_entities(utterance, language):
@@ -170,7 +168,7 @@ def replace_builtin_entities(text, language):
 
         processed_text += text[current_ix:ent_start]
 
-        entity_text = get_builtin_entity_name(ent[ENTITY].label)
+        entity_text = get_builtin_entity_name(ent[ENTITY].label, language)
         offset += len(entity_text) - (
             ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0])
 
@@ -210,7 +208,8 @@ class RegexIntentParser(object):
             intents_to_train = list(intents)
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
-        joined_entity_utterances = get_joined_entity_utterances(dataset)
+        joined_entity_utterances = get_joined_entity_utterances(
+            dataset, self.language)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
         for intent_name, intent in dataset[INTENTS].iteritems():
             if intent_name not in intents_to_train:

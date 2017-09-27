@@ -29,9 +29,9 @@ def get_tokens_clusters(tokens, language, cluster_name):
     return [clusters[t] for t in tokens if t in clusters]
 
 
-def entity_name_to_feature(entity_name):
+def entity_name_to_feature(entity_name, language):
     return "entityfeature%s" % "".join(tokenize_light(
-        entity_name, language=Language.EN))
+        entity_name, language=language))
 
 
 def normalize_stem(text, language):
@@ -49,8 +49,8 @@ def get_word_cluster_features(query_tokens, language):
     cluster_features = []
     for ngram in ngrams:
         cluster = get_word_clusters(language)[cluster_name].get(
-            ngram[NGRAM].lower(), False)
-        if cluster:
+            ngram[NGRAM].lower(), None)
+        if cluster is not None:
             cluster_features.append(cluster)
     return cluster_features
 
@@ -81,7 +81,7 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
     return features
 
 
-def get_utterances_to_features_names(dataset):
+def get_utterances_to_features_names(dataset, language):
     utterances_to_features = defaultdict(set)
     for entity_name, entity_data in dataset[ENTITIES].iteritems():
         if is_builtin_entity(entity_name):
@@ -92,7 +92,8 @@ def get_utterances_to_features_names(dataset):
         else:
             utterances = [ent[VALUE] for ent in entity_data[DATA]]
         for u in utterances:
-            utterances_to_features[u].add(entity_name_to_feature(entity_name))
+            utterances_to_features[u].add(entity_name_to_feature(
+                entity_name, language))
     return dict(utterances_to_features)
 
 
@@ -136,7 +137,8 @@ class Featurizer(object):
         return preprocessed_queries
 
     def fit(self, dataset, queries, y):
-        utterances_to_features = get_utterances_to_features_names(dataset)
+        utterances_to_features = get_utterances_to_features_names(
+            dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
         for k, v in utterances_to_features.iteritems():
             normalized_utterances_to_features[

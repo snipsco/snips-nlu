@@ -158,11 +158,11 @@ def snips_nlu_entities(dataset):
 
         entity_utterances = dict()
         for data in entity[DATA]:
+            entity_utterances[data[VALUE]] = data[VALUE]
             if use_synonyms:
                 for s in data[SYNONYMS]:
                     entity_utterances[s] = data[VALUE]
-            else:
-                entity_utterances[data[VALUE]] = data[VALUE]
+
         entity_data[UTTERANCES] = entity_utterances
         entities[entity_name] = entity_data
     return entities

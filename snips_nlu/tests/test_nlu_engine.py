@@ -12,11 +12,11 @@ from mock import Mock, patch
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import (ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT,
-                                 INTENTS, UTTERANCES)
+                                 INTENTS, UTTERANCES, AUTOMATICALLY_EXTENSIBLE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots, \
-    TAGGING_EXCLUDED_ENTITIES
+    TAGGING_EXCLUDED_ENTITIES, snips_nlu_entities
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
 
@@ -831,3 +831,42 @@ class TestSnipsNLUEngine(unittest.TestCase):
             except Exception:
                 self.fail("Could not fit engine in '%s': %s"
                           % (l.iso_code, tb.format_exc()))
+
+    def test_snips_nlu_entities(self):
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "Ëntity 1",
+                            "synonyms": ["entity 2"]
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": True
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
+        }
+
+        dataset = validate_and_format_dataset(dataset)
+
+        # When
+        entities = snips_nlu_entities(dataset)
+
+        expected_entities = {
+            "entity1": {
+                AUTOMATICALLY_EXTENSIBLE: True,
+                UTTERANCES: {
+                    "Ëntity 1": "Ëntity 1",
+                    "entity 1": "Ëntity 1",
+                    "entity 2": "Ëntity 1"
+                }
+            }
+        }
+
+        # Then
+        self.assertDictEqual(entities, expected_entities)

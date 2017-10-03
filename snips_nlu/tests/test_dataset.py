@@ -11,27 +11,6 @@ from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestDataset(unittest.TestCase):
-    def test_invalid_intent_name_should_raise_exception(self):
-        # Given
-        dataset = {
-            "intents": {
-                "invalid/intent_name": {
-                    "utterances": [],
-                    "engineType": CUSTOM_ENGINE
-                }
-            },
-            "entities": {},
-            "language": "en",
-            "snips_nlu_version": "1.1.1"
-        }
-
-        # When/Then
-        with self.assertRaises(AssertionError) as ctx:
-            validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
-                         "invalid/intent_name is an invalid intent name. "
-                         "Intent names must only use: [a-zA-Z0-9_- ]")
-
     def test_missing_intent_key_should_raise_exception(self):
         # Given
         dataset = {
@@ -777,7 +756,7 @@ class TestDataset(unittest.TestCase):
                     "utterances": {
                         "éNtity": "éNtity",
                         "entity": "éNtity",
-                        },
+                    },
                     "automatically_extensible": True,
                     "capitalize": False
                 }

@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-import re
 from copy import deepcopy
 
 from nlu_utils import normalize
@@ -15,8 +14,6 @@ from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 from utils import validate_type, validate_key, validate_keys
-
-INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
 
 
 def extract_queries_entities(dataset):
@@ -44,7 +41,6 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     language = Language.from_iso_code(dataset[LANGUAGE])
 
     for intent_name, intent in dataset[INTENTS].iteritems():
-        validate_intent_name(intent_name)
         validate_and_format_intent(intent, dataset[ENTITIES])
 
     queries_entities_values = extract_queries_entities(dataset)
@@ -60,12 +56,6 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
 
     validate_language(dataset[LANGUAGE])
     return dataset
-
-
-def validate_intent_name(name):
-    if not INTENT_NAME_REGEX.match(name):
-        raise AssertionError("%s is an invalid intent name. Intent names must "
-                             "only use: [a-zA-Z0-9_- ]" % name)
 
 
 def validate_and_format_intent(intent, entities):

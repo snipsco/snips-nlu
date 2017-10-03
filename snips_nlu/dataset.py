@@ -142,11 +142,12 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
         normalized_value = normalize(entry[VALUE])
         if len(entry[VALUE]):
             normalize_data[entry[VALUE]] = entry[VALUE]
+        else:
+            continue
         if len(normalized_value):
             normalize_data[normalized_value] = entry[VALUE] if \
                 entity[USE_SYNONYMS] else normalized_value
         if entity[USE_SYNONYMS]:
-            normalize_data[normalized_value] = entry[VALUE]
             for s in entry[SYNONYMS]:
                 if len(s):
                     normalize_data[s] = entry[VALUE]
@@ -198,7 +199,7 @@ def add_entity_value_if_missing(value, entity, use_synonyms):
         return
 
     normalized_value = normalize(value)
-    if not len(normalized_value):
+    if len(normalized_value) == 0:
         return
 
     if use_synonyms:

@@ -113,8 +113,10 @@ class TestRegexIntentParser(unittest.TestCase):
                     ]
                 }
             },
-            "language_code": language.iso_code
+            "language": language.iso_code,
+            "snips_nlu_version": "0.1.0"
         }
+        dataset = validate_and_format_dataset(dataset)
 
         parser = RegexIntentParser(language).fit(dataset)
         text = "this is a first dummy_a query with a second dummy_c at " \

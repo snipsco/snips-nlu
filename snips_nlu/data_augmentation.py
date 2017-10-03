@@ -7,8 +7,8 @@ from itertools import cycle
 import numpy as np
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, USE_SYNONYMS,
-                                 SYNONYMS, VALUE, TEXT, INTENTS, ENTITIES)
+from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
+                                 ENTITIES)
 from snips_nlu.resources import get_subtitles
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import namedtuple_with_defaults
@@ -76,12 +76,8 @@ def get_contexts_iterator(intent_utterances):
 def get_entities_iterators(dataset, intent_entities):
     entities_its = dict()
     for entity in intent_entities:
-        if dataset[ENTITIES][entity][USE_SYNONYMS]:
-            values = [s for d in dataset[ENTITIES][entity][DATA] for s in
-                      d[SYNONYMS]]
-        else:
-            values = [d[VALUE] for d in dataset[ENTITIES][entity][DATA]]
-        shuffled_values = np.random.permutation(values)
+        shuffled_values = np.random.permutation(
+            dataset[ENTITIES][entity][UTTERANCES].keys())
         entities_its[entity] = cycle(shuffled_values)
     return entities_its
 

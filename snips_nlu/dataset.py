@@ -118,6 +118,10 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool)
     validate_type(entity[DATA], list)
 
+    formatted_entity = dict()
+    formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
+        AUTOMATICALLY_EXTENSIBLE]
+
     # Validate format and filter out unused data
     valid_entity_data = []
     for entry in entity[DATA]:
@@ -140,23 +144,34 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     else:
         entities = [entry[VALUE] for entry in entity[DATA]]
     ratio = capitalization_ratio(entities + queries_entities, language)
-    entity[CAPITALIZE] = ratio > capitalization_threshold
+    formatted_entity[CAPITALIZE] = ratio > capitalization_threshold
 
     # Normalize
-    normalize_data = []
+    normalize_data = dict()
     for entry in entity[DATA]:
         normalized_value = normalize(entry[VALUE])
-        entry[SYNONYMS] = set(normalize(s) for s in entry[SYNONYMS])
-        entry[SYNONYMS].add(normalized_value)
-        entry[SYNONYMS] = list(entry[SYNONYMS])
-        normalize_data.append(entry)
-    entity[DATA] = normalize_data
+        if len(entry[VALUE]):
+            normalize_data[entry[VALUE]] = entry[VALUE]
+        if len(normalized_value):
+            normalize_data[normalized_value] = entry[VALUE] if \
+                entity[USE_SYNONYMS] else normalized_value
+        if entity[USE_SYNONYMS]:
+            normalize_data[normalized_value] = entry[VALUE]
+            for s in entry[SYNONYMS]:
+                if len(s):
+                    normalize_data[s] = entry[VALUE]
+                normalized_s = normalize(s)
+                if len(normalized_s):
+                    normalize_data[normalize(s)] = entry[VALUE]
+
+    formatted_entity[UTTERANCES] = normalize_data
 
     # Merge queries_entities
     for value in queries_entities:
-        add_entity_value_if_missing(value, entity)
+        add_entity_value_if_missing(value, formatted_entity,
+                                    entity[USE_SYNONYMS])
 
-    return entity
+    return formatted_entity
 
 
 def validate_and_format_builtin_entity(entity):
@@ -186,15 +201,18 @@ def filter_dataset(dataset, engine_type=None, min_utterances=0):
     return _dataset
 
 
-def add_entity_value_if_missing(value, entity):
-    normalized_value = normalize(value)
-    if len(normalized_value) == 0:
-        return
-    if entity[USE_SYNONYMS]:
-        entity_values = set(v for entry in entity[DATA]
-                            for v in entry[SYNONYMS])
+def add_entity_value_if_missing(value, entity, use_synonyms):
+    if len(value) and value not in entity[UTTERANCES]:  # Check for synonyms
+        entity[UTTERANCES][value] = value
     else:
-        entity_values = set(entry[VALUE] for entry in entity[DATA])
-    if normalized_value in entity_values:
         return
-    entity[DATA].append({VALUE: value, SYNONYMS: [normalized_value]})
+
+    normalized_value = normalize(value)
+    if not len(normalized_value):
+        return
+
+    if use_synonyms:
+        if normalized_value not in entity[UTTERANCES]:  # Check for synonyms
+            entity[UTTERANCES][normalized_value] = value
+    else:
+        entity[UTTERANCES][normalized_value] = normalized_value

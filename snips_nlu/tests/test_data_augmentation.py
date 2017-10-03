@@ -129,12 +129,12 @@ class TestDataAugmentation(unittest.TestCase):
         expected_seq = ["entity 1", "entity 11", "entity 111", "entity 3",
                         "entity 33", "entity 1", "entity 11"]
         seq = [next(it_dict["entity1"]) for _ in xrange(len(expected_seq))]
-        self.assertEqual(seq, expected_seq)
+        self.assertItemsEqual(seq, expected_seq)
 
         self.assertIn("entity2", it_dict)
-        expected_seq = ["entity 2", "entity 44", "entity 2"]
+        expected_seq = ["entity 2", "entity 44"]
         seq = [next(it_dict["entity2"]) for _ in xrange(len(expected_seq))]
-        self.assertEqual(seq, expected_seq)
+        self.assertItemsEqual(seq, expected_seq)
 
     def test_generate_utterance(self):
         # Given

@@ -8,7 +8,8 @@ from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
-    SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
+    SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY, ENTITIES
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
     LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
@@ -230,53 +231,65 @@ class TestFeatureFunctions(unittest.TestCase):
     def test_crf_features(self):
         # Given
         language = Language.EN
-        intent_entities = {
-            "dummy_entity_1": {
-                AUTOMATICALLY_EXTENSIBLE: False,
-                USE_SYNONYMS: True,
-                DATA: [
-                    {
-                        SYNONYMS: [
-                            "dummy_a",
-                            "dummy_a_bis"
-                        ],
-                        VALUE: "dummy_a"
-                    },
-                    {
-                        SYNONYMS: [
-                            "dummy_b",
-                            "dummy_b_bis"
-                        ],
-                        VALUE: "dummy_b"
-                    }
-                ]
-            },
-            "dummy_entity_2": {
-                AUTOMATICALLY_EXTENSIBLE: False,
-                USE_SYNONYMS: False,
-                DATA: [
-                    {
-                        SYNONYMS: [
-                            "dummy_c",
-                            "dummy_c_bis"
-                        ],
-                        VALUE: "dummy_c"
-                    }
-                ]
+        dataset = {
+            "snips_nlu_version": "1.0.0",
+            "language": "en",
+            "intents": {},
+            "entities": {
+                "dummy_entity_1": {
+                    AUTOMATICALLY_EXTENSIBLE: False,
+                    USE_SYNONYMS: True,
+                    DATA: [
+                        {
+                            SYNONYMS: [
+                                "dummy_a",
+                                "dummy_a_bis"
+                            ],
+                            VALUE: "dummy_a"
+                        },
+                        {
+                            SYNONYMS: [
+                                "dummy_b",
+                                "dummy_b_bis"
+                            ],
+                            VALUE: "dummy_b"
+                        }
+                    ]
+                },
+                "dummy_entity_2": {
+                    AUTOMATICALLY_EXTENSIBLE: False,
+                    USE_SYNONYMS: False,
+                    DATA: [
+                        {
+                            SYNONYMS: [
+                                "dummy_c",
+                                "dummy_c_bis"
+                            ],
+                            VALUE: "dummy_c"
+                        }
+                    ]
+                }
             }
         }
+        dataset = validate_and_format_dataset(dataset)
 
         # When
         np.random.seed(42)
         keep_prob = 0.5
-        features_signatures = crf_features(intent_entities=intent_entities,
+        features_signatures = crf_features(intent_entities=dataset[ENTITIES],
                                            language=language)
 
         # Then
         np.random.seed(42)
-        collection_1 = ['dummy_a', 'dummy_a_bis', 'dummy_b', 'dummy_b_bis']
+        collection_1 = {
+            'dummy_a': 'dummy_a',
+            'dummy_a_bis': 'dummy_a',
+            'dummy_b': 'dummy_b',
+            'dummy_b_bis': 'dummy_b_bis'
+        }
+
         collection_1_size = max(int(keep_prob * len(collection_1)), 1)
-        collection_1 = np.random.choice(collection_1, collection_1_size,
+        collection_1 = np.random.choice(collection_1.keys(), collection_1_size,
                                         replace=False).tolist()
         collection_2 = ['dummy_c']
 

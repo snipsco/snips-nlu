@@ -6,6 +6,7 @@ from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
@@ -189,9 +190,9 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             language=language, intent_classifier=intent_classifier,
             crf_taggers=taggers,
             slot_name_to_entity_mapping=slot_name_to_entity_mapping)
-
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         # When
-        parser.fit(BEVERAGE_DATASET, intents)
+        parser.fit(dataset, intents)
 
         # Then
         self.assertFalse(mock_coffee_tagger.fit.called)
@@ -246,7 +247,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         parser = ProbabilisticIntentParser(language, intent_classifier,
                                            taggers,
                                            slot_name_to_entity_mapping, None)
-        parser.fit(BEVERAGE_DATASET)
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        parser.fit(dataset)
 
         # When
         actual_parser_dict = parser.to_dict()

@@ -12,11 +12,11 @@ from mock import Mock, patch
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import (ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT,
-                                 INTENTS, UTTERANCES, AUTOMATICALLY_EXTENSIBLE)
+                                 INTENTS, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots, \
-    TAGGING_EXCLUDED_ENTITIES, snips_nlu_entities
+    TAGGING_EXCLUDED_ENTITIES
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
 
@@ -304,7 +304,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                             mocked_default_features):
         # Given
         language = Language.EN
-        dataset = validate_and_format_dataset({
+        dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
@@ -362,7 +362,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        })
+        }
 
         mocked_default_features.return_value = []
         mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
@@ -410,7 +410,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                                  mocked_default_features):
         # Given
         language = Language.EN
-        dataset = validate_and_format_dataset({
+        dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
@@ -444,7 +444,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        })
+        }
 
         mocked_default_features.return_value = []
         mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
@@ -692,7 +692,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         language = Language.EN
         num_entities_threshold = 10
         intent_name = "dummy"
-        dataset = validate_and_format_dataset({
+        dataset = {
             "intents": {
                 intent_name: {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -724,7 +724,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             },
             "language": language.iso_code,
             "snips_nlu_version": "0.0.1"
-        })
+        }
         # When
         engine = SnipsNLUEngine(
             language, num_entities_threshold=num_entities_threshold).fit(
@@ -772,7 +772,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = deepcopy(SAMPLE_DATASET)
         dataset["entities"]["dummy_entity_1"][
             "automatically_extensible"] = True
-        dataset = validate_and_format_dataset(dataset)
         engine = SnipsNLUEngine(language).fit(dataset)
         intent = "dummy_intent_1"
         text = "This is another weird weird query"
@@ -831,42 +830,3 @@ class TestSnipsNLUEngine(unittest.TestCase):
             except Exception:
                 self.fail("Could not fit engine in '%s': %s"
                           % (l.iso_code, tb.format_exc()))
-
-    def test_snips_nlu_entities(self):
-        # Given
-        dataset = {
-            "intents": {},
-            "entities": {
-                "entity1": {
-                    "data": [
-                        {
-                            "value": "Ëntity 1",
-                            "synonyms": ["entity 2"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": True
-                }
-            },
-            "language": "en",
-            "snips_nlu_version": "1.1.1"
-        }
-
-        dataset = validate_and_format_dataset(dataset)
-
-        # When
-        entities = snips_nlu_entities(dataset)
-
-        expected_entities = {
-            "entity1": {
-                AUTOMATICALLY_EXTENSIBLE: True,
-                UTTERANCES: {
-                    "Ëntity 1": "Ëntity 1",
-                    "entity 1": "Ëntity 1",
-                    "entity 2": "Ëntity 1"
-                }
-            }
-        }
-
-        # Then
-        self.assertDictEqual(entities, expected_entities)

@@ -8,6 +8,7 @@ import unittest
 from mock import patch
 
 from snips_nlu.constants import CUSTOM_ENGINE
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.feature_extraction import (
     Featurizer, default_tfidf_vectorizer, get_utterances_to_features_names)
 from snips_nlu.languages import Language
@@ -34,10 +35,16 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
                             "synonyms": ["entity1"]
                         }
                     ],
-                    "use_synonyms": True
+                    "use_synonyms": True,
+                    "automatically_extensible": True
                 }
-            }
+            },
+            "intents": {},
+            "snips_nlu_version": "1.0.1",
+            "language": "en"
         }
+        dataset = validate_and_format_dataset(dataset)
+
         queries = [
             "hello world",
             "beautiful world",
@@ -169,6 +176,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             "snips_nlu_version": "0.0.1"
         }
         language = Language.EN
+        dataset = validate_and_format_dataset(dataset)
 
         # When
         utterance_to_feature_names = get_utterances_to_features_names(
@@ -179,8 +187,11 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             "entity 1": {"entityfeatureentity1", "entityfeatureentity2"},
             "éntity 1": {"entityfeatureentity1"},
             "Éntity_2": {"entityfeatureentity2"},
+            "entity_2": {"entityfeatureentity2"},
             "Éntity 2": {"entityfeatureentity2"},
-            "Alternative entity 2": {"entityfeatureentity2"}
+            "entity 2": {"entityfeatureentity2"},
+            "Alternative entity 2": {"entityfeatureentity2"},
+            "alternative entity 2": {"entityfeatureentity2"}
         }
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)
@@ -258,6 +269,8 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "0.0.1"
         }
+
+        dataset = validate_and_format_dataset(dataset)
 
         queries = [
             "hÉllo wOrld Éntity_2",

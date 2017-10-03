@@ -4,19 +4,19 @@ import argparse
 import io
 import json
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 
 from dataset import validate_and_format_dataset
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity, \
     _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.constants import (
-    INTENTS, ENTITIES, UTTERANCES, LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-    ENTITY, DATA, SLOT_NAME,
-    USE_SYNONYMS, SYNONYMS)
+    INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
+    ENTITY, DATA, SLOT_NAME, CAPITALIZE)
+from snips_nlu.data_augmentation import DataAugmentationConfig
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser, fit_tagger
-from snips_nlu.data_augmentation import DataAugmentationConfig
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \
@@ -146,28 +146,6 @@ def get_intent_custom_entities(dataset, intent):
     return custom_entities
 
 
-def snips_nlu_entities(dataset):
-    entities = dict()
-    for entity_name, entity in dataset[ENTITIES].iteritems():
-        if is_builtin_entity(entity_name):
-            continue
-        entity_data = dict()
-        use_synonyms = entity[USE_SYNONYMS]
-        automatically_extensible = entity[AUTOMATICALLY_EXTENSIBLE]
-        entity_data[AUTOMATICALLY_EXTENSIBLE] = automatically_extensible
-
-        entity_utterances = dict()
-        for data in entity[DATA]:
-            entity_utterances[data[VALUE]] = data[VALUE]
-            if use_synonyms:
-                for s in data[SYNONYMS]:
-                    entity_utterances[s] = data[VALUE]
-
-        entity_data[UTTERANCES] = entity_utterances
-        entities[entity_name] = entity_data
-    return entities
-
-
 def enrich_slots(slots, other_slots):
     enriched_slots = list(slots)
     for slot in other_slots:
@@ -262,8 +240,13 @@ class SnipsNLUEngine(NLUEngine):
                 "These intents must be trained: %s" % missing_intents)
 
         dataset = validate_and_format_dataset(dataset)
-
-        self.entities = snips_nlu_entities(dataset)
+        self.entities = dict()
+        for entity_name, entity in dataset[ENTITIES].iteritems():
+            if is_builtin_entity(entity_name):
+                continue
+            ent = deepcopy(entity)
+            ent.pop(CAPITALIZE)
+            self.entities[entity_name] = ent
 
         regex_intents = [
             intent_name for intent_name, intent in dataset[INTENTS].iteritems()

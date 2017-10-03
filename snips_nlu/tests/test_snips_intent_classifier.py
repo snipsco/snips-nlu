@@ -28,7 +28,7 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 class TestSnipsIntentClassifier(unittest.TestCase):
     def test_intent_classifier_should_get_intent(self):
         # Given
-        dataset = SAMPLE_DATASET
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
         classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
         text = "This is a dummy_3 query from another intent"
 
@@ -69,10 +69,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "random_state": 42,
             "n_jobs": -1
         }
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
 
         intent_classifier = SnipsIntentClassifier(
-            language=Language.EN, classifier_args=classifier_args).fit(
-            SAMPLE_DATASET)
+            language=Language.EN, classifier_args=classifier_args).fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 

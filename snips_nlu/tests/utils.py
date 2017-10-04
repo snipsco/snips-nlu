@@ -24,6 +24,3 @@ with io.open(SAMPLE_DATASET_PATH, encoding='utf8') as dataset_file:
 
 with io.open(BEVERAGE_DATASET_PATH, encoding='utf8') as dataset_file:
     BEVERAGE_DATASET = json.load(dataset_file)
-
-SAMPLE_DATASET = validate_and_format_dataset(SAMPLE_DATASET)
-BEVERAGE_DATASET = validate_and_format_dataset(BEVERAGE_DATASET)

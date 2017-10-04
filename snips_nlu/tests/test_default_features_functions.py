@@ -12,7 +12,7 @@ from snips_nlu.tests.utils import BEVERAGE_DATASET
 class TestDefaultFeaturesFunction(unittest.TestCase):
     def test_should_include_builtin_features(self):
         # Given
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        dataset = BEVERAGE_DATASET
         language = Language.EN
         engine = SnipsNLUEngine(language)
         intent = "MakeCoffee"

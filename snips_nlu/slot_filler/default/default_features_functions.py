@@ -4,7 +4,7 @@ import numpy as np
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
-from snips_nlu.constants import DATA, USE_SYNONYMS, SYNONYMS, VALUE
+from snips_nlu.constants import UTTERANCES
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
@@ -69,13 +69,11 @@ def default_features(language, intent_entities, use_stemming,
         return stem(normalized, language) if use_stemming else normalized
 
     for entity_name, entity in intent_entities.iteritems():
-        if len(entity[DATA]) == 0:
+        if len(entity[UTTERANCES]) == 0:
             continue
-        if entity[USE_SYNONYMS]:
-            collection = [preprocess(s) for d in entity[DATA] for s in
-                          d[SYNONYMS]]
-        else:
-            collection = [preprocess(d[VALUE]) for d in entity[DATA]]
+
+        collection = list(
+            set(preprocess(e) for e in entity[UTTERANCES].keys()))
         collection_size = max(int(entity_keep_prob * len(collection)), 1)
         collection = np.random.choice(collection, collection_size,
                                       replace=False).tolist()

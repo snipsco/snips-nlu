@@ -5,9 +5,8 @@ from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
-from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
-                                 ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
-                                 ENTITY, MATCH_RANGE)
+from snips_nlu.constants import (
+    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE)
 from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
@@ -104,11 +103,7 @@ def get_joined_entity_utterances(dataset, language):
         if is_builtin_entity(entity_name):
             utterances = [get_builtin_entity_name(entity_name, language)]
         else:
-            if entity[USE_SYNONYMS]:
-                utterances = [syn for entry in entity[DATA]
-                              for syn in entry[SYNONYMS]]
-            else:
-                utterances = [entry[VALUE] for entry in entity[DATA]]
+            utterances = entity[UTTERANCES].keys()
         utterances_patterns = [regex_escape(e) for e in utterances]
         utterances_patterns = [p for p in utterances_patterns if len(p) > 0]
         joined_entity_utterances[entity_name] = r"|".join(

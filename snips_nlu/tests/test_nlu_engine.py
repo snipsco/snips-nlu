@@ -304,7 +304,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                             mocked_default_features):
         # Given
         language = Language.EN
-        dataset = validate_and_format_dataset({
+        dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
@@ -362,7 +362,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        })
+        }
 
         mocked_default_features.return_value = []
         mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
@@ -410,7 +410,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                                  mocked_default_features):
         # Given
         language = Language.EN
-        dataset = validate_and_format_dataset({
+        dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
@@ -444,7 +444,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             },
             "language": language.iso_code
-        })
+        }
 
         mocked_default_features.return_value = []
         mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
@@ -692,7 +692,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         language = Language.EN
         num_entities_threshold = 10
         intent_name = "dummy"
-        dataset = validate_and_format_dataset({
+        dataset = {
             "intents": {
                 intent_name: {
                     ENGINE_TYPE: CUSTOM_ENGINE,
@@ -724,7 +724,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             },
             "language": language.iso_code,
             "snips_nlu_version": "0.0.1"
-        })
+        }
         # When
         engine = SnipsNLUEngine(
             language, num_entities_threshold=num_entities_threshold).fit(
@@ -772,7 +772,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = deepcopy(SAMPLE_DATASET)
         dataset["entities"]["dummy_entity_1"][
             "automatically_extensible"] = True
-        dataset = validate_and_format_dataset(dataset)
         engine = SnipsNLUEngine(language).fit(dataset)
         intent = "dummy_intent_1"
         text = "This is another weird weird query"

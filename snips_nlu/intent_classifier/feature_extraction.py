@@ -10,7 +10,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import ENTITIES, USE_SYNONYMS, SYNONYMS, VALUE, DATA
+from snips_nlu.constants import ENTITIES, USE_SYNONYMS, SYNONYMS, VALUE, DATA, \
+    UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
@@ -86,12 +87,7 @@ def get_utterances_to_features_names(dataset, language):
     for entity_name, entity_data in dataset[ENTITIES].iteritems():
         if is_builtin_entity(entity_name):
             continue
-        if entity_data[USE_SYNONYMS]:
-            utterances = [u for ent in entity_data[DATA]
-                          for u in [ent[VALUE]] + ent[SYNONYMS]]
-        else:
-            utterances = [ent[VALUE] for ent in entity_data[DATA]]
-        for u in utterances:
+        for u in entity_data[UTTERANCES].keys():
             utterances_to_features[u].add(entity_name_to_feature(
                 entity_name, language))
     return dict(utterances_to_features)

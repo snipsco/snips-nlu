@@ -20,8 +20,7 @@ def np_random_permutation(x):
 
 
 def get_mocked_augment_utterances(dataset, intent_name, language,
-                                  max_utterances, noise_prob,
-                                  min_noise_size, max_noise_size):
+                                  max_utterances):
     return dataset[INTENTS][intent_name][UTTERANCES]
 
 

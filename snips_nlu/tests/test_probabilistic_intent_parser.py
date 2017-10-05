@@ -257,9 +257,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         expected_parser_dict = {
             "data_augmentation_config": {
                 "max_utterances": 200,
-                "noise_prob": 0.0,
-                "min_noise_size": 0,
-                "max_noise_size": 0
             },
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"
@@ -290,9 +287,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         parser_dict = {
             "data_augmentation_config": {
                 "max_utterances": 200,
-                "noise_prob": 0.0,
-                "min_noise_size": 0,
-                "max_noise_size": 0
             },
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"
@@ -325,10 +319,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         expected_data_augmentation_config = DataAugmentationConfig.from_dict(
             {
-                "max_utterances": 200,
-                "noise_prob": 0.0,
-                "min_noise_size": 0,
-                "max_noise_size": 0
+                "max_utterances": 200
             }
         )
 

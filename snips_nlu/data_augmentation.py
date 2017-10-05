@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import random
 from copy import deepcopy
 from itertools import cycle
 
@@ -9,18 +8,13 @@ import numpy as np
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES)
-from snips_nlu.resources import get_subtitles
-from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import namedtuple_with_defaults
 
 _DataAugmentationConfig = namedtuple_with_defaults(
     '_DataAugmentationConfig',
-    'max_utterances noise_prob min_noise_size max_noise_size',
+    'max_utterances',
     {
-        'max_utterances': 200,
-        'noise_prob': 0.,
-        'min_noise_size': 0,
-        'max_noise_size': 0
+        'max_utterances': 200
     }
 )
 
@@ -34,13 +28,11 @@ class DataAugmentationConfig(_DataAugmentationConfig):
         return cls(**obj_dict)
 
 
-def generate_utterance(contexts_iterator, entities_iterators, noise_iterator,
-                       noise_prob):
+def generate_utterance(contexts_iterator, entities_iterators):
     context = deepcopy(next(contexts_iterator))
     context_data = []
     for i, chunk in enumerate(context[DATA]):
         if ENTITY in chunk:
-            has_entity = True
             if not is_builtin_entity(chunk[ENTITY]):
                 new_chunk = dict(chunk)
                 new_chunk[TEXT] = deepcopy(
@@ -49,21 +41,7 @@ def generate_utterance(contexts_iterator, entities_iterators, noise_iterator,
             else:
                 context_data.append(chunk)
         else:
-            has_entity = False
             context_data.append(chunk)
-
-        last_chunk = i == len(context[DATA]) - 1
-        space_after = ""
-        if not last_chunk and ENTITY in context[DATA][i + 1]:
-            space_after = " "
-
-        space_before = " " if has_entity else ""
-
-        if noise_prob > 0 and random.random() < noise_prob:
-            noise = deepcopy(next(noise_iterator, None))
-            if noise is not None:
-                context_data.append(
-                    {"text": space_before + noise + space_after})
     context[DATA] = context_data
     return context
 
@@ -91,34 +69,17 @@ def get_intent_entities(dataset, intent_name):
     return intent_entities
 
 
-def get_noise_iterator(language, min_size, max_size):
-    subtitles = get_subtitles(language)
-    subtitles_it = cycle(np.random.permutation(list(subtitles)))
-    for subtitle in subtitles_it:
-        size = random.choice(range(min_size, max_size + 1))
-        tokens = tokenize(subtitle, language)
-        while len(tokens) < size:
-            tokens += tokenize(next(subtitles_it), language)
-        start = random.randint(0, len(tokens) - size)
-        yield language.default_sep.join(
-            t.value.lower() for t in tokens[start:start + size])
-
-
-def augment_utterances(dataset, intent_name, language, max_utterances,
-                       noise_prob, min_noise_size, max_noise_size):
+def augment_utterances(dataset, intent_name, language, max_utterances):
     utterances = dataset[INTENTS][intent_name][UTTERANCES]
     nb_utterances = len(utterances)
     nb_to_generate = max(nb_utterances, max_utterances)
     contexts_it = get_contexts_iterator(utterances)
-    noise_iterator = get_noise_iterator(language, min_noise_size,
-                                        max_noise_size)
     intent_entities = get_intent_entities(dataset, intent_name)
     intent_entities = [e for e in intent_entities if not is_builtin_entity(e)]
     entities_its = get_entities_iterators(dataset, intent_entities)
     generated_utterances = []
     while nb_to_generate > 0:
-        generated_utterance = generate_utterance(contexts_it, entities_its,
-                                                 noise_iterator, noise_prob)
+        generated_utterance = generate_utterance(contexts_it, entities_its)
         generated_utterances.append(generated_utterance)
         nb_to_generate -= 1
 

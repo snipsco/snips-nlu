@@ -739,8 +739,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_get_fitted_tagger_should_return_same_tagger_as_fit(
             self, mocked_augment_utterances):
         # Given
-        def augment_utterances(dataset, intent_name, language, max_utterances,
-                               noise_prob, min_noise_size, max_noise_size):
+        def augment_utterances(dataset, intent_name, language, max_utterances):
             return dataset[INTENTS][intent_name][UTTERANCES]
 
         mocked_augment_utterances.side_effect = augment_utterances

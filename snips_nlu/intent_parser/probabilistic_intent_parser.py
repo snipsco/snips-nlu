@@ -8,8 +8,8 @@ from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE, ENTITIES, CAPITALIZE, TEXT)
-from snips_nlu.data_augmentation import augment_utterances, \
-    DataAugmentationConfig
+from snips_nlu.data_augmentation import augment_utterances
+from snips_nlu.config import DataAugmentationConfig
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language

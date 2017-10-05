@@ -11,8 +11,9 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
-    DataAugmentationConfig, capitalize, capitalize_utterances,
+    capitalize, capitalize_utterances,
     generate_slots_permutations)
+from snips_nlu.config import DataAugmentationConfig
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model

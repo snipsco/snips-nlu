@@ -8,24 +8,6 @@ import numpy as np
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES)
-from snips_nlu.utils import namedtuple_with_defaults
-
-_DataAugmentationConfig = namedtuple_with_defaults(
-    '_DataAugmentationConfig',
-    'max_utterances',
-    {
-        'max_utterances': 200
-    }
-)
-
-
-class DataAugmentationConfig(_DataAugmentationConfig):
-    def to_dict(self):
-        return self._asdict()
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
 
 def generate_utterance(contexts_iterator, entities_iterators):

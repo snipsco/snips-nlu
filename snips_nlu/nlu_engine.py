@@ -12,7 +12,7 @@ from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity, \
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
-from snips_nlu.data_augmentation import DataAugmentationConfig
+from snips_nlu.config import DataAugmentationConfig
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \

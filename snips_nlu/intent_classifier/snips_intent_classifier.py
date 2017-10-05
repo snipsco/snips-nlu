@@ -8,8 +8,8 @@ from sklearn.linear_model import SGDClassifier
 
 from feature_extraction import Featurizer
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA
-from snips_nlu.data_augmentation import augment_utterances, \
-    DataAugmentationConfig
+from snips_nlu.data_augmentation import augment_utterances
+from snips_nlu.config import DataAugmentationConfig
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import Language
 from snips_nlu.resources import get_subtitles

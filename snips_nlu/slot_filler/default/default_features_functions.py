@@ -9,9 +9,8 @@ from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
 
-def default_features(language, intent_entities, use_stemming,
-                     entities_offsets, entity_keep_prob,
-                     common_words_gazetteer_name=None):
+def default_features(language, intent_entities, crf_features_config,
+                     use_stemming, common_words_gazetteer_name=None):
     features = [
         {
             "factory_name": "get_ngram_fn",
@@ -74,7 +73,12 @@ def default_features(language, intent_entities, use_stemming,
 
         collection = list(
             set(preprocess(e) for e in entity[UTTERANCES].keys()))
-        collection_size = max(int(entity_keep_prob * len(collection)), 1)
+
+        drop_ratio = crf_features_config.base_drop_ratio
+        # TODO: implement some more complex logic here like getting the number
+        # of contexts and of entities utterances to compure some ratio
+        # from the base_ratio
+        collection_size = max(int((1 - drop_ratio) * len(collection)), 1)
         collection = np.random.choice(collection, collection_size,
                                       replace=False).tolist()
         features.append(
@@ -85,7 +89,7 @@ def default_features(language, intent_entities, use_stemming,
                          "use_stemming": use_stemming,
                          "language_code": language.iso_code,
                          "tagging_scheme_code": TaggingScheme.BILOU.value},
-                "offsets": entities_offsets
+                "offsets": tuple(crf_features_config.entities_offsets)
             }
         )
     return features

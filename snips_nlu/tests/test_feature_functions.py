@@ -7,6 +7,7 @@ import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY, ENTITIES
 from snips_nlu.dataset import validate_and_format_dataset
@@ -276,8 +277,9 @@ class TestFeatureFunctions(unittest.TestCase):
         # When
         np.random.seed(42)
         keep_prob = 0.5
-        features_signatures = crf_features(intent_entities=dataset[ENTITIES],
-                                           language=language)
+        features_signatures = crf_features(
+            intent_entities=dataset[ENTITIES],
+            language=language, crf_features_config=CRFFeaturesConfig())
 
         # Then
         np.random.seed(42)

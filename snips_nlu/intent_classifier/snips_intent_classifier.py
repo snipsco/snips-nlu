@@ -7,9 +7,9 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from feature_extraction import Featurizer
+from snips_nlu.config import IntentClassifierConfig
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA
 from snips_nlu.data_augmentation import augment_utterances
-from snips_nlu.config import DataAugmentationConfig
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import Language
 from snips_nlu.resources import get_subtitles
@@ -27,8 +27,7 @@ def get_regularization_factor(dataset):
     return alpha
 
 
-def build_training_data(dataset, language, noise_factor=5, use_stemming=True,
-                        min_utterances_per_intent=None):
+def build_training_data(dataset, language, config):
     # Creating class mapping
     intents = dataset[INTENTS]
     intent_index = 0
@@ -45,12 +44,13 @@ def build_training_data(dataset, language, noise_factor=5, use_stemming=True,
     augmented_utterances = []
     utterance_classes = []
     for nb_utterance, intent_name in izip(nb_utterances, intents.keys()):
-        min_utterances_to_generate = max(min_utterances_per_intent,
-                                         nb_utterance)
-        config = DataAugmentationConfig(
-            max_utterances=min_utterances_to_generate)
+        min_utterances_to_generate = max(
+            config.data_augmentation_config.min_utterances, nb_utterance)
         utterances = augment_utterances(
-            dataset, intent_name, language=language, **config.to_dict())
+            dataset, intent_name, language=language,
+            min_utterances=min_utterances_to_generate,
+            capitalization_ratio=config.data_augmentation_config
+                .capitalization_ratio)
         augmented_utterances += [get_text_from_chunks(utterance[DATA]) for
                                  utterance in utterances]
         utterance_classes += [classes_mapping[intent_name] for _ in utterances]
@@ -58,7 +58,7 @@ def build_training_data(dataset, language, noise_factor=5, use_stemming=True,
     # Adding noise
     avg_utterances = np.mean(nb_utterances) if len(nb_utterances) > 0 else 0
     noise = list(get_subtitles(language))
-    noise_size = min(int(noise_factor * avg_utterances), len(noise))
+    noise_size = min(int(config.noise_factor * avg_utterances), len(noise))
     noisy_utterances = np.random.choice(noise, size=noise_size, replace=False)
     augmented_utterances += list(noisy_utterances)
     utterance_classes += [noise_class for _ in noisy_utterances]
@@ -76,22 +76,10 @@ def build_training_data(dataset, language, noise_factor=5, use_stemming=True,
     return augmented_utterances, np.array(utterance_classes), intent_mapping
 
 
-def default_intent_classification_parameters():
-    return {
-        "loss": 'log',
-        "penalty": 'l2',
-        "class_weight": 'balanced',
-        "n_iter": 5,
-        "random_state": 42,
-        "n_jobs": -1
-    }
-
-
 class SnipsIntentClassifier(object):
-    def __init__(self, language,
-                 classifier_args=default_intent_classification_parameters()):
+    def __init__(self, language, config=IntentClassifierConfig()):
         self.language = language
-        self.classifier_args = classifier_args
+        self.config = config
         self.classifier = None
         self.intent_list = None
         self.featurizer = Featurizer(self.language)
@@ -103,8 +91,7 @@ class SnipsIntentClassifier(object):
 
     def fit(self, dataset):
         utterances, y, intent_list = build_training_data(
-            dataset, self.language,
-            min_utterances_per_intent=self.min_utterances_per_intent)
+            dataset, self.language, self.config)
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
             return self
@@ -115,8 +102,8 @@ class SnipsIntentClassifier(object):
 
         X = self.featurizer.transform(utterances)
         alpha = get_regularization_factor(dataset)
-        self.classifier_args.update({'alpha': alpha})
-        self.classifier = SGDClassifier(**self.classifier_args).fit(X, y)
+        self.config.log_reg_args['alpha'] = alpha
+        self.classifier = SGDClassifier(**self.config.log_reg_args).fit(X, y)
         return self
 
     def get_intent(self, text):
@@ -156,7 +143,7 @@ class SnipsIntentClassifier(object):
             intercept = self.classifier.intercept_.tolist()
 
         return {
-            "classifier_args": self.classifier_args,
+            "config": self.config.to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": self.intent_list,
@@ -167,13 +154,13 @@ class SnipsIntentClassifier(object):
     @classmethod
     def from_dict(cls, obj_dict):
         language = Language.from_iso_code(obj_dict['language_code'])
-        classifier_args = obj_dict['classifier_args']
-        classifier = cls(language=language, classifier_args=classifier_args)
+        config = IntentClassifierConfig.from_dict(obj_dict["config"])
+        classifier = cls(language=language, config=config)
         sgd_classifier = None
         coeffs = obj_dict['coeffs']
         intercept = obj_dict['intercept']
         if coeffs is not None and intercept is not None:
-            sgd_classifier = SGDClassifier(**classifier_args)
+            sgd_classifier = SGDClassifier(**config.log_reg_args)
             sgd_classifier.coef_ = np.array(coeffs)
             sgd_classifier.intercept_ = np.array(intercept)
         classifier.classifier = sgd_classifier

@@ -11,6 +11,7 @@ from copy import deepcopy
 from mock import Mock, patch
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
+from snips_nlu.config import NLUConfig, RegexTrainingConfig
 from snips_nlu.constants import (ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT,
                                  INTENTS, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
@@ -127,8 +128,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 "MakeCoffee": 7,
                 "MakeTea": 4
             },
-            "num_entities_threshold": 200,
-            "num_queries_threshold": 50,
+            "config": NLUConfig().to_dict(),
             "language": "en",
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
@@ -162,14 +162,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             }
         }
         intents_data_sizes = {"MakeCoffee": 7, "MakeTea": 4}
-        num_queries_threshold = 50
-        num_entities_threshold = 200
         engine_dict = {
             "slot_name_mapping": slot_name_mapping,
             "entities": entities,
             "intents_data_sizes": intents_data_sizes,
-            "num_entities_threshold": num_entities_threshold,
-            "num_queries_threshold": num_queries_threshold,
+            "config": NLUConfig(),
             "language": "en",
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
@@ -654,8 +651,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_not_create_regex_when_having_enough_queries(self):
         # Given
         language = Language.EN
-        num_queries_threshold = 5
+        max_queries = 5
         intent_name = "dummy"
+        regex_config = RegexTrainingConfig(max_queries=max_queries)
+        config = NLUConfig(regex_training_config=regex_config)
         dataset = validate_and_format_dataset({
             "intents": {
                 intent_name: {
@@ -670,7 +669,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                               }
                                           ]
                                       }
-                                  ] * num_queries_threshold
+                                  ] * max_queries
                 }
             },
             "entities": {
@@ -680,8 +679,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "snips_nlu_version": "0.0.1"
         })
         # When
-        engine = SnipsNLUEngine(
-            language, num_queries_threshold=num_queries_threshold).fit(dataset)
+        engine = SnipsNLUEngine(language, config=config).fit(dataset)
 
         # Then
         self.assertEqual(
@@ -690,8 +688,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_not_create_regex_when_having_enough_entities(self):
         # Given
         language = Language.EN
-        num_entities_threshold = 10
         intent_name = "dummy"
+        max_entities = 10
+        config = NLUConfig(
+            regex_training_config=RegexTrainingConfig(max_entities=10))
         dataset = {
             "intents": {
                 intent_name: {
@@ -716,7 +716,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     "data": [
                         {
                             "synonyms": [str(i) for i in
-                                         xrange(1, num_entities_threshold)],
+                                         xrange(1, max_entities)],
                             "value": "0"
                         }
                     ]
@@ -726,9 +726,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "snips_nlu_version": "0.0.1"
         }
         # When
-        engine = SnipsNLUEngine(
-            language, num_entities_threshold=num_entities_threshold).fit(
-            dataset)
+        engine = SnipsNLUEngine(language, config=config).fit(dataset)
 
         # Then
         self.assertEqual(
@@ -739,7 +737,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_get_fitted_tagger_should_return_same_tagger_as_fit(
             self, mocked_augment_utterances):
         # Given
-        def augment_utterances(dataset, intent_name, language, max_utterances):
+        def augment_utterances(dataset, intent_name, language, min_utterances,
+                               capitalization_ratio):
             return dataset[INTENTS][intent_name][UTTERANCES]
 
         mocked_augment_utterances.side_effect = augment_utterances
@@ -794,21 +793,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_parse = Result(text, expected_intent_classif_result,
                                 parsed_slots).as_dict()
         self.assertEqual(parse, expected_parse)
-
-    def test_nlu_engine_should_correct_tagging_scope(self):
-        for language in Language:
-            # Given
-            engine = SnipsNLUEngine(language)
-            entities = deepcopy(_SUPPORTED_BUILTINS_BY_LANGUAGE[language])
-            for ent in TAGGING_EXCLUDED_ENTITIES:
-                if ent in entities:
-                    entities.remove(ent)
-
-            # When
-            scope = engine.tagging_scope
-
-            # Then
-            self.assertItemsEqual(scope, engine.tagging_scope)
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given

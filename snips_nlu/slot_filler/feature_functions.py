@@ -26,19 +26,21 @@ TOKEN_NAME = "token"
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def crf_features(intent_entities, language):
+def crf_features(intent_entities, language, crf_features_config):
     if language == Language.EN:
-        return en_features(intent_entities=intent_entities)
+        return en_features(crf_features_config,
+                           intent_entities=intent_entities)
     elif language == Language.ES:
-        return default_features(language, intent_entities, use_stemming=True,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+        return default_features(language, intent_entities,
+                                crf_features_config,
+                                use_stemming=True)
     elif language == Language.FR:
-        return fr_features(intent_entities)
+        return fr_features(crf_features_config, intent_entities)
     elif language == Language.DE:
-        return de_features(intent_entities)
+        return de_features(crf_features_config, intent_entities)
     elif language == Language.KO:
-        return ko_features(intent_entities=intent_entities)
+        return ko_features(crf_features_config,
+                           intent_entities=intent_entities)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)

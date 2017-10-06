@@ -3,14 +3,13 @@ from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 
 
-def language_specific_features(intent_entities):
+def language_specific_features(crf_features_config, intent_entities):
     """
     :param intent_entities: dict containing entities for the related intent
     """
     language = Language.KO
-    features = default_features(language, intent_entities, use_stemming=False,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+    features = default_features(language, intent_entities,
+                                crf_features_config, use_stemming=False)
 
     features += [
         {

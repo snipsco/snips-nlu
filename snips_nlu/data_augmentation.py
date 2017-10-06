@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import random
 from copy import deepcopy
 from itertools import cycle
 
@@ -7,7 +8,36 @@ import numpy as np
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
-                                 ENTITIES)
+                                 ENTITIES, CAPITALIZE)
+from snips_nlu.resources import get_stop_words
+from snips_nlu.tokenization import tokenize_light
+
+
+def capitalize(text, language):
+    tokens = tokenize_light(text, language)
+    return language.default_sep.join(
+        t.title() if t.lower() not in get_stop_words(language)
+        else t.lower() for t in tokens)
+
+
+def capitalize_utterances(utterances, entities, language, ratio):
+    capitalized_utterances = []
+    for utterance in utterances:
+        capitalized_utterance = deepcopy(utterance)
+        for i, chunk in enumerate(capitalized_utterance[DATA]):
+            if ENTITY not in chunk:
+                continue
+            entity_label = chunk[ENTITY]
+            if is_builtin_entity(entity_label):
+                continue
+            if not entities[entity_label][CAPITALIZE]:
+                continue
+            if random.random() > ratio:
+                continue
+            capitalized_utterance[DATA][i][TEXT] = capitalize(
+                chunk[TEXT], language)
+        capitalized_utterances.append(capitalized_utterance)
+    return capitalized_utterances
 
 
 def generate_utterance(contexts_iterator, entities_iterators):
@@ -51,10 +81,11 @@ def get_intent_entities(dataset, intent_name):
     return intent_entities
 
 
-def augment_utterances(dataset, intent_name, language, max_utterances):
+def augment_utterances(dataset, intent_name, language, min_utterances,
+                       capitalization_ratio):
     utterances = dataset[INTENTS][intent_name][UTTERANCES]
     nb_utterances = len(utterances)
-    nb_to_generate = max(nb_utterances, max_utterances)
+    nb_to_generate = max(nb_utterances, min_utterances)
     contexts_it = get_contexts_iterator(utterances)
     intent_entities = get_intent_entities(dataset, intent_name)
     intent_entities = [e for e in intent_entities if not is_builtin_entity(e)]
@@ -64,5 +95,10 @@ def augment_utterances(dataset, intent_name, language, max_utterances):
         generated_utterance = generate_utterance(contexts_it, entities_its)
         generated_utterances.append(generated_utterance)
         nb_to_generate -= 1
+
+    if capitalization_ratio > 0:
+        generated_utterances = capitalize_utterances(
+            generated_utterances, dataset[ENTITIES], language,
+            ratio=capitalization_ratio)
 
     return generated_utterances

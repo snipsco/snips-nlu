@@ -1,74 +1,22 @@
 from __future__ import unicode_literals
 
-import random
-from copy import copy, deepcopy
+from copy import copy
 from itertools import groupby, permutations
 
-from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities, \
-    is_builtin_entity
+from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities
+from snips_nlu.config import ProbabilisticIntentParserConfig
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
-                                 MATCH_RANGE, ENTITIES, CAPITALIZE, TEXT)
+                                 MATCH_RANGE)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
-from snips_nlu.resources import get_stop_words
 from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample,
                                              positive_tagging, OUTSIDE,
                                              tag_name_to_slot_name)
-from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import (namedtuple_with_defaults)
-
-_DataAugmentationConfig = namedtuple_with_defaults(
-    '_DataAugmentationConfig',
-    'max_utterances noise_prob min_noise_size max_noise_size',
-    {
-        'max_utterances': 200,
-        'noise_prob': 0.,
-        'min_noise_size': 0,
-        'max_noise_size': 0
-    }
-)
-
-
-class DataAugmentationConfig(_DataAugmentationConfig):
-    def to_dict(self):
-        return self._asdict()
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
-
-
-def capitalize(text, language):
-    tokens = tokenize_light(text, language)
-    return language.default_sep.join(
-        t.title() if t.lower() not in get_stop_words(language)
-        else t.lower() for t in tokens)
-
-
-def capitalize_utterances(utterances, entities, language, ratio=.2):
-    # TODO: put it in a capitalization config in the probabilistic parser
-    # but it breaks serialization -> wait for it
-    capitalized_utterances = []
-    for utterance in utterances:
-        capitalized_utterance = deepcopy(utterance)
-        for i, chunk in enumerate(capitalized_utterance[DATA]):
-            if ENTITY not in chunk:
-                continue
-            entity_label = chunk[ENTITY]
-            if is_builtin_entity(entity_label):
-                continue
-            if not entities[entity_label][CAPITALIZE]:
-                continue
-            if random.random() > ratio:
-                continue
-            capitalized_utterance[DATA][i][TEXT] = capitalize(
-                chunk[TEXT], language)
-        capitalized_utterances.append(capitalized_utterance)
-    return capitalized_utterances
+from snips_nlu.tokenization import tokenize
 
 
 def fit_tagger(tagger, dataset, intent_name, language,
@@ -76,8 +24,6 @@ def fit_tagger(tagger, dataset, intent_name, language,
     augmented_intent_utterances = augment_utterances(
         dataset, intent_name, language=language,
         **data_augmentation_config.to_dict())
-    augmented_intent_utterances = capitalize_utterances(
-        augmented_intent_utterances, dataset[ENTITIES], language)
     tagging_scheme = tagger.tagging_scheme
     crf_samples = [
         utterance_to_sample(u[DATA], tagging_scheme, tagger.language)
@@ -87,15 +33,14 @@ def fit_tagger(tagger, dataset, intent_name, language,
 
 class ProbabilisticIntentParser(object):
     def __init__(self, language, intent_classifier, crf_taggers,
-                 slot_name_to_entity_mapping, data_augmentation_config=None):
+                 slot_name_to_entity_mapping,
+                 config=ProbabilisticIntentParserConfig()):
         self.language = language
         self.intent_classifier = intent_classifier
         self._crf_taggers = None
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
-        if data_augmentation_config is None:
-            data_augmentation_config = DataAugmentationConfig()
-        self.data_augmentation_config = data_augmentation_config
+        self.config = config
 
     @property
     def crf_taggers(self):
@@ -162,7 +107,7 @@ class ProbabilisticIntentParser(object):
                 continue
             self.crf_taggers[intent_name] = fit_tagger(
                 self.crf_taggers[intent_name], dataset, intent_name,
-                self.language, self.data_augmentation_config)
+                self.language, self.config.data_augmentation_config)
         return self
 
     def to_dict(self):
@@ -173,8 +118,8 @@ class ProbabilisticIntentParser(object):
             "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "data_augmentation_config":
-                self.data_augmentation_config.to_dict(),
+            "config":
+                self.config.to_dict(),
             "taggers": taggers
         }
 
@@ -190,8 +135,8 @@ class ProbabilisticIntentParser(object):
             crf_taggers=taggers,
             slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
-            data_augmentation_config=DataAugmentationConfig.from_dict(
-                obj_dict["data_augmentation_config"])
+            config=ProbabilisticIntentParserConfig.from_dict(
+                obj_dict["config"])
         )
 
 

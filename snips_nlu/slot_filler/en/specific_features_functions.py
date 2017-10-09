@@ -6,15 +6,13 @@ from snips_nlu.slot_filler.default.default_features_functions import \
     default_features, default_shape_ngram_features
 
 
-def language_specific_features(intent_entities):
+def language_specific_features(dataset, intent, config):
     """
     :param intent_entities: dict containing entities for the related intent
     """
     language = Language.EN
-    features = default_features(language, intent_entities, use_stemming=True,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5,
-                                common_words_gazetteer_name="top_10000_words")
+    features = default_features(language, dataset, intent, config,
+                                use_stemming=True)
 
     features += default_shape_ngram_features(language)
 

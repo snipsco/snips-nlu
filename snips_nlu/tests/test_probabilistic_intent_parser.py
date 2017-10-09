@@ -5,13 +5,14 @@ import unittest
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
+from snips_nlu.config import DataAugmentationConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
-    DataAugmentationConfig, capitalize, capitalize_utterances,
     generate_slots_permutations)
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
@@ -244,9 +245,9 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         mock_tagger_fit.side_effect = [make_coffee_tagger, make_tea_tagger]
 
-        parser = ProbabilisticIntentParser(language, intent_classifier,
-                                           taggers,
-                                           slot_name_to_entity_mapping, None)
+        parser = ProbabilisticIntentParser(
+            language, intent_classifier, taggers,
+            slot_name_to_entity_mapping)
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         parser.fit(dataset)
 
@@ -255,11 +256,15 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         # Then
         expected_parser_dict = {
-            "data_augmentation_config": {
-                "max_utterances": 200,
-                "noise_prob": 0.0,
-                "min_noise_size": 0,
-                "max_noise_size": 0
+            "config": {
+                "data_augmentation_config": {
+                    "min_utterances": 200,
+                    "capitalization_ratio": .2,
+                },
+                'crf_features_config': {
+                    "base_drop_ratio": .5,
+                    "entities_offsets": [-2, -1, 0]
+                }
             },
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"
@@ -288,11 +293,16 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         mock_tagger.from_dict.return_value = mocked_tagger
         mocked_tagger.language = language
         parser_dict = {
-            "data_augmentation_config": {
-                "max_utterances": 200,
-                "noise_prob": 0.0,
-                "min_noise_size": 0,
-                "max_noise_size": 0
+            "config": {
+                'data_augmentation_config': {
+                    "min_utterances": 50,
+                    "capitalization_ration": .2,
+                },
+                'crf_features_config': {
+                    "entities_keep_probs": None,
+                    "entities_offsets": [-2, -1, 0]
+                }
+
             },
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"
@@ -325,17 +335,14 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         expected_data_augmentation_config = DataAugmentationConfig.from_dict(
             {
-                "max_utterances": 200,
-                "noise_prob": 0.0,
-                "min_noise_size": 0,
-                "max_noise_size": 0
+                "max_utterances": 200
             }
         )
 
         self.assertEqual(parser.language, language)
         self.assertEqual(parser.slot_name_to_entity_mapping,
                          expected_slot_name_to_entity_mapping)
-        self.assertEqual(parser.data_augmentation_config,
+        self.assertEqual(parser.config.data_augmentation_config,
                          expected_data_augmentation_config)
         self.assertIsNotNone(parser.intent_classifier)
         self.assertItemsEqual(parser.crf_taggers.keys(),

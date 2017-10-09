@@ -7,8 +7,9 @@ import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
+from snips_nlu.config import ProbabilisticIntentParserConfig
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
-    SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY, ENTITIES
+    SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
@@ -234,7 +235,26 @@ class TestFeatureFunctions(unittest.TestCase):
         dataset = {
             "snips_nlu_version": "1.0.0",
             "language": "en",
-            "intents": {},
+            "intents": {
+                "dummy_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "hello",
+                                    "entity": "dummy_entity_1",
+                                    "slot_name": "dummy_slot_1"
+                                },
+                                {
+                                    "text": "there",
+                                    "entity": "dummy_entity_2",
+                                    "slot_name": "dummy_slot_2"
+                                },
+                            ]
+                        }
+                    ]
+                }
+            },
             "entities": {
                 "dummy_entity_1": {
                     AUTOMATICALLY_EXTENSIBLE: False,
@@ -275,9 +295,10 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # When
         np.random.seed(42)
-        keep_prob = 0.5
-        features_signatures = crf_features(intent_entities=dataset[ENTITIES],
-                                           language=language)
+        drop_prob = 0.5
+        features_signatures = crf_features(
+            dataset, "dummy_1", language=language,
+            config=ProbabilisticIntentParserConfig())
 
         # Then
         np.random.seed(42)
@@ -285,13 +306,17 @@ class TestFeatureFunctions(unittest.TestCase):
             'dummy_a': 'dummy_a',
             'dummy_a_bis': 'dummy_a',
             'dummy_b': 'dummy_b',
-            'dummy_b_bis': 'dummy_b_bis'
+            'dummy_b_bis': 'dummy_b_bis',
+            'hello': 'hello'
         }
 
-        collection_1_size = max(int(keep_prob * len(collection_1)), 1)
+        collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
         collection_1 = np.random.choice(collection_1.keys(), collection_1_size,
                                         replace=False).tolist()
-        collection_2 = ['dummy_c']
+        collection_2 = {'dummy_c': 'dummy_c', 'there': 'there'}
+        collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
+        collection_2 = np.random.choice(collection_2.keys(), collection_2_size,
+                                        replace=False).tolist()
 
         expected_signatures = [
             {

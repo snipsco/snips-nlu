@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 from mock import patch
 
+from snips_nlu.config import IntentClassifierConfig
 from snips_nlu.constants import INTENTS, LANGUAGE, DATA, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
@@ -20,8 +21,7 @@ def np_random_permutation(x):
 
 
 def get_mocked_augment_utterances(dataset, intent_name, language,
-                                  max_utterances, noise_prob,
-                                  min_noise_size, max_noise_size):
+                                  min_utterances, capitalization_ratio):
     return dataset[INTENTS][intent_name][UTTERANCES]
 
 
@@ -71,8 +71,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         }
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
 
-        intent_classifier = SnipsIntentClassifier(
-            language=Language.EN, classifier_args=classifier_args).fit(dataset)
+        intent_classifier = SnipsIntentClassifier(language=Language.EN).fit(
+            dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 
@@ -82,7 +82,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # Then
         intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
-            "classifier_args": classifier_args,
+            "config": IntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
@@ -198,8 +198,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         mocked_build_training.return_value = utterance, labels, intent_list
 
         # When / Then
-        intent_classifier = SnipsIntentClassifier(
-            language=Language.EN, classifier_args=classifier_args).fit(dataset)
+        intent_classifier = SnipsIntentClassifier(language=Language.EN).fit(
+            dataset)
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(intent, None)
 
@@ -213,7 +213,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # When
         utterances, y, intent_mapping = build_training_data(
-            dataset, Language.EN, use_stemming=False, noise_factor=0)
+            dataset, Language.EN, IntentClassifierConfig(noise_factor=0))
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
@@ -242,8 +242,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         np.random.seed(42)
         noise_factor = 2
         utterances, y, intent_mapping = build_training_data(
-            dataset, Language.EN, use_stemming=False,
-            noise_factor=noise_factor)
+            dataset, Language.EN,
+            IntentClassifierConfig(noise_factor=noise_factor))
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
@@ -266,7 +266,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # When
         utterances, y, intent_mapping = build_training_data(
-            dataset, language, use_stemming=False, noise_factor=0)
+            dataset, language, config=IntentClassifierConfig())
 
         # Then
         expected_utterances = []

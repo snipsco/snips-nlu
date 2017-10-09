@@ -10,14 +10,11 @@ from copy import deepcopy
 
 from mock import Mock, patch
 
-from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE
 from snips_nlu.config import NLUConfig, RegexTrainingConfig
-from snips_nlu.constants import (ENGINE_TYPE, CUSTOM_ENGINE, DATA, TEXT,
-                                 INTENTS, UTTERANCES)
+from snips_nlu.constants import (DATA, TEXT, INTENTS, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots, \
-    TAGGING_EXCLUDED_ENTITIES
+from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
 from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
 
@@ -305,7 +302,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -411,7 +407,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -621,7 +616,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = validate_and_format_dataset({
             "intents": {
                 "dummy": {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [
@@ -658,7 +652,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = validate_and_format_dataset({
             "intents": {
                 intent_name: {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                                       {
                                           "data": [
@@ -695,7 +688,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = {
             "intents": {
                 intent_name: {
-                    ENGINE_TYPE: CUSTOM_ENGINE,
                     "utterances": [
                         {
                             "data": [

@@ -7,7 +7,6 @@ import unittest
 
 from mock import patch
 
-from snips_nlu.constants import CUSTOM_ENGINE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.feature_extraction import (
     Featurizer, default_tfidf_vectorizer, get_utterances_to_features_names)
@@ -138,8 +137,8 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         dataset = {
             "intents": {
                 "intent1": {
-                    "utterances": [],
-                    "engineType": CUSTOM_ENGINE
+                    "utterances": []
+
                 }
             },
             "entities": {
@@ -232,8 +231,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         dataset = {
             "intents": {
                 "intent1": {
-                    "utterances": [],
-                    "engineType": CUSTOM_ENGINE
+                    "utterances": []
                 }
             },
             "entities": {

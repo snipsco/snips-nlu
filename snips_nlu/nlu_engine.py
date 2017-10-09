@@ -132,19 +132,6 @@ def get_intent_slot_name_mapping(dataset, intent):
     return slot_name_mapping
 
 
-def get_intent_custom_entities(dataset, intent):
-    intent_entities = set()
-    for utterance in dataset[INTENTS][intent][UTTERANCES]:
-        for c in utterance[DATA]:
-            if ENTITY in c:
-                intent_entities.add(c[ENTITY])
-    custom_entities = dict()
-    for ent in intent_entities:
-        if ent not in BuiltInEntity.built_in_entity_by_label:
-            custom_entities[ent] = dataset[ENTITIES][ent]
-    return custom_entities
-
-
 def enrich_slots(slots, other_slots):
     enriched_slots = list(slots)
     for slot in other_slots:
@@ -275,13 +262,9 @@ class SnipsNLUEngine(NLUEngine):
         self.slot_name_mapping = get_slot_name_mapping(dataset)
         taggers = dict()
         for intent in dataset[INTENTS]:
-            intent_custom_entities = get_intent_custom_entities(dataset,
-                                                                intent)
             features = crf_features(
-                intent_custom_entities,
-                self.language,
-                self.config.probabilistic_intent_parser_config
-                    .crf_features_config)
+                dataset, intent, self.language,
+                self.config.probabilistic_intent_parser_config)
             if intent in self._pre_trained_taggers:
                 tagger = self._pre_trained_taggers[intent]
             else:
@@ -302,11 +285,8 @@ class SnipsNLUEngine(NLUEngine):
 
     def get_fitted_tagger(self, dataset, intent):
         dataset = validate_and_format_dataset(dataset)
-        intent_custom_entities = get_intent_custom_entities(dataset, intent)
-        features = crf_features(
-            intent_custom_entities,
-            self.language,
-            self.config.probabilistic_intent_parser_config.crf_features_config)
+        features = crf_features(dataset, intent, self.language,
+                                self.config.probabilistic_intent_parser_config)
         tagger = CRFTagger(default_crf_model(), features, TaggingScheme.BIO,
                            self.language)
         if self.probabilistic_parser is not None:

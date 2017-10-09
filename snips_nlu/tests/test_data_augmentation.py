@@ -18,10 +18,14 @@ class TestDataAugmentation(unittest.TestCase):
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_context_iterator(self, _):
         # Given
-        seq = range(3)
+        dataset = {
+            "intents": {
+                "dummy": {"utterances": range(3)}
+            }
+        }
 
         # When
-        it = get_contexts_iterator(seq)
+        it = get_contexts_iterator(dataset, "dummy")
         context = [next(it) for _ in xrange(5)]
 
         # Then

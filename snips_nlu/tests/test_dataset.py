@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 import unittest
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.constants import CUSTOM_ENGINE, ENTITIES, \
-    AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE
+from snips_nlu.constants import (
+    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
@@ -25,8 +25,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {},
@@ -55,8 +54,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -185,8 +183,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 },
             },
             "entities": {
@@ -233,8 +230,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ],
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -319,8 +315,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -367,8 +362,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ],
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -413,8 +407,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -460,8 +453,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -512,8 +504,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -584,8 +575,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -657,8 +647,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -719,8 +708,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -747,8 +735,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {

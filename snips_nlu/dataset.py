@@ -10,7 +10,7 @@ from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 ENGINE_TYPE, SNIPS_NLU_VERSION, CAPITALIZE)
+                                 SNIPS_NLU_VERSION, CAPITALIZE)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 from utils import validate_type, validate_key, validate_keys
@@ -60,7 +60,6 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
 
 def validate_and_format_intent(intent, entities):
     validate_type(intent, dict)
-    validate_key(intent, ENGINE_TYPE, object_label="intent dict")
     validate_key(intent, UTTERANCES, object_label="intent dict")
     validate_type(intent[UTTERANCES], list)
     for utterance in intent[UTTERANCES]:
@@ -174,22 +173,6 @@ def validate_language(language):
     if language not in Language.language_by_iso_code:
         raise ValueError("Language name must be ISO 639-1,"
                          " found '%s'" % language)
-
-
-def filter_dataset(dataset, engine_type=None, min_utterances=0):
-    """
-    Return a deepcopy of the dataset filtered according to parameters
-    :param dataset: dataset to filter
-    :param engine_type: if not None, only keep intens of type `engine_type`  
-    :param min_utterances: keep intents having at least `min_utterances` 
-    """
-    _dataset = deepcopy(dataset)
-    for intent_name, intent in dataset[INTENTS].iteritems():
-        if engine_type is not None and intent[ENGINE_TYPE] != engine_type:
-            _dataset[INTENTS].pop(intent_name)
-        elif len(intent[UTTERANCES]) < min_utterances:
-            _dataset[INTENTS].pop(intent_name)
-    return _dataset
 
 
 def add_entity_value_if_missing(value, entity, use_synonyms):

@@ -9,7 +9,7 @@ from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.resources import load_resources
 from snips_nlu.utils import ROOT_PATH, PACKAGE_NAME
 
-__model_version__ = "0.11.0"
+__model_version__ = "0.10.0"
 
 VERSION_FILE_NAME = "__version__"
 

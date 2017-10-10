@@ -6,9 +6,8 @@ from mock import patch
 
 from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_intent_entities, get_entities_iterators,
-    generate_utterance, get_noise_iterator)
+    generate_utterance)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.languages import Language
 
 
 def np_random_permutation(x):
@@ -19,10 +18,14 @@ class TestDataAugmentation(unittest.TestCase):
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_context_iterator(self, _):
         # Given
-        seq = range(3)
+        dataset = {
+            "intents": {
+                "dummy": {"utterances": range(3)}
+            }
+        }
 
         # When
-        it = get_contexts_iterator(seq)
+        it = get_contexts_iterator(dataset, "dummy")
         context = [next(it) for _ in xrange(5)]
 
         # Then
@@ -129,12 +132,12 @@ class TestDataAugmentation(unittest.TestCase):
         expected_seq = ["entity 1", "entity 11", "entity 111", "entity 3",
                         "entity 33", "entity 1", "entity 11"]
         seq = [next(it_dict["entity1"]) for _ in xrange(len(expected_seq))]
-        self.assertEqual(seq, expected_seq)
+        self.assertItemsEqual(seq, expected_seq)
 
         self.assertIn("entity2", it_dict)
-        expected_seq = ["entity 2", "entity 44", "entity 2"]
+        expected_seq = ["entity 2", "entity 44"]
         seq = [next(it_dict["entity2"]) for _ in xrange(len(expected_seq))]
-        self.assertEqual(seq, expected_seq)
+        self.assertItemsEqual(seq, expected_seq)
 
     def test_generate_utterance(self):
         # Given
@@ -166,9 +169,7 @@ class TestDataAugmentation(unittest.TestCase):
         }
 
         # When
-        utterance = generate_utterance(context_iterator, entities_iterators,
-                                       noise_iterator=(_ for _ in xrange(0)),
-                                       noise_prob=0)
+        utterance = generate_utterance(context_iterator, entities_iterators)
 
         # Then
         expected_utterance = {
@@ -192,104 +193,3 @@ class TestDataAugmentation(unittest.TestCase):
             ]
         }
         self.assertEqual(utterance, expected_utterance)
-
-    @patch("random.random")
-    def test_generate_utterance_with_noise(self, mocked_random):
-        # Given
-        context = {
-            "data": [
-                {
-                    "text": "this is ",
-                },
-                {
-                    "text": "entity 11",
-                    "entity": "entity1",
-                    "slot_name": "slot1"
-                },
-                {
-                    "text": " right "
-                },
-                {
-                    "text": "entity 2",
-                    "entity": "entity2",
-                    "slot_name": "slot1"
-                }
-            ]
-        }
-        context_iterator = (context for _ in xrange(1))
-
-        entities_iterators = {
-            "entity1": ("entity one" for _ in xrange(1)),
-            "entity2": ("entity two" for _ in xrange(1)),
-        }
-        noise_iterator = (a for a in ("hi", "hello", "how", "are", "you"))
-
-        global SEED
-        SEED = 0
-
-        def random():
-            global SEED
-            SEED += 1
-            return 0.99 if SEED % 2 == 0 else 0.
-
-        mocked_random.side_effect = random
-
-        # When
-        utterance = generate_utterance(context_iterator, entities_iterators,
-                                       noise_iterator=noise_iterator,
-                                       noise_prob=0.5)
-
-        # Then
-        expected_utterance = {
-            "data": [
-                {
-                    "text": "this is ",
-                },
-                {
-                    "text": "hi "
-                },
-                {
-                    "text": "entity one",
-                    "entity": "entity1",
-                    "slot_name": "slot1"
-                },
-                {
-                    "text": " right "
-                },
-
-                {
-                    "text": "hello "
-                },
-                {
-                    "text": "entity two",
-                    "entity": "entity2",
-                    "slot_name": "slot1"
-                }
-            ]
-        }
-
-        self.assertEqual(utterance, expected_utterance)
-
-    @patch("numpy.random.permutation", side_effect=np_random_permutation)
-    @patch("random.randint")
-    @patch("random.choice")
-    @patch("snips_nlu.data_augmentation.get_subtitles")
-    def test_get_noise_iterator(self, mocked_get_subtitles, mocked_choice,
-                                mocked_randint, _):
-        # Given
-        language = Language.EN
-        min_size, max_size = 2, 3
-
-        mocked_subtitles = ["a b c d", "e", "f g h"]
-        mocked_get_subtitles.return_value = mocked_subtitles
-        mocked_choice.return_value = 2
-        mocked_randint.return_value = 0
-
-        it = get_noise_iterator(language, min_size, max_size)
-
-        # When
-        seq = [next(it) for _ in xrange(3)]
-
-        # Then
-        expected_seq = ["a b", "e f", "a b"]
-        self.assertEqual(seq, expected_seq)

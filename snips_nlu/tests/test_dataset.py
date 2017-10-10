@@ -4,33 +4,13 @@ from __future__ import unicode_literals
 import unittest
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.constants import CUSTOM_ENGINE
+from snips_nlu.constants import (
+    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestDataset(unittest.TestCase):
-    def test_invalid_intent_name_should_raise_exception(self):
-        # Given
-        dataset = {
-            "intents": {
-                "invalid/intent_name": {
-                    "utterances": [],
-                    "engineType": CUSTOM_ENGINE
-                }
-            },
-            "entities": {},
-            "language": "en",
-            "snips_nlu_version": "1.1.1"
-        }
-
-        # When/Then
-        with self.assertRaises(AssertionError) as ctx:
-            validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
-                         "invalid/intent_name is an invalid intent name. "
-                         "Intent names must only use: [a-zA-Z0-9_- ]")
-
     def test_missing_intent_key_should_raise_exception(self):
         # Given
         dataset = {
@@ -45,8 +25,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {},
@@ -75,8 +54,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -126,10 +104,9 @@ class TestDataset(unittest.TestCase):
         }
 
         # When/Then
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
-                         "Language name must be ISO 639-1, found 'eng'")
+        self.assertEqual(ctx.exception.message, "Unknown iso_code 'eng'")
 
     def test_should_format_dataset_by_adding_synonyms(self):
         # Given
@@ -155,13 +132,11 @@ class TestDataset(unittest.TestCase):
             "intents": {},
             "entities": {
                 "entity1": {
-                    "data": [
-                        {
-                            "value": "Entity_1",
-                            "synonyms": ["entity 2", "entity_1"]
-                        }
-                    ],
-                    "use_synonyms": True,
+                    "utterances": {
+                        "Entity_1": "Entity_1",
+                        "entity_1": "Entity_1",
+                        "entity 2": "Entity_1",
+                    },
                     "automatically_extensible": False,
                     "capitalize": True
                 }
@@ -208,8 +183,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 },
             },
             "entities": {
@@ -256,23 +230,16 @@ class TestDataset(unittest.TestCase):
                                 }
                             ],
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
                 "entity1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["entity 1", "entity 1 bis"]
-                        },
-                        {
-                            "value": "alternative entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": True,
+                    "utterances": {
+                        "entity 1 bis": "entity 1",
+                        "entity 1": "entity 1",
+                        "alternative entity 1": "alternative entity 1"
+                    },
                     "automatically_extensible": False,
                     "capitalize": False
                 }
@@ -348,8 +315,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -396,23 +362,16 @@ class TestDataset(unittest.TestCase):
                                 }
                             ],
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
                 "entity1": {
-                    "data": [
+                    "utterances":
                         {
-                            "value": "entity 1",
-                            "synonyms": ["entity 1", "alternative entity 1"]
+                            "alternative entity 1": "alternative entity 1",
+                            "entity 1": "entity 1"
                         },
-                        {
-                            "value": "alternative entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": False,
                     "automatically_extensible": False,
                     "capitalize": False
                 }
@@ -448,8 +407,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -495,8 +453,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -547,20 +504,16 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
                 "entity1": {
-                    "data": [
+                    "utterances":
                         {
-                            "value": "entity 1",
-                            "synonyms": ["entity 1"]
-                        }
-                    ],
+                            "entity 1": "entity 1"
+                        },
                     "capitalize": False,
-                    "use_synonyms": False,
                     "automatically_extensible": False
                 }
             },
@@ -622,8 +575,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -695,55 +647,37 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
                 "entity1": {
-                    "data": [
+                    "utterances":
                         {
-                            "value": "My entity1",
-                            "synonyms": ["my entity1"]
+                            "My entity1": "My entity1",
+                            "my entity1": "my entity1",
+                            "entity1": "entity1"
                         },
-                        {
-                            "value": "entity1",
-                            "synonyms": ["entity1"]
-                        }
-                    ],
-                    "use_synonyms": False,
                     "automatically_extensible": True,
                     "capitalize": False
                 },
                 "entity2": {
-                    "data": [
-                        {
-                            "value": "My entity2",
-                            "synonyms": ["my entity2"]
-
-                        },
-                        {
-                            "value": "myentity2",
-                            "synonyms": ["myentity2"]
-
-                        }
-                    ],
-                    "use_synonyms": False,
+                    "utterances": {
+                        "My entity2": "My entity2",
+                        "my entity2": "my entity2",
+                        "myentity2": "myentity2"
+                    },
                     "automatically_extensible": True,
                     "capitalize": True
                 },
                 "entity3": {
-                    "data": [
+                    "utterances":
                         {
-                            "value": "Entity3",
-                            "synonyms": ["entity3"]
+                            "Entity3": "Entity3",
+                            "entity3": "entity3",
+                            "m_entity3": "m_entity3"
+
                         },
-                        {
-                            "value": "m_entity3",
-                            "synonyms": ["m_entity3"]
-                        }
-                    ],
-                    "use_synonyms": False,
                     "automatically_extensible": True,
                     "capitalize": True
                 }
@@ -774,8 +708,7 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
@@ -802,19 +735,15 @@ class TestDataset(unittest.TestCase):
                                 }
                             ]
                         }
-                    ],
-                    "engineType": CUSTOM_ENGINE
+                    ]
                 }
             },
             "entities": {
                 "entity1": {
-                    "data": [
-                        {
-                            "value": "éNtity",
-                            "synonyms": ["entity"]
-                        }
-                    ],
-                    "use_synonyms": True,
+                    "utterances": {
+                        "éNtity": "éNtity",
+                        "entity": "éNtity",
+                    },
                     "automatically_extensible": True,
                     "capitalize": False
                 }
@@ -829,6 +758,40 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertDictEqual(dataset, expected_dataset)
 
+    def test_dataset_should_handle_synonyms(self):
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "Ëntity 1",
+                            "synonyms": ["entity 2"]
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": True
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "1.1.1"
+        }
 
-if __name__ == '__main__':
-    unittest.main()
+        # When
+        dataset = validate_and_format_dataset(dataset)
+
+        expected_entities = {
+            "entity1": {
+                AUTOMATICALLY_EXTENSIBLE: True,
+                UTTERANCES: {
+                    "Ëntity 1": "Ëntity 1",
+                    "entity 1": "Ëntity 1",
+                    "entity 2": "Ëntity 1"
+                },
+                CAPITALIZE: True
+            }
+        }
+
+        # Then
+        self.assertDictEqual(dataset[ENTITIES], expected_entities)

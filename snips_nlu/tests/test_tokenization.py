@@ -1,15 +1,20 @@
+# coding=utf-8
+from __future__ import unicode_literals
+
 import unittest
 
+from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize, Token
 
 
 class TestTokenization(unittest.TestCase):
     def test_should_tokenize_empty_string(self):
         # Given
+        language = Language.EN
         text = ""
 
         # When
-        tokens = tokenize(text)
+        tokens = tokenize(text, language)
 
         # Then
         self.assertListEqual(tokens, [])
@@ -17,19 +22,21 @@ class TestTokenization(unittest.TestCase):
     def test_should_tokenize_only_white_spaces(self):
         # Given
         text = "    "
+        language = Language.EN
 
         # When
-        tokens = tokenize(text)
+        tokens = tokenize(text, language)
 
         # Then
         self.assertListEqual(tokens, [])
 
     def test_should_tokenize_literals(self):
         # Given
+        language = Language.EN
         text = "Hello Beautiful World"
 
         # When
-        tokens = tokenize(text)
+        tokens = tokenize(text, language)
 
         # Then
         expected_tokens = [
@@ -41,10 +48,11 @@ class TestTokenization(unittest.TestCase):
 
     def test_should_tokenize_symbols(self):
         # Given
+        language = Language.EN
         text = "$$ % !!"
 
         # When
-        tokens = tokenize(text)
+        tokens = tokenize(text, language)
 
         # Then
         expected_tokens = [
@@ -53,3 +61,12 @@ class TestTokenization(unittest.TestCase):
             Token(value='!!', start=5, end=7, stem=None)
         ]
         self.assertListEqual(tokens, expected_tokens)
+
+    def test_space_should_by_ignored(self):
+        # Given
+        text = " "
+        for l in Language:
+            # When
+            tokens = tokenize(text, l)
+            # Then
+            self.assertEqual(len(tokens), 0)

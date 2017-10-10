@@ -144,7 +144,7 @@ _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = dict()
 
 for k, v in rustling.all_configs().iteritems():
     try:
-        language = Language.from_rustling_code(k.upper())
+        language = Language.from_rustling_code(k)
     except KeyError:
         continue
     _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[language] = \

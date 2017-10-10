@@ -5,9 +5,8 @@ from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
-from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
-                                 ENTITIES, SLOT_NAME, UTTERANCES, VALUE,
-                                 ENTITY, MATCH_RANGE)
+from snips_nlu.constants import (
+    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE)
 from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
@@ -16,10 +15,6 @@ from snips_nlu.utils import LimitedSizeDict, regex_escape
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
-SPACE = " "
-WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
-IGNORED_CHARACTERS = "%s.,;/:+*-`\"(){}" % WHITE_SPACES
-IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(IGNORED_CHARACTERS)
 
 
 def get_index(index):
@@ -55,7 +50,7 @@ def get_slot_names_mapping(dataset):
 
 
 def query_to_pattern(query, joined_entity_utterances,
-                     group_names_to_slot_names, ):
+                     group_names_to_slot_names, language):
     pattern = []
     for i, chunk in enumerate(query[DATA]):
         if SLOT_NAME in chunk:
@@ -66,15 +61,15 @@ def query_to_pattern(query, joined_entity_utterances,
             pattern.append(
                 r"(?P<%s>%s)" % (max_index, joined_entity_utterances[entity]))
         else:
-            tokens = tokenize_light(chunk[TEXT])
+            tokens = tokenize_light(chunk[TEXT], language)
             pattern += [regex_escape(t) for t in tokens]
-    pattern = r"^%s%s%s$" % (IGNORED_CHARACTERS_PATTERN,
-                             IGNORED_CHARACTERS_PATTERN.join(pattern),
-                             IGNORED_CHARACTERS_PATTERN)
+    pattern = r"^%s%s%s$" % (language.ignored_characters_pattern,
+                             language.ignored_characters_pattern.join(pattern),
+                             language.ignored_characters_pattern)
     return pattern, group_names_to_slot_names
 
 
-def get_queries_with_unique_context(intent_queries):
+def get_queries_with_unique_context(intent_queries, language):
     contexts = set()
     queries = []
     for query in intent_queries:
@@ -83,36 +78,32 @@ def get_queries_with_unique_context(intent_queries):
             if ENTITY not in chunk:
                 context += chunk[TEXT]
             else:
-                context += get_builtin_entity_name(chunk[ENTITY])
+                context += get_builtin_entity_name(chunk[ENTITY], language)
         if context not in contexts:
             queries.append(query)
     return queries
 
 
 def generate_regexes(intent_queries, joined_entity_utterances,
-                     group_names_to_labels):
-    queries = get_queries_with_unique_context(intent_queries)
+                     group_names_to_labels, language):
+    queries = get_queries_with_unique_context(intent_queries, language)
     # Join all the entities utterances with a "|" to create the patterns
     patterns = set()
     for query in queries:
         pattern, group_names_to_labels = query_to_pattern(
-            query, joined_entity_utterances, group_names_to_labels)
+            query, joined_entity_utterances, group_names_to_labels, language)
         patterns.add(pattern)
     regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
     return regexes, group_names_to_labels
 
 
-def get_joined_entity_utterances(dataset):
+def get_joined_entity_utterances(dataset, language):
     joined_entity_utterances = dict()
     for entity_name, entity in dataset[ENTITIES].iteritems():
         if is_builtin_entity(entity_name):
-            utterances = [get_builtin_entity_name(entity_name)]
+            utterances = [get_builtin_entity_name(entity_name, language)]
         else:
-            if entity[USE_SYNONYMS]:
-                utterances = [syn for entry in entity[DATA]
-                              for syn in entry[SYNONYMS]]
-            else:
-                utterances = [entry[VALUE] for entry in entity[DATA]]
+            utterances = entity[UTTERANCES].keys()
         utterances_patterns = [regex_escape(e) for e in utterances]
         utterances_patterns = [p for p in utterances_patterns if len(p) > 0]
         joined_entity_utterances[entity_name] = r"|".join(
@@ -120,7 +111,7 @@ def get_joined_entity_utterances(dataset):
     return joined_entity_utterances
 
 
-def deduplicate_overlapping_slots(slots):
+def deduplicate_overlapping_slots(slots, language):
     deduplicated_slots = []
     for slot in slots:
         is_overlapping = False
@@ -128,8 +119,8 @@ def deduplicate_overlapping_slots(slots):
             if slot.match_range[1] > dedup_slot.match_range[0] \
                     and slot.match_range[0] < dedup_slot.match_range[1]:
                 is_overlapping = True
-                tokens = tokenize(slot.value)
-                dedup_tokens = tokenize(dedup_slot.value)
+                tokens = tokenize(slot.value, language)
+                dedup_tokens = tokenize(dedup_slot.value, language)
                 if len(tokens) > len(dedup_tokens):
                     deduplicated_slots[slot_index] = slot
                 elif len(tokens) == len(dedup_tokens) \
@@ -140,8 +131,9 @@ def deduplicate_overlapping_slots(slots):
     return deduplicated_slots
 
 
-def get_builtin_entity_name(entity_label):
-    return "%%%s%%" % "".join(tokenize_light(entity_label)).upper()
+def get_builtin_entity_name(entity_label, language):
+    return "%%%s%%" % "".join(
+        tokenize_light(entity_label, language)).upper()
 
 
 def preprocess_builtin_entities(utterance, language):
@@ -171,7 +163,7 @@ def replace_builtin_entities(text, language):
 
         processed_text += text[current_ix:ent_start]
 
-        entity_text = get_builtin_entity_name(ent[ENTITY].label)
+        entity_text = get_builtin_entity_name(ent[ENTITY].label, language)
         offset += len(entity_text) - (
             ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0])
 
@@ -211,7 +203,8 @@ class RegexIntentParser(object):
             intents_to_train = list(intents)
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
-        joined_entity_utterances = get_joined_entity_utterances(dataset)
+        joined_entity_utterances = get_joined_entity_utterances(
+            dataset, self.language)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
         for intent_name, intent in dataset[INTENTS].iteritems():
             if intent_name not in intents_to_train:
@@ -221,7 +214,7 @@ class RegexIntentParser(object):
                           for u in intent[UTTERANCES]]
             regexes, self.group_names_to_slot_names = generate_regexes(
                 utterances, joined_entity_utterances,
-                self.group_names_to_slot_names)
+                self.group_names_to_slot_names, self.language)
             self.regexes_per_intent[intent_name] = regexes
         return self
 
@@ -279,7 +272,8 @@ class RegexIntentParser(object):
                         match_range=rng, value=value, entity=entity,
                         slot_name=slot_name)
                     slots.append(parsed_slot)
-                parsed_slots = deduplicate_overlapping_slots(slots)
+                parsed_slots = deduplicate_overlapping_slots(
+                    slots, self.language)
                 break
             if matched:
                 break
@@ -291,7 +285,7 @@ class RegexIntentParser(object):
             patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
                         self.regexes_per_intent.iteritems()}
         return {
-            "language": self.language.iso_code,
+            "language_code": self.language.iso_code,
             "patterns": patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
@@ -299,7 +293,7 @@ class RegexIntentParser(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        language = Language.from_iso_code(obj_dict["language"])
+        language = Language.from_iso_code(obj_dict["language_code"])
         patterns = obj_dict["patterns"]
         group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
         slot_names_to_entities = obj_dict["slot_names_to_entities"]

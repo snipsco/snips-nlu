@@ -26,19 +26,18 @@ TOKEN_NAME = "token"
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def crf_features(intent_entities, language):
+def crf_features(dataset, intent, language, config):
     if language == Language.EN:
-        return en_features(intent_entities=intent_entities)
+        return en_features(dataset, intent, config)
     elif language == Language.ES:
-        return default_features(language, intent_entities, use_stemming=True,
-                                entities_offsets=(-2, -1, 0),
-                                entity_keep_prob=.5)
+        return default_features(language, dataset, intent, config,
+                                use_stemming=True)
     elif language == Language.FR:
-        return fr_features(intent_entities)
+        return fr_features(dataset, intent, config)
     elif language == Language.DE:
-        return de_features(intent_entities)
+        return de_features(dataset, intent, config)
     elif language == Language.KO:
-        return ko_features(intent_entities=intent_entities)
+        return ko_features(dataset, intent, config)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)
@@ -85,17 +84,19 @@ def get_suffix_fn(suffix_size):
     return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
 
 
-def get_ngram_fn(n, use_stemming, language_code=None,
+def get_length_fn():
+    return BaseFeatureFunction(
+        "length", lambda tokens, token_index: len(tokens[token_index].value))
+
+
+def get_ngram_fn(n, use_stemming, language_code,
                  common_words_gazetteer_name=None):
+    language = Language.from_iso_code(language_code)
     if n < 1:
         raise ValueError("n should be >= 1")
 
     gazetteer = None
     if common_words_gazetteer_name is not None:
-        if language_code is None:
-            raise ValueError("A language code must be provided in order to "
-                             "retrieve the corresponding gazetteer")
-        language = Language.from_iso_code(language_code)
         gazetteer = get_gazetteer(language, common_words_gazetteer_name)
         if use_stemming:
             gazetteer = set(stem(w, language) for w in gazetteer)
@@ -106,23 +107,25 @@ def get_ngram_fn(n, use_stemming, language_code=None,
         if 0 <= token_index < max_len and end <= max_len:
             if gazetteer is None:
                 if use_stemming:
-                    return " ".join(t.stem for t in tokens[token_index:end])
+                    return language.default_sep.join(
+                        t.stem for t in tokens[token_index:end])
                 else:
-                    return " ".join(t.normalized_value
-                                    for t in tokens[token_index:end])
+                    return language.default_sep.join(
+                        t.normalized_value for t in tokens[token_index:end])
             else:
                 words = []
                 for t in tokens[token_index:end]:
                     normalized = t.stem if use_stemming else t.normalized_value
                     words.append(normalized if normalized in gazetteer
                                  else "rare_word")
-                return " ".join(words)
+                return language.default_sep.join(words)
         return None
 
     return BaseFeatureFunction("ngram_%s" % n, ngram)
 
 
-def get_shape_ngram_fn(n):
+def get_shape_ngram_fn(n, language_code):
+    language = Language.from_iso_code(language_code)
     if n < 1:
         raise ValueError("n should be >= 1")
 
@@ -130,8 +133,8 @@ def get_shape_ngram_fn(n):
         max_len = len(tokens)
         end = token_index + n
         if 0 <= token_index < max_len and end <= max_len:
-            return " ".join(get_shape(t.value)
-                            for t in tokens[token_index:end])
+            return language.default_sep.join(get_shape(t.value)
+                                             for t in tokens[token_index:end])
         return None
 
     return BaseFeatureFunction("shape_ngram_%s" % n, shape_ngram)

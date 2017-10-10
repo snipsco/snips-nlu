@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-import re
+import json
 from copy import deepcopy
 
 from nlu_utils import normalize
@@ -10,12 +10,10 @@ from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 ENGINE_TYPE, SNIPS_NLU_VERSION, CAPITALIZE)
+                                 SNIPS_NLU_VERSION, CAPITALIZE)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 from utils import validate_type, validate_key, validate_keys
-
-INTENT_NAME_REGEX = re.compile(r"^[\w\s-]+$")
 
 
 def extract_queries_entities(dataset):
@@ -31,6 +29,7 @@ def extract_queries_entities(dataset):
 
 def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     dataset = deepcopy(dataset)
+    dataset = json.loads(json.dumps(dataset))
     validate_type(dataset, dict)
     mandatory_keys = [INTENTS, ENTITIES, LANGUAGE, SNIPS_NLU_VERSION]
     for key in mandatory_keys:
@@ -39,9 +38,9 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
     validate_type(dataset[LANGUAGE], basestring)
+    language = Language.from_iso_code(dataset[LANGUAGE])
 
     for intent_name, intent in dataset[INTENTS].iteritems():
-        validate_intent_name(intent_name)
         validate_and_format_intent(intent, dataset[ENTITIES])
 
     queries_entities_values = extract_queries_entities(dataset)
@@ -52,22 +51,15 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
                 validate_and_format_builtin_entity(entity)
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
-                entity, queries_entities_values[entity_name],
+                entity, queries_entities_values[entity_name], language,
                 capitalization_threshold)
 
     validate_language(dataset[LANGUAGE])
     return dataset
 
 
-def validate_intent_name(name):
-    if not INTENT_NAME_REGEX.match(name):
-        raise AssertionError("%s is an invalid intent name. Intent names must "
-                             "only use: [a-zA-Z0-9_- ]" % name)
-
-
 def validate_and_format_intent(intent, entities):
     validate_type(intent, dict)
-    validate_key(intent, ENGINE_TYPE, object_label="intent dict")
     validate_key(intent, UTTERANCES, object_label="intent dict")
     validate_type(intent[UTTERANCES], list)
     for utterance in intent[UTTERANCES]:
@@ -92,10 +84,10 @@ def get_text_from_chunks(chunks):
     return ''.join(chunk[TEXT] for chunk in chunks)
 
 
-def capitalization_ratio(entity_utterances):
+def capitalization_ratio(entity_utterances, language):
     capitalizations = []
     for utterance in entity_utterances:
-        tokens = tokenize_light(utterance)
+        tokens = tokenize_light(utterance, language)
         for t in tokens:
             if t.isupper() or t.istitle():
                 capitalizations.append(1.0)
@@ -106,7 +98,7 @@ def capitalization_ratio(entity_utterances):
     return sum(capitalizations) / float(len(capitalizations))
 
 
-def validate_and_format_custom_entity(entity, queries_entities,
+def validate_and_format_custom_entity(entity, queries_entities, language,
                                       capitalization_threshold):
     validate_type(entity, dict)
     mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA]
@@ -114,6 +106,10 @@ def validate_and_format_custom_entity(entity, queries_entities,
     validate_type(entity[USE_SYNONYMS], bool)
     validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool)
     validate_type(entity[DATA], list)
+
+    formatted_entity = dict()
+    formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
+        AUTOMATICALLY_EXTENSIBLE]
 
     # Validate format and filter out unused data
     valid_entity_data = []
@@ -136,24 +132,36 @@ def validate_and_format_custom_entity(entity, queries_entities,
                     for s in entry[SYNONYMS] + [entry[VALUE]]]
     else:
         entities = [entry[VALUE] for entry in entity[DATA]]
-    ratio = capitalization_ratio(entities + queries_entities)
-    entity[CAPITALIZE] = ratio > capitalization_threshold
+    ratio = capitalization_ratio(entities + queries_entities, language)
+    formatted_entity[CAPITALIZE] = ratio > capitalization_threshold
 
     # Normalize
-    normalize_data = []
+    normalize_data = dict()
     for entry in entity[DATA]:
         normalized_value = normalize(entry[VALUE])
-        entry[SYNONYMS] = set(normalize(s) for s in entry[SYNONYMS])
-        entry[SYNONYMS].add(normalized_value)
-        entry[SYNONYMS] = list(entry[SYNONYMS])
-        normalize_data.append(entry)
-    entity[DATA] = normalize_data
+        if len(entry[VALUE]):
+            normalize_data[entry[VALUE]] = entry[VALUE]
+        else:
+            continue
+        if len(normalized_value):
+            normalize_data[normalized_value] = entry[VALUE] if \
+                entity[USE_SYNONYMS] else normalized_value
+        if entity[USE_SYNONYMS]:
+            for s in entry[SYNONYMS]:
+                if len(s):
+                    normalize_data[s] = entry[VALUE]
+                normalized_s = normalize(s)
+                if len(normalized_s):
+                    normalize_data[normalize(s)] = entry[VALUE]
+
+    formatted_entity[UTTERANCES] = normalize_data
 
     # Merge queries_entities
     for value in queries_entities:
-        add_entity_value_if_missing(value, entity)
+        add_entity_value_if_missing(value, formatted_entity,
+                                    entity[USE_SYNONYMS])
 
-    return entity
+    return formatted_entity
 
 
 def validate_and_format_builtin_entity(entity):
@@ -167,31 +175,18 @@ def validate_language(language):
                          " found '%s'" % language)
 
 
-def filter_dataset(dataset, engine_type=None, min_utterances=0):
-    """
-    Return a deepcopy of the dataset filtered according to parameters
-    :param dataset: dataset to filter
-    :param engine_type: if not None, only keep intens of type `engine_type`  
-    :param min_utterances: keep intents having at least `min_utterances` 
-    """
-    _dataset = deepcopy(dataset)
-    for intent_name, intent in dataset[INTENTS].iteritems():
-        if engine_type is not None and intent[ENGINE_TYPE] != engine_type:
-            _dataset[INTENTS].pop(intent_name)
-        elif len(intent[UTTERANCES]) < min_utterances:
-            _dataset[INTENTS].pop(intent_name)
-    return _dataset
+def add_entity_value_if_missing(value, entity, use_synonyms):
+    if len(value) and value not in entity[UTTERANCES]:  # Check for synonyms
+        entity[UTTERANCES][value] = value
+    else:
+        return
 
-
-def add_entity_value_if_missing(value, entity):
     normalized_value = normalize(value)
     if len(normalized_value) == 0:
         return
-    if entity[USE_SYNONYMS]:
-        entity_values = set(v for entry in entity[DATA]
-                            for v in entry[SYNONYMS])
+
+    if use_synonyms:
+        if normalized_value not in entity[UTTERANCES]:  # Check for synonyms
+            entity[UTTERANCES][normalized_value] = value
     else:
-        entity_values = set(entry[VALUE] for entry in entity[DATA])
-    if normalized_value in entity_values:
-        return
-    entity[DATA].append({VALUE: value, SYNONYMS: [normalized_value]})
+        entity[UTTERANCES][normalized_value] = normalized_value

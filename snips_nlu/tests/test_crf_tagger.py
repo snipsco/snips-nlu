@@ -13,29 +13,30 @@ from snips_nlu.tokenization import tokenize
 class TestCRFTagger(unittest.TestCase):
     @patch('snips_nlu.slot_filler.crf_tagger.serialize_crf_model')
     def test_should_be_serializable(self, mock_serialize_crf_model):
+        language = Language.EN
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
         crf_model = default_crf_model()
         features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 1},
+                "args": {"n": 1, "language_code": language.iso_code},
                 "offsets": [0]
             },
             {
                 "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 2},
+                "args": {"n": 2, "language_code": language.iso_code},
                 "offsets": [-1, 0]
             }
         ]
         tagging_scheme = TaggingScheme.BILOU
         data = [
             {
-                "tokens": tokenize("I love blue birds"),
+                "tokens": tokenize("I love blue birds", language),
                 "tags": ["O", "O", "B-COLOR", "O"]
             },
             {
-                "tokens": tokenize("I like red birds"),
+                "tokens": tokenize("I like red birds", language),
                 "tags": ["O", "O", "B-COLOR", "O"]
             }
         ]
@@ -53,7 +54,8 @@ class TestCRFTagger(unittest.TestCase):
             "features_signatures": [
                 {
                     "args": {
-                        "n": 1
+                        "n": 1,
+                        "language_code": language.iso_code
                     },
                     "factory_name": "get_shape_ngram_fn",
                     "offsets": [
@@ -62,7 +64,8 @@ class TestCRFTagger(unittest.TestCase):
                 },
                 {
                     "args": {
-                        "n": 2
+                        "n": 2,
+                        "language_code": language.iso_code
                     },
                     "factory_name": "get_shape_ngram_fn",
                     "offsets": [
@@ -71,7 +74,7 @@ class TestCRFTagger(unittest.TestCase):
                     ]
                 }
             ],
-            "language": "en",
+            "language_code": "en",
             "tagging_scheme": 2
         }
         self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
@@ -79,13 +82,15 @@ class TestCRFTagger(unittest.TestCase):
     @patch('snips_nlu.slot_filler.crf_tagger.deserialize_crf_model')
     def test_should_be_deserializable(self, mock_deserialize_crf_model):
         # Given
+        language = Language.EN
         mock_deserialize_crf_model.return_value = None
         tagger_dict = {
             "crf_model_data": "mocked_crf_model_data",
             "features_signatures": [
                 {
                     "args": {
-                        "n": 1
+                        "n": 1,
+                        "language_code": language.iso_code
                     },
                     "factory_name": "get_shape_ngram_fn",
                     "offsets": [
@@ -94,7 +99,8 @@ class TestCRFTagger(unittest.TestCase):
                 },
                 {
                     "args": {
-                        "n": 2
+                        "n": 2,
+                        "language_code": language.iso_code
                     },
                     "factory_name": "get_shape_ngram_fn",
                     "offsets": [
@@ -103,7 +109,7 @@ class TestCRFTagger(unittest.TestCase):
                     ]
                 }
             ],
-            "language": "en",
+            "language_code": "en",
             "tagging_scheme": 2
         }
         # When
@@ -115,12 +121,12 @@ class TestCRFTagger(unittest.TestCase):
         expected_features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 1},
+                "args": {"n": 1, "language_code": language.iso_code},
                 "offsets": [0]
             },
             {
                 "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 2},
+                "args": {"n": 2, "language_code": language.iso_code},
                 "offsets": [-1, 0]
             }
         ]

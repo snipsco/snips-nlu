@@ -1,33 +1,154 @@
 from __future__ import unicode_literals
 
+from collections import defaultdict
+
 import numpy as np
 import scipy.sparse as sp
+from nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
+from snips_nlu.builtin_entities import is_builtin_entity
+from snips_nlu.constants import ENTITIES, USE_SYNONYMS, SYNONYMS, VALUE, DATA, \
+    UTTERANCES
+from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
-from snips_nlu.resources import get_stop_words
+from snips_nlu.preprocessing import stem
+from snips_nlu.resources import get_stop_words, get_word_clusters, \
+    get_stems
+from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize_light
 
 
-def default_tfidf_vectorizer():
-    return TfidfVectorizer(tokenizer=tokenize_light)
+def default_tfidf_vectorizer(language):
+    return TfidfVectorizer(tokenizer=lambda x: tokenize_light(x, language))
+
+
+def get_tokens_clusters(tokens, language, cluster_name):
+    clusters = get_word_clusters(language)[cluster_name]
+    return [clusters[t] for t in tokens if t in clusters]
+
+
+def entity_name_to_feature(entity_name, language):
+    return "entityfeature%s" % "".join(tokenize_light(
+        entity_name, language=language))
+
+
+def normalize_stem(text, language):
+    normalized_stemmed = normalize(text)
+    if language in get_stems():
+        normalized_stemmed = stem(normalized_stemmed, language)
+    return normalized_stemmed
+
+
+def get_word_cluster_features(query_tokens, language):
+    cluster_name = CLUSTER_USED_PER_LANGUAGES.get(language, False)
+    if not cluster_name:
+        return []
+    ngrams = get_all_ngrams(query_tokens)
+    cluster_features = []
+    for ngram in ngrams:
+        cluster = get_word_clusters(language)[cluster_name].get(
+            ngram[NGRAM].lower(), None)
+        if cluster is not None:
+            cluster_features.append(cluster)
+    return cluster_features
+
+
+def get_dataset_entities_features(normalized_stemmed_tokens,
+                                  entity_utterances_to_entity_names):
+    ngrams = get_all_ngrams(normalized_stemmed_tokens)
+    entity_features = []
+    for ngram in ngrams:
+        entity_features += entity_utterances_to_entity_names.get(
+            ngram[NGRAM], [])
+    return entity_features
+
+
+def preprocess_query(query, language, entity_utterances_to_features_names):
+    query_tokens = tokenize_light(query, language)
+    word_clusters_features = get_word_cluster_features(query_tokens, language)
+    normalized_stemmed_tokens = [normalize_stem(t, language)
+                                 for t in query_tokens]
+    entities_features = get_dataset_entities_features(
+        normalized_stemmed_tokens, entity_utterances_to_features_names)
+
+    features = language.default_sep.join(normalized_stemmed_tokens)
+    if len(entities_features):
+        features += " " + " ".join(entities_features)
+    if len(word_clusters_features):
+        features += " " + " ".join(word_clusters_features)
+    return features
+
+
+def get_utterances_to_features_names(dataset, language):
+    utterances_to_features = defaultdict(set)
+    for entity_name, entity_data in dataset[ENTITIES].iteritems():
+        if is_builtin_entity(entity_name):
+            continue
+        for u in entity_data[UTTERANCES].keys():
+            utterances_to_features[u].add(entity_name_to_feature(
+                entity_name, language))
+    return dict(utterances_to_features)
+
+
+def deserialize_tfidf_vectorizer(vectorizer_dict, language):
+    tfidf_vectorizer = default_tfidf_vectorizer(language)
+    tfidf_vectorizer.vocabulary_ = vectorizer_dict["vocab"]
+    idf_diag_data = np.array(vectorizer_dict["idf_diag"])
+    idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
+    row = range(idf_diag_shape[0])
+    col = range(idf_diag_shape[0])
+    idf_diag = sp.csr_matrix((idf_diag_data, (row, col)), shape=idf_diag_shape)
+    tfidf_transformer = TfidfTransformer()
+    tfidf_transformer._idf_diag = idf_diag
+    tfidf_vectorizer._tfidf = tfidf_transformer
+    return tfidf_vectorizer
+
+
+CLUSTER_USED_PER_LANGUAGES = {}
 
 
 class Featurizer(object):
-    def __init__(self, language, tfidf_vectorizer=default_tfidf_vectorizer(),
+    def __init__(self, language, tfidf_vectorizer=None, best_features=None,
+                 entity_utterances_to_feature_names=None,
                  pvalue_threshold=0.4):
-        self.tfidf_vectorizer = tfidf_vectorizer
-        self.best_features = None
-        self.pvalue_threshold = pvalue_threshold
         self.language = language
+        if tfidf_vectorizer is None:
+            tfidf_vectorizer = default_tfidf_vectorizer(self.language)
+        self.tfidf_vectorizer = tfidf_vectorizer
+        self.best_features = best_features
+        self.pvalue_threshold = pvalue_threshold
+        self.entity_utterances_to_feature_names = \
+            entity_utterances_to_feature_names
 
-    def fit(self, queries, y):
-        if all(len("".join(tokenize_light(q))) == 0 for q in queries):
+    def preprocess_queries(self, queries):
+        preprocessed_queries = []
+        for q in queries:
+            processed_query = preprocess_query(
+                q, self.language, self.entity_utterances_to_feature_names)
+            processed_query = processed_query.encode("utf8")
+            preprocessed_queries.append(processed_query)
+        return preprocessed_queries
+
+    def fit(self, dataset, queries, y):
+        utterances_to_features = get_utterances_to_features_names(
+            dataset, self.language)
+        normalized_utterances_to_features = defaultdict(set)
+        for k, v in utterances_to_features.iteritems():
+            normalized_utterances_to_features[
+                normalize_stem(k, self.language)].update(v)
+        self.entity_utterances_to_feature_names = dict(
+            normalized_utterances_to_features)
+
+        if all(len("".join(tokenize_light(q, self.language))) == 0
+               for q in queries):
             return None
+        preprocessed_queries = self.preprocess_queries(queries)
+
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
-            query.encode('utf-8') for query in queries)
+            preprocessed_queries)
         list_index_words = {self.tfidf_vectorizer.vocabulary_[x]: x for x in
                             self.tfidf_vectorizer.vocabulary_}
 
@@ -52,42 +173,46 @@ class Featurizer(object):
         return self
 
     def transform(self, queries):
-        X_train_tfidf = self.tfidf_vectorizer.transform(queries)
+        preprocessed_queries = self.preprocess_queries(queries)
+        X_train_tfidf = self.tfidf_vectorizer.transform(preprocessed_queries)
         X = X_train_tfidf[:, self.best_features]
         return X
 
-    def fit_transform(self, queries, y):
-        return self.fit(queries, y).transform(queries)
+    def fit_transform(self, dataset, queries, y):
+        return self.fit(dataset, queries, y).transform(queries)
 
     def to_dict(self):
-        idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+        tfidf_vectorizer = {
+            'vocab': self.tfidf_vectorizer.vocabulary_,
+            'idf_diag': self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+        }
+        entity_utterances_to_entity_names = {
+            k: list(v)
+            for k, v in self.entity_utterances_to_feature_names.iteritems()
+        }
         return {
             'language_code': self.language.iso_code,
-            'tfidf_vectorizer_vocab': self.tfidf_vectorizer.vocabulary_,
-            'tfidf_vectorizer_stop_words': self.tfidf_vectorizer.stop_words,
-            'tfidf_vectorizer_idf_diag': idf_diag,
+            'tfidf_vectorizer': tfidf_vectorizer,
             'best_features': self.best_features,
-            'pvalue_threshold': self.pvalue_threshold
+            'pvalue_threshold': self.pvalue_threshold,
+            'entity_utterances_to_feature_names':
+                entity_utterances_to_entity_names
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
-        tfidf_vectorizer = default_tfidf_vectorizer()
-        tfidf_vectorizer.vocabulary_ = obj_dict['tfidf_vectorizer_vocab']
-        tfidf_vectorizer.stop_words = obj_dict['tfidf_vectorizer_stop_words']
-        idf_diag_data = np.array(obj_dict['tfidf_vectorizer_idf_diag'])
-        idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
-        row = range(idf_diag_shape[0])
-        col = range(idf_diag_shape[0])
-        idf_diag = sp.csr_matrix((idf_diag_data, (row, col)),
-                                 shape=idf_diag_shape)
-        tfidf_transformer = TfidfTransformer()
-        tfidf_transformer._idf_diag = idf_diag
-        tfidf_vectorizer._tfidf = tfidf_transformer
+        language = Language.from_iso_code(obj_dict['language_code'])
+        tfidf_vectorizer = deserialize_tfidf_vectorizer(
+            obj_dict["tfidf_vectorizer"], language)
+        entity_utterances_to_entity_names = {
+            k: set(v) for k, v in
+            obj_dict['entity_utterances_to_feature_names'].iteritems()
+        }
         self = cls(
-            language=Language.from_iso_code(obj_dict['language_code']),
+            language=language,
             tfidf_vectorizer=tfidf_vectorizer,
-            pvalue_threshold=obj_dict['pvalue_threshold']
+            pvalue_threshold=obj_dict['pvalue_threshold'],
+            entity_utterances_to_feature_names=entity_utterances_to_entity_names,
+            best_features=obj_dict['best_features']
         )
-        self.best_features = obj_dict["best_features"]
         return self

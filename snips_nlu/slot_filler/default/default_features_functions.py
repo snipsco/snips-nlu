@@ -34,8 +34,8 @@ def get_num_entity_appearances(dataset, intent, entity, config):
                if ENTITY in c and c[ENTITY] == entity)
 
 
-def compute_entity_collection_size(dataset, entity, config):
-    num_entities = len(dataset[ENTITIES][entity][UTTERANCES])
+def compute_entity_collection_size(collection, config):
+    num_entities = len(collection)
     collection_size = int(config.crf_features_config.base_drop_ratio
                           * num_entities)
     collection_size = max(collection_size, 1)
@@ -108,8 +108,7 @@ def default_features(language, dataset, intent, config, use_stemming,
 
         collection = list(
             set(preprocess(e) for e in entity[UTTERANCES].keys()))
-        collection_size = compute_entity_collection_size(dataset, entity_name,
-                                                         config)
+        collection_size = compute_entity_collection_size(collection, config)
         collection = np.random.choice(collection, collection_size,
                                       replace=False).tolist()
         features.append(

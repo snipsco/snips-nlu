@@ -39,6 +39,7 @@ def compute_entity_collection_size(dataset, entity, config):
     collection_size = int(config.crf_features_config.base_drop_ratio
                           * num_entities)
     collection_size = max(collection_size, 1)
+    collection_size = min(collection_size, num_entities)
     return collection_size
 
 

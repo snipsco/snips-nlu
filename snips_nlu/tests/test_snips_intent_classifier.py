@@ -11,7 +11,8 @@ from snips_nlu.constants import INTENTS, LANGUAGE, DATA, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier, build_training_data
+    SnipsIntentClassifier, build_training_data, generate_noise_utterances, \
+    get_noise_it
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 
@@ -223,20 +224,32 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_subtitles")
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_noises")
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
            ".augment_utterances")
     def test_should_build_training_data_with_noise(
             self, mocked_augment_utterances, mocked_get_subtitles):
         # Given
-        mocked_subtitles = set("mocked_subtitle_%s" % i for i in xrange(100))
-        mocked_get_subtitles.return_value = mocked_subtitles
+        language = Language.EN
+        mocked_noises = ["mocked_subtitle_%s" % i for i in xrange(100)]
+        mocked_get_subtitles.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
-        dataset = SAMPLE_DATASET
-        nb_utterances = [len(intent[UTTERANCES]) for intent in
-                         dataset[INTENTS].values()]
-        avg_utterances = np.mean(nb_utterances)
+        num_intents = 3
+        utterances_length = 5
+        num_queries_per_intent = 3
+        fake_utterance = {
+            "data": [
+                {"text": " ".join("1" for _ in xrange(utterances_length))}
+            ]
+        }
+        dataset = {
+            "intents": {
+                unicode(i): {
+                    "utterances": [fake_utterance] * num_queries_per_intent
+                } for i in xrange(num_intents)
+            }
+        }
 
         # When
         np.random.seed(42)
@@ -250,12 +263,14 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                                for intent in dataset[INTENTS].values()
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
-        noise = list(mocked_subtitles)
-        noise_size = int(min(noise_factor * avg_utterances, len(noise)))
-        noisy_utterances = np.random.choice(noise, size=noise_size,
-                                            replace=False)
+        noise = list(mocked_noises)
+        noise_size = int(min(noise_factor * num_queries_per_intent,
+                             len(noise)))
+        noise_it = get_noise_it(mocked_noises, utterances_length, 0,
+                                        language)
+        noisy_utterances = [next(noise_it) for _ in xrange(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = ['dummy_intent_2', 'dummy_intent_1', None]
+        expected_intent_mapping = dataset["intents"].keys() + [None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -273,3 +288,30 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_intent_mapping = []
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
+
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_noises")
+    def test_generate_noise_utterances(self, mocked_get_noises):
+        # Given
+        language = Language.EN
+        num_intents = 2
+        noise_factor = 1
+        utterances_length = 5
+
+        noise = [unicode(i) for i in xrange(utterances_length)]
+        mocked_get_noises.return_value = noise
+
+        augmented_utterances = [
+            " ".join("1" for _ in xrange(utterances_length))]
+        num_utterances = 10
+
+        augmented_utterances = augmented_utterances * num_utterances
+        config = IntentClassifierConfig(noise_factor=noise_factor)
+
+        # When
+        noise_utterances = generate_noise_utterances(
+            augmented_utterances, num_intents, config, language)
+
+        # Then
+        joined_noise = " ".join(noise)
+        for u in noise_utterances:
+            self.assertEqual(u, joined_noise)

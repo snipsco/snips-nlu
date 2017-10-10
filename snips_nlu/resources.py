@@ -6,8 +6,7 @@ import os
 
 from nlu_utils import normalize
 
-from snips_nlu.constants import (STOP_WORDS, SUBTITLES,
-                                 WORD_CLUSTERS, GAZETTEERS)
+from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import get_resources_path, RESOURCES_PATH
@@ -25,7 +24,7 @@ RESOURCE_INDEX = {
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
-        SUBTITLES: "subtitles.txt",
+        NOISE: "noise.txt",
         WORD_CLUSTERS: ["brown_clusters.txt"]
     },
     Language.FR: {
@@ -39,15 +38,15 @@ RESOURCE_INDEX = {
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
-        SUBTITLES: "subtitles.txt",
+        NOISE: "noise.txt",
     },
     Language.ES: {
         STOP_WORDS: "stop_words.txt",
-        SUBTITLES: "subtitles.txt",
+        NOISE: "noise.txt",
     },
     Language.KO: {
         STOP_WORDS: "stop_words.txt",
-        SUBTITLES: "subtitles.txt",
+        NOISE: "noise.txt",
     },
     Language.DE: {
         GAZETTEERS: [
@@ -58,12 +57,12 @@ RESOURCE_INDEX = {
             "street_identifier.txt"
         ],
         STOP_WORDS: "stop_words.txt",
-        SUBTITLES: "subtitles.txt",
+        NOISE: "noise.txt",
     }
 }
 
 _STOP_WORDS = dict()
-_SUBTITLES = dict()
+_NOISES = dict()
 _GAZETTEERS = dict()
 _WORD_CLUSTERS = dict()
 _GAZETTEERS_REGEXES = dict()
@@ -85,19 +84,23 @@ def get_stop_words(language):
     return _STOP_WORDS[language]
 
 
-def load_subtitles():
+def load_noises():
     for language in Language:
-        if SUBTITLES in RESOURCE_INDEX[language]:
-            subtitles_file_path = os.path.join(
+        if NOISE in RESOURCE_INDEX[language]:
+            noise_path = os.path.join(
                 get_resources_path(language),
-                RESOURCE_INDEX[language][SUBTITLES])
-            with io.open(subtitles_file_path, encoding='utf8') as f:
-                lines = [l.strip() for l in f]
-            _SUBTITLES[language] = set(l for l in lines if len(l) > 0)
+                RESOURCE_INDEX[language][NOISE])
+            with io.open(noise_path, encoding='utf8') as f:
+                # Here we split on a " " knowing that it's always ignored by
+                # the tokenization, see tokenization unit tests.
+                # We don't really care about tokenizing precisely as this noise
+                #  is just used to generate fake query that will be
+                # re-tokenized
+                _NOISES[language] = next(f).split()
 
 
-def get_subtitles(language):
-    return _SUBTITLES[language]
+def get_noises(language):
+    return _NOISES[language]
 
 
 def load_clusters():
@@ -200,5 +203,5 @@ def load_resources():
     load_clusters()
     load_gazetteers()
     load_stop_words()
-    load_subtitles()
+    load_noises()
     load_stems()

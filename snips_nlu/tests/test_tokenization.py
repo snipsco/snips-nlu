@@ -61,3 +61,12 @@ class TestTokenization(unittest.TestCase):
             Token(value='!!', start=5, end=7, stem=None)
         ]
         self.assertListEqual(tokens, expected_tokens)
+
+    def test_space_should_by_ignored(self):
+        # Given
+        text = " "
+        for l in Language:
+            # When
+            tokens = tokenize(text, l)
+            # Then
+            self.assertEqual(len(tokens), 0)

@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from itertools import izip
+from itertools import izip, cycle
 from uuid import uuid4
 
 import numpy as np
@@ -12,8 +12,9 @@ from snips_nlu.constants import INTENTS, UTTERANCES, DATA
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import Language
-from snips_nlu.resources import get_subtitles
+from snips_nlu.resources import get_noises
 from snips_nlu.result import IntentClassificationResult
+from snips_nlu.tokenization import tokenize_light
 
 NOISE_NAME = str(uuid4()).decode()
 
@@ -25,6 +26,29 @@ def get_regularization_factor(dataset):
     total_utterances = sum(nb_utterances)
     alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
     return alpha
+
+
+def get_noise_it(noise, mean_length, std_length, language):
+    it = cycle(noise)
+    while True:
+        noise_length = int(np.random.normal(mean_length, std_length))
+        yield " ".join(next(it) for _ in xrange(noise_length))
+
+
+def generate_noise_utterances(augmented_utterances, num_intents, config,
+                              language):
+    if not len(augmented_utterances) or not num_intents:
+        return []
+    avg_num_utterances = len(augmented_utterances) / float(num_intents)
+    noise = get_noises(language)
+    noise_size = min(int(config.noise_factor * avg_num_utterances), len(noise))
+    utterances_lengths = [len(tokenize_light(u, language))
+                          for u in augmented_utterances]
+    mean_utterances_length = np.mean(utterances_lengths)
+    std_utterances_length = np.std(utterances_lengths)
+    noise_it = get_noise_it(noise, mean_utterances_length,
+                            std_utterances_length, language)
+    return [next(noise_it) for _ in xrange(noise_size)]
 
 
 def build_training_data(dataset, language, config):
@@ -56,11 +80,10 @@ def build_training_data(dataset, language, config):
         utterance_classes += [classes_mapping[intent_name] for _ in utterances]
 
     # Adding noise
-    avg_utterances = np.mean(nb_utterances) if len(nb_utterances) > 0 else 0
-    noise = list(get_subtitles(language))
-    noise_size = min(int(config.noise_factor * avg_utterances), len(noise))
-    noisy_utterances = np.random.choice(noise, size=noise_size, replace=False)
-    augmented_utterances += list(noisy_utterances)
+    noisy_utterances = generate_noise_utterances(
+        augmented_utterances, len(intents), config, language)
+
+    augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]
     if len(noisy_utterances) > 0:
         classes_mapping[NOISE_NAME] = noise_class

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import unittest
 
 from snips_nlu.config import ProbabilisticIntentParserConfig, CRFFeaturesConfig
+from snips_nlu.constants import ENTITIES
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
@@ -34,7 +35,7 @@ class TestDefaultFeaturesFunction(unittest.TestCase):
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         config = ProbabilisticIntentParserConfig(
             crf_features_config=CRFFeaturesConfig(base_drop_ratio=.4))
-        entity = "Temperature"
+        collection = dataset[ENTITIES]["Temperature"].keys()
 
         expected_collection_size = 1
 
@@ -42,4 +43,4 @@ class TestDefaultFeaturesFunction(unittest.TestCase):
 
         self.assertEqual(
             expected_collection_size,
-            compute_entity_collection_size(dataset, entity, config))
+            compute_entity_collection_size(collection, config))

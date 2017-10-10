@@ -5,7 +5,7 @@ import unittest
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import DataAugmentationConfig
+from snips_nlu.config import SlotFillerDataAugmentationConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
@@ -333,7 +333,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "number_of_cups": "snips/number"
         }
 
-        expected_data_augmentation_config = DataAugmentationConfig.from_dict(
+        expected_data_augmentation_config = SlotFillerDataAugmentationConfig.from_dict(
             {
                 "max_utterances": 200
             }

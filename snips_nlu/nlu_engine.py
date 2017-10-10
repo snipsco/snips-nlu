@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from dataset import validate_and_format_dataset
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
-from snips_nlu.config import DataAugmentationConfig, NLUConfig
+from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
@@ -292,7 +292,7 @@ class SnipsNLUEngine(NLUEngine):
         if self.probabilistic_parser is not None:
             config = self.probabilistic_parser.data_augmentation_config
         else:
-            config = DataAugmentationConfig()
+            config = SlotFillerDataAugmentationConfig()
         return fit_tagger(tagger, dataset, intent, self.language, config)
 
     def add_fitted_tagger(self, intent, model_data):

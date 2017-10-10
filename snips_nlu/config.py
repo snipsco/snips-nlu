@@ -33,8 +33,23 @@ class NamedTupleConfigMixin(Config):
         }
 
 
-_DataAugmentationConfig = namedtuple_with_defaults(
-    '_DataAugmentationConfig',
+_IntentClassifierDataAugmentationConfig = namedtuple_with_defaults(
+    '_IntentClassifierDataAugmentationConfig',
+    'min_utterances capitalization_ratio',
+    {
+        'min_utterances': 20
+    }
+)
+
+
+class IntentClassifierDataAugmentationConfig(
+    _IntentClassifierDataAugmentationConfig, NamedTupleConfigMixin,
+    FromDictMixin):
+    pass
+
+
+_SlotFillerDataAugmentationConfig = namedtuple_with_defaults(
+    'SlotFillerDataAugmentationConfig',
     'min_utterances capitalization_ratio',
     {
         'min_utterances': 200,
@@ -43,8 +58,9 @@ _DataAugmentationConfig = namedtuple_with_defaults(
 )
 
 
-class DataAugmentationConfig(_DataAugmentationConfig, NamedTupleConfigMixin,
-                             FromDictMixin):
+class SlotFillerDataAugmentationConfig(_SlotFillerDataAugmentationConfig,
+                                       NamedTupleConfigMixin,
+                                       FromDictMixin):
     pass
 
 
@@ -52,7 +68,8 @@ _IntentClassifierConfig = namedtuple_with_defaults(
     '_IntentClassifierConfig',
     'data_augmentation_config noise_factor log_reg_args',
     {
-        'data_augmentation_config': DataAugmentationConfig(min_utterances=20),
+        'data_augmentation_config':
+            IntentClassifierDataAugmentationConfig(min_utterances=20),
         'noise_factor': 5,
         'log_reg_args':
             {
@@ -72,8 +89,9 @@ class IntentClassifierConfig(_IntentClassifierConfig,
     @classmethod
     def from_dict(cls, obj_dict):
         args = deepcopy(obj_dict)
-        args["data_augmentation_config"] = DataAugmentationConfig.from_dict(
-            args["data_augmentation_config"])
+        args["data_augmentation_config"] = \
+            SlotFillerDataAugmentationConfig.from_dict(
+                args["data_augmentation_config"])
         return cls(**args)
 
 
@@ -95,7 +113,7 @@ _ProbabilisticIntentParserConfig = namedtuple_with_defaults(
     'ProbabilisticIntentParserConfig',
     'data_augmentation_config crf_features_config',
     {
-        'data_augmentation_config': DataAugmentationConfig(),
+        'data_augmentation_config': SlotFillerDataAugmentationConfig(),
         'crf_features_config': CRFFeaturesConfig()
     }
 )
@@ -106,8 +124,9 @@ class ProbabilisticIntentParserConfig(_ProbabilisticIntentParserConfig,
     @classmethod
     def from_dict(cls, obj_dict):
         args = deepcopy(obj_dict)
-        args["data_augmentation_config"] = DataAugmentationConfig.from_dict(
-            args["data_augmentation_config"])
+        args["data_augmentation_config"] = \
+            SlotFillerDataAugmentationConfig.from_dict(
+                args["data_augmentation_config"])
         return cls(**args)
 
 

@@ -1,8 +1,8 @@
-# Snips NLU (0.8.14)
+# Snips NLU
 
 [![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/snips-nlu/master)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/view/Branches/job/master)
 
-**Model Version (0.8.5)**
+**Model Version (0.10.0)**
 
 ## Production Use
 
@@ -91,9 +91,23 @@ engine_as_dict = engine.to_dict()
 ```
 
 ### Training
-``` python
+```python
 engine.fit(dataset)
 ```
+
+### Create a engine from a `NLUConfig` file or configuration a `dict`
+```python
+import json
+from snips_nlu import SnipsNLUEngine
+from snips_nlu.config import NLUConfig 
+
+with open("config.json") as f:
+    config = json.load(f) 
+    
+config = NLUConfig.from_dict(config)
+engine = SnipsNLUEngine(language='en', config=config)
+```
+
 
 where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)
 

@@ -4,9 +4,10 @@ from __future__ import unicode_literals
 import os
 import unittest
 
-from nlu_metrics import compute_cross_val_metrics
+from nlu_metrics import compute_cross_val_nlu_metrics
+from snips_nlu_rust import NLUEngine as InferenceEngine
 
-from snips_nlu.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import TEST_PATH
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.8
@@ -18,11 +19,15 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
         # Given
         dataset_path = os.path.join(TEST_PATH, "resources",
                                     "performance_dataset.json")
-
         # When
-        metrics = compute_cross_val_metrics(
-            dataset=dataset_path, snips_nlu_rust_version="0.23.0",
-            training_engine_class=SnipsNLUEngine)
+        metrics = compute_cross_val_nlu_metrics(
+            dataset_path,
+            training_engine_class=TrainingEngine,
+            inference_engine_class=InferenceEngine,
+            nb_folds=5,
+            train_size_ratio=1.0,
+            slot_matching_lambda=None,
+            progression_handler=None)
 
         # Then
         for intent_name, intent_metrics in metrics.iteritems():
@@ -49,4 +54,3 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
                     recall, SLOT_FILLING_THRESHOLD,
                     "Slot recall is too low (%.3f) for slot '%s' of intent "
                     "'%s'" % (recall, slot_name, intent_name))
-

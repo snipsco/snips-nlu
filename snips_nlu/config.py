@@ -12,11 +12,11 @@ class Config(object):
 
     @abstractmethod
     def to_dict(self):
-        pass
+        raise NotImplementedError
 
     @abstractclassmethod
     def from_dict(cls, obj_dict):
-        pass
+        raise NotImplementedError
 
 
 class FromDictMixin(object):
@@ -35,16 +35,17 @@ class NamedTupleConfigMixin(Config):
 
 _IntentClassifierDataAugmentationConfig = namedtuple_with_defaults(
     '_IntentClassifierDataAugmentationConfig',
-    'min_utterances capitalization_ratio',
+    'min_utterances noise_factor',
     {
-        'min_utterances': 20
+        'min_utterances': 20,
+        'noise_factor': 5
     }
 )
 
 
 class IntentClassifierDataAugmentationConfig(
-    _IntentClassifierDataAugmentationConfig, NamedTupleConfigMixin,
-    FromDictMixin):
+    _IntentClassifierDataAugmentationConfig, FromDictMixin,
+    NamedTupleConfigMixin):
     pass
 
 
@@ -59,18 +60,29 @@ _SlotFillerDataAugmentationConfig = namedtuple_with_defaults(
 
 
 class SlotFillerDataAugmentationConfig(_SlotFillerDataAugmentationConfig,
-                                       NamedTupleConfigMixin,
-                                       FromDictMixin):
+                                       FromDictMixin, NamedTupleConfigMixin):
+    pass
+
+
+_FeaturizerConfig = namedtuple_with_defaults(
+    '_FeaturizerConfig',
+    'sublinear_tf',
+    {'sublinear_tf': False}
+)
+
+
+class FeaturizerConfig(_FeaturizerConfig, FromDictMixin,
+                       NamedTupleConfigMixin):
     pass
 
 
 _IntentClassifierConfig = namedtuple_with_defaults(
     '_IntentClassifierConfig',
-    'data_augmentation_config noise_factor log_reg_args',
+    'data_augmentation_config featurizer_config log_reg_args',
     {
         'data_augmentation_config':
-            IntentClassifierDataAugmentationConfig(min_utterances=20),
-        'noise_factor': 5,
+            IntentClassifierDataAugmentationConfig(
+                min_utterances=20, noise_factor=5),
         'log_reg_args':
             {
                 "loss": 'log',
@@ -79,7 +91,8 @@ _IntentClassifierConfig = namedtuple_with_defaults(
                 "n_iter": 5,
                 "random_state": 42,
                 "n_jobs": -1
-            }
+            },
+        'featurizer_config': FeaturizerConfig()
     }
 )
 
@@ -89,8 +102,10 @@ class IntentClassifierConfig(_IntentClassifierConfig,
     @classmethod
     def from_dict(cls, obj_dict):
         args = deepcopy(obj_dict)
+        args["featurizer_config"] = FeaturizerConfig.from_dict(
+            args["featurizer_config"])
         args["data_augmentation_config"] = \
-            SlotFillerDataAugmentationConfig.from_dict(
+            IntentClassifierDataAugmentationConfig.from_dict(
                 args["data_augmentation_config"])
         return cls(**args)
 
@@ -104,8 +119,8 @@ _CRFFeaturesConfig = namedtuple_with_defaults(
 )
 
 
-class CRFFeaturesConfig(_CRFFeaturesConfig, NamedTupleConfigMixin,
-                        FromDictMixin):
+class CRFFeaturesConfig(_CRFFeaturesConfig, FromDictMixin,
+                        NamedTupleConfigMixin):
     pass
 
 
@@ -140,8 +155,8 @@ _RegexTrainingConfig = namedtuple_with_defaults(
 )
 
 
-class RegexTrainingConfig(_RegexTrainingConfig, NamedTupleConfigMixin,
-                          FromDictMixin):
+class RegexTrainingConfig(_RegexTrainingConfig, FromDictMixin,
+                          NamedTupleConfigMixin):
     pass
 
 

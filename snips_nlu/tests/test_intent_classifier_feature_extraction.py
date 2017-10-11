@@ -7,9 +7,10 @@ import unittest
 
 from mock import patch
 
+from snips_nlu.config import FeaturizerConfig
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.feature_extraction import (
-    Featurizer, default_tfidf_vectorizer, get_utterances_to_features_names)
+    Featurizer, get_tfidf_vectorizer, get_utterances_to_features_names)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 
@@ -20,7 +21,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
     def test_should_be_serializable(self):
         # Given
         language = Language.EN
-        tfidf_vectorizer = default_tfidf_vectorizer(language)
+        tfidf_vectorizer = get_tfidf_vectorizer(language)
 
         pvalue_threshold = 0.42
         featurizer = Featurizer(language, tfidf_vectorizer=tfidf_vectorizer,
@@ -80,6 +81,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         }
 
         expected_serialized = {
+            "config": {'sublinear_tf': False},
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
@@ -104,6 +106,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         }
 
         featurizer_dict = {
+            "config": FeaturizerConfig().to_dict(),
             "language_code": language.iso_code,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,

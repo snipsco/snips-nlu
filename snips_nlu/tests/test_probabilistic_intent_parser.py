@@ -295,8 +295,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         parser_dict = {
             "config": {
                 'data_augmentation_config': {
-                    "min_utterances": 50,
-                    "capitalization_ration": .2,
+                    "min_utterances": 200,
+                    "capitalization_ratio": .2,
                 },
                 'crf_features_config': {
                     "entities_keep_probs": None,
@@ -333,11 +333,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "number_of_cups": "snips/number"
         }
 
-        expected_data_augmentation_config = SlotFillerDataAugmentationConfig.from_dict(
-            {
-                "max_utterances": 200
-            }
-        )
+        expected_data_augmentation_config = SlotFillerDataAugmentationConfig \
+            .from_dict({"min_utterances": 200})
 
         self.assertEqual(parser.language, language)
         self.assertEqual(parser.slot_name_to_entity_mapping,

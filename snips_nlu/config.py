@@ -139,6 +139,8 @@ class ProbabilisticIntentParserConfig(_ProbabilisticIntentParserConfig,
     @classmethod
     def from_dict(cls, obj_dict):
         args = deepcopy(obj_dict)
+        args["crf_features_config"] = CRFFeaturesConfig.from_dict(
+            args["crf_features_config"])
         args["data_augmentation_config"] = \
             SlotFillerDataAugmentationConfig.from_dict(
                 args["data_augmentation_config"])
@@ -177,6 +179,8 @@ class NLUConfig(_NLUConfig, NamedTupleConfigMixin):
     @classmethod
     def from_dict(cls, obj_dict):
         args = deepcopy(obj_dict)
+        args['regex_training_config'] = RegexTrainingConfig \
+            .from_dict(args['regex_training_config'])
         args["intent_classifier_config"] = IntentClassifierConfig \
             .from_dict(args["intent_classifier_config"])
         args["probabilistic_intent_parser_config"] = \

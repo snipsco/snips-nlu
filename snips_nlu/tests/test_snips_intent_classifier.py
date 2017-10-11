@@ -13,9 +13,20 @@ from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier, build_training_data, generate_noise_utterances, \
-    get_noise_it
+    get_noise_it, add_unknownwords_to_utterances, generate_smart_noise
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
+
+i = 0
+
+
+def random():
+    global i
+    r = 0
+    if i % 2 == 0:
+        r = 1
+    i += 1
+    return r
 
 
 def np_random_permutation(x):
@@ -225,7 +236,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                                intent[UTTERANCES]]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
         self.assertListEqual(utterances, expected_utterances)
-        self.assertListEqual(intent_mapping, expected_intent_mapping)
+        self.assertListEqual
+
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_noises")
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
@@ -234,7 +246,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             self, mocked_augment_utterances, mocked_get_subtitles):
         # Given
         language = Language.EN
-        mocked_noises = ["mocked_subtitle_%s" % i for i in xrange(100)]
+        mocked_noises = ["mocked_noise_%s" % i for i in xrange(100)]
         mocked_get_subtitles.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
@@ -272,7 +284,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                              len(noise)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0,
                                 language)
-        noisy_utterances = [next(noise_it) for _ in xrange(noise_size)]
+        noisy_utterances = ["unknownword" for _ in xrange(noise_size)]
         expected_utterances += list(noisy_utterances)
         expected_intent_mapping = dataset["intents"].keys() + [None]
         self.assertListEqual(utterances, expected_utterances)
@@ -307,7 +319,15 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         mocked_get_noises.return_value = noise
 
         augmented_utterances = [
-            " ".join("1" for _ in xrange(utterances_length))]
+            {
+                "data": [
+                    {
+                        "text": " ".join(
+                            "{}".format(i) for i in xrange(utterances_length))
+                    }
+                ]
+            }
+        ]
         num_utterances = 10
 
         augmented_utterances = augmented_utterances * num_utterances
@@ -320,3 +340,129 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         joined_noise = " ".join(noise)
         for u in noise_utterances:
             self.assertEqual(u, joined_noise)
+
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.random")
+    def test_add_unknownwords_to_utterances(self, mocked_random):
+        # Given
+
+
+        mocked_random.side_effect = random
+
+        utterances = [
+            {
+                "data": [
+                    {
+                        "text": "hello "
+                    },
+                    {
+                        "text": " you ",
+                        "entity": "you"
+                    },
+                    {
+                        "text": " how are you "
+                    },
+                    {
+                        "text": "dude",
+                        "entity": "you"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "hello "
+                    },
+                    {
+                        "text": "dude",
+                        "entity": "you"
+                    },
+                    {
+                        "text": " how are you "
+
+                    },
+                    {
+                        "text": " you ",
+                        "entity": "you"
+                    }
+                ]
+            }
+        ]
+        unknownword_prob = .5
+
+        # When
+        noisy_utterances = add_unknownwords_to_utterances(
+            utterances, unknownword_prob=unknownword_prob)
+
+        # Then
+        expected_utterances = [
+            {
+                "data": [
+                    {
+                        "text": "hello "
+                    },
+                    {
+                        "text": " you ",
+                        "entity": "you"
+                    },
+                    {
+                        "text": " how are you "
+                    },
+                    {
+                        "text": "unknownword",
+                        "entity": "you"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "hello "
+                    },
+                    {
+                        "text": "dude",
+                        "entity": "you"
+                    },
+                    {
+                        "text": " how are you ",
+                    },
+                    {
+                        "text": " unknownword ",
+                        "entity": "you"
+                    }
+                ]
+            }
+        ]
+        self.assertEqual(expected_utterances, noisy_utterances)
+
+    @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_noises")
+    def test_generate_smart_noise(self, mocked_noise):
+        # Given
+        utterances = [
+            {
+                "data": [
+                    {
+                        "text": "hello "
+                    },
+                    {
+                        "text": " you ",
+                        "entity": "you"
+                    },
+                    {
+                        "text": " how are you "
+                    },
+                    {
+                        "text": "unknownword",
+                        "entity": "you"
+                    }
+                ]
+            }
+        ]
+        language = Language.EN
+        mocked_noise.return_value = ["hello", "dear", "you", "fool"]
+
+        # When
+        noise = generate_smart_noise(utterances, language)
+
+        # Then
+        expected_noise = ["hello", "unknownword", "you", "unknownword"]
+        self.assertEqual(noise, expected_noise)

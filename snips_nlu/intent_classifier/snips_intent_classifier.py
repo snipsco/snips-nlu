@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
+import re
+from copy import deepcopy
 from itertools import izip, cycle
+from random import random
 from uuid import uuid4
 
 import numpy as np
@@ -8,7 +11,8 @@ from sklearn.linear_model import SGDClassifier
 
 from feature_extraction import Featurizer
 from snips_nlu.config import IntentClassifierConfig
-from snips_nlu.constants import INTENTS, UTTERANCES, DATA
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA, ENTITY, UNKNOWNWORD, \
+    TEXT
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import Language
@@ -17,6 +21,9 @@ from snips_nlu.result import IntentClassificationResult
 from snips_nlu.tokenization import tokenize_light
 
 NOISE_NAME = str(uuid4()).decode()
+
+WORD_REGEX = re.compile(r"\w+")
+UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
 
 
 def get_regularization_factor(dataset):
@@ -35,20 +42,40 @@ def get_noise_it(noise, mean_length, std_length, language):
         yield " ".join(next(it) for _ in xrange(noise_length))
 
 
+def generate_smart_noise(augmented_utterances, language):
+    text_utterances = [get_text_from_chunks(u[DATA])
+                       for u in augmented_utterances]
+    vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
+    vocab = set(vocab)
+    noise = deepcopy(get_noises(language))
+    return [w if w in vocab else UNKNOWNWORD for w in noise]
+
+
 def generate_noise_utterances(augmented_utterances, num_intents, noise_factor,
                               language):
     if not len(augmented_utterances) or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
-    noise = get_noises(language)
+    noise = generate_smart_noise(augmented_utterances, language)
     noise_size = min(int(noise_factor * avg_num_utterances), len(noise))
-    utterances_lengths = [len(tokenize_light(u, language))
-                          for u in augmented_utterances]
+    utterances_lengths = [
+        len(tokenize_light(get_text_from_chunks(u[DATA]), language))
+        for u in augmented_utterances]
     mean_utterances_length = np.mean(utterances_lengths)
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
                             std_utterances_length, language)
-    return [next(noise_it) for _ in xrange(noise_size)]
+    # Remove duplicate 'unknowword unknowword'
+    return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
+            for _ in xrange(noise_size)]
+
+
+def add_unknownwords_to_utterances(augmented_utterances, unknownword_prob):
+    for u in augmented_utterances:
+        for chunk in u[DATA]:
+            if ENTITY in chunk and random() < unknownword_prob:
+                chunk[TEXT] = WORD_REGEX.sub(UNKNOWNWORD, chunk[TEXT])
+    return augmented_utterances
 
 
 def build_training_data(dataset, language, data_augmentation_config):
@@ -74,14 +101,19 @@ def build_training_data(dataset, language, data_augmentation_config):
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,
             capitalization_ratio=0.0)  # Data is anyway lower with `normalize`
-        augmented_utterances += [get_text_from_chunks(utterance[DATA]) for
-                                 utterance in utterances]
-        utterance_classes += [classes_mapping[intent_name] for _ in utterances]
+        augmented_utterances += utterances
+        utterance_classes += [classes_mapping[intent_name] for _ in
+                              xrange(len(utterances))]
+    augmented_utterances = add_unknownwords_to_utterances(
+        augmented_utterances, data_augmentation_config.unknownword_prob)
 
     # Adding noise
+
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, len(intents),
         data_augmentation_config.noise_factor, language)
+    augmented_utterances = [get_text_from_chunks(u[DATA])
+                            for u in augmented_utterances]
 
     augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]

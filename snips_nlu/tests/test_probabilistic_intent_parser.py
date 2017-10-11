@@ -299,7 +299,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                     "capitalization_ratio": .2,
                 },
                 'crf_features_config': {
-                    "base_drop_ratio": 0.5,
+                    "base_drop_ratio": .5,
                     "entities_offsets": [-2, -1, 0]
                 }
 

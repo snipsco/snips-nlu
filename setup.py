@@ -36,8 +36,8 @@ extras_require = {
 
 setup(name=PACKAGE_NAME,
       version=version,
-      author="Clement Doumouro",
-      author_email="clement.doumouro@snips.ai",
+      author="Clement Doumouro, Adrien Ball",
+      author_email="clement.doumouro@snips.ai, adrien.ball@snips.ai",
       license="MIT",
       install_requires=required,
       extras_require=extras_require,

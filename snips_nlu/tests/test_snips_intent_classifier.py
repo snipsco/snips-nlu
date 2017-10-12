@@ -6,7 +6,8 @@ import unittest
 import numpy as np
 from mock import patch
 
-from snips_nlu.config import IntentClassifierConfig
+from snips_nlu.config import IntentClassifierConfig, \
+    IntentClassifierDataAugmentationConfig
 from snips_nlu.constants import INTENTS, LANGUAGE, DATA, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
@@ -213,8 +214,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         # When
+        data_augmentation_config = IntentClassifierDataAugmentationConfig(
+            noise_factor=0)
         utterances, y, intent_mapping = build_training_data(
-            dataset, Language.EN, IntentClassifierConfig(noise_factor=0))
+            dataset, Language.EN, data_augmentation_config)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
@@ -254,9 +257,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # When
         np.random.seed(42)
         noise_factor = 2
+        data_augmentation_config = IntentClassifierDataAugmentationConfig(
+            noise_factor=noise_factor)
         utterances, y, intent_mapping = build_training_data(
-            dataset, Language.EN,
-            IntentClassifierConfig(noise_factor=noise_factor))
+            dataset, Language.EN, data_augmentation_config)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
@@ -267,7 +271,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0,
-                                        language)
+                                language)
         noisy_utterances = [next(noise_it) for _ in xrange(noise_size)]
         expected_utterances += list(noisy_utterances)
         expected_intent_mapping = dataset["intents"].keys() + [None]
@@ -280,8 +284,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         dataset = empty_dataset(language)
 
         # When
+        data_augmentation_config = IntentClassifierConfig() \
+            .data_augmentation_config
         utterances, y, intent_mapping = build_training_data(
-            dataset, language, config=IntentClassifierConfig())
+            dataset, language, data_augmentation_config)
 
         # Then
         expected_utterances = []
@@ -305,11 +311,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         num_utterances = 10
 
         augmented_utterances = augmented_utterances * num_utterances
-        config = IntentClassifierConfig(noise_factor=noise_factor)
 
         # When
         noise_utterances = generate_noise_utterances(
-            augmented_utterances, num_intents, config, language)
+            augmented_utterances, num_intents, noise_factor, language)
 
         # Then
         joined_noise = " ".join(noise)

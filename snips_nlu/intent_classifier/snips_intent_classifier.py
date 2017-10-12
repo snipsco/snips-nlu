@@ -35,13 +35,13 @@ def get_noise_it(noise, mean_length, std_length, language):
         yield " ".join(next(it) for _ in xrange(noise_length))
 
 
-def generate_noise_utterances(augmented_utterances, num_intents, config,
+def generate_noise_utterances(augmented_utterances, num_intents, noise_factor,
                               language):
     if not len(augmented_utterances) or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
     noise = get_noises(language)
-    noise_size = min(int(config.noise_factor * avg_num_utterances), len(noise))
+    noise_size = min(int(noise_factor * avg_num_utterances), len(noise))
     utterances_lengths = [len(tokenize_light(u, language))
                           for u in augmented_utterances]
     mean_utterances_length = np.mean(utterances_lengths)
@@ -51,7 +51,7 @@ def generate_noise_utterances(augmented_utterances, num_intents, config,
     return [next(noise_it) for _ in xrange(noise_size)]
 
 
-def build_training_data(dataset, language, config):
+def build_training_data(dataset, language, data_augmentation_config):
     # Creating class mapping
     intents = dataset[INTENTS]
     intent_index = 0
@@ -69,19 +69,19 @@ def build_training_data(dataset, language, config):
     utterance_classes = []
     for nb_utterance, intent_name in izip(nb_utterances, intents.keys()):
         min_utterances_to_generate = max(
-            config.data_augmentation_config.min_utterances, nb_utterance)
+            data_augmentation_config.min_utterances, nb_utterance)
         utterances = augment_utterances(
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,
-            capitalization_ratio=config.data_augmentation_config
-                .capitalization_ratio)
+            capitalization_ratio=0.0)  # Data is anyway lower with `normalize`
         augmented_utterances += [get_text_from_chunks(utterance[DATA]) for
                                  utterance in utterances]
         utterance_classes += [classes_mapping[intent_name] for _ in utterances]
 
     # Adding noise
     noisy_utterances = generate_noise_utterances(
-        augmented_utterances, len(intents), config, language)
+        augmented_utterances, len(intents),
+        data_augmentation_config.noise_factor, language)
 
     augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]
@@ -105,7 +105,8 @@ class SnipsIntentClassifier(object):
         self.config = config
         self.classifier = None
         self.intent_list = None
-        self.featurizer = Featurizer(self.language)
+        self.featurizer = Featurizer(self.language,
+                                     self.config.featurizer_config)
         self.min_utterances_per_intent = 20
 
     @property
@@ -114,7 +115,7 @@ class SnipsIntentClassifier(object):
 
     def fit(self, dataset):
         utterances, y, intent_list = build_training_data(
-            dataset, self.language, self.config)
+            dataset, self.language, self.config.data_augmentation_config)
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
             return self

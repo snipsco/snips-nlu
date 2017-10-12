@@ -51,13 +51,19 @@ def generate_smart_noise(augmented_utterances, language):
     return [w if w in vocab else UNKNOWNWORD for w in noise]
 
 
-def generate_noise_utterances(augmented_utterances, num_intents, noise_factor,
-                              language):
+def generate_noise_utterances(augmented_utterances, num_intents,
+                              data_augmentation_config, language):
     if not len(augmented_utterances) or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
-    noise = generate_smart_noise(augmented_utterances, language)
-    noise_size = min(int(noise_factor * avg_num_utterances), len(noise))
+    if data_augmentation_config.unknownword_prob > 0:
+        noise = generate_smart_noise(augmented_utterances, language)
+    else:
+        noise = get_noises(language)
+
+    noise_size = min(
+        int(data_augmentation_config.noise_factor * avg_num_utterances),
+        len(noise))
     utterances_lengths = [
         len(tokenize_light(get_text_from_chunks(u[DATA]), language))
         for u in augmented_utterances]
@@ -111,7 +117,7 @@ def build_training_data(dataset, language, data_augmentation_config):
 
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, len(intents),
-        data_augmentation_config.noise_factor, language)
+        data_augmentation_config, language)
     augmented_utterances = [get_text_from_chunks(u[DATA])
                             for u in augmented_utterances]
 

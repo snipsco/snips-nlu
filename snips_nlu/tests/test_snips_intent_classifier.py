@@ -270,7 +270,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         np.random.seed(42)
         noise_factor = 2
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
-            noise_factor=noise_factor)
+            noise_factor=noise_factor, unknowword_prob=0.00000000000001)
         utterances, y, intent_mapping = build_training_data(
             dataset, Language.EN, data_augmentation_config)
 
@@ -331,10 +331,11 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         num_utterances = 10
 
         augmented_utterances = augmented_utterances * num_utterances
-
+        config = IntentClassifierDataAugmentationConfig(
+            noise_facteor=noise_factor)
         # When
         noise_utterances = generate_noise_utterances(
-            augmented_utterances, num_intents, noise_factor, language)
+            augmented_utterances, num_intents, config, language)
 
         # Then
         joined_noise = " ".join(noise)

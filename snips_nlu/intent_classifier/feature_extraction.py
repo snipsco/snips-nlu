@@ -74,12 +74,12 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
     word_clusters_features = get_word_cluster_features(query_tokens, language)
     normalized_stemmed_tokens = [normalize_stem(t, language)
                                  for t in query_tokens]
-    entities_features = get_dataset_entities_features(
-        normalized_stemmed_tokens, entity_utterances_to_features_names)
+    # entities_features = get_dataset_entities_features(
+    #     normalized_stemmed_tokens, entity_utterances_to_features_names)
 
     features = language.default_sep.join(normalized_stemmed_tokens)
-    if len(entities_features):
-        features += " " + " ".join(entities_features)
+    # if len(entities_features):
+    #     features += " " + " ".join(entities_features)
     if len(word_clusters_features):
         features += " " + " ".join(word_clusters_features)
     return features

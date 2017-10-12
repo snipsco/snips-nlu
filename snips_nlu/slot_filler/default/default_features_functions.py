@@ -28,7 +28,8 @@ def get_intent_custom_entities(dataset, intent):
 def get_num_entity_appearances(dataset, intent, entity, config):
     contexts_it = get_contexts_iterator(dataset, intent)
     nb_to_generate = num_queries_to_generate(
-        dataset, intent, config.data_augmentation_config.min_utterances)
+        dataset, intent,
+        config.slot_filler_data_augmentation_config.min_utterances)
     contexts = [next(contexts_it)[DATA] for _ in xrange(nb_to_generate)]
     return sum(1 for q in contexts for c in q
                if ENTITY in c and c[ENTITY] == entity)

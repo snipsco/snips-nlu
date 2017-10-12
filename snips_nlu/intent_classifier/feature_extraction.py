@@ -10,8 +10,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import ENTITIES, USE_SYNONYMS, SYNONYMS, VALUE, DATA, \
-    UTTERANCES
+from snips_nlu.config import FeaturizerConfig
+from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
@@ -21,8 +21,11 @@ from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize_light
 
 
-def default_tfidf_vectorizer(language):
-    return TfidfVectorizer(tokenizer=lambda x: tokenize_light(x, language))
+def get_tfidf_vectorizer(language, extra_args=None):
+    if extra_args is None:
+        extra_args = dict()
+    return TfidfVectorizer(tokenizer=lambda x: tokenize_light(x, language),
+                           **extra_args)
 
 
 def get_tokens_clusters(tokens, language, cluster_name):
@@ -93,8 +96,9 @@ def get_utterances_to_features_names(dataset, language):
     return dict(utterances_to_features)
 
 
-def deserialize_tfidf_vectorizer(vectorizer_dict, language):
-    tfidf_vectorizer = default_tfidf_vectorizer(language)
+def deserialize_tfidf_vectorizer(vectorizer_dict, language, featurizer_config):
+    tfidf_vectorizer = get_tfidf_vectorizer(language,
+                                            featurizer_config.to_dict())
     tfidf_vectorizer.vocabulary_ = vectorizer_dict["vocab"]
     idf_diag_data = np.array(vectorizer_dict["idf_diag"])
     idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
@@ -111,12 +115,15 @@ CLUSTER_USED_PER_LANGUAGES = {}
 
 
 class Featurizer(object):
-    def __init__(self, language, tfidf_vectorizer=None, best_features=None,
+    def __init__(self, language, config=FeaturizerConfig(),
+                 tfidf_vectorizer=None, best_features=None,
                  entity_utterances_to_feature_names=None,
                  pvalue_threshold=0.4):
         self.language = language
+        self.config = config
         if tfidf_vectorizer is None:
-            tfidf_vectorizer = default_tfidf_vectorizer(self.language)
+            tfidf_vectorizer = get_tfidf_vectorizer(
+                self.language, self.config.to_dict())
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
         self.pvalue_threshold = pvalue_threshold
@@ -196,14 +203,16 @@ class Featurizer(object):
             'best_features': self.best_features,
             'pvalue_threshold': self.pvalue_threshold,
             'entity_utterances_to_feature_names':
-                entity_utterances_to_entity_names
+                entity_utterances_to_entity_names,
+            'config': self.config.to_dict()
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
         language = Language.from_iso_code(obj_dict['language_code'])
+        config = FeaturizerConfig.from_dict(obj_dict["config"])
         tfidf_vectorizer = deserialize_tfidf_vectorizer(
-            obj_dict["tfidf_vectorizer"], language)
+            obj_dict["tfidf_vectorizer"], language, config)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
             obj_dict['entity_utterances_to_feature_names'].iteritems()
@@ -213,6 +222,7 @@ class Featurizer(object):
             tfidf_vectorizer=tfidf_vectorizer,
             pvalue_threshold=obj_dict['pvalue_threshold'],
             entity_utterances_to_feature_names=entity_utterances_to_entity_names,
-            best_features=obj_dict['best_features']
+            best_features=obj_dict['best_features'],
+            config=config
         )
         return self

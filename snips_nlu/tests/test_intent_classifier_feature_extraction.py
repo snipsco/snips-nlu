@@ -87,7 +87,8 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             "best_features": best_features,
             "pvalue_threshold": pvalue_threshold,
             "entity_utterances_to_feature_names":
-                entity_utterances_to_feature_names
+                entity_utterances_to_feature_names,
+            "unknown_words_replacement_string": None
         }
         self.assertDictEqual(expected_serialized, serialized_featurizer)
 
@@ -112,7 +113,8 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             "best_features": best_features,
             "pvalue_threshold": pvalue_threshold,
             "entity_utterances_to_feature_names":
-                entity_utterances_to_feature_names
+                entity_utterances_to_feature_names,
+            "unknown_words_replacement_string": None
         }
 
         # When

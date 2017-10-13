@@ -35,20 +35,20 @@ def get_regularization_factor(dataset):
     return alpha
 
 
-def get_noise_it(noise, mean_length, std_length, language):
+def get_noise_it(noise, mean_length, std_length):
     it = cycle(noise)
     while True:
         noise_length = int(np.random.normal(mean_length, std_length))
         yield " ".join(next(it) for _ in xrange(noise_length))
 
 
-def generate_smart_noise(augmented_utterances, language):
+def generate_smart_noise(augmented_utterances, replacement_string, language):
     text_utterances = [get_text_from_chunks(u[DATA])
                        for u in augmented_utterances]
     vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
     vocab = set(vocab)
     noise = deepcopy(get_noises(language))
-    return [w if w in vocab else UNKNOWNWORD for w in noise]
+    return [w if w in vocab else replacement_string for w in noise]
 
 
 def generate_noise_utterances(augmented_utterances, num_intents,
@@ -56,8 +56,11 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     if not len(augmented_utterances) or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
-    if data_augmentation_config.unknownword_prob > 0:
-        noise = generate_smart_noise(augmented_utterances, language)
+    if data_augmentation_config.unknown_words_replacement_string is not None:
+        noise = generate_smart_noise(
+            augmented_utterances,
+            data_augmentation_config.unknown_words_replacement_string,
+            language)
     else:
         noise = get_noises(language)
 
@@ -70,17 +73,18 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     mean_utterances_length = np.mean(utterances_lengths)
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
-                            std_utterances_length, language)
+                            std_utterances_length)
     # Remove duplicate 'unknowword unknowword'
     return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
             for _ in xrange(noise_size)]
 
 
-def add_unknownwords_to_utterances(augmented_utterances, unknownword_prob):
+def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
+                                   unknown_word_prob):
     for u in augmented_utterances:
         for chunk in u[DATA]:
-            if ENTITY in chunk and random() < unknownword_prob:
-                chunk[TEXT] = WORD_REGEX.sub(UNKNOWNWORD, chunk[TEXT])
+            if ENTITY in chunk and random() < unknown_word_prob:
+                chunk[TEXT] = WORD_REGEX.sub(replacement_string, chunk[TEXT])
     return augmented_utterances
 
 
@@ -110,11 +114,13 @@ def build_training_data(dataset, language, data_augmentation_config):
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               xrange(len(utterances))]
-    augmented_utterances = add_unknownwords_to_utterances(
-        augmented_utterances, data_augmentation_config.unknownword_prob)
+    augmented_utterances = add_unknown_word_to_utterances(
+        augmented_utterances,
+        data_augmentation_config.unknown_words_replacement_string,
+        data_augmentation_config.unknown_word_prob
+    )
 
     # Adding noise
-
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, len(intents),
         data_augmentation_config, language)
@@ -143,8 +149,7 @@ class SnipsIntentClassifier(object):
         self.config = config
         self.classifier = None
         self.intent_list = None
-        self.featurizer = Featurizer(self.language,
-                                     self.config.featurizer_config)
+        self.featurizer = Featurizer(self.language, self.config)
         self.min_utterances_per_intent = 20
 
     @property

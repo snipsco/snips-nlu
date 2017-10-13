@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import FeaturizerConfig
+from snips_nlu.config import FeaturizerConfig, IntentClassifierConfig
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
@@ -74,12 +74,12 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
     word_clusters_features = get_word_cluster_features(query_tokens, language)
     normalized_stemmed_tokens = [normalize_stem(t, language)
                                  for t in query_tokens]
-    # entities_features = get_dataset_entities_features(
-    #     normalized_stemmed_tokens, entity_utterances_to_features_names)
+    entities_features = get_dataset_entities_features(
+        normalized_stemmed_tokens, entity_utterances_to_features_names)
 
     features = language.default_sep.join(normalized_stemmed_tokens)
-    # if len(entities_features):
-    #     features += " " + " ".join(entities_features)
+    if len(entities_features):
+        features += " " + " ".join(entities_features)
     if len(word_clusters_features):
         features += " " + " ".join(word_clusters_features)
     return features
@@ -115,12 +115,27 @@ CLUSTER_USED_PER_LANGUAGES = {}
 
 
 class Featurizer(object):
-    def __init__(self, language, config=FeaturizerConfig(),
+    def __init__(self, language, config=IntentClassifierConfig(),
                  tfidf_vectorizer=None, best_features=None,
                  entity_utterances_to_feature_names=None,
-                 pvalue_threshold=0.4):
+                 pvalue_threshold=0.4, unknown_words_replacement_string=None):
+        if isinstance(config, IntentClassifierConfig):
+            if unknown_words_replacement_string is not None:
+                raise ValueError("If a IntentClassifierConfig is "
+                                 "supplied the replacement_string must be "
+                                 "None")
+            self.config = config.featurizer_config
+            self.unknown_words_replacement_string = config. \
+                data_augmentation_config. \
+                unknown_words_replacement_string
+        elif isinstance(config, FeaturizerConfig):
+            self.config = config
+            self.unknown_words_replacement_string = \
+                unknown_words_replacement_string
+        else:
+            raise TypeError("Expected 'IntentClassifierConfig' or "
+                            "FeaturizeConfig found {}".format(type(config)))
         self.language = language
-        self.config = config
         if tfidf_vectorizer is None:
             tfidf_vectorizer = get_tfidf_vectorizer(
                 self.language, self.config.to_dict())
@@ -146,6 +161,11 @@ class Featurizer(object):
         for k, v in utterances_to_features.iteritems():
             normalized_utterances_to_features[
                 normalize_stem(k, self.language)].update(v)
+        if self.unknown_words_replacement_string is not None \
+                and self.unknown_words_replacement_string in \
+                        normalized_utterances_to_features:
+            normalized_utterances_to_features.pop(
+                self.config.replacement_string)
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
@@ -204,7 +224,9 @@ class Featurizer(object):
             'pvalue_threshold': self.pvalue_threshold,
             'entity_utterances_to_feature_names':
                 entity_utterances_to_entity_names,
-            'config': self.config.to_dict()
+            'config': self.config.to_dict(),
+            'unknown_words_replacement_string':
+                self.unknown_words_replacement_string
         }
 
     @classmethod
@@ -223,6 +245,8 @@ class Featurizer(object):
             pvalue_threshold=obj_dict['pvalue_threshold'],
             entity_utterances_to_feature_names=entity_utterances_to_entity_names,
             best_features=obj_dict['best_features'],
-            config=config
+            config=config,
+            unknown_words_replacement_string=obj_dict[
+                "unknown_words_replacement_string"]
         )
         return self

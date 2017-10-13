@@ -165,7 +165,7 @@ class Featurizer(object):
                 and self.unknown_words_replacement_string in \
                         normalized_utterances_to_features:
             normalized_utterances_to_features.pop(
-                self.config.replacement_string)
+                self.unknown_words_replacement_string)
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 

@@ -300,3 +300,30 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         ]
 
         self.assertListEqual(queries, expected_queries)
+
+    def test_featurizer_should_exclude_not_include_replacement_string(self):
+        # Given
+        language = Language.EN
+        dataset = {
+            "entities": {
+                "dummy1": {
+                    "utterances": {
+                        "unknownword": "unknownword",
+                        "what": "what"
+                    }
+                }
+            }
+        }
+        replacement_string = "unknownword"
+        featurizer = Featurizer(
+            language, unknown_words_replacement_string=replacement_string,
+            config=FeaturizerConfig())
+        queries = ["hello dude"]
+        y = [1]
+
+        # When
+        featurizer.fit(dataset, queries, y)
+
+        # Then
+        self.assertNotIn(replacement_string,
+                         featurizer.entity_utterances_to_feature_names)

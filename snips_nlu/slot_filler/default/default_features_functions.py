@@ -37,7 +37,7 @@ def get_num_entity_appearances(dataset, intent, entity, config):
 
 def compute_entity_collection_size(collection, config):
     num_entities = len(collection)
-    collection_size = int(config.crf_features_config.base_drop_ratio
+    collection_size = int((1 - config.crf_features_config.base_drop_ratio)
                           * num_entities)
     collection_size = max(collection_size, 1)
     collection_size = min(collection_size, num_entities)

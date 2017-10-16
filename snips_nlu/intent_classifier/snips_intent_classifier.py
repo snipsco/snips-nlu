@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import re
-from copy import deepcopy
 from itertools import izip, cycle
 from random import random
 from uuid import uuid4
@@ -47,7 +46,7 @@ def generate_smart_noise(augmented_utterances, replacement_string, language):
                        for u in augmented_utterances]
     vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
     vocab = set(vocab)
-    noise = deepcopy(get_noises(language))
+    noise = get_noises(language)
     return [w if w in vocab else replacement_string for w in noise]
 
 
@@ -149,7 +148,11 @@ class SnipsIntentClassifier(object):
         self.config = config
         self.classifier = None
         self.intent_list = None
-        self.featurizer = Featurizer(self.language, self.config)
+        self.featurizer = Featurizer(
+            self.language,
+            self.config.data_augmentation_config
+                .unknown_words_replacement_string,
+            self.config.featurizer_config)
         self.min_utterances_per_intent = 20
 
     @property

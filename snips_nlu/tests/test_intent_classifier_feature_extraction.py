@@ -24,7 +24,9 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         tfidf_vectorizer = get_tfidf_vectorizer(language)
 
         pvalue_threshold = 0.42
-        featurizer = Featurizer(language, tfidf_vectorizer=tfidf_vectorizer,
+        featurizer = Featurizer(language,
+                                None,
+                                tfidf_vectorizer=tfidf_vectorizer,
                                 pvalue_threshold=pvalue_threshold)
         dataset = {
             "entities": {
@@ -283,7 +285,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         ]
         labels = [0, 0, 1, 1]
 
-        featurizer = Featurizer(language).fit(
+        featurizer = Featurizer(language, None).fit(
             dataset, queries, labels)
 
         # When
@@ -301,7 +303,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
 
         self.assertListEqual(queries, expected_queries)
 
-    def test_featurizer_should_exclude_not_include_replacement_string(self):
+    def test_featurizer_should_exclude_replacement_string(self):
         # Given
         language = Language.EN
         dataset = {

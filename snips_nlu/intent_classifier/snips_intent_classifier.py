@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from feature_extraction import Featurizer
+from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.config import IntentClassifierConfig
 from snips_nlu.constants import INTENTS, UTTERANCES, DATA, ENTITY, UNKNOWNWORD, \
     TEXT
@@ -21,7 +22,7 @@ from snips_nlu.tokenization import tokenize_light
 
 NOISE_NAME = str(uuid4()).decode()
 
-WORD_REGEX = re.compile(r"\w+")
+WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
 
 
@@ -82,7 +83,8 @@ def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
                                    unknown_word_prob):
     for u in augmented_utterances:
         for chunk in u[DATA]:
-            if ENTITY in chunk and random() < unknown_word_prob:
+            if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]) \
+                    and random() < unknown_word_prob:
                 chunk[TEXT] = WORD_REGEX.sub(replacement_string, chunk[TEXT])
     return augmented_utterances
 

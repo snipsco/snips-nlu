@@ -78,8 +78,8 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
     features = language.default_sep.join(normalized_stemmed_tokens)
-    if len(entities_features):
-        features += " " + " ".join(entities_features)
+    # if len(entities_features):
+    #     features += " " + " ".join(entities_features)
     if len(word_clusters_features):
         features += " " + " ".join(word_clusters_features)
     return features

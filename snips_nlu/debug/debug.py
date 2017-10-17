@@ -62,6 +62,7 @@ def main_debug():
     if mode == "training":
         debug_training(*args.values())
     elif mode == "inference":
+        args.pop("config_path")
         debug_inference(*args.values())
     else:
         raise ValueError("Invalid mode %s" % mode)

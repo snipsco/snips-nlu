@@ -13,7 +13,8 @@ from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier, build_training_data, generate_noise_utterances, \
-    get_noise_it, add_unknown_word_to_utterances, generate_smart_noise
+    get_noise_it, generate_smart_noise
+from snips_nlu.data_augmentation import add_unknown_word_to_utterances
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 

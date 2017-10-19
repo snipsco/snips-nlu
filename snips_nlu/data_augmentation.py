@@ -3,12 +3,14 @@ from __future__ import unicode_literals
 import random
 from copy import deepcopy
 from itertools import cycle
+from random import random
 
 import numpy as np
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
+from snips_nlu.intent_classifier.snips_intent_classifier import WORD_REGEX
 from snips_nlu.resources import get_stop_words
 from snips_nlu.tokenization import tokenize_light
 
@@ -107,3 +109,16 @@ def augment_utterances(dataset, intent_name, language, min_utterances,
             ratio=capitalization_ratio)
 
     return generated_utterances
+
+
+def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
+                                   unknown_word_prob):
+    if replacement_string is None:
+        return augmented_utterances
+
+    for u in augmented_utterances:
+        for chunk in u[DATA]:
+            if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]) \
+                    and random() < unknown_word_prob:
+                chunk[TEXT] = WORD_REGEX.sub(replacement_string, chunk[TEXT])
+    return augmented_utterances

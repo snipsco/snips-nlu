@@ -54,10 +54,13 @@ class IntentClassifierDataAugmentationConfig(
 
 _SlotFillerDataAugmentationConfig = namedtuple_with_defaults(
     'SlotFillerDataAugmentationConfig',
-    'min_utterances capitalization_ratio',
+    'min_utterances capitalization_ratio unknown_word_prob'
+    ' unknown_words_replacement_string',
     {
         'min_utterances': 200,
-        'capitalization_ratio': .2
+        'capitalization_ratio': .2,
+        'unknown_word_prob': 0,
+        'unknown_words_replacement_string': None
     }
 )
 

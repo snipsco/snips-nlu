@@ -35,10 +35,13 @@ class NamedTupleConfigMixin(Config):
 
 _IntentClassifierDataAugmentationConfig = namedtuple_with_defaults(
     '_IntentClassifierDataAugmentationConfig',
-    'min_utterances noise_factor',
+    'min_utterances noise_factor unknown_word_prob '
+    'unknown_words_replacement_string',
     {
         'min_utterances': 20,
-        'noise_factor': 5
+        'noise_factor': 5,
+        'unknown_word_prob': 0,
+        'unknown_words_replacement_string': None
     }
 )
 

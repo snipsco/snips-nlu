@@ -6,15 +6,14 @@ import json
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier
-
 from dataset import validate_and_format_dataset
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser, fit_tagger
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
@@ -68,6 +67,11 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
         text, parsed_intent=IntentClassificationResult(intent, 1.0),
         parsed_slots=[])
 
+    replacement_string = None
+    if probabilistic_parser is not None:
+        replacement_string = probabilistic_parser \
+            .config.data_augmentation_config.unknown_words_replacement_string
+
     for parser in parsers:
         res = parser.get_intent(text)
         if res is None:
@@ -86,10 +90,13 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
             # Check if the entity is from a custom intent
             if s.entity in entities:
                 entity = entities[s.entity]
-                if s.value in entity[UTTERANCES]:
-                    slot_value = entity[UTTERANCES][s.value]
+                if slot_value in entity[UTTERANCES]:
+                    slot_value = entity[UTTERANCES][slot_value]
                 elif not entity[AUTOMATICALLY_EXTENSIBLE]:
-                    continue
+                    if replacement_string is None \
+                            or slot_value != replacement_string:
+                        continue
+
             s = ParsedSlot(s.match_range, slot_value, s.entity,
                            s.slot_name)
             valid_slot.append(s)

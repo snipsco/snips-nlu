@@ -115,12 +115,13 @@ CLUSTER_USED_PER_LANGUAGES = {}
 
 
 class Featurizer(object):
-    def __init__(self, language, config=FeaturizerConfig(),
+    def __init__(self, language, unknown_words_replacement_string,
+                 config=FeaturizerConfig(),
                  tfidf_vectorizer=None, best_features=None,
                  entity_utterances_to_feature_names=None,
                  pvalue_threshold=0.4):
-        self.language = language
         self.config = config
+        self.language = language
         if tfidf_vectorizer is None:
             tfidf_vectorizer = get_tfidf_vectorizer(
                 self.language, self.config.to_dict())
@@ -129,6 +130,9 @@ class Featurizer(object):
         self.pvalue_threshold = pvalue_threshold
         self.entity_utterances_to_feature_names = \
             entity_utterances_to_feature_names
+
+        self.unknown_words_replacement_string = \
+            unknown_words_replacement_string
 
     def preprocess_queries(self, queries):
         preprocessed_queries = []
@@ -146,6 +150,11 @@ class Featurizer(object):
         for k, v in utterances_to_features.iteritems():
             normalized_utterances_to_features[
                 normalize_stem(k, self.language)].update(v)
+        if self.unknown_words_replacement_string is not None \
+                and self.unknown_words_replacement_string in \
+                        normalized_utterances_to_features:
+            normalized_utterances_to_features.pop(
+                self.unknown_words_replacement_string)
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
@@ -204,7 +213,9 @@ class Featurizer(object):
             'pvalue_threshold': self.pvalue_threshold,
             'entity_utterances_to_feature_names':
                 entity_utterances_to_entity_names,
-            'config': self.config.to_dict()
+            'config': self.config.to_dict(),
+            'unknown_words_replacement_string':
+                self.unknown_words_replacement_string
         }
 
     @classmethod
@@ -221,8 +232,11 @@ class Featurizer(object):
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
             pvalue_threshold=obj_dict['pvalue_threshold'],
-            entity_utterances_to_feature_names=entity_utterances_to_entity_names,
+            entity_utterances_to_feature_names= \
+                entity_utterances_to_entity_names,
             best_features=obj_dict['best_features'],
-            config=config
+            config=config,
+            unknown_words_replacement_string=obj_dict[
+                "unknown_words_replacement_string"]
         )
         return self

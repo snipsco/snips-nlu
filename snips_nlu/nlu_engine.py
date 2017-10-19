@@ -6,14 +6,15 @@ import json
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
+
 from dataset import validate_and_format_dataset
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
-from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser, fit_tagger
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser

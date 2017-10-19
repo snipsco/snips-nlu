@@ -3,14 +3,14 @@ from __future__ import unicode_literals
 import unittest
 
 from mock import MagicMock, patch, call
+from snips_nlu.intent_classifier.snips_intent_classifier import \
+    SnipsIntentClassifier
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.config import SlotFillerDataAugmentationConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
     generate_slots_permutations)

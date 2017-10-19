@@ -24,11 +24,14 @@ def fit_tagger(tagger, dataset, intent_name, language,
                data_augmentation_config):
     augmented_intent_utterances = augment_utterances(
         dataset, intent_name, language=language,
-        **data_augmentation_config.to_dict())
+        min_utterances=data_augmentation_config.min_utterances,
+        capitalization_ratio=data_augmentation_config.capitalization_ratio
+    )
     augmented_intent_utterances = add_unknown_word_to_utterances(
         augmented_intent_utterances,
         data_augmentation_config.unknown_words_replacement_string,
-        data_augmentation_config.unknown_word_prob
+        data_augmentation_config.unknown_word_prob,
+        only_entities=False
     )
     tagging_scheme = tagger.tagging_scheme
     crf_samples = [

@@ -106,7 +106,7 @@ def build_training_data(dataset, language, data_augmentation_config):
     augmented_utterances = add_unknown_word_to_utterances(
         augmented_utterances,
         data_augmentation_config.unknown_words_replacement_string,
-        data_augmentation_config.unknown_word_prob
+        data_augmentation_config.unknown_word_prob, only_entities=True
     )
 
     # Adding noise

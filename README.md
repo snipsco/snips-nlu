@@ -1,6 +1,6 @@
 # Snips NLU
 
-[![Build Status](https://jenkins2.snips.ai/buildStatus/icon?job=SDK/snips-nlu/master)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/view/Branches/job/master)
+[![Build Status](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/job/master/badge/icon)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/job/master/)
 
 **Model Version (0.10.0)**
 

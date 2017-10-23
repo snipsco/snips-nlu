@@ -25,6 +25,7 @@ def capitalize_utterances(utterances, entities, language, ratio):
     for utterance in utterances:
         capitalized_utterance = deepcopy(utterance)
         for i, chunk in enumerate(capitalized_utterance[DATA]):
+            capitalized_utterance[DATA][i][TEXT] = chunk[TEXT].lower()
             if ENTITY not in chunk:
                 continue
             entity_label = chunk[ENTITY]
@@ -101,9 +102,8 @@ def augment_utterances(dataset, intent_name, language, min_utterances,
         generated_utterances.append(generated_utterance)
         nb_to_generate -= 1
 
-    if capitalization_ratio > 0:
-        generated_utterances = capitalize_utterances(
-            generated_utterances, dataset[ENTITIES], language,
-            ratio=capitalization_ratio)
+    generated_utterances = capitalize_utterances(
+        generated_utterances, dataset[ENTITIES], language,
+        ratio=capitalization_ratio)
 
     return generated_utterances

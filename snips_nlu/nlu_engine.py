@@ -67,6 +67,11 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
         text, parsed_intent=IntentClassificationResult(intent, 1.0),
         parsed_slots=[])
 
+    replacement_string = None
+    if probabilistic_parser is not None:
+        replacement_string = probabilistic_parser \
+            .config.data_augmentation_config.unknown_words_replacement_string
+
     for parser in parsers:
         res = parser.get_intent(text)
         if res is None:
@@ -85,10 +90,13 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
             # Check if the entity is from a custom intent
             if s.entity in entities:
                 entity = entities[s.entity]
-                if s.value in entity[UTTERANCES]:
-                    slot_value = entity[UTTERANCES][s.value]
+                if slot_value in entity[UTTERANCES]:
+                    slot_value = entity[UTTERANCES][slot_value]
                 elif not entity[AUTOMATICALLY_EXTENSIBLE]:
-                    continue
+                    if replacement_string is None \
+                            or slot_value != replacement_string:
+                        continue
+
             s = ParsedSlot(s.match_range, slot_value, s.entity,
                            s.slot_name)
             valid_slot.append(s)

@@ -2,18 +2,16 @@ from __future__ import unicode_literals
 
 import re
 from itertools import izip, cycle
-from random import random
 from uuid import uuid4
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from feature_extraction import Featurizer
-from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.config import IntentClassifierConfig
-from snips_nlu.constants import INTENTS, UTTERANCES, DATA, ENTITY, UNKNOWNWORD, \
-    TEXT
-from snips_nlu.data_augmentation import augment_utterances
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA, UNKNOWNWORD
+from snips_nlu.data_augmentation import augment_utterances, \
+    add_unknown_word_to_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import Language
 from snips_nlu.resources import get_noises
@@ -79,16 +77,6 @@ def generate_noise_utterances(augmented_utterances, num_intents,
             for _ in xrange(noise_size)]
 
 
-def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
-                                   unknown_word_prob):
-    for u in augmented_utterances:
-        for chunk in u[DATA]:
-            if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]) \
-                    and random() < unknown_word_prob:
-                chunk[TEXT] = WORD_REGEX.sub(replacement_string, chunk[TEXT])
-    return augmented_utterances
-
-
 def build_training_data(dataset, language, data_augmentation_config):
     # Creating class mapping
     intents = dataset[INTENTS]
@@ -118,7 +106,7 @@ def build_training_data(dataset, language, data_augmentation_config):
     augmented_utterances = add_unknown_word_to_utterances(
         augmented_utterances,
         data_augmentation_config.unknown_words_replacement_string,
-        data_augmentation_config.unknown_word_prob
+        data_augmentation_config.unknown_word_prob, only_entities=True
     )
 
     # Adding noise

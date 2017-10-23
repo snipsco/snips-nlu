@@ -7,7 +7,8 @@ from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities
 from snips_nlu.config import ProbabilisticIntentParserConfig
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE)
-from snips_nlu.data_augmentation import augment_utterances
+from snips_nlu.data_augmentation import augment_utterances, \
+    add_unknown_word_to_utterances
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
@@ -23,7 +24,15 @@ def fit_tagger(tagger, dataset, intent_name, language,
                data_augmentation_config):
     augmented_intent_utterances = augment_utterances(
         dataset, intent_name, language=language,
-        **data_augmentation_config.to_dict())
+        min_utterances=data_augmentation_config.min_utterances,
+        capitalization_ratio=data_augmentation_config.capitalization_ratio
+    )
+    augmented_intent_utterances = add_unknown_word_to_utterances(
+        augmented_intent_utterances,
+        data_augmentation_config.unknown_words_replacement_string,
+        data_augmentation_config.unknown_word_prob,
+        only_entities=False
+    )
     tagging_scheme = tagger.tagging_scheme
     crf_samples = [
         utterance_to_sample(u[DATA], tagging_scheme, tagger.language)

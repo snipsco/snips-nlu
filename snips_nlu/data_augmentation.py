@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import random
+import re
 from copy import deepcopy
 from itertools import cycle
 
@@ -11,6 +12,9 @@ from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
 from snips_nlu.resources import get_stop_words
 from snips_nlu.tokenization import tokenize_light
+
+WORDS_REGEX = re.compile(r"\w+(\s+\w+)*")
+WORD_REGEX = re.compile(r"\w+")
 
 
 def capitalize(text, language):
@@ -107,3 +111,49 @@ def augment_utterances(dataset, intent_name, language, min_utterances,
             ratio=capitalization_ratio)
 
     return generated_utterances
+
+
+def add_unknown_word_to_entity(utterance, replacement_string,
+                               unknown_word_prob):
+    for chunk in utterance[DATA]:
+        if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]) \
+                and random.random() < unknown_word_prob:
+            chunk[TEXT] = WORDS_REGEX.sub(replacement_string, chunk[TEXT])
+    return utterance
+
+
+def add_unknown_word_to_utterance(utterance, replacement_string,
+                                  unknown_word_prob):
+    for chunk in utterance[DATA]:
+        if random.random() < unknown_word_prob:
+            if ENTITY in chunk:
+                chunk[TEXT] = replacement_string
+            else:
+                matches = WORD_REGEX.finditer(chunk[TEXT])
+                matches = [m for m in matches]
+                if not len(matches):
+                    continue
+                replaced_ix = random.choice(range(len(matches)))
+                match = matches[replaced_ix]
+                text = chunk[TEXT][:match.start()]
+                text += replacement_string
+                text += chunk[TEXT][match.end():]
+                chunk[TEXT] = text
+    return utterance
+
+
+def add_unknown_word_to_utterances(utterances, replacement_string,
+                                   unknown_word_prob, only_entities):
+    if replacement_string is None:
+        return utterances
+    replacement_string = unicode(replacement_string)
+    augmented_utterances = []
+    for u in utterances:
+        if only_entities:
+            u = add_unknown_word_to_entity(u, replacement_string,
+                                           unknown_word_prob)
+        else:
+            u = add_unknown_word_to_utterance(u, replacement_string,
+                                              unknown_word_prob)
+        augmented_utterances.append(u)
+    return augmented_utterances

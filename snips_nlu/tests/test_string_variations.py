@@ -6,28 +6,12 @@ import unittest
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import MATCH_RANGE
 from snips_nlu.languages import Language
-from snips_nlu.string_variations import canonize, and_variations, \
-    alphabetic_value, punctuation_variations, get_string_variations
+from snips_nlu.string_variations import (
+    and_variations, alphabetic_value, punctuation_variations,
+    get_string_variations)
 
 
 class TestStringVariations(unittest.TestCase):
-    def test_canonize(self):
-        # Given
-        language = Language.EN
-        data = [
-            ("a", "a"),
-            ("Â", "a"),
-            ("Â!", "a"),
-            ("Â!Â", "aa"),
-            ("Â!   Â!", "a a")
-        ]
-
-        for input, expected_output in data:
-            # When
-            output = canonize(input, language)
-            # Then
-            self.assertEqual(output, expected_output)
-
     def test_and_variations(self):
         # Given
         language = Language.EN

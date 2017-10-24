@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import itertools
 import re
 
-from nlu_utils import normalize
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
@@ -25,12 +24,6 @@ AND_REGEXES = {
         re.IGNORECASE)
     for language, utterances in AND_UTTERANCES.iteritems()
 }
-
-
-def canonize(string, language):
-    string = normalize(string)
-    string = language.punctuation_regex.sub("", string)
-    return language.default_sep.join(tokenize_light(string, language))
 
 
 def build_variated_query(string, matches, utterances):
@@ -143,10 +136,11 @@ def get_string_variations(string, language):
     variations = {string}
     variations.update(aggregate(map(lambda x: and_variations(x, language),
                                     variations)))
-    variations.update(aggregate(map(lambda x: numbers_variations(x, language),
-                                    variations)))
     variations.update(aggregate(
         map(lambda x: punctuation_variations(x, language), variations)))
+    variations.update(aggregate(map(lambda x: numbers_variations(x, language),
+                                    variations)))
+
     variations = [language.default_sep.join(tokenize_light(v, language))
                   for v in variations]
     variations = set(variations)

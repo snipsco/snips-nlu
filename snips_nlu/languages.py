@@ -79,11 +79,11 @@ class Language(Enum):
     @property
     def punctuation_regex(self):
         try:
-            regex = self._punctuation_regex
+            return self._punctuation_regex
         except AttributeError:
             pattern = r"|".join(re.escape(p) for p in self.punctuation)
-            regex = re.compile(pattern)
-        return regex
+            self._punctuation_regex = re.compile(pattern)
+            return self._punctuation_regex
 
     @property
     def default_sep(self):

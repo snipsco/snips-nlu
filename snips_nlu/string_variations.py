@@ -128,18 +128,17 @@ def numbers_variations(string, language):
     return variations
 
 
-def aggregate(results):
-    return set(sum((list(r) for r in results), []))
-
+def flatten(results):
+    return set(i for r in results for i in r)
 
 def get_string_variations(string, language):
     variations = {string}
-    variations.update(aggregate(map(lambda x: and_variations(x, language),
-                                    variations)))
-    variations.update(aggregate(
+    variations.update(flatten(map(lambda x: and_variations(x, language),
+                                  variations)))
+    variations.update(flatten(
         map(lambda x: punctuation_variations(x, language), variations)))
-    variations.update(aggregate(map(lambda x: numbers_variations(x, language),
-                                    variations)))
+    variations.update(flatten(map(lambda x: numbers_variations(x, language),
+                                  variations)))
 
     variations = [language.default_sep.join(tokenize_light(v, language))
                   for v in variations]

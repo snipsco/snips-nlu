@@ -31,7 +31,7 @@ class TestDataAugmentation(unittest.TestCase):
         self.assertEqual(context, [0, 1, 2, 0, 1])
 
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
-    def test_entities_iterators(self, _) :
+    def test_entities_iterators(self, _):
         # Given
         intent_entities = {
             "entity1": {

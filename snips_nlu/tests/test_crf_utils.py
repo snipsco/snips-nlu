@@ -119,8 +119,8 @@ class TestCRFUtils(unittest.TestCase):
             # When
             slots = tags_to_slots(
                 data["text"], tokenize(data["text"], language),
-                                  data["tags"], TaggingScheme.IO,
-                                  intent_slots_mapping)
+                data["tags"], TaggingScheme.IO,
+                intent_slots_mapping)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 
@@ -261,8 +261,8 @@ class TestCRFUtils(unittest.TestCase):
             # When
             slots = tags_to_slots(
                 data["text"], tokenize(data["text"], language),
-                                  data["tags"], TaggingScheme.BIO,
-                                  intent_slots_mapping)
+                data["tags"], TaggingScheme.BIO,
+                intent_slots_mapping)
             # Then
             self.assertEqual(slots, data["expected_slots"])
 

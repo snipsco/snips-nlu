@@ -157,7 +157,7 @@ class TestFeatureFunctions(unittest.TestCase):
     def test_is_in_gazetteer(self, mocked_get_gazetteer):
         # Given
         gazetteer = {"bird", "eagle", "blue bird"}
-        mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
+        mocked_get_gazetteer.side_effect = lambda l, name: gazetteer
         text = "This is a Blue bÏrd flying next to an eagle"
         language = Language.EN
         tokens = tokenize(text, language=language)
@@ -317,8 +317,6 @@ class TestFeatureFunctions(unittest.TestCase):
             'there': 'there'
         }
 
-
-
         def np_random(a, size, replace=False):
             a = sorted(a)
             if a == sorted(collection_1.keys()) \
@@ -326,6 +324,7 @@ class TestFeatureFunctions(unittest.TestCase):
                 return np.array(a[:size])
             else:
                 raise ValueError("Unexpected value: {}".format(a))
+
         mocked_np_random.side_effect = np_random
 
         # When

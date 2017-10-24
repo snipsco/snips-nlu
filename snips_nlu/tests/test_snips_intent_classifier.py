@@ -17,15 +17,15 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 
-i = 0
+seed = 0
 
 
 def random():
-    global i
+    global seed
     r = 0
-    if i % 2 == 0:
+    if seed % 2 == 0:
         r = 1
-    i += 1
+    seed += 1
     return r
 
 
@@ -236,7 +236,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                                intent[UTTERANCES]]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
         self.assertListEqual(utterances, expected_utterances)
-        self.assertListEqual
+        self.assertListEqual(expected_intent_mapping, intent_mapping)
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_noises")
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"

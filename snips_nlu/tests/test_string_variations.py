@@ -27,9 +27,9 @@ class TestStringVariations(unittest.TestCase):
             ("be&you", {})
         ]
 
-        for input, expected_variations in data:
+        for string, expected_variations in data:
             # When
-            variations = and_variations(input, language)
+            variations = and_variations(string, language)
             # Then
             self.assertItemsEqual(variations, expected_variations)
 
@@ -51,9 +51,9 @@ class TestStringVariations(unittest.TestCase):
             ("random", {}),
         ]
 
-        for input, expected_variations in data:
+        for string, expected_variations in data:
             # When
-            variations = punctuation_variations(input, language)
+            variations = punctuation_variations(string, language)
 
             # Then
             self.assertItemsEqual(variations, expected_variations)

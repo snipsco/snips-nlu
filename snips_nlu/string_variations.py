@@ -108,8 +108,8 @@ def numbers_variations(string, language):
     number_entities = get_builtin_entities(
         string, language, scope=[BuiltInEntity.NUMBER])
 
-    number_entities = [ent for ent in number_entities
-                       if not "latent" in ent]
+    number_entities = [ent for ent in number_entities if
+                       not ("latent" in ent[VALUE] and ent[VALUE]["latent"])]
     number_entities = sorted(number_entities, key=lambda x: x["range"])
     if len(number_entities) == 0:
         return variations

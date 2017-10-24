@@ -140,7 +140,6 @@ def get_string_variations(string, language):
     variations.update(flatten(map(lambda x: numbers_variations(x, language),
                                   variations)))
 
-    variations = [language.default_sep.join(tokenize_light(v, language))
-                  for v in variations]
-    variations = set(variations)
+    variations = set(language.default_sep.join(tokenize_light(v, language))
+                  for v in variations)
     return variations

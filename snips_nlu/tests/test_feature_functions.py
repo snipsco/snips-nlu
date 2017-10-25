@@ -157,7 +157,7 @@ class TestFeatureFunctions(unittest.TestCase):
     def test_is_in_gazetteer(self, mocked_get_gazetteer):
         # Given
         gazetteer = {"bird", "eagle", "blue bird"}
-        mocked_get_gazetteer.side_effect = lambda language, name: gazetteer
+        mocked_get_gazetteer.side_effect = lambda l, name: gazetteer
         text = "This is a Blue bÏrd flying next to an eagle"
         language = Language.EN
         tokens = tokenize(text, language=language)
@@ -229,7 +229,9 @@ class TestFeatureFunctions(unittest.TestCase):
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
 
-    def test_crf_features(self):
+    @patch("snips_nlu.slot_filler.default.default_features_functions.np"
+           ".random.choice")
+    def test_crf_features(self, mocked_np_random):
         # Given
         language = Language.EN
         dataset = {
@@ -293,35 +295,55 @@ class TestFeatureFunctions(unittest.TestCase):
         }
         dataset = validate_and_format_dataset(dataset)
 
+        collection_1 = {
+            'dummy_a': 'dummy_a',
+            'dummya': 'dummy_a',
+            'dummy_a_bis': 'dummy_a',
+            'dummyabis': 'dummy_a',
+            'dummya_bis': 'dummy_a',
+            'dummy_abis': 'dummy_a',
+            'dummy_b': 'dummy_b',
+            'dummyb': 'dummy_b',
+            'dummy_b_bis': 'dummy_b',
+            'dummybbis': 'dummy_b',
+            'dummy_bbis': 'dummy_b',
+            'dummyb_bis': 'dummy_b',
+            'hello': 'hello'
+        }
+
+        collection_2 = {
+            'dummy_c': 'dummy_c',
+            'dummyc': 'dummyc',
+            'there': 'there'
+        }
+
+        def np_random(a, size, replace=False):
+            a = sorted(a)
+            if a == sorted(collection_1.keys()) \
+                    or a == sorted(collection_2.keys()):
+                return np.array(a[:size])
+            else:
+                raise ValueError("Unexpected value: {}".format(a))
+
+        mocked_np_random.side_effect = np_random
+
         # When
-        np.random.seed(42)
         drop_prob = 0.5
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
             config=ProbabilisticIntentParserConfig())
 
         # Then
-        np.random.seed(42)
-        collection_1 = {
-            'dummy_a': 'dummy_a',
-            'dummy_a_bis': 'dummy_a',
-            'dummy_b': 'dummy_b',
-            'dummy_b_bis': 'dummy_b_bis',
-            'hello': 'hello'
-        }
-
         collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
-        collection_1 = np.random.choice(collection_1.keys(), collection_1_size,
-                                        replace=False).tolist()
-        collection_2 = {'dummy_c': 'dummy_c', 'there': 'there'}
+        col_1 = np_random(collection_1.keys(), collection_1_size).tolist()
+
         collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
-        collection_2 = np.random.choice(collection_2.keys(), collection_2_size,
-                                        replace=False).tolist()
+        col_2 = np_random(collection_2.keys(), collection_2_size).tolist()
 
         expected_signatures = [
             {
                 'args': {
-                    'tokens_collection': collection_1,
+                    'tokens_collection': col_1,
                     'collection_name': 'dummy_entity_1',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -332,7 +354,7 @@ class TestFeatureFunctions(unittest.TestCase):
             },
             {
                 'args': {
-                    'tokens_collection': collection_2,
+                    'tokens_collection': col_2,
                     'collection_name': 'dummy_entity_2',
                     'use_stemming': True,
                     'language_code': 'en',

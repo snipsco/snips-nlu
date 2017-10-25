@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
+import re
 import string
 
 from enum import Enum
+from num2words import num2words
 
 from utils import classproperty, regex_escape
 
@@ -75,6 +77,15 @@ class Language(Enum):
         return ent
 
     @property
+    def punctuation_regex(self):
+        try:
+            return self._punctuation_regex
+        except AttributeError:
+            pattern = r"|".join(re.escape(p) for p in self.punctuation)
+            self._punctuation_regex = re.compile(pattern)
+            return self._punctuation_regex
+
+    @property
     def default_sep(self):
         return " "
 
@@ -85,3 +96,16 @@ class Language(Enum):
     @property
     def ignored_characters_pattern(self):
         return COMMONLY_IGNORED_CHARACTERS_PATTERN
+
+    @property
+    def supports_num2words(self):
+        try:
+            support = self._supports_num2words
+        except AttributeError:
+            try:
+                num2words(0, lang=self.iso_code)
+                self._supports_num2words = True
+            except NotImplementedError:
+                self._supports_num2words = False
+            support = self._supports_num2words
+        return support

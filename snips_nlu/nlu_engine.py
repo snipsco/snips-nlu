@@ -355,17 +355,20 @@ def main_create_and_train_engine():
     parser = argparse.ArgumentParser()
     parser.add_argument("language", type=unicode)
     parser.add_argument("dataset_path", type=unicode)
-    parser.add_argument("config_path", type=unicode)
     parser.add_argument("output_path", type=unicode)
+    parser.add_argument("--config-path", type=unicode)
     args = vars(parser.parse_args())
 
     dataset_path = args.pop("dataset_path")
     with io.open(dataset_path, "r", encoding="utf8") as f:
         dataset = json.load(f)
 
-    config_path = args.pop("config_path")
-    with io.open(config_path, "r", encoding="utf8") as f:
-        config = json.load(f)
+    if "config" in args:
+        config_path = args.pop("config_path")
+        with io.open(config_path, "r", encoding="utf8") as f:
+            config = json.load(f)
+    else:
+        config = NLUConfig()
 
     language = Language.from_iso_code(args.pop("language"))
     engine = SnipsNLUEngine(language, config).fit(dataset)

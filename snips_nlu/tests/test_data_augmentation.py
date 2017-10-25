@@ -5,9 +5,8 @@ import unittest
 from mock import patch
 
 from snips_nlu.data_augmentation import (
-    get_contexts_iterator, get_intent_entities, get_entities_iterators,
+    get_contexts_iterator, get_entities_iterators,
     generate_utterance)
-from snips_nlu.dataset import validate_and_format_dataset
 
 
 def np_random_permutation(x):
@@ -34,108 +33,34 @@ class TestDataAugmentation(unittest.TestCase):
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_entities_iterators(self, _):
         # Given
-        dataset = {
-            "snips_nlu_version": "1.1.1",
-            "intents": {
-                "intent1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "this is ",
-                                },
-                                {
-                                    "text": "entity 1",
-                                    "entity": "entity1",
-                                    "slot_name": "slot1"
-                                }
-                            ]
-                        },
-                        {
-                            "data": [
-                                {
-                                    "text": "this is ",
-                                },
-                                {
-                                    "text": "entity 2",
-                                    "entity": "entity2",
-                                    "slot_name": "slot1"
-                                },
-                                {
-                                    "text": " right"
-                                }
-                            ]
-                        }
-                    ],
-                    "engineType": "regex"
-                },
-                "intent2": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "this is ",
-                                },
-                                {
-                                    "text": "entity 2",
-                                    "entity": "entity2",
-                                    "slot_name": "slot2"
-                                }
-                            ]
-                        }
-                    ],
-                    "engineType": "regex"
+        intent_entities = {
+            "entity1": {
+                "utterances": {
+                    "entity 1": "entity 1",
+                    "entity 11": "entity 11",
+                    "entity 111": "entity 111",
                 }
             },
-            "entities": {
-                "entity1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["entity 1", "entity 11", "entity 111"]
-                        },
-                        {
-                            "value": "entity 3",
-                            "synonyms": ["entity 3", "entity 33"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False
-                },
-                "entity2": {
-                    "data": [
-                        {
-                            "value": "entity 2",
-                            "synonyms": ["entity 2", "entity 22"]
-                        },
-                        {
-                            "value": "entity 44",
-                            "synonyms": ["entity 44", "entity 444444"]
-                        }
-                    ],
-                    "use_synonyms": False,
-                    "automatically_extensible": False
+            "entity2": {
+                "utterances": {
+                    "entity 2": "entity 2",
+                    "entity 22": "entity 22",
+                    "entity 222": "entity 222",
                 }
-            },
-            "language": "en"
+            }
         }
-        dataset = validate_and_format_dataset(dataset)
-
-        intent_name = "intent1"
-        intent_entities = get_intent_entities(dataset, intent_name)
 
         # Then
-        it_dict = get_entities_iterators(dataset, intent_entities)
+        it_dict = get_entities_iterators(intent_entities)
 
         # When
         self.assertIn("entity1", it_dict)
-        expected_seq = ["entity 1", "entity 11", "entity 111", "entity 3",
-                        "entity 33", "entity 1", "entity 11"]
+        expected_seq = ["entity 1", "entity 11", "entity 111"]
         seq = [next(it_dict["entity1"]) for _ in xrange(len(expected_seq))]
         self.assertItemsEqual(seq, expected_seq)
 
         self.assertIn("entity2", it_dict)
-        expected_seq = ["entity 2", "entity 44"]
+        expected_seq = ["entity 2", "entity 22", "entity 222"]
         seq = [next(it_dict["entity2"]) for _ in xrange(len(expected_seq))]
         self.assertItemsEqual(seq, expected_seq)
 

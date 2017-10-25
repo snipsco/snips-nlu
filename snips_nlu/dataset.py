@@ -12,6 +12,7 @@ from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
                                  SNIPS_NLU_VERSION, CAPITALIZE)
 from snips_nlu.languages import Language
+from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
 from utils import validate_type, validate_key, validate_keys
 
@@ -98,6 +99,24 @@ def capitalization_ratio(entity_utterances, language):
     return sum(capitalizations) / float(len(capitalizations))
 
 
+def add_variation_if_needed(utterances, variation, utterance, use_synonyms,
+                            language):
+    if len(variation) == 0:
+        return utterances
+    normalized_variation = normalize(variation)
+    all_variations = get_string_variations(
+        variation, language)
+    all_variations.update(
+        get_string_variations(normalized_variation, language))
+    for v in all_variations:
+        if not v in utterances:
+            if use_synonyms:
+                utterances[v] = utterance
+            else:
+                utterances[v] = v
+    return utterances
+
+
 def validate_and_format_custom_entity(entity, queries_entities, language,
                                       capitalization_threshold):
     validate_type(entity, dict)
@@ -110,6 +129,7 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     formatted_entity = dict()
     formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
         AUTOMATICALLY_EXTENSIBLE]
+    use_synonyms = entity[USE_SYNONYMS]
 
     # Validate format and filter out unused data
     valid_entity_data = []
@@ -138,28 +158,20 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     # Normalize
     normalize_data = dict()
     for entry in entity[DATA]:
-        normalized_value = normalize(entry[VALUE])
-        if len(entry[VALUE]):
-            normalize_data[entry[VALUE]] = entry[VALUE]
-        else:
-            continue
-        if len(normalized_value):
-            normalize_data[normalized_value] = entry[VALUE] if \
-                entity[USE_SYNONYMS] else normalized_value
+        entry_value = entry[VALUE]
+        normalize_data = add_variation_if_needed(
+            normalize_data, entry_value, entry_value, use_synonyms, language)
+
         if entity[USE_SYNONYMS]:
             for s in entry[SYNONYMS]:
-                if len(s):
-                    normalize_data[s] = entry[VALUE]
-                normalized_s = normalize(s)
-                if len(normalized_s):
-                    normalize_data[normalize(s)] = entry[VALUE]
+                normalize_data = add_variation_if_needed(
+                    normalize_data, s, entry_value, use_synonyms, language)
 
     formatted_entity[UTTERANCES] = normalize_data
-
     # Merge queries_entities
     for value in queries_entities:
-        add_entity_value_if_missing(value, formatted_entity,
-                                    entity[USE_SYNONYMS])
+        formatted_entity = add_entity_value_if_missing(
+            value, formatted_entity, use_synonyms, language)
 
     return formatted_entity
 
@@ -175,18 +187,7 @@ def validate_language(language):
                          " found '%s'" % language)
 
 
-def add_entity_value_if_missing(value, entity, use_synonyms):
-    if len(value) and value not in entity[UTTERANCES]:  # Check for synonyms
-        entity[UTTERANCES][value] = value
-    else:
-        return
-
-    normalized_value = normalize(value)
-    if len(normalized_value) == 0:
-        return
-
-    if use_synonyms:
-        if normalized_value not in entity[UTTERANCES]:  # Check for synonyms
-            entity[UTTERANCES][normalized_value] = value
-    else:
-        entity[UTTERANCES][normalized_value] = normalized_value
+def add_entity_value_if_missing(value, entity, use_synonyms, language):
+    entity[UTTERANCES] = add_variation_if_needed(entity[UTTERANCES], value,
+                                                 value, use_synonyms, language)
+    return entity

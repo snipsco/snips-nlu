@@ -14,7 +14,8 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
-    generate_slots_permutations, filter_overlapping_builtins)
+    generate_slots_permutations, filter_overlapping_builtins,
+    exhaustive_slots_permutations)
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import ParsedSlot
@@ -53,6 +54,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         # Given
         language = Language.EN
         text = "Find me a flight before 10pm and after 8pm"
+        exhaustive_permutations_threshold = 2
         tokens = tokenize(text, language)
         intent_slots_mapping = {
             "start_date": "snips/datetime",
@@ -151,7 +153,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         # When
         augmented_slots = augment_slots(text, language, tokens, tags, tagger,
-                                        intent_slots_mapping, missing_slots)
+                                        intent_slots_mapping, missing_slots,
+                                        exhaustive_permutations_threshold)
 
         # Then
         mocked_filter.assert_called_once()
@@ -294,7 +297,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                     "min_utterances": 200,
                     "capitalization_ratio": .2,
                 },
-                'crf_features_config': CRFFeaturesConfig().to_dict()
+                'crf_features_config': CRFFeaturesConfig().to_dict(),
+                'exhaustive_permutations_threshold': 4 ** 3
             },
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"
@@ -493,10 +497,12 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         configs = [
             {
                 "n_builtins_in_sentence": 0,
+                "exhaustive_permutations_threshold": 10,
                 "slots": []
             },
             {
                 "n_builtins_in_sentence": 1,
+                "exhaustive_permutations_threshold": 10,
                 "slots": [
                     ("slot1",),
                     ("slot22",),
@@ -505,6 +511,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             },
             {
                 "n_builtins_in_sentence": 2,
+                "exhaustive_permutations_threshold": 4,
                 "slots": [
                     ("slot1", "slot22"),
                     ("slot22", "slot1"),
@@ -516,7 +523,23 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                 ]
             },
             {
+                "n_builtins_in_sentence": 2,
+                "exhaustive_permutations_threshold": 100,
+                "slots": [
+                    ("O", "O"),
+                    ("O", "slot1"),
+                    ("O", "slot22"),
+                    ("slot1", "O"),
+                    ("slot1", "slot1"),
+                    ("slot1", "slot22"),
+                    ("slot22", "O"),
+                    ("slot22", "slot1"),
+                    ("slot22", "slot22"),
+                ]
+            },
+            {
                 "n_builtins_in_sentence": 3,
+                "exhaustive_permutations_threshold": 5,
                 "slots": [
                     ("slot1", "slot22", "O"),
                     ("slot22", "slot1", "O"),
@@ -537,8 +560,10 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         for conf in configs:
             # When
-            slots = generate_slots_permutations(conf["n_builtins_in_sentence"],
-                                                possible_slots)
+            slots = generate_slots_permutations(
+                conf["n_builtins_in_sentence"],
+                possible_slots,
+                conf["exhaustive_permutations_threshold"])
             # Then
             self.assertItemsEqual(conf["slots"], slots)
 
@@ -566,3 +591,57 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         feature_weights_2 = fitted_parser_2.crf_taggers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
+
+    def test_exhaustive_slots_permutations(self):
+        # Given
+        n_builtins = 2
+        possible_slots_names = ["a", "b"]
+
+        # When
+        perms = exhaustive_slots_permutations(n_builtins, possible_slots_names)
+
+        # Then
+        expected_perms = {
+            ("a", "a"),
+            ("a", "b"),
+            ("a", "O"),
+            ("b", "b"),
+            ("b", "a"),
+            ("b", "O"),
+            ("O", "a"),
+            ("O", "b"),
+            ("O", "O"),
+        }
+        self.assertItemsEqual(perms, expected_perms)
+
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".exhaustive_slots_permutations")
+    def test_slot_permutations_should_be_exhaustive(
+            self, mocked_exhaustive_slots):
+        # Given
+        n_builtins = 2
+        possible_slots_names = ["a", "b"]
+        exhaustive_permutations_threshold = 100
+
+        # When
+        generate_slots_permutations(n_builtins, possible_slots_names,
+                                    exhaustive_permutations_threshold)
+
+        # Then
+        mocked_exhaustive_slots.assert_called_once()
+
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".conservative_slots_permutations")
+    def test_slot_permutations_should_be_conservative(
+            self, mocked_conservative_slots):
+        # Given
+        n_builtins = 2
+        possible_slots_names = ["a", "b"]
+        exhaustive_permutations_threshold = 8
+
+        # When
+        generate_slots_permutations(n_builtins, possible_slots_names,
+                                    exhaustive_permutations_threshold)
+
+        # Then
+        mocked_conservative_slots.assert_called_once()

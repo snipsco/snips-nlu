@@ -159,11 +159,14 @@ class CRFFeaturesConfig(Config):
 class ProbabilisticIntentParserConfig(Config):
     def __init__(self,
                  data_augmentation_config=SlotFillerDataAugmentationConfig(),
-                 crf_features_config=CRFFeaturesConfig()):
+                 crf_features_config=CRFFeaturesConfig(),
+                 exhaustive_permutations_threshold=4 ** 3):
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         self._crf_features_config = None
         self.crf_features_config = crf_features_config
+        self.exhaustive_permutations_threshold = \
+            exhaustive_permutations_threshold
 
     @property
     def data_augmentation_config(self):
@@ -200,7 +203,9 @@ class ProbabilisticIntentParserConfig(Config):
         return {
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
-            "crf_features_config": self.crf_features_config.to_dict()
+            "crf_features_config": self.crf_features_config.to_dict(),
+            "exhaustive_permutations_threshold":
+                self.exhaustive_permutations_threshold
         }
 
     @classmethod

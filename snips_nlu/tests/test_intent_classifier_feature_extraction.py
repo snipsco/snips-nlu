@@ -339,3 +339,11 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         # Then
         self.assertNotIn(replacement_string,
                          featurizer.entity_utterances_to_feature_names)
+
+    def test_featurizer_should_be_serialized_when_not_fitted(self):
+        # Given
+        language = Language.EN
+        featurizer = Featurizer(language, None)
+        # When
+        featurizer.to_dict()
+        # Then

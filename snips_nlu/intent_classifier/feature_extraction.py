@@ -99,14 +99,17 @@ def get_utterances_to_features_names(dataset, language):
 def deserialize_tfidf_vectorizer(vectorizer_dict, language, featurizer_config):
     tfidf_vectorizer = get_tfidf_vectorizer(language,
                                             featurizer_config.to_dict())
-    tfidf_vectorizer.vocabulary_ = vectorizer_dict["vocab"]
-    idf_diag_data = np.array(vectorizer_dict["idf_diag"])
-    idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
-    row = range(idf_diag_shape[0])
-    col = range(idf_diag_shape[0])
-    idf_diag = sp.csr_matrix((idf_diag_data, (row, col)), shape=idf_diag_shape)
     tfidf_transformer = TfidfTransformer()
-    tfidf_transformer._idf_diag = idf_diag
+    vocab = vectorizer_dict["vocab"]
+    if vocab is not None:  # If the vectorizer has been fitted
+        tfidf_vectorizer.vocabulary_ = vocab
+        idf_diag_data = np.array(vectorizer_dict["idf_diag"])
+        idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
+        row = range(idf_diag_shape[0])
+        col = range(idf_diag_shape[0])
+        idf_diag = sp.csr_matrix((idf_diag_data, (row, col)),
+                                 shape=idf_diag_shape)
+        tfidf_transformer._idf_diag = idf_diag
     tfidf_vectorizer._tfidf = tfidf_transformer
     return tfidf_vectorizer
 
@@ -198,14 +201,23 @@ class Featurizer(object):
         return self.fit(dataset, queries, y).transform(queries)
 
     def to_dict(self):
+        if hasattr(self.tfidf_vectorizer, "vocabulary_"):
+            vocab = self.tfidf_vectorizer.vocabulary_
+            idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+            entity_utterances_to_entity_names = {
+                k: list(v)
+                for k, v in self.entity_utterances_to_feature_names.iteritems()
+            }
+        else:
+            vocab = None
+            idf_diag = None
+            entity_utterances_to_entity_names = dict()
+
         tfidf_vectorizer = {
-            'vocab': self.tfidf_vectorizer.vocabulary_,
-            'idf_diag': self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+            'vocab': vocab,
+            'idf_diag': idf_diag
         }
-        entity_utterances_to_entity_names = {
-            k: list(v)
-            for k, v in self.entity_utterances_to_feature_names.iteritems()
-        }
+
         return {
             'language_code': self.language.iso_code,
             'tfidf_vectorizer': tfidf_vectorizer,

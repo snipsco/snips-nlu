@@ -119,3 +119,11 @@ import snips_nlu
 model_version = snips_nlu.__model_version__
 python_package_version = snips_nlu.__version__
 ```
+
+
+## Test coverage
+
+```bash
+venv/bin/coverage run --source=snips_nlu -m unittest discover -s snips_nlu/tests/
+venv/bin/coverage report -m
+```

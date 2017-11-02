@@ -22,7 +22,7 @@ required = [
     "sklearn-crfsuite==0.3.5",
     "builtin_entities_ontology==0.4.2",
     "semantic_version==2.6.0",
-    "rustling==7.0",
+    "rustling==7.2",
     "nlu_utils==0.5.0",
     "num2words==0.5.5"
 ]
@@ -31,7 +31,7 @@ extras_require = {
     "test": [
         "mock==2.0.0",
         "nlu_metrics==0.7.4",
-        "snips_nlu_rust==0.27.2"
+        "snips_nlu_rust==0.29.0"
     ]
 }
 

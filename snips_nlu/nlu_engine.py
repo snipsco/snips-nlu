@@ -363,7 +363,7 @@ def main_create_and_train_engine():
     with io.open(dataset_path, "r", encoding="utf8") as f:
         dataset = json.load(f)
 
-    if "config" in args:
+    if "config_path" in args:
         config_path = args.pop("config_path")
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)

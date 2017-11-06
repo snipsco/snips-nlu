@@ -191,23 +191,23 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         # Then
         expected_utterance_to_entity_names = {
             "entity 1": {"entityfeatureentity1", "entityfeatureentity2"},
-            "entity one": {"entityfeatureentity1", "entityfeatureentity2"},
+            # "entity one": {"entityfeatureentity1", "entityfeatureentity2"},
             "éntity 1": {"entityfeatureentity1"},
-            "éntity one": {"entityfeatureentity1"},
+            # "éntity one": {"entityfeatureentity1"},
             "Éntity_2": {"entityfeatureentity2"},
             "Éntity2": {"entityfeatureentity2"},
-            "Éntity_two": {"entityfeatureentity2"},
+            # "Éntity_two": {"entityfeatureentity2"},
             "entity_2": {"entityfeatureentity2"},
-            "entity_two": {"entityfeatureentity2"},
-            "entity two": {"entityfeatureentity2"},
+            # "entity_two": {"entityfeatureentity2"},
+            # "entity two": {"entityfeatureentity2"},
             "entity2": {"entityfeatureentity2"},
             "Éntity 2": {"entityfeatureentity2"},
-            "Éntity two": {"entityfeatureentity2"},
+            # "Éntity two": {"entityfeatureentity2"},
             "entity 2": {"entityfeatureentity2"},
             "Alternative entity 2": {"entityfeatureentity2"},
-            "Alternative entity two": {"entityfeatureentity2"},
+            # "Alternative entity two": {"entityfeatureentity2"},
             "alternative entity 2": {"entityfeatureentity2"},
-            "alternative entity two": {"entityfeatureentity2"}
+            # "alternative entity two": {"entityfeatureentity2"}
         }
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)

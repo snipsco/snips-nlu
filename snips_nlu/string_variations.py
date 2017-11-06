@@ -27,6 +27,10 @@ AND_REGEXES = {
 
 
 def build_variated_query(string, matches, utterances):
+    if not len(matches) == len(utterances):
+        raise ValueError("Expected matches and utterances to have the same "
+                         "len, found: {} and {}".format(len(matches),
+                                                        len(utterances)))
     matches = sorted(matches, key=lambda x: x.start())
     variated_string = ""
     current_ix = 0
@@ -87,6 +91,11 @@ def alphabetic_value(number_entity, language):
 
 
 def variate_numbers_in_sentence(string, number_entities, number_utterances):
+    if not len(number_utterances) == len(number_utterances):
+        raise ValueError(
+            "Expected number_entities and number_utterances to have the same"
+            " len, found: {} and {}".format(
+                len(number_entities), len(number_utterances)))
     number_entities = sorted(number_entities, key=lambda x: x[MATCH_RANGE])
     variated_string = ""
     current_ix = 0
@@ -102,34 +111,35 @@ def variate_numbers_in_sentence(string, number_entities, number_utterances):
 
 def numbers_variations(string, language):
     variations = set()
-    if not language.supports_num2words:
-        return variations
-
-    number_entities = get_builtin_entities(
-        string, language, scope=[BuiltInEntity.NUMBER])
-
-    number_entities = [ent for ent in number_entities if
-                       not ("latent" in ent[VALUE] and ent[VALUE]["latent"])]
-    number_entities = sorted(number_entities, key=lambda x: x["range"])
-    if len(number_entities) == 0:
-        return variations
-
-    digit_values = [digit_value(e) for e in number_entities]
-    alpha_values = [alphabetic_value(e, language) for e in number_entities]
-
-    values = [(d, a) for d, a in itertools.izip(digit_values, alpha_values)
-              if a is not None]
-
-    combinations = itertools.product(xrange(2), repeat=len(values))
-    for c in combinations:
-        number_utterances = [values[i][ix] for i, ix in enumerate(c)]
-        variations.add(variate_numbers_in_sentence(
-            string, number_entities, number_utterances))
+    # if not language.supports_num2words:
+    #     return variations
+    #
+    # number_entities = get_builtin_entities(
+    #     string, language, scope=[BuiltInEntity.NUMBER])
+    #
+    # number_entities = [ent for ent in number_entities if
+    #                    not ("latent" in ent[VALUE] and ent[VALUE]["latent"])]
+    # number_entities = sorted(number_entities, key=lambda x: x["range"])
+    # if len(number_entities) == 0:
+    #     return variations
+    #
+    # digit_values = [digit_value(e) for e in number_entities]
+    # alpha_values = [alphabetic_value(e, language) for e in number_entities]
+    #
+    # values = [(d, a) for d, a in itertools.izip(digit_values, alpha_values)
+    #           if a is not None]
+    #
+    # combinations = itertools.product(xrange(2), repeat=len(values))
+    # for c in combinations:
+    #     number_utterances = [values[i][ix] for i, ix in enumerate(c)]
+    #     variations.add(variate_numbers_in_sentence(
+    #         string, number_entities, number_utterances))
     return variations
 
 
 def flatten(results):
     return set(i for r in results for i in r)
+
 
 def get_string_variations(string, language):
     variations = {string}
@@ -141,5 +151,5 @@ def get_string_variations(string, language):
                                   variations)))
 
     variations = set(language.default_sep.join(tokenize_light(v, language))
-                  for v in variations)
+                     for v in variations)
     return variations

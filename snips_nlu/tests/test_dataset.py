@@ -134,13 +134,13 @@ class TestDataset(unittest.TestCase):
                 "entity1": {
                     "utterances": {
                         "Entity_1": "Entity_1",
-                        # "Entity_one": "Entity_1",
+                        "Entity_one": "Entity_1",
                         "Entity1": "Entity_1",
                         "entity_1": "Entity_1",
-                        # "entity_one": "Entity_1",
+                        "entity_one": "Entity_1",
                         "entity1": "Entity_1",
                         "entity 2": "Entity_1",
-                        # "entity two": "Entity_1",
+                        "entity two": "Entity_1",
                     },
                     "automatically_extensible": False,
                     "capitalize": True
@@ -242,11 +242,11 @@ class TestDataset(unittest.TestCase):
                 "entity1": {
                     "utterances": {
                         "entity 1 bis": "entity 1",
-                        # "entity one bis": "entity 1",
+                        "entity one bis": "entity 1",
                         "entity 1": "entity 1",
-                        # "entity one": "entity 1",
+                        "entity one": "entity 1",
                         "alternative entity 1": "alternative entity 1",
-                        # "alternative entity one": "alternative entity 1"
+                        "alternative entity one": "alternative entity 1"
                     },
                     "automatically_extensible": False,
                     "capitalize": False
@@ -378,9 +378,9 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "alternative entity 1": "alternative entity 1",
-                            # "alternative entity one": "alternative entity one",
+                            "alternative entity one": "alternative entity one",
                             "entity 1": "entity 1",
-                            # "entity one": "entity one",
+                            "entity one": "entity one",
                         },
                     "automatically_extensible": False,
                     "capitalize": False
@@ -522,7 +522,7 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "entity 1": "entity 1",
-                            # "entity one": "entity one"
+                            "entity one": "entity one"
                         },
                     "capitalize": False,
                     "automatically_extensible": False
@@ -797,11 +797,11 @@ class TestDataset(unittest.TestCase):
                 AUTOMATICALLY_EXTENSIBLE: True,
                 UTTERANCES: {
                     "Ëntity 1": "Ëntity 1",
-                    # "Ëntity one": "Ëntity 1",
+                    "Ëntity one": "Ëntity 1",
                     "entity 1": "Ëntity 1",
-                    # "entity one": "Ëntity 1",
+                    "entity one": "Ëntity 1",
                     "entity 2": "Ëntity 1",
-                    # "entity two": "Ëntity 1"
+                    "entity two": "Ëntity 1"
                 },
                 CAPITALIZE: True
             }

@@ -26,11 +26,11 @@ AND_REGEXES = {
 }
 
 
-def build_variated_query(string, matches_and_utterances):
+def build_variated_query(string, ranges_and_utterances):
     variated_string = ""
     current_ix = 0
-    for m, u in matches_and_utterances:
-        start, end = m.start(), m.end()
+    for m, u in ranges_and_utterances:
+        start, end = m
         variated_string += string[current_ix:start]
         variated_string += u
         current_ix = end
@@ -49,13 +49,14 @@ def and_variations(string, language):
         return variations
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [(m, AND_UTTERANCES[language]) for m in matches]
+    values = [((m.start(), m.end()), AND_UTTERANCES[language])
+              for m in matches]
     combinations = itertools.product(range(len(AND_UTTERANCES[language])),
                                      repeat=len(values))
     for c in combinations:
-        matches_and_utterances = [(values[i][0], values[i][1][ix])
+        ranges_and_utterances = [(values[i][0], values[i][1][ix])
                                   for i, ix in enumerate(c)]
-        variations.add(build_variated_query(string, matches_and_utterances))
+        variations.add(build_variated_query(string, ranges_and_utterances))
     return variations
 
 
@@ -66,13 +67,13 @@ def punctuation_variations(string, language):
         return variations
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [(m, (m.group(0), "")) for m  in matches]
+    values = [((m.start(), m.end()), (m.group(0), "")) for m in matches]
 
     combinations = itertools.product(range(2), repeat=len(matches))
     for c in combinations:
-        matches_and_utterances = [(values[i][0], values[i][1][ix])
-                      for i, ix in enumerate(c)]
-        variations.add(build_variated_query(string, matches_and_utterances))
+        ranges_and_utterances = [(values[i][0], values[i][1][ix])
+                                  for i, ix in enumerate(c)]
+        variations.add(build_variated_query(string, ranges_and_utterances))
     return variations
 
 
@@ -85,18 +86,6 @@ def alphabetic_value(number_entity, language):
     if isinstance(value, float):  # num2words does not handle floats correctly
         return
     return num2words(value, lang=language.iso_code)
-
-
-def variate_numbers_in_sentence(string, number_utterances):
-    variated_string = ""
-    current_ix = 0
-    for (ent, number_utterance) in number_utterances:
-        start, end = ent[MATCH_RANGE]
-        variated_string += string[current_ix:start]
-        variated_string += number_utterance
-        current_ix = end
-    variated_string += string[current_ix:]
-    return variated_string
 
 
 def numbers_variations(string, language):
@@ -116,15 +105,15 @@ def numbers_variations(string, language):
     digit_values = [digit_value(e) for e in number_entities]
     alpha_values = [alphabetic_value(e, language) for e in number_entities]
 
-    values = [(n, (d, a)) for (n, d, a) in
+    values = [(n[MATCH_RANGE], (d, a)) for (n, d, a) in
               itertools.izip(number_entities, digit_values, alpha_values)
               if a is not None]
 
     combinations = itertools.product(xrange(2), repeat=len(values))
     for c in combinations:
-        number_utterances = [(values[i][0], values[i][1][ix])
+        ranges_and_utterances = [(values[i][0], values[i][1][ix])
                              for i, ix in enumerate(c)]
-        variations.add(variate_numbers_in_sentence(string, number_utterances))
+        variations.add(build_variated_query(string, ranges_and_utterances))
     return variations
 
 

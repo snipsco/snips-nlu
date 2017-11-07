@@ -110,10 +110,7 @@ def add_variation_if_needed(utterances, variation, utterance, use_synonyms,
         get_string_variations(normalized_variation, language))
     for v in all_variations:
         if not v in utterances:
-            if use_synonyms:
-                utterances[v] = utterance
-            else:
-                utterances[v] = v
+            utterances[v] = utterance
     return utterances
 
 

@@ -378,9 +378,9 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "alternative entity 1": "alternative entity 1",
-                            "alternative entity one": "alternative entity one",
+                            "alternative entity one": "alternative entity 1",
                             "entity 1": "entity 1",
-                            "entity one": "entity one",
+                            "entity one": "entity 1",
                         },
                     "automatically_extensible": False,
                     "capitalize": False
@@ -522,7 +522,7 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "entity 1": "entity 1",
-                            "entity one": "entity one"
+                            "entity one": "entity 1"
                         },
                     "capitalize": False,
                     "automatically_extensible": False
@@ -666,7 +666,7 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "My entity1": "My entity1",
-                            "my entity1": "my entity1",
+                            "my entity1": "My entity1",
                             "entity1": "entity1"
                         },
                     "automatically_extensible": True,
@@ -675,7 +675,7 @@ class TestDataset(unittest.TestCase):
                 "entity2": {
                     "utterances": {
                         "My entity2": "My entity2",
-                        "my entity2": "my entity2",
+                        "my entity2": "My entity2",
                         "myentity2": "myentity2"
                     },
                     "automatically_extensible": True,
@@ -685,9 +685,9 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "Entity3": "Entity3",
-                            "entity3": "entity3",
+                            "entity3": "Entity3",
                             "m_entity3": "m_entity3",
-                            "mentity3": "mentity3"
+                            "mentity3": "m_entity3"
                         },
                     "automatically_extensible": True,
                     "capitalize": True

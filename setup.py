@@ -58,5 +58,8 @@ setup(name=PACKAGE_NAME,
               "train-assistant=snips_nlu.nlu_engine:main_create_and_train_engine"
           ]
       },
+      classifiers=[
+          "Programming Language :: Python :: 2.7"
+      ],
       include_package_data=True,
       zip_safe=False)

@@ -8,13 +8,13 @@ from uuid import uuid4
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from feature_extraction import Featurizer
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.config import IntentClassifierConfig
-from snips_nlu.constants import INTENTS, UTTERANCES, DATA, ENTITY, UNKNOWNWORD, \
-    TEXT
+from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, ENTITY,
+                                 UNKNOWNWORD, TEXT)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
+from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.languages import Language
 from snips_nlu.resources import get_noises
 from snips_nlu.result import IntentClassificationResult
@@ -53,7 +53,7 @@ def generate_smart_noise(augmented_utterances, replacement_string, language):
 
 def generate_noise_utterances(augmented_utterances, num_intents,
                               data_augmentation_config, language):
-    if not len(augmented_utterances) or not num_intents:
+    if not augmented_utterances or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
     if data_augmentation_config.unknown_words_replacement_string is not None:
@@ -130,7 +130,7 @@ def build_training_data(dataset, language, data_augmentation_config):
 
     augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]
-    if len(noisy_utterances) > 0:
+    if noisy_utterances:
         classes_mapping[NOISE_NAME] = noise_class
 
     nb_classes = len(set(classes_mapping.values()))
@@ -153,7 +153,7 @@ class SnipsIntentClassifier(object):
         self.featurizer = Featurizer(
             self.language,
             self.config.data_augmentation_config
-                .unknown_words_replacement_string,
+            .unknown_words_replacement_string,
             self.config.featurizer_config)
         self.min_utterances_per_intent = 20
 
@@ -172,7 +172,7 @@ class SnipsIntentClassifier(object):
         if self.featurizer is None:
             return self
 
-        X = self.featurizer.transform(utterances)
+        X = self.featurizer.transform(utterances)  # pylint: disable=C0103
         alpha = get_regularization_factor(dataset)
         self.config.log_reg_args['alpha'] = alpha
         self.classifier = SGDClassifier(**self.config.log_reg_args).fit(X, y)
@@ -183,7 +183,7 @@ class SnipsIntentClassifier(object):
             raise AssertionError('SnipsIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
 
-        if len(text) == 0 or len(self.intent_list) == 0 \
+        if not text or not self.intent_list \
                 or self.featurizer is None or self.classifier is None:
             return None
 
@@ -192,7 +192,7 @@ class SnipsIntentClassifier(object):
                 return None
             return IntentClassificationResult(self.intent_list[0], 1.0)
 
-        X = self.featurizer.transform([text])
+        X = self.featurizer.transform([text])  # pylint: disable=C0103
         proba_vect = self.classifier.predict_proba(X)
         predicted = np.argmax(proba_vect[0])
 

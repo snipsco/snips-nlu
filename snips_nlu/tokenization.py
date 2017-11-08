@@ -18,12 +18,11 @@ class Token(object):
     def normalized_value(self):
         if self._normalized_value is not None:
             return self._normalized_value
-        else:
-            self._normalized_value = normalize(self.value)
-            return self._normalized_value
+        self._normalized_value = normalize(self.value)
+        return self._normalized_value
 
     def __eq__(self, other):
-        if type(other) != type(self):
+        if not isinstance(other, type(self)):
             return False
         return (self.value == other.value
                 and self.start == other.start

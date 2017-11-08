@@ -70,7 +70,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         tags = ['O' for _ in tokens]
 
-        def mocked_sequence_probability(_tokens, _tags):
+        def mocked_sequence_probability(_, tags_):
             tags_1 = ['O',
                       'O',
                       'O',
@@ -133,22 +133,22 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                       'O',
                       'O']
 
-            if _tags == tags_1:
+            if tags_ == tags_1:
                 return 0.6
-            elif _tags == tags_2:
+            elif tags_ == tags_2:
                 return 0.8
-            elif _tags == tags_3:
+            elif tags_ == tags_3:
                 return 0.2
-            elif _tags == tags_4:
+            elif tags_ == tags_4:
                 return 0.2
-            elif _tags == tags_5:
+            elif tags_ == tags_5:
                 return 0.99
-            elif _tags == tags_6:
+            elif tags_ == tags_6:
                 return 0.0
-            elif _tags == tags_7:
+            elif tags_ == tags_7:
                 return 0.0
             else:
-                raise ValueError("Unexpected tag sequence: %s" % _tags)
+                raise ValueError("Unexpected tag sequence: %s" % tags_)
 
         tagger = MagicMock()
         tagger.get_sequence_probability = MagicMock(

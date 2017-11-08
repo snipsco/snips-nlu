@@ -109,16 +109,14 @@ def get_ngram_fn(n, use_stemming, language_code,
                 if use_stemming:
                     return language.default_sep.join(
                         t.stem for t in tokens[token_index:end])
-                else:
-                    return language.default_sep.join(
-                        t.normalized_value for t in tokens[token_index:end])
-            else:
-                words = []
-                for t in tokens[token_index:end]:
-                    normalized = t.stem if use_stemming else t.normalized_value
-                    words.append(normalized if normalized in gazetteer
-                                 else "rare_word")
-                return language.default_sep.join(words)
+                return language.default_sep.join(
+                    t.normalized_value for t in tokens[token_index:end])
+            words = []
+            for t in tokens[token_index:end]:
+                normalized = t.stem if use_stemming else t.normalized_value
+                words.append(normalized if normalized in gazetteer
+                             else "rare_word")
+            return language.default_sep.join(words)
         return None
 
     return BaseFeatureFunction("ngram_%s" % n, ngram)
@@ -152,6 +150,7 @@ def get_word_cluster_fn(cluster_name, language_code, use_stemming):
     return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
 
 
+# pylint: disable=unused-argument
 def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
                        tagging_scheme_code, language_code):
     tagging_scheme = TaggingScheme(tagging_scheme_code)
@@ -163,7 +162,7 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
     def token_is_in(tokens, token_index):
         normalized_tokens = map(transform, tokens)
         ngrams = get_all_ngrams(normalized_tokens)
-        ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
+        ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)
         for ngram in ngrams:
@@ -175,6 +174,8 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
 
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
+
+# pylint: enable=unused-argument
 
 def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
                            use_stemming):
@@ -190,7 +191,7 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
     def is_in_gazetter(tokens, token_index):
         normalized_tokens = map(transform, tokens)
         ngrams = get_all_ngrams(normalized_tokens)
-        ngrams = filter(lambda ng: token_index in ng[TOKEN_INDEXES], ngrams)
+        ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
                         reverse=True)
         for ngram in ngrams:
@@ -216,14 +217,13 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code,
         start = tokens[token_index].start
         end = tokens[token_index].end
 
-        builtin_entities = get_builtin_entities(text, language,
-                                                scope=[built_in_entity])
-
-        builtin_entities = filter(
-            lambda _ent: (_ent[MATCH_RANGE][0] <= start < _ent[MATCH_RANGE][
-                1]) and (_ent[MATCH_RANGE][0] < end <= _ent[MATCH_RANGE][1]),
-            builtin_entities)
-
+        builtin_entities = get_builtin_entities(
+            text, language, scope=[built_in_entity])
+        filter_fn = lambda ent: (ent[MATCH_RANGE][0] <= start <
+                                 ent[MATCH_RANGE][1]) and \
+                                (ent[MATCH_RANGE][0] < end <=
+                                 ent[MATCH_RANGE][1])
+        builtin_entities = [ent for ent in builtin_entities if filter_fn(ent)]
         for ent in builtin_entities:
             entity_start = ent[MATCH_RANGE][0]
             entity_end = ent[MATCH_RANGE][1]
@@ -239,7 +239,7 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code,
 
 def create_feature_function(base_feature_fn, offset):
     """
-    Transforms a base feature function into a feature function 
+    Transforms a base feature function into a feature function
     """
     if base_feature_fn.name == TOKEN_NAME:
         raise ValueError("'%s' name is reserved" % TOKEN_NAME)

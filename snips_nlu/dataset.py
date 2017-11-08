@@ -6,7 +6,7 @@ from copy import deepcopy
 from nlu_utils import normalize
 from semantic_version import Version
 
-from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
+from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
@@ -14,7 +14,7 @@ from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
 from snips_nlu.languages import Language
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
-from utils import validate_type, validate_key, validate_keys
+from snips_nlu.utils import validate_type, validate_key, validate_keys
 
 
 def extract_queries_entities(dataset):
@@ -41,7 +41,7 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     validate_type(dataset[LANGUAGE], basestring)
     language = Language.from_iso_code(dataset[LANGUAGE])
 
-    for intent_name, intent in dataset[INTENTS].iteritems():
+    for intent in dataset[INTENTS].values():
         validate_and_format_intent(intent, dataset[ENTITIES])
 
     queries_entities_values = extract_queries_entities(dataset)
@@ -55,7 +55,6 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
                 entity, queries_entities_values[entity_name], language,
                 capitalization_threshold)
 
-    validate_language(dataset[LANGUAGE])
     return dataset
 
 
@@ -73,7 +72,7 @@ def validate_and_format_intent(intent, entities):
             if ENTITY in chunk or SLOT_NAME in chunk:
                 mandatory_keys = [ENTITY, SLOT_NAME]
                 validate_keys(chunk, mandatory_keys, object_label="chunk")
-                if chunk[ENTITY] in BuiltInEntity.built_in_entity_by_label:
+                if is_builtin_entity(chunk[ENTITY]):
                     continue
                 else:
                     validate_key(entities, chunk[ENTITY],
@@ -94,14 +93,13 @@ def capitalization_ratio(entity_utterances, language):
                 capitalizations.append(1.0)
             else:
                 capitalizations.append(0.0)
-    if len(capitalizations) == 0:
+    if not capitalizations:
         return 0
     return sum(capitalizations) / float(len(capitalizations))
 
 
-def add_variation_if_needed(utterances, variation, utterance, use_synonyms,
-                            language):
-    if len(variation) == 0:
+def add_variation_if_needed(utterances, variation, utterance, language):
+    if not variation:
         return utterances
     normalized_variation = normalize(variation)
     all_variations = get_string_variations(
@@ -109,7 +107,7 @@ def add_variation_if_needed(utterances, variation, utterance, use_synonyms,
     all_variations.update(
         get_string_variations(normalized_variation, language))
     for v in all_variations:
-        if not v in utterances:
+        if v not in utterances:
             utterances[v] = utterance
     return utterances
 
@@ -134,7 +132,7 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
         validate_type(entry, dict)
         validate_keys(entry, [VALUE, SYNONYMS], object_label="entity entry")
         entry[VALUE] = entry[VALUE].strip()
-        if len(entry[VALUE]) == 0:
+        if not entry[VALUE]:
             continue
         validate_type(entry[SYNONYMS], list)
         entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS]
@@ -144,7 +142,7 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
 
     # Compute capitalization before normalizing
     # Normalization lowercase and hence lead to bad capitalization calculation
-    if entity[USE_SYNONYMS]:
+    if use_synonyms:
         entities = [s for entry in entity[DATA]
                     for s in entry[SYNONYMS] + [entry[VALUE]]]
     else:
@@ -157,18 +155,18 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     for entry in entity[DATA]:
         entry_value = entry[VALUE]
         normalize_data = add_variation_if_needed(
-            normalize_data, entry_value, entry_value, use_synonyms, language)
+            normalize_data, entry_value, entry_value, language)
 
-        if entity[USE_SYNONYMS]:
+        if use_synonyms:
             for s in entry[SYNONYMS]:
                 normalize_data = add_variation_if_needed(
-                    normalize_data, s, entry_value, use_synonyms, language)
+                    normalize_data, s, entry_value, language)
 
     formatted_entity[UTTERANCES] = normalize_data
     # Merge queries_entities
     for value in queries_entities:
         formatted_entity = add_entity_value_if_missing(
-            value, formatted_entity, use_synonyms, language)
+            value, formatted_entity, language)
 
     return formatted_entity
 
@@ -178,13 +176,7 @@ def validate_and_format_builtin_entity(entity):
     return entity
 
 
-def validate_language(language):
-    if language not in Language.language_by_iso_code:
-        raise ValueError("Language name must be ISO 639-1,"
-                         " found '%s'" % language)
-
-
-def add_entity_value_if_missing(value, entity, use_synonyms, language):
+def add_entity_value_if_missing(value, entity, language):
     entity[UTTERANCES] = add_variation_if_needed(entity[UTTERANCES], value,
-                                                 value, use_synonyms, language)
+                                                 value, language)
     return entity

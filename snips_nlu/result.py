@@ -44,8 +44,7 @@ class Result(_Result):
         else:
             parsed_intent = None
         if self.parsed_slots is not None:
-            parsed_slots = map(lambda slot: slot.as_dict(),
-                               self.parsed_slots)
+            parsed_slots = [slot.as_dict() for slot in self.parsed_slots]
         else:
             parsed_slots = None
         return {

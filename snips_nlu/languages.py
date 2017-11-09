@@ -6,7 +6,7 @@ import string
 from enum import Enum
 from num2words import num2words
 
-from utils import classproperty, regex_escape
+from snips_nlu.utils import classproperty, regex_escape
 
 ISO_CODE, RUSTLING_CODE = "iso", "rustling_code"
 

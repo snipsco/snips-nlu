@@ -29,12 +29,13 @@ def make_index(i):
 
 
 def generate_new_index(slots_name_to_labels):
-    if len(slots_name_to_labels) == 0:
-        return make_index(0)
+    if not slots_name_to_labels:
+        index = make_index(0)
     else:
         max_index = max(slots_name_to_labels.keys(), key=get_index)
         max_index = get_index(max_index) + 1
-        return make_index(max_index)
+        index = make_index(max_index)
+    return index
 
 
 def get_slot_names_mapping(dataset):
@@ -52,7 +53,7 @@ def get_slot_names_mapping(dataset):
 def query_to_pattern(query, joined_entity_utterances,
                      group_names_to_slot_names, language):
     pattern = []
-    for i, chunk in enumerate(query[DATA]):
+    for chunk in query[DATA]:
         if SLOT_NAME in chunk:
             max_index = generate_new_index(group_names_to_slot_names)
             slot_name = chunk[SLOT_NAME]
@@ -147,7 +148,7 @@ def preprocess_builtin_entities(utterance, language):
 
 def replace_builtin_entities(text, language):
     builtin_entities = get_builtin_entities(text, language)
-    if len(builtin_entities) == 0:
+    if not builtin_entities:
         return dict(), text
 
     range_mapping = dict()
@@ -184,9 +185,9 @@ class RegexIntentParser(object):
         self.regexes_per_intent = None
         if patterns is not None:
             self.regexes_per_intent = dict()
-            for intent, patterns in patterns.iteritems():
-                regexes = [re.compile(r"%s" % p, re.IGNORECASE) for p in
-                           patterns]
+            for intent, pattern_list in patterns.iteritems():
+                regexes = [re.compile(r"%s" % p, re.IGNORECASE)
+                           for p in pattern_list]
                 self.regexes_per_intent[intent] = regexes
         self.group_names_to_slot_names = group_names_to_slot_names
         self.slot_names_to_entities = slot_names_to_entities

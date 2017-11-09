@@ -77,7 +77,7 @@ def load_stop_words():
                 RESOURCE_INDEX[language][STOP_WORDS])
             with io.open(stop_words_file_path, encoding='utf8') as f:
                 lines = [normalize(l) for l in f]
-                _STOP_WORDS[language] = set(l for l in lines if len(l) > 0)
+                _STOP_WORDS[language] = set(l for l in lines if l)
 
 
 def get_stop_words(language):
@@ -111,15 +111,15 @@ def load_clusters():
             for name in RESOURCE_INDEX[language].get(WORD_CLUSTERS, [])
         }
         if WORD_CLUSTERS in RESOURCE_INDEX[language]:
-            _word_clusters = dict()
-            _WORD_CLUSTERS[language] = _word_clusters
+            clusters = dict()
+            _WORD_CLUSTERS[language] = clusters
             for name, path in word_clusters_paths.iteritems():
                 with io.open(path, encoding="utf8") as f:
-                    _word_clusters[name] = dict()
+                    clusters[name] = dict()
                     for l in f:
                         split = l.rstrip().split("\t")
                         if len(split) == 2:
-                            _word_clusters[name][split[0]] = split[1]
+                            clusters[name][split[0]] = split[1]
 
 
 def get_word_clusters(language):
@@ -133,17 +133,17 @@ def load_gazetteers():
                 get_resources_path(language), name)
             for name in RESOURCE_INDEX[language].get(GAZETTEERS, [])
         }
-        _gazetteers = dict()
-        _GAZETTEERS[language] = _gazetteers
+        gazetteers = dict()
+        _GAZETTEERS[language] = gazetteers
         for name, path in gazetteers_paths.iteritems():
             with io.open(path, encoding="utf8") as f:
-                _gazetteers[name] = set()
+                gazetteers[name] = set()
                 for l in f:
                     normalized = normalize(l)
-                    if len(normalized) > 0:
+                    if normalized:
                         normalized = language.default_sep.join(
                             [t.value for t in tokenize(normalized, language)])
-                        _gazetteers[name].add(normalized)
+                        gazetteers[name].add(normalized)
 
 
 def get_gazetteers(language):
@@ -157,7 +157,7 @@ def get_gazetteer(language, gazetteer_name):
 def verbs_lexemes(language):
     stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language.iso_code,
                                          "top_*_verbs_lexemes.txt"))
-    if len(stems_paths) == 0:
+    if not stems_paths:
         return dict()
 
     verb_lexemes = dict()
@@ -175,7 +175,7 @@ def word_inflections(language):
     inflection_paths = glob.glob(os.path.join(RESOURCES_PATH,
                                               language.iso_code,
                                               "top_*_words_inflected.txt"))
-    if len(inflection_paths) == 0:
+    if not inflection_paths:
         return dict()
 
     inflections = dict()

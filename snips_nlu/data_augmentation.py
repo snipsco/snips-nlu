@@ -44,7 +44,7 @@ def capitalize_utterances(utterances, entities, language, ratio):
 def generate_utterance(contexts_iterator, entities_iterators):
     context = deepcopy(next(contexts_iterator))
     context_data = []
-    for i, chunk in enumerate(context[DATA]):
+    for chunk in context[DATA]:
         if ENTITY in chunk:
             if not is_builtin_entity(chunk[ENTITY]):
                 new_chunk = dict(chunk)

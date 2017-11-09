@@ -64,18 +64,20 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         # Then
         try:
             dumped = json.dumps(serialized_featurizer).decode("utf8")
-        except:
+        except:  #pylint: disable=W0702
             self.fail("Featurizer dict should be json serializable to utf8.\n"
                       "Traceback:\n%s" % tb.format_exc())
 
         try:
             _ = Featurizer.from_dict(json.loads(dumped))
-        except:
+        except:  #pylint: disable=W0702
             self.fail("SnipsNLUEngine should be deserializable from dict with "
                       "unicode values\nTraceback:\n%s" % tb.format_exc())
 
         vocabulary = tfidf_vectorizer.vocabulary_
+        # pylint: disable=W0212
         idf_diag = tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+        # pylint: enable=W0212
 
         best_features = featurizer.best_features
         entity_utterances_to_feature_names = {
@@ -124,9 +126,11 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
 
         # Then
         self.assertEqual(featurizer.language, language)
+        # pylint: disable=W0212
         self.assertListEqual(
             featurizer.tfidf_vectorizer._tfidf._idf_diag.data.tolist(),
             idf_diag)
+        # pylint: enable=W0212
         self.assertDictEqual(featurizer.tfidf_vectorizer.vocabulary_,
                              vocabulary)
         self.assertListEqual(featurizer.best_features, best_features)

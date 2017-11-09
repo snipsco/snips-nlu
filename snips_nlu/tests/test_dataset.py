@@ -396,7 +396,6 @@ class TestDataset(unittest.TestCase):
             dataset, capitalization_threshold)
 
         # Then
-        self.maxDiff = None
         self.assertEqual(dataset, expected_dataset)
 
     def test_should_not_require_data_for_builtin_entities(self):
@@ -430,7 +429,7 @@ class TestDataset(unittest.TestCase):
         # When / Then
         try:
             validate_and_format_dataset(dataset)
-        except:
+        except:  #pylint: disable=W0702
             self.fail("Could not validate dataset")
 
     def test_should_remove_empty_entities_value_and_empty_synonyms(self):

@@ -16,7 +16,8 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from utils import SAMPLE_DATASET, empty_dataset, TEST_PATH, BEVERAGE_DATASET
+from snips_nlu.tests.utils import (SAMPLE_DATASET, empty_dataset, TEST_PATH,
+                                   BEVERAGE_DATASET)
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
@@ -45,8 +46,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             assert text == input_text
             if intent == intent_result2.intent_name:
                 return intent_entities2
-            else:
-                return intent_entities2_empty
+            return intent_entities2_empty
 
         mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
         mocked_entities = {
@@ -198,7 +198,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         try:
             json.dumps(engine_dict).encode("utf-8")
-        except:
+        except:  # pylint: disable=W0702
             self.fail("SnipsNLUEngine dict should be json serializable "
                       "to utf-8")
         expected_slots = [
@@ -267,7 +267,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         try:
             engine_dict = engine.to_dict()
             new_engine = SnipsNLUEngine.from_dict(engine_dict)
-        except Exception, e:
+        except Exception, e:  # pylint: disable=W0703
             self.fail('Exception raised: %s\n%s' %
                       (e.message, tb.format_exc()))
         result = new_engine.parse(text)
@@ -577,7 +577,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         for s in naughty_strings:
             try:
                 engine.parse(s)
-            except Exception:
+            except:  # pylint: disable=W0702
                 trace = tb.format_exc()
                 self.fail('Exception raised:\n %s' % trace)
 
@@ -606,7 +606,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         try:
             SnipsNLUEngine(Language.EN).fit(naughty_dataset)
-        except Exception:
+        except:  # pylint: disable=W0702
             trace = tb.format_exc()
             self.fail('Exception raised:\n %s' % trace)
 
@@ -639,7 +639,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # When / Then
         try:
             SnipsNLUEngine(language).fit(dataset)
-        except:
+        except:  # pylint: disable=W0702
             self.fail("NLU engine should fit builtin")
 
     def test_should_not_create_regex_when_having_enough_queries(self):
@@ -652,17 +652,15 @@ class TestSnipsNLUEngine(unittest.TestCase):
         dataset = validate_and_format_dataset({
             "intents": {
                 intent_name: {
-                    "utterances": [
-                                      {
-                                          "data": [
-                                              {
-                                                  "text": "10p.m.",
-                                                  "entity": "snips/datetime",
-                                                  "slot_name": "startTime"
-                                              }
-                                          ]
-                                      }
-                                  ] * max_queries
+                    "utterances": [{
+                        "data": [
+                            {
+                                "text": "10p.m.",
+                                "entity": "snips/datetime",
+                                "slot_name": "startTime"
+                            }
+                        ]
+                    }] * max_queries
                 }
             },
             "entities": {
@@ -729,9 +727,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_get_fitted_tagger_should_return_same_tagger_as_fit(
             self, mocked_augment_utterances):
         # Given
+        # pylint: disable=W0613
         def augment_utterances(dataset, intent_name, language, min_utterances,
                                capitalization_ratio):
             return dataset[INTENTS][intent_name][UTTERANCES]
+
+        # pylint: enable=W0613
 
         mocked_augment_utterances.side_effect = augment_utterances
 
@@ -796,12 +797,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
             # When / Then
             try:
                 engine = engine.fit(dataset)
-            except Exception:
+            except:  # pylint: disable=W0702
                 self.fail("Could not fit engine in '%s': %s"
                           % (l.iso_code, tb.format_exc()))
 
             try:
                 engine.parse(text)
-            except Exception:
+            except:  # pylint: disable=W0702
                 self.fail("Could not fit engine in '%s': %s"
                           % (l.iso_code, tb.format_exc()))

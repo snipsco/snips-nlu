@@ -33,9 +33,13 @@ def np_random_permutation(x):
     return x
 
 
+# pylint: disable=W0613
 def get_mocked_augment_utterances(dataset, intent_name, language,
                                   min_utterances, capitalization_ratio):
     return dataset[INTENTS][intent_name][UTTERANCES]
+
+
+# pylint: enable=W0613
 
 
 class TestSnipsIntentClassifier(unittest.TestCase):
@@ -74,14 +78,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         mock_to_dict.return_value = mocked_dict
 
-        classifier_args = {
-            "loss": 'log',
-            "penalty": 'l2',
-            "class_weight": 'balanced',
-            "n_iter": 5,
-            "random_state": 42,
-            "n_jobs": -1
-        }
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
 
         intent_classifier = SnipsIntentClassifier(language=Language.EN).fit(
@@ -106,19 +102,11 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer'
            '.from_dict')
-    def should_be_deserializable(self, mock_from_dict):
+    def test_should_be_deserializable(self, mock_from_dict):
         # Given
-        mocked_featurizer = Featurizer(Language.EN)
+        mocked_featurizer = Featurizer(Language.EN, None)
         mock_from_dict.return_value = mocked_featurizer
 
-        classifier_args = {
-            "loss": 'log',
-            "penalty": 'l2',
-            "class_weight": 'balanced',
-            "n_iter": 5,
-            "random_state": 42,
-            "n_jobs": -1
-        }
         language = Language.EN
         intent_list = ["MakeCoffee", "MakeTea", None]
 
@@ -134,13 +122,15 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             -0.98
         ]
 
+        config = IntentClassifierConfig().to_dict()
+
         classifier_dict = {
-            "classifier_args": classifier_args,
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
             "language_code": language.iso_code,
-            "featurizer": dict()
+            "config": config,
+            "featurizer": mocked_featurizer.to_dict()
         }
 
         # When
@@ -148,7 +138,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # Then
         self.assertEqual(classifier.language, language)
-        self.assertDictEqual(classifier.classifier_args, classifier_args)
         self.assertEqual(classifier.intent_list, intent_list)
         self.assertIsNotNone(classifier.featurizer)
         self.assertListEqual(classifier.classifier.coef_.tolist(), coeffs)
@@ -195,14 +184,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         }
         dataset = validate_and_format_dataset(dataset)
 
-        classifier_args = {
-            "loss": 'log',
-            "penalty": 'l2',
-            "class_weight": 'balanced',
-            "n_iter": 5,
-            "random_state": 42,
-            "n_jobs": -1
-        }
         text = " "
         noise_size = 6
         utterance = [text] + [text] * noise_size
@@ -227,7 +208,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # When
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             noise_factor=0)
-        utterances, y, intent_mapping = build_training_data(
+        utterances, _, intent_mapping = build_training_data(
             dataset, Language.EN, data_augmentation_config)
 
         # Then
@@ -270,7 +251,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=None)
-        utterances, y, intent_mapping = build_training_data(
+        utterances, _, intent_mapping = build_training_data(
             dataset, Language.EN, data_augmentation_config)
 
         # Then
@@ -321,7 +302,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=replacement_string)
-        utterances, y, intent_mapping = build_training_data(
+        utterances, _, intent_mapping = build_training_data(
             dataset, Language.EN, data_augmentation_config)
 
         # Then
@@ -332,7 +313,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
-        noise_it = get_noise_it(mocked_noises, utterances_length, 0)
         noisy_utterances = [replacement_string for _ in xrange(noise_size)]
         expected_utterances += list(noisy_utterances)
         expected_intent_mapping = dataset["intents"].keys() + [None]
@@ -347,7 +327,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # When
         data_augmentation_config = IntentClassifierConfig() \
             .data_augmentation_config
-        utterances, y, intent_mapping = build_training_data(
+        utterances, _, intent_mapping = build_training_data(
             dataset, language, data_augmentation_config)
 
         # Then

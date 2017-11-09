@@ -7,3 +7,4 @@
 snips_nlu/snips-nlu-resources/*
 
 /venv
+pylint.log

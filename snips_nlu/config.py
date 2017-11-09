@@ -19,13 +19,11 @@ class Config(object):
         raise NotImplementedError
 
 
-class FromDictMixin(object):
+class NamedTupleConfigMixin(Config):
     @classmethod
     def from_dict(cls, obj_dict):
         return cls(**obj_dict)
 
-
-class NamedTupleConfigMixin(Config):
     def to_dict(self):
         return {
             k: v.to_dict() if isinstance(v, Config) else v
@@ -47,8 +45,8 @@ _IntentClassifierDataAugmentationConfig = namedtuple_with_defaults(
 
 
 class IntentClassifierDataAugmentationConfig(
-    _IntentClassifierDataAugmentationConfig, FromDictMixin,
-    NamedTupleConfigMixin):
+        _IntentClassifierDataAugmentationConfig,
+        NamedTupleConfigMixin):
     pass
 
 
@@ -63,7 +61,7 @@ _SlotFillerDataAugmentationConfig = namedtuple_with_defaults(
 
 
 class SlotFillerDataAugmentationConfig(_SlotFillerDataAugmentationConfig,
-                                       FromDictMixin, NamedTupleConfigMixin):
+                                       NamedTupleConfigMixin):
     pass
 
 
@@ -74,8 +72,7 @@ _FeaturizerConfig = namedtuple_with_defaults(
 )
 
 
-class FeaturizerConfig(_FeaturizerConfig, FromDictMixin,
-                       NamedTupleConfigMixin):
+class FeaturizerConfig(_FeaturizerConfig, NamedTupleConfigMixin):
     pass
 
 
@@ -122,8 +119,7 @@ _CRFFeaturesConfig = namedtuple_with_defaults(
 )
 
 
-class CRFFeaturesConfig(_CRFFeaturesConfig, FromDictMixin,
-                        NamedTupleConfigMixin):
+class CRFFeaturesConfig(_CRFFeaturesConfig, NamedTupleConfigMixin):
     pass
 
 
@@ -160,8 +156,7 @@ _RegexTrainingConfig = namedtuple_with_defaults(
 )
 
 
-class RegexTrainingConfig(_RegexTrainingConfig, FromDictMixin,
-                          NamedTupleConfigMixin):
+class RegexTrainingConfig(_RegexTrainingConfig, NamedTupleConfigMixin):
     pass
 
 

@@ -5,7 +5,7 @@ from snips_nlu.config import NLUConfig
 
 
 class TestConfig(unittest.TestCase):
-    def test_nlu_config_from_dic(self):
+    def test_nlu_config_from_dict(self):
         # Given
         config = NLUConfig()
 

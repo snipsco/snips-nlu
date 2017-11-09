@@ -38,6 +38,9 @@ node('jenkins-slave-generic') {
             python -m unittest discover
             """
         }
+        sh """
+        find snips_nlu -name "*.py" | grep -v  "snips-nlu-resources" |  xargs venv/bin/pylint --output-format=parseable --rcfile=tools/pylintrc > pylint.log
+        """
     }
 
     stage('Publish') {

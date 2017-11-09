@@ -92,7 +92,7 @@ def default_features(language, dataset, intent, config, use_stemming,
                 "args": {
                     "built_in_entity_label": entity.label,
                     "language_code": language.iso_code,
-                    "tagging_scheme_code": TaggingScheme.BILOU.value},
+                    "tagging_scheme_code": TaggingScheme.BIO.value},
                 "offsets": [-2, -1, 0]
             }
         )

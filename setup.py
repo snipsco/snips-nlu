@@ -3,8 +3,7 @@ import os
 
 from setuptools import setup, find_packages
 
-packages = [p for p in find_packages()
-            if "tests" not in p and "debug" not in p]
+packages = [p for p in find_packages() if "debug" not in p]  # and if "tests" not in p]
 
 PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))

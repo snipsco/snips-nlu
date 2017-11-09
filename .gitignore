@@ -1,6 +1,7 @@
 *.cache
 *.py[cod]
 *.egg-info
+.tox
 *build
 .idea
 /dist

@@ -1,15 +1,15 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+from builtins import object
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
 from snips_nlu.utils import namedtuple_with_defaults, abstractclassmethod
+from future.utils import with_metaclass, iteritems
 
 
-class Config(object):
-    __metaclass__ = ABCMeta
-
+class Config(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def to_dict(self):
         raise NotImplementedError
@@ -27,7 +27,7 @@ class NamedTupleConfigMixin(Config):
     def to_dict(self):
         return {
             k: v.to_dict() if isinstance(v, Config) else v
-            for k, v in self._asdict().iteritems()
+            for k, v in iteritems(self._asdict())
         }
 
 

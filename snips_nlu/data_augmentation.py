@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from builtins import next
 import random
 from copy import deepcopy
 from itertools import cycle
@@ -67,8 +68,8 @@ def get_contexts_iterator(dataset, intent_name):
 
 def get_entities_iterators(intent_entities):
     entities_its = dict()
-    for entity_name, entity in intent_entities.iteritems():
-        shuffled_values = np.random.permutation(entity[UTTERANCES].keys())
+    for entity_name, entity in intent_entities.items():
+        shuffled_values = np.random.permutation(list(entity[UTTERANCES]))
         entities_its[entity_name] = cycle(shuffled_values)
     return entities_its
 

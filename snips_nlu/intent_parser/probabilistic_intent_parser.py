@@ -3,6 +3,10 @@ from __future__ import unicode_literals
 from copy import copy
 from itertools import groupby, permutations
 
+from builtins import object
+from builtins import range
+from six import itervalues, iteritems
+
 from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities, \
     is_builtin_entity
 from snips_nlu.config import ProbabilisticIntentParserConfig
@@ -49,7 +53,7 @@ class ProbabilisticIntentParser(object):
 
     @crf_taggers.setter
     def crf_taggers(self, value):
-        if any(t.language != self.language for t in value.values()):
+        if any(t.language != self.language for t in itervalues(value)):
             raise ValueError("Found taggers with different languages")
         self._crf_taggers = value
 
@@ -79,7 +83,7 @@ class ProbabilisticIntentParser(object):
                               intent_slots_mapping)
 
         builtin_slot_names = set(slot_name for (slot_name, entity) in
-                                 intent_slots_mapping.iteritems()
+                                 iteritems(intent_slots_mapping)
                                  if is_builtin_entity(entity))
         if not builtin_slot_names:
             return slots
@@ -97,7 +101,7 @@ class ProbabilisticIntentParser(object):
     @property
     def fitted(self):
         return self.intent_classifier.fitted and all(
-            slot_filler.fitted for slot_filler in self.crf_taggers.values())
+            slot_filler.fitted for slot_filler in itervalues(self.crf_taggers))
 
     def fit(self, dataset, intents=None):
         if intents is None:
@@ -112,8 +116,10 @@ class ProbabilisticIntentParser(object):
         return self
 
     def to_dict(self):
-        taggers = {intent: tagger.to_dict()
-                   for intent, tagger in self.crf_taggers.iteritems()}
+        taggers = {
+            intent: tagger.to_dict()
+            for intent, tagger in iteritems(self.crf_taggers)
+        }
 
         return {
             "language_code": self.language.iso_code,
@@ -126,8 +132,10 @@ class ProbabilisticIntentParser(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        taggers = {intent: CRFTagger.from_dict(tagger_dict) for
-                   intent, tagger_dict in obj_dict["taggers"].iteritems()}
+        taggers = {
+            intent: CRFTagger.from_dict(tagger_dict) for
+            intent, tagger_dict in iteritems(obj_dict["taggers"])
+        }
 
         return cls(
             language=Language.from_iso_code(obj_dict["language_code"]),
@@ -162,7 +170,8 @@ def generate_slots_permutations(n_detected_builtins, possible_slots_names):
     # It's possible that out of the detected builtins the CRF choose that
     # none of them are likely to be an actually slot, these combination
     # must be taken into account
-    permutation_pool = range(len(possible_slots_names) + n_detected_builtins)
+    permutation_pool = list(
+        range(len(possible_slots_names) + n_detected_builtins))
 
     # Generate all permutations
     perms = [p for p in permutations(permutation_pool, n_detected_builtins)]

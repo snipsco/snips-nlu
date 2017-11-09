@@ -1,6 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+from builtins import str
+from builtins import range
 import io
 import json
 import os
@@ -267,7 +269,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         try:
             engine_dict = engine.to_dict()
             new_engine = SnipsNLUEngine.from_dict(engine_dict)
-        except Exception, e:  # pylint: disable=W0703
+        except Exception as e:  # pylint: disable=W0703
             self.fail('Exception raised: %s\n%s' %
                       (e.message, tb.format_exc()))
         result = new_engine.parse(text)
@@ -706,7 +708,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     "data": [
                         {
                             "synonyms": [str(i) for i in
-                                         xrange(1, max_entities)],
+                                         range(1, max_entities)],
                             "value": "0"
                         }
                     ]

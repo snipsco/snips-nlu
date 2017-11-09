@@ -1,10 +1,13 @@
+from __future__ import division
 from __future__ import unicode_literals
 
 import json
 from copy import deepcopy
 
 from nlu_utils import normalize
+from past.builtins import basestring
 from semantic_version import Version
+from six import viewvalues, iteritems
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
@@ -20,12 +23,12 @@ from snips_nlu.utils import validate_type, validate_key, validate_keys
 def extract_queries_entities(dataset):
     entities_values = {ent_name: [] for ent_name in dataset[ENTITIES]}
 
-    for intent in dataset[INTENTS].values():
+    for intent in list(viewvalues(dataset[INTENTS])):
         for query in intent[UTTERANCES]:
             for chunk in query[DATA]:
                 if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]):
                     entities_values[chunk[ENTITY]].append(chunk[TEXT])
-    return {k: list(v) for k, v in entities_values.iteritems()}
+    return {k: list(v) for k, v in iteritems(entities_values)}
 
 
 def validate_and_format_dataset(dataset, capitalization_threshold=.1):
@@ -41,12 +44,12 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
     validate_type(dataset[LANGUAGE], basestring)
     language = Language.from_iso_code(dataset[LANGUAGE])
 
-    for intent in dataset[INTENTS].values():
+    for intent in list(viewvalues(dataset[INTENTS])):
         validate_and_format_intent(intent, dataset[ENTITIES])
 
     queries_entities_values = extract_queries_entities(dataset)
 
-    for entity_name, entity in dataset[ENTITIES].iteritems():
+    for entity_name, entity in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
                 validate_and_format_builtin_entity(entity)
@@ -95,7 +98,7 @@ def capitalization_ratio(entity_utterances, language):
                 capitalizations.append(0.0)
     if not capitalizations:
         return 0
-    return sum(capitalizations) / float(len(capitalizations))
+    return sum(capitalizations) / len(capitalizations)
 
 
 def add_variation_if_needed(utterances, variation, utterance, language):

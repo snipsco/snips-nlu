@@ -1,7 +1,10 @@
 from __future__ import unicode_literals
 
+from builtins import next
+from builtins import range
 import numpy as np
 from nlu_utils import normalize
+from six import iteritems
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE, \
     is_builtin_entity
@@ -30,7 +33,7 @@ def get_num_entity_appearances(dataset, intent, entity, config):
     nb_to_generate = num_queries_to_generate(
         dataset, intent,
         config.slot_filler_data_augmentation_config.min_utterances)
-    contexts = [next(contexts_it)[DATA] for _ in xrange(nb_to_generate)]
+    contexts = [next(contexts_it)[DATA] for _ in range(nb_to_generate)]
     return sum(1 for q in contexts for c in q
                if ENTITY in c and c[ENTITY] == entity)
 
@@ -103,12 +106,11 @@ def default_features(language, dataset, intent, config, use_stemming,
         return stem(normalized, language) if use_stemming else normalized
 
     intent_entities = get_intent_custom_entities(dataset, intent)
-    for entity_name, entity in intent_entities.iteritems():
+    for entity_name, entity in iteritems(intent_entities):
         if not entity[UTTERANCES]:
             continue
 
-        collection = list(
-            set(preprocess(e) for e in entity[UTTERANCES].keys()))
+        collection = list(set(preprocess(e) for e in entity[UTTERANCES]))
         collection_size = compute_entity_collection_size(collection, config)
         collection = np.random.choice(collection, collection_size,
                                       replace=False).tolist()

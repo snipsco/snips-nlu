@@ -2,9 +2,12 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
+from builtins import object
+from builtins import str
 from enum import Enum
 from rustling import (RustlingParser as _RustlingParser, RustlingError,
                       all_configs)
+from six import iteritems, viewvalues
 
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, LABEL, \
     RUSTLING_DIM_KIND, SUPPORTED_LANGUAGES
@@ -142,7 +145,7 @@ class BuiltInEntity(Enum):
 
 _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = dict()
 
-for k, v in all_configs().iteritems():
+for k, v in iteritems(all_configs()):
     try:
         lang = Language.from_rustling_code(k)
     except KeyError:
@@ -161,7 +164,8 @@ for builtin_entity in BuiltInEntity:
         _SUPPORTED_BUILTINS_BY_LANGUAGE[lang].add(builtin_entity)
 
 RUSTLING_ENTITIES = set(
-    kind for kinds in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE.values()
+    kind for kinds
+    in list(viewvalues(_RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE))
     for kind in kinds)
 
 _DIM_KIND_TO_ENTITY = {e.rustling_dim_kind: e for e in RUSTLING_ENTITIES}
@@ -238,5 +242,5 @@ def get_builtin_entities(text, language, scope=None):
 
 
 def is_builtin_entity(entity_label):
-    #pylint: disable=E1135
+    # pylint: disable=E1135
     return entity_label in BuiltInEntity.built_in_entity_by_label

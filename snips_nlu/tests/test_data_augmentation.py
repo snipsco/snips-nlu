@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from builtins import next
+from builtins import range
 import unittest
 
 from mock import patch
@@ -19,13 +21,13 @@ class TestDataAugmentation(unittest.TestCase):
         # Given
         dataset = {
             "intents": {
-                "dummy": {"utterances": range(3)}
+                "dummy": {"utterances": list(range(3))}
             }
         }
 
         # When
         it = get_contexts_iterator(dataset, "dummy")
-        context = [next(it) for _ in xrange(5)]
+        context = [next(it) for _ in range(5)]
 
         # Then
         self.assertEqual(context, [0, 1, 2, 0, 1])
@@ -56,12 +58,12 @@ class TestDataAugmentation(unittest.TestCase):
         # When
         self.assertIn("entity1", it_dict)
         expected_seq = ["entity 1", "entity 11", "entity 111"]
-        seq = [next(it_dict["entity1"]) for _ in xrange(len(expected_seq))]
+        seq = [next(it_dict["entity1"]) for _ in range(len(expected_seq))]
         self.assertItemsEqual(seq, expected_seq)
 
         self.assertIn("entity2", it_dict)
         expected_seq = ["entity 2", "entity 22", "entity 222"]
-        seq = [next(it_dict["entity2"]) for _ in xrange(len(expected_seq))]
+        seq = [next(it_dict["entity2"]) for _ in range(len(expected_seq))]
         self.assertItemsEqual(seq, expected_seq)
 
     def test_generate_utterance(self):
@@ -86,11 +88,11 @@ class TestDataAugmentation(unittest.TestCase):
                 }
             ]
         }
-        context_iterator = (context for _ in xrange(1))
+        context_iterator = (context for _ in range(1))
 
         entities_iterators = {
-            "entity1": ("entity one" for _ in xrange(1)),
-            "entity2": ("entity two" for _ in xrange(1)),
+            "entity1": ("entity one" for _ in range(1)),
+            "entity2": ("entity two" for _ in range(1)),
         }
 
         # When

@@ -342,7 +342,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         self.assertEqual(parser.config.data_augmentation_config,
                          expected_data_augmentation_config)
         self.assertIsNotNone(parser.intent_classifier)
-        self.assertItemsEqual(parser.crf_taggers.keys(),
+        self.assertItemsEqual(list(parser.crf_taggers),
                               ["MakeCoffee", "MakeTea"])
 
     def test_capitalize(self):

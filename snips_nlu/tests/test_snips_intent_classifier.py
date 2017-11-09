@@ -4,7 +4,11 @@ from __future__ import unicode_literals
 import unittest
 
 import numpy as np
+from builtins import next
+from builtins import range
+from builtins import str
 from mock import patch
+from six import viewvalues
 
 from snips_nlu.config import IntentClassifierConfig, \
     IntentClassifierDataAugmentationConfig
@@ -89,7 +93,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
+        intent_list = list(SAMPLE_DATASET[INTENTS]) + [None]
         expected_dict = {
             "config": IntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
@@ -212,9 +216,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             dataset, Language.EN, data_augmentation_config)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
-                               in dataset[INTENTS].values() for utterance in
-                               intent[UTTERANCES]]
+        expected_utterances = [
+            get_text_from_chunks(utterance[DATA]) for intent
+            in list(viewvalues(dataset[INTENTS]))
+            for utterance in intent[UTTERANCES]]
         expected_intent_mapping = list(dataset[INTENTS].keys())
         self.assertListEqual(utterances, expected_utterances)
         # Here we can't guess what the order of the intents will be
@@ -226,7 +231,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_should_build_training_data_with_noise(
             self, mocked_augment_utterances, mocked_get_subtitles):
         # Given
-        mocked_noises = ["mocked_noise_%s" % i for i in xrange(100)]
+        mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
         mocked_get_subtitles.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
@@ -235,14 +240,14 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         num_queries_per_intent = 3
         fake_utterance = {
             "data": [
-                {"text": " ".join("1" for _ in xrange(utterances_length))}
+                {"text": " ".join("1" for _ in range(utterances_length))}
             ]
         }
         dataset = {
             "intents": {
-                unicode(i): {
+                str(i): {
                     "utterances": [fake_utterance] * num_queries_per_intent
-                } for i in xrange(num_intents)
+                } for i in range(num_intents)
             }
         }
 
@@ -257,16 +262,16 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
-                               for intent in dataset[INTENTS].values()
+                               for intent in list(viewvalues(dataset[INTENTS]))
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0)
-        noisy_utterances = [next(noise_it) for _ in xrange(noise_size)]
+        noisy_utterances = [next(noise_it) for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = dataset["intents"].keys() + [None]
+        expected_intent_mapping = list(dataset["intents"]) + [None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -276,7 +281,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_should_build_training_data_with_unknown_noise(
             self, mocked_augment_utterances, mocked_get_subtitles):
         # Given
-        mocked_noises = ["mocked_noise_%s" % i for i in xrange(100)]
+        mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
         mocked_get_subtitles.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
@@ -285,14 +290,14 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         num_queries_per_intent = 3
         fake_utterance = {
             "data": [
-                {"text": " ".join("1" for _ in xrange(utterances_length))}
+                {"text": " ".join("1" for _ in range(utterances_length))}
             ]
         }
         dataset = {
             "intents": {
-                unicode(i): {
+                str(i): {
                     "utterances": [fake_utterance] * num_queries_per_intent
-                } for i in xrange(num_intents)
+                } for i in range(num_intents)
             }
         }
 
@@ -308,15 +313,15 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
-                               for intent in dataset[INTENTS].values()
+                               for intent in list(viewvalues(dataset[INTENTS]))
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
-        noisy_utterances = [replacement_string for _ in xrange(noise_size)]
+        noisy_utterances = [replacement_string for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = dataset["intents"].keys() + [None]
+        expected_intent_mapping = list(dataset["intents"]) + [None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -345,7 +350,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         noise_factor = 1
         utterances_length = 5
 
-        noise = [unicode(i) for i in xrange(utterances_length)]
+        noise = [str(i) for i in range(utterances_length)]
         mocked_get_noises.return_value = noise
 
         augmented_utterances = [
@@ -353,7 +358,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                 "data": [
                     {
                         "text": " ".join(
-                            "{}".format(i) for i in xrange(utterances_length))
+                            "{}".format(i) for i in range(utterances_length))
                     }
                 ]
             }

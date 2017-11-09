@@ -7,6 +7,9 @@ import json
 import os
 from pprint import pprint
 
+from builtins import input
+from six import viewvalues
+
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.config import NLUConfig
 from snips_nlu.languages import Language
@@ -25,7 +28,7 @@ def debug_training(dataset_path, config_path=None):
     engine = SnipsNLUEngine(language, config).fit(dataset)
 
     while True:
-        query = raw_input("Enter a query (type 'q' to quit): ").strip()
+        query = input("Enter a query (type 'q' to quit): ").strip()
         if isinstance(query, str):
             query = query.decode("utf8")
         if query == "q":
@@ -39,7 +42,7 @@ def debug_inference(engine_path):
     engine = SnipsNLUEngine.from_dict(engine_dict)
 
     while True:
-        query = raw_input("Enter a query (type 'q' to quit): ").strip()
+        query = input("Enter a query (type 'q' to quit): ").strip()
         if isinstance(query, str):
             query = query.decode("utf8")
         if query == "q":
@@ -49,21 +52,21 @@ def debug_inference(engine_path):
 
 def main_debug():
     parser = argparse.ArgumentParser(description="Debug snippets")
-    parser.add_argument("mode", type=unicode,
+    parser.add_argument("mode", type=str,
                         choices=["training", "inference"],
                         help="'training' to debug training and 'inference to "
                              "debug inference'")
-    parser.add_argument("path", type=unicode,
+    parser.add_argument("path", type=str,
                         help="Path to the dataset or trained assistant")
-    parser.add_argument("--config-path", type=unicode,
+    parser.add_argument("--config-path", type=str,
                         help="Path to the assistant configuration")
     args = vars(parser.parse_args())
     mode = args.pop("mode")
     if mode == "training":
-        debug_training(*args.values())
+        debug_training(*list(viewvalues(args)))
     elif mode == "inference":
         args.pop("config_path")
-        debug_inference(*args.values())
+        debug_inference(*list(viewvalues(args)))
     else:
         raise ValueError("Invalid mode %s" % mode)
 

@@ -6,6 +6,7 @@ import traceback as tb
 import unittest
 
 from mock import patch
+from six import iteritems
 
 from snips_nlu.config import FeaturizerConfig
 from snips_nlu.dataset import validate_and_format_dataset
@@ -140,7 +141,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             featurizer.entity_utterances_to_feature_names,
             {
                 k: set(v) for k, v
-                in entity_utterances_to_feature_names.iteritems()
+                in iteritems(entity_utterances_to_feature_names)
             })
 
     def test_get_utterances_entities(self):

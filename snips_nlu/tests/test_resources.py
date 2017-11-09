@@ -12,7 +12,7 @@ class TestResources(unittest.TestCase):
         index = RESOURCE_INDEX
 
         # When
-        languages = index.keys()
+        languages = list(index)
 
         # Then
         self.assertEqual(len(languages), len(Language.__members__))

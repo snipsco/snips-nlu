@@ -1,11 +1,17 @@
+from __future__ import division
 from __future__ import unicode_literals
 
 import re
-from itertools import izip, cycle
+from itertools import cycle
 from random import random
 from uuid import uuid4
 
 import numpy as np
+from builtins import next
+from builtins import object
+from builtins import range
+from builtins import zip
+from six import itervalues
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.builtin_entities import is_builtin_entity
@@ -20,7 +26,7 @@ from snips_nlu.resources import get_noises
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.tokenization import tokenize_light
 
-NOISE_NAME = str(uuid4()).decode()
+NOISE_NAME = bytes(uuid4()).decode()
 
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
@@ -28,10 +34,11 @@ UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
 
 def get_regularization_factor(dataset):
     intents = dataset[INTENTS]
-    nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
+    nb_utterances = [len(intent[UTTERANCES]) for intent in
+                     list(itervalues(intents))]
     avg_utterances = np.mean(nb_utterances)
     total_utterances = sum(nb_utterances)
-    alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
+    alpha = 1 / (4 * (total_utterances + 5 * avg_utterances))
     return alpha
 
 
@@ -39,7 +46,7 @@ def get_noise_it(noise, mean_length, std_length):
     it = cycle(noise)
     while True:
         noise_length = int(np.random.normal(mean_length, std_length))
-        yield " ".join(next(it) for _ in xrange(noise_length))
+        yield " ".join(next(it) for _ in range(noise_length))
 
 
 def generate_smart_noise(augmented_utterances, replacement_string, language):
@@ -55,7 +62,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
                               data_augmentation_config, language):
     if not augmented_utterances or not num_intents:
         return []
-    avg_num_utterances = len(augmented_utterances) / float(num_intents)
+    avg_num_utterances = len(augmented_utterances) / num_intents
     if data_augmentation_config.unknown_words_replacement_string is not None:
         noise = generate_smart_noise(
             augmented_utterances,
@@ -76,7 +83,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
                             std_utterances_length)
     # Remove duplicate 'unknowword unknowword'
     return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
-            for _ in xrange(noise_size)]
+            for _ in range(noise_size)]
 
 
 def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
@@ -101,11 +108,12 @@ def build_training_data(dataset, language, data_augmentation_config):
     noise_class = intent_index
 
     # Computing dataset statistics
-    nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
+    nb_utterances = [len(intent[UTTERANCES]) for intent in
+                     list(itervalues(intents))]
 
     augmented_utterances = []
     utterance_classes = []
-    for nb_utterance, intent_name in izip(nb_utterances, intents.keys()):
+    for nb_utterance, intent_name in zip(nb_utterances, intents):
         min_utterances_to_generate = max(
             data_augmentation_config.min_utterances, nb_utterance)
         utterances = augment_utterances(
@@ -114,7 +122,7 @@ def build_training_data(dataset, language, data_augmentation_config):
             capitalization_ratio=0.0)  # Data is anyway lower with `normalize`
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
-                              xrange(len(utterances))]
+                              range(len(utterances))]
     augmented_utterances = add_unknown_word_to_utterances(
         augmented_utterances,
         data_augmentation_config.unknown_words_replacement_string,
@@ -134,8 +142,8 @@ def build_training_data(dataset, language, data_augmentation_config):
         classes_mapping[NOISE_NAME] = noise_class
 
     nb_classes = len(set(classes_mapping.values()))
-    intent_mapping = [None for _ in xrange(nb_classes)]
-    for intent, intent_class in classes_mapping.iteritems():
+    intent_mapping = [None for _ in range(nb_classes)]
+    for intent, intent_class in classes_mapping.items():
         if intent == NOISE_NAME:
             intent_mapping[intent_class] = None
         else:
@@ -153,7 +161,7 @@ class SnipsIntentClassifier(object):
         self.featurizer = Featurizer(
             self.language,
             self.config.data_augmentation_config
-            .unknown_words_replacement_string,
+                .unknown_words_replacement_string,
             self.config.featurizer_config)
         self.min_utterances_per_intent = 20
 

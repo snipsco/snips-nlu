@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 import unittest
 
+from six import viewvalues
+
 from snips_nlu.config import ProbabilisticIntentParserConfig, CRFFeaturesConfig
 from snips_nlu.constants import ENTITIES
 from snips_nlu.dataset import validate_and_format_dataset
@@ -35,7 +37,7 @@ class TestDefaultFeaturesFunction(unittest.TestCase):
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         config = ProbabilisticIntentParserConfig(
             crf_features_config=CRFFeaturesConfig(base_drop_ratio=.4))
-        collection = dataset[ENTITIES]["Temperature"].keys()
+        collection = list(viewvalues(dataset[ENTITIES]["Temperature"]))
 
         expected_collection_size = 1
 

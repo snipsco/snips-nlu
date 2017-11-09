@@ -160,7 +160,7 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
         return token.stem if use_stemming else token.normalized_value
 
     def token_is_in(tokens, token_index):
-        normalized_tokens = map(transform, tokens)
+        normalized_tokens = [transform(t) for t in tokens]
         ngrams = get_all_ngrams(normalized_tokens)
         ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
@@ -189,7 +189,7 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
         return token.stem if use_stemming else token.normalized_value
 
     def is_in_gazetter(tokens, token_index):
-        normalized_tokens = map(transform, tokens)
+        normalized_tokens = [transform(t) for t in tokens]
         ngrams = get_all_ngrams(normalized_tokens)
         ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
         ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),

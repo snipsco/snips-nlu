@@ -4,7 +4,9 @@ from __future__ import unicode_literals
 import unittest
 
 import numpy as np
+from builtins import range
 from mock import patch
+from six import iteritems, viewkeys
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.config import ProbabilisticIntentParserConfig
@@ -33,12 +35,12 @@ class TestFeatureFunctions(unittest.TestCase):
             3: ["i love house", "love house music", None, None]
         }
 
-        for n, expected_features in ngrams.iteritems():
+        for n, expected_features in iteritems(ngrams):
             ngrams_fn = get_ngram_fn(n, use_stemming=False,
                                      language_code=language.iso_code)
             # When
             features = [ngrams_fn.function(tokens, i)
-                        for i in xrange(len(tokens))]
+                        for i in range(len(tokens))]
             # Then
             self.assertEqual(expected_features, features)
 
@@ -56,13 +58,13 @@ class TestFeatureFunctions(unittest.TestCase):
             3: ["i love rare_word", "love rare_word music", None, None]
         }
 
-        for n, expected_features in ngrams.iteritems():
+        for n, expected_features in iteritems(ngrams):
             ngrams_fn = get_ngram_fn(n, use_stemming=False,
                                      language_code=language.iso_code,
                                      common_words_gazetteer_name='common')
             # When
             features = [ngrams_fn.function(tokens, i)
-                        for i in xrange(len(tokens))]
+                        for i in range(len(tokens))]
             # Then
             self.assertEqual(expected_features, features)
 
@@ -73,7 +75,7 @@ class TestFeatureFunctions(unittest.TestCase):
         token = tokens[0]
         expected_prefixes = ["a", "ab", "abc", "abcd", "abcde", None]
 
-        for i in xrange(1, len(token.value) + 2):
+        for i in range(1, len(token.value) + 2):
             prefix_fn = get_prefix_fn(i)
             # When
             prefix = prefix_fn.function(tokens, 0)
@@ -87,7 +89,7 @@ class TestFeatureFunctions(unittest.TestCase):
         token = tokens[0]
         expected_suffixes = ["e", "de", "cde", "bcde", "abcde", None]
 
-        for i in xrange(1, len(token.value) + 2):
+        for i in range(1, len(token.value) + 2):
             suffix_fn = get_suffix_fn(i)
             # When
             prefix = suffix_fn.function(tokens, 0)
@@ -101,7 +103,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # When
         fn = get_length_fn().function
-        tokens_length = [fn(tokens, i) for i in xrange(len(tokens))]
+        tokens_length = [fn(tokens, i) for i in range(len(tokens))]
 
         # Then
         expected_tokens_lengths = [1, 1, 4, 4]
@@ -123,7 +125,7 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         self.assertEqual(expected_features,
                          [feature_fn.function(tokens, i)
-                          for i in xrange(len(tokens))])
+                          for i in range(len(tokens))])
 
     @patch('snips_nlu.preprocessing.stem')
     def test_token_is_in_with_stemming(self, mocked_stem):
@@ -150,7 +152,7 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         self.assertEqual(expected_features,
                          [feature_fn.function(tokens, i)
-                          for i in xrange(len(tokens))])
+                          for i in range(len(tokens))])
 
     @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
     def test_is_in_gazetteer(self, mocked_get_gazetteer):
@@ -167,7 +169,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # When
         features = [feature_fn.function(tokens, i) for i in
-                    xrange(len(tokens))]
+                    range(len(tokens))]
 
         # Then
         expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX,
@@ -198,7 +200,7 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # When
         features = [feature_fn.function(tokens, i)
-                    for i in xrange(len(tokens))]
+                    for i in range(len(tokens))]
 
         # Then
         self.assertEqual(features, expected_features)
@@ -217,13 +219,13 @@ class TestFeatureFunctions(unittest.TestCase):
             1: ("position[+1]", [2, 3, None]),
             2: ("position[+2]", [3, None, None])
         }
-        cache = [{TOKEN_NAME: t for t in tokens} for _ in xrange(len(tokens))]
-        for offset, expected in expected_features.iteritems():
+        cache = [{TOKEN_NAME: t for t in tokens} for _ in range(len(tokens))]
+        for offset, expected in expected_features.items():
             feature_name, feature_function = create_feature_function(
                 base_feature_function, offset)
             expected_name, expected_feats = expected
             # When
-            feats = [feature_function(i, cache) for i in xrange(len(tokens))]
+            feats = [feature_function(i, cache) for i in range(len(tokens))]
             # Then
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
@@ -335,10 +337,12 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # Then
         collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
-        col_1 = np_random(collection_1.keys(), collection_1_size).tolist()
+        col_1 = np_random(
+            list(viewkeys(collection_1)), collection_1_size).tolist()
 
         collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
-        col_2 = np_random(collection_2.keys(), collection_2_size).tolist()
+        col_2 = np_random(
+            list(viewkeys(collection_2)), collection_2_size).tolist()
 
         expected_signatures = [
             {
@@ -366,7 +370,3 @@ class TestFeatureFunctions(unittest.TestCase):
         ]
         for signature in expected_signatures:
             self.assertIn(signature, features_signatures)
-
-
-if __name__ == '__main__':
-    unittest.main()

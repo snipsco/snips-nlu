@@ -6,6 +6,7 @@ import unittest
 import rustling
 from builtin_entities_ontology import get_ontology
 from mock import patch
+from six import viewvalues
 
 from snips_nlu.builtin_entities import (
     get_builtin_entities, BuiltInEntity, scope_to_dim_kinds,
@@ -145,7 +146,7 @@ class TestBuiltInEntities(unittest.TestCase):
             # When / Then
             if not any((k.rustling_dim_kind in language_dim_kinds)
                        for language_dim_kinds
-                       in supported_dim_kinds_by_language.values()):
+                       in list(viewvalues(supported_dim_kinds_by_language))):
                 self.fail("Unknown Rustling dimension kind '%s'" % k)
 
     def test_get_builtin_entities_should_support_all_languages(self):

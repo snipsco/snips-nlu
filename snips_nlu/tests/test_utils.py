@@ -1,5 +1,7 @@
 import unittest
 
+from six import viewitems
+
 from snips_nlu.utils import LimitedSizeDict
 
 
@@ -18,7 +20,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(sequence, size_limit=size_limit)
         # Then
-        self.assertItemsEqual(d.items(), sequence)
+        self.assertItemsEqual(list(viewitems(d)), sequence)
 
     def test_should_initialize_without_argument(self):
         # Given
@@ -26,7 +28,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(size_limit=size_limit)
         # Then
-        self.assertItemsEqual(d.items(), [])
+        self.assertItemsEqual(list(viewitems(d)), [])
 
     def test_should_wrong_when_initialization_should_raise_error(self):
         # Given
@@ -48,8 +50,4 @@ class TestLimitedSizeDict(unittest.TestCase):
         for k, v in sequence[size_limit:]:
             my_dict[k] = v
         # Then
-        self.assertItemsEqual(my_dict.items(), sequence[size_limit:])
-
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertItemsEqual(list(viewitems(my_dict)), sequence[size_limit:])

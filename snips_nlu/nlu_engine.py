@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
+from __future__ import print_function
 
+from builtins import str, bytes
 import argparse
 import io
 import json
@@ -24,11 +26,10 @@ from snips_nlu.result import Result
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
+from future.utils import with_metaclass, iteritems
 
 
-class NLUEngine(object):
-    __metaclass__ = ABCMeta
-
+class NLUEngine(with_metaclass(ABCMeta, object)):
     def __init__(self, language):
         self._language = None
         self.language = language
@@ -41,7 +42,7 @@ class NLUEngine(object):
     def language(self, value):
         if isinstance(value, Language):
             self._language = value
-        elif isinstance(value, (str, unicode)):
+        elif isinstance(value, (str, bytes)):
             self._language = Language.from_iso_code(value)
         else:
             raise TypeError("Expected str, unicode or Language found '%s'"
@@ -112,7 +113,7 @@ def get_slot_name_mapping(dataset):
     Returns a dict which maps slot names to entities
     """
     slot_name_mapping = dict()
-    for intent_name, intent in dataset[INTENTS].iteritems():
+    for intent_name, intent in iteritems(dataset[INTENTS]):
         mapping = dict()
         slot_name_mapping[intent_name] = mapping
         for utterance in intent[UTTERANCES]:
@@ -241,7 +242,7 @@ class SnipsNLUEngine(NLUEngine):
 
         dataset = validate_and_format_dataset(dataset)
         self.entities = dict()
-        for entity_name, entity in dataset[ENTITIES].iteritems():
+        for entity_name, entity in iteritems(dataset[ENTITIES]):
             if is_builtin_entity(entity_name):
                 continue
             ent = deepcopy(entity)
@@ -249,7 +250,7 @@ class SnipsNLUEngine(NLUEngine):
             self.entities[entity_name] = ent
 
         regex_intents = [
-            intent_name for intent_name, intent in dataset[INTENTS].iteritems()
+            intent_name for intent_name, intent in iteritems(dataset[INTENTS])
             if is_trainable_regex_intent(
                 intent, self.entities, self.config.regex_training_config)]
 
@@ -258,7 +259,7 @@ class SnipsNLUEngine(NLUEngine):
 
         self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
                                    for intent_name, intent
-                                   in dataset[INTENTS].iteritems()}
+                                   in iteritems(dataset[INTENTS])}
         self.slot_name_mapping = get_slot_name_mapping(dataset)
         taggers = dict()
         for intent in dataset[INTENTS]:
@@ -353,10 +354,10 @@ class SnipsNLUEngine(NLUEngine):
 
 def main_create_and_train_engine():
     parser = argparse.ArgumentParser()
-    parser.add_argument("language", type=unicode)
-    parser.add_argument("dataset_path", type=unicode)
-    parser.add_argument("output_path", type=unicode)
-    parser.add_argument("--config-path", type=unicode)
+    parser.add_argument("language", type=str)
+    parser.add_argument("dataset_path", type=str)
+    parser.add_argument("output_path", type=str)
+    parser.add_argument("--config-path", type=str)
     args = vars(parser.parse_args())
 
     dataset_path = args.pop("dataset_path")
@@ -372,10 +373,10 @@ def main_create_and_train_engine():
 
     language = Language.from_iso_code(args.pop("language"))
     engine = SnipsNLUEngine(language, config).fit(dataset)
-    print "Create and trained the engine..."
+    print("Create and trained the engine...")
 
     output_path = args.pop("output_path")
     serialized_engine = json.dumps(engine.to_dict()).decode("utf8")
     with io.open(output_path, "w", encoding="utf8") as f:
         f.write(serialized_engine)
-    print "Saved the trained engine to %s" % output_path
+    print("Saved the trained engine to %s" % output_path)

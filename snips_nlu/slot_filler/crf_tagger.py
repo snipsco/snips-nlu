@@ -1,5 +1,10 @@
 from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
 
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import base64
 import io
 import math
@@ -7,6 +12,7 @@ import os
 import tempfile
 from copy import deepcopy
 
+from six import iteritems
 from sklearn_crfsuite import CRF
 
 import snips_nlu.slot_filler.feature_functions
@@ -50,7 +56,7 @@ def get_features_from_signatures(signatures):
 def scaled_regularization(n_samples, n_reference=50):
     c1, c2 = .0, .0
 
-    coef = n_samples / float(n_reference)
+    coef = old_div(n_samples, float(n_reference))
     c1 *= coef
     c2 *= coef
 
@@ -121,21 +127,21 @@ class CRFTagger(object):
         if verbose:
             transition_features = self.crf_model.transition_features_
             transition_features = sorted(
-                transition_features.iteritems(),
-                key=lambda (transition, _weight): math.fabs(_weight),
+                iteritems(transition_features),
+                key=lambda transition_weight: math.fabs(transition_weight[1]),
                 reverse=True)
-            print "\nTransition weights: \n\n"
+            print("\nTransition weights: \n\n")
             for (state_1, state_2), weight in transition_features:
-                print "%s %s: %s" % (state_1, state_2, weight)
+                print("%s %s: %s" % (state_1, state_2, weight))
 
             feature_weights = self.crf_model.state_features_
             feature_weights = sorted(
-                feature_weights.iteritems(),
-                key=lambda (feature, _weight): math.fabs(_weight),
+                iteritems(feature_weights),
+                key=lambda feature__weight: math.fabs(feature__weight[1]),
                 reverse=True)
-            print "\nFeature weights: \n\n"
+            print("\nFeature weights: \n\n")
             for (feat, tag), weight in feature_weights:
-                print "%s %s: %s" % (feat, tag, weight)
+                print("%s %s: %s" % (feat, tag, weight))
 
         return self
 
@@ -148,7 +154,7 @@ class CRFTagger(object):
         features = []
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
-            for feature_name, feature_fn in self.features.iteritems():
+            for feature_name, feature_fn in iteritems(self.features):
                 value = feature_fn(i, cache)
                 if value is not None:
                     token_features[feature_name] = value

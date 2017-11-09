@@ -119,25 +119,27 @@ class CRFTagger(object):
         self.crf_model.c2 = c2
         self.crf_model = self.crf_model.fit(X, Y)
         if verbose:
-            transition_features = self.crf_model.transition_features_
-            transition_features = sorted(
-                transition_features.iteritems(),
-                key=lambda (transition, _weight): math.fabs(_weight),
-                reverse=True)
-            print "\nTransition weights: \n\n"
-            for (state_1, state_2), weight in transition_features:
-                print "%s %s: %s" % (state_1, state_2, weight)
-
-            feature_weights = self.crf_model.state_features_
-            feature_weights = sorted(
-                feature_weights.iteritems(),
-                key=lambda (feature, _weight): math.fabs(_weight),
-                reverse=True)
-            print "\nFeature weights: \n\n"
-            for (feat, tag), weight in feature_weights:
-                print "%s %s: %s" % (feat, tag, weight)
+            self.print_weights()
 
         return self
+
+    def print_weights(self):
+        transition_features = self.crf_model.transition_features_
+        transition_features = sorted(
+            transition_features.iteritems(),
+            key=lambda (transition, _weight): math.fabs(_weight),
+            reverse=True)
+        print "\nTransition weights: \n\n"
+        for (state_1, state_2), weight in transition_features:
+            print "%s %s: %s" % (state_1, state_2, weight)
+        feature_weights = self.crf_model.state_features_
+        feature_weights = sorted(
+            feature_weights.iteritems(),
+            key=lambda (feature, _weight): math.fabs(_weight),
+            reverse=True)
+        print "\nFeature weights: \n\n"
+        for (feat, tag), weight in feature_weights:
+            print "%s %s: %s" % (feat, tag, weight)
 
     def compute_features(self, tokens):
         tokens = [

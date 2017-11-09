@@ -7,7 +7,7 @@ import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import ProbabilisticIntentParserConfig
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
@@ -329,9 +329,10 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # When
         drop_prob = 0.5
+        features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
-            config=ProbabilisticIntentParserConfig())
+            crf_features_config=features_config)
 
         # Then
         collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)

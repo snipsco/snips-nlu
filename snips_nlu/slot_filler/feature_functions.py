@@ -205,6 +205,11 @@ def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
                                is_in_gazetter)
 
 
+def entity_filter(entity, start, end):
+    return (entity[MATCH_RANGE][0] <= start < entity[MATCH_RANGE][1]) and \
+           (entity[MATCH_RANGE][0] < end <= entity[MATCH_RANGE][1])
+
+
 def get_built_in_annotation_fn(built_in_entity_label, language_code,
                                tagging_scheme_code):
     language = Language.from_iso_code(language_code)
@@ -219,11 +224,8 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code,
 
         builtin_entities = get_builtin_entities(
             text, language, scope=[built_in_entity])
-        filter_fn = lambda ent: (ent[MATCH_RANGE][0] <= start <
-                                 ent[MATCH_RANGE][1]) and \
-                                (ent[MATCH_RANGE][0] < end <=
-                                 ent[MATCH_RANGE][1])
-        builtin_entities = [ent for ent in builtin_entities if filter_fn(ent)]
+        builtin_entities = [ent for ent in builtin_entities
+                            if entity_filter(ent, start, end)]
         for ent in builtin_entities:
             entity_start = ent[MATCH_RANGE][0]
             entity_end = ent[MATCH_RANGE][1]

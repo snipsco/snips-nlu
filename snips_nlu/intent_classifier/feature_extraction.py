@@ -78,10 +78,11 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
     features = language.default_sep.join(normalized_stemmed_tokens)
+    # Here we sort to have a determistic output for testing purpose
     if entities_features:
-        features += " " + " ".join(entities_features)
+        features += " " + " ".join(sorted(entities_features))
     if word_clusters_features:
-        features += " " + " ".join(word_clusters_features)
+        features += " " + " ".join(sorted(word_clusters_features))
     return features
 
 

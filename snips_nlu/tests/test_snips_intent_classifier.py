@@ -215,9 +215,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
                                in dataset[INTENTS].values() for utterance in
                                intent[UTTERANCES]]
-        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
+        expected_intent_mapping = list(dataset[INTENTS].keys())
         self.assertListEqual(utterances, expected_utterances)
-        self.assertListEqual(expected_intent_mapping, intent_mapping)
+        # Here we can't guess what the order of the intents will be
+        self.assertItemsEqual(expected_intent_mapping, intent_mapping)
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier.get_noises")
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"

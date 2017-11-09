@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.default.default_features_functions import \
     default_features, default_shape_ngram_features
 

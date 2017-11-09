@@ -12,8 +12,8 @@ from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
-    LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, LAST_PREFIX, \
+    BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
     get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,

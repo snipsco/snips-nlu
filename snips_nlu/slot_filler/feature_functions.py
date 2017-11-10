@@ -175,6 +175,9 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
     return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
 
 
+# pylint: enable=unused-argument
+
+
 def entity_filter(entity, start, end):
     return (entity[MATCH_RANGE][0] <= start < entity[MATCH_RANGE][1]) and \
            (entity[MATCH_RANGE][0] < end <= entity[MATCH_RANGE][1])

@@ -15,12 +15,7 @@ RESOURCE_INDEX = {
     Language.EN: {
         GAZETTEERS: [
             "top_10000_nouns.txt",
-            "cities_us.txt",
-            "cities_world.txt",
-            "countries.txt",
-            "states_us.txt",
             "stop_words.txt",
-            "street_identifier.txt",
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
@@ -29,12 +24,6 @@ RESOURCE_INDEX = {
     },
     Language.FR: {
         GAZETTEERS: [
-            "cities_france.txt",
-            "cities_world.txt",
-            "countries.txt",
-            "departements_france.txt",
-            "regions_france.txt",
-            "street_identifier.txt",
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
@@ -49,13 +38,7 @@ RESOURCE_INDEX = {
         NOISE: "noise.txt",
     },
     Language.DE: {
-        GAZETTEERS: [
-            "cities_germany.txt",
-            "cities_world.txt",
-            "countries.txt",
-            "lander_germany.txt",
-            "street_identifier.txt"
-        ],
+        GAZETTEERS: [],
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     }

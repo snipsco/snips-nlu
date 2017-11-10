@@ -26,18 +26,18 @@ TOKEN_NAME = "token"
 BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
 
 
-def crf_features(dataset, intent, language, config):
+def crf_features(dataset, intent, language, crf_features_config):
     if language == Language.EN:
-        return en_features(dataset, intent, config)
+        return en_features(dataset, intent, crf_features_config)
     elif language == Language.ES:
-        return default_features(language, dataset, intent, config,
+        return default_features(language, dataset, intent, crf_features_config,
                                 use_stemming=True)
     elif language == Language.FR:
-        return fr_features(dataset, intent, config)
+        return fr_features(dataset, intent, crf_features_config)
     elif language == Language.DE:
-        return de_features(dataset, intent, config)
+        return de_features(dataset, intent, crf_features_config)
     elif language == Language.KO:
-        return ko_features(dataset, intent, config)
+        return ko_features(dataset, intent, crf_features_config)
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)
@@ -176,33 +176,6 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
 
 
 # pylint: enable=unused-argument
-
-def get_is_in_gazetteer_fn(gazetteer_name, language_code, tagging_scheme_code,
-                           use_stemming):
-    language = Language.from_iso_code(language_code)
-    gazetteer = get_gazetteer(language, gazetteer_name)
-    if use_stemming:
-        gazetteer = set(stem(w, language) for w in gazetteer)
-    tagging_scheme = TaggingScheme(tagging_scheme_code)
-
-    def transform(token):
-        return token.stem if use_stemming else token.normalized_value
-
-    def is_in_gazetter(tokens, token_index):
-        normalized_tokens = map(transform, tokens)
-        ngrams = get_all_ngrams(normalized_tokens)
-        ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
-        ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
-                        reverse=True)
-        for ngram in ngrams:
-            if ngram[NGRAM] in gazetteer:
-                return get_scheme_prefix(token_index,
-                                         sorted(ngram[TOKEN_INDEXES]),
-                                         tagging_scheme)
-        return None
-
-    return BaseFeatureFunction("is_in_gazetteer_%s" % gazetteer_name,
-                               is_in_gazetter)
 
 
 def entity_filter(entity, start, end):

@@ -7,18 +7,18 @@ import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import ProbabilisticIntentParserConfig
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
-    LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, LAST_PREFIX, \
+    BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
     get_prefix_fn, get_suffix_fn, get_ngram_fn,
     create_feature_function, TOKEN_NAME, BaseFeatureFunction,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
-    get_is_in_gazetteer_fn, get_length_fn)
+    get_length_fn)
 from snips_nlu.tokenization import tokenize
 
 
@@ -151,28 +151,6 @@ class TestFeatureFunctions(unittest.TestCase):
         self.assertEqual(expected_features,
                          [feature_fn.function(tokens, i)
                           for i in xrange(len(tokens))])
-
-    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
-    def test_is_in_gazetteer(self, mocked_get_gazetteer):
-        # Given
-        gazetteer = {"bird", "eagle", "blue bird"}
-        mocked_get_gazetteer.side_effect = lambda l, name: gazetteer
-        text = "This is a Blue bÏrd flying next to an eagle"
-        language = Language.EN
-        tokens = tokenize(text, language=language)
-        feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
-                                            language.iso_code,
-                                            TaggingScheme.BILOU.value,
-                                            use_stemming=False)
-
-        # When
-        features = [feature_fn.function(tokens, i) for i in
-                    xrange(len(tokens))]
-
-        # Then
-        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX,
-                             None, None, None, None, UNIT_PREFIX]
-        self.assertListEqual(features, expected_features)
 
     @patch('snips_nlu.slot_filler.feature_functions.get_builtin_entities')
     def test_get_built_in_annotation_fn(self, mocked_get_builtin_entities):
@@ -329,9 +307,10 @@ class TestFeatureFunctions(unittest.TestCase):
 
         # When
         drop_prob = 0.5
+        features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
-            config=ProbabilisticIntentParserConfig())
+            crf_features_config=features_config)
 
         # Then
         collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)

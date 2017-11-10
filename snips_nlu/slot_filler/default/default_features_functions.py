@@ -35,17 +35,17 @@ def get_num_entity_appearances(dataset, intent, entity, config):
                if ENTITY in c and c[ENTITY] == entity)
 
 
-def compute_entity_collection_size(collection, config):
+def compute_entity_collection_size(collection, crf_features_config):
     num_entities = len(collection)
-    collection_size = int((1 - config.crf_features_config.base_drop_ratio)
-                          * num_entities)
+    collection_size = int(
+        (1 - crf_features_config.base_drop_ratio) * num_entities)
     collection_size = max(collection_size, 1)
     collection_size = min(collection_size, num_entities)
     return collection_size
 
 
-def default_features(language, dataset, intent, config, use_stemming,
-                     common_words_gazetteer_name=None):
+def default_features(language, dataset, intent, crf_features_config,
+                     use_stemming, common_words_gazetteer_name=None):
     features = [
         {
             "factory_name": "get_ngram_fn",
@@ -109,7 +109,8 @@ def default_features(language, dataset, intent, config, use_stemming,
 
         collection = list(
             set(preprocess(e) for e in entity[UTTERANCES].keys()))
-        collection_size = compute_entity_collection_size(collection, config)
+        collection_size = compute_entity_collection_size(collection,
+                                                         crf_features_config)
         collection = np.random.choice(collection, collection_size,
                                       replace=False).tolist()
         features.append(
@@ -122,7 +123,7 @@ def default_features(language, dataset, intent, config, use_stemming,
                     "tagging_scheme_code": TaggingScheme.BILOU.value,
                     "language_code": language.iso_code,
                 },
-                "offsets": tuple(config.crf_features_config.entities_offsets)
+                "offsets": tuple(crf_features_config.entities_offsets)
             }
         )
     return features

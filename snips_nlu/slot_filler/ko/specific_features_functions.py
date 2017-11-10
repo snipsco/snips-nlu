@@ -6,9 +6,6 @@ from snips_nlu.slot_filler.default.default_features_functions import \
 
 
 def language_specific_features(dataset, intent, config):
-    """
-    :param intent_entities: dict containing entities for the related intent
-    """
     language = Language.KO
     features = default_features(language, dataset, intent, config,
                                 use_stemming=False)

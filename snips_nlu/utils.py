@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import base64
 import cPickle
-import importlib
+import errno
 import os
 from collections import OrderedDict, namedtuple, Mapping
 
@@ -14,9 +14,11 @@ REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
 
 
+# pylint: disable=C0103
 class abstractclassmethod(classmethod):
     __isabstractmethod__ = True
 
+    # pylint: disable=W0622
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractclassmethod, self).__init__(callable)
@@ -26,6 +28,8 @@ class classproperty(property):
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
 
+
+# pylint: enable=C0103
 
 def sequence_equal(seq, other_seq):
     return len(seq) == len(other_seq) and sorted(seq) == sorted(other_seq)
@@ -55,9 +59,7 @@ def validate_type(obj, expected_type):
 def missing_key_error(key, object_label=None):
     if object_label is None:
         return KeyError("Missing key: '%s'" % key)
-    else:
-        return KeyError(
-            "Expected %s to have key: '%s'" % (object_label, key))
+    return KeyError("Expected %s to have key: '%s'" % (object_label, key))
 
 
 def validate_key(obj, key, object_label=None):
@@ -112,7 +114,7 @@ class UnupdatableDict(dict):
 
 
 def namedtuple_with_defaults(typename, field_names, default_values=()):
-    T = namedtuple(typename, field_names)
+    T = namedtuple(typename, field_names)  # pylint: disable=C0103
     T.__new__.__defaults__ = (None,) * len(T._fields)
     if isinstance(default_values, Mapping):
         prototype = T(**default_values)
@@ -146,8 +148,8 @@ def safe_pickle_loads(pkl_str):
 
 def mkdir_p(path):
     """
-    Reproduces the mkdir -p shell command
-    see http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python 
+    Reproduces the mkdir -p shell command, see
+    http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     try:
         os.makedirs(path)
@@ -161,17 +163,17 @@ def mkdir_p(path):
 def regex_escape(s):
     """
     Escapes all regular expression meta characters in `text`.
-    
+
     The string returned may be safely used as a literal in a regular
-    expression.
-     
-    This function is more precise than `re.escape`, the latter escapes 
-    all non-alphanumeric characters which can cause cross-platform 
+     expression.
+
+    This function is more precise than `re.escape`, the latter escapes
+    all non-alphanumeric characters which can cause cross-platform
     compatibility issues.
-    
+
     References:
-    https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
-    https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
+        https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
+        https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
     """
     escaped_string = ""
     for c in s:

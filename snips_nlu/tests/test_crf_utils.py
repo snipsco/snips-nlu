@@ -459,7 +459,7 @@ class TestCRFUtils(unittest.TestCase):
         # Given
         language = Language.EN
 
-        def mock_positive_tagging(tagging_scheme, slot, slot_size):
+        def mock_positive_tagging(_, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
         mocked_positive_tagging.side_effect = mock_positive_tagging
@@ -490,7 +490,7 @@ class TestCRFUtils(unittest.TestCase):
         # Given
         language = Language.EN
 
-        def mock_positive_tagging(tagging_scheme, slot, slot_size):
+        def mock_positive_tagging(_, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in xrange(slot_size)]
 
         mocked_positive_tagging.side_effect = mock_positive_tagging

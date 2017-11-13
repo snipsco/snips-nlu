@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import json
 import unittest
 
@@ -21,7 +23,7 @@ class TestResult(unittest.TestCase):
         # Then
         try:
             json.dumps(result_dict)
-        except:
+        except:  # pylint: disable=W0702
             self.fail("Result dict should be json serializable")
 
         expected_dict = {

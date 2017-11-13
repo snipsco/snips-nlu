@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 from copy import copy
 from itertools import groupby, permutations
 
-from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities
+from snips_nlu.builtin_entities import BuiltInEntity, get_builtin_entities, \
+    is_builtin_entity
 from snips_nlu.config import ProbabilisticIntentParserConfig
 from snips_nlu.constants import (DATA, INTENTS, ENTITY,
                                  MATCH_RANGE)
@@ -68,7 +69,7 @@ class ProbabilisticIntentParser(object):
             raise KeyError("Invalid intent '%s'" % intent)
 
         tokens = tokenize(text, self.language)
-        if len(tokens) == 0:
+        if not tokens:
             return []
 
         tagger = self.crf_taggers[intent]
@@ -78,9 +79,9 @@ class ProbabilisticIntentParser(object):
                               intent_slots_mapping)
 
         builtin_slot_names = set(slot_name for (slot_name, entity) in
-                                 intent_slots_mapping.iteritems() if entity
-                                 in BuiltInEntity.built_in_entity_by_label)
-        if len(builtin_slot_names) == 0:
+                                 intent_slots_mapping.iteritems()
+                                 if is_builtin_entity(entity))
+        if not builtin_slot_names:
             return slots
 
         # Replace tags corresponding to builtin entities by outside tags

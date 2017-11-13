@@ -6,12 +6,12 @@ import json
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from dataset import validate_and_format_dataset
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
@@ -48,7 +48,7 @@ class NLUEngine(object):
                             % type(value))
 
     @abstractmethod
-    def parse(self, text):
+    def parse(self, text, intent=None):
         pass
 
 
@@ -60,7 +60,7 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
     if probabilistic_parser is not None:
         parsers.append(probabilistic_parser)
 
-    if len(parsers) == 0:
+    if not parsers:
         return empty_result(text)
 
     result = empty_result(text) if intent is None else Result(
@@ -113,12 +113,12 @@ def get_slot_name_mapping(dataset):
     """
     slot_name_mapping = dict()
     for intent_name, intent in dataset[INTENTS].iteritems():
-        _dict = dict()
-        slot_name_mapping[intent_name] = _dict
+        mapping = dict()
+        slot_name_mapping[intent_name] = mapping
         for utterance in intent[UTTERANCES]:
             for chunk in utterance[DATA]:
                 if SLOT_NAME in chunk:
-                    _dict[chunk[SLOT_NAME]] = chunk[ENTITY]
+                    mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_mapping
 
 
@@ -217,8 +217,8 @@ class SnipsNLUEngine(NLUEngine):
         Parameters
         ----------
         - dataset: dict containing intents and entities data
-        - intents: list of intents to train. If `None`, all intents will 
-        be trained. This parameter allows to have pre-trained intents.
+        - intents: list of intents to train. If `None`, all intents will be
+        trained. This parameter allows to have pre-trained intents.
 
         Returns
         -------
@@ -235,7 +235,7 @@ class SnipsNLUEngine(NLUEngine):
         missing_intents = implicit_pretrained_intents.difference(
             actual_pretrained_intents)
 
-        if len(missing_intents) > 0:
+        if missing_intents:
             raise ValueError(
                 "These intents must be trained: %s" % missing_intents)
 
@@ -363,7 +363,7 @@ def main_create_and_train_engine():
     with io.open(dataset_path, "r", encoding="utf8") as f:
         dataset = json.load(f)
 
-    if "config" in args:
+    if "config_path" in args:
         config_path = args.pop("config_path")
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)
@@ -372,10 +372,10 @@ def main_create_and_train_engine():
 
     language = Language.from_iso_code(args.pop("language"))
     engine = SnipsNLUEngine(language, config).fit(dataset)
-    print("Create and trained the engine...")
+    print "Create and trained the engine..."
 
     output_path = args.pop("output_path")
     serialized_engine = json.dumps(engine.to_dict()).decode("utf8")
     with io.open(output_path, "w", encoding="utf8") as f:
         f.write(serialized_engine)
-    print("Saved the trained engine to %s" % output_path)
+    print "Saved the trained engine to %s" % output_path

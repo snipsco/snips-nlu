@@ -26,5 +26,5 @@ class TestResources(unittest.TestCase):
             try:
                 # When/Then
                 get_stop_words(l)
-            except:
+            except:  # pylint: disable=W0702
                 self.fail("%s has not stop words" % l.iso_code)

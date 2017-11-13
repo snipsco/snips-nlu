@@ -169,7 +169,7 @@ def negative_tagging(size):
 def utterance_to_sample(query_data, tagging_scheme, language):
     tokens, tags = [], []
     current_length = 0
-    for i, chunk in enumerate(query_data):
+    for chunk in query_data:
         chunk_tokens = tokenize(chunk[TEXT], language)
         tokens += [Token(t.value, current_length + t.start,
                          current_length + t.end) for t in chunk_tokens]
@@ -188,8 +188,7 @@ def get_scheme_prefix(index, indexes, tagging_scheme):
     elif tagging_scheme == TaggingScheme.BIO:
         if index == indexes[0]:
             return BEGINNING_PREFIX
-        else:
-            return INSIDE_PREFIX
+        return INSIDE_PREFIX
     elif tagging_scheme == TaggingScheme.BILOU:
         if len(indexes) == 1:
             return UNIT_PREFIX
@@ -197,7 +196,6 @@ def get_scheme_prefix(index, indexes, tagging_scheme):
             return BEGINNING_PREFIX
         if index == indexes[-1]:
             return LAST_PREFIX
-        else:
-            return INSIDE_PREFIX
+        return INSIDE_PREFIX
     else:
         raise ValueError("Invalid tagging scheme %s" % tagging_scheme)

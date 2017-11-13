@@ -2,14 +2,14 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
-import rustling
 from enum import Enum
-from rustling import RustlingParser as _RustlingParser, RustlingError
+from rustling import (RustlingParser as _RustlingParser, RustlingError,
+                      all_configs)
 
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, LABEL, \
     RUSTLING_DIM_KIND, SUPPORTED_LANGUAGES
 from snips_nlu.languages import Language
-from utils import LimitedSizeDict, classproperty
+from snips_nlu.utils import LimitedSizeDict, classproperty
 
 
 class BuiltInEntity(Enum):
@@ -142,22 +142,23 @@ class BuiltInEntity(Enum):
 
 _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = dict()
 
-for k, v in rustling.all_configs().iteritems():
+for k, v in all_configs().iteritems():
     try:
-        language = Language.from_rustling_code(k)
+        lang = Language.from_rustling_code(k)
     except KeyError:
         continue
-    _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[language] = \
+    _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[lang] = \
         set(BuiltInEntity.from_rustling_dim_kind(e) for e in v)
 
 _SUPPORTED_BUILTINS_BY_LANGUAGE = defaultdict(set)
-for entity in BuiltInEntity:
-    for language in entity.supported_languages:
-        if not entity in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[language]:
+for builtin_entity in BuiltInEntity:
+    for lang in builtin_entity.supported_languages:
+        if not builtin_entity in \
+                _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[lang]:
             raise KeyError("Found '%s' in supported languages of '%s' but, "
                            "'%s' is not supported in rustling.all_configs()" %
-                           (language, entity, language))
-        _SUPPORTED_BUILTINS_BY_LANGUAGE[language].add(entity)
+                           (lang, builtin_entity, lang))
+        _SUPPORTED_BUILTINS_BY_LANGUAGE[lang].add(builtin_entity)
 
 RUSTLING_ENTITIES = set(
     kind for kinds in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE.values()
@@ -200,9 +201,9 @@ class RustlingParser(object):
 
 
 _RUSTLING_PARSERS = dict()
-for language in Language:
+for lang in Language:
     try:
-        _RUSTLING_PARSERS[language] = RustlingParser(language)
+        _RUSTLING_PARSERS[lang] = RustlingParser(lang)
     except RustlingError:
         pass
 
@@ -210,7 +211,6 @@ RUSTLING_SUPPORTED_LANGUAGES = set(_RUSTLING_PARSERS.keys())
 
 
 def get_builtin_entities(text, language, scope=None):
-    global _RUSTLING_CACHE
     global _RUSTLING_PARSERS
 
     parser = _RUSTLING_PARSERS.get(language, False)
@@ -225,17 +225,18 @@ def get_builtin_entities(text, language, scope=None):
     entities = [e for e in scope if parser.supports_entity(e)]
     entities_parsed_dims = set(e.rustling_dim_kind for e in entities)
     parsed_entities = []
-    for ent in parser.parse(text, scope=scope):
-        if ent["dim"] in entities_parsed_dims:
+    for entity in parser.parse(text, scope=scope):
+        if entity["dim"] in entities_parsed_dims:
             parsed_entity = {
-                MATCH_RANGE: (ent["char_range"]["start"],
-                              ent["char_range"]["end"]),
-                VALUE: ent["value"],
-                ENTITY: _DIM_KIND_TO_ENTITY[ent["dim"]]
+                MATCH_RANGE: (entity["char_range"]["start"],
+                              entity["char_range"]["end"]),
+                VALUE: entity["value"],
+                ENTITY: _DIM_KIND_TO_ENTITY[entity["dim"]]
             }
             parsed_entities.append(parsed_entity)
     return parsed_entities
 
 
 def is_builtin_entity(entity_label):
+    #pylint: disable=E1135
     return entity_label in BuiltInEntity.built_in_entity_by_label

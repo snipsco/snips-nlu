@@ -8,7 +8,7 @@ from snips_nlu.constants import MATCH_RANGE
 from snips_nlu.languages import Language
 from snips_nlu.string_variations import (
     and_variations, alphabetic_value, punctuation_variations,
-    get_string_variations)
+    get_string_variations, numbers_variations)
 
 
 class TestStringVariations(unittest.TestCase):
@@ -90,8 +90,25 @@ class TestStringVariations(unittest.TestCase):
             "a and b 2",
             "a & b 2",
             "a b 2",
-            # "a and b two",
-            # "a & b two",
-            # "a b two"
+            "a and b two",
+            "a & b two",
+            "a b two"
+        }
+        self.assertItemsEqual(variations, expected_variations)
+
+    def test_numbers_variations_should_handle_floats(self):
+        # Given
+        language = Language.EN
+        string = "7.62 mm caliber 2 and six"
+
+        # When
+        variations = numbers_variations(string, language)
+
+        # Then
+        expected_variations = {
+            "7.62 mm caliber 2 and six",
+            "7.62 mm caliber two and six",
+            "7.62 mm caliber 2 and 6",
+            "7.62 mm caliber two and 6",
         }
         self.assertItemsEqual(variations, expected_variations)

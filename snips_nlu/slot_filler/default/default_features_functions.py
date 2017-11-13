@@ -92,7 +92,7 @@ def default_features(language, dataset, intent, config, use_stemming,
                 "args": {
                     "built_in_entity_label": entity.label,
                     "language_code": language.iso_code,
-                    "tagging_scheme_code": TaggingScheme.BILOU.value},
+                    "tagging_scheme_code": TaggingScheme.BIO.value},
                 "offsets": [-2, -1, 0]
             }
         )
@@ -104,7 +104,7 @@ def default_features(language, dataset, intent, config, use_stemming,
 
     intent_entities = get_intent_custom_entities(dataset, intent)
     for entity_name, entity in intent_entities.iteritems():
-        if len(entity[UTTERANCES]) == 0:
+        if not entity[UTTERANCES]:
             continue
 
         collection = list(
@@ -115,11 +115,13 @@ def default_features(language, dataset, intent, config, use_stemming,
         features.append(
             {
                 "factory_name": "get_token_is_in_fn",
-                "args": {"tokens_collection": collection,
-                         "collection_name": entity_name,
-                         "use_stemming": use_stemming,
-                         "language_code": language.iso_code,
-                         "tagging_scheme_code": TaggingScheme.BILOU.value},
+                "args": {
+                    "tokens_collection": collection,
+                    "collection_name": entity_name,
+                    "use_stemming": use_stemming,
+                    "tagging_scheme_code": TaggingScheme.BILOU.value,
+                    "language_code": language.iso_code,
+                },
                 "offsets": tuple(config.crf_features_config.entities_offsets)
             }
         )

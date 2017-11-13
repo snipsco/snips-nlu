@@ -118,7 +118,7 @@ class TestFeatureFunctions(unittest.TestCase):
         feature_fn = get_token_is_in_fn(collection, "animal",
                                         use_stemming=False,
                                         tagging_scheme_code=scheme_code,
-                                        language_code='en')
+                                        language_code=language.iso_code)
 
         # Then
         self.assertEqual(expected_features,
@@ -131,8 +131,7 @@ class TestFeatureFunctions(unittest.TestCase):
         def stem_mocked(string, _):
             if string.startswith("bird"):
                 return "bird_stemmed"
-            else:
-                return string
+            return string
 
         mocked_stem.side_effect = stem_mocked
         language = Language.EN
@@ -317,14 +316,15 @@ class TestFeatureFunctions(unittest.TestCase):
             'there': 'there'
         }
 
+        # pylint: disable=unused-argument
         def np_random(a, size, replace=False):
             a = sorted(a)
             if a == sorted(collection_1.keys()) \
                     or a == sorted(collection_2.keys()):
                 return np.array(a[:size])
-            else:
-                raise ValueError("Unexpected value: {}".format(a))
+            raise ValueError("Unexpected value: {}".format(a))
 
+        # pylint: enable=unused-argument
         mocked_np_random.side_effect = np_random
 
         # When

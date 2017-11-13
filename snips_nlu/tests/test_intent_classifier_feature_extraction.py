@@ -64,18 +64,20 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         # Then
         try:
             dumped = json.dumps(serialized_featurizer).decode("utf8")
-        except:
+        except:  #pylint: disable=W0702
             self.fail("Featurizer dict should be json serializable to utf8.\n"
                       "Traceback:\n%s" % tb.format_exc())
 
         try:
             _ = Featurizer.from_dict(json.loads(dumped))
-        except:
+        except:  #pylint: disable=W0702
             self.fail("SnipsNLUEngine should be deserializable from dict with "
                       "unicode values\nTraceback:\n%s" % tb.format_exc())
 
         vocabulary = tfidf_vectorizer.vocabulary_
+        # pylint: disable=W0212
         idf_diag = tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+        # pylint: enable=W0212
 
         best_features = featurizer.best_features
         entity_utterances_to_feature_names = {
@@ -124,9 +126,11 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
 
         # Then
         self.assertEqual(featurizer.language, language)
+        # pylint: disable=W0212
         self.assertListEqual(
             featurizer.tfidf_vectorizer._tfidf._idf_diag.data.tolist(),
             idf_diag)
+        # pylint: enable=W0212
         self.assertDictEqual(featurizer.tfidf_vectorizer.vocabulary_,
                              vocabulary)
         self.assertListEqual(featurizer.best_features, best_features)
@@ -191,23 +195,23 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         # Then
         expected_utterance_to_entity_names = {
             "entity 1": {"entityfeatureentity1", "entityfeatureentity2"},
-            # "entity one": {"entityfeatureentity1", "entityfeatureentity2"},
+            "entity one": {"entityfeatureentity1", "entityfeatureentity2"},
             "éntity 1": {"entityfeatureentity1"},
-            # "éntity one": {"entityfeatureentity1"},
+            "éntity one": {"entityfeatureentity1"},
             "Éntity_2": {"entityfeatureentity2"},
             "Éntity2": {"entityfeatureentity2"},
-            # "Éntity_two": {"entityfeatureentity2"},
+            "Éntity_two": {"entityfeatureentity2"},
             "entity_2": {"entityfeatureentity2"},
-            # "entity_two": {"entityfeatureentity2"},
-            # "entity two": {"entityfeatureentity2"},
+            "entity_two": {"entityfeatureentity2"},
+            "entity two": {"entityfeatureentity2"},
             "entity2": {"entityfeatureentity2"},
             "Éntity 2": {"entityfeatureentity2"},
-            # "Éntity two": {"entityfeatureentity2"},
+            "Éntity two": {"entityfeatureentity2"},
             "entity 2": {"entityfeatureentity2"},
             "Alternative entity 2": {"entityfeatureentity2"},
-            # "Alternative entity two": {"entityfeatureentity2"},
+            "Alternative entity two": {"entityfeatureentity2"},
             "alternative entity 2": {"entityfeatureentity2"},
-            # "alternative entity two": {"entityfeatureentity2"}
+            "alternative entity two": {"entityfeatureentity2"}
         }
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)

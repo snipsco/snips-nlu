@@ -78,9 +78,9 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
     features = language.default_sep.join(normalized_stemmed_tokens)
-    if len(entities_features):
+    if entities_features:
         features += " " + " ".join(entities_features)
-    if len(word_clusters_features):
+    if word_clusters_features:
         features += " " + " ".join(word_clusters_features)
     return features
 
@@ -109,8 +109,8 @@ def deserialize_tfidf_vectorizer(vectorizer_dict, language, featurizer_config):
         col = range(idf_diag_shape[0])
         idf_diag = sp.csr_matrix((idf_diag_data, (row, col)),
                                  shape=idf_diag_shape)
-        tfidf_transformer._idf_diag = idf_diag
-    tfidf_vectorizer._tfidf = tfidf_transformer
+        tfidf_transformer._idf_diag = idf_diag  # pylint: disable=W0212
+    tfidf_vectorizer._tfidf = tfidf_transformer  # pylint: disable=W0212
     return tfidf_vectorizer
 
 
@@ -161,22 +161,23 @@ class Featurizer(object):
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
-        if all(len("".join(tokenize_light(q, self.language))) == 0
+        if all(not "".join(tokenize_light(q, self.language))
                for q in queries):
             return None
         preprocessed_queries = self.preprocess_queries(queries)
-
+        # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             preprocessed_queries)
+        # pylint: enable=C0103
         list_index_words = {self.tfidf_vectorizer.vocabulary_[x]: x for x in
                             self.tfidf_vectorizer.vocabulary_}
 
         stop_words = get_stop_words(self.language)
 
-        chi2val, pval = chi2(X_train_tfidf, y)
+        _, pval = chi2(X_train_tfidf, y)
         self.best_features = [i for i, v in enumerate(pval) if
                               v < self.pvalue_threshold]
-        if len(self.best_features) == 0:
+        if not self.best_features:
             self.best_features = [idx for idx, val in enumerate(pval) if
                                   val == pval.min()]
 
@@ -193,8 +194,10 @@ class Featurizer(object):
 
     def transform(self, queries):
         preprocessed_queries = self.preprocess_queries(queries)
+        # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.transform(preprocessed_queries)
         X = X_train_tfidf[:, self.best_features]
+        # pylint: enable=C0103
         return X
 
     def fit_transform(self, dataset, queries, y):
@@ -202,8 +205,10 @@ class Featurizer(object):
 
     def to_dict(self):
         if hasattr(self.tfidf_vectorizer, "vocabulary_"):
+            # pylint: # pylint: disable=W0212
             vocab = self.tfidf_vectorizer.vocabulary_
             idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
+            # pylint: enable=W0212
             entity_utterances_to_entity_names = {
                 k: list(v)
                 for k, v in self.entity_utterances_to_feature_names.iteritems()

@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
 
-import argparse
-import io
-import json
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
@@ -286,7 +283,7 @@ class SnipsNLUEngine(NLUEngine):
 
     def get_fitted_tagger(self, dataset, intent):
         dataset = validate_and_format_dataset(dataset)
-        crf_features_config = self.config.probabilistic_intent_parser_config\
+        crf_features_config = self.config.probabilistic_intent_parser_config \
             .crf_features_config
         features = crf_features(dataset, intent, self.language,
                                 crf_features_config)
@@ -352,33 +349,3 @@ class SnipsNLUEngine(NLUEngine):
             intents_data_sizes=intents_data_sizes,
             config=obj_dict["config"]
         )
-
-
-def main_create_and_train_engine():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("language", type=unicode)
-    parser.add_argument("dataset_path", type=unicode)
-    parser.add_argument("output_path", type=unicode)
-    parser.add_argument("--config-path", type=unicode)
-    args = vars(parser.parse_args())
-
-    dataset_path = args.pop("dataset_path")
-    with io.open(dataset_path, "r", encoding="utf8") as f:
-        dataset = json.load(f)
-
-    if args.get("config_path") is not None:
-        config_path = args.pop("config_path")
-        with io.open(config_path, "r", encoding="utf8") as f:
-            config = json.load(f)
-    else:
-        config = NLUConfig()
-
-    language = Language.from_iso_code(args.pop("language"))
-    engine = SnipsNLUEngine(language, config).fit(dataset)
-    print "Create and trained the engine..."
-
-    output_path = args.pop("output_path")
-    serialized_engine = json.dumps(engine.to_dict()).decode("utf8")
-    with io.open(output_path, "w", encoding="utf8") as f:
-        f.write(serialized_engine)
-    print "Saved the trained engine to %s" % output_path

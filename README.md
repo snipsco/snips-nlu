@@ -16,6 +16,7 @@ Create a virtual env:
 
     virtualenv venv
 
+
 Activate it:
 
     . venv/bin/activate
@@ -28,13 +29,12 @@ Update the submodules:
 
 Then create a pip.conf file within the virtual env (replacing `<username>` and `<password>` with appropriate values):
 
-```
-echo "[global]\nindex = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-```
+    echo "[global]\nindex = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
+
 
 Install the package in edition mode:
 
-    pip install -e .
+    pip install -e ".[test]"
     
 
 ## API
@@ -103,6 +103,13 @@ with io.open("path/to/trained_engine.json") as f:
     trained_engine_dict = json.load(f)
     
 trained_engine = SnipsNLUEngine.from_dict(trained_engine_dict)
+```
+
+### CLI
+
+```bash
+>>> train-engine en /path/to/input/dataset.json /path/to/output/trained_engine.json
+>>> engine-inference /path/to/output/trained_engine.json
 ```
 
 ### Versioning

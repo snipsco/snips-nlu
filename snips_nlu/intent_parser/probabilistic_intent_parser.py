@@ -172,7 +172,7 @@ def conservative_slots_permutations(n_detected_builtins, possible_slots_names):
     # must be taken into account
     permutation_pool = range(len(possible_slots_names) + n_detected_builtins)
     # Generate all permutations
-    perms = [p for p in permutations(permutation_pool, n_detected_builtins)]
+    perms = permutations(permutation_pool, n_detected_builtins)
 
     # Replace the indices greater than possible_slots_names by "O"
     perms = [tuple(possible_slots_names[i] if i < len(possible_slots_names)

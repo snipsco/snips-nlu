@@ -20,9 +20,9 @@ required = [
     "scipy==0.19.0",
     "scikit-learn==0.18.1",
     "sklearn-crfsuite==0.3.5",
-    "builtin_entities_ontology==0.5.0",
+    "builtin_entities_ontology==0.5.1",
     "semantic_version==2.6.0",
-    "rustling==7.2",
+    "rustling==8.0",
     "nlu_utils==0.5.0",
     "num2words==0.5.5"
 ]

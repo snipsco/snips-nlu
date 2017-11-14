@@ -79,6 +79,7 @@ class TestBuiltInEntities(unittest.TestCase):
         expected_dim_kinds = [
             "Time",
             "Number",
+            "Percentage",
             "Ordinal",
             "AmountOfMoney",
             "Temperature",

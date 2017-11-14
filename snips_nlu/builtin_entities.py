@@ -37,6 +37,17 @@ class BuiltInEntity(Enum):
         }
     }
 
+    PERCENTAGE = {
+        LABEL: "snips/percentage",
+        RUSTLING_DIM_KIND: "Percentage",
+        SUPPORTED_LANGUAGES: {
+            Language.DE,
+            Language.EN,
+            Language.ES,
+            Language.FR,
+        }
+    }
+
     TEMPERATURE = {
         LABEL: "snips/temperature",
         RUSTLING_DIM_KIND: "Temperature",
@@ -79,6 +90,7 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.DE,
             Language.EN,
+            Language.ES,
             Language.FR,
             Language.KO,
         }

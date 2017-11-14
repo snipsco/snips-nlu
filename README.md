@@ -12,14 +12,13 @@ You will need to be signed in to access the repo.
 
 ## Development
 
-### Installation
 Create a virtual env:
 
     virtualenv venv
 
 Activate it:
 
-    venv/bin/activate
+    . venv/bin/activate
 
 
 Update the submodules:
@@ -27,10 +26,10 @@ Update the submodules:
     git submodule update --init --recursive
 
 
-Then create a pip.conf file within the virtual env:
+Then create a pip.conf file within the virtual env (replacing `<username>` and `<password>` with appropriate values):
 
 ```
-echo "[global]\nindex = https://nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
+echo "[global]\nindex = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
 ```
 
 Install the package in edition mode:
@@ -38,37 +37,40 @@ Install the package in edition mode:
     pip install -e .
     
 
-As some dependencies are private, you will need a valid username/password to authenticate to the Nexus repository.
+## API
 
-### Initialization
+### Data
+The input of the NLU engine training is a dataset which format can be found [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)
+
+### Code
 
 ```python
-from snips_nlu.nlu_engine import SnipsNLUEngine
-```
+import io
+import json
+from pprint import pprint
+
+from snips_nlu.nlu_engine import SnipsNLUEngine, NLUConfig
+
+############## Initialization ##############
+
+# The nlu config is optional here
+with io.open("config.json") as f:
+    nlu_config = NLUConfig.from_dict(json.load(f))
+
+engine = SnipsNLUEngine(language='en', config=nlu_config)
 
 
-The NLU Engine can be initialized in two ways:
+############## Training ####################
 
-- You can create an empty engine in order to fit it with a dataset afterwards:
-    ```python
-    engine = SnipsNLUEngine(language='en')
-    ```
+with io.open("path/to/dataset.json") as f:
+    dataset = json.load(f)
+    
+engine.fit(dataset)
 
-- Or you can load an already trained engine:
-    ```python
-    engine = SnipsNLUEngine.from_dict(engine_as_dict)
-    ```
+############## Parsing #####################
 
-### Serialization
-The NLU Engine has an API that allows to persist the object as a dictionary:
-```python
-engine_as_dict = engine.to_dict()
-```
-
-### Parsing
-```python
->>> parsing = engine.parse("Turn on the light in the kitchen")
->>> pprint(parsing)
+parsing = engine.parse("Turn on the light in the kitchen")
+pprint(parsing)
 # {
 #     "text": "Turn on the light in the kitchen", 
 #     "intent": {
@@ -88,28 +90,20 @@ engine_as_dict = engine.to_dict()
 #         }
 #     ]
 # }
-```
 
-### Training
-```python
-engine.fit(dataset)
-```
 
-### Create a engine from a `NLUConfig` file or configuration a `dict`
-```python
-import json
-from snips_nlu import SnipsNLUEngine
-from snips_nlu.config import NLUConfig 
+############## Serialization ###############
 
-with open("config.json") as f:
-    config = json.load(f) 
+with io.open("path/to/trained_engine.json", mode="w", encoding="utf8") as f:
+    f.write(json.dumps(engine.to_dict()).decode())
+
+############## Deserialization #############
+
+with io.open("path/to/trained_engine.json") as f:
+    trained_engine_dict = json.load(f)
     
-config = NLUConfig.from_dict(config)
-engine = SnipsNLUEngine(language='en', config=config)
+trained_engine = SnipsNLUEngine.from_dict(trained_engine_dict)
 ```
-
-
-where `dataset` is a dictionary which format is described [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)
 
 ### Versioning
 The NLU Engine has a separated versioning for the underlying model:

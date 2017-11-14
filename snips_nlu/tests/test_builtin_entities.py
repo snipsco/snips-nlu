@@ -156,7 +156,7 @@ class TestBuiltInEntities(unittest.TestCase):
             # When / Then
             try:
                 get_builtin_entities(text, l)
-            except:  #pylint: disable=W0702
+            except:  # pylint: disable=W0702
                 self.fail("get_builtin_entities does not support %s."
                           "\n%s" % (l.iso_code, tb.format_exc()))
 

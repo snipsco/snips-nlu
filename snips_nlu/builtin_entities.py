@@ -241,5 +241,5 @@ def get_builtin_entities(text, language, scope=None):
 
 
 def is_builtin_entity(entity_label):
-    #pylint: disable=E1135
+    # pylint: disable=E1135
     return entity_label in BuiltInEntity.built_in_entity_by_label

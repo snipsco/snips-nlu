@@ -64,13 +64,13 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         # Then
         try:
             dumped = json.dumps(serialized_featurizer).decode("utf8")
-        except:  #pylint: disable=W0702
+        except:  # pylint: disable=W0702
             self.fail("Featurizer dict should be json serializable to utf8.\n"
                       "Traceback:\n%s" % tb.format_exc())
 
         try:
             _ = Featurizer.from_dict(json.loads(dumped))
-        except:  #pylint: disable=W0702
+        except:  # pylint: disable=W0702
             self.fail("SnipsNLUEngine should be deserializable from dict with "
                       "unicode values\nTraceback:\n%s" % tb.format_exc())
 

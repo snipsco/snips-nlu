@@ -17,11 +17,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/number",
         RUSTLING_DIM_KIND: "Number",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.FR,
             Language.ES,
+            Language.FR,
             Language.KO,
-            Language.DE
         }
     }
 
@@ -29,11 +29,22 @@ class BuiltInEntity(Enum):
         LABEL: "snips/ordinal",
         RUSTLING_DIM_KIND: "Ordinal",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.FR,
             Language.ES,
+            Language.FR,
             Language.KO,
-            Language.DE
+        }
+    }
+
+    PERCENTAGE = {
+        LABEL: "snips/percentage",
+        RUSTLING_DIM_KIND: "Percentage",
+        SUPPORTED_LANGUAGES: {
+            Language.DE,
+            Language.EN,
+            Language.ES,
+            Language.FR,
         }
     }
 
@@ -41,10 +52,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/temperature",
         RUSTLING_DIM_KIND: "Temperature",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.FR,
             Language.ES,
-            Language.KO
+            Language.FR,
+            Language.KO,
         }
     }
 
@@ -52,11 +64,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/datetime",
         RUSTLING_DIM_KIND: "Time",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.FR,
             Language.ES,
+            Language.FR,
             Language.KO,
-            Language.DE
         }
     }
 
@@ -64,11 +76,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/duration",
         RUSTLING_DIM_KIND: "Duration",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.FR,
             Language.ES,
+            Language.FR,
             Language.KO,
-            Language.DE
         }
     }
 
@@ -76,8 +88,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/amountOfMoney",
         RUSTLING_DIM_KIND: "AmountOfMoney",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.KO
+            Language.ES,
+            Language.FR,
+            Language.KO,
         }
     }
 
@@ -153,7 +168,7 @@ for k, v in all_configs().iteritems():
 _SUPPORTED_BUILTINS_BY_LANGUAGE = defaultdict(set)
 for builtin_entity in BuiltInEntity:
     for lang in builtin_entity.supported_languages:
-        if not builtin_entity in \
+        if builtin_entity not in \
                 _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE[lang]:
             raise KeyError("Found '%s' in supported languages of '%s' but, "
                            "'%s' is not supported in rustling.all_configs()" %
@@ -238,5 +253,5 @@ def get_builtin_entities(text, language, scope=None):
 
 
 def is_builtin_entity(entity_label):
-    #pylint: disable=E1135
+    # pylint: disable=E1135
     return entity_label in BuiltInEntity.built_in_entity_by_label

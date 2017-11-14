@@ -109,7 +109,7 @@ class CRFTagger(object):
         return self.crf_model.tagger_.probability(cleaned_labels)
 
     def fit(self, data, verbose=False):
-        #pylint: disable=C0103
+        # pylint: disable=C0103
         X = [self.compute_features(sample[TOKENS]) for sample in data]
         Y = [[tag.encode('utf8') for tag in sample[TAGS]] for sample in data]
         # pylint: enable=C0103

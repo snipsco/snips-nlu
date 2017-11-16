@@ -47,16 +47,6 @@ def get_features_from_signatures(signatures):
     return features
 
 
-def scaled_regularization(n_samples, n_reference=50):
-    c1, c2 = .0, .0
-
-    coef = n_samples / float(n_reference)
-    c1 *= coef
-    c2 *= coef
-
-    return c1, c2
-
-
 class CRFTagger(object):
     def __init__(self, crf_model, features_signatures, tagging_scheme,
                  language):
@@ -114,9 +104,6 @@ class CRFTagger(object):
         Y = [[tag.encode('utf8') for tag in sample[TAGS]] for sample in data]
         # pylint: enable=C0103
 
-        c1, c2 = scaled_regularization(len(X))
-        self.crf_model.c1 = c1
-        self.crf_model.c2 = c2
         self.crf_model = self.crf_model.fit(X, Y)
         if verbose:
             self.print_weights()

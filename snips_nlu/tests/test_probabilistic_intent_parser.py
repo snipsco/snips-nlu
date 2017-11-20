@@ -4,14 +4,16 @@ import unittest
 
 from mock import MagicMock, patch, call
 
+from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.config import SlotFillerDataAugmentationConfig
+from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
-    generate_slots_permutations)
+    generate_slots_permutations, filter_overlapping_builtins)
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
@@ -43,7 +45,9 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         expected_indexes = [[0], [0, 1], [1], [2]]
         self.assertListEqual(indexes, expected_indexes)
 
-    def test_augment_slots(self):
+    @patch("snips_nlu.intent_parser.probabilistic_intent_parser"
+           ".filter_overlapping_builtins")
+    def test_augment_slots(self, mocked_filter):
         # Given
         language = Language.EN
         text = "Find me a flight before 10pm and after 8pm"
@@ -55,6 +59,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         missing_slots = {"start_date", "end_date"}
 
         tags = ['O' for _ in tokens]
+
+        mocked_filter.side_effect = filter_overlapping_builtins
 
         def mocked_sequence_probability(_, tags_):
             tags_1 = ['O',
@@ -146,11 +152,47 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                                         intent_slots_mapping, missing_slots)
 
         # Then
+        mocked_filter.assert_called_once()
         expected_slots = [
             ParsedSlot(value='after 8pm', match_range=(33, 42),
                        entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
+
+    def test_filter_overlapping_builtins(self):
+        # Given
+        language = Language.EN
+        text = "Find me a flight before 10pm and after 8pm"
+        tokens = tokenize(text, language)
+        tags = ['O' for _ in xrange(5)] + ['B-flight'] + ['O' for _ in
+                                                          xrange(3)]
+        tagging_scheme = TaggingScheme.BIO
+        builtin_entities = [
+            {
+                MATCH_RANGE: (17, 28),
+                VALUE: "before 10pm",
+                ENTITY: BuiltInEntity.DATETIME
+            },
+            {
+                MATCH_RANGE: (33, 42),
+                VALUE: "after 8pm",
+                ENTITY: BuiltInEntity.DATETIME
+            }
+        ]
+
+        # When
+        entities = filter_overlapping_builtins(builtin_entities, tokens, tags,
+                                               tagging_scheme)
+
+        # Then
+        expected_entities = [
+            {
+                MATCH_RANGE: (33, 42),
+                VALUE: "after 8pm",
+                ENTITY: BuiltInEntity.DATETIME
+            }
+        ]
+        self.assertEqual(entities, expected_entities)
 
     def test_should_fit_only_selected_intents(self):
         # Given

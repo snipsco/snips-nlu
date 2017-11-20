@@ -177,9 +177,8 @@ def filter_overlapping_builtins(builtin_entities, tokens, tags,
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     ents = []
     for ent in builtin_entities:
-        if any(s[MATCH_RANGE][0] <= ent[MATCH_RANGE][0] < s[MATCH_RANGE][1]
-               or s[MATCH_RANGE][0] < ent[MATCH_RANGE][1] <= s[MATCH_RANGE][1]
-               for s in slots):
+        if any(ent[MATCH_RANGE][0] < s[MATCH_RANGE][1]
+               and ent[MATCH_RANGE][1] > s[MATCH_RANGE][0] for s in slots):
             continue
         ents.append(ent)
     return ents

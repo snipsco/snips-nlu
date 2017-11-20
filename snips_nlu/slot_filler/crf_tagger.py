@@ -65,11 +65,11 @@ class CRFTagger(object):
 
     @property
     def labels(self):
-        l = []
+        labels = []
         if self.crf_model.tagger_ is not None:
-            l = [label.decode('utf8') for label in
-                 self.crf_model.tagger_.labels()]
-        return l
+            labels = [label.decode('utf8') for label in
+                      self.crf_model.tagger_.labels()]
+        return labels
 
     @property
     def fitted(self):

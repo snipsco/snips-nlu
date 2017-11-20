@@ -4,9 +4,7 @@ import unittest
 
 from mock import MagicMock, patch, call
 
-from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.config import SlotFillerDataAugmentationConfig
-from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
@@ -55,18 +53,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "end_date": "snips/datetime",
         }
         missing_slots = {"start_date", "end_date"}
-        builtin_entities = [
-            {
-                MATCH_RANGE: (16, 28),
-                VALUE: " before 10pm",
-                ENTITY: BuiltInEntity.DATETIME
-            },
-            {
-                MATCH_RANGE: (33, 42),
-                VALUE: "after 8pm",
-                ENTITY: BuiltInEntity.DATETIME
-            }
-        ]
 
         tags = ['O' for _ in tokens]
 
@@ -156,9 +142,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         tagger.tagging_scheme = TaggingScheme.BIO
 
         # When
-        augmented_slots = augment_slots(text, tokens, tags, tagger,
-                                        intent_slots_mapping,
-                                        builtin_entities, missing_slots)
+        augmented_slots = augment_slots(text, language, tokens, tags, tagger,
+                                        intent_slots_mapping, missing_slots)
 
         # Then
         expected_slots = [

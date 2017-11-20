@@ -115,7 +115,7 @@ def _tags_to_slots(tags, tokens, is_start_of_slot, is_end_of_slot):
     return slots
 
 
-def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
+def tags_to_preslots(tokens, tags, tagging_scheme):
     if tagging_scheme == TaggingScheme.IO:
         slots = _tags_to_slots(tags, tokens, start_of_io_slot, end_of_io_slot)
     elif tagging_scheme == TaggingScheme.BIO:
@@ -126,6 +126,11 @@ def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
                                end_of_bilou_slot)
     else:
         raise ValueError("Unknown tagging scheme %s" % tagging_scheme)
+    return slots
+
+
+def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
+    slots = tags_to_preslots(tokens, tags, tagging_scheme)
     return [
         ParsedSlot(match_range=slot["range"],
                    value=text[slot["range"][0]:slot["range"][1]],

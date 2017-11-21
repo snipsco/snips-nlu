@@ -188,9 +188,8 @@ def generate_slots_permutations(n_detected_builtins, possible_slots_names,
     if num_exhaustive_perms <= exhaustive_permutations_threshold:
         return exhaustive_slots_permutations(
             n_detected_builtins, possible_slots_names)
-    else:
-        return conservative_slots_permutations(
-            n_detected_builtins, possible_slots_names)
+    return conservative_slots_permutations(
+        n_detected_builtins, possible_slots_names)
 
 
 def filter_overlapping_builtins(builtin_entities, tokens, tags,

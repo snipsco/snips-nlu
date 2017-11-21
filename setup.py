@@ -56,7 +56,8 @@ setup(name=PACKAGE_NAME,
           ]},
       entry_points={
           "console_scripts": [
-              "train-assistant=snips_nlu.nlu_engine:main_create_and_train_engine"
+              "train-engine=cli.cli:main_train_engine",
+              "engine-inference=cli.cli:main_engine_inference"
           ]
       },
       include_package_data=True,

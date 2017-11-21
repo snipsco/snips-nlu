@@ -195,10 +195,11 @@ class SnipsIntentClassifier(object):
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
         alpha = get_regularization_factor(filtered_dataset)
-        self.config.log_reg_args['alpha'] = alpha
+        log_reg_args = deepcopy(self.config.log_reg_args)
+        log_reg_args['alpha'] = alpha
         self.classifier = SGDClassifier(
             random_state=random_state,
-            **self.config.log_reg_args).fit(X, y)
+            **log_reg_args).fit(X, y)
         return self
 
     def get_intent(self, text):

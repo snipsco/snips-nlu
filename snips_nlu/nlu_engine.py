@@ -263,9 +263,9 @@ class SnipsNLUEngine(NLUEngine):
 
         random_state = check_random_state(self.random_seed)
         taggers = dict()
+        features_config = self.config.probabilistic_intent_parser_config \
+            .crf_features_config
         for intent in dataset[INTENTS]:
-            features_config = self.config.probabilistic_intent_parser_config \
-                .crf_features_config
             features = crf_features(dataset, intent, self.language,
                                     features_config, random_state)
             if intent in self._pre_trained_taggers:

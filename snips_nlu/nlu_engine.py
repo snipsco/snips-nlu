@@ -298,7 +298,7 @@ class SnipsNLUEngine(NLUEngine):
         features = crf_features(dataset, intent, self.language,
                                 crf_features_config, random_state)
         tagger = CRFTagger(get_crf_model(), features, TaggingScheme.BIO,
-                           self.language)
+                           self.language, crf_features_config)
         if self.probabilistic_parser is not None:
             config = self.probabilistic_parser.data_augmentation_config
         else:

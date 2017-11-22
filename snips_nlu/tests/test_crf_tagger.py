@@ -42,8 +42,10 @@ class TestCRFTagger(unittest.TestCase):
             }
         ]
 
+        config = CRFFeaturesConfig()
+
         tagger = CRFTagger(crf_model, features_signatures, tagging_scheme,
-                           Language.EN)
+                           Language.EN, config)
         tagger.fit(data)
 
         # When
@@ -76,7 +78,8 @@ class TestCRFTagger(unittest.TestCase):
                 }
             ],
             "language_code": "en",
-            "tagging_scheme": 2
+            "tagging_scheme": 2,
+            "config": CRFFeaturesConfig().to_dict()
         }
         self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
 
@@ -111,7 +114,8 @@ class TestCRFTagger(unittest.TestCase):
                 }
             ],
             "language_code": "en",
-            "tagging_scheme": 2
+            "tagging_scheme": 2,
+            "config": CRFFeaturesConfig().to_dict()
         }
         # When
         tagger = CRFTagger.from_dict(tagger_dict)
@@ -133,11 +137,14 @@ class TestCRFTagger(unittest.TestCase):
         ]
         expected_tagging_scheme = TaggingScheme.BILOU
         expected_language = Language.EN
+        expected_config = CRFFeaturesConfig()
 
         self.assertListEqual(tagger.features_signatures,
                              expected_features_signatures)
         self.assertEqual(tagger.tagging_scheme, expected_tagging_scheme)
         self.assertEqual(tagger.language, expected_language)
+        self.assertDictEqual(expected_config.to_dict(),
+                             tagger.config.to_dict())
 
     @patch('snips_nlu.slot_filler.crf_tagger.random')
     def test_should_compute_features(self, mocked_random):

@@ -6,7 +6,8 @@ import numpy as np
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import SlotFillerDataAugmentationConfig
+from snips_nlu.config import SlotFillerDataAugmentationConfig, \
+    ProbabilisticIntentParserConfig, CRFFeaturesConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
@@ -260,15 +261,17 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                 "offsets": [-1, 0]
             }
         ]
-
+        parser_config = ProbabilisticIntentParserConfig()
         tagging_scheme = TaggingScheme.BIO
 
         make_coffee_crf = get_crf_model()
         make_tea_crf = get_crf_model()
         make_coffee_tagger = CRFTagger(make_coffee_crf, features_signatures,
-                                       tagging_scheme, language)
+                                       tagging_scheme, language,
+                                       parser_config.crf_features_config)
         make_tea_tagger = CRFTagger(make_tea_crf, features_signatures,
-                                    tagging_scheme, language)
+                                    tagging_scheme, language,
+                                    parser_config.crf_features_config)
         taggers = {
             "MakeCoffee": make_coffee_tagger,
             "MakeTea": make_tea_tagger,
@@ -277,8 +280,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         mock_tagger_fit.side_effect = [make_coffee_tagger, make_tea_tagger]
 
         parser = ProbabilisticIntentParser(
-            language, intent_classifier, taggers,
-            slot_name_to_entity_mapping, random_seed=random_seed)
+            language, intent_classifier, taggers, slot_name_to_entity_mapping,
+            parser_config)
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         parser.fit(dataset)
 
@@ -292,10 +295,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                     "min_utterances": 200,
                     "capitalization_ratio": .2,
                 },
-                'crf_features_config': {
-                    "features_drop_out": dict(),
-                    "entities_offsets": [-2, -1, 0]
-                }
+                'crf_features_config': CRFFeaturesConfig().to_dict()
             },
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"

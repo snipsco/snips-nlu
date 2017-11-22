@@ -15,8 +15,7 @@ from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, LAST_PREFIX, \
     BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
-    get_prefix_fn, get_suffix_fn, get_ngram_fn,
-    create_feature_function, TOKEN_NAME, BaseFeatureFunction,
+    get_prefix_fn, get_suffix_fn, get_ngram_fn, TOKEN_NAME, Feature,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
     get_length_fn)
 from snips_nlu.tokenization import tokenize
@@ -181,11 +180,11 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         self.assertEqual(features, expected_features)
 
-    def test_create_feature_function(self):
+    def test_offset_feature(self):
         # Given
         language = Language.EN
         name = "position"
-        base_feature_function = BaseFeatureFunction(
+        base_feature_function = Feature(
             name, lambda _, token_index: token_index + 1)
 
         tokens = tokenize("a b c", language)
@@ -196,15 +195,15 @@ class TestFeatureFunctions(unittest.TestCase):
             2: ("position[+2]", [3, None, None])
         }
         cache = [{TOKEN_NAME: t for t in tokens} for _ in xrange(len(tokens))]
-        for offset, expected in expected_features.iteritems():
-            feature_name, feature_function = create_feature_function(
-                base_feature_function, offset)
-            expected_name, expected_feats = expected
+        for offset, (expected_name, expected_values) in \
+                expected_features.iteritems():
+            offset_feature = base_feature_function.get_offset_feature(offset)
             # When
-            feats = [feature_function(i, cache) for i in xrange(len(tokens))]
+            feature_values = [offset_feature.compute(i, cache)
+                              for i in xrange(len(tokens))]
             # Then
-            self.assertEqual(feature_name, expected_name)
-            self.assertEqual(feats, expected_feats)
+            self.assertEqual(expected_name, offset_feature.name)
+            self.assertEqual(expected_values, feature_values)
 
     def test_crf_features(self):
         # Given

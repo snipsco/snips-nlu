@@ -15,7 +15,7 @@ from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
     OUTSIDE
 from snips_nlu.slot_filler.feature_functions import (
-    TOKEN_NAME, create_feature_function)
+    TOKEN_NAME)
 from snips_nlu.tokenization import Token
 from snips_nlu.utils import (UnupdatableDict, mkdir_p)
 
@@ -33,17 +33,18 @@ def get_crf_model(model_filename=None):
 
 
 def get_features_from_signatures(signatures):
-    features = dict()
+    features = []
     for signature in signatures:
         factory_name = signature["factory_name"]
         factory = getattr(snips_nlu.slot_filler.feature_functions,
                           factory_name)
-        fn = factory(**(signature["args"]))
+        feature = factory(**(signature["args"]))
         for offset in signature["offsets"]:
-            feature_name, feature_fn = create_feature_function(fn, offset)
-            if feature_name in features:
-                raise KeyError("Existing feature: %s" % feature_name)
-            features[feature_name] = feature_fn
+            offset_feature = feature.get_offset_feature(offset)
+            feature_name = offset_feature.name
+            if offset_feature.name in features:
+                raise KeyError("Duplicated feature: %s" % feature_name)
+            features.append(offset_feature)
     return features
 
 
@@ -137,10 +138,10 @@ class CRFTagger(object):
         features = []
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
-            for feature_name, feature_fn in self.features.iteritems():
-                value = feature_fn(i, cache)
+            for feature in self.features:
+                value = feature.compute(i, cache)
                 if value is not None:
-                    token_features[feature_name] = value
+                    token_features[feature.name] = value
             features.append(token_features)
         return features
 

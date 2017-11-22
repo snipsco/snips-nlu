@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from collections import namedtuple
-
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
 from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
 from snips_nlu.languages import Language
@@ -23,7 +21,51 @@ from snips_nlu.slot_filler.ko.specific_features_functions import \
 
 TOKEN_NAME = "token"
 
-BaseFeatureFunction = namedtuple("BaseFeatureFunction", "name function")
+
+class Feature(object):
+    def __init__(self, name, func, feature_type=None, offset=0):
+        if name == TOKEN_NAME:
+            raise ValueError("'%s' name is reserved" % TOKEN_NAME)
+        self._name = name
+        self._feature_type = feature_type
+        self.function = func
+        self.offset = offset
+
+    def get_offset_feature(self, offset):
+        if offset == 0:
+            return self
+        else:
+            return Feature(self._name, self.function, self.feature_type,
+                           offset)
+
+    @property
+    def name(self):
+        if self.offset > 0:
+            return "%s[+%s]" % (self._name, self.offset)
+        elif self.offset < 0:
+            return "%s[%s]" % (self._name, self.offset)
+        else:
+            return self._name
+
+    @property
+    def feature_type(self):
+        if self._feature_type is not None:
+            return self._feature_type
+        else:
+            return self._name
+
+    def compute(self, token_index, cache):
+        if not 0 <= (token_index + self.offset) < len(cache):
+            return
+
+        if self._name in cache[token_index + self.offset]:
+            return cache[token_index + self.offset].get(self._name, None)
+        else:
+            tokens = [c["token"] for c in cache]
+            value = self.function(tokens, token_index + self.offset)
+            if value is not None:
+                cache[token_index + self.offset][self._name] = value
+            return value
 
 
 def crf_features(dataset, intent, language, crf_features_config, random_state):
@@ -49,7 +91,7 @@ def crf_features(dataset, intent, language, crf_features_config, random_state):
 
 # Base feature functions and factories
 def is_digit():
-    return BaseFeatureFunction(
+    return Feature(
         "is_digit",
         lambda tokens, token_index: "1" if tokens[
             token_index].value.isdigit() else None
@@ -57,14 +99,14 @@ def is_digit():
 
 
 def is_first():
-    return BaseFeatureFunction(
+    return Feature(
         "is_first",
         lambda tokens, token_index: "1" if token_index == 0 else None
     )
 
 
 def is_last():
-    return BaseFeatureFunction(
+    return Feature(
         "is_last",
         lambda tokens, token_index: "1" if token_index == len(
             tokens) - 1 else None
@@ -76,7 +118,8 @@ def get_prefix_fn(prefix_size):
         return get_word_chunk(tokens[token_index].normalized_value,
                               prefix_size, 0)
 
-    return BaseFeatureFunction("prefix-%s" % prefix_size, prefix)
+    return Feature("prefix-%s" % prefix_size, prefix,
+                   feature_type="prefix_%s")
 
 
 def get_suffix_fn(suffix_size):
@@ -85,11 +128,12 @@ def get_suffix_fn(suffix_size):
                               suffix_size, len(tokens[token_index].value),
                               reverse=True)
 
-    return BaseFeatureFunction("suffix-%s" % suffix_size, suffix)
+    return Feature("suffix-%s" % suffix_size, suffix,
+                   feature_type="suffix_%s")
 
 
 def get_length_fn():
-    return BaseFeatureFunction(
+    return Feature(
         "length", lambda tokens, token_index: len(tokens[token_index].value))
 
 
@@ -123,7 +167,7 @@ def get_ngram_fn(n, use_stemming, language_code,
             return language.default_sep.join(words)
         return None
 
-    return BaseFeatureFunction("ngram_%s" % n, ngram)
+    return Feature("ngram_%s" % n, ngram)
 
 
 def get_shape_ngram_fn(n, language_code):
@@ -139,7 +183,7 @@ def get_shape_ngram_fn(n, language_code):
                                              for t in tokens[token_index:end])
         return None
 
-    return BaseFeatureFunction("shape_ngram_%s" % n, shape_ngram)
+    return Feature("shape_ngram_%s" % n, shape_ngram)
 
 
 def get_word_cluster_fn(cluster_name, language_code, use_stemming):
@@ -151,7 +195,8 @@ def get_word_cluster_fn(cluster_name, language_code, use_stemming):
         return get_word_clusters(language)[cluster_name].get(normalized_value,
                                                              None)
 
-    return BaseFeatureFunction("word_cluster_%s" % cluster_name, word_cluster)
+    return Feature("word_cluster_%s" % cluster_name, word_cluster,
+                   feature_type="word_cluster")
 
 
 # pylint: disable=unused-argument
@@ -176,7 +221,8 @@ def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
                                          tagging_scheme)
         return None
 
-    return BaseFeatureFunction("token_is_in_%s" % collection_name, token_is_in)
+    return Feature("token_is_in_%s" % collection_name, token_is_in,
+                   feature_type="collection_match")
 
 
 # pylint: enable=unused-argument
@@ -213,35 +259,5 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code,
                     indexes.append(index)
             return get_scheme_prefix(token_index, indexes, tagging_scheme)
 
-    return BaseFeatureFunction(feature_name, built_in_annotation)
-
-
-def create_feature_function(base_feature_fn, offset):
-    """
-    Transforms a base feature function into a feature function
-    """
-    if base_feature_fn.name == TOKEN_NAME:
-        raise ValueError("'%s' name is reserved" % TOKEN_NAME)
-    if offset > 0:
-        index = "[+%s]" % offset
-    elif offset < 0:
-        index = "[%s]" % offset
-    else:
-        index = ""
-
-    feature_name = base_feature_fn.name + index
-
-    def feature_fn(token_index, cache):
-        if not 0 <= (token_index + offset) < len(cache):
-            return
-
-        if base_feature_fn.name in cache[token_index + offset]:
-            return cache[token_index + offset].get(base_feature_fn.name, None)
-        else:
-            tokens = [c["token"] for c in cache]
-            value = base_feature_fn.function(tokens, token_index + offset)
-            if value is not None:
-                cache[token_index + offset][base_feature_fn.name] = value
-            return value
-
-    return feature_name, feature_fn
+    return Feature(feature_name, built_in_annotation,
+                   feature_type="builtin_match")

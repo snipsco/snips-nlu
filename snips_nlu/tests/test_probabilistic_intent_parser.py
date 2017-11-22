@@ -293,7 +293,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                     "capitalization_ratio": .2,
                 },
                 'crf_features_config': {
-                    "base_drop_ratio": .5,
+                    "features_drop_out": dict(),
                     "entities_offsets": [-2, -1, 0]
                 }
             },
@@ -327,11 +327,14 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         parser_dict = {
             "config": {
                 'data_augmentation_config': {
-                    "min_utterances": 200,
-                    "capitalization_ratio": .2,
+                    "min_utterances": 42,
+                    "capitalization_ratio": 43,
                 },
                 'crf_features_config': {
-                    "base_drop_ratio": .5,
+                    "features_drop_out": {
+                        "feature_1": 0.5,
+                        "feature_2": 0.2
+                    },
                     "entities_offsets": [-2, -1, 0]
                 }
 
@@ -366,14 +369,16 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "number_of_cups": "snips/number"
         }
 
-        expected_data_augmentation_config = SlotFillerDataAugmentationConfig \
-            .from_dict({"min_utterances": 200})
+        expected_data_augmentation_config = {
+            "min_utterances": 42,
+            "capitalization_ratio": 43
+        }
 
         self.assertEqual(parser.language, language)
         self.assertEqual(parser.slot_name_to_entity_mapping,
                          expected_slot_name_to_entity_mapping)
-        self.assertEqual(parser.config.data_augmentation_config,
-                         expected_data_augmentation_config)
+        self.assertEqual(expected_data_augmentation_config,
+                         parser.config.data_augmentation_config.to_dict())
         self.assertIsNotNone(parser.intent_classifier)
         self.assertItemsEqual(parser.crf_taggers.keys(),
                               ["MakeCoffee", "MakeTea"])

@@ -272,7 +272,8 @@ class SnipsNLUEngine(NLUEngine):
                 tagger = self._pre_trained_taggers[intent]
             else:
                 tagger = CRFTagger(get_crf_model(), features,
-                                   TaggingScheme.BIO, self.language)
+                                   TaggingScheme.BIO, self.language,
+                                   features_config)
             taggers[intent] = tagger
         intent_classifier = SnipsIntentClassifier(
             self.language, self.config.intent_classifier_config,

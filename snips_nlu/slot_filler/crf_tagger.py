@@ -10,6 +10,7 @@ from copy import deepcopy
 from sklearn_crfsuite import CRF
 
 import snips_nlu.slot_filler.feature_functions
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
@@ -50,12 +51,13 @@ def get_features_from_signatures(signatures):
 
 class CRFTagger(object):
     def __init__(self, crf_model, features_signatures, tagging_scheme,
-                 language):
+                 language, crf_features_config):
         self.crf_model = crf_model
         self.features_signatures = features_signatures
         self._features = None
         self.tagging_scheme = tagging_scheme
         self.language = language
+        self.config = crf_features_config
 
     @property
     def features(self):
@@ -158,7 +160,8 @@ class CRFTagger(object):
             "crf_model_data": serialize_crf_model(self.crf_model),
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
-            "language_code": self.language.iso_code
+            "language_code": self.language.iso_code,
+            "config": self.config.to_dict()
         }
 
     @classmethod
@@ -167,8 +170,10 @@ class CRFTagger(object):
         tagging_scheme = TaggingScheme(int(tagger_config["tagging_scheme"]))
         language = Language.from_iso_code(tagger_config["language_code"])
         crf = deserialize_crf_model(tagger_config["crf_model_data"])
+        config = CRFFeaturesConfig.from_dict(tagger_config["config"])
         return cls(crf_model=crf, features_signatures=features_signatures,
-                   tagging_scheme=tagging_scheme, language=language)
+                   tagging_scheme=tagging_scheme, language=language,
+                   crf_features_config=config)
 
     def __del__(self):
         if self.crf_model is None or self.crf_model.modelfile.auto \

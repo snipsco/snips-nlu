@@ -6,6 +6,7 @@ import math
 import os
 import tempfile
 from copy import deepcopy
+from random import random
 
 from sklearn_crfsuite import CRF
 
@@ -102,8 +103,10 @@ class CRFTagger(object):
         return self.crf_model.tagger_.probability(cleaned_labels)
 
     def fit(self, data, verbose=False):
+        drop_out = self.config.features_drop_out
         # pylint: disable=C0103
-        X = [self.compute_features(sample[TOKENS]) for sample in data]
+        X = [self.compute_features(sample[TOKENS], drop_out)
+             for sample in data]
         Y = [[tag.encode('utf8') for tag in sample[TAGS]] for sample in data]
         # pylint: enable=C0103
 
@@ -131,7 +134,11 @@ class CRFTagger(object):
         for (feat, tag), weight in feature_weights:
             print "%s %s: %s" % (feat, tag, weight)
 
-    def compute_features(self, tokens):
+    def compute_features(self, tokens, drop_out_prob=False):
+        if drop_out_prob:
+            features_drop_out = self.config.features_drop_out
+        else:
+            features_drop_out = dict()
         tokens = [
             Token(t.value, t.start, t.end,
                   stem=stem(t.normalized_value, self.language))
@@ -141,6 +148,9 @@ class CRFTagger(object):
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
             for feature in self.features:
+                drop_out_prob = features_drop_out.get(feature.feature_type, 0)
+                if random() < drop_out_prob:
+                    continue
                 value = feature.compute(i, cache)
                 if value is not None:
                     token_features[feature.name] = value

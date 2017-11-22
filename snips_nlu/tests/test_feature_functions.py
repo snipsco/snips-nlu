@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
@@ -291,29 +290,24 @@ class TestFeatureFunctions(unittest.TestCase):
             'there': 'there'
         }
 
-        seed = 1
-        random_state = np.random.RandomState(seed)
-
         # When
-        drop_prob = 0.5
         features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
             crf_features_config=features_config, random_state=random_state)
 
         # Then
-        random_state = np.random.RandomState(seed)
-        collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
-        collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
+        for signature in features_signatures:
+            # sort collections in order to make testing easier
+            if 'tokens_collection' in signature['args']:
+                signature['args']['tokens_collection'] = sorted(
+                    signature['args']['tokens_collection'])
 
-        col_1 = random_state.choice(sorted(collection_1.keys()),
-                                    collection_1_size, replace=False).tolist()
-        col_2 = random_state.choice(sorted(collection_2.keys()),
-                                    collection_2_size, replace=False).tolist()
         expected_signatures = [
             {
                 'args': {
-                    'tokens_collection': col_1,
+                    'tokens_collection':
+                        sorted(list(set(collection_1.keys()))),
                     'collection_name': 'dummy_entity_1',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -324,7 +318,8 @@ class TestFeatureFunctions(unittest.TestCase):
             },
             {
                 'args': {
-                    'tokens_collection': col_2,
+                    'tokens_collection':
+                        sorted(list(set(collection_2.keys()))),
                     'collection_name': 'dummy_entity_2',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -334,8 +329,8 @@ class TestFeatureFunctions(unittest.TestCase):
                 'offsets': (-2, -1, 0)
             }
         ]
-        for signature in expected_signatures:
-            self.assertIn(signature, features_signatures)
+        for expected_signature in expected_signatures:
+            self.assertIn(expected_signature, features_signatures)
 
 
 if __name__ == '__main__':

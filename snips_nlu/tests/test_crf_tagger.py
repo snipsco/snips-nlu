@@ -2,8 +2,9 @@ from __future__ import unicode_literals
 
 import unittest
 
-from mock import patch
+from mock import patch, MagicMock, Mock
 
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
@@ -137,3 +138,41 @@ class TestCRFTagger(unittest.TestCase):
                              expected_features_signatures)
         self.assertEqual(tagger.tagging_scheme, expected_tagging_scheme)
         self.assertEqual(tagger.language, expected_language)
+
+    @patch('snips_nlu.slot_filler.crf_tagger.random')
+    def test_should_compute_features(self, mocked_random):
+        # Given
+        mocked_random.side_effect = [0.9, 0.1, 0.2, 0.4]
+
+        features_signatures = [
+            {
+                "factory_name": "get_ngram_fn",
+                "args": {
+                    "n": 1,
+                    "use_stemming": False,
+                    "language_code": "en",
+                    "common_words_gazetteer_name": None
+                },
+                "offsets": [0]
+            },
+        ]
+        drop_out = {
+            "ngram_1": 0.3
+        }
+        crf_features_config = CRFFeaturesConfig(features_drop_out=drop_out)
+        tagger = CRFTagger(default_crf_model(), features_signatures,
+                           TaggingScheme.BIO, Language.EN, crf_features_config)
+
+        tokens = tokenize("foo hello world bar", Language.EN)
+
+        # When
+        features_with_drop_out = tagger.compute_features(tokens, True)
+
+        # Then
+        expected_features = [
+            {"ngram_1": "foo"},
+            {},
+            {},
+            {"ngram_1": "bar"}
+        ]
+        self.assertListEqual(expected_features, features_with_drop_out)

@@ -22,15 +22,6 @@ def get_intent_custom_entities(dataset, intent):
     return custom_entities
 
 
-def compute_entity_collection_size(collection, crf_features_config):
-    num_entities = len(collection)
-    collection_size = int(
-        (1 - crf_features_config.base_drop_ratio) * num_entities)
-    collection_size = max(collection_size, 1)
-    collection_size = min(collection_size, num_entities)
-    return collection_size
-
-
 def default_features(language, dataset, intent, crf_features_config,
                      use_stemming, random_state,
                      common_words_gazetteer_name=None):
@@ -95,12 +86,9 @@ def default_features(language, dataset, intent, crf_features_config,
         if not entity[UTTERANCES]:
             continue
 
-        collection = set(preprocess(e) for e in entity[UTTERANCES].keys())
-        collection = sorted(collection)  # For test reproducibility
-        collection_size = compute_entity_collection_size(collection,
-                                                         crf_features_config)
-        collection = random_state.choice(collection, collection_size,
-                                         replace=False).tolist()
+        collection = list(
+            set(preprocess(e) for e in entity[UTTERANCES].keys()))
+
         features.append(
             {
                 "factory_name": "get_token_is_in_fn",

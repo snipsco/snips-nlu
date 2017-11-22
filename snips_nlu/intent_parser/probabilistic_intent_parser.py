@@ -16,7 +16,8 @@ from snips_nlu.slot_filler.crf_tagger import CRFTagger
 from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              utterance_to_sample,
                                              positive_tagging, OUTSIDE,
-                                             tag_name_to_slot_name)
+                                             tag_name_to_slot_name,
+                                             tags_to_preslots)
 from snips_nlu.tokenization import tokenize
 
 
@@ -78,20 +79,16 @@ class ProbabilisticIntentParser(object):
         slots = tags_to_slots(text, tokens, tags, tagger.tagging_scheme,
                               intent_slots_mapping)
 
-        builtin_slot_names = set(slot_name for (slot_name, entity) in
-                                 intent_slots_mapping.iteritems()
-                                 if is_builtin_entity(entity))
-        if not builtin_slot_names:
+        builtin_slots_names = set(slot_name for (slot_name, entity) in
+                                  intent_slots_mapping.iteritems()
+                                  if is_builtin_entity(entity))
+        if not builtin_slots_names:
             return slots
 
         # Replace tags corresponding to builtin entities by outside tags
-        tags = replace_builtin_tags(tags, builtin_slot_names)
-
-        scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
-                 for slot in builtin_slot_names]
-        builtin_entities = get_builtin_entities(text, self.language, scope)
-        slots = augment_slots(text, tokens, tags, tagger, intent_slots_mapping,
-                              builtin_entities, builtin_slot_names)
+        tags = replace_builtin_tags(tags, builtin_slots_names)
+        slots = augment_slots(text, self.language, tokens, tags, tagger,
+                              intent_slots_mapping, builtin_slots_names)
         return slots
 
     @property
@@ -175,9 +172,28 @@ def generate_slots_permutations(n_detected_builtins, possible_slots_names):
     return list(set(perms))
 
 
-def augment_slots(text, tokens, tags, tagger, intent_slots_mapping,
-                  builtin_entities, builtin_slots_names):
+def filter_overlapping_builtins(builtin_entities, tokens, tags,
+                                tagging_scheme):
+    slots = tags_to_preslots(tokens, tags, tagging_scheme)
+    ents = []
+    for ent in builtin_entities:
+        if any(ent[MATCH_RANGE][0] < s[MATCH_RANGE][1]
+               and ent[MATCH_RANGE][1] > s[MATCH_RANGE][0] for s in slots):
+            continue
+        ents.append(ent)
+    return ents
+
+
+def augment_slots(text, language, tokens, tags, tagger, intent_slots_mapping,
+                  builtin_slots_names):
     augmented_tags = tags
+    scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
+             for slot in builtin_slots_names]
+    builtin_entities = get_builtin_entities(text, language, scope)
+
+    builtin_entities = filter_overlapping_builtins(
+        builtin_entities, tokens, tags, tagger.tagging_scheme)
+
     grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
     for entity, matches in grouped_entities:
         spans_ranges = [match[MATCH_RANGE] for match in matches]

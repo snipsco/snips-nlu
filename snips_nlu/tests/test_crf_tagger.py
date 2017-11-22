@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from mock import patch, MagicMock, Mock
+from mock import patch
 
 from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.languages import Language

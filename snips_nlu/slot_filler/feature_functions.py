@@ -34,25 +34,21 @@ class Feature(object):
     def get_offset_feature(self, offset):
         if offset == 0:
             return self
-        else:
-            return Feature(self._name, self.function, self.feature_type,
-                           offset)
+        return Feature(self._name, self.function, self.feature_type, offset)
 
     @property
     def name(self):
         if self.offset > 0:
             return "%s[+%s]" % (self._name, self.offset)
-        elif self.offset < 0:
+        if self.offset < 0:
             return "%s[%s]" % (self._name, self.offset)
-        else:
-            return self._name
+        return self._name
 
     @property
     def feature_type(self):
         if self._feature_type is not None:
             return self._feature_type
-        else:
-            return self._name
+        return self._name
 
     def compute(self, token_index, cache):
         if not 0 <= (token_index + self.offset) < len(cache):

@@ -6,8 +6,7 @@ import numpy as np
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import SlotFillerDataAugmentationConfig, \
-    ProbabilisticIntentParserConfig, CRFFeaturesConfig
+from snips_nlu.config import ProbabilisticIntentParserConfig, CRFFeaturesConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset

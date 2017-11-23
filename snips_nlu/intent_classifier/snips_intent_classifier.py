@@ -6,6 +6,7 @@ from random import random
 from uuid import uuid4
 
 import numpy as np
+from copy import deepcopy
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.builtin_entities import is_builtin_entity
@@ -24,6 +25,16 @@ NOISE_NAME = str(uuid4()).decode()
 
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
+
+
+def remove_builtin_slot(dataset):
+    filtered_dataset = deepcopy(dataset)
+    for intent_data in filtered_dataset[INTENTS].values():
+        for utterance in intent_data[UTTERANCES]:
+            utterance[DATA] = [
+                chunk for chunk in utterance[DATA]
+                if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])]
+    return filtered_dataset
 
 
 def get_regularization_factor(dataset):
@@ -153,7 +164,7 @@ class SnipsIntentClassifier(object):
         self.featurizer = Featurizer(
             self.language,
             self.config.data_augmentation_config
-            .unknown_words_replacement_string,
+                .unknown_words_replacement_string,
             self.config.featurizer_config)
         self.min_utterances_per_intent = 20
 
@@ -162,18 +173,20 @@ class SnipsIntentClassifier(object):
         return self.intent_list is not None
 
     def fit(self, dataset):
+        filtered_dataset = remove_builtin_slot(dataset)
         utterances, y, intent_list = build_training_data(
-            dataset, self.language, self.config.data_augmentation_config)
+            filtered_dataset, self.language,
+            self.config.data_augmentation_config)
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
             return self
 
-        self.featurizer = self.featurizer.fit(dataset, utterances, y)
+        self.featurizer = self.featurizer.fit(filtered_dataset, utterances, y)
         if self.featurizer is None:
             return self
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
-        alpha = get_regularization_factor(dataset)
+        alpha = get_regularization_factor(filtered_dataset)
         self.config.log_reg_args['alpha'] = alpha
         self.classifier = SGDClassifier(**self.config.log_reg_args).fit(X, y)
         return self

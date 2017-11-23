@@ -5,7 +5,7 @@ import unittest
 from mock import patch
 
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
+from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.tokenization import tokenize
 
@@ -16,7 +16,7 @@ class TestCRFTagger(unittest.TestCase):
         language = Language.EN
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
-        crf_model = default_crf_model()
+        crf_model = get_crf_model()
         features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",

@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import numpy as np
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE, \
@@ -45,7 +44,8 @@ def compute_entity_collection_size(collection, crf_features_config):
 
 
 def default_features(language, dataset, intent, crf_features_config,
-                     use_stemming, common_words_gazetteer_name=None):
+                     use_stemming, random_state,
+                     common_words_gazetteer_name=None):
     features = [
         {
             "factory_name": "get_ngram_fn",
@@ -107,12 +107,12 @@ def default_features(language, dataset, intent, crf_features_config,
         if not entity[UTTERANCES]:
             continue
 
-        collection = list(
-            set(preprocess(e) for e in entity[UTTERANCES].keys()))
+        collection = set(preprocess(e) for e in entity[UTTERANCES].keys())
+        collection = sorted(collection)  # For test reproducibility
         collection_size = compute_entity_collection_size(collection,
                                                          crf_features_config)
-        collection = np.random.choice(collection, collection_size,
-                                      replace=False).tolist()
+        collection = random_state.choice(collection, collection_size,
+                                         replace=False).tolist()
         features.append(
             {
                 "factory_name": "get_token_is_in_fn",

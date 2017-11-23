@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import numpy as np
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
@@ -16,7 +17,7 @@ from snips_nlu.intent_parser.probabilistic_intent_parser import (
     generate_slots_permutations, filter_overlapping_builtins)
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
+from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import (BEGINNING_PREFIX, INSIDE_PREFIX,
                                              TaggingScheme)
 from snips_nlu.tests.utils import BEVERAGE_DATASET
@@ -234,11 +235,13 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                                     mock_tagger_to_dict, mock_tagger_fit):
         # Given
         language = Language.EN
+        random_seed = 1
         mock_tagger_to_dict.return_value = {
             "mocked_tagger_key": "mocked_tagger_value"}
         mock_classifier_to_dict.return_value = {
             "mocked_dict_key": "mocked_dict_value"}
-        intent_classifier = SnipsIntentClassifier(language)
+        intent_classifier = SnipsIntentClassifier(
+            language, random_seed=random_seed)
         slot_name_to_entity_mapping = {
             "number_of_cups": "snips/number",
             "beverage_temperature": "Temperature"
@@ -259,8 +262,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         tagging_scheme = TaggingScheme.BIO
 
-        make_coffee_crf = default_crf_model()
-        make_tea_crf = default_crf_model()
+        make_coffee_crf = get_crf_model()
+        make_tea_crf = get_crf_model()
         make_coffee_tagger = CRFTagger(make_coffee_crf, features_signatures,
                                        tagging_scheme, language)
         make_tea_tagger = CRFTagger(make_tea_crf, features_signatures,
@@ -274,7 +277,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         parser = ProbabilisticIntentParser(
             language, intent_classifier, taggers,
-            slot_name_to_entity_mapping)
+            slot_name_to_entity_mapping, random_seed=random_seed)
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         parser.fit(dataset)
 
@@ -304,7 +307,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "taggers": {
                 "MakeCoffee": {"mocked_tagger_key": "mocked_tagger_value"},
                 "MakeTea": {"mocked_tagger_key": "mocked_tagger_value"}
-            }
+            },
+            "random_seed": random_seed
         }
         self.assertDictEqual(actual_parser_dict, expected_parser_dict)
 
@@ -342,7 +346,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "taggers": {
                 "MakeCoffee": {"mocked_tagger_key1": "mocked_tagger_value1"},
                 "MakeTea": {"mocked_tagger_key2": "mocked_tagger_value2"}
-            }
+            },
+            "random_seed": 1,
         }
 
         # When
@@ -434,10 +439,11 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                 ]
             }
         ]
+        random_state = np.random.RandomState(1)
 
         # When
         capitalized_utterances = capitalize_utterances(
-            utterances, entities, language, ratio)
+            utterances, entities, language, ratio, random_state)
 
         # Then
         expected_utterances = [

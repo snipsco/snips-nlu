@@ -5,10 +5,10 @@ from snips_nlu.slot_filler.default.default_features_functions import \
     default_features
 
 
-def language_specific_features(dataset, intent, config):
+def language_specific_features(dataset, intent, config, random_state):
     language = Language.KO
     features = default_features(language, dataset, intent, config,
-                                use_stemming=False)
+                                use_stemming=False, random_state=random_state)
 
     features += [
         {

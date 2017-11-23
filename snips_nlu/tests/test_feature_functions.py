@@ -206,9 +206,7 @@ class TestFeatureFunctions(unittest.TestCase):
             self.assertEqual(feature_name, expected_name)
             self.assertEqual(feats, expected_feats)
 
-    @patch("snips_nlu.slot_filler.default.default_features_functions.np"
-           ".random.choice")
-    def test_crf_features(self, mocked_np_random):
+    def test_crf_features(self):
         # Given
         language = Language.EN
         dataset = {
@@ -303,22 +301,26 @@ class TestFeatureFunctions(unittest.TestCase):
             raise ValueError("Unexpected value: {}".format(a))
 
         # pylint: enable=unused-argument
-        mocked_np_random.side_effect = np_random
+
+        seed = 1
+        random_state = np.random.RandomState(seed)
 
         # When
         drop_prob = 0.5
         features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
-            crf_features_config=features_config)
+            crf_features_config=features_config, random_state=random_state)
 
         # Then
+        random_state = np.random.RandomState(seed)
         collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
-        col_1 = np_random(collection_1.keys(), collection_1_size).tolist()
-
         collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
-        col_2 = np_random(collection_2.keys(), collection_2_size).tolist()
 
+        col_1 = random_state.choice(sorted(collection_1.keys()),
+                                    collection_1_size, replace=False).tolist()
+        col_2 = random_state.choice(sorted(collection_2.keys()),
+                                    collection_2_size, replace=False).tolist()
         expected_signatures = [
             {
                 'args': {

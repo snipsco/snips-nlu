@@ -36,7 +36,8 @@ def np_random_permutation(x):
 
 # pylint: disable=W0613
 def get_mocked_augment_utterances(dataset, intent_name, language,
-                                  min_utterances, capitalization_ratio):
+                                  min_utterances, capitalization_ratio,
+                                  random_state):
     return dataset[INTENTS][intent_name][UTTERANCES]
 
 
@@ -97,7 +98,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "intercept": intercept,
             "intent_list": intent_list,
             "language_code": SAMPLE_DATASET[LANGUAGE],
-            "featurizer": mocked_dict
+            "featurizer": mocked_dict,
+            "random_seed": None
         }
         self.assertEqual(classifier_dict, expected_dict)
 
@@ -131,7 +133,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "intent_list": intent_list,
             "language_code": language.iso_code,
             "config": config,
-            "featurizer": mocked_featurizer.to_dict()
+            "featurizer": mocked_featurizer.to_dict(),
+            "random_seed": 1,
         }
 
         # When
@@ -205,12 +208,13 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # Given
         dataset = SAMPLE_DATASET
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
+        random_state = np.random.RandomState(1)
 
         # When
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             noise_factor=0)
         utterances, _, intent_mapping = build_training_data(
-            dataset, Language.EN, data_augmentation_config)
+            dataset, Language.EN, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
@@ -224,10 +228,10 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
            ".augment_utterances")
     def test_should_build_training_data_with_noise(
-            self, mocked_augment_utterances, mocked_get_subtitles):
+            self, mocked_augment_utterances, mocked_get_noises):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in xrange(100)]
-        mocked_get_subtitles.return_value = mocked_noises
+        mocked_get_noises.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -245,6 +249,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                 } for i in xrange(num_intents)
             }
         }
+        random_state = np.random.RandomState(1)
 
         # When
         np.random.seed(42)
@@ -253,7 +258,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=None)
         utterances, _, intent_mapping = build_training_data(
-            dataset, Language.EN, data_augmentation_config)
+            dataset, Language.EN, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
@@ -263,7 +268,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
-        noise_it = get_noise_it(mocked_noises, utterances_length, 0)
+        noise_it = get_noise_it(mocked_noises, utterances_length, 0,
+                                random_state)
         noisy_utterances = [next(noise_it) for _ in xrange(noise_size)]
         expected_utterances += list(noisy_utterances)
         expected_intent_mapping = dataset["intents"].keys() + [None]
@@ -295,6 +301,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                 } for i in xrange(num_intents)
             }
         }
+        random_state = np.random.RandomState(1)
 
         # When
         np.random.seed(42)
@@ -304,7 +311,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=replacement_string)
         utterances, _, intent_mapping = build_training_data(
-            dataset, Language.EN, data_augmentation_config)
+            dataset, Language.EN, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
@@ -324,12 +331,13 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         # Given
         language = Language.EN
         dataset = empty_dataset(language)
+        random_state = np.random.RandomState(1)
 
         # When
         data_augmentation_config = IntentClassifierConfig() \
             .data_augmentation_config
         utterances, _, intent_mapping = build_training_data(
-            dataset, language, data_augmentation_config)
+            dataset, language, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = []
@@ -359,24 +367,22 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             }
         ]
         num_utterances = 10
+        random_state = np.random.RandomState(1)
 
         augmented_utterances = augmented_utterances * num_utterances
         config = IntentClassifierDataAugmentationConfig(
             noise_factor=noise_factor)
         # When
         noise_utterances = generate_noise_utterances(
-            augmented_utterances, num_intents, config, language)
+            augmented_utterances, num_intents, config, language, random_state)
 
         # Then
         joined_noise = " ".join(noise)
         for u in noise_utterances:
             self.assertEqual(u, joined_noise)
 
-    @patch("snips_nlu.intent_classifier.snips_intent_classifier.random")
-    def test_add_unknown_words_to_utterances(self, mocked_random):
+    def test_add_unknown_words_to_utterances(self):
         # Given
-        mocked_random.side_effect = random
-
         utterances = [
             {
                 "data": [
@@ -417,12 +423,13 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             }
         ]
         unknownword_prob = .5
+        random_state = np.random.RandomState(1)
 
         # When
         replacement_string = "unknownword"
         noisy_utterances = add_unknown_word_to_utterances(
             utterances, unknown_word_prob=unknownword_prob,
-            replacement_string=replacement_string
+            replacement_string=replacement_string, random_state=random_state
         )
 
         # Then
@@ -433,14 +440,14 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                         "text": "hello "
                     },
                     {
-                        "text": " you ",
+                        "text": " unknownword ",
                         "entity": "you"
                     },
                     {
                         "text": " how are you "
                     },
                     {
-                        "text": "unknownword",
+                        "text": "dude",
                         "entity": "you"
                     }
                 ]
@@ -451,11 +458,11 @@ class TestSnipsIntentClassifier(unittest.TestCase):
                         "text": "hello "
                     },
                     {
-                        "text": "dude",
+                        "text": "unknownword",
                         "entity": "you"
                     },
                     {
-                        "text": " how are you ",
+                        "text": " how are you "
                     },
                     {
                         "text": " unknownword ",
@@ -493,9 +500,11 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         language = Language.EN
         mocked_noise.return_value = ["hello", "dear", "you", "fool"]
         replacement_string = "unknownword"
+        random_state = np.random.RandomState(1)
 
         # When
-        noise = generate_smart_noise(utterances, replacement_string, language)
+        noise = generate_smart_noise(utterances, replacement_string, language,
+                                     random_state)
 
         # Then
         expected_noise = ["hello", replacement_string, "you",

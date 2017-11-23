@@ -19,12 +19,13 @@ from snips_nlu.slot_filler.crf_utils import (tags_to_slots,
                                              tag_name_to_slot_name,
                                              tags_to_preslots)
 from snips_nlu.tokenization import tokenize
+from snips_nlu.utils import check_random_state
 
 
 def fit_tagger(tagger, dataset, intent_name, language,
-               data_augmentation_config):
+               data_augmentation_config, random_state):
     augmented_intent_utterances = augment_utterances(
-        dataset, intent_name, language=language,
+        dataset, intent_name, language=language, random_state=random_state,
         **data_augmentation_config.to_dict())
     tagging_scheme = tagger.tagging_scheme
     crf_samples = [
@@ -36,13 +37,14 @@ def fit_tagger(tagger, dataset, intent_name, language,
 class ProbabilisticIntentParser(object):
     def __init__(self, language, intent_classifier, crf_taggers,
                  slot_name_to_entity_mapping,
-                 config=ProbabilisticIntentParserConfig()):
+                 config=ProbabilisticIntentParserConfig(), random_seed=None):
         self.language = language
         self.intent_classifier = intent_classifier
         self._crf_taggers = None
         self.crf_taggers = crf_taggers
         self.slot_name_to_entity_mapping = slot_name_to_entity_mapping
         self.config = config
+        self.random_seed = random_seed
 
     @property
     def crf_taggers(self):
@@ -100,12 +102,14 @@ class ProbabilisticIntentParser(object):
         if intents is None:
             intents = set(dataset[INTENTS].keys())
         self.intent_classifier = self.intent_classifier.fit(dataset)
+        random_state =  check_random_state(self.random_seed)
         for intent_name in dataset[INTENTS]:
             if intent_name not in intents:
                 continue
             self.crf_taggers[intent_name] = fit_tagger(
                 self.crf_taggers[intent_name], dataset, intent_name,
-                self.language, self.config.data_augmentation_config)
+                self.language, self.config.data_augmentation_config,
+                random_state)
         return self
 
     def to_dict(self):
@@ -118,7 +122,8 @@ class ProbabilisticIntentParser(object):
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
             "config":
                 self.config.to_dict(),
-            "taggers": taggers
+            "taggers": taggers,
+            "random_seed": self.random_seed
         }
 
     @classmethod
@@ -134,7 +139,8 @@ class ProbabilisticIntentParser(object):
             slot_name_to_entity_mapping=obj_dict[
                 "slot_name_to_entity_mapping"],
             config=ProbabilisticIntentParserConfig.from_dict(
-                obj_dict["config"])
+                obj_dict["config"]),
+            random_seed=obj_dict["random_seed"]
         )
 
 

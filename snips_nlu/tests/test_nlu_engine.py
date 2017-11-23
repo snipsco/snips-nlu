@@ -202,7 +202,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         try:
             json.dumps(engine_dict).encode("utf-8")
-        except Exception, e:  # pylint: disable=W0702
+        except Exception, e:  # pylint: disable=W0703
             trace = tb.format_exc()
             self.fail("SnipsNLUEngine dict should be json serializable "
                       "to utf-8.\n{}\n{}".format(e, trace))

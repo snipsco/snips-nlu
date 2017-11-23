@@ -292,16 +292,6 @@ class TestFeatureFunctions(unittest.TestCase):
             'there': 'there'
         }
 
-        # pylint: disable=unused-argument
-        def np_random(a, size, replace=False):
-            a = sorted(a)
-            if a == sorted(collection_1.keys()) \
-                    or a == sorted(collection_2.keys()):
-                return np.array(a[:size])
-            raise ValueError("Unexpected value: {}".format(a))
-
-        # pylint: enable=unused-argument
-
         seed = 1
         random_state = np.random.RandomState(seed)
 

@@ -53,8 +53,7 @@ def get_noise_it(noise, mean_length, std_length, random_state):
         yield " ".join(next(it) for _ in xrange(noise_length))
 
 
-def generate_smart_noise(augmented_utterances, replacement_string, language,
-                         random_state):
+def generate_smart_noise(augmented_utterances, replacement_string, language):
     text_utterances = [get_text_from_chunks(u[DATA])
                        for u in augmented_utterances]
     vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
@@ -73,7 +72,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
         noise = generate_smart_noise(
             augmented_utterances,
             data_augmentation_config.unknown_words_replacement_string,
-            language, random_state)
+            language)
     else:
         noise = get_noises(language)
 

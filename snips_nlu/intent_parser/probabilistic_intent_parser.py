@@ -102,7 +102,7 @@ class ProbabilisticIntentParser(object):
         if intents is None:
             intents = set(dataset[INTENTS].keys())
         self.intent_classifier = self.intent_classifier.fit(dataset)
-        random_state =  check_random_state(self.random_seed)
+        random_state = check_random_state(self.random_seed)
         for intent_name in dataset[INTENTS]:
             if intent_name not in intents:
                 continue

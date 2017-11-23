@@ -500,11 +500,9 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         language = Language.EN
         mocked_noise.return_value = ["hello", "dear", "you", "fool"]
         replacement_string = "unknownword"
-        random_state = np.random.RandomState(1)
 
         # When
-        noise = generate_smart_noise(utterances, replacement_string, language,
-                                     random_state)
+        noise = generate_smart_noise(utterances, replacement_string, language)
 
         # Then
         expected_noise = ["hello", replacement_string, "you",

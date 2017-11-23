@@ -27,7 +27,7 @@ WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
 
 
-def remove_builtin_slot(dataset):
+def remove_builtin_slots(dataset):
     filtered_dataset = deepcopy(dataset)
     for intent_data in filtered_dataset[INTENTS].values():
         for utterance in intent_data[UTTERANCES]:
@@ -173,7 +173,7 @@ class SnipsIntentClassifier(object):
         return self.intent_list is not None
 
     def fit(self, dataset):
-        filtered_dataset = remove_builtin_slot(dataset)
+        filtered_dataset = remove_builtin_slots(dataset)
         utterances, y, intent_list = build_training_data(
             filtered_dataset, self.language,
             self.config.data_augmentation_config)

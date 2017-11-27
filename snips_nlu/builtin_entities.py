@@ -79,6 +79,7 @@ class BuiltInEntity(Enum):
         SUPPORTED_LANGUAGES: {
             Language.DE,
             Language.EN,
+            Language.ES,
             Language.FR,
             Language.KO,
         }

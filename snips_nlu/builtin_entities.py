@@ -41,10 +41,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/temperature",
         RUSTLING_DIM_KIND: "Temperature",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.FR,
             Language.ES,
-            Language.KO
+            Language.FR,
+            Language.KO,
         }
     }
 
@@ -76,8 +77,11 @@ class BuiltInEntity(Enum):
         LABEL: "snips/amountOfMoney",
         RUSTLING_DIM_KIND: "AmountOfMoney",
         SUPPORTED_LANGUAGES: {
+            Language.DE,
             Language.EN,
-            Language.KO
+            Language.ES,
+            Language.FR,
+            Language.KO,
         }
     }
 

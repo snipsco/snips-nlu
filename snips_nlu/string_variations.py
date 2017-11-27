@@ -83,7 +83,7 @@ def digit_value(number_entity):
 
 def alphabetic_value(number_entity, language):
     value = number_entity[VALUE][VALUE]
-    if isinstance(value, float):  # num2words does not handle floats correctly
+    if value != int(value):  # num2words does not handle floats correctly
         return
     return num2words(value, lang=language.iso_code)
 

@@ -19,15 +19,15 @@ from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset, \
     BEVERAGE_DATASET
 
-seed = 0
+SEED = 0
 
 
 def random():
-    global seed
+    global SEED
     r = 0
-    if seed % 2 == 0:
+    if SEED % 2 == 0:
         r = 1
-    seed += 1
+    SEED += 1
     return r
 
 

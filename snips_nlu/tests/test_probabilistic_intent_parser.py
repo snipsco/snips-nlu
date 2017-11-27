@@ -3,12 +3,10 @@ from __future__ import unicode_literals
 import unittest
 
 import numpy as np
-from copy import deepcopy
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import SlotFillerDataAugmentationConfig, \
-    CRFFeaturesConfig
+from snips_nlu.config import SlotFillerDataAugmentationConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
@@ -18,12 +16,11 @@ from snips_nlu.intent_parser.probabilistic_intent_parser import (
     augment_slots, spans_to_tokens_indexes, ProbabilisticIntentParser,
     generate_slots_permutations, filter_overlapping_builtins)
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import get_slot_name_mapping, SnipsNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import (BEGINNING_PREFIX, INSIDE_PREFIX,
                                              TaggingScheme)
-from snips_nlu.slot_filler.en import specific_features_functions
 from snips_nlu.tests.utils import BEVERAGE_DATASET
 from snips_nlu.tokenization import Token, tokenize
 
@@ -541,13 +538,11 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             # Then
             self.assertItemsEqual(conf["slots"], slots)
 
-
     def test_fitting_should_be_reproducible_after_serialization(self):
         # Given
         language = Language.EN
         dataset = BEVERAGE_DATASET
-        validated_dataset =  validate_and_format_dataset(dataset)
-        intent = "MakeCoffee"
+        validated_dataset = validate_and_format_dataset(dataset)
 
         seed = 666
         parser = SnipsNLUEngine(

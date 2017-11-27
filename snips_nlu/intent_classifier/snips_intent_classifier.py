@@ -1,12 +1,12 @@
 from __future__ import unicode_literals
 
 import re
+from copy import deepcopy
 from itertools import izip, cycle
 from random import random
 from uuid import uuid4
 
 import numpy as np
-from copy import deepcopy
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.builtin_entities import is_builtin_entity
@@ -161,10 +161,10 @@ class SnipsIntentClassifier(object):
         self.config = config
         self.classifier = None
         self.intent_list = None
+        data_augmentation_config = self.config.data_augmentation_config
         self.featurizer = Featurizer(
             self.language,
-            self.config.data_augmentation_config
-                .unknown_words_replacement_string,
+            data_augmentation_config.unknown_words_replacement_string,
             self.config.featurizer_config)
         self.min_utterances_per_intent = 20
 

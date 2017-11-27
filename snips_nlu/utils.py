@@ -9,6 +9,7 @@ from collections import OrderedDict, namedtuple, Mapping
 RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
 PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
 RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}

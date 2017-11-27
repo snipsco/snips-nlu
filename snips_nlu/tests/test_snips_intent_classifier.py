@@ -13,7 +13,8 @@ from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier, build_training_data, generate_noise_utterances, \
-    get_noise_it, add_unknown_word_to_utterances, generate_smart_noise
+    get_noise_it, add_unknown_word_to_utterances, generate_smart_noise, \
+    remove_builtin_slots
 from snips_nlu.languages import Language
 from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 
@@ -500,3 +501,92 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_noise = ["hello", replacement_string, "you",
                           replacement_string]
         self.assertEqual(noise, expected_noise)
+
+    def test_remove_builtin_slots(self):
+        # Given
+        language = Language.EN
+        dataset = {
+            "snips_nlu_version": "0.0.1",
+            "entities": {
+                "snips/number": {}
+            },
+            "intents": {
+                "dummy_intent_1": {
+                    "engineType": "regex",
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "I want ",
+                                },
+                                {
+                                    "text": "three",
+                                    "slot_name": "number_of_cups",
+                                    "entity": "snips/number"
+                                },
+                                {
+                                    "text": " cups",
+                                },
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "give me ",
+                                },
+                                {
+                                    "text": "twenty two",
+                                    "slot_name": "number_of_cups",
+                                    "entity": "snips/number"
+                                },
+                                {
+                                    "text": " big cups please",
+                                },
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        }
+
+        # When
+        filtered_dataset = remove_builtin_slots(dataset)
+
+        # Then
+        expected_dataset = dataset = {
+            "snips_nlu_version": "0.0.1",
+            "entities": {
+                "snips/number": {}
+            },
+            "intents": {
+                "dummy_intent_1": {
+                    "engineType": "regex",
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "I want ",
+                                },
+                                {
+                                    "text": " cups",
+                                },
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "give me ",
+                                },
+                                {
+                                    "text": " big cups please",
+                                },
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": language.iso_code
+        }
+
+        self.assertDictEqual(expected_dataset, filtered_dataset)

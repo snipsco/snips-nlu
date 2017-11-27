@@ -161,8 +161,7 @@ class Featurizer(object):
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
-        if all(not "".join(tokenize_light(q, self.language))
-               for q in queries):
+        if all(not "".join(tokenize_light(q, self.language)) for q in queries):
             return None
         preprocessed_queries = self.preprocess_queries(queries)
         # pylint: disable=C0103

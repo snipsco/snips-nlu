@@ -6,11 +6,14 @@ from pprint import pprint
 
 
 def main_train_engine():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("language", type=unicode)
+    parser = argparse.ArgumentParser("Train an NLU engine and persist it in "
+                                     "a json file")
+    parser.add_argument("language", type=unicode,
+                        help="language (iso code) of the engine")
     parser.add_argument("dataset_path", type=unicode)
     parser.add_argument("output_path", type=unicode)
-    parser.add_argument("--config-path", type=unicode)
+    parser.add_argument("-c", "--config-path", type=unicode,
+                        help="Path to the NLU engine configuration")
     args = vars(parser.parse_args())
 
     from snips_nlu import SnipsNLUEngine
@@ -39,8 +42,10 @@ def main_train_engine():
 
 
 def main_engine_inference():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("training_path", type=unicode)
+    parser = argparse.ArgumentParser("Load a trained NLU engine and play with "
+                                     "its parsing API")
+    parser.add_argument("training_path", type=unicode,
+                        help="Path to a json-serialized trained engine")
     args = vars(parser.parse_args())
 
     from snips_nlu import SnipsNLUEngine
@@ -57,3 +62,87 @@ def main_engine_inference():
         if query == "q":
             break
         pprint(engine.parse(query))
+
+
+def main_cross_val_metrics():
+    parser = argparse.ArgumentParser("Compute cross validation metrics on a "
+                                     "given dataset")
+    parser.add_argument("dataset_path", type=unicode)
+    parser.add_argument("output_path", type=unicode)
+    parser.add_argument("-n", "--nb-folds", type=int,
+                        help="Number of folds to use for the cross-validation")
+    parser.add_argument("-t", "--train-size-ratio", type=float,
+                        help="Fraction of the data that we want to use for "
+                             "training (between 0 and 1")
+    parser.add_argument("-i", "--include-errors", action="store_true",
+                        help="Include parsing errors in the output")
+
+    args = vars(parser.parse_args())
+
+    from snips_nlu import SnipsNLUEngine as TrainingEngine
+    from snips_nlu_rust import NLUEngine as InferenceEngine
+    from nlu_metrics import compute_cross_val_nlu_metrics
+
+    dataset_path = args.pop("dataset_path")
+    output_path = args.pop("output_path")
+
+    def progression_handler(progress):
+        print "%d%%" % int(progress * 100)
+
+    metrics_args = dict(
+        dataset=dataset_path,
+        training_engine_class=TrainingEngine,
+        inference_engine_class=InferenceEngine,
+        progression_handler=progression_handler
+    )
+    if args.get("nb_folds") is not None:
+        nb_folds = args.pop("nb_folds")
+        metrics_args.update(dict(nb_folds=nb_folds))
+    if args.get("train_size_ratio") is not None:
+        train_size_ratio = args.pop("train_size_ratio")
+        metrics_args.update(dict(train_size_ratio=train_size_ratio))
+
+    include_errors = args.get("include_errors", False)
+
+    metrics = compute_cross_val_nlu_metrics(**metrics_args)
+    if not include_errors:
+        metrics.pop("errors")
+
+    with io.open(output_path, mode="w") as f:
+        f.write(json.dumps(metrics).decode())
+
+
+def main_train_test_metrics():
+    parser = argparse.ArgumentParser("Compute train/test metrics on a given "
+                                     "pair training set/testing set")
+    parser.add_argument("train_dataset_path", type=unicode)
+    parser.add_argument("test_dataset_path", type=unicode)
+    parser.add_argument("output_path", type=unicode)
+    parser.add_argument("-i", "--include-errors", action="store_true",
+                        help="Include parsing errors in the output")
+
+    args = vars(parser.parse_args())
+
+    from snips_nlu import SnipsNLUEngine as TrainingEngine
+    from snips_nlu_rust import NLUEngine as InferenceEngine
+    from nlu_metrics import compute_train_test_nlu_metrics
+
+    train_dataset_path = args.pop("train_dataset_path")
+    test_dataset_path = args.pop("test_dataset_path")
+    output_path = args.pop("output_path")
+
+    metrics_args = dict(
+        train_dataset=train_dataset_path,
+        test_dataset=test_dataset_path,
+        training_engine_class=TrainingEngine,
+        inference_engine_class=InferenceEngine,
+    )
+
+    include_errors = args.get("include_errors", False)
+
+    metrics = compute_train_test_nlu_metrics(**metrics_args)
+    if not include_errors:
+        metrics.pop("errors")
+
+    with io.open(output_path, mode="w") as f:
+        f.write(json.dumps(metrics).decode())

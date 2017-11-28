@@ -23,32 +23,45 @@ TOKEN_NAME = "token"
 
 
 class Feature(object):
-    def __init__(self, name, func, feature_type=None, offset=0):
-        if name == TOKEN_NAME:
+    def __init__(self, base_name, func, feature_type=None, offset=0):
+        if base_name == TOKEN_NAME:
             raise ValueError("'%s' name is reserved" % TOKEN_NAME)
-        self._name = name
+        self.offset = offset
+        self._name = None
+        self._base_name = None
+        self.base_name = base_name
         self._feature_type = feature_type
         self.function = func
-        self.offset = offset
 
     def get_offset_feature(self, offset):
         if offset == 0:
             return self
-        return Feature(self._name, self.function, self.feature_type, offset)
+        return Feature(self.base_name, self.function, self.feature_type,
+                       offset)
 
     @property
     def name(self):
-        if self.offset > 0:
-            return "%s[+%s]" % (self._name, self.offset)
-        if self.offset < 0:
-            return "%s[%s]" % (self._name, self.offset)
         return self._name
+
+    @property
+    def base_name(self):
+        return self._base_name
+
+    @base_name.setter
+    def base_name(self, value):
+        if self.offset > 0:
+            self._name = "%s[+%s]" % (value, self.offset)
+        elif self.offset < 0:
+            self._name = "%s[%s]" % (value, self.offset)
+        else:
+            self._name = value
+        self._base_name = value
 
     @property
     def feature_type(self):
         if self._feature_type is not None:
             return self._feature_type
-        return self._name
+        return self.name
 
     def compute(self, token_index, cache):
         if not 0 <= (token_index + self.offset) < len(cache):
@@ -115,7 +128,7 @@ def get_prefix_fn(prefix_size):
                               prefix_size, 0)
 
     return Feature("prefix-%s" % prefix_size, prefix,
-                   feature_type="prefix_%s")
+                   feature_type="prefix_%s" % prefix_size)
 
 
 def get_suffix_fn(suffix_size):
@@ -125,7 +138,7 @@ def get_suffix_fn(suffix_size):
                               reverse=True)
 
     return Feature("suffix-%s" % suffix_size, suffix,
-                   feature_type="suffix_%s")
+                   feature_type="suffix_%s" % suffix_size)
 
 
 def get_length_fn():

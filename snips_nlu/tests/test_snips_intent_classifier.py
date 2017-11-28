@@ -16,8 +16,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     get_noise_it, add_unknown_word_to_utterances, generate_smart_noise, \
     remove_builtin_slots
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset, \
-    BEVERAGE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
 
 SEED = 0
 
@@ -509,27 +508,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         expected_noise = ["hello", replacement_string, "you",
                           replacement_string]
         self.assertEqual(noise, expected_noise)
-
-    def test_fitting_should_be_reproducible_after_serialization(self):
-        # Given
-        language = Language.EN
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
-        seed = 666
-        intent_classifier = SnipsIntentClassifier(language, random_seed=seed)
-        classifier_dict = intent_classifier.to_dict()
-        fitted_classifier_1 = SnipsIntentClassifier.from_dict(
-            classifier_dict).fit(dataset)
-        fitted_classifier_2 = SnipsIntentClassifier.from_dict(
-            classifier_dict).fit(dataset)
-
-        text = "can you make me 2 coffees"
-
-        # When
-        result_1 = fitted_classifier_1.get_intent(text)
-        result_2 = fitted_classifier_2.get_intent(text)
-
-        # Then
-        self.assertEqual(result_1.probability, result_2.probability)
 
     def test_remove_builtin_slots(self):
         # Given

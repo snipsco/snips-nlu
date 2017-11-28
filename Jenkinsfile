@@ -54,13 +54,13 @@ node('jenkins-slave-generic') {
                 ${VENV}
                 echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
                 pip install .
-                python setup.py bdist_wheel upload -r pypisnips
                 git tag ${version(path)}
                 git remote rm origin
                 git remote add origin 'git@github.com:snipsco/snips-nlu.git'
                 git config --global user.email 'jenkins@snips.ai'
                 git config --global user.name 'Jenkins'
                 git push --tags
+                python setup.py bdist_wheel upload -r pypisnips
                 """
             default:
                 sh """

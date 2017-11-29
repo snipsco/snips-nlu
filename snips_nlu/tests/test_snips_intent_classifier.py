@@ -101,7 +101,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "featurizer": mocked_dict,
             "random_seed": None
         }
-        self.assertEqual(classifier_dict, expected_dict)
+        self.assertEqual(expected_dict, classifier_dict)
 
     @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer'
            '.from_dict')

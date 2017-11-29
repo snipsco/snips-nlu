@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
@@ -15,8 +14,7 @@ from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, LAST_PREFIX, \
     BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
-    get_prefix_fn, get_suffix_fn, get_ngram_fn,
-    create_feature_function, TOKEN_NAME, BaseFeatureFunction,
+    get_prefix_fn, get_suffix_fn, get_ngram_fn, TOKEN_NAME, Feature,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
     get_length_fn)
 from snips_nlu.tokenization import tokenize
@@ -181,11 +179,11 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         self.assertEqual(features, expected_features)
 
-    def test_create_feature_function(self):
+    def test_offset_feature(self):
         # Given
         language = Language.EN
         name = "position"
-        base_feature_function = BaseFeatureFunction(
+        base_feature_function = Feature(
             name, lambda _, token_index: token_index + 1)
 
         tokens = tokenize("a b c", language)
@@ -196,15 +194,15 @@ class TestFeatureFunctions(unittest.TestCase):
             2: ("position[+2]", [3, None, None])
         }
         cache = [{TOKEN_NAME: t for t in tokens} for _ in xrange(len(tokens))]
-        for offset, expected in expected_features.iteritems():
-            feature_name, feature_function = create_feature_function(
-                base_feature_function, offset)
-            expected_name, expected_feats = expected
+        for offset, (expected_name, expected_values) in \
+                expected_features.iteritems():
+            offset_feature = base_feature_function.get_offset_feature(offset)
             # When
-            feats = [feature_function(i, cache) for i in xrange(len(tokens))]
+            feature_values = [offset_feature.compute(i, cache)
+                              for i in xrange(len(tokens))]
             # Then
-            self.assertEqual(feature_name, expected_name)
-            self.assertEqual(feats, expected_feats)
+            self.assertEqual(expected_name, offset_feature.name)
+            self.assertEqual(expected_values, feature_values)
 
     def test_crf_features(self):
         # Given
@@ -292,29 +290,24 @@ class TestFeatureFunctions(unittest.TestCase):
             'there': 'there'
         }
 
-        seed = 1
-        random_state = np.random.RandomState(seed)
-
         # When
-        drop_prob = 0.5
         features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
-            crf_features_config=features_config, random_state=random_state)
+            crf_features_config=features_config)
 
         # Then
-        random_state = np.random.RandomState(seed)
-        collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
-        collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
+        for signature in features_signatures:
+            # sort collections in order to make testing easier
+            if 'tokens_collection' in signature['args']:
+                signature['args']['tokens_collection'] = sorted(
+                    signature['args']['tokens_collection'])
 
-        col_1 = random_state.choice(sorted(collection_1.keys()),
-                                    collection_1_size, replace=False).tolist()
-        col_2 = random_state.choice(sorted(collection_2.keys()),
-                                    collection_2_size, replace=False).tolist()
         expected_signatures = [
             {
                 'args': {
-                    'tokens_collection': col_1,
+                    'tokens_collection':
+                        sorted(list(set(collection_1.keys()))),
                     'collection_name': 'dummy_entity_1',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -325,7 +318,8 @@ class TestFeatureFunctions(unittest.TestCase):
             },
             {
                 'args': {
-                    'tokens_collection': col_2,
+                    'tokens_collection':
+                        sorted(list(set(collection_2.keys()))),
                     'collection_name': 'dummy_entity_2',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -335,8 +329,8 @@ class TestFeatureFunctions(unittest.TestCase):
                 'offsets': (-2, -1, 0)
             }
         ]
-        for signature in expected_signatures:
-            self.assertIn(signature, features_signatures)
+        for expected_signature in expected_signatures:
+            self.assertIn(expected_signature, features_signatures)
 
 
 if __name__ == '__main__':

@@ -120,8 +120,7 @@ class ProbabilisticIntentParser(object):
             "language_code": self.language.iso_code,
             "intent_classifier": self.intent_classifier.to_dict(),
             "slot_name_to_entity_mapping": self.slot_name_to_entity_mapping,
-            "config":
-                self.config.to_dict(),
+            "config": self.config.to_dict(),
             "taggers": taggers,
             "random_seed": self.random_seed
         }

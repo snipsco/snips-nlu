@@ -261,18 +261,18 @@ class SnipsNLUEngine(NLUEngine):
                                    in dataset[INTENTS].iteritems()}
         self.slot_name_mapping = get_slot_name_mapping(dataset)
 
-        random_state = check_random_state(self.random_seed)
         taggers = dict()
+        features_config = self.config.probabilistic_intent_parser_config \
+            .crf_features_config
         for intent in dataset[INTENTS]:
-            features_config = self.config.probabilistic_intent_parser_config \
-                .crf_features_config
             features = crf_features(dataset, intent, self.language,
-                                    features_config, random_state)
+                                    features_config)
             if intent in self._pre_trained_taggers:
                 tagger = self._pre_trained_taggers[intent]
             else:
                 tagger = CRFTagger(get_crf_model(), features,
-                                   TaggingScheme.BIO, self.language)
+                                   TaggingScheme.BIO, self.language,
+                                   features_config, self.random_seed)
             taggers[intent] = tagger
         intent_classifier = SnipsIntentClassifier(
             self.language, self.config.intent_classifier_config,
@@ -295,9 +295,9 @@ class SnipsNLUEngine(NLUEngine):
             .crf_features_config
         random_state = check_random_state(self.random_seed)
         features = crf_features(dataset, intent, self.language,
-                                crf_features_config, random_state)
+                                crf_features_config)
         tagger = CRFTagger(get_crf_model(), features, TaggingScheme.BIO,
-                           self.language)
+                           self.language, crf_features_config)
         if self.probabilistic_parser is not None:
             config = self.probabilistic_parser.data_augmentation_config
         else:

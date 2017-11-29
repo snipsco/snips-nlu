@@ -562,7 +562,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         # Then
         feature_weights_1 = fitted_parser_1.crf_taggers[
-            "MakeCoffee"].crf_model.state_features_
+            "MakeTea"].crf_model.state_features_
         feature_weights_2 = fitted_parser_2.crf_taggers[
-            "MakeCoffee"].crf_model.state_features_
+            "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)

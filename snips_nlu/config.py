@@ -137,7 +137,9 @@ class IntentClassifierConfig(Config):
 class CRFFeaturesConfig(Config):
     def __init__(self, features_drop_out=None, entities_offsets=None):
         if features_drop_out is None:
-            features_drop_out = dict()
+            features_drop_out = {
+                "collection_match": 0.5
+            }
         if entities_offsets is None:
             entities_offsets = [-2, -1, 0]
         self.features_drop_out = features_drop_out

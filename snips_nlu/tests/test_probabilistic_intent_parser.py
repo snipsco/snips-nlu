@@ -280,7 +280,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         parser = ProbabilisticIntentParser(
             language, intent_classifier, taggers, slot_name_to_entity_mapping,
-            parser_config)
+            parser_config, random_seed)
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         parser.fit(dataset)
 

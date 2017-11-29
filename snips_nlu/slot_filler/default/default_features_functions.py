@@ -23,8 +23,7 @@ def get_intent_custom_entities(dataset, intent):
 
 
 def default_features(language, dataset, intent, crf_features_config,
-                     use_stemming, random_state,
-                     common_words_gazetteer_name=None):
+                     use_stemming, common_words_gazetteer_name=None):
     features = [
         {
             "factory_name": "get_ngram_fn",

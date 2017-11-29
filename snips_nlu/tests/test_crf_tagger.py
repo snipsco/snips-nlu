@@ -167,7 +167,7 @@ class TestCRFTagger(unittest.TestCase):
             "ngram_1": 0.3
         }
         crf_features_config = CRFFeaturesConfig(features_drop_out=drop_out)
-        tagger = CRFTagger(default_crf_model(), features_signatures,
+        tagger = CRFTagger(get_crf_model(), features_signatures,
                            TaggingScheme.BIO, Language.EN, crf_features_config)
 
         tokens = tokenize("foo hello world bar", Language.EN)

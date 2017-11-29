@@ -294,7 +294,7 @@ class TestFeatureFunctions(unittest.TestCase):
         features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
-            crf_features_config=features_config, random_state=random_state)
+            crf_features_config=features_config)
 
         # Then
         for signature in features_signatures:

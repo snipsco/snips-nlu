@@ -99,7 +99,8 @@ class TestConfig(unittest.TestCase):
         config_dict = {
             "data_augmentation_config":
                 SlotFillerDataAugmentationConfig().to_dict(),
-            "crf_features_config": CRFFeaturesConfig().to_dict()
+            "crf_features_config": CRFFeaturesConfig().to_dict(),
+            "exhaustive_permutations_threshold": 42
         }
 
         # When

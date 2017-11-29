@@ -6,7 +6,6 @@ import math
 import os
 import tempfile
 from copy import deepcopy
-from random import random
 
 from sklearn_crfsuite import CRF
 
@@ -19,7 +18,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
 from snips_nlu.slot_filler.feature_functions import (
     TOKEN_NAME)
 from snips_nlu.tokenization import Token
-from snips_nlu.utils import (UnupdatableDict, mkdir_p)
+from snips_nlu.utils import (UnupdatableDict, mkdir_p, check_random_state)
 
 POSSIBLE_SET_FEATURES = ["collection"]
 
@@ -52,13 +51,14 @@ def get_features_from_signatures(signatures):
 
 class CRFTagger(object):
     def __init__(self, crf_model, features_signatures, tagging_scheme,
-                 language, crf_features_config):
+                 language, crf_features_config, random_seed=None):
         self.crf_model = crf_model
         self.features_signatures = features_signatures
         self._features = None
         self.tagging_scheme = tagging_scheme
         self.language = language
         self.config = crf_features_config
+        self.random_seed = random_seed
 
     @property
     def features(self):
@@ -103,9 +103,8 @@ class CRFTagger(object):
         return self.crf_model.tagger_.probability(cleaned_labels)
 
     def fit(self, data, verbose=False):
-        drop_out = self.config.features_drop_out
         # pylint: disable=C0103
-        X = [self.compute_features(sample[TOKENS], drop_out)
+        X = [self.compute_features(sample[TOKENS], drop_out=True)
              for sample in data]
         Y = [[tag.encode('utf8') for tag in sample[TAGS]] for sample in data]
         # pylint: enable=C0103
@@ -134,8 +133,8 @@ class CRFTagger(object):
         for (feat, tag), weight in feature_weights:
             print "%s %s: %s" % (feat, tag, weight)
 
-    def compute_features(self, tokens, drop_out_prob=False):
-        if drop_out_prob:
+    def compute_features(self, tokens, drop_out=False):
+        if drop_out:
             features_drop_out = self.config.features_drop_out
         else:
             features_drop_out = dict()
@@ -145,11 +144,12 @@ class CRFTagger(object):
             for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
+        random_state = check_random_state(self.random_seed)
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
             for feature in self.features:
-                drop_out_prob = features_drop_out.get(feature.feature_type, 0)
-                if random() < drop_out_prob:
+                drop_out = features_drop_out.get(feature.feature_type, 0)
+                if random_state.rand() < drop_out:
                     continue
                 value = feature.compute(i, cache)
                 if value is not None:
@@ -171,7 +171,8 @@ class CRFTagger(object):
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
             "language_code": self.language.iso_code,
-            "config": self.config.to_dict()
+            "config": self.config.to_dict(),
+            "random_seed": self.random_seed
         }
 
     @classmethod
@@ -181,9 +182,10 @@ class CRFTagger(object):
         language = Language.from_iso_code(tagger_config["language_code"])
         crf = deserialize_crf_model(tagger_config["crf_model_data"])
         config = CRFFeaturesConfig.from_dict(tagger_config["config"])
+        random_seed = tagger_config["random_seed"]
         return cls(crf_model=crf, features_signatures=features_signatures,
                    tagging_scheme=tagging_scheme, language=language,
-                   crf_features_config=config)
+                   crf_features_config=config, random_seed=random_seed)
 
     def __del__(self):
         if self.crf_model is None or self.crf_model.modelfile.auto \

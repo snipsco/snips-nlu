@@ -45,7 +45,7 @@ class TestCRFTagger(unittest.TestCase):
         config = CRFFeaturesConfig()
 
         tagger = CRFTagger(crf_model, features_signatures, tagging_scheme,
-                           Language.EN, config)
+                           Language.EN, config, random_seed=42)
         tagger.fit(data)
 
         # When
@@ -79,7 +79,8 @@ class TestCRFTagger(unittest.TestCase):
             ],
             "language_code": "en",
             "tagging_scheme": 2,
-            "config": CRFFeaturesConfig().to_dict()
+            "config": CRFFeaturesConfig().to_dict(),
+            "random_seed": 42
         }
         self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
 
@@ -115,7 +116,8 @@ class TestCRFTagger(unittest.TestCase):
             ],
             "language_code": "en",
             "tagging_scheme": 2,
-            "config": CRFFeaturesConfig().to_dict()
+            "config": CRFFeaturesConfig().to_dict(),
+            "random_seed": 42
         }
         # When
         tagger = CRFTagger.from_dict(tagger_dict)
@@ -143,14 +145,12 @@ class TestCRFTagger(unittest.TestCase):
                              expected_features_signatures)
         self.assertEqual(tagger.tagging_scheme, expected_tagging_scheme)
         self.assertEqual(tagger.language, expected_language)
+        self.assertEqual(tagger.random_seed, 42)
         self.assertDictEqual(expected_config.to_dict(),
                              tagger.config.to_dict())
 
-    @patch('snips_nlu.slot_filler.crf_tagger.random')
-    def test_should_compute_features(self, mocked_random):
+    def test_should_compute_features(self):
         # Given
-        mocked_random.side_effect = [0.9, 0.1, 0.2, 0.4]
-
         features_signatures = [
             {
                 "factory_name": "get_ngram_fn",
@@ -168,7 +168,8 @@ class TestCRFTagger(unittest.TestCase):
         }
         crf_features_config = CRFFeaturesConfig(features_drop_out=drop_out)
         tagger = CRFTagger(get_crf_model(), features_signatures,
-                           TaggingScheme.BIO, Language.EN, crf_features_config)
+                           TaggingScheme.BIO, Language.EN, crf_features_config,
+                           random_seed=40)
 
         tokens = tokenize("foo hello world bar", Language.EN)
 
@@ -179,7 +180,7 @@ class TestCRFTagger(unittest.TestCase):
         expected_features = [
             {"ngram_1": "foo"},
             {},
+            {"ngram_1": "world"},
             {},
-            {"ngram_1": "bar"}
         ]
         self.assertListEqual(expected_features, features_with_drop_out)

@@ -86,7 +86,7 @@ class CRFTagger(object):
         return [tag.decode('utf8') for tag in
                 self.crf_model.predict_single(features)]
 
-    def get_sequence_probability(self, tokens, labels):
+    def get_sequence_probability(self, features, labels):
         if not self.fitted:
             raise AssertionError("Model must be fitted before using predict")
 
@@ -97,8 +97,6 @@ class CRFTagger(object):
         cleaned_labels = [substitution_label if l not in self.labels else l for
                           l in labels]
         cleaned_labels = [label.encode('utf8') for label in cleaned_labels]
-
-        features = self.compute_features(tokens)
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 

@@ -22,14 +22,14 @@ from snips_nlu.utils import (UnupdatableDict, mkdir_p)
 POSSIBLE_SET_FEATURES = ["collection"]
 
 
-def default_crf_model(model_filename=None):
+def get_crf_model(model_filename=None):
     if model_filename is not None:
         directory = os.path.dirname(model_filename)
         if not os.path.isdir(directory):
             mkdir_p(directory)
 
     return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False,
-               model_filename=model_filename)
+               algorithm="lbfgs", model_filename=model_filename)
 
 
 def get_features_from_signatures(signatures):

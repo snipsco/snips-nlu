@@ -18,9 +18,10 @@ from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \
     IntentClassificationResult
 from snips_nlu.result import Result
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
+from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
+from snips_nlu.utils import check_random_state
 
 
 class NLUEngine(object):
@@ -161,7 +162,8 @@ def is_trainable_regex_intent(intent, entities, regex_training_config):
 class SnipsNLUEngine(NLUEngine):
     def __init__(self, language, config=None, rule_based_parser=None,
                  probabilistic_parser=None, entities=None,
-                 slot_name_mapping=None, intents_data_sizes=None):
+                 slot_name_mapping=None, intents_data_sizes=None,
+                 random_seed=None):
         super(SnipsNLUEngine, self).__init__(language)
         self._config = None
         if config is None:
@@ -180,6 +182,7 @@ class SnipsNLUEngine(NLUEngine):
         self.slot_name_mapping = slot_name_mapping
         self.intents_data_sizes = intents_data_sizes
         self._pre_trained_taggers = dict()
+        self.random_seed = random_seed
 
     @property
     def config(self):
@@ -257,26 +260,31 @@ class SnipsNLUEngine(NLUEngine):
                                    for intent_name, intent
                                    in dataset[INTENTS].iteritems()}
         self.slot_name_mapping = get_slot_name_mapping(dataset)
+
+        random_state = check_random_state(self.random_seed)
         taggers = dict()
         for intent in dataset[INTENTS]:
             features_config = self.config.probabilistic_intent_parser_config \
                 .crf_features_config
             features = crf_features(dataset, intent, self.language,
-                                    features_config)
+                                    features_config, random_state)
             if intent in self._pre_trained_taggers:
                 tagger = self._pre_trained_taggers[intent]
             else:
-                tagger = CRFTagger(default_crf_model(), features,
+                tagger = CRFTagger(get_crf_model(), features,
                                    TaggingScheme.BIO, self.language)
             taggers[intent] = tagger
         intent_classifier = SnipsIntentClassifier(
-            self.language, self.config.intent_classifier_config)
+            self.language, self.config.intent_classifier_config,
+            random_seed=self.random_seed)
         self.probabilistic_parser = ProbabilisticIntentParser(
             self.language,
             intent_classifier,
             taggers,
             self.slot_name_mapping,
-            self.config.probabilistic_intent_parser_config)
+            self.config.probabilistic_intent_parser_config,
+            random_seed=self.random_seed
+        )
         self.probabilistic_parser.fit(dataset, intents=intents)
         self._pre_trained_taggers = taggers
         return self
@@ -285,15 +293,17 @@ class SnipsNLUEngine(NLUEngine):
         dataset = validate_and_format_dataset(dataset)
         crf_features_config = self.config.probabilistic_intent_parser_config \
             .crf_features_config
+        random_state = check_random_state(self.random_seed)
         features = crf_features(dataset, intent, self.language,
-                                crf_features_config)
-        tagger = CRFTagger(default_crf_model(), features, TaggingScheme.BIO,
+                                crf_features_config, random_state)
+        tagger = CRFTagger(get_crf_model(), features, TaggingScheme.BIO,
                            self.language)
         if self.probabilistic_parser is not None:
             config = self.probabilistic_parser.data_augmentation_config
         else:
             config = SlotFillerDataAugmentationConfig()
-        return fit_tagger(tagger, dataset, intent, self.language, config)
+        return fit_tagger(tagger, dataset, intent, self.language, config,
+                          random_state)
 
     def add_fitted_tagger(self, intent, model_data):
         tagger = CRFTagger.from_dict(model_data)
@@ -318,7 +328,8 @@ class SnipsNLUEngine(NLUEngine):
             ENTITIES: self.entities,
             "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict,
-            "config": self.config.to_dict()
+            "config": self.config.to_dict(),
+            "random_seed": self.random_seed
         }
 
     @classmethod
@@ -347,5 +358,6 @@ class SnipsNLUEngine(NLUEngine):
             probabilistic_parser=probabilistic_parser, entities=entities,
             slot_name_mapping=slot_name_mapping,
             intents_data_sizes=intents_data_sizes,
-            config=obj_dict["config"]
+            config=obj_dict["config"],
+            random_seed=obj_dict["random_seed"]
         )

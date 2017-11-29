@@ -89,7 +89,6 @@ _IntentClassifierConfig = namedtuple_with_defaults(
                 "penalty": 'l2',
                 "class_weight": 'balanced',
                 "n_iter": 5,
-                "random_state": 42,
                 "n_jobs": -1
             },
         'featurizer_config': FeaturizerConfig()

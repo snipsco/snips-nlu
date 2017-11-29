@@ -94,7 +94,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "mocked_proba_based_parser_key": "mocked_proba_parser_value"}
         mock_probabilistic_parser_to_dict.return_value = \
             mocked_proba_parser_dict
-        engine = SnipsNLUEngine(language).fit(BEVERAGE_DATASET)
+        random_state = 1
+        engine = SnipsNLUEngine(
+            language, random_seed=random_state).fit(BEVERAGE_DATASET)
 
         # When
         actual_engine_dict = engine.to_dict()
@@ -130,7 +132,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
                 "probabilistic_parser": mocked_proba_parser_dict
-            }
+            },
+            "random_seed": random_state
         }
 
         self.assertDictEqual(actual_engine_dict, expected_engine_dict)
@@ -168,7 +171,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "model": {
                 "rule_based_parser": mocked_rule_based_parser_dict,
                 "probabilistic_parser": mocked_proba_parser_dict
-            }
+            },
+            "random_seed": 1,
         }
         engine = SnipsNLUEngine.from_dict(engine_dict)
 
@@ -198,9 +202,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         try:
             json.dumps(engine_dict).encode("utf-8")
-        except:  # pylint: disable=W0702
+        except Exception, e:  # pylint: disable=W0703
+            trace = tb.format_exc()
             self.fail("SnipsNLUEngine dict should be json serializable "
-                      "to utf-8")
+                      "to utf-8.\n{}\n{}".format(e, trace))
         expected_slots = [
             ParsedSlot((8, 9), '3', 'snips/number',
                        'number_of_cups').as_dict(),
@@ -729,7 +734,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         # pylint: disable=W0613
         def augment_utterances(dataset, intent_name, language, min_utterances,
-                               capitalization_ratio):
+                               capitalization_ratio, random_state):
             return dataset[INTENTS][intent_name][UTTERANCES]
 
         # pylint: enable=W0613

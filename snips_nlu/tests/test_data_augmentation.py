@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import numpy as np
 from mock import patch
 
 from snips_nlu.data_augmentation import (
@@ -22,13 +23,14 @@ class TestDataAugmentation(unittest.TestCase):
                 "dummy": {"utterances": range(3)}
             }
         }
+        random_state = np.random.RandomState(1)
 
         # When
-        it = get_contexts_iterator(dataset, "dummy")
+        it = get_contexts_iterator(dataset, "dummy", random_state)
         context = [next(it) for _ in xrange(5)]
 
         # Then
-        self.assertEqual(context, [0, 1, 2, 0, 1])
+        self.assertEqual(context, [0, 2, 1, 0, 2])
 
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_entities_iterators(self, _):
@@ -49,9 +51,10 @@ class TestDataAugmentation(unittest.TestCase):
                 }
             }
         }
+        random_state = np.random.RandomState(1)
 
         # Then
-        it_dict = get_entities_iterators(intent_entities)
+        it_dict = get_entities_iterators(intent_entities, random_state)
 
         # When
         self.assertIn("entity1", it_dict)

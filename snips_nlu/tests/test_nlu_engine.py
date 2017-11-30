@@ -8,9 +8,9 @@ import traceback as tb
 import unittest
 from copy import deepcopy
 
-import snips_nlu
 from mock import Mock, patch
 
+import snips_nlu
 from snips_nlu.config import NLUConfig, RegexTrainingConfig
 from snips_nlu.constants import (DATA, TEXT, INTENTS, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset

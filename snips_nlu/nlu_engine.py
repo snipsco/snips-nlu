@@ -3,9 +3,6 @@ from __future__ import unicode_literals
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from semantic_version import Version
-import  snips_nlu
-
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
 from snips_nlu.constants import (
@@ -25,6 +22,8 @@ from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.utils import check_random_state
+
+__model_version__ = "0.11.0"
 
 
 class NLUEngine(object):
@@ -333,7 +332,7 @@ class SnipsNLUEngine(NLUEngine):
             "model": model_dict,
             "config": self.config.to_dict(),
             "random_seed": self.random_seed,
-            "model_version": snips_nlu.__model_version__
+            "model_version": __model_version__
         }
 
     @classmethod

@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
+from semantic_version import Version
+import  snips_nlu
+
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
 from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
 from snips_nlu.constants import (
@@ -329,7 +332,8 @@ class SnipsNLUEngine(NLUEngine):
             "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict,
             "config": self.config.to_dict(),
-            "random_seed": self.random_seed
+            "random_seed": self.random_seed,
+            "model_version": snips_nlu.__model_version__
         }
 
     @classmethod

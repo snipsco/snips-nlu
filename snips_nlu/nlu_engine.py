@@ -23,6 +23,8 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
 from snips_nlu.utils import check_random_state
 
+__model_version__ = "0.11.0"
+
 
 class NLUEngine(object):
     __metaclass__ = ABCMeta
@@ -329,7 +331,8 @@ class SnipsNLUEngine(NLUEngine):
             "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict,
             "config": self.config.to_dict(),
-            "random_seed": self.random_seed
+            "random_seed": self.random_seed,
+            "model_version": __model_version__
         }
 
     @classmethod

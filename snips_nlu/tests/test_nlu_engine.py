@@ -10,6 +10,7 @@ from copy import deepcopy
 
 from mock import Mock, patch
 
+import snips_nlu
 from snips_nlu.config import NLUConfig, RegexTrainingConfig
 from snips_nlu.constants import (DATA, TEXT, INTENTS, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
@@ -133,7 +134,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 "rule_based_parser": mocked_rule_based_parser_dict,
                 "probabilistic_parser": mocked_proba_parser_dict
             },
-            "random_seed": random_state
+            "random_seed": random_state,
+            "model_version": snips_nlu.__model_version__
         }
 
         self.assertDictEqual(actual_engine_dict, expected_engine_dict)
@@ -173,6 +175,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 "probabilistic_parser": mocked_proba_parser_dict
             },
             "random_seed": 1,
+            "model_version": snips_nlu.__model_version__
         }
         engine = SnipsNLUEngine.from_dict(engine_dict)
 

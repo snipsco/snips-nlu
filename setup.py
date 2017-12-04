@@ -20,9 +20,9 @@ required = [
     "scipy==0.19.0",
     "scikit-learn==0.18.1",
     "sklearn-crfsuite==0.3.5",
-    "builtin_entities_ontology==0.5.0",
+    "builtin_entities_ontology==0.5.1",
     "semantic_version==2.6.0",
-    "rustling==7.3",
+    "rustling==8.1",
     "nlu_utils==0.5.0",
     "num2words==0.5.5"
 ]
@@ -31,8 +31,9 @@ extras_require = {
     "test": [
         "mock==2.0.0",
         "nlu_metrics==0.7.4",
-        "snips_nlu_rust==0.29.0",
-        "pylint==1.7.4"
+        "snips_nlu_rust==0.51.0",
+        "pylint==1.7.4",
+        "coverage==4.4.1"
     ]
 }
 
@@ -55,7 +56,10 @@ setup(name=PACKAGE_NAME,
           ]},
       entry_points={
           "console_scripts": [
-              "train-assistant=snips_nlu.nlu_engine:main_create_and_train_engine"
+              "train-engine=cli.cli:main_train_engine",
+              "engine-inference=cli.cli:main_engine_inference",
+              "cross-val-metrics=cli.cli:main_cross_val_metrics",
+              "train-test-metrics=cli.cli:main_train_test_metrics"
           ]
       },
       include_package_data=True,

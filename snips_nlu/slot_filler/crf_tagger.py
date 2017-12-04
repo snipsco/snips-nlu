@@ -10,51 +10,55 @@ from copy import deepcopy
 from sklearn_crfsuite import CRF
 
 import snips_nlu.slot_filler.feature_functions
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, TOKENS, TAGS, \
     OUTSIDE
 from snips_nlu.slot_filler.feature_functions import (
-    TOKEN_NAME, create_feature_function)
+    TOKEN_NAME)
 from snips_nlu.tokenization import Token
-from snips_nlu.utils import (UnupdatableDict, mkdir_p)
+from snips_nlu.utils import (UnupdatableDict, mkdir_p, check_random_state)
 
 POSSIBLE_SET_FEATURES = ["collection"]
 
 
-def default_crf_model(model_filename=None):
+def get_crf_model(model_filename=None):
     if model_filename is not None:
         directory = os.path.dirname(model_filename)
         if not os.path.isdir(directory):
             mkdir_p(directory)
 
     return CRF(min_freq=None, c1=.1, c2=.1, max_iterations=None, verbose=False,
-               model_filename=model_filename)
+               algorithm="lbfgs", model_filename=model_filename)
 
 
 def get_features_from_signatures(signatures):
-    features = dict()
+    features = []
     for signature in signatures:
         factory_name = signature["factory_name"]
         factory = getattr(snips_nlu.slot_filler.feature_functions,
                           factory_name)
-        fn = factory(**(signature["args"]))
+        feature = factory(**(signature["args"]))
         for offset in signature["offsets"]:
-            feature_name, feature_fn = create_feature_function(fn, offset)
-            if feature_name in features:
-                raise KeyError("Existing feature: %s" % feature_name)
-            features[feature_name] = feature_fn
+            offset_feature = feature.get_offset_feature(offset)
+            feature_name = offset_feature.name
+            if offset_feature.name in features:
+                raise KeyError("Duplicated feature: %s" % feature_name)
+            features.append(offset_feature)
     return features
 
 
 class CRFTagger(object):
     def __init__(self, crf_model, features_signatures, tagging_scheme,
-                 language):
+                 language, crf_features_config, random_seed=None):
         self.crf_model = crf_model
         self.features_signatures = features_signatures
         self._features = None
         self.tagging_scheme = tagging_scheme
         self.language = language
+        self.config = crf_features_config
+        self.random_seed = random_seed
 
     @property
     def features(self):
@@ -65,11 +69,11 @@ class CRFTagger(object):
 
     @property
     def labels(self):
-        l = []
+        labels = []
         if self.crf_model.tagger_ is not None:
-            l = [label.decode('utf8') for label in
-                 self.crf_model.tagger_.labels()]
-        return l
+            labels = [label.decode('utf8') for label in
+                      self.crf_model.tagger_.labels()]
+        return labels
 
     @property
     def fitted(self):
@@ -82,7 +86,7 @@ class CRFTagger(object):
         return [tag.decode('utf8') for tag in
                 self.crf_model.predict_single(features)]
 
-    def get_sequence_probability(self, tokens, labels):
+    def get_sequence_probability(self, features, labels):
         if not self.fitted:
             raise AssertionError("Model must be fitted before using predict")
 
@@ -93,14 +97,13 @@ class CRFTagger(object):
         cleaned_labels = [substitution_label if l not in self.labels else l for
                           l in labels]
         cleaned_labels = [label.encode('utf8') for label in cleaned_labels]
-
-        features = self.compute_features(tokens)
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
     def fit(self, data, verbose=False):
-        #pylint: disable=C0103
-        X = [self.compute_features(sample[TOKENS]) for sample in data]
+        # pylint: disable=C0103
+        X = [self.compute_features(sample[TOKENS], drop_out=True)
+             for sample in data]
         Y = [[tag.encode('utf8') for tag in sample[TAGS]] for sample in data]
         # pylint: enable=C0103
 
@@ -128,19 +131,27 @@ class CRFTagger(object):
         for (feat, tag), weight in feature_weights:
             print "%s %s: %s" % (feat, tag, weight)
 
-    def compute_features(self, tokens):
+    def compute_features(self, tokens, drop_out=False):
+        if drop_out:
+            features_drop_out = self.config.features_drop_out
+        else:
+            features_drop_out = dict()
         tokens = [
             Token(t.value, t.start, t.end,
                   stem=stem(t.normalized_value, self.language))
             for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
+        random_state = check_random_state(self.random_seed)
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
-            for feature_name, feature_fn in self.features.iteritems():
-                value = feature_fn(i, cache)
+            for feature in self.features:
+                drop_out = features_drop_out.get(feature.feature_type, 0)
+                if random_state.rand() < drop_out:
+                    continue
+                value = feature.compute(i, cache)
                 if value is not None:
-                    token_features[feature_name] = value
+                    token_features[feature.name] = value
             features.append(token_features)
         return features
 
@@ -157,7 +168,9 @@ class CRFTagger(object):
             "crf_model_data": serialize_crf_model(self.crf_model),
             "features_signatures": features_signatures,
             "tagging_scheme": self.tagging_scheme.value,
-            "language_code": self.language.iso_code
+            "language_code": self.language.iso_code,
+            "config": self.config.to_dict(),
+            "random_seed": self.random_seed
         }
 
     @classmethod
@@ -166,8 +179,11 @@ class CRFTagger(object):
         tagging_scheme = TaggingScheme(int(tagger_config["tagging_scheme"]))
         language = Language.from_iso_code(tagger_config["language_code"])
         crf = deserialize_crf_model(tagger_config["crf_model_data"])
+        config = CRFFeaturesConfig.from_dict(tagger_config["config"])
+        random_seed = tagger_config["random_seed"]
         return cls(crf_model=crf, features_signatures=features_signatures,
-                   tagging_scheme=tagging_scheme, language=language)
+                   tagging_scheme=tagging_scheme, language=language,
+                   crf_features_config=config, random_seed=random_seed)
 
     def __del__(self):
         if self.crf_model is None or self.crf_model.modelfile.auto \

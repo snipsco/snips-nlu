@@ -5,6 +5,6 @@
 .idea
 /dist
 snips_nlu/snips-nlu-resources/*
-
 /venv
+.coverage
 pylint.log

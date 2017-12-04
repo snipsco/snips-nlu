@@ -1,10 +1,7 @@
 from __future__ import unicode_literals
 
-import random
 from copy import deepcopy
 from itertools import cycle
-
-import numpy as np
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
@@ -20,7 +17,7 @@ def capitalize(text, language):
         else t.lower() for t in tokens)
 
 
-def capitalize_utterances(utterances, entities, language, ratio):
+def capitalize_utterances(utterances, entities, language, ratio, random_state):
     capitalized_utterances = []
     for utterance in utterances:
         capitalized_utterance = deepcopy(utterance)
@@ -33,7 +30,7 @@ def capitalize_utterances(utterances, entities, language, ratio):
                 continue
             if not entities[entity_label][CAPITALIZE]:
                 continue
-            if random.random() > ratio:
+            if random_state.rand() > ratio:
                 continue
             capitalized_utterance[DATA][i][TEXT] = capitalize(
                 chunk[TEXT], language)
@@ -59,16 +56,16 @@ def generate_utterance(contexts_iterator, entities_iterators):
     return context
 
 
-def get_contexts_iterator(dataset, intent_name):
-    shuffled_utterances = np.random.permutation(
+def get_contexts_iterator(dataset, intent_name, random_state):
+    shuffled_utterances = random_state.permutation(
         dataset[INTENTS][intent_name][UTTERANCES])
     return cycle(shuffled_utterances)
 
 
-def get_entities_iterators(intent_entities):
+def get_entities_iterators(intent_entities, random_state):
     entities_its = dict()
     for entity_name, entity in intent_entities.iteritems():
-        shuffled_values = np.random.permutation(entity[UTTERANCES].keys())
+        shuffled_values = random_state.permutation(entity[UTTERANCES].keys())
         entities_its[entity_name] = cycle(shuffled_values)
     return entities_its
 
@@ -88,14 +85,14 @@ def num_queries_to_generate(dataset, intent_name, min_utterances):
 
 
 def augment_utterances(dataset, intent_name, language, min_utterances,
-                       capitalization_ratio):
-    contexts_it = get_contexts_iterator(dataset, intent_name)
+                       capitalization_ratio, random_state):
+    contexts_it = get_contexts_iterator(dataset, intent_name, random_state)
     intent_entities = get_intent_entities(dataset, intent_name)
     intent_entities = {
         e: dataset[ENTITIES][e] for e in intent_entities
         if not is_builtin_entity(e)
     }
-    entities_its = get_entities_iterators(intent_entities)
+    entities_its = get_entities_iterators(intent_entities, random_state)
     generated_utterances = []
     nb_to_generate = num_queries_to_generate(dataset, intent_name,
                                              min_utterances)
@@ -106,6 +103,6 @@ def augment_utterances(dataset, intent_name, language, min_utterances,
 
     generated_utterances = capitalize_utterances(
         generated_utterances, dataset[ENTITIES], language,
-        ratio=capitalization_ratio)
+        ratio=capitalization_ratio, random_state=random_state)
 
     return generated_utterances

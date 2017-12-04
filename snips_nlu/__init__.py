@@ -5,15 +5,13 @@ import os
 
 import builtin_entities_ontology
 
-from snips_nlu.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine import SnipsNLUEngine, __model_version__
 from snips_nlu.resources import load_resources
-from snips_nlu.utils import ROOT_PATH, PACKAGE_NAME
-
-__model_version__ = "0.10.0"
+from snips_nlu.utils import ROOT_PATH, PACKAGE_NAME, PACKAGE_PATH
 
 VERSION_FILE_NAME = "__version__"
 
-with io.open(os.path.join(ROOT_PATH, PACKAGE_NAME, VERSION_FILE_NAME)) as f:
+with io.open(os.path.join(PACKAGE_PATH, VERSION_FILE_NAME)) as f:
     __version__ = f.readline().strip()
 
 load_resources()

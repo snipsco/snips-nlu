@@ -4,8 +4,9 @@ import unittest
 
 from mock import patch
 
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, default_crf_model
+from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.tokenization import tokenize
 
@@ -16,7 +17,7 @@ class TestCRFTagger(unittest.TestCase):
         language = Language.EN
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
-        crf_model = default_crf_model()
+        crf_model = get_crf_model()
         features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",
@@ -41,8 +42,10 @@ class TestCRFTagger(unittest.TestCase):
             }
         ]
 
+        config = CRFFeaturesConfig()
+
         tagger = CRFTagger(crf_model, features_signatures, tagging_scheme,
-                           Language.EN)
+                           Language.EN, config, random_seed=42)
         tagger.fit(data)
 
         # When
@@ -75,7 +78,9 @@ class TestCRFTagger(unittest.TestCase):
                 }
             ],
             "language_code": "en",
-            "tagging_scheme": 2
+            "tagging_scheme": 2,
+            "config": CRFFeaturesConfig().to_dict(),
+            "random_seed": 42
         }
         self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
 
@@ -110,7 +115,9 @@ class TestCRFTagger(unittest.TestCase):
                 }
             ],
             "language_code": "en",
-            "tagging_scheme": 2
+            "tagging_scheme": 2,
+            "config": CRFFeaturesConfig().to_dict(),
+            "random_seed": 42
         }
         # When
         tagger = CRFTagger.from_dict(tagger_dict)
@@ -132,8 +139,48 @@ class TestCRFTagger(unittest.TestCase):
         ]
         expected_tagging_scheme = TaggingScheme.BILOU
         expected_language = Language.EN
+        expected_config = CRFFeaturesConfig()
 
         self.assertListEqual(tagger.features_signatures,
                              expected_features_signatures)
         self.assertEqual(tagger.tagging_scheme, expected_tagging_scheme)
         self.assertEqual(tagger.language, expected_language)
+        self.assertEqual(tagger.random_seed, 42)
+        self.assertDictEqual(expected_config.to_dict(),
+                             tagger.config.to_dict())
+
+    def test_should_compute_features(self):
+        # Given
+        features_signatures = [
+            {
+                "factory_name": "get_ngram_fn",
+                "args": {
+                    "n": 1,
+                    "use_stemming": False,
+                    "language_code": "en",
+                    "common_words_gazetteer_name": None
+                },
+                "offsets": [0]
+            },
+        ]
+        drop_out = {
+            "ngram_1": 0.3
+        }
+        crf_features_config = CRFFeaturesConfig(features_drop_out=drop_out)
+        tagger = CRFTagger(get_crf_model(), features_signatures,
+                           TaggingScheme.BIO, Language.EN, crf_features_config,
+                           random_seed=40)
+
+        tokens = tokenize("foo hello world bar", Language.EN)
+
+        # When
+        features_with_drop_out = tagger.compute_features(tokens, True)
+
+        # Then
+        expected_features = [
+            {"ngram_1": "foo"},
+            {},
+            {"ngram_1": "world"},
+            {},
+        ]
+        self.assertListEqual(expected_features, features_with_drop_out)

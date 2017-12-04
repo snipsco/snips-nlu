@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 import re
+from copy import deepcopy
 from itertools import izip, cycle
-from random import random
 from uuid import uuid4
 
 import numpy as np
@@ -19,11 +19,22 @@ from snips_nlu.languages import Language
 from snips_nlu.resources import get_noises
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.tokenization import tokenize_light
+from snips_nlu.utils import check_random_state
 
 NOISE_NAME = str(uuid4()).decode()
 
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
+
+
+def remove_builtin_slots(dataset):
+    filtered_dataset = deepcopy(dataset)
+    for intent_data in filtered_dataset[INTENTS].values():
+        for utterance in intent_data[UTTERANCES]:
+            utterance[DATA] = [
+                chunk for chunk in utterance[DATA]
+                if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])]
+    return filtered_dataset
 
 
 def get_regularization_factor(dataset):
@@ -35,10 +46,10 @@ def get_regularization_factor(dataset):
     return alpha
 
 
-def get_noise_it(noise, mean_length, std_length):
+def get_noise_it(noise, mean_length, std_length, random_state):
     it = cycle(noise)
     while True:
-        noise_length = int(np.random.normal(mean_length, std_length))
+        noise_length = int(random_state.normal(mean_length, std_length))
         yield " ".join(next(it) for _ in xrange(noise_length))
 
 
@@ -52,7 +63,8 @@ def generate_smart_noise(augmented_utterances, replacement_string, language):
 
 
 def generate_noise_utterances(augmented_utterances, num_intents,
-                              data_augmentation_config, language):
+                              data_augmentation_config, language,
+                              random_state):
     if not augmented_utterances or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
@@ -73,23 +85,24 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     mean_utterances_length = np.mean(utterances_lengths)
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
-                            std_utterances_length)
+                            std_utterances_length, random_state)
     # Remove duplicate 'unknowword unknowword'
     return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
             for _ in xrange(noise_size)]
 
 
 def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
-                                   unknown_word_prob):
+                                   unknown_word_prob, random_state):
     for u in augmented_utterances:
         for chunk in u[DATA]:
             if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]) \
-                    and random() < unknown_word_prob:
+                    and random_state.rand() < unknown_word_prob:
                 chunk[TEXT] = WORD_REGEX.sub(replacement_string, chunk[TEXT])
     return augmented_utterances
 
 
-def build_training_data(dataset, language, data_augmentation_config):
+def build_training_data(dataset, language, data_augmentation_config,
+                        random_state):
     # Creating class mapping
     intents = dataset[INTENTS]
     intent_index = 0
@@ -111,20 +124,21 @@ def build_training_data(dataset, language, data_augmentation_config):
         utterances = augment_utterances(
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,
-            capitalization_ratio=0.0)  # Data is anyway lower with `normalize`
+            capitalization_ratio=0.0, random_state=random_state)
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               xrange(len(utterances))]
     augmented_utterances = add_unknown_word_to_utterances(
         augmented_utterances,
         data_augmentation_config.unknown_words_replacement_string,
-        data_augmentation_config.unknown_word_prob
+        data_augmentation_config.unknown_word_prob,
+        random_state
     )
 
     # Adding noise
     noisy_utterances = generate_noise_utterances(
-        augmented_utterances, len(intents),
-        data_augmentation_config, language)
+        augmented_utterances, len(intents), data_augmentation_config, language,
+        random_state)
     augmented_utterances = [get_text_from_chunks(u[DATA])
                             for u in augmented_utterances]
 
@@ -145,37 +159,47 @@ def build_training_data(dataset, language, data_augmentation_config):
 
 
 class SnipsIntentClassifier(object):
-    def __init__(self, language, config=IntentClassifierConfig()):
+    def __init__(self, language, config=IntentClassifierConfig(),
+                 random_seed=None):
         self.language = language
         self.config = config
         self.classifier = None
         self.intent_list = None
+        data_augmentation_config = self.config.data_augmentation_config
         self.featurizer = Featurizer(
             self.language,
-            self.config.data_augmentation_config
+            data_augmentation_config
             .unknown_words_replacement_string,
             self.config.featurizer_config)
         self.min_utterances_per_intent = 20
+        self.random_seed = random_seed
 
     @property
     def fitted(self):
         return self.intent_list is not None
 
     def fit(self, dataset):
+        random_state = check_random_state(self.random_seed)
+        filtered_dataset = remove_builtin_slots(dataset)
         utterances, y, intent_list = build_training_data(
-            dataset, self.language, self.config.data_augmentation_config)
+            filtered_dataset, self.language,
+            self.config.data_augmentation_config,
+            random_state)
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
             return self
 
-        self.featurizer = self.featurizer.fit(dataset, utterances, y)
+        self.featurizer = self.featurizer.fit(filtered_dataset, utterances, y)
         if self.featurizer is None:
             return self
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
-        alpha = get_regularization_factor(dataset)
-        self.config.log_reg_args['alpha'] = alpha
-        self.classifier = SGDClassifier(**self.config.log_reg_args).fit(X, y)
+        alpha = get_regularization_factor(filtered_dataset)
+        log_reg_args = deepcopy(self.config.log_reg_args)
+        log_reg_args['alpha'] = alpha
+        self.classifier = SGDClassifier(
+            random_state=random_state,
+            **log_reg_args).fit(X, y)
         return self
 
     def get_intent(self, text):
@@ -220,14 +244,16 @@ class SnipsIntentClassifier(object):
             "intercept": intercept,
             "intent_list": self.intent_list,
             "language_code": self.language.iso_code,
-            "featurizer": featurizer_dict
+            "featurizer": featurizer_dict,
+            "random_seed": self.random_seed,
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
         language = Language.from_iso_code(obj_dict['language_code'])
         config = IntentClassifierConfig.from_dict(obj_dict["config"])
-        classifier = cls(language=language, config=config)
+        classifier = cls(language=language, config=config,
+                         random_seed=obj_dict["random_seed"])
         sgd_classifier = None
         coeffs = obj_dict['coeffs']
         intercept = obj_dict['intercept']

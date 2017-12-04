@@ -1,13 +1,10 @@
 from __future__ import unicode_literals
 
-import numpy as np
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE, \
     is_builtin_entity
 from snips_nlu.constants import UTTERANCES, DATA, ENTITY, ENTITIES, INTENTS
-from snips_nlu.data_augmentation import get_contexts_iterator, \
-    num_queries_to_generate
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 
@@ -25,27 +22,8 @@ def get_intent_custom_entities(dataset, intent):
     return custom_entities
 
 
-def get_num_entity_appearances(dataset, intent, entity, config):
-    contexts_it = get_contexts_iterator(dataset, intent)
-    nb_to_generate = num_queries_to_generate(
-        dataset, intent,
-        config.slot_filler_data_augmentation_config.min_utterances)
-    contexts = [next(contexts_it)[DATA] for _ in xrange(nb_to_generate)]
-    return sum(1 for q in contexts for c in q
-               if ENTITY in c and c[ENTITY] == entity)
-
-
-def compute_entity_collection_size(collection, config):
-    num_entities = len(collection)
-    collection_size = int((1 - config.crf_features_config.base_drop_ratio)
-                          * num_entities)
-    collection_size = max(collection_size, 1)
-    collection_size = min(collection_size, num_entities)
-    return collection_size
-
-
-def default_features(language, dataset, intent, config, use_stemming,
-                     common_words_gazetteer_name=None):
+def default_features(language, dataset, intent, crf_features_config,
+                     use_stemming, common_words_gazetteer_name=None):
     features = [
         {
             "factory_name": "get_ngram_fn",
@@ -109,9 +87,7 @@ def default_features(language, dataset, intent, config, use_stemming,
 
         collection = list(
             set(preprocess(e) for e in entity[UTTERANCES].keys()))
-        collection_size = compute_entity_collection_size(collection, config)
-        collection = np.random.choice(collection, collection_size,
-                                      replace=False).tolist()
+
         features.append(
             {
                 "factory_name": "get_token_is_in_fn",
@@ -122,7 +98,7 @@ def default_features(language, dataset, intent, config, use_stemming,
                     "tagging_scheme_code": TaggingScheme.BILOU.value,
                     "language_code": language.iso_code,
                 },
-                "offsets": tuple(config.crf_features_config.entities_offsets)
+                "offsets": tuple(crf_features_config.entities_offsets)
             }
         )
     return features

@@ -3,22 +3,20 @@ from __future__ import unicode_literals
 
 import unittest
 
-import numpy as np
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import ProbabilisticIntentParserConfig
+from snips_nlu.config import CRFFeaturesConfig
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_utils import TaggingScheme, UNIT_PREFIX, \
-    LAST_PREFIX, BEGINNING_PREFIX, INSIDE_PREFIX
+from snips_nlu.slot_filler.crf_utils import TaggingScheme, LAST_PREFIX, \
+    BEGINNING_PREFIX, INSIDE_PREFIX
 from snips_nlu.slot_filler.feature_functions import (
-    get_prefix_fn, get_suffix_fn, get_ngram_fn,
-    create_feature_function, TOKEN_NAME, BaseFeatureFunction,
+    get_prefix_fn, get_suffix_fn, get_ngram_fn, TOKEN_NAME, Feature,
     get_token_is_in_fn, get_built_in_annotation_fn, crf_features,
-    get_is_in_gazetteer_fn, get_length_fn)
+    get_length_fn)
 from snips_nlu.tokenization import tokenize
 
 
@@ -152,28 +150,6 @@ class TestFeatureFunctions(unittest.TestCase):
                          [feature_fn.function(tokens, i)
                           for i in xrange(len(tokens))])
 
-    @patch('snips_nlu.slot_filler.feature_functions.get_gazetteer')
-    def test_is_in_gazetteer(self, mocked_get_gazetteer):
-        # Given
-        gazetteer = {"bird", "eagle", "blue bird"}
-        mocked_get_gazetteer.side_effect = lambda l, name: gazetteer
-        text = "This is a Blue bÏrd flying next to an eagle"
-        language = Language.EN
-        tokens = tokenize(text, language=language)
-        feature_fn = get_is_in_gazetteer_fn("bird_gazetteer",
-                                            language.iso_code,
-                                            TaggingScheme.BILOU.value,
-                                            use_stemming=False)
-
-        # When
-        features = [feature_fn.function(tokens, i) for i in
-                    xrange(len(tokens))]
-
-        # Then
-        expected_features = [None, None, None, BEGINNING_PREFIX, LAST_PREFIX,
-                             None, None, None, None, UNIT_PREFIX]
-        self.assertListEqual(features, expected_features)
-
     @patch('snips_nlu.slot_filler.feature_functions.get_builtin_entities')
     def test_get_built_in_annotation_fn(self, mocked_get_builtin_entities):
         # Given
@@ -203,11 +179,11 @@ class TestFeatureFunctions(unittest.TestCase):
         # Then
         self.assertEqual(features, expected_features)
 
-    def test_create_feature_function(self):
+    def test_offset_feature(self):
         # Given
         language = Language.EN
         name = "position"
-        base_feature_function = BaseFeatureFunction(
+        base_feature_function = Feature(
             name, lambda _, token_index: token_index + 1)
 
         tokens = tokenize("a b c", language)
@@ -218,19 +194,17 @@ class TestFeatureFunctions(unittest.TestCase):
             2: ("position[+2]", [3, None, None])
         }
         cache = [{TOKEN_NAME: t for t in tokens} for _ in xrange(len(tokens))]
-        for offset, expected in expected_features.iteritems():
-            feature_name, feature_function = create_feature_function(
-                base_feature_function, offset)
-            expected_name, expected_feats = expected
+        for offset, (expected_name, expected_values) in \
+                expected_features.iteritems():
+            offset_feature = base_feature_function.get_offset_feature(offset)
             # When
-            feats = [feature_function(i, cache) for i in xrange(len(tokens))]
+            feature_values = [offset_feature.compute(i, cache)
+                              for i in xrange(len(tokens))]
             # Then
-            self.assertEqual(feature_name, expected_name)
-            self.assertEqual(feats, expected_feats)
+            self.assertEqual(expected_name, offset_feature.name)
+            self.assertEqual(expected_values, feature_values)
 
-    @patch("snips_nlu.slot_filler.default.default_features_functions.np"
-           ".random.choice")
-    def test_crf_features(self, mocked_np_random):
+    def test_crf_features(self):
         # Given
         language = Language.EN
         dataset = {
@@ -316,34 +290,24 @@ class TestFeatureFunctions(unittest.TestCase):
             'there': 'there'
         }
 
-        # pylint: disable=unused-argument
-        def np_random(a, size, replace=False):
-            a = sorted(a)
-            if a == sorted(collection_1.keys()) \
-                    or a == sorted(collection_2.keys()):
-                return np.array(a[:size])
-            raise ValueError("Unexpected value: {}".format(a))
-
-        # pylint: enable=unused-argument
-        mocked_np_random.side_effect = np_random
-
         # When
-        drop_prob = 0.5
+        features_config = CRFFeaturesConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
-            config=ProbabilisticIntentParserConfig())
+            crf_features_config=features_config)
 
         # Then
-        collection_1_size = max(int((1 - drop_prob) * len(collection_1)), 1)
-        col_1 = np_random(collection_1.keys(), collection_1_size).tolist()
-
-        collection_2_size = max(int((1 - drop_prob) * len(collection_2)), 1)
-        col_2 = np_random(collection_2.keys(), collection_2_size).tolist()
+        for signature in features_signatures:
+            # sort collections in order to make testing easier
+            if 'tokens_collection' in signature['args']:
+                signature['args']['tokens_collection'] = sorted(
+                    signature['args']['tokens_collection'])
 
         expected_signatures = [
             {
                 'args': {
-                    'tokens_collection': col_1,
+                    'tokens_collection':
+                        sorted(list(set(collection_1.keys()))),
                     'collection_name': 'dummy_entity_1',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -354,7 +318,8 @@ class TestFeatureFunctions(unittest.TestCase):
             },
             {
                 'args': {
-                    'tokens_collection': col_2,
+                    'tokens_collection':
+                        sorted(list(set(collection_2.keys()))),
                     'collection_name': 'dummy_entity_2',
                     'use_stemming': True,
                     'language_code': 'en',
@@ -364,8 +329,8 @@ class TestFeatureFunctions(unittest.TestCase):
                 'offsets': (-2, -1, 0)
             }
         ]
-        for signature in expected_signatures:
-            self.assertIn(signature, features_signatures)
+        for expected_signature in expected_signatures:
+            self.assertIn(expected_signature, features_signatures)
 
 
 if __name__ == '__main__':

@@ -38,9 +38,6 @@ node('jenkins-slave-generic') {
             python -m unittest discover
             """
         }
-        sh """
-        find snips_nlu -name "*.py" | grep -v  "snips-nlu-resources" |  xargs venv/bin/pylint --output-format=parseable --rcfile=tools/pylintrc > pylint.log
-        """
     }
 
     stage('Publish') {
@@ -50,6 +47,15 @@ node('jenkins-slave-generic') {
                 checkout scm
                 def rootPath = pwd()
                 def path = "${rootPath}/${packagePath}"
+                def newVersion = version(path)
+
+                def gitTagExists = sh "git tag -l $newVersion"
+
+                if (gitTagExists) {
+                    echo "tag $newVersion already exists."
+                    exit 1
+                }
+
                 def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
                 sh "git submodule update --init --recursive"
                 sh """
@@ -57,7 +63,7 @@ node('jenkins-slave-generic') {
                 ${VENV}
                 echo "[global]\nindex = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://${credentials}@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
                 pip install .
-                git tag ${version(path)}
+                git tag $newVersion
                 git remote rm origin
                 git remote add origin 'git@github.com:snipsco/snips-nlu.git'
                 git config --global user.email 'jenkins@snips.ai'

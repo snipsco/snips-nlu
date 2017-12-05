@@ -6,7 +6,7 @@ import numpy as np
 from mock import MagicMock, patch, call
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import ProbabilisticIntentParserConfig, CRFFeaturesConfig
+from snips_nlu.config import ProbabilisticIntentParserConfig, CRFSlotFillerConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.data_augmentation import capitalize, capitalize_utterances
 from snips_nlu.dataset import validate_and_format_dataset
@@ -19,7 +19,7 @@ from snips_nlu.intent_parser.probabilistic_intent_parser import (
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.result import ParsedSlot
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
+from snips_nlu.slot_filler.crf_tagger import CRFSlotFiller, get_crf_model
 from snips_nlu.slot_filler.crf_utils import (BEGINNING_PREFIX, INSIDE_PREFIX,
                                              TaggingScheme)
 from snips_nlu.tests.utils import BEVERAGE_DATASET
@@ -221,7 +221,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         }
         parser = ProbabilisticIntentParser(
             language=language, intent_classifier=intent_classifier,
-            crf_taggers=taggers,
+            slot_fillers=taggers,
             slot_name_to_entity_mapping=slot_name_to_entity_mapping)
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         # When
@@ -268,12 +268,12 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         make_coffee_crf = get_crf_model()
         make_tea_crf = get_crf_model()
-        make_coffee_tagger = CRFTagger(make_coffee_crf, features_signatures,
-                                       tagging_scheme, language,
-                                       parser_config.crf_features_config)
-        make_tea_tagger = CRFTagger(make_tea_crf, features_signatures,
-                                    tagging_scheme, language,
-                                    parser_config.crf_features_config)
+        make_coffee_tagger = CRFSlotFiller(make_coffee_crf, features_signatures,
+                                           tagging_scheme, language,
+                                           parser_config.crf_slot_filler_config)
+        make_tea_tagger = CRFSlotFiller(make_tea_crf, features_signatures,
+                                        tagging_scheme, language,
+                                        parser_config.crf_slot_filler_config)
         taggers = {
             "MakeCoffee": make_coffee_tagger,
             "MakeTea": make_tea_tagger,
@@ -297,7 +297,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                     "min_utterances": 200,
                     "capitalization_ratio": .2,
                 },
-                'crf_features_config': CRFFeaturesConfig().to_dict(),
+                'crf_features_config': CRFSlotFillerConfig().to_dict(),
                 'exhaustive_permutations_threshold': 4 ** 3
             },
             "intent_classifier": {
@@ -383,7 +383,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         self.assertEqual(expected_data_augmentation_config,
                          parser.config.data_augmentation_config.to_dict())
         self.assertIsNotNone(parser.intent_classifier)
-        self.assertItemsEqual(parser.crf_taggers.keys(),
+        self.assertItemsEqual(parser.slot_fillers.keys(),
                               ["MakeCoffee", "MakeTea"])
 
     def test_capitalize(self):
@@ -586,9 +586,9 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             parser_dict).fit(validated_dataset)
 
         # Then
-        feature_weights_1 = fitted_parser_1.crf_taggers[
+        feature_weights_1 = fitted_parser_1.slot_fillers[
             "MakeTea"].crf_model.state_features_
-        feature_weights_2 = fitted_parser_2.crf_taggers[
+        feature_weights_2 = fitted_parser_2.slot_fillers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
 

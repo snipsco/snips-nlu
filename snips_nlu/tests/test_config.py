@@ -5,7 +5,7 @@ from snips_nlu.config import (NLUConfig,
                               IntentClassifierDataAugmentationConfig,
                               SlotFillerDataAugmentationConfig,
                               FeaturizerConfig, IntentClassifierConfig,
-                              CRFFeaturesConfig,
+                              CRFSlotFillerConfig,
                               ProbabilisticIntentParserConfig,
                               RegexTrainingConfig)
 
@@ -88,7 +88,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When
-        config = CRFFeaturesConfig.from_dict(config_dict)
+        config = CRFSlotFillerConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -99,7 +99,7 @@ class TestConfig(unittest.TestCase):
         config_dict = {
             "data_augmentation_config":
                 SlotFillerDataAugmentationConfig().to_dict(),
-            "crf_features_config": CRFFeaturesConfig().to_dict(),
+            "crf_features_config": CRFSlotFillerConfig().to_dict(),
             "exhaustive_permutations_threshold": 42
         }
 

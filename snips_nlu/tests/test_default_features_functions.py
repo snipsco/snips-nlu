@@ -20,7 +20,7 @@ class TestDefaultFeaturesFunction(unittest.TestCase):
         engine = engine.fit(dataset)
 
         # Then
-        features = engine.probabilistic_parser.crf_taggers[intent].features
+        features = engine.probabilistic_parser.slot_fillers[intent].features
         builtin_features_count = len(
             [f for f in features if "built-in-snips/number" in f.name])
         self.assertGreater(builtin_features_count, 0)

@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
 from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
-from snips_nlu.config import SlotFillerDataAugmentationConfig, NLUConfig
+from snips_nlu.config import NLUConfig
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
@@ -12,16 +12,16 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
-    ProbabilisticIntentParser, fit_tagger
+    ProbabilisticIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \
     IntentClassificationResult
 from snips_nlu.result import Result
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
+from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, get_crf_model
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_functions import crf_features
-from snips_nlu.utils import check_random_state
+from snips_nlu.utils import get_slot_name_mapping
 
 __model_version__ = "0.11.0"
 
@@ -94,32 +94,6 @@ def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
             valid_slot.append(s)
         return Result(text, parsed_intent=res, parsed_slots=valid_slot)
     return result
-
-
-def spans_to_tokens_indexes(spans, tokens):
-    tokens_indexes = []
-    for span_start, span_end in spans:
-        indexes = []
-        for i, token in enumerate(tokens):
-            if span_end > token.start and span_start < token.end:
-                indexes.append(i)
-        tokens_indexes.append(indexes)
-    return tokens_indexes
-
-
-def get_slot_name_mapping(dataset):
-    """
-    Returns a dict which maps slot names to entities
-    """
-    slot_name_mapping = dict()
-    for intent_name, intent in dataset[INTENTS].iteritems():
-        mapping = dict()
-        slot_name_mapping[intent_name] = mapping
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
-    return slot_name_mapping
 
 
 def get_intent_slot_name_mapping(dataset, intent):
@@ -265,16 +239,14 @@ class SnipsNLUEngine(NLUEngine):
 
         taggers = dict()
         features_config = self.config.probabilistic_intent_parser_config \
-            .crf_features_config
+            .crf_slot_filler_config
         for intent in dataset[INTENTS]:
             features = crf_features(dataset, intent, self.language,
                                     features_config)
             if intent in self._pre_trained_taggers:
                 tagger = self._pre_trained_taggers[intent]
             else:
-                tagger = CRFTagger(get_crf_model(), features,
-                                   TaggingScheme.BIO, self.language,
-                                   features_config, self.random_seed)
+                tagger = CRFSlotFiller(features, features_config)
             taggers[intent] = tagger
         intent_classifier = SnipsIntentClassifier(
             self.language, self.config.intent_classifier_config,
@@ -294,23 +266,16 @@ class SnipsNLUEngine(NLUEngine):
     def get_fitted_tagger(self, dataset, intent):
         dataset = validate_and_format_dataset(dataset)
         crf_features_config = self.config.probabilistic_intent_parser_config \
-            .crf_features_config
-        random_state = check_random_state(self.random_seed)
+            .crf_slot_filler_config
         features = crf_features(dataset, intent, self.language,
                                 crf_features_config)
-        tagger = CRFTagger(get_crf_model(), features, TaggingScheme.BIO,
-                           self.language, crf_features_config)
-        if self.probabilistic_parser is not None:
-            config = self.probabilistic_parser.data_augmentation_config
-        else:
-            config = SlotFillerDataAugmentationConfig()
-        return fit_tagger(tagger, dataset, intent, self.language, config,
-                          random_state)
+        tagger = CRFSlotFiller(features, crf_features_config)
+        return tagger.fit(dataset, intent)
 
     def add_fitted_tagger(self, intent, model_data):
-        tagger = CRFTagger.from_dict(model_data)
+        tagger = CRFSlotFiller.from_dict(model_data)
         if self.probabilistic_parser is not None:
-            self.probabilistic_parser.crf_taggers[intent] = tagger
+            self.probabilistic_parser.slot_fillers[intent] = tagger
         self._pre_trained_taggers[intent] = tagger
 
     def to_dict(self):

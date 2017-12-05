@@ -1,23 +1,25 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 import unittest
 
 from mock import patch
 
-from snips_nlu.config import CRFFeaturesConfig
+from snips_nlu.config import CRFSlotFillerConfig
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.slot_filler.crf_tagger import CRFTagger, get_crf_model
+from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
+from snips_nlu.tests.utils import SAMPLE_DATASET
 from snips_nlu.tokenization import tokenize
 
 
-class TestCRFTagger(unittest.TestCase):
-    @patch('snips_nlu.slot_filler.crf_tagger.serialize_crf_model')
+class TestCRFSlotFiller(unittest.TestCase):
+    @patch('snips_nlu.slot_filler.crf_slot_filler.serialize_crf_model')
     def test_should_be_serializable(self, mock_serialize_crf_model):
         language = Language.EN
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
-        crf_model = get_crf_model()
         features_signatures = [
             {
                 "factory_name": "get_shape_ngram_fn",
@@ -30,29 +32,18 @@ class TestCRFTagger(unittest.TestCase):
                 "offsets": [-1, 0]
             }
         ]
-        tagging_scheme = TaggingScheme.BILOU
-        data = [
-            {
-                "tokens": tokenize("I love blue birds", language),
-                "tags": ["O", "O", "B-COLOR", "O"]
-            },
-            {
-                "tokens": tokenize("I like red birds", language),
-                "tags": ["O", "O", "B-COLOR", "O"]
-            }
-        ]
+        config = CRFSlotFillerConfig(tagging_scheme=TaggingScheme.BILOU)
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
 
-        config = CRFFeaturesConfig()
-
-        tagger = CRFTagger(crf_model, features_signatures, tagging_scheme,
-                           Language.EN, config, random_seed=42)
-        tagger.fit(data)
+        slot_filler = CRFSlotFiller(features_signatures, config)
+        intent = "dummy_intent_1"
+        slot_filler.fit(dataset, intent=intent)
 
         # When
-        actual_tagger_dict = tagger.to_dict()
+        actual_slot_filler_dict = slot_filler.to_dict()
 
         # Then
-        expected_tagger_dict = {
+        expected_slot_filler_dict = {
             "crf_model_data": "mocked_crf_model_data",
             "features_signatures": [
                 {
@@ -78,18 +69,28 @@ class TestCRFTagger(unittest.TestCase):
                 }
             ],
             "language_code": "en",
-            "tagging_scheme": 2,
-            "config": CRFFeaturesConfig().to_dict(),
-            "random_seed": 42
+            "config": config.to_dict(),
+            "intent": intent,
+            "slot_name_mapping": {
+                "dummy_intent_1": {
+                    "dummy_slot_name": "dummy_entity_1",
+                    "dummy_slot_name2": "dummy_entity_2",
+                    "dummy_slot_name3": "dummy_entity_2",
+                },
+                "dummy_intent_2": {
+                    "dummy slot nàme": "dummy_entity_1"
+                }
+            },
         }
-        self.assertDictEqual(actual_tagger_dict, expected_tagger_dict)
+        self.assertDictEqual(actual_slot_filler_dict,
+                             expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_tagger.deserialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler.deserialize_crf_model')
     def test_should_be_deserializable(self, mock_deserialize_crf_model):
         # Given
         language = Language.EN
         mock_deserialize_crf_model.return_value = None
-        tagger_dict = {
+        slot_filler_dict = {
             "crf_model_data": "mocked_crf_model_data",
             "features_signatures": [
                 {
@@ -115,12 +116,16 @@ class TestCRFTagger(unittest.TestCase):
                 }
             ],
             "language_code": "en",
-            "tagging_scheme": 2,
-            "config": CRFFeaturesConfig().to_dict(),
-            "random_seed": 42
+            "intent": "dummy_intent_1",
+            "slot_name_mapping": {
+                "dummy_intent_1": {
+                    "dummy_slot_name": "dummy_entity_1",
+                }
+            },
+            "config": CRFSlotFillerConfig().to_dict()
         }
         # When
-        tagger = CRFTagger.from_dict(tagger_dict)
+        slot_filler = CRFSlotFiller.from_dict(slot_filler_dict)
 
         # Then
         mock_deserialize_crf_model.assert_called_once_with(
@@ -137,17 +142,23 @@ class TestCRFTagger(unittest.TestCase):
                 "offsets": [-1, 0]
             }
         ]
-        expected_tagging_scheme = TaggingScheme.BILOU
         expected_language = Language.EN
-        expected_config = CRFFeaturesConfig()
+        expected_config = CRFSlotFillerConfig()
+        expected_intent = "dummy_intent_1"
+        expected_slot_name_mapping = {
+            "dummy_intent_1": {
+                "dummy_slot_name": "dummy_entity_1",
+            }
+        }
 
-        self.assertListEqual(tagger.features_signatures,
+        self.assertListEqual(slot_filler.features_signatures,
                              expected_features_signatures)
-        self.assertEqual(tagger.tagging_scheme, expected_tagging_scheme)
-        self.assertEqual(tagger.language, expected_language)
-        self.assertEqual(tagger.random_seed, 42)
+        self.assertEqual(slot_filler.language, expected_language)
+        self.assertEqual(slot_filler.intent, expected_intent)
+        self.assertEqual(slot_filler.slot_name_mapping,
+                         expected_slot_name_mapping)
         self.assertDictEqual(expected_config.to_dict(),
-                             tagger.config.to_dict())
+                             slot_filler.config.to_dict())
 
     def test_should_compute_features(self):
         # Given
@@ -166,15 +177,16 @@ class TestCRFTagger(unittest.TestCase):
         drop_out = {
             "ngram_1": 0.3
         }
-        crf_features_config = CRFFeaturesConfig(features_drop_out=drop_out)
-        tagger = CRFTagger(get_crf_model(), features_signatures,
-                           TaggingScheme.BIO, Language.EN, crf_features_config,
-                           random_seed=40)
+        slot_filler_config = CRFSlotFillerConfig(features_drop_out=drop_out,
+                                                 random_seed=40)
+        slot_filler = CRFSlotFiller(features_signatures, slot_filler_config)
 
         tokens = tokenize("foo hello world bar", Language.EN)
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        slot_filler.fit(dataset, intent="dummy_intent_1")
 
         # When
-        features_with_drop_out = tagger.compute_features(tokens, True)
+        features_with_drop_out = slot_filler._compute_features(tokens, True)
 
         # Then
         expected_features = [

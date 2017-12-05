@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
 
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.utils import abstractclassmethod
 
 
@@ -134,21 +135,15 @@ class IntentClassifierConfig(Config):
         return cls(**obj_dict)
 
 
-class CRFFeaturesConfig(Config):
-    def __init__(self, features_drop_out=None, entities_offsets=None):
-        if features_drop_out is None:
-            features_drop_out = {
-                "collection_match": 0.5
-            }
-        if entities_offsets is None:
-            entities_offsets = [-2, -1, 0]
-        self.features_drop_out = features_drop_out
-        self.entities_offsets = entities_offsets
+class SlotFillerDataAugmentationConfig(Config):
+    def __init__(self, min_utterances=200, capitalization_ratio=.2):
+        self.min_utterances = min_utterances
+        self.capitalization_ratio = capitalization_ratio
 
     def to_dict(self):
         return {
-            "features_drop_out": self.features_drop_out,
-            "entities_offsets": self.entities_offsets
+            "min_utterances": self.min_utterances,
+            "capitalization_ratio": self.capitalization_ratio
         }
 
     @classmethod
@@ -156,17 +151,48 @@ class CRFFeaturesConfig(Config):
         return cls(**obj_dict)
 
 
-class ProbabilisticIntentParserConfig(Config):
-    def __init__(self,
+class CRFSlotFillerConfig(Config):
+    def __init__(self, tagging_scheme=TaggingScheme.BIO.value, crf_args=None,
+                 features_drop_out=None, entities_offsets=None,
+                 exhaustive_permutations_threshold=4 ** 3,
                  data_augmentation_config=SlotFillerDataAugmentationConfig(),
-                 crf_features_config=CRFFeaturesConfig(),
-                 exhaustive_permutations_threshold=4 ** 3):
-        self._data_augmentation_config = None
-        self.data_augmentation_config = data_augmentation_config
-        self._crf_features_config = None
-        self.crf_features_config = crf_features_config
+                 random_seed=None):
+        if crf_args is None:
+            crf_args = {
+                "c1": .1,
+                "c2": .1,
+                "algorithm": "lbfgs"
+            }
+        if features_drop_out is None:
+            features_drop_out = {
+                "collection_match": 0.5
+            }
+        if entities_offsets is None:
+            entities_offsets = [-2, -1, 0]
+        self._tagging_scheme = None
+        self.tagging_scheme = tagging_scheme
+        self.crf_args = crf_args
+        self.features_drop_out = features_drop_out
+        self.entities_offsets = entities_offsets
         self.exhaustive_permutations_threshold = \
             exhaustive_permutations_threshold
+        self._data_augmentation_config = None
+        self.data_augmentation_config = data_augmentation_config
+        self.random_seed = random_seed
+
+    @property
+    def tagging_scheme(self):
+        return self._tagging_scheme
+
+    @tagging_scheme.setter
+    def tagging_scheme(self, value):
+        if isinstance(value, TaggingScheme):
+            self._tagging_scheme = value
+        elif isinstance(value, int):
+            self._tagging_scheme = TaggingScheme(value)
+        else:
+            raise TypeError("Expected instance of TaggingScheme or int but"
+                            "received: %s" % type(value))
 
     @property
     def data_augmentation_config(self):
@@ -184,28 +210,47 @@ class ProbabilisticIntentParserConfig(Config):
                             "SlotFillerDataAugmentationConfig or dict but "
                             "received: %s" % type(value))
 
-    @property
-    def crf_features_config(self):
-        return self._crf_features_config
+    def to_dict(self):
+        return {
+            "crf_args": self.crf_args,
+            "tagging_scheme": self.tagging_scheme.value,
+            "features_drop_out": self.features_drop_out,
+            "entities_offsets": self.entities_offsets,
+            "exhaustive_permutations_threshold":
+                self.exhaustive_permutations_threshold,
+            "data_augmentation_config":
+                self.data_augmentation_config.to_dict(),
+            "random_seed": self.random_seed
+        }
 
-    @crf_features_config.setter
-    def crf_features_config(self, value):
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)
+
+
+class ProbabilisticIntentParserConfig(Config):
+    def __init__(self, crf_slot_filler_config=CRFSlotFillerConfig()):
+        self._crf_slot_filler_config = None
+        self.crf_slot_filler_config = crf_slot_filler_config
+
+    @property
+    def crf_slot_filler_config(self):
+        return self._crf_slot_filler_config
+
+    @crf_slot_filler_config.setter
+    def crf_slot_filler_config(self, value):
         if isinstance(value, dict):
-            self._crf_features_config = \
-                CRFFeaturesConfig.from_dict(value)
-        elif isinstance(value, CRFFeaturesConfig):
-            self._crf_features_config = value
+            self._crf_slot_filler_config = \
+                CRFSlotFillerConfig.from_dict(value)
+        elif isinstance(value, CRFSlotFillerConfig):
+            self._crf_slot_filler_config = value
         else:
-            raise TypeError("Expected instance of CRFFeaturesConfig or dict "
+            raise TypeError("Expected instance of CRFSlotFillerConfig or dict "
                             "but received: %s" % type(value))
 
     def to_dict(self):
         return {
-            "data_augmentation_config":
-                self.data_augmentation_config.to_dict(),
-            "crf_features_config": self.crf_features_config.to_dict(),
-            "exhaustive_permutations_threshold":
-                self.exhaustive_permutations_threshold
+            "crf_slot_filler_config": self.crf_slot_filler_config.to_dict(),
         }
 
     @classmethod

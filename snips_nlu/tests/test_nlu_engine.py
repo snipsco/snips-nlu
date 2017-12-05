@@ -235,7 +235,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         text = "Give me 3 cups of hot tea please"
         trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
-        trained_tagger = trained_engine.probabilistic_parser.crf_taggers[
+        trained_tagger = trained_engine.probabilistic_parser.slot_fillers[
             "MakeTea"]
         trained_tagger_data = trained_tagger.to_dict()
 
@@ -260,7 +260,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         text = "Give me 3 cups of hot tea please"
         trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
-        taggers = trained_engine.probabilistic_parser.crf_taggers
+        taggers = trained_engine.probabilistic_parser.slot_fillers
         trained_tagger_coffee = taggers["MakeCoffee"]
         trained_tagger_tea = taggers["MakeTea"]
         trained_tagger_data_coffee = trained_tagger_coffee.to_dict()
@@ -752,7 +752,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         tagger = engine.get_fitted_tagger(BEVERAGE_DATASET, intent)
 
         # Then
-        expected_tagger = trained_engine.probabilistic_parser.crf_taggers[
+        expected_tagger = trained_engine.probabilistic_parser.slot_fillers[
             intent]
         self.assertEqual(tagger.crf_model.state_features_,
                          expected_tagger.crf_model.state_features_)

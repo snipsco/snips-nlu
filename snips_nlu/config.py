@@ -42,22 +42,6 @@ class IntentClassifierDataAugmentationConfig(Config):
         return cls(**obj_dict)
 
 
-class SlotFillerDataAugmentationConfig(Config):
-    def __init__(self, min_utterances=200, capitalization_ratio=.2):
-        self.min_utterances = min_utterances
-        self.capitalization_ratio = capitalization_ratio
-
-    def to_dict(self):
-        return {
-            "min_utterances": self.min_utterances,
-            "capitalization_ratio": self.capitalization_ratio
-        }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
-
-
 class FeaturizerConfig(Config):
     def __init__(self, sublinear_tf=False):
         self.sublinear_tf = sublinear_tf
@@ -76,7 +60,8 @@ class IntentClassifierConfig(Config):
     def __init__(
             self,
             data_augmentation_config=IntentClassifierDataAugmentationConfig(),
-            log_reg_args=None, featurizer_config=FeaturizerConfig()):
+            log_reg_args=None, featurizer_config=FeaturizerConfig(),
+            random_seed=None):
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         if log_reg_args is None:
@@ -90,6 +75,7 @@ class IntentClassifierConfig(Config):
         self.log_reg_args = log_reg_args
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
+        self.random_seed = random_seed
 
     @property
     def data_augmentation_config(self):
@@ -127,7 +113,8 @@ class IntentClassifierConfig(Config):
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
             "log_reg_args": self.log_reg_args,
-            "featurizer_config": self.featurizer_config.to_dict()
+            "featurizer_config": self.featurizer_config.to_dict(),
+            "random_seed": self.random_seed
         }
 
     @classmethod

@@ -51,6 +51,7 @@ class ProbabilisticIntentParser(object):
         if intents is None:
             intents = set(dataset[INTENTS].keys())
         self.language = dataset[LANGUAGE]
+        SnipsIntentClassifier(self.config.intent_classifier_config)
         self.intent_classifier = self.intent_classifier.fit(dataset)
         for intent_name in dataset[INTENTS]:
             if intent_name not in intents:

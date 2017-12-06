@@ -30,7 +30,7 @@ POSSIBLE_SET_FEATURES = ["collection"]
 
 
 class CRFSlotFiller(object):
-    def __init__(self, features_signatures, config):
+    def __init__(self, features_signatures, config=CRFSlotFillerConfig()):
         self.crf_model = None
         self._features = None
         self.language = None
@@ -217,29 +217,39 @@ class CRFSlotFiller(object):
                         signature["args"][feat], set):
                     signature["args"][feat] = list(signature["args"][feat])
 
+        language_code = None
+        crf_model_data = None
+
+        if self.fitted:
+            language_code = self.language.iso_code
+            crf_model_data = serialize_crf_model(self.crf_model)
+
         return {
-            "language_code": self.language.iso_code,
+            "language_code": language_code,
             "intent": self.intent,
             "slot_name_mapping": self.slot_name_mapping,
             "features_signatures": features_signatures,
-            "crf_model_data": serialize_crf_model(self.crf_model),
+            "crf_model_data": crf_model_data,
             "config": self.config.to_dict(),
         }
 
     @classmethod
     def from_dict(cls, config):
         features_signatures = config["features_signatures"]
-        language = Language.from_iso_code(config["language_code"])
-        intent = config["intent"]
-        slot_name_mapping = config["slot_name_mapping"]
-        crf = deserialize_crf_model(config["crf_model_data"])
         slot_filler_config = CRFSlotFillerConfig.from_dict(config["config"])
         slot_filler = cls(features_signatures=features_signatures,
                           config=slot_filler_config)
-        slot_filler.crf_model = crf
-        slot_filler.language = language
-        slot_filler.intent = intent
-        slot_filler.slot_name_mapping = slot_name_mapping
+
+        crf_model_data = config["crf_model_data"]
+        if crf_model_data is not None:
+            crf = deserialize_crf_model(crf_model_data)
+            slot_filler.crf_model = crf
+        language_code = config["language_code"]
+        if language_code is not None:
+            language = Language.from_iso_code(language_code)
+            slot_filler.language = language
+        slot_filler.intent = config["intent"]
+        slot_filler.slot_name_mapping = config["slot_name_mapping"]
         return slot_filler
 
     def __del__(self):

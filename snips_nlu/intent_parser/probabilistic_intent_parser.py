@@ -12,18 +12,8 @@ class ProbabilisticIntentParser(object):
     def __init__(self, config=ProbabilisticIntentParserConfig()):
         self.language = None
         self.intent_classifier = None
-        self._slot_fillers = None
+        self.slot_fillers = None
         self.config = config
-
-    @property
-    def slot_fillers(self):
-        return self._slot_fillers
-
-    @slot_fillers.setter
-    def slot_fillers(self, value):
-        if any(t.language != self.language for t in value.values()):
-            raise ValueError("Found slot fillers with different languages")
-        self._slot_fillers = value
 
     def get_intent(self, text):
         if not self.fitted:
@@ -44,44 +34,68 @@ class ProbabilisticIntentParser(object):
 
     @property
     def fitted(self):
-        return self.intent_classifier.fitted and all(
-            slot_filler.fitted for slot_filler in self.slot_fillers.values())
+        return self.intent_classifier is not None \
+               and self.intent_classifier.fitted \
+               and all(slot_filler.fitted
+                       for slot_filler in self.slot_fillers.values())
 
     def fit(self, dataset, intents=None):
         if intents is None:
             intents = set(dataset[INTENTS].keys())
-        self.language = dataset[LANGUAGE]
-        SnipsIntentClassifier(self.config.intent_classifier_config)
-        self.intent_classifier = self.intent_classifier.fit(dataset)
+        self.language = Language.from_iso_code(dataset[LANGUAGE])
+        self.intent_classifier = SnipsIntentClassifier(
+            self.config.intent_classifier_config)
+        self.intent_classifier.fit(dataset)
+        self.slot_fillers = dict()
         for intent_name in dataset[INTENTS]:
             if intent_name not in intents:
                 continue
+            self.slot_fillers[intent_name] = CRFSlotFiller(
+                features_signatures=[],
+                config=self.config.crf_slot_filler_config)
             self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
 
     def to_dict(self):
-        slot_fillers = {
-            intent: slot_filler.to_dict()
-            for intent, slot_filler in self.slot_fillers.iteritems()}
+        slot_fillers = None
+        language_code = None
+        intent_classifier_dict = None
+
+        if self.language is not None:
+            language_code = self.language.iso_code
+        if self.intent_classifier is not None:
+            intent_classifier_dict = self.intent_classifier.to_dict()
+        if self.slot_fillers is not None:
+            slot_fillers = {
+                intent: slot_filler.to_dict()
+                for intent, slot_filler in self.slot_fillers.iteritems()}
 
         return {
-            "language_code": self.language.iso_code,
-            "intent_classifier": self.intent_classifier.to_dict(),
+            "language_code": language_code,
+            "intent_classifier": intent_classifier_dict,
             "config": self.config.to_dict(),
             "slot_fillers": slot_fillers,
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
-        slot_fillers = {
-            intent: CRFSlotFiller.from_dict(slot_filler_dict) for
-            intent, slot_filler_dict in obj_dict["slot_fillers"].iteritems()}
+        slot_fillers = None
+        if obj_dict["slot_fillers"] is not None:
+            slot_fillers = {
+                intent: CRFSlotFiller.from_dict(slot_filler_dict) for
+                intent, slot_filler_dict in
+                obj_dict["slot_fillers"].iteritems()}
+        language = None
+        if obj_dict["language_code"] is not None:
+            language = Language.from_iso_code(obj_dict["language_code"])
+        classifier = None
+        if obj_dict["intent_classifier"] is not None:
+            classifier = SnipsIntentClassifier.from_dict(
+                obj_dict["intent_classifier"])
 
-        return cls(
-            language=Language.from_iso_code(obj_dict["language_code"]),
-            intent_classifier=SnipsIntentClassifier.from_dict(
-                obj_dict["intent_classifier"]),
-            slot_fillers=slot_fillers,
-            config=ProbabilisticIntentParserConfig.from_dict(
-                obj_dict["config"]),
-        )
+        parser = cls(config=ProbabilisticIntentParserConfig.from_dict(
+            obj_dict["config"]))
+        parser.language = language
+        parser.intent_classifier = classifier
+        parser.slot_fillers = slot_fillers
+        return parser

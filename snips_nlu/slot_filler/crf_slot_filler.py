@@ -56,7 +56,8 @@ class CRFSlotFiller(object):
 
     @property
     def fitted(self):
-        return self.crf_model.tagger_ is not None
+        return self.crf_model is not None \
+               and self.crf_model.tagger_ is not None
 
     def get_slots(self, text):
         if not self.fitted:
@@ -220,8 +221,9 @@ class CRFSlotFiller(object):
         language_code = None
         crf_model_data = None
 
-        if self.fitted:
+        if self.language is not None:
             language_code = self.language.iso_code
+        if self.crf_model is not None:
             crf_model_data = serialize_crf_model(self.crf_model)
 
         return {

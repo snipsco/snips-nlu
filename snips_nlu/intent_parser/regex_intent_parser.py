@@ -5,8 +5,10 @@ from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
+from snips_nlu.config import RegexIntentParserConfig
 from snips_nlu.constants import (
-    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE)
+    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE,
+    LANGUAGE)
 from snips_nlu.languages import Language
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
@@ -166,7 +168,7 @@ def replace_builtin_entities(text, language):
 
         entity_text = get_builtin_entity_name(ent[ENTITY].label, language)
         offset += len(entity_text) - (
-            ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0])
+                ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0])
 
         processed_text += entity_text
         rng_end = ent_end + offset
@@ -179,36 +181,44 @@ def replace_builtin_entities(text, language):
 
 
 class RegexIntentParser(object):
-    def __init__(self, language, patterns=None, group_names_to_slot_names=None,
-                 slot_names_to_entities=None):
-        self.language = language
+    def __init__(self, config=RegexIntentParserConfig()):
+        self.config = config
+        self.language = None
         self.regexes_per_intent = None
-        if patterns is not None:
+        self.group_names_to_slot_names = None
+        self.slot_names_to_entities = None
+        self._cache = LimitedSizeDict(size_limit=1000)
+
+    @property
+    def patterns(self):
+        if self.regexes_per_intent is not None:
+            return {i: [r.pattern for r in regex_list] for i, regex_list in
+                    self.regexes_per_intent.iteritems()}
+        else:
+            return None
+
+    @patterns.setter
+    def patterns(self, value):
+        if value is not None:
             self.regexes_per_intent = dict()
-            for intent, pattern_list in patterns.iteritems():
+            for intent, pattern_list in value.iteritems():
                 regexes = [re.compile(r"%s" % p, re.IGNORECASE)
                            for p in pattern_list]
                 self.regexes_per_intent[intent] = regexes
-        self.group_names_to_slot_names = group_names_to_slot_names
-        self.slot_names_to_entities = slot_names_to_entities
-        self._cache = LimitedSizeDict(size_limit=1000)
 
     @property
     def fitted(self):
         return self.regexes_per_intent is not None
 
-    def fit(self, dataset, intents=None):
-        if intents is None:
-            intents_to_train = dataset[INTENTS].keys()
-        else:
-            intents_to_train = list(intents)
+    def fit(self, dataset):
+        self.language = Language.from_iso_code(dataset[LANGUAGE])
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = get_joined_entity_utterances(
             dataset, self.language)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
         for intent_name, intent in dataset[INTENTS].iteritems():
-            if intent_name not in intents_to_train:
+            if not self.is_trainable(intent, dataset):
                 self.regexes_per_intent[intent_name] = []
                 continue
             utterances = [preprocess_builtin_entities(u, self.language)
@@ -218,6 +228,19 @@ class RegexIntentParser(object):
                 self.group_names_to_slot_names, self.language)
             self.regexes_per_intent[intent_name] = regexes
         return self
+
+    def is_trainable(self, intent, dataset):
+        if len(intent[UTTERANCES]) >= self.config.max_queries:
+            return False
+
+        intent_entities = set(chunk[ENTITY] for query in intent[UTTERANCES]
+                              for chunk in query[DATA] if ENTITY in chunk)
+        total_entities = sum(len(dataset[ENTITIES][ent][UTTERANCES])
+                             for ent in intent_entities
+                             if not is_builtin_entity(ent))
+        if total_entities > self.config.max_entities:
+            return False
+        return True
 
     def get_intent(self, text):
         if not self.fitted:
@@ -281,25 +304,30 @@ class RegexIntentParser(object):
         return Result(text, parsed_intent, parsed_slots)
 
     def to_dict(self):
-        patterns = None
-        if self.regexes_per_intent is not None:
-            patterns = {i: [r.pattern for r in regex_list] for i, regex_list in
-                        self.regexes_per_intent.iteritems()}
+        language_code = None
+        if self.language is not None:
+            language_code = self.language.iso_code
         return {
-            "language_code": self.language.iso_code,
-            "patterns": patterns,
+            "config": self.config.to_dict(),
+            "language_code": language_code,
+            "patterns": self.patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
-        language = Language.from_iso_code(obj_dict["language_code"])
-        patterns = obj_dict["patterns"]
-        group_names_to_slot_names = obj_dict["group_names_to_slot_names"]
-        slot_names_to_entities = obj_dict["slot_names_to_entities"]
-        return cls(language, patterns, group_names_to_slot_names,
-                   slot_names_to_entities)
+        config = RegexIntentParserConfig.from_dict(obj_dict["config"])
+        parser = cls(config=config)
+        language = None
+        if obj_dict["language_code"] is not None:
+            language = Language.from_iso_code(obj_dict["language_code"])
+        parser.patterns = obj_dict["patterns"]
+        parser.language = language
+        parser.group_names_to_slot_names = obj_dict[
+            "group_names_to_slot_names"]
+        parser.slot_names_to_entities = obj_dict["slot_names_to_entities"]
+        return parser
 
     def __eq__(self, other):
         if not isinstance(other, RegexIntentParser):

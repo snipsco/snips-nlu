@@ -264,7 +264,7 @@ class ProbabilisticIntentParserConfig(Config):
         return cls(**obj_dict)
 
 
-class RegexTrainingConfig(Config):
+class RegexIntentParserConfig(Config):
     def __init__(self, max_queries=50, max_entities=200):
         self.max_queries = max_queries
         self.max_entities = max_entities
@@ -332,8 +332,8 @@ class NLUConfig(Config):
     def regex_training_config(self, value):
         if isinstance(value, dict):
             self._regex_training_config = \
-                RegexTrainingConfig.from_dict(value)
-        elif isinstance(value, RegexTrainingConfig):
+                RegexIntentParserConfig.from_dict(value)
+        elif isinstance(value, RegexIntentParserConfig):
             self._regex_training_config = value
         else:
             raise TypeError("Expected instance of RegexTrainingConfig or dict "

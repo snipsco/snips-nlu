@@ -6,6 +6,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
+from snips_nlu.slot_filler.feature_functions import crf_features
 
 
 class ProbabilisticIntentParser(object):
@@ -36,25 +37,60 @@ class ProbabilisticIntentParser(object):
     def fitted(self):
         return self.intent_classifier is not None \
                and self.intent_classifier.fitted \
-               and all(slot_filler.fitted
+               and all(slot_filler is not None and slot_filler.fitted
                        for slot_filler in self.slot_fillers.values())
 
     def fit(self, dataset, intents=None):
+        missing_intents = self.get_missing_intents(dataset, intents)
+        if missing_intents:
+            raise ValueError("These intents must be trained: %s"
+                             % missing_intents)
         if intents is None:
-            intents = set(dataset[INTENTS].keys())
+            intents = dataset[INTENTS].keys()
+
         self.language = Language.from_iso_code(dataset[LANGUAGE])
         self.intent_classifier = SnipsIntentClassifier(
             self.config.intent_classifier_config)
         self.intent_classifier.fit(dataset)
-        self.slot_fillers = dict()
-        for intent_name in dataset[INTENTS]:
-            if intent_name not in intents:
-                continue
+        if self.slot_fillers is None:
+            self.slot_fillers = dict()
+        for intent_name in intents:
+            feature_signatures = crf_features(
+                dataset, intent_name, self.language,
+                self.config.crf_slot_filler_config)
             self.slot_fillers[intent_name] = CRFSlotFiller(
-                features_signatures=[],
+                features_signatures=feature_signatures,
                 config=self.config.crf_slot_filler_config)
             self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
+
+    def get_missing_intents(self, dataset, intents_to_fit):
+        if intents_to_fit is None:
+            return set()
+        all_intents = set(dataset[INTENTS].keys())
+        implicit_fitted_intents = all_intents.difference(intents_to_fit)
+        if self.slot_fillers is None:
+            already_fitted_intents = set()
+        else:
+            already_fitted_intents = set(
+                intent_name for intent_name, slot_filler
+                in self.slot_fillers.iteritems() if slot_filler.fitted)
+        missing_intents = implicit_fitted_intents.difference(
+            already_fitted_intents)
+        return missing_intents
+
+    def add_fitted_slot_filler(self, intent, slot_filler_data):
+        if self.slot_fillers is None:
+            self.slot_fillers = dict()
+        self.slot_fillers[intent] = CRFSlotFiller.from_dict(slot_filler_data)
+
+    def get_fitted_slot_filler(self, dataset, intent):
+        language = Language.from_iso_code(dataset[LANGUAGE])
+        crf_signatures = crf_features(dataset, intent, language,
+                                      self.config.crf_slot_filler_config)
+        slot_filler = CRFSlotFiller(crf_signatures,
+                                    self.config.crf_slot_filler_config)
+        return slot_filler.fit(dataset, intent)
 
     def to_dict(self):
         slot_fillers = None

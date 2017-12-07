@@ -16,11 +16,56 @@ from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, \
     generate_slots_permutations, exhaustive_slots_permutations
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, BEGINNING_PREFIX, \
     INSIDE_PREFIX
-from snips_nlu.tests.utils import SAMPLE_DATASET
+from snips_nlu.slot_filler.feature_functions import crf_features
+from snips_nlu.tests.utils import SAMPLE_DATASET, BEVERAGE_DATASET
 from snips_nlu.tokenization import tokenize, Token
 
 
 class TestCRFSlotFiller(unittest.TestCase):
+    def test_should_get_slots(self):
+        # Given
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        config = CRFSlotFillerConfig(random_seed=42)
+        intent = "MakeTea"
+        features_signatures = crf_features(dataset, intent, Language.EN,
+                                           config)
+        slot_filler = CRFSlotFiller(features_signatures, config)
+        slot_filler.fit(dataset, intent)
+
+        # When
+        slots = slot_filler.get_slots("make me two cups of tea")
+
+        # Then
+        expected_slots = [
+            ParsedSlot(match_range=(8, 11),
+                       value='two',
+                       entity='snips/number',
+                       slot_name='number_of_cups')]
+        self.assertListEqual(slots, expected_slots)
+
+    def test_should_get_slots_after_deserialization(self):
+        # Given
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        config = CRFSlotFillerConfig(random_seed=42)
+        intent = "MakeTea"
+        features_signatures = crf_features(dataset, intent, Language.EN,
+                                           config)
+        slot_filler = CRFSlotFiller(features_signatures, config)
+        slot_filler.fit(dataset, intent)
+        deserialized_slot_filler = CRFSlotFiller.from_dict(
+            slot_filler.to_dict())
+
+        # When
+        slots = deserialized_slot_filler.get_slots("make me two cups of tea")
+
+        # Then
+        expected_slots = [
+            ParsedSlot(match_range=(8, 11),
+                       value='two',
+                       entity='snips/number',
+                       slot_name='number_of_cups')]
+        self.assertListEqual(slots, expected_slots)
+
     def test_should_be_serializable_before_fit(self):
         # Given
         language = Language.EN

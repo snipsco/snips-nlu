@@ -7,7 +7,7 @@ from snips_nlu.config import (NLUConfig,
                               FeaturizerConfig, IntentClassifierConfig,
                               CRFSlotFillerConfig,
                               ProbabilisticIntentParserConfig,
-                              RegexTrainingConfig)
+                              RegexIntentParserConfig)
 
 
 class TestConfig(unittest.TestCase):
@@ -118,7 +118,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When
-        config = RegexTrainingConfig.from_dict(config_dict)
+        config = RegexIntentParserConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -130,7 +130,7 @@ class TestConfig(unittest.TestCase):
             "intent_classifier_config": IntentClassifierConfig().to_dict(),
             "probabilistic_intent_parser_config":
                 ProbabilisticIntentParserConfig().to_dict(),
-            "regex_training_config": RegexTrainingConfig().to_dict()
+            "regex_training_config": RegexIntentParserConfig().to_dict()
         }
 
         # When

@@ -216,7 +216,10 @@ class CRFSlotFillerConfig(Config):
 
 
 class ProbabilisticIntentParserConfig(Config):
-    def __init__(self, crf_slot_filler_config=CRFSlotFillerConfig()):
+    def __init__(self, intent_classifier_config=IntentClassifierConfig(),
+                 crf_slot_filler_config=CRFSlotFillerConfig()):
+        self._intent_classifier_config = None
+        self.intent_classifier_config = intent_classifier_config
         self._crf_slot_filler_config = None
         self.crf_slot_filler_config = crf_slot_filler_config
 
@@ -235,9 +238,25 @@ class ProbabilisticIntentParserConfig(Config):
             raise TypeError("Expected instance of CRFSlotFillerConfig or dict "
                             "but received: %s" % type(value))
 
+    @property
+    def intent_classifier_config(self):
+        return self._intent_classifier_config
+
+    @intent_classifier_config.setter
+    def intent_classifier_config(self, value):
+        if isinstance(value, dict):
+            self._intent_classifier_config = \
+                IntentClassifierConfig.from_dict(value)
+        elif isinstance(value, IntentClassifierConfig):
+            self._intent_classifier_config = value
+        else:
+            raise TypeError("Expected instance of IntentClassifierConfig or "
+                            "dict but received: %s" % type(value))
+
     def to_dict(self):
         return {
             "crf_slot_filler_config": self.crf_slot_filler_config.to_dict(),
+            "intent_classifier_config": self.intent_classifier_config.to_dict()
         }
 
     @classmethod

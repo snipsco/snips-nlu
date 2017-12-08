@@ -281,32 +281,15 @@ class RegexIntentParserConfig(Config):
 
 
 class NLUConfig(Config):
-    def __init__(self, intent_classifier_config=IntentClassifierConfig(),
+    def __init__(self,
                  probabilistic_intent_parser_config=
                  ProbabilisticIntentParserConfig(),
-                 regex_training_config=RegexTrainingConfig()):
-        self._intent_classifier_config = None
-        self.intent_classifier_config = intent_classifier_config
+                 regex_intent_parser_config=RegexIntentParserConfig()):
         self._probabilistic_intent_parser_config = None
         self.probabilistic_intent_parser_config = \
             probabilistic_intent_parser_config
-        self._regex_training_config = None
-        self.regex_training_config = regex_training_config
-
-    @property
-    def intent_classifier_config(self):
-        return self._intent_classifier_config
-
-    @intent_classifier_config.setter
-    def intent_classifier_config(self, value):
-        if isinstance(value, dict):
-            self._intent_classifier_config = \
-                IntentClassifierConfig.from_dict(value)
-        elif isinstance(value, IntentClassifierConfig):
-            self._intent_classifier_config = value
-        else:
-            raise TypeError("Expected instance of IntentClassifierConfig or "
-                            "dict but received: %s" % type(value))
+        self._regex_intent_parser_config = None
+        self.regex_intent_parser_config = regex_intent_parser_config
 
     @property
     def probabilistic_intent_parser_config(self):
@@ -325,27 +308,26 @@ class NLUConfig(Config):
                             "received: %s" % type(value))
 
     @property
-    def regex_training_config(self):
-        return self._regex_training_config
+    def regex_intent_parser_config(self):
+        return self._regex_intent_parser_config
 
-    @regex_training_config.setter
-    def regex_training_config(self, value):
+    @regex_intent_parser_config.setter
+    def regex_intent_parser_config(self, value):
         if isinstance(value, dict):
-            self._regex_training_config = \
+            self._regex_intent_parser_config = \
                 RegexIntentParserConfig.from_dict(value)
         elif isinstance(value, RegexIntentParserConfig):
-            self._regex_training_config = value
+            self._regex_intent_parser_config = value
         else:
-            raise TypeError("Expected instance of RegexTrainingConfig or dict "
-                            "but received: %s" % type(value))
+            raise TypeError("Expected instance of RegexIntentParserConfig or "
+                            "dict but received: %s" % type(value))
 
     def to_dict(self):
         return {
-            "intent_classifier_config":
-                self.intent_classifier_config.to_dict(),
             "probabilistic_intent_parser_config":
                 self.probabilistic_intent_parser_config.to_dict(),
-            "regex_training_config": self.regex_training_config.to_dict()
+            "regex_intent_parser_config":
+                self.regex_intent_parser_config.to_dict()
         }
 
     @classmethod

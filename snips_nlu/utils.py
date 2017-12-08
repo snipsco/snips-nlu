@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import base64
-import cPickle
 import errno
 import numbers
 import os
@@ -9,13 +7,9 @@ from collections import OrderedDict, namedtuple, Mapping
 
 import numpy as np
 
-from snips_nlu.constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY, \
+    RESOURCES_PATH
 
-RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
-PACKAGE_NAME = "snips_nlu"
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
-RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
 
@@ -28,6 +22,7 @@ class abstractclassmethod(classmethod):
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractclassmethod, self).__init__(callable)
+    # pylint: enable=W0622
 
 
 class classproperty(property):

@@ -1,5 +1,13 @@
 from __future__ import unicode_literals
 
+import os
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
+PACKAGE_NAME = "snips_nlu"
+RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
+PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
+
 INTENT_NAME = "intent_name"
 PROBABILITY = "probability"
 PARSED_INTENT = "intent"

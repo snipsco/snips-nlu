@@ -4,9 +4,9 @@ import unittest
 import time
 from pylint.lint import Run
 
-import snips_nlu
+from snips_nlu.constants import PACKAGE_PATH, ROOT_PATH
 
-RCFILEPATH = os.path.join(snips_nlu.ROOT_PATH, "tools", "pylintrc")
+RCFILEPATH = os.path.join(ROOT_PATH, "tools", "pylintrc")
 
 
 class TestLinting(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestLinting(unittest.TestCase):
 
 def all_python_files():
     files = []
-    for dirpath, _, filenames in os.walk(snips_nlu.PACKAGE_PATH):
+    for dirpath, _, filenames in os.walk(PACKAGE_PATH):
         if "snips-nlu-resources" in dirpath:
             continue
         files += [

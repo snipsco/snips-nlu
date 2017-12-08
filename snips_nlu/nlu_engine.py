@@ -3,14 +3,12 @@ from __future__ import unicode_literals
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from snips_nlu.builtin_entities import BuiltInEntity, is_builtin_entity
+from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.config import NLUConfig
 from snips_nlu.constants import (
-    INTENTS, ENTITIES, UTTERANCES, LANGUAGE, AUTOMATICALLY_EXTENSIBLE,
+    INTENTS, ENTITIES, UTTERANCES, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
@@ -18,20 +16,14 @@ from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \
     IntentClassificationResult
 from snips_nlu.result import Result
-from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, get_crf_model
-from snips_nlu.slot_filler.crf_utils import TaggingScheme
-from snips_nlu.slot_filler.feature_functions import crf_features
-from snips_nlu.utils import get_slot_name_mapping
-
-__model_version__ = "0.11.0"
+from snips_nlu.version import __model_version__, __version__
 
 
 class NLUEngine(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, language):
+    def __init__(self):
         self._language = None
-        self.language = language
 
     @property
     def language(self):
@@ -117,48 +109,14 @@ def enrich_slots(slots, other_slots):
     return enriched_slots
 
 
-TAGGING_EXCLUDED_ENTITIES = {BuiltInEntity.NUMBER}
-
-
-def is_trainable_regex_intent(intent, entities, regex_training_config):
-    if len(intent[UTTERANCES]) >= regex_training_config.max_queries:
-        return False
-
-    intent_entities = set(chunk[ENTITY] for query in intent[UTTERANCES]
-                          for chunk in query[DATA] if ENTITY in chunk)
-    intent_entities = [ent for ent in intent_entities
-                       if not is_builtin_entity(ent)]
-    total_entities = sum(len(entities[entity_name][UTTERANCES])
-                         for entity_name in intent_entities)
-    if total_entities > regex_training_config.max_entities:
-        return False
-    return True
-
-
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, language, config=None, rule_based_parser=None,
-                 probabilistic_parser=None, entities=None,
-                 slot_name_mapping=None, intents_data_sizes=None,
-                 random_seed=None):
-        super(SnipsNLUEngine, self).__init__(language)
+    def __init__(self, config=NLUConfig()):
+        super(SnipsNLUEngine, self).__init__()
         self._config = None
-        if config is None:
-            config = NLUConfig()
         self.config = config
-
-        self.rule_based_parser = rule_based_parser
-        self.probabilistic_parser = probabilistic_parser
-        if entities is None:
-            entities = dict()
-
-        self.entities = entities
-        if slot_name_mapping is None:
-            slot_name_mapping = dict()
-
-        self.slot_name_mapping = slot_name_mapping
-        self.intents_data_sizes = intents_data_sizes
-        self._pre_trained_taggers = dict()
-        self.random_seed = random_seed
+        self.rule_based_parser = None
+        self.probabilistic_parser = None
+        self.entities = None
 
     @property
     def config(self):
@@ -200,21 +158,6 @@ class SnipsNLUEngine(NLUEngine):
         -------
         The same object, trained
         """
-        all_intents = set(dataset[INTENTS].keys())
-        if intents is None:
-            intents = all_intents
-        else:
-            intents = set(intents)
-
-        implicit_pretrained_intents = all_intents.difference(intents)
-        actual_pretrained_intents = set(self._pre_trained_taggers.keys())
-        missing_intents = implicit_pretrained_intents.difference(
-            actual_pretrained_intents)
-
-        if missing_intents:
-            raise ValueError(
-                "These intents must be trained: %s" % missing_intents)
-
         dataset = validate_and_format_dataset(dataset)
         self.entities = dict()
         for entity_name, entity in dataset[ENTITIES].iteritems():
@@ -224,59 +167,27 @@ class SnipsNLUEngine(NLUEngine):
             ent.pop(CAPITALIZE)
             self.entities[entity_name] = ent
 
-        regex_intents = [
-            intent_name for intent_name, intent in dataset[INTENTS].iteritems()
-            if is_trainable_regex_intent(
-                intent, self.entities, self.config.regex_training_config)]
+        self.rule_based_parser = RegexIntentParser().fit(dataset)
 
-        self.rule_based_parser = RegexIntentParser(self.language).fit(
-            dataset, intents=regex_intents)
-
-        self.intents_data_sizes = {intent_name: len(intent[UTTERANCES])
-                                   for intent_name, intent
-                                   in dataset[INTENTS].iteritems()}
-        self.slot_name_mapping = get_slot_name_mapping(dataset)
-
-        taggers = dict()
-        features_config = self.config.probabilistic_intent_parser_config \
-            .crf_slot_filler_config
-        for intent in dataset[INTENTS]:
-            features = crf_features(dataset, intent, self.language,
-                                    features_config)
-            if intent in self._pre_trained_taggers:
-                tagger = self._pre_trained_taggers[intent]
-            else:
-                tagger = CRFSlotFiller(features, features_config)
-            taggers[intent] = tagger
-        intent_classifier = SnipsIntentClassifier(
-            self.language, self.config.intent_classifier_config,
-            random_seed=self.random_seed)
-        self.probabilistic_parser = ProbabilisticIntentParser(
-            self.language,
-            intent_classifier,
-            taggers,
-            self.slot_name_mapping,
-            self.config.probabilistic_intent_parser_config,
-            random_seed=self.random_seed
-        )
+        if self.probabilistic_parser is None:
+            self.probabilistic_parser = ProbabilisticIntentParser(
+                self.config.probabilistic_intent_parser_config)
         self.probabilistic_parser.fit(dataset, intents=intents)
-        self._pre_trained_taggers = taggers
         return self
 
     def get_fitted_tagger(self, dataset, intent):
         dataset = validate_and_format_dataset(dataset)
-        crf_features_config = self.config.probabilistic_intent_parser_config \
-            .crf_slot_filler_config
-        features = crf_features(dataset, intent, self.language,
-                                crf_features_config)
-        tagger = CRFSlotFiller(features, crf_features_config)
-        return tagger.fit(dataset, intent)
+        if self.probabilistic_parser is None:
+            self.probabilistic_parser = ProbabilisticIntentParser(
+                self.config.probabilistic_intent_parser_config)
+        return self.probabilistic_parser.get_fitted_slot_filler(dataset,
+                                                                intent)
 
     def add_fitted_tagger(self, intent, model_data):
-        tagger = CRFSlotFiller.from_dict(model_data)
-        if self.probabilistic_parser is not None:
-            self.probabilistic_parser.slot_fillers[intent] = tagger
-        self._pre_trained_taggers[intent] = tagger
+        if self.probabilistic_parser is None:
+            self.probabilistic_parser = ProbabilisticIntentParser(
+                self.config.probabilistic_intent_parser_config)
+        self.probabilistic_parser.add_fitted_slot_filler(intent, model_data)
 
     def to_dict(self):
         """
@@ -290,14 +201,11 @@ class SnipsNLUEngine(NLUEngine):
                 self.probabilistic_parser.to_dict()
 
         return {
-            LANGUAGE: self.language.iso_code,
-            "slot_name_mapping": self.slot_name_mapping,
             ENTITIES: self.entities,
-            "intents_data_sizes": self.intents_data_sizes,
             "model": model_dict,
             "config": self.config.to_dict(),
-            "random_seed": self.random_seed,
-            "model_version": __model_version__
+            "model_version": __model_version__,
+            "training_package_version": __version__
         }
 
     @classmethod
@@ -305,27 +213,22 @@ class SnipsNLUEngine(NLUEngine):
         """
         Loads a SnipsNLUEngine instance from a python dictionary.
         """
-        language = Language.from_iso_code(obj_dict[LANGUAGE])
-        slot_name_mapping = obj_dict["slot_name_mapping"]
-        entities = obj_dict[ENTITIES]
-        intents_data_sizes = obj_dict["intents_data_sizes"]
+        model_version = obj_dict.get("model_version")
+        if model_version is None or model_version != __model_version__:
+            raise ValueError(
+                "Incompatible data model: persisted object=%s, python lib=%s"
+                % (model_version, __model_version__))
 
-        rule_based_parser = None
-        probabilistic_parser = None
+        nlu_engine = SnipsNLUEngine(config=obj_dict["config"])
+        nlu_engine.entities = obj_dict[ENTITIES]
 
         if "rule_based_parser" in obj_dict["model"]:
-            rule_based_parser = RegexIntentParser.from_dict(
+            nlu_engine.rule_based_parser = RegexIntentParser.from_dict(
                 obj_dict["model"]["rule_based_parser"])
 
         if "probabilistic_parser" in obj_dict["model"]:
-            probabilistic_parser = ProbabilisticIntentParser.from_dict(
-                obj_dict["model"]["probabilistic_parser"])
+            nlu_engine.probabilistic_parser = \
+                ProbabilisticIntentParser.from_dict(
+                    obj_dict["model"]["probabilistic_parser"])
 
-        return cls(
-            language=language, rule_based_parser=rule_based_parser,
-            probabilistic_parser=probabilistic_parser, entities=entities,
-            slot_name_mapping=slot_name_mapping,
-            intents_data_sizes=intents_data_sizes,
-            config=obj_dict["config"],
-            random_seed=obj_dict["random_seed"]
-        )
+        return nlu_engine

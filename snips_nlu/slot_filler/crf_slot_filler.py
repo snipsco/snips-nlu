@@ -65,7 +65,7 @@ class CRFSlotFiller(object):
         tokens = tokenize(text, self.language)
         if not tokens:
             return []
-        features = self._compute_features(tokens)
+        features = self.compute_features(tokens)
         tags = [tag.decode('utf8') for tag in
                 self.crf_model.predict_single(features)]
         intent_slots_mapping = self.slot_name_mapping[self.intent]
@@ -112,7 +112,7 @@ class CRFSlotFiller(object):
             for u in augmented_intent_utterances]
 
         # pylint: disable=C0103
-        X = [self._compute_features(sample[TOKENS], drop_out=True)
+        X = [self.compute_features(sample[TOKENS], drop_out=True)
              for sample in crf_samples]
         Y = [[tag.encode('utf8') for tag in sample[TAGS]]
              for sample in crf_samples]
@@ -142,7 +142,7 @@ class CRFSlotFiller(object):
         for (feat, tag), weight in feature_weights:
             print "%s %s: %s" % (feat, tag, weight)
 
-    def _compute_features(self, tokens, drop_out=False):
+    def compute_features(self, tokens, drop_out=False):
         if drop_out:
             features_drop_out = self.config.features_drop_out
         else:
@@ -200,7 +200,7 @@ class CRFSlotFiller(object):
                     updated_tags[indexes[0]:indexes[-1] + 1] = \
                         sub_tags_sequence
                 if features is None:
-                    features = self._compute_features(tokens)
+                    features = self.compute_features(tokens)
                 score = self.get_sequence_probability(features, updated_tags)
                 if score > best_permutation_score:
                     best_updated_tags = updated_tags

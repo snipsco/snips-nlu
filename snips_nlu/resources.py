@@ -6,10 +6,11 @@ import os
 
 from nlu_utils import normalize
 
-from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE)
+from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
+                                 RESOURCES_PATH)
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import get_resources_path, RESOURCES_PATH
+from snips_nlu.utils import get_resources_path
 
 RESOURCE_INDEX = {
     Language.EN: {

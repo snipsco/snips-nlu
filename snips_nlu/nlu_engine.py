@@ -11,7 +11,8 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
-from snips_nlu.intent_parser.regex_intent_parser import RegexIntentParser
+from snips_nlu.intent_parser.deterministic_intent_parser import \
+    DeterministicIntentParser
 from snips_nlu.languages import Language
 from snips_nlu.result import ParsedSlot, empty_result, \
     IntentClassificationResult
@@ -44,11 +45,11 @@ class NLUEngine(object):
         pass
 
 
-def _parse(text, entities, rule_based_parser=None, probabilistic_parser=None,
-           intent=None):
+def _parse(text, entities, deterministic_parser=None,
+           probabilistic_parser=None, intent=None):
     parsers = []
-    if rule_based_parser is not None:
-        parsers.append(rule_based_parser)
+    if deterministic_parser is not None:
+        parsers.append(deterministic_parser)
     if probabilistic_parser is not None:
         parsers.append(probabilistic_parser)
 
@@ -114,7 +115,7 @@ class SnipsNLUEngine(NLUEngine):
         super(SnipsNLUEngine, self).__init__()
         self._config = None
         self.config = config
-        self.rule_based_parser = None
+        self.deterministic_parser = None
         self.probabilistic_parser = None
         self.entities = None
 
@@ -140,7 +141,7 @@ class SnipsNLUEngine(NLUEngine):
         return self._parse(text, intent=intent).as_dict()
 
     def _parse(self, text, intent=None):
-        return _parse(text, self.entities, self.rule_based_parser,
+        return _parse(text, self.entities, self.deterministic_parser,
                       self.probabilistic_parser, intent)
 
     def fit(self, dataset, intents=None):
@@ -167,7 +168,7 @@ class SnipsNLUEngine(NLUEngine):
             ent.pop(CAPITALIZE)
             self.entities[entity_name] = ent
 
-        self.rule_based_parser = RegexIntentParser().fit(dataset)
+        self.deterministic_parser = DeterministicIntentParser().fit(dataset)
 
         if self.probabilistic_parser is None:
             self.probabilistic_parser = ProbabilisticIntentParser(
@@ -175,7 +176,7 @@ class SnipsNLUEngine(NLUEngine):
         self.probabilistic_parser.fit(dataset, intents=intents)
         return self
 
-    def get_fitted_tagger(self, dataset, intent):
+    def get_fitted_slot_filler(self, dataset, intent):
         dataset = validate_and_format_dataset(dataset)
         if self.probabilistic_parser is None:
             self.probabilistic_parser = ProbabilisticIntentParser(
@@ -183,7 +184,7 @@ class SnipsNLUEngine(NLUEngine):
         return self.probabilistic_parser.get_fitted_slot_filler(dataset,
                                                                 intent)
 
-    def add_fitted_tagger(self, intent, model_data):
+    def add_fitted_slot_filler(self, intent, model_data):
         if self.probabilistic_parser is None:
             self.probabilistic_parser = ProbabilisticIntentParser(
                 self.config.probabilistic_intent_parser_config)
@@ -194,8 +195,9 @@ class SnipsNLUEngine(NLUEngine):
         Serialize the nlu engine into a python dictionary
         """
         model_dict = dict()
-        if self.rule_based_parser is not None:
-            model_dict["rule_based_parser"] = self.rule_based_parser.to_dict()
+        if self.deterministic_parser is not None:
+            model_dict["deterministic_parser"] = \
+                self.deterministic_parser.to_dict()
         if self.probabilistic_parser is not None:
             model_dict["probabilistic_parser"] = \
                 self.probabilistic_parser.to_dict()
@@ -222,9 +224,10 @@ class SnipsNLUEngine(NLUEngine):
         nlu_engine = SnipsNLUEngine(config=obj_dict["config"])
         nlu_engine.entities = obj_dict[ENTITIES]
 
-        if "rule_based_parser" in obj_dict["model"]:
-            nlu_engine.rule_based_parser = RegexIntentParser.from_dict(
-                obj_dict["model"]["rule_based_parser"])
+        if "deterministic_parser" in obj_dict["model"]:
+            nlu_engine.deterministic_parser = \
+                DeterministicIntentParser.from_dict(
+                    obj_dict["model"]["deterministic_parser"])
 
         if "probabilistic_parser" in obj_dict["model"]:
             nlu_engine.probabilistic_parser = \

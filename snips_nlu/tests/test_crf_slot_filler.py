@@ -361,7 +361,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         slot_filler.fit(dataset, intent="dummy_intent_1")
 
         # When
-        features_with_drop_out = slot_filler._compute_features(tokens, True)
+        features_with_drop_out = slot_filler.compute_features(tokens, True)
 
         # Then
         expected_features = [
@@ -502,8 +502,10 @@ class TestCRFSlotFiller(unittest.TestCase):
             side_effect=mocked_sequence_probability)
 
         # When
+        # pylint: disable=protected-access
         augmented_slots = slot_filler._augment_slots(text, tokens, tags,
                                                      missing_slots)
+        # pylint: enable=protected-access
 
         # Then
         expected_slots = [

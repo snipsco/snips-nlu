@@ -57,7 +57,7 @@ from snips_nlu.nlu_engine import SnipsNLUEngine, NLUConfig
 with io.open("config.json") as f:
     nlu_config = NLUConfig.from_dict(json.load(f))
 
-engine = SnipsNLUEngine(language='en', config=nlu_config)
+engine = SnipsNLUEngine(config=nlu_config)
 
 
 ############## Training ####################

@@ -8,8 +8,6 @@ from pprint import pprint
 def main_train_engine():
     parser = argparse.ArgumentParser("Train an NLU engine and persist it in "
                                      "a json file")
-    parser.add_argument("language", type=unicode,
-                        help="language (iso code) of the engine")
     parser.add_argument("dataset_path", type=unicode)
     parser.add_argument("output_path", type=unicode)
     parser.add_argument("-c", "--config-path", type=unicode,
@@ -30,8 +28,7 @@ def main_train_engine():
     else:
         config = NLUConfig()
 
-    language = args.pop("language")
-    engine = SnipsNLUEngine(language, config).fit(dataset)
+    engine = SnipsNLUEngine(config).fit(dataset)
     print "Create and train the engine..."
 
     output_path = args.pop("output_path")

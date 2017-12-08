@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
-from snips_nlu.config import RegexIntentParserConfig
+from snips_nlu.config import DeterministicIntentParserConfig
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE,
     LANGUAGE)
@@ -182,8 +182,8 @@ def replace_builtin_entities(text, language):
     return range_mapping, processed_text
 
 
-class RegexIntentParser(object):
-    def __init__(self, config=RegexIntentParserConfig()):
+class DeterministicIntentParser(object):
+    def __init__(self, config=DeterministicIntentParserConfig()):
         self.config = config
         self.language = None
         self.regexes_per_intent = None
@@ -245,18 +245,18 @@ class RegexIntentParser(object):
 
     def get_intent(self, text):
         if not self.fitted:
-            raise AssertionError("RegexIntentParser must be fitted before "
-                                 "calling `get_entities`")
+            raise AssertionError("DeterministicIntentParser must be fitted "
+                                 "before calling `get_entities`")
         if text not in self._cache:
             self._cache[text] = self._parse(text)
         return self._cache[text].parsed_intent
 
     def get_slots(self, text, intent=None):
         if not self.fitted:
-            raise AssertionError("RegexIntentParser must be fitted before "
-                                 "calling `get_entities`")
+            raise AssertionError("DeterministicIntentParser must be fitted "
+                                 "before calling `get_entities`")
         if intent not in self.regexes_per_intent:
-            raise KeyError("Intent not found in RegexIntentParser: %s"
+            raise KeyError("Intent not found in DeterministicIntentParser: %s"
                            % intent)
         if text not in self._cache:
             self._cache[text] = self._parse(text)
@@ -268,8 +268,8 @@ class RegexIntentParser(object):
 
     def _parse(self, text):
         if not self.fitted:
-            raise AssertionError("RegexIntentParser must be fitted before "
-                                 "calling `get_entities`")
+            raise AssertionError("DeterministicIntentParser must be fitted "
+                                 "before calling `get_entities`")
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)
 
@@ -318,7 +318,7 @@ class RegexIntentParser(object):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        config = RegexIntentParserConfig.from_dict(obj_dict["config"])
+        config = DeterministicIntentParserConfig.from_dict(obj_dict["config"])
         parser = cls(config=config)
         language = None
         if obj_dict["language_code"] is not None:
@@ -331,7 +331,7 @@ class RegexIntentParser(object):
         return parser
 
     def __eq__(self, other):
-        if not isinstance(other, RegexIntentParser):
+        if not isinstance(other, DeterministicIntentParser):
             return False
         return self.to_dict() == other.to_dict()
 

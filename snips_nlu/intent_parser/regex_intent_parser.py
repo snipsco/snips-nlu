@@ -166,11 +166,13 @@ def replace_builtin_entities(text, language):
 
         processed_text += text[current_ix:ent_start]
 
-        entity_text = get_builtin_entity_name(ent[ENTITY].label, language)
-        offset += len(entity_text) - (
-                ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0])
+        entity_length = ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0]
+        entity_place_holder = get_builtin_entity_name(ent[ENTITY].label,
+                                                      language)
 
-        processed_text += entity_text
+        offset += len(entity_place_holder) - entity_length
+
+        processed_text += entity_place_holder
         rng_end = ent_end + offset
         new_range = (rng_start, rng_end)
         range_mapping[new_range] = ent[MATCH_RANGE]
@@ -194,8 +196,7 @@ class RegexIntentParser(object):
         if self.regexes_per_intent is not None:
             return {i: [r.pattern for r in regex_list] for i, regex_list in
                     self.regexes_per_intent.iteritems()}
-        else:
-            return None
+        return None
 
     @patterns.setter
     def patterns(self, value):

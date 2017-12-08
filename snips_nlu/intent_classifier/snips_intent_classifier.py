@@ -173,9 +173,9 @@ class SnipsIntentClassifier(object):
         language = Language.from_iso_code(dataset[LANGUAGE])
         random_state = check_random_state(self.config.random_seed)
         filtered_dataset = remove_builtin_slots(dataset)
+        data_augmentation_config = self.config.data_augmentation_config
         utterances, y, intent_list = build_training_data(
-            filtered_dataset, language, self.config.data_augmentation_config,
-            random_state)
+            filtered_dataset, language, data_augmentation_config, random_state)
 
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
@@ -183,8 +183,7 @@ class SnipsIntentClassifier(object):
 
         self.featurizer = Featurizer(
             language,
-            self.config.data_augmentation_config
-                .unknown_words_replacement_string,
+            data_augmentation_config.unknown_words_replacement_string,
             self.config.featurizer_config)
         self.featurizer = self.featurizer.fit(filtered_dataset, utterances, y)
         if self.featurizer is None:

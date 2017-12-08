@@ -414,12 +414,16 @@ class TestRegexIntentParser(unittest.TestCase):
     @patch("snips_nlu.intent_parser.regex_intent_parser.generate_regexes")
     def test_should_be_serializable(self, mocked_generate_regexes):
         # Given
+
+        # pylint: disable=unused-argument
         def mock_generate_regexes(utterances, joined_entity_utterances,
                                   group_names_to_slot_names, language):
             regexes = [re.compile(r"mocked_regex_%s" % i)
                        for i in range(len(utterances))]
-            _group_names_to_slot_names = {"group_0": "dummy slot name"}
-            return regexes, _group_names_to_slot_names
+            group_to_slot = {"group_0": "dummy slot name"}
+            return regexes, group_to_slot
+
+        # pylint: enable=unused-argument
 
         mocked_generate_regexes.side_effect = mock_generate_regexes
         dataset = validate_and_format_dataset(SAMPLE_DATASET)

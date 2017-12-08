@@ -16,7 +16,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     get_noise_it, add_unknown_word_to_utterances, generate_smart_noise, \
     remove_builtin_slots
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
+from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset
 
 SEED = 0
 
@@ -62,7 +62,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     def test_should_get_none_if_empty_dataset(self):
         # Given
-        dataset = empty_dataset(Language.EN)
+        dataset = validate_and_format_dataset(get_empty_dataset(Language.EN))
         classifier = SnipsIntentClassifier().fit(dataset)
         text = "this is a dummy query"
 
@@ -107,7 +107,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         mocked_featurizer = Featurizer(Language.EN, None)
         mock_from_dict.return_value = mocked_featurizer
 
-        language = Language.EN
         intent_list = ["MakeCoffee", "MakeTea", None]
 
         coeffs = [
@@ -324,7 +323,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_should_build_training_data_with_no_data(self):
         # Given
         language = Language.EN
-        dataset = empty_dataset(language)
+        dataset = validate_and_format_dataset(get_empty_dataset(language))
         random_state = np.random.RandomState(1)
 
         # When

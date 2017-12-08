@@ -3744,7 +3744,6 @@
           ]
         }
       ],
-      "engineType": "regex",
       "version": "0.0.11",
       "language": "en"
     },
@@ -9422,7 +9421,6 @@
           ]
         }
       ],
-      "engineType": "regex",
       "version": "0.0.7",
       "language": "en"
     },
@@ -13023,7 +13021,6 @@
           ]
         }
       ],
-      "engineType": "regex",
       "version": "0.0.4",
       "language": "en"
     }

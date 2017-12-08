@@ -7,19 +7,19 @@ import unittest
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import RegexIntentParserConfig
-from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, \
-    SLOT_NAME
+from snips_nlu.config import DeterministicIntentParserConfig
+from snips_nlu.constants import (MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
+                                 SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_parser.regex_intent_parser import (
-    RegexIntentParser, deduplicate_overlapping_slots,
+from snips_nlu.intent_parser.deterministic_intent_parser import (
+    DeterministicIntentParser, deduplicate_overlapping_slots,
     replace_builtin_entities, preprocess_builtin_entities)
 from snips_nlu.languages import Language
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
-class TestRegexIntentParser(unittest.TestCase):
+class TestDeterministicIntentParser(unittest.TestCase):
     def setUp(self):
         self.intent_dataset = {
             "entities": {
@@ -71,7 +71,6 @@ class TestRegexIntentParser(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [
@@ -167,7 +166,6 @@ class TestRegexIntentParser(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [
@@ -229,7 +227,7 @@ class TestRegexIntentParser(unittest.TestCase):
         # Given
         dataset = validate_and_format_dataset(self.intent_dataset)
 
-        parser = RegexIntentParser().fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         text = "this is a first dummy_a query with a second dummy_c at " \
                "10p.m. or at 12p.m."
 
@@ -247,8 +245,9 @@ class TestRegexIntentParser(unittest.TestCase):
         # Given
         dataset = validate_and_format_dataset(self.intent_dataset)
 
-        parser = RegexIntentParser().fit(dataset)
-        deserialized_parser = RegexIntentParser.from_dict(parser.to_dict())
+        parser = DeterministicIntentParser().fit(dataset)
+        deserialized_parser = DeterministicIntentParser \
+            .from_dict(parser.to_dict())
         text = "this is a first dummy_a query with a second dummy_c at " \
                "10p.m. or at 12p.m."
 
@@ -266,7 +265,7 @@ class TestRegexIntentParser(unittest.TestCase):
         dataset = self.slots_dataset
         dataset = validate_and_format_dataset(dataset)
 
-        parser = RegexIntentParser().fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -329,8 +328,9 @@ class TestRegexIntentParser(unittest.TestCase):
         dataset = self.slots_dataset
         dataset = validate_and_format_dataset(dataset)
 
-        parser = RegexIntentParser().fit(dataset)
-        deserialized_parser = RegexIntentParser.from_dict(parser.to_dict())
+        parser = DeterministicIntentParser().fit(dataset)
+        deserialized_parser = DeterministicIntentParser \
+            .from_dict(parser.to_dict())
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -391,8 +391,9 @@ class TestRegexIntentParser(unittest.TestCase):
 
     def test_should_be_serializable_before_fitting(self):
         # Given
-        config = RegexIntentParserConfig(max_queries=42, max_entities=43)
-        parser = RegexIntentParser(config=config)
+        config = DeterministicIntentParserConfig(max_queries=42,
+                                                 max_entities=43)
+        parser = DeterministicIntentParser(config=config)
 
         # When
         actual_dict = parser.to_dict()
@@ -411,7 +412,8 @@ class TestRegexIntentParser(unittest.TestCase):
 
         self.assertDictEqual(actual_dict, expected_dict)
 
-    @patch("snips_nlu.intent_parser.regex_intent_parser.generate_regexes")
+    @patch("snips_nlu.intent_parser.deterministic_intent_parser"
+           ".generate_regexes")
     def test_should_be_serializable(self, mocked_generate_regexes):
         # Given
 
@@ -427,8 +429,9 @@ class TestRegexIntentParser(unittest.TestCase):
 
         mocked_generate_regexes.side_effect = mock_generate_regexes
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        config = RegexIntentParserConfig(max_queries=42, max_entities=43)
-        parser = RegexIntentParser(config=config).fit(dataset)
+        config = DeterministicIntentParserConfig(max_queries=42,
+                                                 max_entities=43)
+        parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
         actual_dict = parser.to_dict()
@@ -489,7 +492,7 @@ class TestRegexIntentParser(unittest.TestCase):
         }
 
         # When
-        parser = RegexIntentParser.from_dict(parser_dict)
+        parser = DeterministicIntentParser.from_dict(parser_dict)
 
         # Then
         patterns = {
@@ -506,8 +509,9 @@ class TestRegexIntentParser(unittest.TestCase):
             "hello_slot": "hello_entity",
             "world_slot": "world_entity"
         }
-        config = RegexIntentParserConfig(max_queries=42, max_entities=43)
-        expected_parser = RegexIntentParser(config=config)
+        config = DeterministicIntentParserConfig(max_queries=42,
+                                                 max_entities=43)
+        expected_parser = DeterministicIntentParser(config=config)
         expected_parser.language = Language.EN
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
         expected_parser.slot_names_to_entities = slot_names_to_entities
@@ -580,10 +584,11 @@ class TestRegexIntentParser(unittest.TestCase):
     def test_should_not_train_intents_too_big(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        config = RegexIntentParserConfig(max_queries=2, max_entities=200)
+        config = DeterministicIntentParserConfig(max_queries=2,
+                                                 max_entities=200)
 
         # When
-        parser = RegexIntentParser(config=config).fit(dataset)
+        parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
         not_fitted_intent = "dummy_intent_1"
@@ -591,7 +596,8 @@ class TestRegexIntentParser(unittest.TestCase):
         self.assertGreater(len(parser.regexes_per_intent[fitted_intent]), 0)
         self.assertListEqual(parser.regexes_per_intent[not_fitted_intent], [])
 
-    @patch('snips_nlu.intent_parser.regex_intent_parser.get_builtin_entities')
+    @patch('snips_nlu.intent_parser.deterministic_intent_parser'
+           '.get_builtin_entities')
     def test_should_replace_builtin_entities(self, mock_get_builtin_entities):
         # Given
         text = "Be the first to be there at 9pm"

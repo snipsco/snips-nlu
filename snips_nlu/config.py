@@ -264,7 +264,7 @@ class ProbabilisticIntentParserConfig(Config):
         return cls(**obj_dict)
 
 
-class RegexIntentParserConfig(Config):
+class DeterministicIntentParserConfig(Config):
     def __init__(self, max_queries=50, max_entities=200):
         self.max_queries = max_queries
         self.max_entities = max_entities
@@ -284,12 +284,14 @@ class NLUConfig(Config):
     def __init__(self,
                  probabilistic_intent_parser_config=
                  ProbabilisticIntentParserConfig(),
-                 regex_intent_parser_config=RegexIntentParserConfig()):
+                 deterministic_intent_parser_config=
+                 DeterministicIntentParserConfig()):
         self._probabilistic_intent_parser_config = None
         self.probabilistic_intent_parser_config = \
             probabilistic_intent_parser_config
-        self._regex_intent_parser_config = None
-        self.regex_intent_parser_config = regex_intent_parser_config
+        self._deterministic_intent_parser_config = None
+        self.deterministic_intent_parser_config = \
+            deterministic_intent_parser_config
 
     @property
     def probabilistic_intent_parser_config(self):
@@ -308,26 +310,27 @@ class NLUConfig(Config):
                             "received: %s" % type(value))
 
     @property
-    def regex_intent_parser_config(self):
-        return self._regex_intent_parser_config
+    def deterministic_intent_parser_config(self):
+        return self._deterministic_intent_parser_config
 
-    @regex_intent_parser_config.setter
-    def regex_intent_parser_config(self, value):
+    @deterministic_intent_parser_config.setter
+    def deterministic_intent_parser_config(self, value):
         if isinstance(value, dict):
-            self._regex_intent_parser_config = \
-                RegexIntentParserConfig.from_dict(value)
-        elif isinstance(value, RegexIntentParserConfig):
-            self._regex_intent_parser_config = value
+            self._deterministic_intent_parser_config = \
+                DeterministicIntentParserConfig.from_dict(value)
+        elif isinstance(value, DeterministicIntentParserConfig):
+            self._deterministic_intent_parser_config = value
         else:
-            raise TypeError("Expected instance of RegexIntentParserConfig or "
-                            "dict but received: %s" % type(value))
+            raise TypeError("Expected instance of "
+                            "DeterministicIntentParserConfig or dict but "
+                            "received: %s" % type(value))
 
     def to_dict(self):
         return {
             "probabilistic_intent_parser_config":
                 self.probabilistic_intent_parser_config.to_dict(),
-            "regex_intent_parser_config":
-                self.regex_intent_parser_config.to_dict()
+            "deterministic_intent_parser_config":
+                self.deterministic_intent_parser_config.to_dict()
         }
 
     @classmethod

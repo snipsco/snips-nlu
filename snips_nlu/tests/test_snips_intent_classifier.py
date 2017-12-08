@@ -164,7 +164,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [
@@ -512,7 +511,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [
@@ -561,7 +559,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [

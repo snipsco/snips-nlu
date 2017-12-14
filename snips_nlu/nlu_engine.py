@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import NLUConfig
+from snips_nlu.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.constants import (
     INTENTS, ENTITIES, UTTERANCES, AUTOMATICALLY_EXTENSIBLE,
     ENTITY, DATA, SLOT_NAME, CAPITALIZE)
@@ -111,8 +111,10 @@ def enrich_slots(slots, other_slots):
 
 
 class SnipsNLUEngine(NLUEngine):
-    def __init__(self, config=NLUConfig()):
+    def __init__(self, config=None):
         super(SnipsNLUEngine, self).__init__()
+        if config is None:
+            config = NLUEngineConfig()
         self._config = None
         self.config = config
         self.deterministic_parser = None
@@ -125,10 +127,10 @@ class SnipsNLUEngine(NLUEngine):
 
     @config.setter
     def config(self, value):
-        if isinstance(value, NLUConfig):
+        if isinstance(value, NLUEngineConfig):
             config = value
         elif isinstance(value, dict):
-            config = NLUConfig.from_dict(value)
+            config = NLUEngineConfig.from_dict(value)
         else:
             raise TypeError("Expected config to be a dict or a NLUConfig")
         self._config = config

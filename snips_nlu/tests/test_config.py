@@ -72,16 +72,29 @@ class TestConfig(unittest.TestCase):
 
     def test_crf_slot_filler_config(self):
         # Given
+        feature_factories = [
+            {
+                "args": {
+                    "common_words_gazetteer_name": None,
+                    "use_stemming": True,
+                    "n": 1
+                },
+                "factory_name": "get_ngram_fn",
+                "offsets": [-2, -1, 0, 1, 2]
+            },
+            {
+                "args": {},
+                "factory_name": "is_digit",
+                "offsets": [-1, 0, 1]
+            }
+        ]
         config_dict = {
+            "feature_factory_configs": feature_factories,
             "tagging_scheme": 2,
             "crf_args": {
                 "c1": .2,
                 "c2": .3,
                 "algorithm": "lbfgs"
-            },
-            "features_drop_out": {
-                "feature_1": 0.5,
-                "feature_2": 0.1
             },
             "entities_offsets": [-2, 0, 3],
             "exhaustive_permutations_threshold": 42,

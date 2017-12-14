@@ -1,43 +1,37 @@
 from __future__ import unicode_literals
 
+from nlu_utils import normalize
+
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
-from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM)
+from snips_nlu.constants import (MATCH_RANGE, TOKEN_INDEXES, NGRAM, LANGUAGE,
+                                 UTTERANCES)
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_word_clusters, get_gazetteer
 from snips_nlu.slot_filler.crf_utils import get_scheme_prefix, TaggingScheme
-from snips_nlu.slot_filler.de.specific_features_functions import \
-    language_specific_features as de_features
 from snips_nlu.slot_filler.default.default_features_functions import \
-    default_features
-from snips_nlu.slot_filler.en.specific_features_functions import \
-    language_specific_features as en_features
+    get_intent_custom_entities
+from snips_nlu.slot_filler.features.de import features as de_features
+from snips_nlu.slot_filler.features.en import features as en_features
+from snips_nlu.slot_filler.features.es import features as es_features
+from snips_nlu.slot_filler.features.fr import features as fr_features
+from snips_nlu.slot_filler.features.ko import features as ko_features
 from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape, \
-    get_word_chunk, initial_string_from_tokens
-from snips_nlu.slot_filler.fr.specific_features_functions import \
-    language_specific_features as fr_features
-from snips_nlu.slot_filler.ko.specific_features_functions import \
-    language_specific_features as ko_features
+    get_word_chunk, initial_string_from_tokens, entity_filter
 
 TOKEN_NAME = "token"
 
 
 class Feature(object):
-    def __init__(self, base_name, func, feature_type=None, offset=0):
+    def __init__(self, base_name, func, offset=0, drop_out=0):
         if base_name == TOKEN_NAME:
             raise ValueError("'%s' name is reserved" % TOKEN_NAME)
         self.offset = offset
         self._name = None
         self._base_name = None
         self.base_name = base_name
-        self._feature_type = feature_type
         self.function = func
-
-    def get_offset_feature(self, offset):
-        if offset == 0:
-            return self
-        return Feature(self.base_name, self.function, self.feature_type,
-                       offset)
+        self.drop_out = drop_out
 
     @property
     def name(self):
@@ -49,46 +43,41 @@ class Feature(object):
 
     @base_name.setter
     def base_name(self, value):
-        if self.offset > 0:
-            self._name = "%s[+%s]" % (value, self.offset)
-        elif self.offset < 0:
-            self._name = "%s[%s]" % (value, self.offset)
-        else:
-            self._name = value
-        self._base_name = value
-
-    @property
-    def feature_type(self):
-        if self._feature_type is not None:
-            return self._feature_type
-        return self.name
+        self._name = _offset_name(value, self.offset)
+        self._base_name = _offset_name(value, 0)
 
     def compute(self, token_index, cache):
         if not 0 <= (token_index + self.offset) < len(cache):
             return
 
-        if self._name in cache[token_index + self.offset]:
-            return cache[token_index + self.offset].get(self._name, None)
-        else:
-            tokens = [c["token"] for c in cache]
-            value = self.function(tokens, token_index + self.offset)
-            if value is not None:
-                cache[token_index + self.offset][self._name] = value
-            return value
+        if self.base_name in cache[token_index + self.offset]:
+            return cache[token_index + self.offset][self.base_name]
+
+        tokens = [c["token"] for c in cache]
+        value = self.function(tokens, token_index + self.offset)
+        cache[token_index + self.offset][self.base_name] = value
+        return value
 
 
-def crf_features(dataset, intent, language, crf_features_config):
+def _offset_name(name, offset):
+    if offset > 0:
+        return "%s[+%s]" % (name, offset)
+    if offset < 0:
+        return "%s[%s]" % (name, offset)
+    return name
+
+
+def crf_features(language):
     if language == Language.EN:
-        return en_features(dataset, intent, crf_features_config)
+        return en_features
     elif language == Language.ES:
-        return default_features(language, dataset, intent, crf_features_config,
-                                use_stemming=True)
+        return es_features
     elif language == Language.FR:
-        return fr_features(dataset, intent, crf_features_config)
+        return fr_features
     elif language == Language.DE:
-        return de_features(dataset, intent, crf_features_config)
+        return de_features
     elif language == Language.KO:
-        return ko_features(dataset, intent, crf_features_config)
+        return ko_features
     else:
         raise NotImplementedError("Feature function are not implemented for "
                                   "%s" % language)
@@ -96,26 +85,32 @@ def crf_features(dataset, intent, language, crf_features_config):
 
 # Base feature functions and factories
 def is_digit():
-    return Feature(
-        "is_digit",
-        lambda tokens, token_index: "1" if tokens[
-            token_index].value.isdigit() else None
-    )
+    return [
+        Feature(
+            "is_digit",
+            lambda tokens, token_index: "1" if tokens[
+                token_index].value.isdigit() else None
+        )
+    ]
 
 
 def is_first():
-    return Feature(
-        "is_first",
-        lambda tokens, token_index: "1" if token_index == 0 else None
-    )
+    return [
+        Feature(
+            "is_first",
+            lambda tokens, token_index: "1" if token_index == 0 else None
+        )
+    ]
 
 
 def is_last():
-    return Feature(
-        "is_last",
-        lambda tokens, token_index: "1" if token_index == len(
-            tokens) - 1 else None
-    )
+    return [
+        Feature(
+            "is_last",
+            lambda tokens, token_index: "1" if token_index == len(
+                tokens) - 1 else None
+        )
+    ]
 
 
 def get_prefix_fn(prefix_size):
@@ -123,8 +118,7 @@ def get_prefix_fn(prefix_size):
         return get_word_chunk(tokens[token_index].normalized_value,
                               prefix_size, 0)
 
-    return Feature("prefix-%s" % prefix_size, prefix,
-                   feature_type="prefix_%s" % prefix_size)
+    return [Feature("prefix-%s" % prefix_size, prefix)]
 
 
 def get_suffix_fn(suffix_size):
@@ -133,18 +127,16 @@ def get_suffix_fn(suffix_size):
                               suffix_size, len(tokens[token_index].value),
                               reverse=True)
 
-    return Feature("suffix-%s" % suffix_size, suffix,
-                   feature_type="suffix_%s" % suffix_size)
+    return [Feature("suffix-%s" % suffix_size, suffix)]
 
 
 def get_length_fn():
-    return Feature(
-        "length", lambda tokens, token_index: len(tokens[token_index].value))
+    return [Feature(
+        "length", lambda tokens, token_index: len(tokens[token_index].value))]
 
 
-def get_ngram_fn(n, use_stemming, language_code,
-                 common_words_gazetteer_name=None):
-    language = Language.from_iso_code(language_code)
+def get_ngram_fn(n, use_stemming, dataset, common_words_gazetteer_name=None):
+    language = Language.from_iso_code(dataset[LANGUAGE])
     if n < 1:
         raise ValueError("n should be >= 1")
 
@@ -172,11 +164,11 @@ def get_ngram_fn(n, use_stemming, language_code,
             return language.default_sep.join(words)
         return None
 
-    return Feature("ngram_%s" % n, ngram)
+    return [Feature("ngram_%s" % n, ngram)]
 
 
-def get_shape_ngram_fn(n, language_code):
-    language = Language.from_iso_code(language_code)
+def get_shape_ngram_fn(n, dataset):
+    language = Language.from_iso_code(dataset[LANGUAGE])
     if n < 1:
         raise ValueError("n should be >= 1")
 
@@ -188,11 +180,11 @@ def get_shape_ngram_fn(n, language_code):
                                              for t in tokens[token_index:end])
         return None
 
-    return Feature("shape_ngram_%s" % n, shape_ngram)
+    return [Feature("shape_ngram_%s" % n, shape_ngram)]
 
 
-def get_word_cluster_fn(cluster_name, language_code, use_stemming):
-    language = Language.from_iso_code(language_code)
+def get_word_cluster_fn(cluster_name, use_stemming, dataset):
+    language = Language.from_iso_code(dataset[LANGUAGE])
 
     def word_cluster(tokens, token_index):
         normalized_value = tokens[token_index].stem if use_stemming \
@@ -200,47 +192,59 @@ def get_word_cluster_fn(cluster_name, language_code, use_stemming):
         return get_word_clusters(language)[cluster_name].get(normalized_value,
                                                              None)
 
-    return Feature("word_cluster_%s" % cluster_name, word_cluster,
-                   feature_type="word_cluster")
+    return [Feature("word_cluster_%s" % cluster_name, word_cluster)]
 
 
 # pylint: disable=unused-argument
-def get_token_is_in_fn(tokens_collection, collection_name, use_stemming,
-                       tagging_scheme_code, language_code):
-    tagging_scheme = TaggingScheme(tagging_scheme_code)
-    tokens_collection = set(tokens_collection)
+def get_collection_match_fn(use_stemming, tagging_scheme_code, dataset,
+                            intent):
+    language = Language.from_iso_code(dataset[LANGUAGE])
+
+    # Entity lookup
+    def preprocess(string):
+        normalized = normalize(string)
+        return stem(normalized, language) if use_stemming else normalized
 
     def transform(token):
         return token.stem if use_stemming else token.normalized_value
 
-    def token_is_in(tokens, token_index):
-        normalized_tokens = map(transform, tokens)
-        ngrams = get_all_ngrams(normalized_tokens)
-        ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
-        ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
-                        reverse=True)
-        for ngram in ngrams:
-            if ngram[NGRAM] in tokens_collection:
-                return get_scheme_prefix(token_index,
-                                         sorted(ngram[TOKEN_INDEXES]),
-                                         tagging_scheme)
-        return None
+    intent_entities = get_intent_custom_entities(dataset, intent)
+    features = []
+    for entity_name, entity in intent_entities.iteritems():
+        if not entity[UTTERANCES]:
+            continue
 
-    return Feature("token_is_in_%s" % collection_name, token_is_in,
-                   feature_type="collection_match")
+        collection = list(
+            set(preprocess(e) for e in entity[UTTERANCES].keys()))
+
+        tagging_scheme = TaggingScheme(tagging_scheme_code)
+        tokens_collection = set(collection)
+
+        def token_is_in(tokens, token_index):
+            normalized_tokens = map(transform, tokens)
+            ngrams = get_all_ngrams(normalized_tokens)
+            ngrams = [ng for ng in ngrams if token_index in ng[TOKEN_INDEXES]]
+            ngrams = sorted(ngrams,
+                            key=lambda _ngram: len(_ngram[TOKEN_INDEXES]),
+                            reverse=True)
+            for ngram in ngrams:
+                if ngram[NGRAM] in tokens_collection:
+                    return get_scheme_prefix(token_index,
+                                             sorted(ngram[TOKEN_INDEXES]),
+                                             tagging_scheme)
+            return None
+
+        feature = Feature("token_is_in_%s" % entity_name, token_is_in)
+        features.append(feature)
+    return features
 
 
 # pylint: enable=unused-argument
 
 
-def entity_filter(entity, start, end):
-    return (entity[MATCH_RANGE][0] <= start < entity[MATCH_RANGE][1]) and \
-           (entity[MATCH_RANGE][0] < end <= entity[MATCH_RANGE][1])
-
-
-def get_built_in_annotation_fn(built_in_entity_label, language_code,
+def get_built_in_annotation_fn(built_in_entity_label, dataset,
                                tagging_scheme_code):
-    language = Language.from_iso_code(language_code)
+    language = Language.from_iso_code(dataset[LANGUAGE])
     tagging_scheme = TaggingScheme(tagging_scheme_code)
     built_in_entity = BuiltInEntity.from_label(built_in_entity_label)
     feature_name = "built-in-%s" % built_in_entity.value["label"]
@@ -264,5 +268,4 @@ def get_built_in_annotation_fn(built_in_entity_label, language_code,
                     indexes.append(index)
             return get_scheme_prefix(token_index, indexes, tagging_scheme)
 
-    return Feature(feature_name, built_in_annotation,
-                   feature_type="builtin_match")
+    return [Feature(feature_name, built_in_annotation)]

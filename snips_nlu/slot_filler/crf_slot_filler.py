@@ -13,7 +13,7 @@ from sklearn_crfsuite import CRF
 import snips_nlu.slot_filler.feature_functions
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
     get_builtin_entities
-from snips_nlu.config import CRFSlotFillerConfig
+from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.constants import MATCH_RANGE, ENTITY, LANGUAGE, DATA
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.languages import Language
@@ -30,7 +30,9 @@ POSSIBLE_SET_FEATURES = ["collection"]
 
 
 class CRFSlotFiller(object):
-    def __init__(self, features_signatures, config=CRFSlotFillerConfig()):
+    def __init__(self, config=None):
+        if config is None:
+            config = CRFSlotFillerConfig()
         self.crf_model = None
         self._features = None
         self.language = None

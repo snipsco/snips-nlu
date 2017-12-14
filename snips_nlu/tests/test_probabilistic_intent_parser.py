@@ -4,8 +4,9 @@ import unittest
 
 from mock import MagicMock, patch, call
 
-from snips_nlu.config import ProbabilisticIntentParserConfig, \
-    CRFSlotFillerConfig, IntentClassifierConfig
+from snips_nlu.configs.intent_classifier import IntentClassifierConfig
+from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
+from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser

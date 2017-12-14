@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
-from snips_nlu.config import DeterministicIntentParserConfig
+from snips_nlu.configs.intent_parser import DeterministicIntentParserConfig
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE,
     LANGUAGE)
@@ -183,7 +183,9 @@ def replace_builtin_entities(text, language):
 
 
 class DeterministicIntentParser(object):
-    def __init__(self, config=DeterministicIntentParserConfig()):
+    def __init__(self, config=None):
+        if config is None:
+            config = DeterministicIntentParserConfig()
         self.config = config
         self.language = None
         self.regexes_per_intent = None

@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import IntentClassifierConfig
+from snips_nlu.configs.intent_classifier import IntentClassifierConfig
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, ENTITY,
                                  UNKNOWNWORD, TEXT, LANGUAGE)
 from snips_nlu.data_augmentation import augment_utterances
@@ -166,7 +166,9 @@ def build_training_data(dataset, language, data_augmentation_config,
 
 
 class SnipsIntentClassifier(object):
-    def __init__(self, config=IntentClassifierConfig()):
+    def __init__(self, config=None):
+        if config is None:
+            config = IntentClassifierConfig()
         self.classifier = None
         self.intent_list = None
         self.featurizer = None

@@ -7,7 +7,7 @@ import unittest
 
 from mock import patch
 
-from snips_nlu.config import FeaturizerConfig
+from snips_nlu.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.feature_extraction import (
     Featurizer, get_tfidf_vectorizer, get_utterances_to_features_names)

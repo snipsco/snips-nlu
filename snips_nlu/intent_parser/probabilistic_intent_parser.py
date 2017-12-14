@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
-from snips_nlu.config import ProbabilisticIntentParserConfig
 from snips_nlu.constants import INTENTS, LANGUAGE
+from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
 from snips_nlu.languages import Language
@@ -10,8 +10,9 @@ from snips_nlu.slot_filler.feature_functions import crf_features
 
 
 class ProbabilisticIntentParser(object):
-    def __init__(self, config=ProbabilisticIntentParserConfig()):
-        self.language = None
+    def __init__(self, config=None):
+        if config is None:
+            config = ProbabilisticIntentParserConfig()
         self.intent_classifier = None
         self.slot_fillers = None
         self.config = config

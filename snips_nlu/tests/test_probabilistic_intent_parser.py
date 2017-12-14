@@ -10,7 +10,6 @@ from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
-from snips_nlu.languages import Language
 from snips_nlu.tests.utils import BEVERAGE_DATASET
 
 
@@ -43,7 +42,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                 "intent_classifier_config": IntentClassifierConfig().to_dict()
             },
             "intent_classifier": None,
-            "language_code": None,
             "slot_fillers": None,
         }
         self.assertDictEqual(actual_parser_dict, expected_parser_dict)
@@ -54,7 +52,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         parser_dict = {
             "config": config,
             "intent_classifier": None,
-            "language_code": None,
             "slot_fillers": None,
         }
 
@@ -63,28 +60,19 @@ class TestProbabilisticIntentParser(unittest.TestCase):
 
         # Then
         self.assertEqual(parser.config.to_dict(), config)
-        self.assertIsNone(parser.language)
         self.assertIsNone(parser.intent_classifier)
         self.assertIsNone(parser.slot_fillers)
 
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
-           '.CRFSlotFiller.fit')
-    @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.CRFSlotFiller.to_dict')
-    @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
-           '.SnipsIntentClassifier.fit')
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.SnipsIntentClassifier.to_dict')
     def test_should_be_serializable(self, mock_classifier_to_dict,
-                                    mock_classifier_fit,
-                                    mock_slot_filler_to_dict,
-                                    mock_slot_filler_fit):
+                                    mock_slot_filler_to_dict):
         # Given
-        mock_classifier_fit.return_value = None
         mock_classifier_to_dict.return_value = {
             "mocked_classifier_key": "mocked_classifier_value"
         }
-        mock_slot_filler_fit.return_value = None
         mock_slot_filler_to_dict.return_value = {
             "mocked_slot_filler_key": "mocked_slot_filler_value"
         }
@@ -98,12 +86,12 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         actual_parser_dict = parser.to_dict()
 
         # Then
+        expected_parser_config = ProbabilisticIntentParserConfig()
         expected_parser_dict = {
-            "config": parser_config.to_dict(),
+            "config": expected_parser_config.to_dict(),
             "intent_classifier": {
                 "mocked_classifier_key": "mocked_classifier_value"
             },
-            "language_code": "en",
             "slot_fillers": {
                 "MakeCoffee": {
                     "mocked_slot_filler_key": "mocked_slot_filler_value"
@@ -122,13 +110,10 @@ class TestProbabilisticIntentParser(unittest.TestCase):
     def test_should_be_deserializable(self, mock_slot_filler,
                                       mock_classifier_from_dict):
         # When
-        language = Language.EN
         mocked_slot_filler = MagicMock()
         mock_slot_filler.from_dict.return_value = mocked_slot_filler
-        mocked_slot_filler.language = language
         config = ProbabilisticIntentParserConfig().to_dict()
         parser_dict = {
-            "language_code": "en",
             "intent_classifier": {
                 "mocked_dict_key": "mocked_dict_value"
             },
@@ -155,7 +140,6 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         ]
         mock_slot_filler.from_dict.assert_has_calls(calls, any_order=True)
 
-        self.assertEqual(parser.language, language)
         self.assertDictEqual(parser.config.to_dict(), config)
         self.assertIsNotNone(parser.intent_classifier)
         self.assertItemsEqual(parser.slot_fillers.keys(),

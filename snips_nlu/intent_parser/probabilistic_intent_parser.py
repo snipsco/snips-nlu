@@ -1,12 +1,12 @@
 from __future__ import unicode_literals
 
-from snips_nlu.constants import INTENTS, LANGUAGE
+from copy import deepcopy
+
 from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
+from snips_nlu.constants import INTENTS
 from snips_nlu.intent_classifier.snips_intent_classifier import \
     SnipsIntentClassifier
-from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
-from snips_nlu.slot_filler.feature_functions import crf_features
 
 
 class ProbabilisticIntentParser(object):
@@ -49,19 +49,15 @@ class ProbabilisticIntentParser(object):
         if intents is None:
             intents = dataset[INTENTS].keys()
 
-        self.language = Language.from_iso_code(dataset[LANGUAGE])
         self.intent_classifier = SnipsIntentClassifier(
             self.config.intent_classifier_config)
         self.intent_classifier.fit(dataset)
         if self.slot_fillers is None:
             self.slot_fillers = dict()
         for intent_name in intents:
-            feature_signatures = crf_features(
-                dataset, intent_name, self.language,
-                self.config.crf_slot_filler_config)
-            self.slot_fillers[intent_name] = CRFSlotFiller(
-                features_signatures=feature_signatures,
-                config=self.config.crf_slot_filler_config)
+            # We need to copy the slot filler config as it may be mutated
+            slot_filler_config = deepcopy(self.config.crf_slot_filler_config)
+            self.slot_fillers[intent_name] = CRFSlotFiller(slot_filler_config)
             self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
 
@@ -86,20 +82,13 @@ class ProbabilisticIntentParser(object):
         self.slot_fillers[intent] = CRFSlotFiller.from_dict(slot_filler_data)
 
     def get_fitted_slot_filler(self, dataset, intent):
-        language = Language.from_iso_code(dataset[LANGUAGE])
-        crf_signatures = crf_features(dataset, intent, language,
-                                      self.config.crf_slot_filler_config)
-        slot_filler = CRFSlotFiller(crf_signatures,
-                                    self.config.crf_slot_filler_config)
+        slot_filler = CRFSlotFiller(self.config.crf_slot_filler_config)
         return slot_filler.fit(dataset, intent)
 
     def to_dict(self):
         slot_fillers = None
-        language_code = None
         intent_classifier_dict = None
 
-        if self.language is not None:
-            language_code = self.language.iso_code
         if self.intent_classifier is not None:
             intent_classifier_dict = self.intent_classifier.to_dict()
         if self.slot_fillers is not None:
@@ -108,7 +97,6 @@ class ProbabilisticIntentParser(object):
                 for intent, slot_filler in self.slot_fillers.iteritems()}
 
         return {
-            "language_code": language_code,
             "intent_classifier": intent_classifier_dict,
             "config": self.config.to_dict(),
             "slot_fillers": slot_fillers,
@@ -122,9 +110,6 @@ class ProbabilisticIntentParser(object):
                 intent: CRFSlotFiller.from_dict(slot_filler_dict) for
                 intent, slot_filler_dict in
                 obj_dict["slot_fillers"].iteritems()}
-        language = None
-        if obj_dict["language_code"] is not None:
-            language = Language.from_iso_code(obj_dict["language_code"])
         classifier = None
         if obj_dict["intent_classifier"] is not None:
             classifier = SnipsIntentClassifier.from_dict(
@@ -132,7 +117,6 @@ class ProbabilisticIntentParser(object):
 
         parser = cls(config=ProbabilisticIntentParserConfig.from_dict(
             obj_dict["config"]))
-        parser.language = language
         parser.intent_classifier = classifier
         parser.slot_fillers = slot_fillers
         return parser

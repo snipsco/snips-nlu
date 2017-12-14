@@ -28,8 +28,6 @@ from snips_nlu.tests.utils import (SAMPLE_DATASET, get_empty_dataset,
 class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_use_parsers_sequentially(self):
         # Given
-        language = Language.EN
-
         input_text = "hello world"
 
         mocked_parser1 = Mock()
@@ -61,7 +59,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
             }
         }
         engine = SnipsNLUEngine()
-        engine.language = language
         engine.entities = mocked_entities
         engine.deterministic_parser = mocked_parser1
         engine.probabilistic_parser = mocked_parser2
@@ -215,7 +212,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertTrue("These intents must be trained: set([u'MakeTea'])"
                         in context.exception)
 
-    def test_should_use_fitted_tagger(self):
+    def test_should_use_fitted_slot_filler(self):
         # Given
         text = "Give me 3 cups of hot tea please"
         fitted_slot_filler = SnipsNLUEngine().get_fitted_slot_filler(
@@ -238,7 +235,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertEqual(result['intent']['intent_name'], 'MakeTea')
         self.assertListEqual(result['slots'], expected_slots)
 
-    def test_should_be_serializable_after_fitted_tagger_is_added(self):
+    def test_should_be_serializable_after_fitted_slot_filler_is_added(self):
         # Given
         text = "Give me 3 cups of hot tea please"
         engine = SnipsNLUEngine()
@@ -274,7 +271,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertEqual(result['intent']['intent_name'], 'MakeTea')
         self.assertListEqual(result['slots'], expected_slots)
 
-    @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.get_slots")
@@ -285,10 +281,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".DeterministicIntentParser.get_intent")
     def test_should_handle_keyword_entities(self, mocked_regex_get_intent,
                                             mocked_crf_get_intent,
-                                            mocked_crf_get_slots,
-                                            mocked_default_features):
+                                            mocked_crf_get_slots):
         # Given
-        language = Language.EN
         dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
@@ -345,10 +339,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": "en"
         }
 
-        mocked_default_features.return_value = []
         mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
         mocked_crf_slots = [ParsedSlot(match_range=(0, 7),
                                        value="dummy_3",
@@ -379,7 +372,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
             .as_dict()
         self.assertEqual(result, expected_result)
 
-    @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.get_slots")
@@ -390,10 +382,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
            ".DeterministicIntentParser.get_intent")
     def test_synonyms_should_point_to_base_value(self, mocked_deter_get_intent,
                                                  mocked_crf_get_intent,
-                                                 mocked_crf_get_slots,
-                                                 mocked_default_features):
+                                                 mocked_crf_get_slots):
         # Given
-        language = Language.EN
         dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
@@ -426,10 +416,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": "en"
         }
 
-        mocked_default_features.return_value = []
         mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
         mocked_crf_slots = [ParsedSlot(match_range=(0, 10), value="dummy1_bis",
                                        entity="dummy_entity_1",
@@ -601,7 +590,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
-        language = Language.EN
         dataset = validate_and_format_dataset({
             "intents": {
                 "dummy": {
@@ -621,7 +609,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "entities": {
                 "snips/datetime": {}
             },
-            "language": language.iso_code,
+            "language": "en",
             "snips_nlu_version": "0.0.1"
         })
 

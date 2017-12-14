@@ -16,7 +16,8 @@ from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, \
     generate_slots_permutations, exhaustive_slots_permutations
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, BEGINNING_PREFIX, \
     INSIDE_PREFIX
-from snips_nlu.slot_filler.feature_functions import crf_features
+from snips_nlu.slot_filler.feature_factory import IsDigitFactory, \
+    ShapeNgramFactory, NgramFactory
 from snips_nlu.tests.utils import SAMPLE_DATASET, BEVERAGE_DATASET
 from snips_nlu.tokenization import tokenize, Token
 
@@ -27,9 +28,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
-        features_signatures = crf_features(dataset, intent, Language.EN,
-                                           config)
-        slot_filler = CRFSlotFiller(features_signatures, config)
+        slot_filler = CRFSlotFiller(config)
         slot_filler.fit(dataset, intent)
 
         # When
@@ -48,9 +47,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
-        features_signatures = crf_features(dataset, intent, Language.EN,
-                                           config)
-        slot_filler = CRFSlotFiller(features_signatures, config)
+        slot_filler = CRFSlotFiller(config)
         slot_filler.fit(dataset, intent)
         deserialized_slot_filler = CRFSlotFiller.from_dict(
             slot_filler.to_dict())
@@ -68,22 +65,23 @@ class TestCRFSlotFiller(unittest.TestCase):
 
     def test_should_be_serializable_before_fit(self):
         # Given
-        language = Language.EN
-        features_signatures = [
+        features_factories = [
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 1, "language_code": language.iso_code},
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1},
                 "offsets": [0]
             },
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 2, "language_code": language.iso_code},
+                "factory_name": IsDigitFactory.name,
+                "args": {},
                 "offsets": [-1, 0]
             }
         ]
-        config = CRFSlotFillerConfig(tagging_scheme=TaggingScheme.BILOU)
+        config = CRFSlotFillerConfig(
+            tagging_scheme=TaggingScheme.BILOU,
+            feature_factory_configs=features_factories)
 
-        slot_filler = CRFSlotFiller(features_signatures, config)
+        slot_filler = CRFSlotFiller(config)
 
         # When
         actual_slot_filler_dict = slot_filler.to_dict()
@@ -91,29 +89,6 @@ class TestCRFSlotFiller(unittest.TestCase):
         # Then
         expected_slot_filler_dict = {
             "crf_model_data": None,
-            "features_signatures": [
-                {
-                    "args": {
-                        "n": 1,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        0
-                    ]
-                },
-                {
-                    "args": {
-                        "n": 2,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        -1,
-                        0
-                    ]
-                }
-            ],
             "language_code": None,
             "config": config.to_dict(),
             "intent": None,
@@ -126,63 +101,53 @@ class TestCRFSlotFiller(unittest.TestCase):
     def test_should_be_deserializable_before_fit(self,
                                                  mock_deserialize_crf_model):
         # Given
-        language = Language.EN
         mock_deserialize_crf_model.return_value = None
+        features_factories = [
+            {
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1},
+                "offsets": [0]
+            },
+            {
+                "factory_name": IsDigitFactory.name,
+                "args": {},
+                "offsets": [-1, 0]
+            }
+        ]
+        slot_filler_config = CRFSlotFillerConfig(
+            feature_factory_configs=features_factories)
         slot_filler_dict = {
             "crf_model_data": None,
-            "features_signatures": [
-                {
-                    "args": {
-                        "n": 1,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        0
-                    ]
-                },
-                {
-                    "args": {
-                        "n": 2,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        -1,
-                        0
-                    ]
-                }
-            ],
             "language_code": None,
             "intent": None,
             "slot_name_mapping": None,
-            "config": CRFSlotFillerConfig().to_dict()
+            "config": slot_filler_config.to_dict()
         }
+
         # When
         slot_filler = CRFSlotFiller.from_dict(slot_filler_dict)
 
         # Then
-        expected_features_signatures = [
+        expected_features_factories = [
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 1, "language_code": language.iso_code},
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1},
                 "offsets": [0]
             },
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 2, "language_code": language.iso_code},
+                "factory_name": IsDigitFactory.name,
+                "args": {},
                 "offsets": [-1, 0]
             }
         ]
         expected_language = None
-        expected_config = CRFSlotFillerConfig()
+        expected_config = CRFSlotFillerConfig(
+            feature_factory_configs=expected_features_factories)
         expected_intent = None
         expected_slot_name_mapping = None
         expected_crf_model = None
 
         self.assertEqual(slot_filler.crf_model, expected_crf_model)
-        self.assertListEqual(slot_filler.features_signatures,
-                             expected_features_signatures)
         self.assertEqual(slot_filler.language, expected_language)
         self.assertEqual(slot_filler.intent, expected_intent)
         self.assertEqual(slot_filler.slot_name_mapping,
@@ -192,25 +157,26 @@ class TestCRFSlotFiller(unittest.TestCase):
 
     @patch('snips_nlu.slot_filler.crf_slot_filler.serialize_crf_model')
     def test_should_be_serializable(self, mock_serialize_crf_model):
-        language = Language.EN
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
-        features_signatures = [
+        features_factories = [
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 1, "language_code": language.iso_code},
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1},
                 "offsets": [0]
             },
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 2, "language_code": language.iso_code},
+                "factory_name": IsDigitFactory.name,
+                "args": {},
                 "offsets": [-1, 0]
             }
         ]
-        config = CRFSlotFillerConfig(tagging_scheme=TaggingScheme.BILOU)
+        config = CRFSlotFillerConfig(
+            tagging_scheme=TaggingScheme.BILOU,
+            feature_factory_configs=features_factories)
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
 
-        slot_filler = CRFSlotFiller(features_signatures, config)
+        slot_filler = CRFSlotFiller(config)
         intent = "dummy_intent_1"
         slot_filler.fit(dataset, intent=intent)
 
@@ -218,33 +184,25 @@ class TestCRFSlotFiller(unittest.TestCase):
         actual_slot_filler_dict = slot_filler.to_dict()
 
         # Then
+        expected_feature_factories = [
+            {
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1, "language_code": "en"},
+                "offsets": [0]
+            },
+            {
+                "factory_name": IsDigitFactory.name,
+                "args": {},
+                "offsets": [-1, 0]
+            }
+        ]
+        expected_config = CRFSlotFillerConfig(
+            tagging_scheme=TaggingScheme.BILOU,
+            feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
             "crf_model_data": "mocked_crf_model_data",
-            "features_signatures": [
-                {
-                    "args": {
-                        "n": 1,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        0
-                    ]
-                },
-                {
-                    "args": {
-                        "n": 2,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        -1,
-                        0
-                    ]
-                }
-            ],
             "language_code": "en",
-            "config": config.to_dict(),
+            "config": expected_config.to_dict(),
             "intent": intent,
             "slot_name_mapping": {
                 "dummy_intent_1": {
@@ -265,31 +223,22 @@ class TestCRFSlotFiller(unittest.TestCase):
         # Given
         language = Language.EN
         mock_deserialize_crf_model.return_value = None
+        feature_factories = [
+            {
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1, "language_code": language.iso_code},
+                "offsets": [0]
+            },
+            {
+                "factory_name": IsDigitFactory.name,
+                "args": {},
+                "offsets": [-1, 0]
+            }
+        ]
+        slot_filler_config = CRFSlotFillerConfig(
+            feature_factory_configs=feature_factories)
         slot_filler_dict = {
             "crf_model_data": "mocked_crf_model_data",
-            "features_signatures": [
-                {
-                    "args": {
-                        "n": 1,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        0
-                    ]
-                },
-                {
-                    "args": {
-                        "n": 2,
-                        "language_code": language.iso_code
-                    },
-                    "factory_name": "get_shape_ngram_fn",
-                    "offsets": [
-                        -1,
-                        0
-                    ]
-                }
-            ],
             "language_code": "en",
             "intent": "dummy_intent_1",
             "slot_name_mapping": {
@@ -297,7 +246,7 @@ class TestCRFSlotFiller(unittest.TestCase):
                     "dummy_slot_name": "dummy_entity_1",
                 }
             },
-            "config": CRFSlotFillerConfig().to_dict()
+            "config": slot_filler_config.to_dict()
         }
         # When
         slot_filler = CRFSlotFiller.from_dict(slot_filler_dict)
@@ -305,20 +254,21 @@ class TestCRFSlotFiller(unittest.TestCase):
         # Then
         mock_deserialize_crf_model.assert_called_once_with(
             "mocked_crf_model_data")
-        expected_features_signatures = [
+        expected_language = Language.EN
+        expected_feature_factories = [
             {
-                "factory_name": "get_shape_ngram_fn",
+                "factory_name": ShapeNgramFactory.name,
                 "args": {"n": 1, "language_code": language.iso_code},
                 "offsets": [0]
             },
             {
-                "factory_name": "get_shape_ngram_fn",
-                "args": {"n": 2, "language_code": language.iso_code},
+                "factory_name": IsDigitFactory.name,
+                "args": {},
                 "offsets": [-1, 0]
             }
         ]
-        expected_language = Language.EN
-        expected_config = CRFSlotFillerConfig()
+        expected_config = CRFSlotFillerConfig(
+            feature_factory_configs=expected_feature_factories)
         expected_intent = "dummy_intent_1"
         expected_slot_name_mapping = {
             "dummy_intent_1": {
@@ -326,8 +276,6 @@ class TestCRFSlotFiller(unittest.TestCase):
             }
         }
 
-        self.assertListEqual(slot_filler.features_signatures,
-                             expected_features_signatures)
         self.assertEqual(slot_filler.language, expected_language)
         self.assertEqual(slot_filler.intent, expected_intent)
         self.assertEqual(slot_filler.slot_name_mapping,
@@ -337,24 +285,21 @@ class TestCRFSlotFiller(unittest.TestCase):
 
     def test_should_compute_features(self):
         # Given
-        features_signatures = [
+        features_factories = [
             {
-                "factory_name": "get_ngram_fn",
+                "factory_name": NgramFactory.name,
                 "args": {
                     "n": 1,
                     "use_stemming": False,
-                    "language_code": "en",
                     "common_words_gazetteer_name": None
                 },
-                "offsets": [0]
+                "offsets": [0],
+                "drop_out": 0.3
             },
         ]
-        drop_out = {
-            "ngram_1": 0.3
-        }
-        slot_filler_config = CRFSlotFillerConfig(features_drop_out=drop_out,
-                                                 random_seed=40)
-        slot_filler = CRFSlotFiller(features_signatures, slot_filler_config)
+        slot_filler_config = CRFSlotFillerConfig(
+            feature_factory_configs=features_factories, random_seed=40)
+        slot_filler = CRFSlotFiller(slot_filler_config)
 
         tokens = tokenize("foo hello world bar", Language.EN)
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
@@ -484,8 +429,7 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         slot_filler_config = CRFSlotFillerConfig(
             random_seed=42, exhaustive_permutations_threshold=2)
-        slot_filler = CRFSlotFiller(features_signatures=[],
-                                    config=slot_filler_config)
+        slot_filler = CRFSlotFiller(config=slot_filler_config)
         slot_filler.language = Language.EN
         slot_filler.intent = "intent1"
         slot_filler.slot_name_mapping = {
@@ -500,6 +444,8 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         slot_filler.get_sequence_probability = MagicMock(
             side_effect=mocked_sequence_probability)
+
+        slot_filler.compute_features = MagicMock(return_value=None)
 
         # When
         # pylint: disable=protected-access

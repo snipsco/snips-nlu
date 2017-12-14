@@ -5,12 +5,11 @@ import io
 import math
 import os
 import tempfile
-from copy import deepcopy, copy
+from copy import copy
 from itertools import groupby, permutations, product
 
 from sklearn_crfsuite import CRF
 
-import snips_nlu.slot_filler.feature_functions
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
     get_builtin_entities
 from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
@@ -21,12 +20,11 @@ from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TOKENS, TAGS, OUTSIDE, \
     tags_to_slots, tag_name_to_slot_name, tags_to_preslots, positive_tagging, \
     utterance_to_sample
-from snips_nlu.slot_filler.feature_functions import TOKEN_NAME
+from snips_nlu.slot_filler.feature import TOKEN_NAME
+from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import UnupdatableDict, mkdir_p, check_random_state, \
     get_slot_name_mapping
-
-POSSIBLE_SET_FEATURES = ["collection"]
 
 
 class CRFSlotFiller(object):
@@ -34,18 +32,25 @@ class CRFSlotFiller(object):
         if config is None:
             config = CRFSlotFillerConfig()
         self.crf_model = None
+        self.features_factories = [get_feature_factory(conf) for conf in
+                                   config.feature_factory_configs]
         self._features = None
         self.language = None
         self.intent = None
         self.slot_name_mapping = None
-        self.features_signatures = features_signatures
         self.config = config
 
     @property
     def features(self):
         if self._features is None:
-            self._features = get_features_from_signatures(
-                self.features_signatures)
+            self._features = []
+            feature_names = set()
+            for factory in self.features_factories:
+                for feature in factory.build_features():
+                    if feature.name in feature_names:
+                        raise KeyError("Duplicated feature: %s" % feature.name)
+                    feature_names.add(feature.name)
+                    self._features.append(feature)
         return self._features
 
     @property
@@ -113,6 +118,9 @@ class CRFSlotFiller(object):
                                 self.language)
             for u in augmented_intent_utterances]
 
+        for factory in self.features_factories:
+            factory.fit(dataset, intent)
+
         # pylint: disable=C0103
         X = [self.compute_features(sample[TOKENS], drop_out=True)
              for sample in crf_samples]
@@ -145,10 +153,6 @@ class CRFSlotFiller(object):
             print "%s %s: %s" % (feat, tag, weight)
 
     def compute_features(self, tokens, drop_out=False):
-        if drop_out:
-            features_drop_out = self.config.features_drop_out
-        else:
-            features_drop_out = dict()
         tokens = [
             Token(t.value, t.start, t.end,
                   stem=stem(t.normalized_value, self.language))
@@ -159,8 +163,8 @@ class CRFSlotFiller(object):
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
             for feature in self.features:
-                drop_out = features_drop_out.get(feature.feature_type, 0)
-                if random_state.rand() < drop_out:
+                f_drop_out = feature.drop_out
+                if drop_out and random_state.rand() < f_drop_out:
                     continue
                 value = feature.compute(i, cache)
                 if value is not None:
@@ -212,14 +216,6 @@ class CRFSlotFiller(object):
                              self.config.tagging_scheme, intent_slots_mapping)
 
     def to_dict(self):
-        features_signatures = deepcopy(self.features_signatures)
-
-        for signature in features_signatures:
-            for feat in POSSIBLE_SET_FEATURES:
-                if feat in signature["args"] and isinstance(
-                        signature["args"][feat], set):
-                    signature["args"][feat] = list(signature["args"][feat])
-
         language_code = None
         crf_model_data = None
 
@@ -232,17 +228,14 @@ class CRFSlotFiller(object):
             "language_code": language_code,
             "intent": self.intent,
             "slot_name_mapping": self.slot_name_mapping,
-            "features_signatures": features_signatures,
             "crf_model_data": crf_model_data,
             "config": self.config.to_dict(),
         }
 
     @classmethod
     def from_dict(cls, config):
-        features_signatures = config["features_signatures"]
         slot_filler_config = CRFSlotFillerConfig.from_dict(config["config"])
-        slot_filler = cls(features_signatures=features_signatures,
-                          config=slot_filler_config)
+        slot_filler = cls(config=slot_filler_config)
 
         crf_model_data = config["crf_model_data"]
         if crf_model_data is not None:
@@ -273,22 +266,6 @@ def get_crf_model(crf_args):
             mkdir_p(directory)
 
     return CRF(model_filename=model_filename, **crf_args)
-
-
-def get_features_from_signatures(signatures):
-    features = []
-    for signature in signatures:
-        factory_name = signature["factory_name"]
-        factory = getattr(snips_nlu.slot_filler.feature_functions,
-                          factory_name)
-        feature = factory(**(signature["args"]))
-        for offset in signature["offsets"]:
-            offset_feature = feature.get_offset_feature(offset)
-            feature_name = offset_feature.name
-            if offset_feature.name in features:
-                raise KeyError("Duplicated feature: %s" % feature_name)
-            features.append(offset_feature)
-    return features
 
 
 def replace_builtin_tags(tags, builtin_slot_names):

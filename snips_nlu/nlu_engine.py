@@ -132,7 +132,8 @@ class SnipsNLUEngine(NLUEngine):
         elif isinstance(value, dict):
             config = NLUEngineConfig.from_dict(value)
         else:
-            raise TypeError("Expected config to be a dict or a NLUConfig")
+            raise TypeError("Expected config to be a dict or a "
+                            "NLUEngineConfig but received: %s" % type(value))
         self._config = config
 
     def parse(self, text, intent=None):

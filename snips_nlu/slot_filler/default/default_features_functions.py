@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from nlu_utils import normalize
 
-from snips_nlu.builtin_entities import _SUPPORTED_BUILTINS_BY_LANGUAGE, \
+from snips_nlu.builtin_entities import get_supported_builtin_entities, \
     is_builtin_entity
 from snips_nlu.constants import UTTERANCES, DATA, ENTITY, ENTITIES, INTENTS
 from snips_nlu.preprocessing import stem
@@ -63,7 +63,7 @@ def default_features(language, dataset, intent, crf_features_config,
     ]
 
     # Built-ins
-    for entity in _SUPPORTED_BUILTINS_BY_LANGUAGE[language]:
+    for entity in get_supported_builtin_entities(language):
         features.append(
             {
                 "factory_name": "get_built_in_annotation_fn",

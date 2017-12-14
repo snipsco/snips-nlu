@@ -15,7 +15,7 @@ def main_train_engine():
     args = vars(parser.parse_args())
 
     from snips_nlu import SnipsNLUEngine
-    from snips_nlu.configs.engine import NLUEngineConfig
+    from snips_nlu.configs.nlu_engine import NLUEngineConfig
 
     dataset_path = args.pop("dataset_path")
     with io.open(dataset_path, "r", encoding="utf8") as f:

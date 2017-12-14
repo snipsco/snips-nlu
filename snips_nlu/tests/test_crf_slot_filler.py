@@ -6,7 +6,7 @@ import unittest
 from mock import patch, MagicMock
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import CRFSlotFillerConfig
+from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language

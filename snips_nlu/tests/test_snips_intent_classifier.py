@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from mock import patch
 
-from snips_nlu.config import IntentClassifierConfig, \
+from snips_nlu.configs.intent_classifier import IntentClassifierConfig, \
     IntentClassifierDataAugmentationConfig
 from snips_nlu.constants import INTENTS, DATA, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks

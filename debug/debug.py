@@ -8,16 +8,16 @@ import os
 from pprint import pprint
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.config import NLUConfig
+from snips_nlu.configs.engine import NLUEngineConfig
 from snips_nlu.languages import Language
 
 
 def debug_training(dataset_path, config_path=None):
     if config_path is None:
-        config = NLUConfig()
+        config = NLUEngineConfig()
     else:
         with io.open(config_path, "r", encoding="utf8") as f:
-            config = NLUConfig.from_dict(json.load(f))
+            config = NLUEngineConfig.from_dict(json.load(f))
 
     with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
         dataset = json.load(f)

@@ -12,8 +12,9 @@ from mock import Mock, patch
 
 import snips_nlu
 import snips_nlu.version
-from snips_nlu.config import NLUConfig, ProbabilisticIntentParserConfig, \
-    CRFSlotFillerConfig
+from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
+from snips_nlu.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.constants import DATA, TEXT, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
@@ -116,7 +117,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     }
                 }
             },
-            "config": NLUConfig().to_dict(),
+            "config": NLUEngineConfig().to_dict(),
             "model": {
                 "deterministic_parser": mocked_deterministic_parser_dict,
                 "probabilistic_parser": mocked_proba_parser_dict
@@ -153,7 +154,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         }
         engine_dict = {
             "entities": entities,
-            "config": NLUConfig(),
+            "config": NLUEngineConfig(),
             "model": {
                 "deterministic_parser": mocked_deterministic_parser_dict,
                 "probabilistic_parser": mocked_proba_parser_dict
@@ -171,7 +172,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
             mocked_proba_parser_dict)
 
         self.assertDictEqual(engine.entities, entities)
-        self.assertDictEqual(engine.config.to_dict(), NLUConfig().to_dict())
+        self.assertDictEqual(engine.config.to_dict(),
+                             NLUEngineConfig().to_dict())
 
     def test_should_parse_after_deserialization(self):
         # Given
@@ -634,7 +636,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         intent = "MakeCoffee"
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        config = NLUConfig(ProbabilisticIntentParserConfig(
+        config = NLUEngineConfig(ProbabilisticIntentParserConfig(
             crf_slot_filler_config=slot_filler_config))
         trained_engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
 

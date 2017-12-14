@@ -7,7 +7,7 @@ import unittest
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import DeterministicIntentParserConfig
+from snips_nlu.configs.intent_parser import DeterministicIntentParserConfig
 from snips_nlu.constants import (MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
                                  SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset

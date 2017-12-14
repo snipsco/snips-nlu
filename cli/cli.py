@@ -15,7 +15,7 @@ def main_train_engine():
     args = vars(parser.parse_args())
 
     from snips_nlu import SnipsNLUEngine
-    from snips_nlu.config import NLUConfig
+    from snips_nlu.configs.engine import NLUEngineConfig
 
     dataset_path = args.pop("dataset_path")
     with io.open(dataset_path, "r", encoding="utf8") as f:
@@ -26,7 +26,7 @@ def main_train_engine():
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)
     else:
-        config = NLUConfig()
+        config = NLUEngineConfig()
 
     engine = SnipsNLUEngine(config).fit(dataset)
     print "Create and train the engine..."

@@ -1,13 +1,13 @@
 # coding=utf-8
 import unittest
 
-from snips_nlu.config import (NLUConfig,
-                              IntentClassifierDataAugmentationConfig,
-                              SlotFillerDataAugmentationConfig,
-                              FeaturizerConfig, IntentClassifierConfig,
-                              CRFSlotFillerConfig,
-                              ProbabilisticIntentParserConfig,
-                              DeterministicIntentParserConfig)
+from snips_nlu.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.configs.slot_filler import CRFSlotFillerConfig, \
+    SlotFillerDataAugmentationConfig
+from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig, \
+    DeterministicIntentParserConfig
+from snips_nlu.configs.intent_classifier import IntentClassifierConfig, \
+    IntentClassifierDataAugmentationConfig, FeaturizerConfig
 
 
 class TestConfig(unittest.TestCase):
@@ -135,7 +135,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When
-        config = NLUConfig.from_dict(config_dict)
+        config = NLUEngineConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then

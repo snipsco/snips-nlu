@@ -222,7 +222,9 @@ for lang in Language:
     except RustlingError:
         pass
 
-RUSTLING_SUPPORTED_LANGUAGES = set(_RUSTLING_PARSERS.keys())
+
+def get_supported_builtin_entities(language):
+    return _SUPPORTED_BUILTINS_BY_LANGUAGE[language]
 
 
 def get_builtin_entities(text, language, scope=None):

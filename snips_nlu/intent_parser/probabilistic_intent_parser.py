@@ -4,8 +4,8 @@ from copy import deepcopy
 
 from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
 from snips_nlu.constants import INTENTS
-from snips_nlu.intent_classifier.snips_intent_classifier import \
-    SnipsIntentClassifier
+from snips_nlu.intent_classifier.log_reg_classifier import \
+    LogRegIntentClassifier
 from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
 
 
@@ -49,7 +49,7 @@ class ProbabilisticIntentParser(object):
         if intents is None:
             intents = dataset[INTENTS].keys()
 
-        self.intent_classifier = SnipsIntentClassifier(
+        self.intent_classifier = LogRegIntentClassifier(
             self.config.intent_classifier_config)
         self.intent_classifier.fit(dataset)
         if self.slot_fillers is None:
@@ -112,7 +112,7 @@ class ProbabilisticIntentParser(object):
                 obj_dict["slot_fillers"].iteritems()}
         classifier = None
         if obj_dict["intent_classifier"] is not None:
-            classifier = SnipsIntentClassifier.from_dict(
+            classifier = LogRegIntentClassifier.from_dict(
                 obj_dict["intent_classifier"])
 
         parser = cls(config=ProbabilisticIntentParserConfig.from_dict(

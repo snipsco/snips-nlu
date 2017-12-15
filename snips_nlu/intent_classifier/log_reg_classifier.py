@@ -165,7 +165,7 @@ def build_training_data(dataset, language, data_augmentation_config,
     return augmented_utterances, np.array(utterance_classes), intent_mapping
 
 
-class SnipsIntentClassifier(object):
+class LogRegIntentClassifier(object):
     def __init__(self, config=None):
         if config is None:
             config = IntentClassifierConfig()
@@ -207,7 +207,7 @@ class SnipsIntentClassifier(object):
 
     def get_intent(self, text):
         if not self.fitted:
-            raise AssertionError('SnipsIntentClassifier instance must be '
+            raise AssertionError('LogRegIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
 
         if not text or not self.intent_list \

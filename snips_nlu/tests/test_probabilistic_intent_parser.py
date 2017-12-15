@@ -66,7 +66,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.CRFSlotFiller.to_dict')
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
-           '.SnipsIntentClassifier.to_dict')
+           '.LogRegIntentClassifier.to_dict')
     def test_should_be_serializable(self, mock_classifier_to_dict,
                                     mock_slot_filler_to_dict):
         # Given
@@ -104,7 +104,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         self.assertDictEqual(actual_parser_dict, expected_parser_dict)
 
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
-           '.SnipsIntentClassifier.from_dict')
+           '.LogRegIntentClassifier.from_dict')
     @patch('snips_nlu.intent_parser.probabilistic_intent_parser'
            '.CRFSlotFiller')
     def test_should_be_deserializable(self, mock_slot_filler,

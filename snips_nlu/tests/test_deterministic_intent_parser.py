@@ -519,6 +519,28 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         self.assertEqual(parser, expected_parser)
 
+    def test_should_be_deserializable_before_fitting(self):
+        # Given
+        parser_dict = {
+            "config": {
+                "max_queries": 42,
+                "max_entities": 43
+            },
+            "language_code": None,
+            "group_names_to_slot_names": None,
+            "patterns": None,
+            "slot_names_to_entities": None
+        }
+
+        # When
+        parser = DeterministicIntentParser.from_dict(parser_dict)
+
+        # Then
+        config = DeterministicIntentParserConfig(max_queries=42,
+                                                 max_entities=43)
+        expected_parser = DeterministicIntentParser(config=config)
+        self.assertEqual(parser, expected_parser)
+
     def test_should_deduplicate_overlapping_slots(self):
         # Given
         language = Language.EN

@@ -12,11 +12,10 @@ from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
-from snips_nlu.slot_filler.default.default_features_functions import \
-    get_intent_custom_entities
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import get_word_chunk, get_shape, \
-    get_all_ngrams, initial_string_from_tokens, entity_filter
+    get_all_ngrams, initial_string_from_tokens, entity_filter, \
+    get_intent_custom_entities
 
 
 class CRFFeatureFactory(object):

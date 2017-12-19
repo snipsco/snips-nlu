@@ -5,11 +5,13 @@ from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
-from snips_nlu.configs.intent_parser import DeterministicIntentParserConfig
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE,
     LANGUAGE)
+from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_parser import \
+    DeterministicIntentParserConfig
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
 from snips_nlu.tokenization import tokenize, tokenize_light
@@ -182,11 +184,14 @@ def replace_builtin_entities(text, language):
     return range_mapping, processed_text
 
 
-class DeterministicIntentParser(object):
+class DeterministicIntentParser(IntentParser):
+    unit_name = "deterministic_intent_parser"
+    config_type = DeterministicIntentParserConfig
+
     def __init__(self, config=None):
         if config is None:
-            config = DeterministicIntentParserConfig()
-        self.config = config
+            config = self.config_type()
+        super(DeterministicIntentParser, self).__init__(config)
         self.language = None
         self.regexes_per_intent = None
         self.group_names_to_slot_names = None
@@ -213,7 +218,7 @@ class DeterministicIntentParser(object):
     def fitted(self):
         return self.regexes_per_intent is not None
 
-    def fit(self, dataset):
+    def fit(self, dataset, intents=None):
         self.language = Language.from_iso_code(dataset[LANGUAGE])
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
@@ -253,7 +258,7 @@ class DeterministicIntentParser(object):
             self._cache[text] = self._parse(text)
         return self._cache[text].parsed_intent
 
-    def get_slots(self, text, intent=None):
+    def get_slots(self, text, intent):
         if not self.fitted:
             raise AssertionError("DeterministicIntentParser must be fitted "
                                  "before calling `get_entities`")
@@ -311,6 +316,7 @@ class DeterministicIntentParser(object):
         if self.language is not None:
             language_code = self.language.iso_code
         return {
+            "unit_name": self.unit_name,
             "config": self.config.to_dict(),
             "language_code": language_code,
             "patterns": self.patterns,
@@ -319,17 +325,17 @@ class DeterministicIntentParser(object):
         }
 
     @classmethod
-    def from_dict(cls, obj_dict):
-        config = DeterministicIntentParserConfig.from_dict(obj_dict["config"])
+    def from_dict(cls, unit_dict):
+        config = cls.config_type.from_dict(unit_dict["config"])
         parser = cls(config=config)
         language = None
-        if obj_dict["language_code"] is not None:
-            language = Language.from_iso_code(obj_dict["language_code"])
-        parser.patterns = obj_dict["patterns"]
+        if unit_dict["language_code"] is not None:
+            language = Language.from_iso_code(unit_dict["language_code"])
+        parser.patterns = unit_dict["patterns"]
         parser.language = language
-        parser.group_names_to_slot_names = obj_dict[
+        parser.group_names_to_slot_names = unit_dict[
             "group_names_to_slot_names"]
-        parser.slot_names_to_entities = obj_dict["slot_names_to_entities"]
+        parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
         return parser
 
     def __eq__(self, other):

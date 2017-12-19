@@ -8,7 +8,7 @@ import os
 from pprint import pprint
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.pipeline.configs import NLUEngineConfig
 
 
 def debug_training(dataset_path, config_path=None):

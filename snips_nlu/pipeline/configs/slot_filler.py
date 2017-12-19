@@ -1,9 +1,12 @@
-from snips_nlu.configs.serializable import Serializable
-from snips_nlu.configs.features import default_features_factories
+from copy import deepcopy
+
+from snips_nlu.pipeline.configs.config import Config, ProcessingUnitConfig
+from snips_nlu.pipeline.configs.features import default_features_factories
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
+from snips_nlu.utils import classproperty
 
 
-class SlotFillerDataAugmentationConfig(Serializable):
+class SlotFillerDataAugmentationConfig(Config):
     def __init__(self, min_utterances=200, capitalization_ratio=.2):
         self.min_utterances = min_utterances
         self.capitalization_ratio = capitalization_ratio
@@ -27,9 +30,9 @@ def _default_entities_offsets():
     return [-2, -1, 0]
 
 
-class CRFSlotFillerConfig(Serializable):
+class CRFSlotFillerConfig(ProcessingUnitConfig):
     def __init__(self, feature_factory_configs=None,
-                 tagging_scheme=TaggingScheme.BIO.value, crf_args=None,
+                 tagging_scheme=TaggingScheme.BIO, crf_args=None,
                  entities_offsets=None,
                  exhaustive_permutations_threshold=4 ** 3,
                  data_augmentation_config=None, random_seed=None):
@@ -82,8 +85,14 @@ class CRFSlotFillerConfig(Serializable):
                             "SlotFillerDataAugmentationConfig or dict but "
                             "received: %s" % type(value))
 
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
+        return CRFSlotFiller.unit_name
+
     def to_dict(self):
         return {
+            "unit_name": self.unit_name,
             "feature_factory_configs": self.feature_factory_configs,
             "crf_args": self.crf_args,
             "tagging_scheme": self.tagging_scheme.value,
@@ -97,4 +106,8 @@ class CRFSlotFillerConfig(Serializable):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)

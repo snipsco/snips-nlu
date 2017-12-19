@@ -2,35 +2,40 @@ from __future__ import unicode_literals
 
 import base64
 import io
-import math
 import os
 import tempfile
 from copy import copy
-from itertools import groupby, permutations, product
 
+import math
+from itertools import groupby, permutations, product
 from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
     get_builtin_entities
-from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.constants import MATCH_RANGE, ENTITY, LANGUAGE, DATA
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import TOKENS, TAGS, OUTSIDE, \
     tags_to_slots, tag_name_to_slot_name, tags_to_preslots, positive_tagging, \
     utterance_to_sample
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
+from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import UnupdatableDict, mkdir_p, check_random_state, \
     get_slot_name_mapping
 
 
-class CRFSlotFiller(object):
+class CRFSlotFiller(SlotFiller):
+    unit_name = "crf_slot_filler"
+    config_type = CRFSlotFillerConfig
+
     def __init__(self, config=None):
         if config is None:
-            config = CRFSlotFillerConfig()
+            config = self.config_type()
+        super(CRFSlotFiller, self).__init__(config)
         self.crf_model = None
         self.features_factories = [get_feature_factory(conf) for conf in
                                    config.feature_factory_configs]
@@ -38,7 +43,6 @@ class CRFSlotFiller(object):
         self.language = None
         self.intent = None
         self.slot_name_mapping = None
-        self.config = config
 
     @property
     def features(self):
@@ -103,6 +107,7 @@ class CRFSlotFiller(object):
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
+    # pylint:disable=arguments-differ
     def fit(self, dataset, intent, verbose=False):
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset)
@@ -133,6 +138,8 @@ class CRFSlotFiller(object):
             self.print_weights()
 
         return self
+
+    # pylint:enable=arguments-differ
 
     def print_weights(self):
         transition_features = self.crf_model.transition_features_
@@ -225,6 +232,7 @@ class CRFSlotFiller(object):
             crf_model_data = serialize_crf_model(self.crf_model)
 
         return {
+            "unit_name": self.unit_name,
             "language_code": language_code,
             "intent": self.intent,
             "slot_name_mapping": self.slot_name_mapping,
@@ -233,20 +241,20 @@ class CRFSlotFiller(object):
         }
 
     @classmethod
-    def from_dict(cls, config):
-        slot_filler_config = CRFSlotFillerConfig.from_dict(config["config"])
+    def from_dict(cls, unit_dict):
+        slot_filler_config = cls.config_type.from_dict(unit_dict["config"])
         slot_filler = cls(config=slot_filler_config)
 
-        crf_model_data = config["crf_model_data"]
+        crf_model_data = unit_dict["crf_model_data"]
         if crf_model_data is not None:
             crf = deserialize_crf_model(crf_model_data)
             slot_filler.crf_model = crf
-        language_code = config["language_code"]
+        language_code = unit_dict["language_code"]
         if language_code is not None:
             language = Language.from_iso_code(language_code)
             slot_filler.language = language
-        slot_filler.intent = config["intent"]
-        slot_filler.slot_name_mapping = config["slot_name_mapping"]
+        slot_filler.intent = unit_dict["intent"]
+        slot_filler.slot_name_mapping = unit_dict["slot_name_mapping"]
         return slot_filler
 
     def __del__(self):

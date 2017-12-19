@@ -6,32 +6,19 @@ import unittest
 import numpy as np
 from mock import patch
 
-from snips_nlu.configs.intent_classifier import IntentClassifierConfig, \
-    IntentClassifierDataAugmentationConfig
 from snips_nlu.constants import INTENTS, DATA, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
-from snips_nlu.intent_classifier.feature_extraction import Featurizer
+from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier import (
-    LogRegIntentClassifier, build_training_data, generate_noise_utterances,
-    get_noise_it, add_unknown_word_to_utterances, generate_smart_noise,
-    remove_builtin_slots)
+    LogRegIntentClassifier)
+from snips_nlu.intent_classifier.log_reg_classifier_utils import \
+    remove_builtin_slots, get_noise_it, generate_smart_noise, \
+    generate_noise_utterances, add_unknown_word_to_utterances, \
+    build_training_data
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_classifier import (
+    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset
-
-SEED = 0
-
-
-def random():
-    global SEED
-    r = 0
-    if SEED % 2 == 0:
-        r = 1
-    SEED += 1
-    return r
-
-
-def np_random_permutation(x):
-    return x
 
 
 # pylint: disable=W0613
@@ -73,7 +60,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         expected_intent = None
         self.assertEqual(intent, expected_intent)
 
-    @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer.to_dict')
+    @patch('snips_nlu.intent_classifier.featurizer.Featurizer.to_dict')
     def test_should_be_serializable(self, mock_to_dict):
         # Given
         mocked_dict = {"mocked_featurizer_key": "mocked_featurizer_value"}
@@ -92,7 +79,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         # Then
         intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
-            "config": IntentClassifierConfig().to_dict(),
+            "unit_name": "log_reg_intent_classifier",
+            "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
@@ -100,8 +88,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         }
         self.assertEqual(expected_dict, classifier_dict)
 
-    @patch('snips_nlu.intent_classifier.feature_extraction.Featurizer'
-           '.from_dict')
+    @patch('snips_nlu.intent_classifier.featurizer.Featurizer.from_dict')
     def test_should_be_deserializable(self, mock_from_dict):
         # Given
         mocked_featurizer = Featurizer(Language.EN, None)
@@ -121,7 +108,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
             -0.98
         ]
 
-        config = IntentClassifierConfig().to_dict()
+        config = LogRegIntentClassifierConfig().to_dict()
 
         classifier_dict = {
             "coeffs": coeffs,
@@ -193,7 +180,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(intent, None)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier"
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_no_stemming_no_noise(
             self, mocked_augment_utterances):
@@ -216,8 +203,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier.get_noises")
-    @patch("snips_nlu.intent_classifier.log_reg_classifier"
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_noise(
             self, mocked_augment_utterances, mocked_get_noises):
@@ -268,8 +255,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier.get_noises")
-    @patch("snips_nlu.intent_classifier.log_reg_classifier"
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_unknown_noise(
             self, mocked_augment_utterances, mocked_get_subtitles):
@@ -326,7 +313,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         random_state = np.random.RandomState(1)
 
         # When
-        data_augmentation_config = IntentClassifierConfig() \
+        data_augmentation_config = LogRegIntentClassifierConfig() \
             .data_augmentation_config
         utterances, _, intent_mapping = build_training_data(
             dataset, language, data_augmentation_config, random_state)
@@ -337,7 +324,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
     def test_generate_noise_utterances(self, mocked_get_noises):
         # Given
         language = Language.EN
@@ -465,7 +452,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         ]
         self.assertEqual(expected_utterances, noisy_utterances)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
     def test_generate_noise_utterances_should_replace_unknown_words(
             self, mocked_noise):
         # Given

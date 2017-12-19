@@ -1,7 +1,10 @@
-from snips_nlu.configs.serializable import Serializable
+from copy import deepcopy
+
+from snips_nlu.pipeline.configs.config import Config, ProcessingUnitConfig
+from snips_nlu.utils import classproperty
 
 
-class IntentClassifierDataAugmentationConfig(Serializable):
+class IntentClassifierDataAugmentationConfig(Config):
     def __init__(self, min_utterances=20, noise_factor=5, unknown_word_prob=0,
                  unknown_words_replacement_string=None):
         self.min_utterances = min_utterances
@@ -38,7 +41,7 @@ class FeaturizerConfig(Serializable):
         return cls(**obj_dict)
 
 
-class IntentClassifierConfig(Serializable):
+class IntentClassifierConfig(ProcessingUnitConfig):
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
                  random_seed=None):
         if data_augmentation_config is None:
@@ -82,8 +85,15 @@ class IntentClassifierConfig(Serializable):
             raise TypeError("Expected instance of FeaturizerConfig or dict"
                             "but received: %s" % type(value))
 
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.log_reg_classifier import \
+            LogRegIntentClassifier
+        return LogRegIntentClassifier.unit_name
+
     def to_dict(self):
         return {
+            "unit_name": self.unit_name,
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
             "featurizer_config": self.featurizer_config.to_dict(),
@@ -92,4 +102,8 @@ class IntentClassifierConfig(Serializable):
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)

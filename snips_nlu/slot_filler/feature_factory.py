@@ -53,7 +53,7 @@ class SingleFeatureFactory(CRFFeatureFactory):
 
     @property
     def feature_name(self):
-        # by default, use factory name as the feature name
+        # by default, use the factory name
         return self.factory_name
 
     @abstractmethod

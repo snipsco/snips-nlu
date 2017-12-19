@@ -12,20 +12,28 @@ from mock import Mock, patch
 
 import snips_nlu
 import snips_nlu.version
-from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
-from snips_nlu.configs.nlu_engine import NLUEngineConfig
-from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.constants import DATA, TEXT, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
+from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine.utils import enrich_slots
+from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
+from snips_nlu.pipeline.configs.intent_parser import \
+    ProbabilisticIntentParserConfig
+from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.pipeline.units_registry import register_processing_unit, \
+    reset_processing_units
 from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from snips_nlu.tests.utils import (SAMPLE_DATASET, get_empty_dataset,
-                                   TEST_PATH,
-                                   BEVERAGE_DATASET)
+from snips_nlu.tests.utils import (
+    SAMPLE_DATASET, get_empty_dataset, TEST_PATH, BEVERAGE_DATASET)
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
+    def setUp(self):
+        reset_processing_units()
+
     def test_should_use_parsers_sequentially(self):
         # Given
         input_text = "hello world"
@@ -60,8 +68,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         }
         engine = SnipsNLUEngine()
         engine.entities = mocked_entities
-        engine.deterministic_parser = mocked_parser1
-        engine.probabilistic_parser = mocked_parser2
+        engine.intent_parsers = [mocked_parser1, mocked_parser2]
 
         # When
         parse = engine.parse(input_text)
@@ -81,28 +88,93 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.assertEqual(result, Result("hello world", None, None).as_dict())
 
-    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.to_dict')
-    @patch('snips_nlu.nlu_engine.DeterministicIntentParser.to_dict')
-    def test_should_be_serializable(self, mock_deterministic_parser_to_dict,
-                                    mock_probabilistic_parser_to_dict):
+    def test_should_be_serializable(self):
         # Given
-        mocked_deterministic_parser_dict = {
-            "mocked_deterministic_parser_key":
-                "mocked_deterministic_parser_value"
-        }
-        mock_deterministic_parser_to_dict.return_value = \
-            mocked_deterministic_parser_dict
-        mocked_proba_parser_dict = {
-            "mocked_proba_parser_key": "mocked_proba_parser_value"}
-        mock_probabilistic_parser_to_dict.return_value = \
-            mocked_proba_parser_dict
-        engine = SnipsNLUEngine().fit(BEVERAGE_DATASET)
+        class TestIntentParser1Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser1"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser1Config()
+
+        class TestIntentParser1(IntentParser):
+            unit_name = "test_intent_parser1"
+            config_type = TestIntentParser1Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser1(conf)
+
+        class TestIntentParser2Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser2"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser2Config()
+
+        class TestIntentParser2(IntentParser):
+            unit_name = "test_intent_parser2"
+            config_type = TestIntentParser2Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser2(conf)
+
+        register_processing_unit(TestIntentParser1)
+        register_processing_unit(TestIntentParser2)
+
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        parsers_configs = [parser1_config, parser2_config]
+        config = NLUEngineConfig(parsers_configs)
+        engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
 
         # When
         actual_engine_dict = engine.to_dict()
 
         # Then
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        parsers_configs = [parser1_config, parser2_config]
+        expected_engine_config = NLUEngineConfig(parsers_configs)
         expected_engine_dict = {
+            "unit_name": "nlu_engine",
             "entities": {
                 "Temperature": {
                     "automatically_extensible": True,
@@ -114,30 +186,88 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     }
                 }
             },
-            "config": NLUEngineConfig().to_dict(),
-            "model": {
-                "deterministic_parser": mocked_deterministic_parser_dict,
-                "probabilistic_parser": mocked_proba_parser_dict
-            },
+            "config": expected_engine_config.to_dict(),
+            "intent_parsers": [
+                {"unit_name": "test_intent_parser1"},
+                {"unit_name": "test_intent_parser2"}
+            ],
             "model_version": snips_nlu.version.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
 
         self.assertDictEqual(actual_engine_dict, expected_engine_dict)
 
-    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.from_dict')
-    @patch('snips_nlu.nlu_engine.DeterministicIntentParser.from_dict')
-    def test_should_be_deserializable(self,
-                                      mock_deterministic_parser_from_dict,
-                                      mock_probabilistic_parser_from_dict):
+    def test_should_be_deserializable(self):
         # When
-        mocked_deterministic_parser_dict = {
-            "mocked_deterministic_parser_key":
-                "mocked_deterministic_parser_value"
-        }
-        mocked_proba_parser_dict = {
-            "mocked_proba_based_parser_key": "mocked_proba_parser_value"
-        }
+        class TestIntentParser1Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser1"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser1Config()
+
+        class TestIntentParser1(IntentParser):
+            unit_name = "test_intent_parser1"
+            config_type = TestIntentParser1Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                config = cls.config_type()
+                return TestIntentParser1(config)
+
+        class TestIntentParser2Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser2"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser2Config()
+
+        class TestIntentParser2(IntentParser):
+            unit_name = "test_intent_parser2"
+            config_type = TestIntentParser2Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                config = cls.config_type()
+                return TestIntentParser2(config)
+
+        register_processing_unit(TestIntentParser1)
+        register_processing_unit(TestIntentParser2)
+
         entities = {
             "Temperature": {
                 "automatically_extensible": True,
@@ -149,28 +279,28 @@ class TestSnipsNLUEngine(unittest.TestCase):
                 }
             }
         }
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        engine_config = NLUEngineConfig([parser1_config, parser2_config])
         engine_dict = {
             "entities": entities,
-            "config": NLUEngineConfig(),
-            "model": {
-                "deterministic_parser": mocked_deterministic_parser_dict,
-                "probabilistic_parser": mocked_proba_parser_dict
-            },
+            "config": engine_config.to_dict(),
+            "intent_parsers": [
+                {"unit_name": "test_intent_parser1"},
+                {"unit_name": "test_intent_parser2"},
+            ],
             "model_version": snips_nlu.version.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
         engine = SnipsNLUEngine.from_dict(engine_dict)
 
         # Then
-        mock_deterministic_parser_from_dict.assert_called_once_with(
-            mocked_deterministic_parser_dict)
-
-        mock_probabilistic_parser_from_dict.assert_called_once_with(
-            mocked_proba_parser_dict)
-
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        expected_engine_config = NLUEngineConfig(
+            [parser1_config, parser2_config]).to_dict()
         self.assertDictEqual(engine.entities, entities)
-        self.assertDictEqual(engine.config.to_dict(),
-                             NLUEngineConfig().to_dict())
+        self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
     def test_should_parse_after_deserialization(self):
         # Given
@@ -624,8 +754,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         intent = "MakeCoffee"
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        config = NLUEngineConfig(ProbabilisticIntentParserConfig(
-            crf_slot_filler_config=slot_filler_config))
+        parser_config = ProbabilisticIntentParserConfig(
+            slot_filler_config=slot_filler_config)
+        config = NLUEngineConfig(intent_parsers_configs=[parser_config])
         trained_engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
 
         # When
@@ -634,7 +765,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         expected_slot_filler = \
-            trained_engine.probabilistic_parser.slot_fillers[intent]
+            trained_engine.intent_parsers[0].slot_fillers[intent]
         self.assertEqual(slot_filler.crf_model.state_features_,
                          expected_slot_filler.crf_model.state_features_)
         self.assertEqual(slot_filler.crf_model.transition_features_,

@@ -2,20 +2,24 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.configs.intent_parser import ProbabilisticIntentParserConfig
 from snips_nlu.constants import INTENTS
-from snips_nlu.intent_classifier.log_reg_classifier import \
-    LogRegIntentClassifier
-from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
+from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.pipeline.configs.intent_parser import \
+    ProbabilisticIntentParserConfig
+from snips_nlu.pipeline.processing_unit import (
+    build_processing_unit, load_processing_unit)
 
 
-class ProbabilisticIntentParser(object):
+class ProbabilisticIntentParser(IntentParser):
+    unit_name = "probabilistic_intent_parser"
+    config_type = ProbabilisticIntentParserConfig
+
     def __init__(self, config=None):
         if config is None:
-            config = ProbabilisticIntentParserConfig()
+            config = self.config_type()
+        super(ProbabilisticIntentParser, self).__init__(config)
         self.intent_classifier = None
         self.slot_fillers = None
-        self.config = config
 
     def get_intent(self, text):
         if not self.fitted:
@@ -23,7 +27,7 @@ class ProbabilisticIntentParser(object):
                              "`get_intent` is called")
         return self.intent_classifier.get_intent(text)
 
-    def get_slots(self, text, intent=None):
+    def get_slots(self, text, intent):
         if intent is None:
             raise ValueError("intent can't be None")
         if not self.fitted:
@@ -49,15 +53,16 @@ class ProbabilisticIntentParser(object):
         if intents is None:
             intents = dataset[INTENTS].keys()
 
-        self.intent_classifier = LogRegIntentClassifier(
+        self.intent_classifier = build_processing_unit(
             self.config.intent_classifier_config)
         self.intent_classifier.fit(dataset)
         if self.slot_fillers is None:
             self.slot_fillers = dict()
         for intent_name in intents:
             # We need to copy the slot filler config as it may be mutated
-            slot_filler_config = deepcopy(self.config.crf_slot_filler_config)
-            self.slot_fillers[intent_name] = CRFSlotFiller(slot_filler_config)
+            slot_filler_config = deepcopy(self.config.slot_filler_config)
+            self.slot_fillers[intent_name] = build_processing_unit(
+                slot_filler_config)
             self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
 
@@ -79,10 +84,10 @@ class ProbabilisticIntentParser(object):
     def add_fitted_slot_filler(self, intent, slot_filler_data):
         if self.slot_fillers is None:
             self.slot_fillers = dict()
-        self.slot_fillers[intent] = CRFSlotFiller.from_dict(slot_filler_data)
+        self.slot_fillers[intent] = load_processing_unit(slot_filler_data)
 
     def get_fitted_slot_filler(self, dataset, intent):
-        slot_filler = CRFSlotFiller(self.config.crf_slot_filler_config)
+        slot_filler = build_processing_unit(self.config.slot_filler_config)
         return slot_filler.fit(dataset, intent)
 
     def to_dict(self):
@@ -97,26 +102,25 @@ class ProbabilisticIntentParser(object):
                 for intent, slot_filler in self.slot_fillers.iteritems()}
 
         return {
+            "unit_name": self.unit_name,
             "intent_classifier": intent_classifier_dict,
             "config": self.config.to_dict(),
             "slot_fillers": slot_fillers,
         }
 
     @classmethod
-    def from_dict(cls, obj_dict):
+    def from_dict(cls, unit_dict):
         slot_fillers = None
-        if obj_dict["slot_fillers"] is not None:
+        if unit_dict["slot_fillers"] is not None:
             slot_fillers = {
-                intent: CRFSlotFiller.from_dict(slot_filler_dict) for
+                intent: load_processing_unit(slot_filler_dict) for
                 intent, slot_filler_dict in
-                obj_dict["slot_fillers"].iteritems()}
+                unit_dict["slot_fillers"].iteritems()}
         classifier = None
-        if obj_dict["intent_classifier"] is not None:
-            classifier = LogRegIntentClassifier.from_dict(
-                obj_dict["intent_classifier"])
+        if unit_dict["intent_classifier"] is not None:
+            classifier = load_processing_unit(unit_dict["intent_classifier"])
 
-        parser = cls(config=ProbabilisticIntentParserConfig.from_dict(
-            obj_dict["config"]))
+        parser = cls(config=cls.config_type.from_dict(unit_dict["config"]))
         parser.intent_classifier = classifier
         parser.slot_fillers = slot_fillers
         return parser

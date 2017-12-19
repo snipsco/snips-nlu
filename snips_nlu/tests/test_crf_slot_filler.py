@@ -6,10 +6,10 @@ import unittest
 from mock import patch, MagicMock
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.result import ParsedSlot
 from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, \
     spans_to_tokens_indexes, filter_overlapping_builtins, \
@@ -88,6 +88,7 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slot_filler_dict = {
+            "unit_name": "crf_slot_filler",
             "crf_model_data": None,
             "language_code": None,
             "config": config.to_dict(),
@@ -117,6 +118,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         slot_filler_config = CRFSlotFillerConfig(
             feature_factory_configs=features_factories)
         slot_filler_dict = {
+            "unit_name": "crf_slot_filler",
             "crf_model_data": None,
             "language_code": None,
             "intent": None,
@@ -200,6 +202,7 @@ class TestCRFSlotFiller(unittest.TestCase):
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
+            "unit_name": "crf_slot_filler",
             "crf_model_data": "mocked_crf_model_data",
             "language_code": "en",
             "config": expected_config.to_dict(),
@@ -238,6 +241,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         slot_filler_config = CRFSlotFillerConfig(
             feature_factory_configs=feature_factories)
         slot_filler_dict = {
+            "unit_name": "crf_slot_filler",
             "crf_model_data": "mocked_crf_model_data",
             "language_code": "en",
             "intent": "dummy_intent_1",

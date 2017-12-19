@@ -5,8 +5,6 @@ from copy import deepcopy
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import ENTITIES, CAPITALIZE
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_parser.probabilistic_intent_parser import (
-    ProbabilisticIntentParser)
 from snips_nlu.nlu_engine.utils import parse
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
@@ -74,44 +72,6 @@ class SnipsNLUEngine(ProcessingUnit):
         for parser in self.intent_parsers:
             parser.fit(dataset, intents=intents)
         return self
-
-    def get_fitted_slot_filler(self, dataset, intent):
-        probabilistic_parser = None
-        for intent_parser in self.intent_parsers:
-            if intent_parser.unit_name == ProbabilisticIntentParser.unit_name:
-                probabilistic_parser = intent_parser
-
-        if probabilistic_parser is None:
-            probabilistic_parser_config = None
-            for parser_config in self.config.intent_parsers_configs:
-                if parser_config.unit_name == \
-                        ProbabilisticIntentParser.unit_name:
-                    probabilistic_parser_config = parser_config
-                    break
-            probabilistic_parser = ProbabilisticIntentParser(
-                probabilistic_parser_config)
-
-        dataset = validate_and_format_dataset(dataset)
-        return probabilistic_parser.get_fitted_slot_filler(dataset, intent)
-
-    def add_fitted_slot_filler(self, intent, model_data):
-        probabilistic_parser = None
-        for intent_parser in self.intent_parsers:
-            if intent_parser.unit_name == ProbabilisticIntentParser.unit_name:
-                probabilistic_parser = intent_parser
-
-        if probabilistic_parser is None:
-            probabilistic_parser_config = None
-            for parser_config in self.config.intent_parsers_configs:
-                if parser_config.unit_name == \
-                        ProbabilisticIntentParser.unit_name:
-                    probabilistic_parser_config = parser_config
-                    break
-            probabilistic_parser = ProbabilisticIntentParser(
-                probabilistic_parser_config)
-            self.intent_parsers.append(probabilistic_parser)
-
-        probabilistic_parser.add_fitted_slot_filler(intent, model_data)
 
     def to_dict(self):
         """

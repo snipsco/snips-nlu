@@ -32,7 +32,6 @@ class SnipsNLUEngine(ProcessingUnit):
         return result.as_dict()
 
     def fit(self, dataset, intents=None):
-
         """
         Fit the NLU engine.
 

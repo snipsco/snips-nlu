@@ -209,16 +209,13 @@ def check_random_state(seed):
                      ' instance' % seed)
 
 
-def get_slot_name_mapping(dataset):
+def get_slot_name_mapping(dataset, intent):
     """
-    Returns a dict which maps slot names to entities
+    Returns a dict which maps slot names to entities for the provided intent
     """
     slot_name_mapping = dict()
-    for intent_name, intent in dataset[INTENTS].iteritems():
-        mapping = dict()
-        slot_name_mapping[intent_name] = mapping
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
+    for utterance in dataset[INTENTS][intent][UTTERANCES]:
+        for chunk in utterance[DATA]:
+            if SLOT_NAME in chunk:
+                slot_name_mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_mapping

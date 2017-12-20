@@ -79,12 +79,11 @@ class CRFSlotFiller(SlotFiller):
         features = self.compute_features(tokens)
         tags = [tag.decode('utf8') for tag in
                 self.crf_model.predict_single(features)]
-        intent_slots_mapping = self.slot_name_mapping[self.intent]
         slots = tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
-                              intent_slots_mapping)
+                              self.slot_name_mapping)
 
         builtin_slots_names = set(slot_name for (slot_name, entity) in
-                                  intent_slots_mapping.iteritems()
+                                  self.slot_name_mapping.iteritems()
                                   if is_builtin_entity(entity))
         if not builtin_slots_names:
             return slots
@@ -110,7 +109,7 @@ class CRFSlotFiller(SlotFiller):
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent, verbose=False):
         self.intent = intent
-        self.slot_name_mapping = get_slot_name_mapping(dataset)
+        self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
         self.language = Language.from_iso_code(dataset[LANGUAGE])
         random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
@@ -180,9 +179,8 @@ class CRFSlotFiller(SlotFiller):
         return features
 
     def _augment_slots(self, text, tokens, tags, builtin_slots_names):
-        intent_slots_mapping = self.slot_name_mapping[self.intent]
         augmented_tags = tags
-        scope = [BuiltInEntity.from_label(intent_slots_mapping[slot])
+        scope = [BuiltInEntity.from_label(self.slot_name_mapping[slot])
                  for slot in builtin_slots_names]
         builtin_entities = get_builtin_entities(text, self.language, scope)
 
@@ -195,8 +193,9 @@ class CRFSlotFiller(SlotFiller):
             spans_ranges = [match[MATCH_RANGE] for match in matches]
             num_possible_builtins = len(spans_ranges)
             tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
-            related_slots = list(set(s for s in builtin_slots_names if
-                                     intent_slots_mapping[s] == entity.label))
+            related_slots = list(
+                set(s for s in builtin_slots_names if
+                    self.slot_name_mapping[s] == entity.label))
             best_updated_tags = augmented_tags
             best_permutation_score = -1
 
@@ -220,7 +219,8 @@ class CRFSlotFiller(SlotFiller):
                     best_permutation_score = score
             augmented_tags = best_updated_tags
         return tags_to_slots(text, tokens, augmented_tags,
-                             self.config.tagging_scheme, intent_slots_mapping)
+                             self.config.tagging_scheme,
+                             self.slot_name_mapping)
 
     def to_dict(self):
         language_code = None

@@ -208,15 +208,10 @@ class TestCRFSlotFiller(unittest.TestCase):
             "config": expected_config.to_dict(),
             "intent": intent,
             "slot_name_mapping": {
-                "dummy_intent_1": {
-                    "dummy_slot_name": "dummy_entity_1",
-                    "dummy_slot_name2": "dummy_entity_2",
-                    "dummy_slot_name3": "dummy_entity_2",
-                },
-                "dummy_intent_2": {
-                    "dummy slot nàme": "dummy_entity_1"
-                }
-            },
+                "dummy_slot_name": "dummy_entity_1",
+                "dummy_slot_name2": "dummy_entity_2",
+                "dummy_slot_name3": "dummy_entity_2",
+            }
         }
         self.assertDictEqual(actual_slot_filler_dict,
                              expected_slot_filler_dict)
@@ -437,13 +432,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         slot_filler.language = Language.EN
         slot_filler.intent = "intent1"
         slot_filler.slot_name_mapping = {
-            "intent1": {
-                "start_date": "snips/datetime",
-                "end_date": "snips/datetime",
-            },
-            "intent2": {
-                "location": "location"
-            }
+            "start_date": "snips/datetime",
+            "end_date": "snips/datetime",
         }
 
         slot_filler.get_sequence_probability = MagicMock(

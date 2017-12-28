@@ -3,12 +3,13 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import ENTITIES, CAPITALIZE
+from snips_nlu.constants import ENTITIES, CAPITALIZE, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.nlu_engine.utils import parse
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
+from snips_nlu.utils import get_slot_name_mappings
 from snips_nlu.version import __model_version__, __version__
 
 
@@ -21,14 +22,22 @@ class SnipsNLUEngine(ProcessingUnit):
             config = self.config_type()
         super(SnipsNLUEngine, self).__init__(config)
         self.intent_parsers = []
-        self.entities = None
+        self.dataset_metadata = None
+
+    @property
+    def fitted(self):
+        return self.dataset_metadata is not None
 
     def parse(self, text, intent=None):
         """
         Parse the input text and returns a dictionary containing the most
         likely intent and slots.
         """
-        result = parse(text, self.entities, self.intent_parsers, intent)
+        if not self.fitted:
+            raise AssertionError("NLU engine must be fitted before calling "
+                                 "`parse`")
+        result = parse(text, self.dataset_metadata["entities"],
+                       self.intent_parsers, intent)
         return result.as_dict()
 
     def fit(self, dataset, intents=None):
@@ -46,13 +55,7 @@ class SnipsNLUEngine(ProcessingUnit):
         The same object, trained
         """
         dataset = validate_and_format_dataset(dataset)
-        self.entities = dict()
-        for entity_name, entity in dataset[ENTITIES].iteritems():
-            if is_builtin_entity(entity_name):
-                continue
-            ent = deepcopy(entity)
-            ent.pop(CAPITALIZE)
-            self.entities[entity_name] = ent
+        self.dataset_metadata = get_dataset_metadata(dataset)
 
         parsers = []
         for parser_config in self.config.intent_parsers_configs:
@@ -79,7 +82,7 @@ class SnipsNLUEngine(ProcessingUnit):
         intent_parsers = [parser.to_dict() for parser in self.intent_parsers]
         return {
             "unit_name": self.unit_name,
-            ENTITIES: self.entities,
+            "dataset_metadata": self.dataset_metadata,
             "intent_parsers": intent_parsers,
             "config": self.config.to_dict(),
             "model_version": __model_version__,
@@ -98,9 +101,25 @@ class SnipsNLUEngine(ProcessingUnit):
                 % (model_version, __model_version__))
 
         nlu_engine = SnipsNLUEngine(config=unit_dict["config"])
-        nlu_engine.entities = unit_dict[ENTITIES]
+        nlu_engine.dataset_metadata = unit_dict["dataset_metadata"]
         nlu_engine.intent_parsers = [
             load_processing_unit(parser_dict)
             for parser_dict in unit_dict["intent_parsers"]]
 
         return nlu_engine
+
+
+def get_dataset_metadata(dataset):
+    entities = dict()
+    for entity_name, entity in dataset[ENTITIES].iteritems():
+        if is_builtin_entity(entity_name):
+            continue
+        ent = deepcopy(entity)
+        ent.pop(CAPITALIZE)
+        entities[entity_name] = ent
+    slot_name_mappings = get_slot_name_mappings(dataset)
+    return {
+        "language_code": dataset[LANGUAGE],
+        "entities": entities,
+        "slot_name_mappings": slot_name_mappings
+    }

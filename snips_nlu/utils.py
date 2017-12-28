@@ -219,3 +219,11 @@ def get_slot_name_mapping(dataset, intent):
             if SLOT_NAME in chunk:
                 slot_name_mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_mapping
+
+
+def get_slot_name_mappings(dataset):
+    """
+    Returns a dict which maps intents to their slot name mapping
+    """
+    return {intent: get_slot_name_mapping(dataset, intent)
+            for intent in dataset[INTENTS].keys()}

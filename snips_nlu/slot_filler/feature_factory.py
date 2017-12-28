@@ -272,13 +272,25 @@ class EntityMatchFactory(CRFFeatureFactory):
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
         self.collections = self.args.get("collections")
+        self._language = None
+        self.language = self.args.get("language_code")
+
+    @property
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, value):
+        if value is not None:
+            self._language = Language.from_iso_code(value)
+            self.args["language_code"] = self.language.iso_code
 
     def fit(self, dataset, intent):
-        language = Language.from_iso_code(dataset[LANGUAGE])
+        self.language = dataset[LANGUAGE]
 
         def preprocess(string):
             normalized = normalize(string)
-            return stem(normalized, language) if self.use_stemming \
+            return stem(normalized, self.language) if self.use_stemming \
                 else normalized
 
         intent_entities = get_intent_custom_entities(dataset, intent)

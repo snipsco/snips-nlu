@@ -235,16 +235,28 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_engine_config = NLUEngineConfig(parsers_configs)
         expected_engine_dict = {
             "unit_name": "nlu_engine",
-            "entities": {
-                "Temperature": {
-                    "automatically_extensible": True,
-                    "utterances": {
-                        "boiling": "hot",
-                        "cold": "cold",
-                        "hot": "hot",
-                        "iced": "cold"
+            "dataset_metadata": {
+                "language_code": "en",
+                "entities": {
+                    "Temperature": {
+                        "automatically_extensible": True,
+                        "utterances": {
+                            "boiling": "hot",
+                            "cold": "cold",
+                            "hot": "hot",
+                            "iced": "cold"
+                        }
                     }
-                }
+                },
+                "slot_name_mappings": {
+                    "MakeCoffee": {
+                        "number_of_cups": "snips/number"
+                    },
+                    "MakeTea": {
+                        "beverage_temperature": "Temperature",
+                        "number_of_cups": "snips/number"
+                    }
+                },
             },
             "config": expected_engine_config.to_dict(),
             "intent_parsers": [
@@ -328,22 +340,35 @@ class TestSnipsNLUEngine(unittest.TestCase):
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
 
-        entities = {
-            "Temperature": {
-                "automatically_extensible": True,
-                "utterances": {
-                    "boiling": "hot",
-                    "cold": "cold",
-                    "hot": "hot",
-                    "iced": "cold"
+        dataset_metadata = {
+            "language_code": "en",
+            "entities": {
+                "Temperature": {
+                    "automatically_extensible": True,
+                    "utterances": {
+                        "boiling": "hot",
+                        "cold": "cold",
+                        "hot": "hot",
+                        "iced": "cold"
+                    }
                 }
-            }
+            },
+            "slot_name_mappings": {
+                "MakeCoffee": {
+                    "number_of_cups": "snips/number"
+                },
+                "MakeTea": {
+                    "beverage_temperature": "Temperature",
+                    "number_of_cups": "snips/number"
+                }
+            },
         }
         parser1_config = TestIntentParser1Config()
         parser2_config = TestIntentParser2Config()
         engine_config = NLUEngineConfig([parser1_config, parser2_config])
         engine_dict = {
-            "entities": entities,
+            "unit_name": "nlu_engine",
+            "dataset_metadata": dataset_metadata,
             "config": engine_config.to_dict(),
             "intent_parsers": [
                 {"unit_name": "test_intent_parser1"},
@@ -359,7 +384,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         parser2_config = TestIntentParser2Config()
         expected_engine_config = NLUEngineConfig(
             [parser1_config, parser2_config]).to_dict()
-        self.assertDictEqual(engine.entities, entities)
+        self.assertDictEqual(engine.dataset_metadata, dataset_metadata)
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
     def test_should_parse_after_deserialization(self):

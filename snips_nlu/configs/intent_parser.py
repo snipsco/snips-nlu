@@ -1,4 +1,4 @@
-from snips_nlu.configs.config import Serializable
+from snips_nlu.configs.serializable import Serializable
 from snips_nlu.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.configs.intent_classifier import IntentClassifierConfig
 

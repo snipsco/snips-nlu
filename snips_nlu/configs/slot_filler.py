@@ -1,4 +1,4 @@
-from snips_nlu.configs.config import Serializable
+from snips_nlu.configs.serializable import Serializable
 from snips_nlu.configs.features import default_features_factories
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 

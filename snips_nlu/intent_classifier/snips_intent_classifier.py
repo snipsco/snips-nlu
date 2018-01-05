@@ -25,6 +25,13 @@ NOISE_NAME = str(uuid4()).decode()
 
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
+LOG_REG_ARGS = {
+    "loss": "log",
+    "penalty": "l2",
+    "class_weight": "balanced",
+    "n_iter": 5,
+    "n_jobs": -1
+}
 
 
 def remove_builtin_slots(dataset):
@@ -40,7 +47,7 @@ def remove_builtin_slots(dataset):
 def get_regularization_factor(dataset):
     intents = dataset[INTENTS]
     nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
-    avg_utterances = np.mean(nb_utterances)
+    avg_utterances = float(np.mean(nb_utterances))
     total_utterances = sum(nb_utterances)
     alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
     return alpha
@@ -86,7 +93,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
                             std_utterances_length, random_state)
-    # Remove duplicate 'unknowword unknowword'
+    # Remove duplicate 'unknownword unknownword'
     return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
             for _ in xrange(noise_size)]
 
@@ -191,10 +198,8 @@ class SnipsIntentClassifier(object):
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
         alpha = get_regularization_factor(filtered_dataset)
-        log_reg_args = deepcopy(self.config.log_reg_args)
-        log_reg_args['alpha'] = alpha
         self.classifier = SGDClassifier(random_state=random_state,
-                                        **log_reg_args)
+                                        alpha=alpha, **LOG_REG_ARGS)
         self.classifier.fit(X, y)
         return self
 
@@ -250,7 +255,7 @@ class SnipsIntentClassifier(object):
         coeffs = obj_dict['coeffs']
         intercept = obj_dict['intercept']
         if coeffs is not None and intercept is not None:
-            sgd_classifier = SGDClassifier(**config.log_reg_args)
+            sgd_classifier = SGDClassifier(**LOG_REG_ARGS)
             sgd_classifier.coef_ = np.array(coeffs)
             sgd_classifier.intercept_ = np.array(intercept)
         intent_classifier.classifier = sgd_classifier

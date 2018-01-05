@@ -255,8 +255,7 @@ class CRFSlotFiller(object):
         return slot_filler
 
     def __del__(self):
-        if self.crf_model is None or self.crf_model.modelfile.auto \
-                or self.crf_model.modelfile.name is None:
+        if self.crf_model is None or self.crf_model.modelfile.name is None:
             return
         try:
             os.remove(self.crf_model.modelfile.name)

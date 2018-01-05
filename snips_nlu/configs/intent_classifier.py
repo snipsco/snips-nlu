@@ -1,4 +1,4 @@
-from snips_nlu.configs.config import Serializable
+from snips_nlu.configs.serializable import Serializable
 
 
 class IntentClassifierDataAugmentationConfig(Serializable):

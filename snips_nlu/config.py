@@ -7,7 +7,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.utils import abstractclassmethod
 
 
-class Config(object):
+class Serializable(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -19,7 +19,7 @@ class Config(object):
         raise NotImplementedError
 
 
-class IntentClassifierDataAugmentationConfig(Config):
+class IntentClassifierDataAugmentationConfig(Serializable):
     def __init__(self, min_utterances=20, noise_factor=5, unknown_word_prob=0,
                  unknown_words_replacement_string=None):
         self.min_utterances = min_utterances
@@ -42,7 +42,7 @@ class IntentClassifierDataAugmentationConfig(Config):
         return cls(**obj_dict)
 
 
-class FeaturizerConfig(Config):
+class FeaturizerConfig(Serializable):
     def __init__(self, sublinear_tf=False):
         self.sublinear_tf = sublinear_tf
 
@@ -56,23 +56,13 @@ class FeaturizerConfig(Config):
         return cls(**obj_dict)
 
 
-class IntentClassifierConfig(Config):
+class IntentClassifierConfig(Serializable):
     def __init__(
             self,
             data_augmentation_config=IntentClassifierDataAugmentationConfig(),
-            log_reg_args=None, featurizer_config=FeaturizerConfig(),
-            random_seed=None):
+            featurizer_config=FeaturizerConfig(), random_seed=None):
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
-        if log_reg_args is None:
-            log_reg_args = {
-                "loss": "log",
-                "penalty": "l2",
-                "class_weight": "balanced",
-                "n_iter": 5,
-                "n_jobs": -1
-            }
-        self.log_reg_args = log_reg_args
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
         self.random_seed = random_seed
@@ -112,7 +102,6 @@ class IntentClassifierConfig(Config):
         return {
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
-            "log_reg_args": self.log_reg_args,
             "featurizer_config": self.featurizer_config.to_dict(),
             "random_seed": self.random_seed
         }
@@ -122,7 +111,7 @@ class IntentClassifierConfig(Config):
         return cls(**obj_dict)
 
 
-class SlotFillerDataAugmentationConfig(Config):
+class SlotFillerDataAugmentationConfig(Serializable):
     def __init__(self, min_utterances=200, capitalization_ratio=.2):
         self.min_utterances = min_utterances
         self.capitalization_ratio = capitalization_ratio
@@ -138,7 +127,7 @@ class SlotFillerDataAugmentationConfig(Config):
         return cls(**obj_dict)
 
 
-class CRFSlotFillerConfig(Config):
+class CRFSlotFillerConfig(Serializable):
     def __init__(self, tagging_scheme=TaggingScheme.BIO.value, crf_args=None,
                  features_drop_out=None, entities_offsets=None,
                  exhaustive_permutations_threshold=4 ** 3,
@@ -215,7 +204,7 @@ class CRFSlotFillerConfig(Config):
         return cls(**obj_dict)
 
 
-class ProbabilisticIntentParserConfig(Config):
+class ProbabilisticIntentParserConfig(Serializable):
     def __init__(self, intent_classifier_config=IntentClassifierConfig(),
                  crf_slot_filler_config=CRFSlotFillerConfig()):
         self._intent_classifier_config = None
@@ -264,7 +253,7 @@ class ProbabilisticIntentParserConfig(Config):
         return cls(**obj_dict)
 
 
-class DeterministicIntentParserConfig(Config):
+class DeterministicIntentParserConfig(Serializable):
     def __init__(self, max_queries=50, max_entities=200):
         self.max_queries = max_queries
         self.max_entities = max_entities
@@ -280,7 +269,7 @@ class DeterministicIntentParserConfig(Config):
         return cls(**obj_dict)
 
 
-class NLUConfig(Config):
+class NLUConfig(Serializable):
     def __init__(self,
                  probabilistic_intent_parser_config=
                  ProbabilisticIntentParserConfig(),

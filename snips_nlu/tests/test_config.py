@@ -59,14 +59,6 @@ class TestConfig(unittest.TestCase):
         config_dict = {
             "data_augmentation_config":
                 IntentClassifierDataAugmentationConfig().to_dict(),
-            "log_reg_args": {
-                "loss": "log",
-                "penalty": "l1",
-                "class_weight": "unbalanced",
-                "n_iter": 42,
-                "random_state": 1,
-                "n_jobs": 3
-            },
             "featurizer_config": FeaturizerConfig().to_dict(),
             "random_seed": 42
         }

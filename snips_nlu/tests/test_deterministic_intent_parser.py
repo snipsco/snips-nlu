@@ -7,8 +7,6 @@ import unittest
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.pipeline.configs.intent_parser import \
-    DeterministicIntentParserConfig
 from snips_nlu.constants import (MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
                                  SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
@@ -16,6 +14,8 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, deduplicate_overlapping_slots,
     replace_builtin_entities, preprocess_builtin_entities)
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_parser import \
+    DeterministicIntentParserConfig
 from snips_nlu.result import IntentClassificationResult, ParsedSlot
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
@@ -108,6 +108,36 @@ class TestDeterministicIntentParser(unittest.TestCase):
                                     "entity": "snips/datetime"
                                 }
 
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.1.0"
+        }
+
+        self.duplicated_utterances_dataset = {
+            "entities": {},
+            "intents": {
+                "dummy_intent_1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "Hello world"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "dummy_intent_2": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "Hello world"
+                                }
                             ]
                         }
                     ]
@@ -241,6 +271,24 @@ class TestDeterministicIntentParser(unittest.TestCase):
             intent_name="dummy_intent_1", probability=probability)
 
         self.assertEqual(intent, expected_intent)
+
+    def test_should_get_intent_when_filter(self):
+        # Given
+        dataset = validate_and_format_dataset(
+            self.duplicated_utterances_dataset)
+
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "Hello world"
+        intent_name_1 = "dummy_intent_1"
+        intent_name_2 = "dummy_intent_2"
+
+        # When
+        res_1 = parser.get_intent(text, [intent_name_1])
+        res_2 = parser.get_intent(text, [intent_name_2])
+
+        # Then
+        self.assertEqual(res_1.intent_name, intent_name_1)
+        self.assertEqual(res_2.intent_name, intent_name_2)
 
     def test_should_get_intent_after_deserialization(self):
         # Given

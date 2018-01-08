@@ -15,7 +15,7 @@ from snips_nlu.pipeline.configs.intent_parser import \
 from snips_nlu.result import (IntentClassificationResult,
                               ParsedSlot, Result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import LimitedSizeDict, regex_escape
+from snips_nlu.utils import regex_escape
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -196,7 +196,6 @@ class DeterministicIntentParser(IntentParser):
         self.regexes_per_intent = None
         self.group_names_to_slot_names = None
         self.slot_names_to_entities = None
-        self._cache = LimitedSizeDict(size_limit=1000)
 
     @property
     def patterns(self):
@@ -250,33 +249,22 @@ class DeterministicIntentParser(IntentParser):
             return False
         return True
 
-    def get_intent(self, text):
+    def get_intent(self, text, intents=None):
         if not self.fitted:
             raise AssertionError("DeterministicIntentParser must be fitted "
-                                 "before calling `get_entities`")
-        if text not in self._cache:
-            self._cache[text] = self._parse(text)
-        return self._cache[text].parsed_intent
+                                 "before calling `get_intent`")
+        return self._parse(text, intents).parsed_intent
 
     def get_slots(self, text, intent):
         if not self.fitted:
             raise AssertionError("DeterministicIntentParser must be fitted "
-                                 "before calling `get_entities`")
+                                 "before calling `get_slots`")
         if intent not in self.regexes_per_intent:
             raise KeyError("Intent not found in DeterministicIntentParser: %s"
                            % intent)
-        if text not in self._cache:
-            self._cache[text] = self._parse(text)
-        res = self._cache[text]
-        if intent is not None and res.parsed_intent is not None \
-                and res.parsed_intent.intent_name != intent:
-            return []
-        return res.parsed_slots
+        return self._parse(text, [intent]).parsed_slots
 
-    def _parse(self, text):
-        if not self.fitted:
-            raise AssertionError("DeterministicIntentParser must be fitted "
-                                 "before calling `get_entities`")
+    def _parse(self, text, intents=None):
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)
 
@@ -284,6 +272,8 @@ class DeterministicIntentParser(IntentParser):
         parsed_slots = []
         matched = False
         for intent, regexes in self.regexes_per_intent.iteritems():
+            if intents is not None and intent not in intents:
+                continue
             for regex in regexes:
                 match = regex.match(processed_text)
                 if match is None:

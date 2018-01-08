@@ -21,7 +21,7 @@ class ProbabilisticIntentParser(IntentParser):
         self.intent_classifier = None
         self.slot_fillers = None
 
-    def get_intent(self, text):
+    def get_intent(self, text, intents=None):
         if not self.fitted:
             raise ValueError("ProbabilisticIntentParser must be fitted before "
                              "`get_intent` is called")

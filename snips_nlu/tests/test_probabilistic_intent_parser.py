@@ -7,8 +7,7 @@ from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_classifier import \
-    LogRegIntentClassifierConfig
+from snips_nlu.pipeline.configs.intent_classifier import IntentClassifierConfig
 from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
@@ -45,8 +44,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "config": {
                 "unit_name": "probabilistic_intent_parser",
                 "slot_filler_config": CRFSlotFillerConfig().to_dict(),
-                "intent_classifier_config":
-                    LogRegIntentClassifierConfig().to_dict()
+                "intent_classifier_config": IntentClassifierConfig().to_dict()
             },
             "intent_classifier": None,
             "slot_fillers": None,
@@ -259,8 +257,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         seed1 = 666
         seed2 = 42
         config = ProbabilisticIntentParserConfig(
-            intent_classifier_config=LogRegIntentClassifierConfig(
-                random_seed=seed1),
+            intent_classifier_config=IntentClassifierConfig(random_seed=seed1),
             slot_filler_config=CRFSlotFillerConfig(random_seed=seed2)
         )
         parser = ProbabilisticIntentParser(config)

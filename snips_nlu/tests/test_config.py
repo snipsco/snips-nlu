@@ -9,7 +9,7 @@ from snips_nlu.pipeline.configs.slot_filler import (
 from snips_nlu.pipeline.configs.intent_parser import (
     ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
 from snips_nlu.pipeline.configs.intent_classifier import (
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
+    IntentClassifierConfig, IntentClassifierDataAugmentationConfig,
     FeaturizerConfig)
 
 
@@ -68,7 +68,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When
-        config = LogRegIntentClassifierConfig.from_dict(config_dict)
+        config = IntentClassifierConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -119,8 +119,7 @@ class TestConfig(unittest.TestCase):
         # Given
         config_dict = {
             "unit_name": "probabilistic_intent_parser",
-            "intent_classifier_config":
-                LogRegIntentClassifierConfig().to_dict(),
+            "intent_classifier_config": IntentClassifierConfig().to_dict(),
             "slot_filler_config": CRFSlotFillerConfig().to_dict(),
         }
 

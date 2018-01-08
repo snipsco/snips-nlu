@@ -3,7 +3,6 @@
   "language": "en",
   "intents": {
     "MakeCoffee": {
-      "engineType": "regex",
       "utterances": [
         {
           "data": [
@@ -204,7 +203,6 @@
       ]
     },
     "MakeTea": {
-      "engineType": "regex",
       "utterances": [
         {
           "data": [

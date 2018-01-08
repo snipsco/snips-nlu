@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import base64
-import cPickle
 import errno
 import numbers
 import os
@@ -9,11 +7,9 @@ from collections import OrderedDict, namedtuple, Mapping
 
 import numpy as np
 
-RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
-PACKAGE_NAME = "snips_nlu"
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
-RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY, \
+    RESOURCES_PATH
+
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
 
@@ -26,6 +22,7 @@ class abstractclassmethod(classmethod):
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractclassmethod, self).__init__(callable)
+    # pylint: enable=W0622
 
 
 class classproperty(property):
@@ -142,14 +139,6 @@ def ensure_string(string_or_unicode, encoding="utf8"):
                         % type(string_or_unicode))
 
 
-def safe_pickle_dumps(obj):
-    return base64.b64encode(cPickle.dumps(obj)).decode('ascii')
-
-
-def safe_pickle_loads(pkl_str):
-    return cPickle.loads(base64.b64decode(pkl_str))
-
-
 def mkdir_p(path):
     """
     Reproduces the mkdir -p shell command, see
@@ -204,3 +193,18 @@ def check_random_state(seed):
         return seed
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
+
+
+def get_slot_name_mapping(dataset):
+    """
+    Returns a dict which maps slot names to entities
+    """
+    slot_name_mapping = dict()
+    for intent_name, intent in dataset[INTENTS].iteritems():
+        mapping = dict()
+        slot_name_mapping[intent_name] = mapping
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if SLOT_NAME in chunk:
+                    mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
+    return slot_name_mapping

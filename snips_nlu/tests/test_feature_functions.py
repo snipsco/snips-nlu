@@ -6,7 +6,7 @@ import unittest
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.config import CRFFeaturesConfig
+from snips_nlu.config import CRFSlotFillerConfig
 from snips_nlu.constants import AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, \
     SYNONYMS, DATA, VALUE, MATCH_RANGE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
@@ -291,7 +291,7 @@ class TestFeatureFunctions(unittest.TestCase):
         }
 
         # When
-        features_config = CRFFeaturesConfig()
+        features_config = CRFSlotFillerConfig()
         features_signatures = crf_features(
             dataset, "dummy_1", language=language,
             crf_features_config=features_config)

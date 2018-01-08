@@ -8,7 +8,7 @@ from mock import patch
 
 from snips_nlu.config import IntentClassifierConfig, \
     IntentClassifierDataAugmentationConfig
-from snips_nlu.constants import INTENTS, LANGUAGE, DATA, UTTERANCES
+from snips_nlu.constants import INTENTS, DATA, UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
 from snips_nlu.intent_classifier.snips_intent_classifier import \
@@ -16,7 +16,7 @@ from snips_nlu.intent_classifier.snips_intent_classifier import \
     get_noise_it, add_unknown_word_to_utterances, generate_smart_noise, \
     remove_builtin_slots
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import SAMPLE_DATASET, empty_dataset
+from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset
 
 SEED = 0
 
@@ -48,7 +48,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_intent_classifier_should_get_intent(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
+        classifier = SnipsIntentClassifier().fit(dataset)
         text = "This is a dummy_3 query from another intent"
 
         # When
@@ -62,8 +62,8 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
     def test_should_get_none_if_empty_dataset(self):
         # Given
-        dataset = empty_dataset(Language.EN)
-        classifier = SnipsIntentClassifier(language=Language.EN).fit(dataset)
+        dataset = validate_and_format_dataset(get_empty_dataset(Language.EN))
+        classifier = SnipsIntentClassifier().fit(dataset)
         text = "this is a dummy query"
 
         # When
@@ -82,8 +82,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
 
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
 
-        intent_classifier = SnipsIntentClassifier(language=Language.EN).fit(
-            dataset)
+        intent_classifier = SnipsIntentClassifier().fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 
@@ -97,9 +96,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
-            "language_code": SAMPLE_DATASET[LANGUAGE],
-            "featurizer": mocked_dict,
-            "random_seed": None
+            "featurizer": mocked_dict
         }
         self.assertEqual(expected_dict, classifier_dict)
 
@@ -110,7 +107,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         mocked_featurizer = Featurizer(Language.EN, None)
         mock_from_dict.return_value = mocked_featurizer
 
-        language = Language.EN
         intent_list = ["MakeCoffee", "MakeTea", None]
 
         coeffs = [
@@ -131,22 +127,20 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
-            "language_code": language.iso_code,
             "config": config,
             "featurizer": mocked_featurizer.to_dict(),
-            "random_seed": 1,
         }
 
         # When
         classifier = SnipsIntentClassifier.from_dict(classifier_dict)
 
         # Then
-        self.assertEqual(classifier.language, language)
         self.assertEqual(classifier.intent_list, intent_list)
         self.assertIsNotNone(classifier.featurizer)
         self.assertListEqual(classifier.classifier.coef_.tolist(), coeffs)
         self.assertListEqual(classifier.classifier.intercept_.tolist(),
                              intercept)
+        self.assertDictEqual(classifier.config.to_dict(), config)
 
     @patch("snips_nlu.intent_classifier.snips_intent_classifier"
            ".build_training_data")
@@ -170,7 +164,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [
@@ -196,8 +189,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
         mocked_build_training.return_value = utterance, labels, intent_list
 
         # When / Then
-        intent_classifier = SnipsIntentClassifier(language=Language.EN).fit(
-            dataset)
+        intent_classifier = SnipsIntentClassifier().fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(intent, None)
 
@@ -330,7 +322,7 @@ class TestSnipsIntentClassifier(unittest.TestCase):
     def test_should_build_training_data_with_no_data(self):
         # Given
         language = Language.EN
-        dataset = empty_dataset(language)
+        dataset = validate_and_format_dataset(get_empty_dataset(language))
         random_state = np.random.RandomState(1)
 
         # When
@@ -519,7 +511,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [
@@ -568,7 +559,6 @@ class TestSnipsIntentClassifier(unittest.TestCase):
             },
             "intents": {
                 "dummy_intent_1": {
-                    "engineType": "regex",
                     "utterances": [
                         {
                             "data": [

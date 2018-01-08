@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
@@ -12,7 +10,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     remove_builtin_slots, get_regularization_factor, build_training_data
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_classifier import \
-    LogRegIntentClassifierConfig
+    IntentClassifierConfig
 from snips_nlu.result import IntentClassificationResult
 from snips_nlu.utils import check_random_state
 
@@ -24,13 +22,14 @@ LOG_REG_ARGS = {
     "n_jobs": -1
 }
 
+
 class LogRegIntentClassifier(IntentClassifier):
     unit_name = "log_reg_intent_classifier"
-    config_type = LogRegIntentClassifierConfig
+    config_type = IntentClassifierConfig
 
     def __init__(self, config=None):
         if config is None:
-            config = LogRegIntentClassifierConfig()
+            config = IntentClassifierConfig()
         super(LogRegIntentClassifier, self).__init__(config)
         self.classifier = None
         self.intent_list = None
@@ -114,7 +113,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_dict(cls, unit_dict):
-        config = LogRegIntentClassifierConfig.from_dict(unit_dict["config"])
+        config = IntentClassifierConfig.from_dict(unit_dict["config"])
         intent_classifier = cls(config=config)
         sgd_classifier = None
         coeffs = unit_dict['coeffs']

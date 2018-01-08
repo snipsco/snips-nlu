@@ -9,9 +9,9 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import IntentClassifierConfig
+from snips_nlu.configs.intent_classifier import IntentClassifierConfig
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, ENTITY,
-                                 UNKNOWNWORD, TEXT)
+                                 UNKNOWNWORD, TEXT, LANGUAGE)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.intent_classifier.feature_extraction import Featurizer
@@ -25,6 +25,13 @@ NOISE_NAME = str(uuid4()).decode()
 
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
+LOG_REG_ARGS = {
+    "loss": "log",
+    "penalty": "l2",
+    "class_weight": "balanced",
+    "n_iter": 5,
+    "n_jobs": -1
+}
 
 
 def remove_builtin_slots(dataset):
@@ -40,7 +47,7 @@ def remove_builtin_slots(dataset):
 def get_regularization_factor(dataset):
     intents = dataset[INTENTS]
     nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
-    avg_utterances = np.mean(nb_utterances)
+    avg_utterances = float(np.mean(nb_utterances))
     total_utterances = sum(nb_utterances)
     alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
     return alpha
@@ -86,7 +93,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
                             std_utterances_length, random_state)
-    # Remove duplicate 'unknowword unknowword'
+    # Remove duplicate 'unknownword unknownword'
     return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
             for _ in xrange(noise_size)]
 
@@ -158,53 +165,49 @@ def build_training_data(dataset, language, data_augmentation_config,
     return augmented_utterances, np.array(utterance_classes), intent_mapping
 
 
-class SnipsIntentClassifier(object):
-    def __init__(self, language, config=IntentClassifierConfig(),
-                 random_seed=None):
-        self.language = language
-        self.config = config
+class LogRegIntentClassifier(object):
+    def __init__(self, config=None):
+        if config is None:
+            config = IntentClassifierConfig()
         self.classifier = None
         self.intent_list = None
-        data_augmentation_config = self.config.data_augmentation_config
-        self.featurizer = Featurizer(
-            self.language,
-            data_augmentation_config
-            .unknown_words_replacement_string,
-            self.config.featurizer_config)
-        self.min_utterances_per_intent = 20
-        self.random_seed = random_seed
+        self.featurizer = None
+        self.config = config
 
     @property
     def fitted(self):
         return self.intent_list is not None
 
     def fit(self, dataset):
-        random_state = check_random_state(self.random_seed)
+        language = Language.from_iso_code(dataset[LANGUAGE])
+        random_state = check_random_state(self.config.random_seed)
         filtered_dataset = remove_builtin_slots(dataset)
+        data_augmentation_config = self.config.data_augmentation_config
         utterances, y, intent_list = build_training_data(
-            filtered_dataset, self.language,
-            self.config.data_augmentation_config,
-            random_state)
+            filtered_dataset, language, data_augmentation_config, random_state)
+
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
             return self
 
+        self.featurizer = Featurizer(
+            language,
+            data_augmentation_config.unknown_words_replacement_string,
+            self.config.featurizer_config)
         self.featurizer = self.featurizer.fit(filtered_dataset, utterances, y)
         if self.featurizer is None:
             return self
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
         alpha = get_regularization_factor(filtered_dataset)
-        log_reg_args = deepcopy(self.config.log_reg_args)
-        log_reg_args['alpha'] = alpha
-        self.classifier = SGDClassifier(
-            random_state=random_state,
-            **log_reg_args).fit(X, y)
+        self.classifier = SGDClassifier(random_state=random_state,
+                                        alpha=alpha, **LOG_REG_ARGS)
+        self.classifier.fit(X, y)
         return self
 
     def get_intent(self, text):
         if not self.fitted:
-            raise AssertionError('SnipsIntentClassifier instance must be '
+            raise AssertionError('LogRegIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
 
         if not text or not self.intent_list \
@@ -243,27 +246,23 @@ class SnipsIntentClassifier(object):
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": self.intent_list,
-            "language_code": self.language.iso_code,
             "featurizer": featurizer_dict,
-            "random_seed": self.random_seed,
         }
 
     @classmethod
     def from_dict(cls, obj_dict):
-        language = Language.from_iso_code(obj_dict['language_code'])
         config = IntentClassifierConfig.from_dict(obj_dict["config"])
-        classifier = cls(language=language, config=config,
-                         random_seed=obj_dict["random_seed"])
+        intent_classifier = cls(config=config)
         sgd_classifier = None
         coeffs = obj_dict['coeffs']
         intercept = obj_dict['intercept']
         if coeffs is not None and intercept is not None:
-            sgd_classifier = SGDClassifier(**config.log_reg_args)
+            sgd_classifier = SGDClassifier(**LOG_REG_ARGS)
             sgd_classifier.coef_ = np.array(coeffs)
             sgd_classifier.intercept_ = np.array(intercept)
-        classifier.classifier = sgd_classifier
-        classifier.intent_list = obj_dict['intent_list']
+        intent_classifier.classifier = sgd_classifier
+        intent_classifier.intent_list = obj_dict['intent_list']
         featurizer = obj_dict['featurizer']
         if featurizer is not None:
-            classifier.featurizer = Featurizer.from_dict(featurizer)
-        return classifier
+            intent_classifier.featurizer = Featurizer.from_dict(featurizer)
+        return intent_classifier

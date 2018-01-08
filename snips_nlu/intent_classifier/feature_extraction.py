@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import FeaturizerConfig
+from snips_nlu.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language

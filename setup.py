@@ -30,7 +30,7 @@ required = [
 extras_require = {
     "test": [
         "mock==2.0.0",
-        "nlu_metrics==0.7.4",
+        "nlu_metrics==0.8.4",
         "snips_nlu_rust==0.51.0",
         "pylint==1.7.4",
         "coverage==4.4.1"

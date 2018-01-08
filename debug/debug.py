@@ -8,21 +8,19 @@ import os
 from pprint import pprint
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.config import NLUConfig
-from snips_nlu.languages import Language
+from snips_nlu.configs.nlu_engine import NLUEngineConfig
 
 
 def debug_training(dataset_path, config_path=None):
     if config_path is None:
-        config = NLUConfig()
+        config = NLUEngineConfig()
     else:
         with io.open(config_path, "r", encoding="utf8") as f:
-            config = NLUConfig.from_dict(json.load(f))
+            config = NLUEngineConfig.from_dict(json.load(f))
 
     with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
         dataset = json.load(f)
-    language = Language.from_iso_code(dataset["language"])
-    engine = SnipsNLUEngine(language, config).fit(dataset)
+    engine = SnipsNLUEngine(config).fit(dataset)
 
     while True:
         query = raw_input("Enter a query (type 'q' to quit): ").strip()

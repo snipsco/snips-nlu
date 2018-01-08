@@ -27,7 +27,7 @@ class IntentClassifierDataAugmentationConfig(Config):
         return cls(**obj_dict)
 
 
-class FeaturizerConfig(Serializable):
+class FeaturizerConfig(Config):
     def __init__(self, sublinear_tf=False):
         self.sublinear_tf = sublinear_tf
 

@@ -17,7 +17,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     build_training_data
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_classifier import (
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
+    IntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset
 
 
@@ -80,7 +80,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
         expected_dict = {
             "unit_name": "log_reg_intent_classifier",
-            "config": LogRegIntentClassifierConfig().to_dict(),
+            "config": IntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
             "intent_list": intent_list,
@@ -108,7 +108,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
             -0.98
         ]
 
-        config = LogRegIntentClassifierConfig().to_dict()
+        config = IntentClassifierConfig().to_dict()
 
         classifier_dict = {
             "coeffs": coeffs,
@@ -313,7 +313,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         random_state = np.random.RandomState(1)
 
         # When
-        data_augmentation_config = LogRegIntentClassifierConfig() \
+        data_augmentation_config = IntentClassifierConfig() \
             .data_augmentation_config
         utterances, _, intent_mapping = build_training_data(
             dataset, language, data_augmentation_config, random_state)

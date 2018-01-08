@@ -7,7 +7,7 @@ class IntentClassifier(ProcessingUnit):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def get_intent(self, text):
+    def get_intent(self, text, intents):
         pass
 
     @abstractmethod

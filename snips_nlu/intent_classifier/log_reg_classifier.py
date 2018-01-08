@@ -66,7 +66,7 @@ class LogRegIntentClassifier(IntentClassifier):
         self.classifier.fit(X, y)
         return self
 
-    def get_intent(self, text):
+    def get_intent(self, text, intents=None):
         if not self.fitted:
             raise AssertionError('LogRegIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
@@ -81,16 +81,15 @@ class LogRegIntentClassifier(IntentClassifier):
             return IntentClassificationResult(self.intent_list[0], 1.0)
 
         X = self.featurizer.transform([text])  # pylint: disable=C0103
-        proba_vect = self.classifier.predict_proba(X)
-        predicted = np.argmax(proba_vect[0])
-
-        intent_name = self.intent_list[int(predicted)]
-        prob = proba_vect[0][int(predicted)]
-
-        if intent_name is None:
-            return None
-
-        return IntentClassificationResult(intent_name, prob)
+        proba_vec = self.classifier.predict_proba(X)[0]
+        intents_probas = sorted(zip(self.intent_list, proba_vec),
+                                cmp=lambda p1, p2: -1 if p1[1] > p2[1] else 1)
+        for intent, proba in intents_probas:
+            if intent is None:
+                return None
+            if intents is None or intent in intents:
+                return IntentClassificationResult(intent, proba)
+        return None
 
     def to_dict(self):
         featurizer_dict = None

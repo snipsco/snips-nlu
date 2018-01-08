@@ -18,7 +18,8 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_classifier import (
     IntentClassifierConfig, IntentClassifierDataAugmentationConfig)
-from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset
+from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset, \
+    BEVERAGE_DATASET
 
 
 # pylint: disable=W0613
@@ -46,6 +47,26 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         expected_intent = "dummy_intent_2"
 
         self.assertEqual(intent, expected_intent)
+
+    def test_intent_classifier_should_get_intent_when_filter(self):
+        # Given
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        classifier = LogRegIntentClassifier().fit(dataset)
+
+        # When
+        text1 = "Make me two cups of tea"
+        res1 = classifier.get_intent(text1, ["MakeCoffee", "MakeTea"])
+
+        text2 = "Make me two cups of tea"
+        res2 = classifier.get_intent(text2, ["MakeCoffee"])
+
+        text3 = "bla bla bla"
+        res3 = classifier.get_intent(text3, ["MakeCoffee"])
+
+        # Then
+        self.assertEqual("MakeTea", res1.intent_name)
+        self.assertEqual("MakeCoffee", res2.intent_name)
+        self.assertEqual(None, res3)
 
     def test_should_get_none_if_empty_dataset(self):
         # Given

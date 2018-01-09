@@ -32,6 +32,26 @@ def custom_slot(internal_slot_):
     }
 
 
+def builtin_slot(internal_slot_, resolved_value):
+    return {
+        RES_MATCH_RANGE: list(internal_slot_[RES_MATCH_RANGE]),
+        RES_RAW_VALUE: internal_slot_[RES_VALUE],
+        RES_VALUE: resolved_value,
+        RES_ENTITY: internal_slot_[RES_ENTITY],
+        RES_SLOT_NAME: internal_slot_[RES_SLOT_NAME]
+    }
+
+
+def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
+    return {
+        RES_MATCH_RANGE: list(match_range),
+        RES_RAW_VALUE: raw_value,
+        RES_VALUE: resolved_value,
+        RES_ENTITY: entity,
+        RES_SLOT_NAME: slot_name
+    }
+
+
 def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
     return {
         RES_INPUT: input,

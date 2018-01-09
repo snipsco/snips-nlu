@@ -5,6 +5,7 @@ from copy import deepcopy
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import ENTITIES, CAPITALIZE, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.utils import parse
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
@@ -36,7 +37,9 @@ class SnipsNLUEngine(ProcessingUnit):
         if not self.fitted:
             raise AssertionError("NLU engine must be fitted before calling "
                                  "`parse`")
-        return parse(text, self.dataset_metadata["entities"],
+        language = Language.from_iso_code(
+            self.dataset_metadata["language_code"])
+        return parse(text, self.dataset_metadata["entities"], language,
                      self.intent_parsers, intent)
 
     def fit(self, dataset, intents=None):

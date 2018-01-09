@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from mock import patch
 
-from snips_nlu.constants import INTENTS, DATA, UTTERANCES
+from snips_nlu.constants import INTENTS, DATA, UTTERANCES, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier import (
@@ -41,7 +41,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
         # When
         res = classifier.get_intent(text)
-        intent = res[0]
+        intent = res[RES_INTENT_NAME]
 
         # Then
         expected_intent = "dummy_intent_2"
@@ -64,8 +64,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         res3 = classifier.get_intent(text3, ["MakeCoffee"])
 
         # Then
-        self.assertEqual("MakeTea", res1.intent_name)
-        self.assertEqual("MakeCoffee", res2.intent_name)
+        self.assertEqual("MakeTea", res1[RES_INTENT_NAME])
+        self.assertEqual("MakeCoffee", res2[RES_INTENT_NAME])
         self.assertEqual(None, res3)
 
     def test_should_get_none_if_empty_dataset(self):

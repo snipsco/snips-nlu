@@ -1,7 +1,6 @@
 import os
 import unittest
 
-import time
 from pylint.lint import Run
 
 from snips_nlu.constants import PACKAGE_PATH, ROOT_PATH
@@ -15,7 +14,6 @@ class TestLinting(unittest.TestCase):
         args += all_python_files()
 
         run = Run(args, exit=False)
-        time.sleep(10)
         self.assertEqual(0, run.linter.msg_status)
 
 

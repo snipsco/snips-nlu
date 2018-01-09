@@ -11,7 +11,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_classifier import \
     IntentClassifierConfig
-from snips_nlu.result import IntentClassificationResult
+from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state
 
 LOG_REG_ARGS = {
@@ -78,7 +78,7 @@ class LogRegIntentClassifier(IntentClassifier):
         if len(self.intent_list) == 1:
             if self.intent_list[0] is None:
                 return None
-            return IntentClassificationResult(self.intent_list[0], 1.0)
+            return intent_classification_result(self.intent_list[0], 1.0)
 
         X = self.featurizer.transform([text])  # pylint: disable=C0103
         proba_vec = self.classifier.predict_proba(X)[0]
@@ -88,7 +88,7 @@ class LogRegIntentClassifier(IntentClassifier):
             if intent is None:
                 return None
             if intents is None or intent in intents:
-                return IntentClassificationResult(intent, proba)
+                return intent_classification_result(intent, proba)
         return None
 
     def to_dict(self):

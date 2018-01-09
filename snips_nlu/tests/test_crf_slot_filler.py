@@ -6,11 +6,11 @@ import unittest
 from mock import patch, MagicMock
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.constants import RES_MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
-from snips_nlu.result import ParsedSlot
+from snips_nlu.result import internal_slot
 from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, \
     spans_to_tokens_indexes, filter_overlapping_builtins, \
     generate_slots_permutations, exhaustive_slots_permutations
@@ -36,10 +36,10 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            ParsedSlot(match_range=(8, 11),
-                       value='two',
-                       entity='snips/number',
-                       slot_name='number_of_cups')]
+            internal_slot(match_range=(8, 11),
+                          value='two',
+                          entity='snips/number',
+                          slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_get_slots_after_deserialization(self):
@@ -57,10 +57,10 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            ParsedSlot(match_range=(8, 11),
-                       value='two',
-                       entity='snips/number',
-                       slot_name='number_of_cups')]
+            internal_slot(match_range=(8, 11),
+                          value='two',
+                          entity='snips/number',
+                          slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_be_serializable_before_fit(self):
@@ -449,8 +449,8 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            ParsedSlot(value='after 8pm', match_range=(33, 42),
-                       entity='snips/datetime', slot_name='end_date')
+            internal_slot(value='after 8pm', match_range=(33, 42),
+                          entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
 
@@ -464,12 +464,12 @@ class TestCRFSlotFiller(unittest.TestCase):
         tagging_scheme = TaggingScheme.BIO
         builtin_entities = [
             {
-                MATCH_RANGE: (17, 28),
+                RES_MATCH_RANGE: (17, 28),
                 VALUE: "before 10pm",
                 ENTITY: BuiltInEntity.DATETIME
             },
             {
-                MATCH_RANGE: (33, 42),
+                RES_MATCH_RANGE: (33, 42),
                 VALUE: "after 8pm",
                 ENTITY: BuiltInEntity.DATETIME
             }
@@ -482,7 +482,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         # Then
         expected_entities = [
             {
-                MATCH_RANGE: (33, 42),
+                RES_MATCH_RANGE: (33, 42),
                 VALUE: "after 8pm",
                 ENTITY: BuiltInEntity.DATETIME
             }

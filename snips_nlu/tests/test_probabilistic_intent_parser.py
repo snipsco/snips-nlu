@@ -85,7 +85,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             unit_name = "test_intent_classifier"
             config_type = TestIntentClassifierConfig
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents):
                 return None
 
             def fit(self, dataset):
@@ -177,7 +177,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             unit_name = "test_intent_classifier"
             config_type = TestIntentClassifierConfig
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents):
                 return None
 
             def fit(self, dataset):

@@ -1,46 +1,46 @@
 from snips_nlu.constants import (
-    UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY)
+    UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
+    RES_MATCH_RANGE, RES_INTENT_NAME, RES_VALUE, RES_ENTITY)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
-from snips_nlu.result import (
-    empty_result, Result, IntentClassificationResult, ParsedSlot)
+from snips_nlu.result import (parsing_result, empty_result,
+                              intent_classification_result)
+from snips_nlu.utils import ranges_overlap
 
 
 def parse(text, entities, parsers, intent=None):
     if not parsers:
         return empty_result(text)
 
-    result = empty_result(text) if intent is None else Result(
-        text, parsed_intent=IntentClassificationResult(intent, 1.0),
-        parsed_slots=[])
+    result = empty_result(text) if intent is None else parsing_result(
+        text, intent=intent_classification_result(intent, 1.0), slots=[])
 
     for parser in parsers:
         res = parser.get_intent(text)
         if res is None:
             continue
 
-        intent_name = res.intent_name
+        intent_name = res[RES_INTENT_NAME]
         if intent is not None:
             if intent_name != intent:
                 continue
-            res = IntentClassificationResult(intent_name, 1.0)
+            res = intent_classification_result(intent_name, 1.0)
 
-        valid_slot = []
+        valid_slots = []
         slots = parser.get_slots(text, intent_name)
         for s in slots:
-            slot_value = s.value
+            slot_value = s[RES_VALUE]
             # Check if the entity is from a custom intent
-            if s.entity in entities:
-                entity = entities[s.entity]
-                if s.value in entity[UTTERANCES]:
-                    slot_value = entity[UTTERANCES][s.value]
+            if s[RES_ENTITY] in entities:
+                entity = entities[s[RES_ENTITY]]
+                if s[RES_VALUE] in entity[UTTERANCES]:
+                    slot_value = entity[UTTERANCES][s[RES_VALUE]]
                 elif not entity[AUTOMATICALLY_EXTENSIBLE]:
                     continue
-            s = ParsedSlot(s.match_range, slot_value, s.entity,
-                           s.slot_name)
-            valid_slot.append(s)
-        return Result(text, parsed_intent=res, parsed_slots=valid_slot)
+            s[RES_VALUE] = slot_value
+            valid_slots.append(s)
+        return parsing_result(text, intent=res, slots=valid_slots)
     return result
 
 
@@ -57,8 +57,7 @@ def get_intent_slot_name_mapping(dataset, intent):
 def enrich_slots(slots, other_slots):
     enriched_slots = list(slots)
     for slot in other_slots:
-        if any((slot.match_range[1] > s.match_range[0])
-               and (slot.match_range[0] < s.match_range[1])
+        if any(ranges_overlap(slot[RES_MATCH_RANGE], s[RES_MATCH_RANGE])
                for s in enriched_slots):
             continue
         enriched_slots.append(slot)

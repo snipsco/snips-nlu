@@ -1,6 +1,6 @@
 import unittest
 
-from snips_nlu.utils import LimitedSizeDict
+from snips_nlu.utils import LimitedSizeDict, ranges_overlap
 
 
 class TestLimitedSizeDict(unittest.TestCase):
@@ -51,5 +51,21 @@ class TestLimitedSizeDict(unittest.TestCase):
         self.assertItemsEqual(my_dict.items(), sequence[size_limit:])
 
 
-if __name__ == '__main__':
-    unittest.main()
+class TestUtils(unittest.TestCase):
+    def test_ranges_overlap(self):
+        # Given
+        range1 = [4, 8]
+        range2 = [5, 7]
+        range3 = [3, 9]
+        range4 = [3, 4]
+        range5 = [8, 9]
+        range6 = [3, 6]
+        range7 = [4, 10]
+
+        # When / Then
+        self.assertTrue(ranges_overlap(range1, range2))
+        self.assertTrue(ranges_overlap(range1, range3))
+        self.assertFalse(ranges_overlap(range1, range4))
+        self.assertFalse(ranges_overlap(range1, range5))
+        self.assertTrue(ranges_overlap(range1, range6))
+        self.assertTrue(ranges_overlap(range1, range7))

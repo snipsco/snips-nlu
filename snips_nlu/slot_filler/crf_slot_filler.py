@@ -2,17 +2,17 @@ from __future__ import unicode_literals
 
 import base64
 import io
+import math
 import os
 import tempfile
 from copy import copy
-
-import math
 from itertools import groupby, permutations, product
+
 from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
     get_builtin_entities
-from snips_nlu.constants import MATCH_RANGE, ENTITY, LANGUAGE, DATA
+from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
@@ -25,7 +25,7 @@ from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import UnupdatableDict, mkdir_p, check_random_state, \
-    get_slot_name_mapping
+    get_slot_name_mapping, ranges_overlap
 
 
 class CRFSlotFiller(SlotFiller):
@@ -190,7 +190,7 @@ class CRFSlotFiller(SlotFiller):
         grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
         features = None
         for entity, matches in grouped_entities:
-            spans_ranges = [match[MATCH_RANGE] for match in matches]
+            spans_ranges = [match[RES_MATCH_RANGE] for match in matches]
             num_possible_builtins = len(spans_ranges)
             tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
             related_slots = list(
@@ -295,8 +295,8 @@ def filter_overlapping_builtins(builtin_entities, tokens, tags,
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     ents = []
     for ent in builtin_entities:
-        if any(ent[MATCH_RANGE][0] < s[MATCH_RANGE][1]
-               and ent[MATCH_RANGE][1] > s[MATCH_RANGE][0] for s in slots):
+        if any(ranges_overlap(ent[RES_MATCH_RANGE], s[RES_MATCH_RANGE])
+               for s in slots):
             continue
         ents.append(ent)
     return ents

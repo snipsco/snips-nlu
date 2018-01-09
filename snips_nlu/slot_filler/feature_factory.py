@@ -7,7 +7,7 @@ from nlu_utils import normalize
 from snips_nlu.builtin_entities import get_builtin_entities, \
     get_supported_builtin_entities, BuiltInEntity
 from snips_nlu.constants import LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, \
-    MATCH_RANGE
+    RES_MATCH_RANGE
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
@@ -397,8 +397,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
             for ent in builtin_entities:
-                entity_start = ent[MATCH_RANGE][0]
-                entity_end = ent[MATCH_RANGE][1]
+                entity_start = ent[RES_MATCH_RANGE][0]
+                entity_end = ent[RES_MATCH_RANGE][1]
                 indexes = []
                 for index, token in enumerate(tokens):
                     if (entity_start <= token.start < entity_end) \

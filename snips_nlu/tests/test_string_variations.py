@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import unittest
 
 from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import MATCH_RANGE
+from snips_nlu.constants import RES_MATCH_RANGE
 from snips_nlu.languages import Language
 from snips_nlu.string_variations import (
     and_variations, alphabetic_value, punctuation_variations,
@@ -63,7 +63,7 @@ class TestStringVariations(unittest.TestCase):
         language = Language.EN
         string = "1 time and 23 times and one thousand and sixty and 1.2"
         entities = get_builtin_entities(string, language)
-        entities = sorted(entities, key=lambda x: x[MATCH_RANGE])
+        entities = sorted(entities, key=lambda x: x[RES_MATCH_RANGE])
 
         expected_values = ["one", "twenty-three", "one thousand and sixty",
                            None]

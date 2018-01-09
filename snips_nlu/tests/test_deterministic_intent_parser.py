@@ -7,8 +7,8 @@ import unittest
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.constants import (MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
-                                 SLOT_NAME)
+from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
+                                 SLOT_NAME, RES_INTENT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, deduplicate_overlapping_slots,
@@ -16,7 +16,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
     DeterministicIntentParserConfig
-from snips_nlu.result import IntentClassificationResult, ParsedSlot
+from snips_nlu.result import intent_classification_result, internal_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
@@ -267,7 +267,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         # Then
         probability = 1.0
-        expected_intent = IntentClassificationResult(
+        expected_intent = intent_classification_result(
             intent_name="dummy_intent_1", probability=probability)
 
         self.assertEqual(intent, expected_intent)
@@ -287,8 +287,8 @@ class TestDeterministicIntentParser(unittest.TestCase):
         res_2 = parser.get_intent(text, [intent_name_2])
 
         # Then
-        self.assertEqual(res_1.intent_name, intent_name_1)
-        self.assertEqual(res_2.intent_name, intent_name_2)
+        self.assertEqual(res_1[RES_INTENT_NAME], intent_name_1)
+        self.assertEqual(res_2[RES_INTENT_NAME], intent_name_2)
 
     def test_should_get_intent_after_deserialization(self):
         # Given
@@ -305,7 +305,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         # Then
         probability = 1.0
-        expected_intent = IntentClassificationResult(
+        expected_intent = intent_classification_result(
             intent_name="dummy_intent_1", probability=probability)
         self.assertEqual(intent, expected_intent)
 
@@ -320,48 +320,52 @@ class TestDeterministicIntentParser(unittest.TestCase):
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
                 " 12p.m.",
                 [
-                    ParsedSlot(match_range=(10, 17), value="dummy a",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name"),
-                    ParsedSlot(match_range=(37, 44), value="dummy_c",
-                               entity="dummy_entity_2",
-                               slot_name="dummy_slot_name2"),
-                    ParsedSlot(match_range=(45, 54), value="at 10p.m.",
-                               entity="snips/datetime", slot_name="startTime"),
-                    ParsedSlot(match_range=(58, 67), value="at 12p.m.",
-                               entity="snips/datetime", slot_name="startTime")
+                    internal_slot(match_range=(10, 17), value="dummy a",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name"),
+                    internal_slot(match_range=(37, 44), value="dummy_c",
+                                  entity="dummy_entity_2",
+                                  slot_name="dummy_slot_name2"),
+                    internal_slot(match_range=(45, 54), value="at 10p.m.",
+                                  entity="snips/datetime",
+                                  slot_name="startTime"),
+                    internal_slot(match_range=(58, 67), value="at 12p.m.",
+                                  entity="snips/datetime",
+                                  slot_name="startTime")
                 ]
             ),
             (
                 "this, is,, a, dummy a query with another dummy_c at 10pm or "
                 "at 12p.m.",
                 [
-                    ParsedSlot(match_range=(14, 21), value="dummy a",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name"),
-                    ParsedSlot(match_range=(41, 48), value="dummy_c",
-                               entity="dummy_entity_2",
-                               slot_name="dummy_slot_name2"),
-                    ParsedSlot(match_range=(49, 56), value="at 10pm",
-                               entity="snips/datetime", slot_name="startTime"),
-                    ParsedSlot(match_range=(60, 69), value="at 12p.m.",
-                               entity="snips/datetime", slot_name="startTime")
+                    internal_slot(match_range=(14, 21), value="dummy a",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name"),
+                    internal_slot(match_range=(41, 48), value="dummy_c",
+                                  entity="dummy_entity_2",
+                                  slot_name="dummy_slot_name2"),
+                    internal_slot(match_range=(49, 56), value="at 10pm",
+                                  entity="snips/datetime",
+                                  slot_name="startTime"),
+                    internal_slot(match_range=(60, 69), value="at 12p.m.",
+                                  entity="snips/datetime",
+                                  slot_name="startTime")
                 ]
             ),
             (
                 "this is a dummy b",
                 [
-                    ParsedSlot(match_range=(10, 17), value="dummy b",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name")
+                    internal_slot(match_range=(10, 17), value="dummy b",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name")
                 ]
             ),
             (
                 " this is a dummy b ",
                 [
-                    ParsedSlot(match_range=(11, 18), value="dummy b",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name")
+                    internal_slot(match_range=(11, 18), value="dummy b",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name")
                 ]
             )
         ]
@@ -385,48 +389,52 @@ class TestDeterministicIntentParser(unittest.TestCase):
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
                 " 12p.m.",
                 [
-                    ParsedSlot(match_range=(10, 17), value="dummy a",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name"),
-                    ParsedSlot(match_range=(37, 44), value="dummy_c",
-                               entity="dummy_entity_2",
-                               slot_name="dummy_slot_name2"),
-                    ParsedSlot(match_range=(45, 54), value="at 10p.m.",
-                               entity="snips/datetime", slot_name="startTime"),
-                    ParsedSlot(match_range=(58, 67), value="at 12p.m.",
-                               entity="snips/datetime", slot_name="startTime")
+                    internal_slot(match_range=(10, 17), value="dummy a",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name"),
+                    internal_slot(match_range=(37, 44), value="dummy_c",
+                                  entity="dummy_entity_2",
+                                  slot_name="dummy_slot_name2"),
+                    internal_slot(match_range=(45, 54), value="at 10p.m.",
+                                  entity="snips/datetime",
+                                  slot_name="startTime"),
+                    internal_slot(match_range=(58, 67), value="at 12p.m.",
+                                  entity="snips/datetime",
+                                  slot_name="startTime")
                 ]
             ),
             (
                 "this, is,, a, dummy a query with another dummy_c at 10pm or "
                 "at 12p.m.",
                 [
-                    ParsedSlot(match_range=(14, 21), value="dummy a",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name"),
-                    ParsedSlot(match_range=(41, 48), value="dummy_c",
-                               entity="dummy_entity_2",
-                               slot_name="dummy_slot_name2"),
-                    ParsedSlot(match_range=(49, 56), value="at 10pm",
-                               entity="snips/datetime", slot_name="startTime"),
-                    ParsedSlot(match_range=(60, 69), value="at 12p.m.",
-                               entity="snips/datetime", slot_name="startTime")
+                    internal_slot(match_range=(14, 21), value="dummy a",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name"),
+                    internal_slot(match_range=(41, 48), value="dummy_c",
+                                  entity="dummy_entity_2",
+                                  slot_name="dummy_slot_name2"),
+                    internal_slot(match_range=(49, 56), value="at 10pm",
+                                  entity="snips/datetime",
+                                  slot_name="startTime"),
+                    internal_slot(match_range=(60, 69), value="at 12p.m.",
+                                  entity="snips/datetime",
+                                  slot_name="startTime")
                 ]
             ),
             (
                 "this is a dummy b",
                 [
-                    ParsedSlot(match_range=(10, 17), value="dummy b",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name")
+                    internal_slot(match_range=(10, 17), value="dummy b",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name")
                 ]
             ),
             (
                 " this is a dummy b ",
                 [
-                    ParsedSlot(match_range=(11, 18), value="dummy b",
-                               entity="dummy_entity_1",
-                               slot_name="dummy_slot_name")
+                    internal_slot(match_range=(11, 18), value="dummy b",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name")
                 ]
             )
         ]
@@ -598,31 +606,31 @@ class TestDeterministicIntentParser(unittest.TestCase):
         # Given
         language = Language.EN
         slots = [
-            ParsedSlot(
+            internal_slot(
                 [3, 7],
                 "non_overlapping1",
                 "e",
                 "s1"
             ),
-            ParsedSlot(
+            internal_slot(
                 [9, 16],
                 "aaaaaaa",
                 "e1",
                 "s2"
             ),
-            ParsedSlot(
+            internal_slot(
                 [10, 18],
                 "bbbbbbbb",
                 "e1",
                 "s3"
             ),
-            ParsedSlot(
+            internal_slot(
                 [17, 23],
                 "b cccc",
                 "e1",
                 "s4"
             ),
-            ParsedSlot(
+            internal_slot(
                 [50, 60],
                 "non_overlapping2",
                 "e",
@@ -635,19 +643,19 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         # Then
         expected_slots = [
-            ParsedSlot(
+            internal_slot(
                 [3, 7],
                 "non_overlapping1",
                 "e",
                 "s1"
             ),
-            ParsedSlot(
+            internal_slot(
                 [17, 23],
                 "b cccc",
                 "e1",
                 "s4"
             ),
-            ParsedSlot(
+            internal_slot(
                 [50, 60],
                 "non_overlapping2",
                 "e",
@@ -678,12 +686,12 @@ class TestDeterministicIntentParser(unittest.TestCase):
         text = "Be the first to be there at 9pm"
         mock_get_builtin_entities.return_value = [
             {
-                MATCH_RANGE: (7, 12),
+                RES_MATCH_RANGE: (7, 12),
                 VALUE: "first",
                 ENTITY: BuiltInEntity.ORDINAL
             },
             {
-                MATCH_RANGE: (28, 31),
+                RES_MATCH_RANGE: (28, 31),
                 VALUE: "9pm",
                 ENTITY: BuiltInEntity.DATETIME
             }

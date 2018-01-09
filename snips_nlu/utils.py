@@ -46,21 +46,6 @@ def classproperty(func):
 
 # pylint: enable=C0103
 
-def sequence_equal(seq, other_seq):
-    return len(seq) == len(other_seq) and sorted(seq) == sorted(other_seq)
-
-
-def merge_two_dicts(x, y, shallow_copy=True):
-    """Given two dicts, merge them into a new dict.
-    :param x: first dict
-    :param y: second dict
-    :param shallow_copy: if False, `x` will be updated with y and returned.
-    Otherwise a shallow copy of `x` will be created (default).
-    """
-    z = x.copy() if shallow_copy else x
-    z.update(y)
-    return z
-
 
 def type_error(expected_type, found_type):
     return TypeError("Expected %s but found: %s" % (expected_type, found_type))
@@ -143,16 +128,6 @@ def get_resources_path(language):
     return os.path.join(RESOURCES_PATH, language.iso_code)
 
 
-def ensure_string(string_or_unicode, encoding="utf8"):
-    if isinstance(string_or_unicode, str):
-        return string_or_unicode
-    elif isinstance(string_or_unicode, unicode):
-        return string_or_unicode.encode(encoding)
-    else:
-        raise TypeError("Expected str or unicode, found %s"
-                        % type(string_or_unicode))
-
-
 def mkdir_p(path):
     """
     Reproduces the mkdir -p shell command, see
@@ -227,3 +202,7 @@ def get_slot_name_mappings(dataset):
     """
     return {intent: get_slot_name_mapping(dataset, intent)
             for intent in dataset[INTENTS].keys()}
+
+
+def ranges_overlap(lhs_range, rhs_range):
+    return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]

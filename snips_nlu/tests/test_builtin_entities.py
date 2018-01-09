@@ -10,7 +10,7 @@ from mock import patch
 from snips_nlu.builtin_entities import (
     get_builtin_entities, BuiltInEntity, scope_to_dim_kinds,
     RUSTLING_ENTITIES, RustlingParser)
-from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.constants import RES_MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.languages import Language
 
 
@@ -60,7 +60,7 @@ class TestBuiltInEntities(unittest.TestCase):
         # When
         expected_entities = [
             {
-                MATCH_RANGE: (11, 18),
+                RES_MATCH_RANGE: (11, 18),
                 VALUE: {
                     'grain': 'hour',
                     'type': 'value',

@@ -2,18 +2,26 @@ from __future__ import unicode_literals
 
 import os
 
+# package
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
 PACKAGE_NAME = "snips_nlu"
 RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
 PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
 
-INTENT_NAME = "intent_name"
-PROBABILITY = "probability"
-PARSED_INTENT = "intent"
-PARSED_SLOTS = "slots"
-TEXT = "text"
-NORMALIZED_TEXT = "normalized_text"
+# result
+RES_INPUT = "input"
+RES_INTENT = "intent"
+RES_SLOTS = "slots"
+RES_INTENT_NAME = "intentName"
+RES_PROBABILITY = "probability"
+RES_SLOT_NAME = "slotName"
+RES_ENTITY = "entity"
+RES_VALUE = "value"
+RES_RAW_VALUE = "rawValue"
+RES_MATCH_RANGE = "range"
+
+# miscellaneous
 AUTOMATICALLY_EXTENSIBLE = "automatically_extensible"
 USE_SYNONYMS = "use_synonyms"
 SYNONYMS = "synonyms"
@@ -22,9 +30,10 @@ INTENTS = "intents"
 ENTITIES = "entities"
 ENTITY = "entity"
 SLOT_NAME = "slot_name"
+TEXT = "text"
+NORMALIZED_TEXT = "normalized_text"
 UTTERANCES = "utterances"
 LANGUAGE = "language"
-MATCH_RANGE = "range"
 VALUE = "value"
 BUILTIN_PARSER = "builtin_parser"
 BUILTIN_PATH = "builtin_path"

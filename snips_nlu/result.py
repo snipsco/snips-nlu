@@ -1,61 +1,48 @@
-from collections import namedtuple
-
-from snips_nlu.constants import INTENT_NAME, PROBABILITY, PARSED_INTENT, \
-    PARSED_SLOTS, TEXT, SLOT_NAME, MATCH_RANGE, VALUE
-
-_IntentClassificationResult = namedtuple('_IntentClassificationResult',
-                                         'intent_name probability')
-_ParsedSlot = namedtuple('_ParsedSlot', 'match_range value entity slot_name')
-_Result = namedtuple('_Result', 'text parsed_intent parsed_slots')
+from snips_nlu.constants import (
+    RES_INTENT_NAME, RES_PROBABILITY, RES_INTENT, RES_SLOTS, RES_MATCH_RANGE,
+    RES_RAW_VALUE, RES_INPUT, RES_SLOT_NAME, RES_ENTITY, RES_VALUE)
 
 
-class IntentClassificationResult(_IntentClassificationResult):
-    def __init__(self, intent_name, probability):
-        super(IntentClassificationResult, self).__init__([intent_name,
-                                                          probability])
-
-    def as_dict(self):
-        return {
-            INTENT_NAME: self.intent_name,
-            PROBABILITY: self.probability
-        }
+def intent_classification_result(intent_name, probability):
+    return {
+        RES_INTENT_NAME: intent_name,
+        RES_PROBABILITY: probability
+    }
 
 
-class ParsedSlot(_ParsedSlot):
-    def __init__(self, match_range, value, entity, slot_name):
-        super(ParsedSlot, self).__init__(
-            [match_range, value, entity, slot_name])
-
-    def as_dict(self):
-        return {
-            MATCH_RANGE: [self.match_range[0], self.match_range[1]],
-            VALUE: self.value,
-            SLOT_NAME: self.slot_name
-        }
+def internal_slot(match_range, value, entity, slot_name):
+    return {
+        RES_MATCH_RANGE: list(match_range),
+        RES_VALUE: value,
+        RES_ENTITY: entity,
+        RES_SLOT_NAME: slot_name
+    }
 
 
-class Result(_Result):
-    def __init__(self, text, parsed_intent, parsed_slots):
-        super(Result, self).__init__([text, parsed_intent, parsed_slots])
-
-    def as_dict(self):
-        if self.parsed_intent is not None:
-            parsed_intent = self.parsed_intent.as_dict()
-        else:
-            parsed_intent = None
-        if self.parsed_slots is not None:
-            parsed_slots = [slot.as_dict() for slot in self.parsed_slots]
-        else:
-            parsed_slots = None
-        return {
-            TEXT: self.text,
-            PARSED_INTENT: parsed_intent,
-            PARSED_SLOTS: parsed_slots
-        }
-
-    def is_empty(self):
-        return self.parsed_intent is None and self.parsed_slots is None
+def custom_slot(internal_slot_):
+    return {
+        RES_MATCH_RANGE: internal_slot_[RES_MATCH_RANGE],
+        RES_RAW_VALUE: internal_slot_[RES_VALUE],
+        RES_VALUE: {
+            "kind": "Custom",
+            "value": internal_slot_[RES_VALUE]
+        },
+        RES_ENTITY: internal_slot_[RES_ENTITY],
+        RES_SLOT_NAME: internal_slot_[RES_SLOT_NAME]
+    }
 
 
-def empty_result(text):
-    return Result(text=text, parsed_intent=None, parsed_slots=None)
+def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
+    return {
+        RES_INPUT: input,
+        RES_INTENT: intent,
+        RES_SLOTS: slots
+    }
+
+
+def is_empty(result):
+    return result[RES_INTENT] is None and result[RES_SLOTS] is None
+
+
+def empty_result(input_):
+    return parsing_result(input=input_, intent=None, slots=None)

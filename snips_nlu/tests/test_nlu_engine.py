@@ -12,7 +12,8 @@ from mock import patch
 
 import snips_nlu
 import snips_nlu.version
-from snips_nlu.constants import DATA, TEXT, LANGUAGE
+from snips_nlu.constants import DATA, TEXT, LANGUAGE, RES_INTENT, \
+    RES_INTENT_NAME, RES_INPUT, RES_SLOTS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
@@ -26,7 +27,8 @@ from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.pipeline.units_registry import register_processing_unit, \
     reset_processing_units
-from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
+from snips_nlu.result import parsing_result, internal_slot, \
+    intent_classification_result, empty_result
 from snips_nlu.tests.utils import (
     SAMPLE_DATASET, get_empty_dataset, TEST_PATH, BEVERAGE_DATASET)
 
@@ -38,12 +40,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_use_parsers_sequentially(self):
         # Given
         input_text = "hello world"
-        intent_classification_result = IntentClassificationResult(
+        result = intent_classification_result(
             intent_name='mocked_intent2', probability=0.7)
-        slots = [ParsedSlot(match_range=(3, 5),
-                            value='mocked_value',
-                            entity='mocked_entity',
-                            slot_name='mocked_slot_name')]
+        slots = [internal_slot(match_range=(3, 5),
+                               value='mocked_value',
+                               entity='mocked_entity',
+                               slot_name='mocked_slot_name')]
 
         class TestIntentParser1Config(ProcessingUnitConfig):
             unit_name = "test_intent_parser1"
@@ -62,7 +64,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             def fit(self, dataset, intents):
                 return self
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents=None):
                 return None
 
             def get_slots(self, text, intent):
@@ -95,9 +97,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
             def fit(self, dataset, intents):
                 return self
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents=None):
                 if text == input_text:
-                    return intent_classification_result
+                    return result
                 return None
 
             def get_slots(self, text, intent):
@@ -133,9 +135,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         parse = engine.parse(input_text)
 
         # Then
-        expected_parse = Result(input_text, intent_classification_result,
-                                slots)
-        self.assertDictEqual(parse, expected_parse.as_dict())
+        expected_parse = parsing_result(input_text, result, slots)
+        self.assertDictEqual(expected_parse, parse)
 
     def test_should_handle_empty_dataset(self):
         # Given
@@ -146,7 +147,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse("hello world")
 
         # Then
-        self.assertEqual(result, Result("hello world", None, None).as_dict())
+        self.assertEqual(empty_result("hello world"), result)
 
     def test_should_be_serializable(self):
         # Given
@@ -167,7 +168,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             def fit(self, dataset, intents):
                 return self
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents=None):
                 return None
 
             def get_slots(self, text, intent):
@@ -200,7 +201,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             def fit(self, dataset, intents):
                 return self
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents=None):
                 return None
 
             def get_slots(self, text, intent):
@@ -288,7 +289,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             def fit(self, dataset, intents):
                 return self
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents=None):
                 return None
 
             def get_slots(self, text, intent):
@@ -321,7 +322,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             def fit(self, dataset, intents):
                 return self
 
-            def get_intent(self, text):
+            def get_intent(self, text, intents=None):
                 return None
 
             def get_slots(self, text, intent):
@@ -391,12 +392,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         dataset = BEVERAGE_DATASET
         engine = SnipsNLUEngine().fit(dataset)
-        text = "Give me 3 cups of hot tea please"
+        input_ = "Give me 3 cups of hot tea please"
 
         # When
         engine_dict = engine.to_dict()
         deserialized_engine = SnipsNLUEngine.from_dict(engine_dict)
-        result = deserialized_engine.parse(text)
+        result = deserialized_engine.parse(input_)
 
         # Then
         try:
@@ -406,14 +407,13 @@ class TestSnipsNLUEngine(unittest.TestCase):
             self.fail("SnipsNLUEngine dict should be json serializable "
                       "to utf-8.\n{}\n{}".format(e, trace))
         expected_slots = [
-            ParsedSlot((8, 9), '3', 'snips/number',
-                       'number_of_cups').as_dict(),
-            ParsedSlot((18, 21), 'hot', 'Temperature',
-                       'beverage_temperature').as_dict()
+            internal_slot((8, 9), '3', 'snips/number', 'number_of_cups'),
+            internal_slot((18, 21), 'hot', 'Temperature',
+                          'beverage_temperature')
         ]
-        self.assertEqual(result['text'], text)
-        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
-        self.assertListEqual(result['slots'], expected_slots)
+        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
+        self.assertListEqual(result[RES_SLOTS], expected_slots)
 
     def test_should_fail_when_missing_intents(self):
         # Given
@@ -429,7 +429,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     def test_should_use_fitted_slot_filler(self):
         # Given
-        text = "Give me 3 cups of hot tea please"
+        input_ = "Give me 3 cups of hot tea please"
         fitted_slot_filler = get_fitted_slot_filler(
             SnipsNLUEngine(), BEVERAGE_DATASET, "MakeTea")
 
@@ -437,22 +437,21 @@ class TestSnipsNLUEngine(unittest.TestCase):
         engine = SnipsNLUEngine()
         add_fitted_slot_filler(engine, "MakeTea", fitted_slot_filler.to_dict())
         engine.fit(BEVERAGE_DATASET, intents=["MakeCoffee"])
-        result = engine.parse(text)
+        result = engine.parse(input_)
 
         # Then
         expected_slots = [
-            ParsedSlot((8, 9), '3', 'snips/number',
-                       'number_of_cups').as_dict(),
-            ParsedSlot((18, 21), 'hot', 'Temperature',
-                       'beverage_temperature').as_dict()
+            internal_slot((8, 9), '3', 'snips/number', 'number_of_cups'),
+            internal_slot((18, 21), 'hot', 'Temperature',
+                          'beverage_temperature')
         ]
-        self.assertEqual(result['text'], text)
-        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
-        self.assertListEqual(result['slots'], expected_slots)
+        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
+        self.assertListEqual(result[RES_SLOTS], expected_slots)
 
     def test_should_be_serializable_after_fitted_slot_filler_is_added(self):
         # Given
-        text = "Give me 3 cups of hot tea please"
+        input_ = "Give me 3 cups of hot tea please"
         engine = SnipsNLUEngine()
         trained_slot_filler_coffee = get_fitted_slot_filler(
             engine, BEVERAGE_DATASET, "MakeCoffee")
@@ -473,17 +472,16 @@ class TestSnipsNLUEngine(unittest.TestCase):
         except Exception, e:  # pylint: disable=W0703
             self.fail('Exception raised: %s\n%s' %
                       (e.message, tb.format_exc()))
-        result = new_engine.parse(text)
+        result = new_engine.parse(input_)
 
         # Then
         expected_slots = [
-            ParsedSlot((8, 9), '3', 'snips/number',
-                       'number_of_cups').as_dict(),
-            ParsedSlot((18, 21), 'hot', 'Temperature',
-                       'beverage_temperature').as_dict()
+            internal_slot((8, 9), '3', 'snips/number', 'number_of_cups'),
+            internal_slot((18, 21), 'hot', 'Temperature',
+                          'beverage_temperature')
         ]
-        self.assertEqual(result['text'], text)
-        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
+        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
         self.assertListEqual(result['slots'], expected_slots)
 
     @patch(
@@ -557,15 +555,15 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "language": "en"
         }
 
-        mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
-        mocked_crf_slots = [ParsedSlot(match_range=(0, 7),
-                                       value="dummy_3",
-                                       entity="dummy_entity_1",
-                                       slot_name="dummy_slot_name"),
-                            ParsedSlot(match_range=(8, 15),
-                                       value="dummy_4",
-                                       entity="dummy_entity_2",
-                                       slot_name="other_dummy_slot_name")]
+        mocked_crf_intent = intent_classification_result("dummy_intent_1", 1.0)
+        mocked_crf_slots = [internal_slot(match_range=(0, 7),
+                                          value="dummy_3",
+                                          entity="dummy_entity_1",
+                                          slot_name="dummy_slot_name"),
+                            internal_slot(match_range=(8, 15),
+                                          value="dummy_4",
+                                          entity="dummy_entity_2",
+                                          slot_name="other_dummy_slot_name")]
 
         mocked_regex_get_intent.return_value = None
         mocked_crf_get_intent.return_value = mocked_crf_intent
@@ -579,13 +577,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_result = Result(
-            text, parsed_intent=mocked_crf_intent,
-            parsed_slots=[ParsedSlot(match_range=(8, 15), value="dummy_4",
-                                     entity="dummy_entity_2",
-                                     slot_name="other_dummy_slot_name")]) \
-            .as_dict()
-        self.assertEqual(result, expected_result)
+        expected_result = parsing_result(
+            text, intent=mocked_crf_intent,
+            slots=[internal_slot(match_range=(8, 15), value="dummy_4",
+                                 entity="dummy_entity_2",
+                                 slot_name="other_dummy_slot_name")])
+        self.assertEqual(expected_result, result)
 
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
@@ -634,10 +631,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "language": "en"
         }
 
-        mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
-        mocked_crf_slots = [ParsedSlot(match_range=(0, 10), value="dummy1_bis",
-                                       entity="dummy_entity_1",
-                                       slot_name="dummy_slot_name")]
+        mocked_crf_intent = intent_classification_result("dummy_intent_1", 1.0)
+        mocked_crf_slots = [
+            internal_slot(match_range=(0, 10), value="dummy1_bis",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name")]
 
         mocked_deter_get_intent.return_value = None
         mocked_crf_get_intent.return_value = mocked_crf_intent
@@ -650,12 +648,12 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_result = Result(
-            text, parsed_intent=mocked_crf_intent,
-            parsed_slots=[ParsedSlot(match_range=(0, 10), value="dummy1",
-                                     entity="dummy_entity_1",
-                                     slot_name="dummy_slot_name")])
-        self.assertEqual(result, expected_result.as_dict())
+        expected_result = parsing_result(
+            text, intent=mocked_crf_intent,
+            slots=[internal_slot(match_range=(0, 10), value="dummy1",
+                                 entity="dummy_entity_1",
+                                 slot_name="dummy_slot_name")])
+        self.assertEqual(expected_result, result)
 
     def test_enrich_slots(self):
         # Given
@@ -663,88 +661,88 @@ class TestSnipsNLUEngine(unittest.TestCase):
             # Adjacent
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((2, 6), "", "", ""),
-                    ParsedSlot((8, 10), "", "", "")
+                    internal_slot((2, 6), "", "", ""),
+                    internal_slot((8, 10), "", "", "")
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", ""),
-                    ParsedSlot((2, 6), "", "", ""),
-                    ParsedSlot((8, 10), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", ""),
+                    internal_slot((2, 6), "", "", ""),
+                    internal_slot((8, 10), "", "", "")
                 ]
             },
             # Equality
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((6, 8), "", "", ""),
+                    internal_slot((6, 8), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ]
             },
             # Inclusion
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((5, 7), "", "", ""),
+                    internal_slot((5, 7), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ]
             },
             # Cross upper
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((7, 10), "", "", ""),
+                    internal_slot((7, 10), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ]
             },
             # Cross lower
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((5, 7), "", "", ""),
+                    internal_slot((5, 7), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ]
             },
             # Full overlap
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((4, 12), "", "", ""),
+                    internal_slot((4, 12), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    internal_slot((0, 2), "", "", ""),
+                    internal_slot((6, 8), "", "", "")
                 ]
             }
         ]
@@ -851,10 +849,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         expected_slot_filler = \
             trained_engine.intent_parsers[0].slot_fillers[intent]
-        self.assertEqual(slot_filler.crf_model.state_features_,
-                         expected_slot_filler.crf_model.state_features_)
-        self.assertEqual(slot_filler.crf_model.transition_features_,
-                         expected_slot_filler.crf_model.transition_features_)
+        self.assertEqual(expected_slot_filler.crf_model.state_features_,
+                         slot_filler.crf_model.state_features_)
+        self.assertEqual(expected_slot_filler.crf_model.transition_features_,
+                         slot_filler.crf_model.transition_features_)
 
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
            "ProbabilisticIntentParser.get_slots")
@@ -871,14 +869,15 @@ class TestSnipsNLUEngine(unittest.TestCase):
         intent = "dummy_intent_1"
         text = "This is another weird weird query"
 
-        intent_classif_result = IntentClassificationResult(intent, .8)
-        expected_intent_classif_result = IntentClassificationResult(intent,
-                                                                    1.0)
+        intent_classif_result = intent_classification_result(intent, .8)
+        expected_intent_classif_result = intent_classification_result(intent,
+                                                                      1.0)
         mocked_probabilistic_get_intent.return_value = intent_classif_result
 
-        parsed_slots = [ParsedSlot(match_range=(16, 27), value="weird weird",
-                                   entity="dummy_entity_1",
-                                   slot_name="dummy slot nàme")]
+        parsed_slots = [
+            internal_slot(match_range=(16, 27), value="weird weird",
+                          entity="dummy_entity_1",
+                          slot_name="dummy slot nàme")]
         mocked_probabilistic_get_slots.return_value = parsed_slots
 
         # When
@@ -887,9 +886,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         mocked_probabilistic_get_intent.assert_called_once()
         mocked_probabilistic_get_slots.assert_called_once()
-        expected_parse = Result(text, expected_intent_classif_result,
-                                parsed_slots).as_dict()
-        self.assertEqual(parse, expected_parse)
+        expected_parse = parsing_result(text, expected_intent_classif_result,
+                                        parsed_slots)
+        self.assertEqual(expected_parse, parse)
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given

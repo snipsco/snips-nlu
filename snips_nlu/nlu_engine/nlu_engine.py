@@ -36,9 +36,8 @@ class SnipsNLUEngine(ProcessingUnit):
         if not self.fitted:
             raise AssertionError("NLU engine must be fitted before calling "
                                  "`parse`")
-        result = parse(text, self.dataset_metadata["entities"],
-                       self.intent_parsers, intent)
-        return result.as_dict()
+        return parse(text, self.dataset_metadata["entities"],
+                     self.intent_parsers, intent)
 
     def fit(self, dataset, intents=None):
         """

@@ -6,16 +6,16 @@ from copy import deepcopy
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (
-    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY, MATCH_RANGE,
-    LANGUAGE)
+    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
+    RES_MATCH_RANGE, LANGUAGE, RES_INTENT, RES_SLOTS, RES_VALUE)
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
     DeterministicIntentParserConfig
-from snips_nlu.result import (IntentClassificationResult,
-                              ParsedSlot, Result)
+from snips_nlu.result import (internal_slot, parsing_result,
+                              intent_classification_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import regex_escape
+from snips_nlu.utils import regex_escape, ranges_overlap
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -121,15 +121,15 @@ def deduplicate_overlapping_slots(slots, language):
     for slot in slots:
         is_overlapping = False
         for slot_index, dedup_slot in enumerate(deduplicated_slots):
-            if slot.match_range[1] > dedup_slot.match_range[0] \
-                    and slot.match_range[0] < dedup_slot.match_range[1]:
+            if ranges_overlap(slot[RES_MATCH_RANGE],
+                              dedup_slot[RES_MATCH_RANGE]):
                 is_overlapping = True
-                tokens = tokenize(slot.value, language)
-                dedup_tokens = tokenize(dedup_slot.value, language)
+                tokens = tokenize(slot[RES_VALUE], language)
+                dedup_tokens = tokenize(dedup_slot[RES_VALUE], language)
                 if len(tokens) > len(dedup_tokens):
                     deduplicated_slots[slot_index] = slot
                 elif len(tokens) == len(dedup_tokens) \
-                        and len(slot.value) > len(dedup_slot.value):
+                        and len(slot[RES_VALUE]) > len(dedup_slot[RES_VALUE]):
                     deduplicated_slots[slot_index] = slot
         if not is_overlapping:
             deduplicated_slots.append(slot)
@@ -160,15 +160,15 @@ def replace_builtin_entities(text, language):
     offset = 0
     current_ix = 0
     builtin_entities = sorted(builtin_entities,
-                              key=lambda e: e[MATCH_RANGE][0])
+                              key=lambda e: e[RES_MATCH_RANGE][0])
     for ent in builtin_entities:
-        ent_start = ent[MATCH_RANGE][0]
-        ent_end = ent[MATCH_RANGE][1]
+        ent_start = ent[RES_MATCH_RANGE][0]
+        ent_end = ent[RES_MATCH_RANGE][1]
         rng_start = ent_start + offset
 
         processed_text += text[current_ix:ent_start]
 
-        entity_length = ent[MATCH_RANGE][1] - ent[MATCH_RANGE][0]
+        entity_length = ent[RES_MATCH_RANGE][1] - ent[RES_MATCH_RANGE][0]
         entity_place_holder = get_builtin_entity_name(ent[ENTITY].label,
                                                       language)
 
@@ -177,7 +177,7 @@ def replace_builtin_entities(text, language):
         processed_text += entity_place_holder
         rng_end = ent_end + offset
         new_range = (rng_start, rng_end)
-        range_mapping[new_range] = ent[MATCH_RANGE]
+        range_mapping[new_range] = ent[RES_MATCH_RANGE]
         current_ix = ent_end
 
     processed_text += text[current_ix:]
@@ -253,7 +253,7 @@ class DeterministicIntentParser(IntentParser):
         if not self.fitted:
             raise AssertionError("DeterministicIntentParser must be fitted "
                                  "before calling `get_intent`")
-        return self._parse(text, intents).parsed_intent
+        return self._parse(text, intents)[RES_INTENT]
 
     def get_slots(self, text, intent):
         if not self.fitted:
@@ -262,7 +262,7 @@ class DeterministicIntentParser(IntentParser):
         if intent not in self.regexes_per_intent:
             raise KeyError("Intent not found in DeterministicIntentParser: %s"
                            % intent)
-        return self._parse(text, [intent]).parsed_slots
+        return self._parse(text, [intent])[RES_SLOTS]
 
     def _parse(self, text, intents=None):
         ranges_mapping, processed_text = replace_builtin_entities(
@@ -278,7 +278,7 @@ class DeterministicIntentParser(IntentParser):
                 match = regex.match(processed_text)
                 if match is None:
                     continue
-                parsed_intent = IntentClassificationResult(
+                parsed_intent = intent_classification_result(
                     intent_name=intent, probability=1.0)
                 matched = True
                 slots = []
@@ -290,7 +290,7 @@ class DeterministicIntentParser(IntentParser):
                     if rng in ranges_mapping:
                         rng = ranges_mapping[rng]
                         value = text[rng[0]:rng[1]]
-                    parsed_slot = ParsedSlot(
+                    parsed_slot = internal_slot(
                         match_range=rng, value=value, entity=entity,
                         slot_name=slot_name)
                     slots.append(parsed_slot)
@@ -299,7 +299,7 @@ class DeterministicIntentParser(IntentParser):
                 break
             if matched:
                 break
-        return Result(text, parsed_intent, parsed_slots)
+        return parsing_result(text, parsed_intent, parsed_slots)
 
     def to_dict(self):
         language_code = None

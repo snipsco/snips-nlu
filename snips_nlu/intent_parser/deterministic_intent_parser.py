@@ -13,7 +13,7 @@ from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
     DeterministicIntentParserConfig
 from snips_nlu.result import (internal_slot, parsing_result,
-                              intent_classification_result)
+                              intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
 from snips_nlu.utils import regex_escape, ranges_overlap
 
@@ -268,9 +268,6 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)
 
-        parsed_intent = None
-        parsed_slots = []
-        matched = False
         for intent, regexes in self.regexes_per_intent.iteritems():
             if intents is not None and intent not in intents:
                 continue
@@ -280,7 +277,6 @@ class DeterministicIntentParser(IntentParser):
                     continue
                 parsed_intent = intent_classification_result(
                     intent_name=intent, probability=1.0)
-                matched = True
                 slots = []
                 for group_name in match.groupdict():
                     slot_name = self.group_names_to_slot_names[group_name]
@@ -296,10 +292,8 @@ class DeterministicIntentParser(IntentParser):
                     slots.append(parsed_slot)
                 parsed_slots = deduplicate_overlapping_slots(
                     slots, self.language)
-                break
-            if matched:
-                break
-        return parsing_result(text, parsed_intent, parsed_slots)
+                return parsing_result(text, parsed_intent, parsed_slots)
+        return empty_result(text)
 
     def to_dict(self):
         language_code = None

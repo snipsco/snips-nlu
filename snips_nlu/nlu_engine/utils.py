@@ -1,15 +1,18 @@
+from snips_nlu.builtin_entities import (
+    get_builtin_entities, is_builtin_entity, BuiltInEntity)
 from snips_nlu.constants import (
     UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
-    RES_MATCH_RANGE, RES_INTENT_NAME, RES_VALUE, RES_ENTITY)
+    RES_MATCH_RANGE, RES_INTENT_NAME, RES_VALUE, RES_ENTITY, VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.result import (parsing_result, empty_result,
-                              intent_classification_result)
+                              intent_classification_result, custom_slot,
+                              builtin_slot)
 from snips_nlu.utils import ranges_overlap
 
 
-def parse(text, entities, parsers, intent=None):
+def parse(text, entities, language, parsers, intent=None):
     if not parsers:
         return empty_result(text)
 
@@ -40,9 +43,40 @@ def parse(text, entities, parsers, intent=None):
                     continue
             s[RES_VALUE] = slot_value
             valid_slots.append(s)
-        return parsing_result(text, intent=res, slots=valid_slots)
+        scope = [BuiltInEntity.from_label(s[RES_ENTITY]) for s in slots
+                 if is_builtin_entity(s[RES_ENTITY])]
+        resolved_slots = resolve_slots(text, valid_slots, language, scope)
+        return parsing_result(text, intent=res, slots=resolved_slots)
     return result
 
+
+# pylint:disable=redefined-builtin
+def resolve_slots(input, slots, language, scope):
+    builtin_entities = get_builtin_entities(input, language, scope)
+    resolved_slots = []
+    for slot in slots:
+        if is_builtin_entity(slot[RES_ENTITY]):
+            found = False
+            for ent in builtin_entities:
+                if ent[ENTITY].label == slot[RES_ENTITY] and \
+                        ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
+                    resolved_slots.append(builtin_slot(
+                        slot, resolved_value=ent[VALUE]))
+                    found = True
+                    break
+            if not found:
+                builtin_entity = BuiltInEntity.from_label(slot[RES_ENTITY])
+                entities = get_builtin_entities(slot[RES_VALUE], language,
+                                                scope=[builtin_entity])
+                if entities:
+                    resolved_slots.append(builtin_slot(
+                        slot, resolved_value=entities[0][VALUE]))
+        else:
+            resolved_slots.append(custom_slot(slot))
+    return resolved_slots
+
+
+# pylint:enable=redefined-builtin
 
 def get_intent_slot_name_mapping(dataset, intent):
     slot_name_mapping = dict()

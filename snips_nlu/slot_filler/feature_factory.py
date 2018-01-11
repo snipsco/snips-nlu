@@ -45,7 +45,7 @@ class CRFFeatureFactory(object):
 
     @abstractmethod
     def build_features(self):
-        raise NotImplementedError
+        pass
 
 
 class SingleFeatureFactory(CRFFeatureFactory):
@@ -58,7 +58,7 @@ class SingleFeatureFactory(CRFFeatureFactory):
 
     @abstractmethod
     def compute_feature(self, tokens, token_index):
-        raise NotImplementedError
+        pass
 
     def build_features(self):
         return [
@@ -410,14 +410,14 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         return builtin_entity_match
 
 
-factories = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
+FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
              SuffixFactory, LengthFactory, NgramFactory, ShapeNgramFactory,
              WordClusterFactory, EntityMatchFactory, BuiltinEntityMatchFactory]
 
 
 def get_feature_factory(factory_config):
     factory_name = factory_config["factory_name"]
-    for factory in factories:
+    for factory in FACTORIES:
         if factory_name == factory.name:
             return factory(factory_config)
     raise ValueError("Unknown feature factory: %s" % factory_name)

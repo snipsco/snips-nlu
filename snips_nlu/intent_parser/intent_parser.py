@@ -8,12 +8,12 @@ class IntentParser(ProcessingUnit):
 
     @abstractmethod
     def fit(self, dataset, intents):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def get_intent(self, text):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def get_slots(self, text, intent):
-        raise NotImplementedError
+        pass

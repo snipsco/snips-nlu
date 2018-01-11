@@ -8,8 +8,8 @@ class IntentClassifier(ProcessingUnit):
 
     @abstractmethod
     def get_intent(self, text):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def fit(self, dataset):
-        raise NotImplementedError
+        pass

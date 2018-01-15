@@ -413,7 +413,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         try:
             json.dumps(engine_dict).encode("utf-8")
-        except Exception, e:  # pylint: disable=W0703
+        except Exception as e:  # pylint: disable=W0703
             trace = tb.format_exc()
             self.fail("SnipsNLUEngine dict should be json serializable "
                       "to utf-8.\n{}\n{}".format(e, trace))
@@ -482,7 +482,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         try:
             engine_dict = engine.to_dict()
             new_engine = SnipsNLUEngine.from_dict(engine_dict)
-        except Exception, e:  # pylint: disable=W0703
+        except Exception as e:  # pylint: disable=W0703
             self.fail('Exception raised: %s\n%s' %
                       (e.message, tb.format_exc()))
         result = new_engine.parse(input_)

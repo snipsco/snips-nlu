@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import base64
 import io
@@ -144,19 +145,19 @@ class CRFSlotFiller(SlotFiller):
         transition_features = self.crf_model.transition_features_
         transition_features = sorted(
             transition_features.iteritems(),
-            key=lambda (transition, _weight): math.fabs(_weight),
+            key=lambda transition_weight: math.fabs(transition_weight[1]),
             reverse=True)
-        print "\nTransition weights: \n\n"
+        print("\nTransition weights: \n\n")
         for (state_1, state_2), weight in transition_features:
-            print "%s %s: %s" % (state_1, state_2, weight)
+            print("%s %s: %s" % (state_1, state_2, weight))
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
             feature_weights.iteritems(),
-            key=lambda (feature, _weight): math.fabs(_weight),
+            key=lambda feature_weight: math.fabs(feature_weight[1]),
             reverse=True)
-        print "\nFeature weights: \n\n"
+        print("\nFeature weights: \n\n")
         for (feat, tag), weight in feature_weights:
-            print "%s %s: %s" % (feat, tag, weight)
+            print("%s %s: %s" % (feat, tag, weight))
 
     def compute_features(self, tokens, drop_out=False):
         tokens = [

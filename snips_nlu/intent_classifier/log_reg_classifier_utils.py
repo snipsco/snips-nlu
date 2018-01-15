@@ -1,4 +1,9 @@
 from __future__ import unicode_literals
+from __future__ import division
+from builtins import str
+from builtins import zip
+from builtins import next
+from builtins import range
 
 import re
 from copy import deepcopy
@@ -43,7 +48,7 @@ def get_noise_it(noise, mean_length, std_length, random_state):
     it = itertools.cycle(noise)
     while True:
         noise_length = int(random_state.normal(mean_length, std_length))
-        yield " ".join(next(it) for _ in xrange(noise_length))
+        yield " ".join(next(it) for _ in range(noise_length))
 
 
 def generate_smart_noise(augmented_utterances, replacement_string, language):
@@ -81,7 +86,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
                             std_utterances_length, random_state)
     # Remove duplicate 'unknowword unknowword'
     return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
-            for _ in xrange(noise_size)]
+            for _ in range(noise_size)]
 
 
 def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
@@ -121,7 +126,7 @@ def build_training_data(dataset, language, data_augmentation_config,
             capitalization_ratio=0.0, random_state=random_state)
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
-                              xrange(len(utterances))]
+                              range(len(utterances))]
     augmented_utterances = add_unknown_word_to_utterances(
         augmented_utterances,
         data_augmentation_config.unknown_words_replacement_string,
@@ -142,8 +147,8 @@ def build_training_data(dataset, language, data_augmentation_config,
         classes_mapping[NOISE_NAME] = noise_class
 
     nb_classes = len(set(classes_mapping.values()))
-    intent_mapping = [None for _ in xrange(nb_classes)]
-    for intent, intent_class in classes_mapping.iteritems():
+    intent_mapping = [None for _ in range(nb_classes)]
+    for intent, intent_class in classes_mapping.items():
         if intent == NOISE_NAME:
             intent_mapping[intent_class] = None
         else:

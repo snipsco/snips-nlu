@@ -1,5 +1,5 @@
-from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import base64
 import io
@@ -9,6 +9,7 @@ import tempfile
 from copy import copy
 from itertools import groupby, permutations, product
 
+from builtins import range
 from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
@@ -84,7 +85,7 @@ class CRFSlotFiller(SlotFiller):
                               self.slot_name_mapping)
 
         builtin_slots_names = set(slot_name for (slot_name, entity) in
-                                  self.slot_name_mapping.iteritems()
+                                  self.slot_name_mapping.items()
                                   if is_builtin_entity(entity))
         if not builtin_slots_names:
             return slots
@@ -144,7 +145,7 @@ class CRFSlotFiller(SlotFiller):
     def print_weights(self):
         transition_features = self.crf_model.transition_features_
         transition_features = sorted(
-            transition_features.iteritems(),
+            transition_features.items(),
             key=lambda transition_weight: math.fabs(transition_weight[1]),
             reverse=True)
         print("\nTransition weights: \n\n")
@@ -152,7 +153,7 @@ class CRFSlotFiller(SlotFiller):
             print("%s %s: %s" % (state_1, state_2, weight))
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
-            feature_weights.iteritems(),
+            feature_weights.items(),
             key=lambda feature_weight: math.fabs(feature_weight[1]),
             reverse=True)
         print("\nFeature weights: \n\n")

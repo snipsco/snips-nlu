@@ -1,12 +1,12 @@
+from builtins import object
 from abc import ABCMeta, abstractmethod
 
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
 from snips_nlu.utils import classproperty
+from future.utils import with_metaclass
 
 
-class ProcessingUnit(object):
-    __metaclass__ = ABCMeta
-
+class ProcessingUnit(with_metaclass(ABCMeta, object)):
     def __init__(self, config):
         if config is None or isinstance(config, ProcessingUnitConfig):
             self.config = config

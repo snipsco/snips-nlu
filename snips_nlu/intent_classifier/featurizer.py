@@ -1,4 +1,7 @@
 from __future__ import unicode_literals
+from __future__ import division
+from builtins import range
+from builtins import object
 
 from collections import defaultdict
 
@@ -87,7 +90,7 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
 
 def get_utterances_to_features_names(dataset, language):
     utterances_to_features = defaultdict(set)
-    for entity_name, entity_data in dataset[ENTITIES].iteritems():
+    for entity_name, entity_data in dataset[ENTITIES].items():
         if is_builtin_entity(entity_name):
             continue
         for u in entity_data[UTTERANCES].keys():
@@ -105,8 +108,8 @@ def deserialize_tfidf_vectorizer(vectorizer_dict, language, featurizer_config):
         tfidf_vectorizer.vocabulary_ = vocab
         idf_diag_data = np.array(vectorizer_dict["idf_diag"])
         idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
-        row = range(idf_diag_shape[0])
-        col = range(idf_diag_shape[0])
+        row = list(range(idf_diag_shape[0]))
+        col = list(range(idf_diag_shape[0]))
         idf_diag = sp.csr_matrix((idf_diag_data, (row, col)),
                                  shape=idf_diag_shape)
         tfidf_transformer._idf_diag = idf_diag  # pylint: disable=W0212
@@ -150,7 +153,7 @@ class Featurizer(object):
         utterances_to_features = get_utterances_to_features_names(
             dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
-        for k, v in utterances_to_features.iteritems():
+        for k, v in utterances_to_features.items():
             normalized_utterances_to_features[
                 normalize_stem(k, self.language)].update(v)
         if self.unknown_words_replacement_string is not None \
@@ -210,7 +213,7 @@ class Featurizer(object):
             # pylint: enable=W0212
             entity_utterances_to_entity_names = {
                 k: list(v)
-                for k, v in self.entity_utterances_to_feature_names.iteritems()
+                for k, v in self.entity_utterances_to_feature_names.items()
             }
         else:
             vocab = None
@@ -242,7 +245,7 @@ class Featurizer(object):
             obj_dict["tfidf_vectorizer"], language, config)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
-            obj_dict['entity_utterances_to_feature_names'].iteritems()
+            obj_dict['entity_utterances_to_feature_names'].items()
         }
         self = cls(
             language=language,

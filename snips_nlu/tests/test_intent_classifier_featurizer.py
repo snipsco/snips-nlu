@@ -140,7 +140,7 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
             featurizer.entity_utterances_to_feature_names,
             {
                 k: set(v) for k, v
-                in entity_utterances_to_feature_names.iteritems()
+                in entity_utterances_to_feature_names.items()
             })
 
     def test_get_utterances_entities(self):

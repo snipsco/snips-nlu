@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from builtins import map
+from builtins import object
 
 from abc import ABCMeta, abstractmethod
 
@@ -16,11 +18,10 @@ from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import get_word_chunk, get_shape, \
     get_all_ngrams, initial_string_from_tokens, entity_filter, \
     get_intent_custom_entities
+from future.utils import with_metaclass
 
 
-class CRFFeatureFactory(object):
-    __metaclass__ = ABCMeta
-
+class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
     def __init__(self, factory_config):
         self.factory_config = factory_config
 
@@ -48,9 +49,7 @@ class CRFFeatureFactory(object):
         pass
 
 
-class SingleFeatureFactory(CRFFeatureFactory):
-    __metaclass__ = ABCMeta
-
+class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     @property
     def feature_name(self):
         # by default, use the factory name
@@ -295,7 +294,7 @@ class EntityMatchFactory(CRFFeatureFactory):
 
         intent_entities = get_intent_custom_entities(dataset, intent)
         self.collections = dict()
-        for entity_name, entity in intent_entities.iteritems():
+        for entity_name, entity in intent_entities.items():
             if not entity[UTTERANCES]:
                 continue
             collection = list(preprocess(e) for e in entity[UTTERANCES].keys())
@@ -308,7 +307,7 @@ class EntityMatchFactory(CRFFeatureFactory):
 
     def build_features(self):
         features = []
-        for name, collection in self.collections.iteritems():
+        for name, collection in self.collections.items():
             # We need to call this wrapper in order to properly capture
             # `collection`
             collection_match = self._build_collection_match_fn(collection)
@@ -323,7 +322,7 @@ class EntityMatchFactory(CRFFeatureFactory):
         collection_set = set(collection)
 
         def collection_match(tokens, token_index):
-            normalized_tokens = map(self._transform, tokens)
+            normalized_tokens = list(map(self._transform, tokens))
             ngrams = get_all_ngrams(normalized_tokens)
             ngrams = [ngram for ngram in ngrams if
                       token_index in ngram[TOKEN_INDEXES]]

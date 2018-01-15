@@ -18,7 +18,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(sequence, size_limit=size_limit)
         # Then
-        self.assertItemsEqual(d.items(), sequence)
+        self.assertItemsEqual(list(d.items()), sequence)
 
     def test_should_initialize_without_argument(self):
         # Given
@@ -26,7 +26,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(size_limit=size_limit)
         # Then
-        self.assertItemsEqual(d.items(), [])
+        self.assertItemsEqual(list(d.items()), [])
 
     def test_should_wrong_when_initialization_should_raise_error(self):
         # Given
@@ -48,7 +48,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         for k, v in sequence[size_limit:]:
             my_dict[k] = v
         # Then
-        self.assertItemsEqual(my_dict.items(), sequence[size_limit:])
+        self.assertItemsEqual(list(my_dict.items()), sequence[size_limit:])
 
 
 class TestUtils(unittest.TestCase):

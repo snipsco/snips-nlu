@@ -31,7 +31,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
             progression_handler=None)
 
         # Then
-        for intent_name, intent_metrics in results["metrics"].iteritems():
+        for intent_name, intent_metrics in results["metrics"].items():
             if intent_name is None or intent_name == "null":
                 continue
             classification_precision = intent_metrics["intent"]["precision"]
@@ -44,7 +44,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
                 classification_recall, INTENT_CLASSIFICATION_THRESHOLD,
                 "Intent classification recall is too low (%.3f) for intent "
                 "'%s'" % (classification_recall, intent_name))
-            for slot_name, slot_metrics in intent_metrics["slots"].iteritems():
+            for slot_name, slot_metrics in intent_metrics["slots"].items():
                 precision = slot_metrics["precision"]
                 recall = slot_metrics["recall"]
                 self.assertGreaterEqual(

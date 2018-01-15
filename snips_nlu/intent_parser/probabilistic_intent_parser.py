@@ -76,7 +76,7 @@ class ProbabilisticIntentParser(IntentParser):
         else:
             already_fitted_intents = set(
                 intent_name for intent_name, slot_filler
-                in self.slot_fillers.iteritems() if slot_filler.fitted)
+                in self.slot_fillers.items() if slot_filler.fitted)
         missing_intents = implicit_fitted_intents.difference(
             already_fitted_intents)
         return missing_intents
@@ -99,7 +99,7 @@ class ProbabilisticIntentParser(IntentParser):
         if self.slot_fillers is not None:
             slot_fillers = {
                 intent: slot_filler.to_dict()
-                for intent, slot_filler in self.slot_fillers.iteritems()}
+                for intent, slot_filler in self.slot_fillers.items()}
 
         return {
             "unit_name": self.unit_name,
@@ -115,7 +115,7 @@ class ProbabilisticIntentParser(IntentParser):
             slot_fillers = {
                 intent: load_processing_unit(slot_filler_dict) for
                 intent, slot_filler_dict in
-                unit_dict["slot_fillers"].iteritems()}
+                unit_dict["slot_fillers"].items()}
         classifier = None
         if unit_dict["intent_classifier"] is not None:
             classifier = load_processing_unit(unit_dict["intent_classifier"])

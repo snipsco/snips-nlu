@@ -113,7 +113,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
 def get_dataset_metadata(dataset):
     entities = dict()
-    for entity_name, entity in dataset[ENTITIES].iteritems():
+    for entity_name, entity in dataset[ENTITIES].items():
         if is_builtin_entity(entity_name):
             continue
         ent = deepcopy(entity)

@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
+from builtins import range
 
 import unittest
 
@@ -459,8 +460,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         language = Language.EN
         text = "Find me a flight before 10pm and after 8pm"
         tokens = tokenize(text, language)
-        tags = ['O' for _ in xrange(5)] + ['B-flight'] + ['O' for _ in
-                                                          xrange(3)]
+        tags = ['O' for _ in range(5)] + ['B-flight'] + ['O' for _ in
+                                                          range(3)]
         tagging_scheme = TaggingScheme.BIO
         builtin_entities = [
             {

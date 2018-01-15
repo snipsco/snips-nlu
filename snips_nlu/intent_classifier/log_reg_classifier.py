@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from builtins import zip
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier

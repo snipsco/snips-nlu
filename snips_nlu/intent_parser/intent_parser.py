@@ -1,11 +1,10 @@
 from abc import ABCMeta, abstractmethod
 
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
+from future.utils import with_metaclass
 
 
-class IntentParser(ProcessingUnit):
-    __metaclass__ = ABCMeta
-
+class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
     @abstractmethod
     def fit(self, dataset, intents):
         pass

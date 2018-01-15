@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from builtins import str
+from builtins import object
 
 from collections import defaultdict
 
@@ -157,7 +159,7 @@ class BuiltInEntity(Enum):
 
 _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = dict()
 
-for k, v in all_configs().iteritems():
+for k, v in all_configs().items():
     try:
         lang = Language.from_rustling_code(k)
     except KeyError:

@@ -1,11 +1,11 @@
+from builtins import object
 from abc import ABCMeta, abstractmethod
 
 from snips_nlu.utils import classproperty
+from future.utils import with_metaclass
 
 
-class Config(object):
-    __metaclass__ = ABCMeta
-
+class Config(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def to_dict(self):
         raise NotImplementedError
@@ -15,9 +15,7 @@ class Config(object):
         raise NotImplementedError
 
 
-class ProcessingUnitConfig(Config):
-    __metaclass__ = ABCMeta
-
+class ProcessingUnitConfig(with_metaclass(ABCMeta, Config)):
     @classproperty
     def unit_name(self):
         raise NotImplementedError

@@ -1,5 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
+from builtins import next
+from builtins import str
+from builtins import range
 
 import unittest
 
@@ -98,7 +101,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        intent_list = SAMPLE_DATASET[INTENTS].keys() + [None]
+        intent_list = list(SAMPLE_DATASET[INTENTS].keys()) + [None]
         expected_dict = {
             "unit_name": "log_reg_intent_classifier",
             "config": IntentClassifierConfig().to_dict(),
@@ -230,7 +233,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
     def test_should_build_training_data_with_noise(
             self, mocked_augment_utterances, mocked_get_noises):
         # Given
-        mocked_noises = ["mocked_noise_%s" % i for i in xrange(100)]
+        mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
         mocked_get_noises.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
@@ -239,14 +242,14 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         num_queries_per_intent = 3
         fake_utterance = {
             "data": [
-                {"text": " ".join("1" for _ in xrange(utterances_length))}
+                {"text": " ".join("1" for _ in range(utterances_length))}
             ]
         }
         dataset = {
             "intents": {
-                unicode(i): {
+                str(i): {
                     "utterances": [fake_utterance] * num_queries_per_intent
-                } for i in xrange(num_intents)
+                } for i in range(num_intents)
             }
         }
         random_state = np.random.RandomState(1)
@@ -270,9 +273,9 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                              len(noise)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0,
                                 random_state)
-        noisy_utterances = [next(noise_it) for _ in xrange(noise_size)]
+        noisy_utterances = [next(noise_it) for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = dataset["intents"].keys() + [None]
+        expected_intent_mapping = list(dataset["intents"].keys()) + [None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -282,7 +285,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
     def test_should_build_training_data_with_unknown_noise(
             self, mocked_augment_utterances, mocked_get_subtitles):
         # Given
-        mocked_noises = ["mocked_noise_%s" % i for i in xrange(100)]
+        mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
         mocked_get_subtitles.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
@@ -291,14 +294,14 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         num_queries_per_intent = 3
         fake_utterance = {
             "data": [
-                {"text": " ".join("1" for _ in xrange(utterances_length))}
+                {"text": " ".join("1" for _ in range(utterances_length))}
             ]
         }
         dataset = {
             "intents": {
-                unicode(i): {
+                str(i): {
                     "utterances": [fake_utterance] * num_queries_per_intent
-                } for i in xrange(num_intents)
+                } for i in range(num_intents)
             }
         }
         random_state = np.random.RandomState(1)
@@ -321,9 +324,9 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
-        noisy_utterances = [replacement_string for _ in xrange(noise_size)]
+        noisy_utterances = [replacement_string for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = dataset["intents"].keys() + [None]
+        expected_intent_mapping = list(dataset["intents"].keys()) + [None]
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -353,7 +356,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         noise_factor = 1
         utterances_length = 5
 
-        noise = [unicode(i) for i in xrange(utterances_length)]
+        noise = [str(i) for i in range(utterances_length)]
         mocked_get_noises.return_value = noise
 
         augmented_utterances = [
@@ -361,7 +364,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                 "data": [
                     {
                         "text": " ".join(
-                            "{}".format(i) for i in xrange(utterances_length))
+                            "{}".format(i) for i in range(utterances_length))
                     }
                 ]
             }

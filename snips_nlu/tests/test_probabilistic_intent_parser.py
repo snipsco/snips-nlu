@@ -246,7 +246,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         # Then
         self.assertDictEqual(parser.config.to_dict(), config.to_dict())
         self.assertIsNotNone(parser.intent_classifier)
-        self.assertItemsEqual(parser.slot_fillers.keys(),
+        self.assertItemsEqual(list(parser.slot_fillers.keys()),
                               ["MakeCoffee", "MakeTea"])
 
     def test_fitting_should_be_reproducible_after_serialization(self):

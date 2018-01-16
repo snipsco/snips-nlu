@@ -16,7 +16,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
     DeterministicIntentParserConfig
-from snips_nlu.result import intent_classification_result, internal_slot
+from snips_nlu.result import intent_classification_result, _slot
 from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
@@ -320,52 +320,52 @@ class TestDeterministicIntentParser(unittest.TestCase):
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
                 " 12p.m.",
                 [
-                    internal_slot(match_range=(10, 17), value="dummy a",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name"),
-                    internal_slot(match_range=(37, 44), value="dummy_c",
-                                  entity="dummy_entity_2",
-                                  slot_name="dummy_slot_name2"),
-                    internal_slot(match_range=(45, 54), value="at 10p.m.",
-                                  entity="snips/datetime",
-                                  slot_name="startTime"),
-                    internal_slot(match_range=(58, 67), value="at 12p.m.",
-                                  entity="snips/datetime",
-                                  slot_name="startTime")
+                    _slot(match_range=(10, 17), value="dummy a",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name"),
+                    _slot(match_range=(37, 44), value="dummy_c",
+                          entity="dummy_entity_2",
+                          slot_name="dummy_slot_name2"),
+                    _slot(match_range=(45, 54), value="at 10p.m.",
+                          entity="snips/datetime",
+                          slot_name="startTime"),
+                    _slot(match_range=(58, 67), value="at 12p.m.",
+                          entity="snips/datetime",
+                          slot_name="startTime")
                 ]
             ),
             (
                 "this, is,, a, dummy a query with another dummy_c at 10pm or "
                 "at 12p.m.",
                 [
-                    internal_slot(match_range=(14, 21), value="dummy a",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name"),
-                    internal_slot(match_range=(41, 48), value="dummy_c",
-                                  entity="dummy_entity_2",
-                                  slot_name="dummy_slot_name2"),
-                    internal_slot(match_range=(49, 56), value="at 10pm",
-                                  entity="snips/datetime",
-                                  slot_name="startTime"),
-                    internal_slot(match_range=(60, 69), value="at 12p.m.",
-                                  entity="snips/datetime",
-                                  slot_name="startTime")
+                    _slot(match_range=(14, 21), value="dummy a",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name"),
+                    _slot(match_range=(41, 48), value="dummy_c",
+                          entity="dummy_entity_2",
+                          slot_name="dummy_slot_name2"),
+                    _slot(match_range=(49, 56), value="at 10pm",
+                          entity="snips/datetime",
+                          slot_name="startTime"),
+                    _slot(match_range=(60, 69), value="at 12p.m.",
+                          entity="snips/datetime",
+                          slot_name="startTime")
                 ]
             ),
             (
                 "this is a dummy b",
                 [
-                    internal_slot(match_range=(10, 17), value="dummy b",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name")
+                    _slot(match_range=(10, 17), value="dummy b",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name")
                 ]
             ),
             (
                 " this is a dummy b ",
                 [
-                    internal_slot(match_range=(11, 18), value="dummy b",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name")
+                    _slot(match_range=(11, 18), value="dummy b",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name")
                 ]
             )
         ]
@@ -389,52 +389,52 @@ class TestDeterministicIntentParser(unittest.TestCase):
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
                 " 12p.m.",
                 [
-                    internal_slot(match_range=(10, 17), value="dummy a",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name"),
-                    internal_slot(match_range=(37, 44), value="dummy_c",
-                                  entity="dummy_entity_2",
-                                  slot_name="dummy_slot_name2"),
-                    internal_slot(match_range=(45, 54), value="at 10p.m.",
-                                  entity="snips/datetime",
-                                  slot_name="startTime"),
-                    internal_slot(match_range=(58, 67), value="at 12p.m.",
-                                  entity="snips/datetime",
-                                  slot_name="startTime")
+                    _slot(match_range=(10, 17), value="dummy a",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name"),
+                    _slot(match_range=(37, 44), value="dummy_c",
+                          entity="dummy_entity_2",
+                          slot_name="dummy_slot_name2"),
+                    _slot(match_range=(45, 54), value="at 10p.m.",
+                          entity="snips/datetime",
+                          slot_name="startTime"),
+                    _slot(match_range=(58, 67), value="at 12p.m.",
+                          entity="snips/datetime",
+                          slot_name="startTime")
                 ]
             ),
             (
                 "this, is,, a, dummy a query with another dummy_c at 10pm or "
                 "at 12p.m.",
                 [
-                    internal_slot(match_range=(14, 21), value="dummy a",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name"),
-                    internal_slot(match_range=(41, 48), value="dummy_c",
-                                  entity="dummy_entity_2",
-                                  slot_name="dummy_slot_name2"),
-                    internal_slot(match_range=(49, 56), value="at 10pm",
-                                  entity="snips/datetime",
-                                  slot_name="startTime"),
-                    internal_slot(match_range=(60, 69), value="at 12p.m.",
-                                  entity="snips/datetime",
-                                  slot_name="startTime")
+                    _slot(match_range=(14, 21), value="dummy a",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name"),
+                    _slot(match_range=(41, 48), value="dummy_c",
+                          entity="dummy_entity_2",
+                          slot_name="dummy_slot_name2"),
+                    _slot(match_range=(49, 56), value="at 10pm",
+                          entity="snips/datetime",
+                          slot_name="startTime"),
+                    _slot(match_range=(60, 69), value="at 12p.m.",
+                          entity="snips/datetime",
+                          slot_name="startTime")
                 ]
             ),
             (
                 "this is a dummy b",
                 [
-                    internal_slot(match_range=(10, 17), value="dummy b",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name")
+                    _slot(match_range=(10, 17), value="dummy b",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name")
                 ]
             ),
             (
                 " this is a dummy b ",
                 [
-                    internal_slot(match_range=(11, 18), value="dummy b",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name")
+                    _slot(match_range=(11, 18), value="dummy b",
+                          entity="dummy_entity_1",
+                          slot_name="dummy_slot_name")
                 ]
             )
         ]
@@ -606,31 +606,31 @@ class TestDeterministicIntentParser(unittest.TestCase):
         # Given
         language = Language.EN
         slots = [
-            internal_slot(
+            _slot(
                 [3, 7],
                 "non_overlapping1",
                 "e",
                 "s1"
             ),
-            internal_slot(
+            _slot(
                 [9, 16],
                 "aaaaaaa",
                 "e1",
                 "s2"
             ),
-            internal_slot(
+            _slot(
                 [10, 18],
                 "bbbbbbbb",
                 "e1",
                 "s3"
             ),
-            internal_slot(
+            _slot(
                 [17, 23],
                 "b cccc",
                 "e1",
                 "s4"
             ),
-            internal_slot(
+            _slot(
                 [50, 60],
                 "non_overlapping2",
                 "e",
@@ -643,19 +643,19 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         # Then
         expected_slots = [
-            internal_slot(
+            _slot(
                 [3, 7],
                 "non_overlapping1",
                 "e",
                 "s1"
             ),
-            internal_slot(
+            _slot(
                 [17, 23],
                 "b cccc",
                 "e1",
                 "s4"
             ),
-            internal_slot(
+            _slot(
                 [50, 60],
                 "non_overlapping2",
                 "e",

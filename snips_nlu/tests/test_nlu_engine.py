@@ -27,7 +27,7 @@ from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.pipeline.units_registry import register_processing_unit, \
     reset_processing_units
-from snips_nlu.result import parsing_result, internal_slot, \
+from snips_nlu.result import parsing_result, _slot, \
     intent_classification_result, empty_result, custom_slot, resolved_slot
 from snips_nlu.tests.utils import (
     SAMPLE_DATASET, get_empty_dataset, TEST_PATH, BEVERAGE_DATASET)
@@ -42,10 +42,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
         input_text = "hello world"
         result = intent_classification_result(
             intent_name='mocked_intent2', probability=0.7)
-        slots = [internal_slot(match_range=(3, 5),
-                               value='mocked_value',
-                               entity='mocked_entity',
-                               slot_name='mocked_slot_name')]
+        slots = [_slot(match_range=(3, 5),
+                       value='mocked_value',
+                       entity='mocked_entity',
+                       slot_name='mocked_slot_name')]
 
         class TestIntentParser1Config(ProcessingUnitConfig):
             unit_name = "test_intent_parser1"
@@ -410,7 +410,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_slots = [
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
-            custom_slot(internal_slot((18, 21), 'hot', 'Temperature',
+            custom_slot(_slot((18, 21), 'hot', 'Temperature',
                                       'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
@@ -445,7 +445,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_slots = [
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
-            custom_slot(internal_slot((18, 21), 'hot', 'Temperature',
+            custom_slot(_slot((18, 21), 'hot', 'Temperature',
                                       'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
@@ -481,7 +481,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_slots = [
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
-            custom_slot(internal_slot((18, 21), 'hot', 'Temperature',
+            custom_slot(_slot((18, 21), 'hot', 'Temperature',
                                       'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
@@ -560,14 +560,14 @@ class TestSnipsNLUEngine(unittest.TestCase):
         }
 
         mocked_crf_intent = intent_classification_result("dummy_intent_1", 1.0)
-        mocked_crf_slots = [internal_slot(match_range=(0, 7),
-                                          value="dummy_3",
-                                          entity="dummy_entity_1",
-                                          slot_name="dummy_slot_name"),
-                            internal_slot(match_range=(8, 15),
-                                          value="dummy_4",
-                                          entity="dummy_entity_2",
-                                          slot_name="other_dummy_slot_name")]
+        mocked_crf_slots = [_slot(match_range=(0, 7),
+                                  value="dummy_3",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name"),
+                            _slot(match_range=(8, 15),
+                                  value="dummy_4",
+                                  entity="dummy_entity_2",
+                                  slot_name="other_dummy_slot_name")]
 
         mocked_regex_get_intent.return_value = None
         mocked_crf_get_intent.return_value = mocked_crf_intent
@@ -581,7 +581,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_slot = custom_slot(internal_slot(
+        expected_slot = custom_slot(_slot(
             match_range=(8, 15), value="dummy_4", entity="dummy_entity_2",
             slot_name="other_dummy_slot_name"))
         expected_result = parsing_result(text, intent=mocked_crf_intent,
@@ -638,9 +638,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_proba_parser_intent = intent_classification_result(
             "dummy_intent_1", 1.0)
         mocked_proba_parser_slots = [
-            internal_slot(match_range=(0, 10), value="dummy1_bis",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name")]
+            _slot(match_range=(0, 10), value="dummy1_bis",
+                  entity="dummy_entity_1",
+                  slot_name="dummy_slot_name")]
 
         mocked_deter_get_intent.return_value = None
         mocked_proba_get_intent.return_value = mocked_proba_parser_intent
@@ -653,7 +653,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_slot = custom_slot(internal_slot(
+        expected_slot = custom_slot(_slot(
             match_range=(0, 10), value="dummy1", entity="dummy_entity_1",
             slot_name="dummy_slot_name"))
         expected_result = parsing_result(
@@ -666,88 +666,88 @@ class TestSnipsNLUEngine(unittest.TestCase):
             # Adjacent
             {
                 "slots": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    internal_slot((2, 6), "", "", ""),
-                    internal_slot((8, 10), "", "", "")
+                    _slot((2, 6), "", "", ""),
+                    _slot((8, 10), "", "", "")
                 ],
                 "enriched": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", ""),
-                    internal_slot((2, 6), "", "", ""),
-                    internal_slot((8, 10), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", ""),
+                    _slot((2, 6), "", "", ""),
+                    _slot((8, 10), "", "", "")
                 ]
             },
             # Equality
             {
                 "slots": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    internal_slot((6, 8), "", "", ""),
+                    _slot((6, 8), "", "", ""),
                 ],
                 "enriched": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Inclusion
             {
                 "slots": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    internal_slot((5, 7), "", "", ""),
+                    _slot((5, 7), "", "", ""),
                 ],
                 "enriched": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Cross upper
             {
                 "slots": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    internal_slot((7, 10), "", "", ""),
+                    _slot((7, 10), "", "", ""),
                 ],
                 "enriched": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Cross lower
             {
                 "slots": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    internal_slot((5, 7), "", "", ""),
+                    _slot((5, 7), "", "", ""),
                 ],
                 "enriched": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Full overlap
             {
                 "slots": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    internal_slot((4, 12), "", "", ""),
+                    _slot((4, 12), "", "", ""),
                 ],
                 "enriched": [
-                    internal_slot((0, 2), "", "", ""),
-                    internal_slot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             }
         ]
@@ -880,9 +880,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_probabilistic_get_intent.return_value = intent_classif_result
 
         parsed_slots = [
-            internal_slot(match_range=(16, 27), value="weird weird",
-                          entity="dummy_entity_1",
-                          slot_name="dummy slot nàme")]
+            _slot(match_range=(16, 27), value="weird weird",
+                  entity="dummy_entity_1",
+                  slot_name="dummy slot nàme")]
         mocked_probabilistic_get_slots.return_value = parsed_slots
 
         # When

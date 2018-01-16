@@ -13,7 +13,8 @@ from mock import patch
 import snips_nlu
 import snips_nlu.version
 from snips_nlu.constants import DATA, TEXT, LANGUAGE, RES_INTENT, \
-    RES_INTENT_NAME, RES_INPUT, RES_SLOTS
+    RES_INTENT_NAME, RES_INPUT, RES_SLOTS, RES_MATCH_RANGE, RES_RAW_VALUE, \
+    RES_VALUE, RES_ENTITY, RES_SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
@@ -41,9 +42,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Given
         input_text = "hello world"
         result = intent_classification_result(
-            intent_name='mocked_intent2', probability=0.7)
-        slots = [_slot(match_range=(3, 5),
-                       value='mocked_value',
+            intent_name='dummy_intent_1', probability=0.7)
+        slots = [_slot(match_range=(6, 11),
+                       value='world',
                        entity='mocked_entity',
                        slot_name='mocked_slot_name')]
 
@@ -120,16 +121,25 @@ class TestSnipsNLUEngine(unittest.TestCase):
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
 
-        mocked_entities = {
-            "mocked_entity": {
-                "automatically_extensible": True,
-                "utterances": dict()
+        mocked_dataset_metadata = {
+            "language_code": "en",
+            "entities": {
+                "mocked_entity": {
+                    "automatically_extensible": True,
+                    "utterances": dict()
+                }
+            },
+            "slot_name_mappings": {
+                "dummy_intent_1": {
+                    "mocked_slot_name": "mocked_entity"
+                }
             }
         }
+
         config = NLUEngineConfig([TestIntentParser1Config(),
                                   TestIntentParser2Config()])
         engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
-        engine.entities = mocked_entities
+        engine.dataset_metadata = mocked_dataset_metadata
 
         # When
         parse = engine.parse(input_text)
@@ -411,7 +421,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
             custom_slot(_slot((18, 21), 'hot', 'Temperature',
-                                      'beverage_temperature'))
+                              'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
@@ -446,7 +456,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
             custom_slot(_slot((18, 21), 'hot', 'Temperature',
-                                      'beverage_temperature'))
+                              'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
@@ -482,7 +492,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
             custom_slot(_slot((18, 21), 'hot', 'Temperature',
-                                      'beverage_temperature'))
+                              'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
@@ -653,9 +663,16 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_slot = custom_slot(_slot(
-            match_range=(0, 10), value="dummy1", entity="dummy_entity_1",
-            slot_name="dummy_slot_name"))
+        expected_slot = {
+            RES_MATCH_RANGE: [0, 10],
+            RES_RAW_VALUE: "dummy1_bis",
+            RES_VALUE: {
+                "kind": "Custom",
+                "value": "dummy1"
+            },
+            RES_ENTITY: "dummy_entity_1",
+            RES_SLOT_NAME: "dummy_slot_name"
+        }
         expected_result = parsing_result(
             text, intent=mocked_proba_parser_intent, slots=[expected_slot])
         self.assertEqual(expected_result, result)

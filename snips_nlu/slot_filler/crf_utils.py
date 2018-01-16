@@ -1,7 +1,7 @@
 from enum import Enum, unique
 
 from snips_nlu.constants import TEXT, SLOT_NAME
-from snips_nlu.result import internal_slot
+from snips_nlu.result import _slot
 from snips_nlu.tokenization import tokenize, Token
 
 BEGINNING_PREFIX = u'B-'
@@ -133,10 +133,10 @@ def tags_to_preslots(tokens, tags, tagging_scheme):
 def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     return [
-        internal_slot(match_range=slot["range"],
-                      value=text[slot["range"][0]:slot["range"][1]],
-                      entity=intent_slots_mapping[slot[SLOT_NAME]],
-                      slot_name=slot[SLOT_NAME])
+        _slot(match_range=slot["range"],
+              value=text[slot["range"][0]:slot["range"][1]],
+              entity=intent_slots_mapping[slot[SLOT_NAME]],
+              slot_name=slot[SLOT_NAME])
         for slot in slots
     ]
 

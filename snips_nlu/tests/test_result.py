@@ -5,10 +5,9 @@ import unittest
 
 from snips_nlu.constants import (RES_INTENT, RES_SLOTS, RES_INTENT_NAME,
                                  RES_PROBABILITY, RES_MATCH_RANGE, RES_INPUT,
-                                 RES_ENTITY, RES_SLOT_NAME,
-                                 RES_VALUE)
-from snips_nlu.result import parsing_result, intent_classification_result, \
-    internal_slot
+                                 RES_ENTITY, RES_SLOT_NAME, RES_VALUE)
+from snips_nlu.result import (parsing_result, intent_classification_result,
+                              _slot)
 
 
 class TestResult(unittest.TestCase):
@@ -16,10 +15,7 @@ class TestResult(unittest.TestCase):
         # Given
         input_ = "hello world"
         intent = intent_classification_result("world", 0.5)
-        slots = [internal_slot([3, 5],
-                               "slot_value",
-                               "slot_entity",
-                               "slot_name")]
+        slots = [_slot([3, 5], "slot_value", "slot_entity", "slot_name")]
 
         # When
         result = parsing_result(input=input_, intent=intent, slots=slots)

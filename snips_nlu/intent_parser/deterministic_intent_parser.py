@@ -12,7 +12,7 @@ from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
     DeterministicIntentParserConfig
-from snips_nlu.result import (internal_slot, parsing_result,
+from snips_nlu.result import (_slot, parsing_result,
                               intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
 from snips_nlu.utils import regex_escape, ranges_overlap
@@ -286,7 +286,7 @@ class DeterministicIntentParser(IntentParser):
                     if rng in ranges_mapping:
                         rng = ranges_mapping[rng]
                         value = text[rng[0]:rng[1]]
-                    parsed_slot = internal_slot(
+                    parsed_slot = _slot(
                         match_range=rng, value=value, entity=entity,
                         slot_name=slot_name)
                     slots.append(parsed_slot)

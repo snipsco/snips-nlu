@@ -30,49 +30,50 @@ def parse(text, entities, language, parsers, intent=None):
                 continue
             res = intent_classification_result(intent_name, 1.0)
 
-        valid_slots = []
         slots = parser.get_slots(text, intent_name)
-        for s in slots:
-            slot_value = s[RES_VALUE]
-            # Check if the entity is from a custom intent
-            if s[RES_ENTITY] in entities:
-                entity = entities[s[RES_ENTITY]]
-                if s[RES_VALUE] in entity[UTTERANCES]:
-                    slot_value = entity[UTTERANCES][s[RES_VALUE]]
-                elif not entity[AUTOMATICALLY_EXTENSIBLE]:
-                    continue
-            s[RES_VALUE] = slot_value
-            valid_slots.append(s)
         scope = [BuiltInEntity.from_label(s[RES_ENTITY]) for s in slots
                  if is_builtin_entity(s[RES_ENTITY])]
-        resolved_slots = resolve_slots(text, valid_slots, language, scope)
+        resolved_slots = resolve_slots(text, slots, entities, language, scope)
         return parsing_result(text, intent=res, slots=resolved_slots)
     return result
 
 
 # pylint:disable=redefined-builtin
-def resolve_slots(input, slots, language, scope):
+def resolve_slots(input, slots, dataset_entities, language, scope):
     builtin_entities = get_builtin_entities(input, language, scope)
     resolved_slots = []
     for slot in slots:
-        if is_builtin_entity(slot[RES_ENTITY]):
+        entity_name = slot[RES_ENTITY]
+        raw_value = slot[RES_VALUE]
+        if is_builtin_entity(entity_name):
             found = False
             for ent in builtin_entities:
-                if ent[ENTITY].label == slot[RES_ENTITY] and \
+                if ent[ENTITY].label == entity_name and \
                         ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
-                    resolved_slots.append(builtin_slot(
-                        slot, resolved_value=ent[VALUE]))
+                    resolved_slot = builtin_slot(slot, ent[VALUE])
+                    resolved_slots.append(resolved_slot)
                     found = True
                     break
             if not found:
-                builtin_entity = BuiltInEntity.from_label(slot[RES_ENTITY])
-                entities = get_builtin_entities(slot[RES_VALUE], language,
-                                                scope=[builtin_entity])
-                if entities:
-                    resolved_slots.append(builtin_slot(
-                        slot, resolved_value=entities[0][VALUE]))
-        else:
-            resolved_slots.append(custom_slot(slot))
+                builtin_entity = BuiltInEntity.from_label(entity_name)
+                builtin_matches = get_builtin_entities(raw_value, language,
+                                                       scope=[builtin_entity])
+                if builtin_matches:
+                    resolved_slot = builtin_slot(slot,
+                                                 builtin_matches[0][VALUE])
+                    resolved_slots.append(resolved_slot)
+        else:  # custom slot
+            entity = dataset_entities[entity_name]
+            if raw_value in entity[UTTERANCES]:
+                resolved_value = entity[UTTERANCES][raw_value]
+            elif entity[AUTOMATICALLY_EXTENSIBLE]:
+                resolved_value = raw_value
+            else:
+                # entity is skipped
+                resolved_value = None
+
+            if resolved_value is not None:
+                resolved_slots.append(custom_slot(slot, resolved_value))
     return resolved_slots
 
 

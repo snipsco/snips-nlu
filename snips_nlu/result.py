@@ -22,13 +22,15 @@ def _slot(match_range, value, entity, slot_name):
     }
 
 
-def custom_slot(internal_slot):
+def custom_slot(internal_slot, resolved_value=None):
+    if resolved_value is None:
+        resolved_value = internal_slot[RES_VALUE]
     return {
         RES_MATCH_RANGE: internal_slot[RES_MATCH_RANGE],
         RES_RAW_VALUE: internal_slot[RES_VALUE],
         RES_VALUE: {
             "kind": "Custom",
-            "value": internal_slot[RES_VALUE]
+            "value": resolved_value
         },
         RES_ENTITY: internal_slot[RES_ENTITY],
         RES_SLOT_NAME: internal_slot[RES_SLOT_NAME]

@@ -1,9 +1,10 @@
 from __future__ import unicode_literals
+
+from abc import ABCMeta, abstractmethod
 from builtins import map
 from builtins import object
 
-from abc import ABCMeta, abstractmethod
-
+from future.utils import with_metaclass
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities, \
@@ -18,7 +19,6 @@ from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import get_word_chunk, get_shape, \
     get_all_ngrams, initial_string_from_tokens, entity_filter, \
     get_intent_custom_entities
-from future.utils import with_metaclass
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, object)):

@@ -177,7 +177,7 @@ def check_random_state(seed):
     # pylint: disable=W0212
     # pylint: disable=c-extension-no-member
     if seed is None or seed is np.random:
-        return np.random.mtrand._rand
+        return np.random.mtrand._rand # pylint: disable=c-extension-no-member
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
     if isinstance(seed, np.random.RandomState):

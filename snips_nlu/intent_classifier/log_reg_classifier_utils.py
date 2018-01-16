@@ -1,15 +1,15 @@
-from __future__ import unicode_literals
 from __future__ import division
-from builtins import str
-from builtins import zip
+from __future__ import unicode_literals
+
+import itertools
+import re
 from builtins import next
 from builtins import range
-
-import re
+from builtins import str
+from builtins import zip
 from copy import deepcopy
 from uuid import uuid4
 
-import itertools
 import numpy as np
 
 from snips_nlu.builtin_entities import is_builtin_entity
@@ -20,7 +20,7 @@ from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.resources import get_noises
 from snips_nlu.tokenization import tokenize_light
 
-NOISE_NAME = str(uuid4()).decode()
+NOISE_NAME = str(uuid4())
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
 UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
 
@@ -48,7 +48,9 @@ def get_noise_it(noise, mean_length, std_length, random_state):
     it = itertools.cycle(noise)
     while True:
         noise_length = int(random_state.normal(mean_length, std_length))
+        # pylint: disable=stop-iteration-return
         yield " ".join(next(it) for _ in range(noise_length))
+        # pylint: enable=stop-iteration-return
 
 
 def generate_smart_noise(augmented_utterances, replacement_string, language):
@@ -116,8 +118,7 @@ def build_training_data(dataset, language, data_augmentation_config,
 
     augmented_utterances = []
     utterance_classes = []
-    for nb_utterance, intent_name in itertools.izip(nb_utterances,
-                                                    intents.keys()):
+    for nb_utterance, intent_name in zip(nb_utterances, intents.keys()):
         min_utterances_to_generate = max(
             data_augmentation_config.min_utterances, nb_utterance)
         utterances = augment_utterances(

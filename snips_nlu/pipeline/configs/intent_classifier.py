@@ -42,6 +42,7 @@ class FeaturizerConfig(Config):
 
 
 class IntentClassifierConfig(ProcessingUnitConfig):
+    # pylint: disable=super-init-not-called
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
                  random_seed=None):
         if data_augmentation_config is None:
@@ -53,6 +54,8 @@ class IntentClassifierConfig(ProcessingUnitConfig):
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
         self.random_seed = random_seed
+
+    # pylint: enable=super-init-not-called
 
     @property
     def data_augmentation_config(self):

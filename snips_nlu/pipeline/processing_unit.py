@@ -1,9 +1,10 @@
-from builtins import object
 from abc import ABCMeta, abstractmethod
+from builtins import object
+
+from future.utils import with_metaclass
 
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
 from snips_nlu.utils import classproperty
-from future.utils import with_metaclass
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):

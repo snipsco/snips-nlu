@@ -31,6 +31,7 @@ def _default_entities_offsets():
 
 
 class CRFSlotFillerConfig(ProcessingUnitConfig):
+    # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=TaggingScheme.BIO, crf_args=None,
                  entities_offsets=None,
@@ -54,6 +55,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         self.random_seed = random_seed
+
+    # pylint: enable=super-init-not-called
 
     @property
     def tagging_scheme(self):

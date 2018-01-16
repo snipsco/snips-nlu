@@ -66,7 +66,7 @@ class LogRegIntentClassifier(IntentClassifier):
         self.classifier.fit(X, y)
         return self
 
-    def get_intent(self, text, intents=None):
+    def get_intent(self, text, intents_filter=None):
         if not self.fitted:
             raise AssertionError('LogRegIntentClassifier instance must be '
                                  'fitted before `get_intent` can be called')
@@ -87,7 +87,7 @@ class LogRegIntentClassifier(IntentClassifier):
         for intent, proba in intents_probas:
             if intent is None:
                 return None
-            if intents is None or intent in intents:
+            if intents_filter is None or intent in intents_filter:
                 return intent_classification_result(intent, proba)
         return None
 

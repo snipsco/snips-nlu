@@ -5,6 +5,7 @@ import argparse
 import io
 import json
 import os
+from builtins import input, bytes
 from pprint import pprint
 
 from snips_nlu import SnipsNLUEngine
@@ -23,8 +24,8 @@ def debug_training(dataset_path, config_path=None):
     engine = SnipsNLUEngine(config).fit(dataset)
 
     while True:
-        query = raw_input("Enter a query (type 'q' to quit): ").strip()
-        if isinstance(query, str):
+        query = input("Enter a query (type 'q' to quit): ").strip()
+        if isinstance(query, bytes):
             query = query.decode("utf8")
         if query == "q":
             break
@@ -37,8 +38,8 @@ def debug_inference(engine_path):
     engine = SnipsNLUEngine.from_dict(engine_dict)
 
     while True:
-        query = raw_input("Enter a query (type 'q' to quit): ").strip()
-        if isinstance(query, str):
+        query = input("Enter a query (type 'q' to quit): ").strip()
+        if isinstance(query, bytes):
             query = query.decode("utf8")
         if query == "q":
             break
@@ -47,21 +48,21 @@ def debug_inference(engine_path):
 
 def main_debug():
     parser = argparse.ArgumentParser(description="Debug snippets")
-    parser.add_argument("mode", type=unicode,
+    parser.add_argument("mode", type=bytes,
                         choices=["training", "inference"],
                         help="'training' to debug training and 'inference to "
                              "debug inference'")
-    parser.add_argument("path", type=unicode,
+    parser.add_argument("path", type=bytes,
                         help="Path to the dataset or trained assistant")
-    parser.add_argument("--config-path", type=unicode,
+    parser.add_argument("--config-path", type=bytes,
                         help="Path to the assistant configuration")
     args = vars(parser.parse_args())
     mode = args.pop("mode")
     if mode == "training":
-        debug_training(*args.values())
+        debug_training(*list(args.values()))
     elif mode == "inference":
         args.pop("config_path")
-        debug_inference(*args.values())
+        debug_inference(*list(args.values()))
     else:
         raise ValueError("Invalid mode %s" % mode)
 

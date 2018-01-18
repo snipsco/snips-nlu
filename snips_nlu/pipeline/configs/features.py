@@ -67,7 +67,7 @@ def default_features_factories():
             },
             "factory_name": EntityMatchFactory.name,
             "offsets": [-2, -1, 0],
-            "drop_out": 0.1
+            "drop_out": 0.5
         },
         {
             "args": {

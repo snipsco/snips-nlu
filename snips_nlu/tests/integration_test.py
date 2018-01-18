@@ -7,7 +7,7 @@ import unittest
 from nlu_metrics import compute_cross_val_nlu_metrics
 from snips_nlu_rust import NLUEngine as InferenceEngine
 
-from snips_nlu.nlu_engine import SnipsNLUEngine as TrainingEngine
+from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import TEST_PATH
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.9
@@ -19,6 +19,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
         # Given
         dataset_path = os.path.join(TEST_PATH, "resources",
                                     "performance_dataset.json")
+
         # When
         results = compute_cross_val_nlu_metrics(
             dataset_path,

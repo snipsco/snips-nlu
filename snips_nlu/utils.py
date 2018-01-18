@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import base64
-import cPickle
 import errno
 import numbers
 import os
@@ -9,46 +7,44 @@ from collections import OrderedDict, namedtuple, Mapping
 
 import numpy as np
 
-RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
-PACKAGE_NAME = "snips_nlu"
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
-RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
+from snips_nlu.constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY, \
+    RESOURCES_PATH
+
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
 
 
-# pylint: disable=C0103
-class abstractclassmethod(classmethod):
-    __isabstractmethod__ = True
+class ClassPropertyDescriptor(object):
+    def __init__(self, fget, fset=None):
+        self.fget = fget
+        self.fset = fset
 
-    # pylint: disable=W0622
-    def __init__(self, callable):
-        callable.__isabstractmethod__ = True
-        super(abstractclassmethod, self).__init__(callable)
+    def __get__(self, obj, klass=None):
+        if klass is None:
+            klass = type(obj)
+        return self.fget.__get__(obj, klass)()
+
+    def __set__(self, obj, value):
+        if not self.fset:
+            raise AttributeError("can't set attribute")
+        type_ = type(obj)
+        return self.fset.__get__(obj, type_)(value)
+
+    def setter(self, func):
+        if not isinstance(func, (classmethod, staticmethod)):
+            func = classmethod(func)
+        self.fset = func
+        return self
 
 
-class classproperty(property):
-    def __get__(self, cls, owner):
-        return self.fget.__get__(None, owner)()
+def classproperty(func):
+    if not isinstance(func, (classmethod, staticmethod)):
+        func = classmethod(func)
+
+    return ClassPropertyDescriptor(func)
 
 
 # pylint: enable=C0103
-
-def sequence_equal(seq, other_seq):
-    return len(seq) == len(other_seq) and sorted(seq) == sorted(other_seq)
-
-
-def merge_two_dicts(x, y, shallow_copy=True):
-    """Given two dicts, merge them into a new dict.
-    :param x: first dict
-    :param y: second dict
-    :param shallow_copy: if False, `x` will be updated with y and returned.
-    Otherwise a shallow copy of `x` will be created (default).
-    """
-    z = x.copy() if shallow_copy else x
-    z.update(y)
-    return z
 
 
 def type_error(expected_type, found_type):
@@ -132,24 +128,6 @@ def get_resources_path(language):
     return os.path.join(RESOURCES_PATH, language.iso_code)
 
 
-def ensure_string(string_or_unicode, encoding="utf8"):
-    if isinstance(string_or_unicode, str):
-        return string_or_unicode
-    elif isinstance(string_or_unicode, unicode):
-        return string_or_unicode.encode(encoding)
-    else:
-        raise TypeError("Expected str or unicode, found %s"
-                        % type(string_or_unicode))
-
-
-def safe_pickle_dumps(obj):
-    return base64.b64encode(cPickle.dumps(obj)).decode('ascii')
-
-
-def safe_pickle_loads(pkl_str):
-    return cPickle.loads(base64.b64decode(pkl_str))
-
-
 def mkdir_p(path):
     """
     Reproduces the mkdir -p shell command, see
@@ -204,3 +182,27 @@ def check_random_state(seed):
         return seed
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
+
+
+def get_slot_name_mapping(dataset, intent):
+    """
+    Returns a dict which maps slot names to entities for the provided intent
+    """
+    slot_name_mapping = dict()
+    for utterance in dataset[INTENTS][intent][UTTERANCES]:
+        for chunk in utterance[DATA]:
+            if SLOT_NAME in chunk:
+                slot_name_mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
+    return slot_name_mapping
+
+
+def get_slot_name_mappings(dataset):
+    """
+    Returns a dict which maps intents to their slot name mapping
+    """
+    return {intent: get_slot_name_mapping(dataset, intent)
+            for intent in dataset[INTENTS].keys()}
+
+
+def ranges_overlap(lhs_range, rhs_range):
+    return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]

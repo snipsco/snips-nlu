@@ -6,7 +6,7 @@ from enum import Enum
 from rustling import (RustlingParser as _RustlingParser, RustlingError,
                       all_configs)
 
-from snips_nlu.constants import MATCH_RANGE, VALUE, ENTITY, LABEL, \
+from snips_nlu.constants import RES_MATCH_RANGE, VALUE, ENTITY, LABEL, \
     RUSTLING_DIM_KIND, SUPPORTED_LANGUAGES
 from snips_nlu.languages import Language
 from snips_nlu.utils import LimitedSizeDict, classproperty
@@ -222,7 +222,9 @@ for lang in Language:
     except RustlingError:
         pass
 
-RUSTLING_SUPPORTED_LANGUAGES = set(_RUSTLING_PARSERS.keys())
+
+def get_supported_builtin_entities(language):
+    return _SUPPORTED_BUILTINS_BY_LANGUAGE[language]
 
 
 def get_builtin_entities(text, language, scope=None):
@@ -243,8 +245,8 @@ def get_builtin_entities(text, language, scope=None):
     for entity in parser.parse(text, scope=scope):
         if entity["dim"] in entities_parsed_dims:
             parsed_entity = {
-                MATCH_RANGE: (entity["char_range"]["start"],
-                              entity["char_range"]["end"]),
+                RES_MATCH_RANGE: (entity["char_range"]["start"],
+                                  entity["char_range"]["end"]),
                 VALUE: entity["value"],
                 ENTITY: _DIM_KIND_TO_ENTITY[entity["dim"]]
             }

@@ -8,8 +8,6 @@ from pprint import pprint
 def main_train_engine():
     parser = argparse.ArgumentParser("Train an NLU engine and persist it in "
                                      "a json file")
-    parser.add_argument("language", type=unicode,
-                        help="language (iso code) of the engine")
     parser.add_argument("dataset_path", type=unicode)
     parser.add_argument("output_path", type=unicode)
     parser.add_argument("-c", "--config-path", type=unicode,
@@ -17,7 +15,7 @@ def main_train_engine():
     args = vars(parser.parse_args())
 
     from snips_nlu import SnipsNLUEngine
-    from snips_nlu.config import NLUConfig
+    from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
     dataset_path = args.pop("dataset_path")
     with io.open(dataset_path, "r", encoding="utf8") as f:
@@ -28,10 +26,9 @@ def main_train_engine():
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)
     else:
-        config = NLUConfig()
+        config = NLUEngineConfig()
 
-    language = args.pop("language")
-    engine = SnipsNLUEngine(language, config).fit(dataset)
+    engine = SnipsNLUEngine(config).fit(dataset)
     print "Create and train the engine..."
 
     output_path = args.pop("output_path")

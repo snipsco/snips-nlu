@@ -3,49 +3,49 @@ from __future__ import unicode_literals
 import json
 import unittest
 
-from snips_nlu.constants import (PARSED_INTENT, PARSED_SLOTS, TEXT,
-                                 INTENT_NAME, PROBABILITY, MATCH_RANGE,
-                                 SLOT_NAME, VALUE)
-from snips_nlu.result import Result, IntentClassificationResult, ParsedSlot
+from snips_nlu.constants import (RES_INTENT, RES_SLOTS, RES_INTENT_NAME,
+                                 RES_PROBABILITY, RES_MATCH_RANGE, RES_INPUT,
+                                 RES_ENTITY, RES_SLOT_NAME, RES_VALUE)
+from snips_nlu.result import (parsing_result, intent_classification_result,
+                              _slot)
 
 
 class TestResult(unittest.TestCase):
     def test_should_serialize_results(self):
         # Given
-        result = Result(text="hello world",
-                        parsed_intent=IntentClassificationResult("world", 0.5),
-                        parsed_slots=[
-                            ParsedSlot((3, 5), "slot_value", "slot_entity",
-                                       "slot_name")])
+        input_ = "hello world"
+        intent = intent_classification_result("world", 0.5)
+        slots = [_slot([3, 5], "slot_value", "slot_entity", "slot_name")]
+
         # When
-        result_dict = result.as_dict()
+        result = parsing_result(input=input_, intent=intent, slots=slots)
 
         # Then
         try:
-            json.dumps(result_dict)
+            json.dumps(result)
         except:  # pylint: disable=W0702
             self.fail("Result dict should be json serializable")
 
-        expected_dict = {
-            PARSED_INTENT: {INTENT_NAME: 'world', PROBABILITY: 0.5},
-            PARSED_SLOTS: [{MATCH_RANGE: [3, 5],
-                            SLOT_NAME: 'slot_name',
-                            VALUE: 'slot_value'}],
-            TEXT: 'hello world'}
-        self.assertDictEqual(result_dict, expected_dict)
+        expected_result = {
+            RES_INTENT: {RES_INTENT_NAME: 'world', RES_PROBABILITY: 0.5},
+            RES_SLOTS: [{RES_MATCH_RANGE: [3, 5],
+                         RES_ENTITY: 'slot_entity',
+                         RES_SLOT_NAME: 'slot_name',
+                         RES_VALUE: 'slot_value'}],
+            RES_INPUT: input_}
+        self.assertDictEqual(expected_result, result)
 
     def test_should_serialize_results_when_none_values(self):
         # Given
-        result = Result(text="hello world", parsed_intent=None,
-                        parsed_slots=None)
+        input_ = "hello world"
 
         # When
-        result_dict = result.as_dict()
+        result = parsing_result(input=input_, intent=None, slots=None)
 
         # Then
-        expected_dict = {
-            PARSED_INTENT: None,
-            PARSED_SLOTS: None,
-            TEXT: 'hello world'
+        expected_result = {
+            RES_INTENT: None,
+            RES_SLOTS: None,
+            RES_INPUT: input_
         }
-        self.assertDictEqual(result_dict, expected_dict)
+        self.assertDictEqual(expected_result, result)

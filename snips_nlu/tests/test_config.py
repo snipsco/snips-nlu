@@ -1,13 +1,16 @@
 # coding=utf-8
 import unittest
 
-from snips_nlu.config import (NLUConfig,
-                              IntentClassifierDataAugmentationConfig,
-                              SlotFillerDataAugmentationConfig,
-                              FeaturizerConfig, IntentClassifierConfig,
-                              CRFFeaturesConfig,
-                              ProbabilisticIntentParserConfig,
-                              RegexTrainingConfig)
+from snips_nlu.intent_classifier.log_reg_classifier import \
+    LogRegIntentClassifier
+from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.pipeline.configs.slot_filler import (
+    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig)
+from snips_nlu.pipeline.configs.intent_parser import (
+    ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
+from snips_nlu.pipeline.configs.intent_classifier import (
+    IntentClassifierConfig, IntentClassifierDataAugmentationConfig,
+    FeaturizerConfig)
 
 
 class TestConfig(unittest.TestCase):
@@ -57,17 +60,11 @@ class TestConfig(unittest.TestCase):
     def test_intent_classifier_config(self):
         # Given
         config_dict = {
+            "unit_name": LogRegIntentClassifier.unit_name,
             "data_augmentation_config":
                 IntentClassifierDataAugmentationConfig().to_dict(),
-            "log_reg_args": {
-                "loss": "log",
-                "penalty": "l1",
-                "class_weight": "unbalanced",
-                "n_iter": 42,
-                "random_state": 1,
-                "n_jobs": 3
-            },
-            "featurizer_config": FeaturizerConfig().to_dict()
+            "featurizer_config": FeaturizerConfig().to_dict(),
+            "random_seed": 42
         }
 
         # When
@@ -77,18 +74,42 @@ class TestConfig(unittest.TestCase):
         # Then
         self.assertDictEqual(config_dict, serialized_config)
 
-    def test_crf_features_config(self):
+    def test_crf_slot_filler_config(self):
         # Given
-        config_dict = {
-            "features_drop_out": {
-                "feature_1": 0.5,
-                "feature_2": 0.1
+        feature_factories = [
+            {
+                "args": {
+                    "common_words_gazetteer_name": None,
+                    "use_stemming": True,
+                    "n": 1
+                },
+                "factory_name": "get_ngram_fn",
+                "offsets": [-2, -1, 0, 1, 2]
             },
-            "entities_offsets": [-2, 0, 3]
+            {
+                "args": {},
+                "factory_name": "is_digit",
+                "offsets": [-1, 0, 1]
+            }
+        ]
+        config_dict = {
+            "unit_name": "crf_slot_filler",
+            "feature_factory_configs": feature_factories,
+            "tagging_scheme": 2,
+            "crf_args": {
+                "c1": .2,
+                "c2": .3,
+                "algorithm": "lbfgs"
+            },
+            "entities_offsets": [-2, 0, 3],
+            "exhaustive_permutations_threshold": 42,
+            "data_augmentation_config":
+                SlotFillerDataAugmentationConfig().to_dict(),
+            "random_seed": 43
         }
 
         # When
-        config = CRFFeaturesConfig.from_dict(config_dict)
+        config = CRFSlotFillerConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -97,10 +118,9 @@ class TestConfig(unittest.TestCase):
     def test_probabilistic_intent_parser_config(self):
         # Given
         config_dict = {
-            "data_augmentation_config":
-                SlotFillerDataAugmentationConfig().to_dict(),
-            "crf_features_config": CRFFeaturesConfig().to_dict(),
-            "exhaustive_permutations_threshold": 42
+            "unit_name": "probabilistic_intent_parser",
+            "intent_classifier_config": IntentClassifierConfig().to_dict(),
+            "slot_filler_config": CRFSlotFillerConfig().to_dict(),
         }
 
         # When
@@ -110,15 +130,16 @@ class TestConfig(unittest.TestCase):
         # Then
         self.assertDictEqual(config_dict, serialized_config)
 
-    def test_regex_training_config(self):
+    def test_deterministic_parser_config(self):
         # Given
         config_dict = {
+            "unit_name": "deterministic_intent_parser",
             "max_queries": 666,
             "max_entities": 333
         }
 
         # When
-        config = RegexTrainingConfig.from_dict(config_dict)
+        config = DeterministicIntentParserConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -127,14 +148,15 @@ class TestConfig(unittest.TestCase):
     def test_nlu_config_from_dict(self):
         # Given
         config_dict = {
-            "intent_classifier_config": IntentClassifierConfig().to_dict(),
-            "probabilistic_intent_parser_config":
-                ProbabilisticIntentParserConfig().to_dict(),
-            "regex_training_config": RegexTrainingConfig().to_dict()
+            "unit_name": "nlu_engine",
+            "intent_parsers_configs": [
+                DeterministicIntentParserConfig().to_dict(),
+                ProbabilisticIntentParserConfig().to_dict()
+            ]
         }
 
         # When
-        config = NLUConfig.from_dict(config_dict)
+        config = NLUEngineConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then

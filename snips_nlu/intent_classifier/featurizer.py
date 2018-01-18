@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import FeaturizerConfig
+from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
@@ -155,7 +155,7 @@ class Featurizer(object):
                 normalize_stem(k, self.language)].update(v)
         if self.unknown_words_replacement_string is not None \
                 and self.unknown_words_replacement_string in \
-                        normalized_utterances_to_features:
+                normalized_utterances_to_features:
             normalized_utterances_to_features.pop(
                 self.unknown_words_replacement_string)
         self.entity_utterances_to_feature_names = dict(
@@ -248,8 +248,8 @@ class Featurizer(object):
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
             pvalue_threshold=obj_dict['pvalue_threshold'],
-            entity_utterances_to_feature_names= \
-                entity_utterances_to_entity_names,
+            entity_utterances_to_feature_names=
+            entity_utterances_to_entity_names,
             best_features=obj_dict['best_features'],
             config=config,
             unknown_words_replacement_string=obj_dict[

@@ -7,7 +7,7 @@ import re
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
-from snips_nlu.constants import VALUE, MATCH_RANGE
+from snips_nlu.constants import VALUE, RES_MATCH_RANGE
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 
@@ -105,7 +105,7 @@ def numbers_variations(string, language):
     digit_values = [digit_value(e) for e in number_entities]
     alpha_values = [alphabetic_value(e, language) for e in number_entities]
 
-    values = [(n[MATCH_RANGE], (d, a)) for (n, d, a) in
+    values = [(n[RES_MATCH_RANGE], (d, a)) for (n, d, a) in
               itertools.izip(number_entities, digit_values, alpha_values)
               if a is not None]
 

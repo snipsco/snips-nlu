@@ -8,111 +8,352 @@ import traceback as tb
 import unittest
 from copy import deepcopy
 
-from mock import Mock, patch
+from mock import patch
 
 import snips_nlu
-from snips_nlu.config import NLUConfig, RegexTrainingConfig
-from snips_nlu.constants import (DATA, TEXT, INTENTS, UTTERANCES)
+import snips_nlu.version
+from snips_nlu.constants import DATA, TEXT, LANGUAGE, RES_INTENT, \
+    RES_INTENT_NAME, RES_INPUT, RES_SLOTS, RES_MATCH_RANGE, RES_RAW_VALUE, \
+    RES_VALUE, RES_ENTITY, RES_SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine import SnipsNLUEngine, enrich_slots
-from snips_nlu.result import Result, ParsedSlot, IntentClassificationResult
-from snips_nlu.tests.utils import (SAMPLE_DATASET, empty_dataset, TEST_PATH,
-                                   BEVERAGE_DATASET)
+from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine.utils import enrich_slots, get_fitted_slot_filler, \
+    add_fitted_slot_filler
+from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
+from snips_nlu.pipeline.configs.intent_parser import \
+    ProbabilisticIntentParserConfig
+from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.pipeline.units_registry import register_processing_unit, \
+    reset_processing_units
+from snips_nlu.result import parsing_result, _slot, \
+    intent_classification_result, empty_result, custom_slot, resolved_slot
+from snips_nlu.tests.utils import (
+    SAMPLE_DATASET, get_empty_dataset, TEST_PATH, BEVERAGE_DATASET)
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
+    def setUp(self):
+        reset_processing_units()
+
     def test_should_use_parsers_sequentially(self):
         # Given
-        language = Language.EN
-
         input_text = "hello world"
+        result = intent_classification_result(
+            intent_name='dummy_intent_1', probability=0.7)
+        slots = [_slot(match_range=(6, 11),
+                       value='world',
+                       entity='mocked_entity',
+                       slot_name='mocked_slot_name')]
 
-        mocked_parser1 = Mock()
-        intent_result1 = None
-        intent_entities1 = []
-        mocked_parser1.get_intent.return_value = intent_result1
-        mocked_parser1.get_entities.return_value = intent_entities1
+        class TestIntentParser1Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser1"
 
-        mocked_parser2 = Mock()
-        intent_result2 = IntentClassificationResult(
-            intent_name='mocked_intent2', probability=0.7)
-        intent_entities2_empty = []
-        intent_entities2 = [
-            ParsedSlot(match_range=(3, 5), value='mocked_value',
-                       entity='mocked_entity', slot_name='mocked_slot_name')]
-        mocked_parser2.get_intent.return_value = intent_result2
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
 
-        def mock_get_slots(text, intent):
-            assert text == input_text
-            if intent == intent_result2.intent_name:
-                return intent_entities2
-            return intent_entities2_empty
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser1Config()
 
-        mocked_parser2.get_slots = Mock(side_effect=mock_get_slots)
-        mocked_entities = {
-            "mocked_entity": {
-                "automatically_extensible": True,
-                "utterances": dict()
+        class TestIntentParser1(IntentParser):
+            unit_name = "test_intent_parser1"
+            config_type = TestIntentParser1Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text, intents=None):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser1(conf)
+
+        class TestIntentParser2Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser2"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser2Config()
+
+        class TestIntentParser2(IntentParser):
+            unit_name = "test_intent_parser2"
+            config_type = TestIntentParser2Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text, intents=None):
+                if text == input_text:
+                    return result
+                return None
+
+            def get_slots(self, text, intent):
+                if text == input_text:
+                    return slots
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser2(conf)
+
+        register_processing_unit(TestIntentParser1)
+        register_processing_unit(TestIntentParser2)
+
+        mocked_dataset_metadata = {
+            "language_code": "en",
+            "entities": {
+                "mocked_entity": {
+                    "automatically_extensible": True,
+                    "utterances": dict()
+                }
+            },
+            "slot_name_mappings": {
+                "dummy_intent_1": {
+                    "mocked_slot_name": "mocked_entity"
+                }
             }
         }
-        engine = SnipsNLUEngine(
-            language, entities=mocked_entities,
-            rule_based_parser=mocked_parser1,
-            probabilistic_parser=mocked_parser2,
-            slot_name_mapping={'mocked_slot_name': 'mocked_entity'})
+
+        config = NLUEngineConfig([TestIntentParser1Config(),
+                                  TestIntentParser2Config()])
+        engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
+        engine.dataset_metadata = mocked_dataset_metadata
 
         # When
         parse = engine.parse(input_text)
 
         # Then
-        expected_parse = Result(input_text, intent_result2,
-                                intent_entities2).as_dict()
-        self.assertEqual(parse, expected_parse)
+        expected_slots = [custom_slot(s) for s in slots]
+        expected_parse = parsing_result(input_text, result, expected_slots)
+        self.assertDictEqual(expected_parse, parse)
 
     def test_should_handle_empty_dataset(self):
         # Given
-        engine = SnipsNLUEngine(Language.EN).fit(empty_dataset(Language.EN))
+        dataset = validate_and_format_dataset(get_empty_dataset(Language.EN))
+        engine = SnipsNLUEngine().fit(dataset)
 
         # When
         result = engine.parse("hello world")
 
         # Then
-        self.assertEqual(result, Result("hello world", None, None).as_dict())
+        self.assertEqual(empty_result("hello world"), result)
 
-    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.to_dict')
-    @patch('snips_nlu.nlu_engine.RegexIntentParser.to_dict')
-    def test_should_be_serializable(self, mock_rule_based_parser_to_dict,
-                                    mock_probabilistic_parser_to_dict):
+    def test_should_be_serializable(self):
         # Given
-        language = Language.EN
+        class TestIntentParser1Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser1"
 
-        mocked_rule_based_parser_dict = {
-            "mocked_ruled_based_parser_key": "mocked_ruled_based_parser_value"}
-        mock_rule_based_parser_to_dict.return_value = \
-            mocked_rule_based_parser_dict
-        mocked_proba_parser_dict = {
-            "mocked_proba_based_parser_key": "mocked_proba_parser_value"}
-        mock_probabilistic_parser_to_dict.return_value = \
-            mocked_proba_parser_dict
-        random_state = 1
-        engine = SnipsNLUEngine(
-            language, random_seed=random_state).fit(BEVERAGE_DATASET)
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser1Config()
+
+        class TestIntentParser1(IntentParser):
+            unit_name = "test_intent_parser1"
+            config_type = TestIntentParser1Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text, intents=None):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser1(conf)
+
+        class TestIntentParser2Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser2"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser2Config()
+
+        class TestIntentParser2(IntentParser):
+            unit_name = "test_intent_parser2"
+            config_type = TestIntentParser2Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text, intents=None):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser2(conf)
+
+        register_processing_unit(TestIntentParser1)
+        register_processing_unit(TestIntentParser2)
+
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        parsers_configs = [parser1_config, parser2_config]
+        config = NLUEngineConfig(parsers_configs)
+        engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
 
         # When
         actual_engine_dict = engine.to_dict()
 
         # Then
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        parsers_configs = [parser1_config, parser2_config]
+        expected_engine_config = NLUEngineConfig(parsers_configs)
         expected_engine_dict = {
-            "slot_name_mapping": {
-                "MakeCoffee": {
-                    "number_of_cups": "snips/number"
+            "unit_name": "nlu_engine",
+            "dataset_metadata": {
+                "language_code": "en",
+                "entities": {
+                    "Temperature": {
+                        "automatically_extensible": True,
+                        "utterances": {
+                            "boiling": "hot",
+                            "cold": "cold",
+                            "hot": "hot",
+                            "iced": "cold"
+                        }
+                    }
                 },
-                "MakeTea": {
-                    "number_of_cups": "snips/number",
-                    "beverage_temperature": "Temperature"
-                }
+                "slot_name_mappings": {
+                    "MakeCoffee": {
+                        "number_of_cups": "snips/number"
+                    },
+                    "MakeTea": {
+                        "beverage_temperature": "Temperature",
+                        "number_of_cups": "snips/number"
+                    }
+                },
             },
+            "config": expected_engine_config.to_dict(),
+            "intent_parsers": [
+                {"unit_name": "test_intent_parser1"},
+                {"unit_name": "test_intent_parser2"}
+            ],
+            "model_version": snips_nlu.version.__model_version__,
+            "training_package_version": snips_nlu.__version__
+        }
+
+        self.assertDictEqual(actual_engine_dict, expected_engine_dict)
+
+    def test_should_be_deserializable(self):
+        # When
+        class TestIntentParser1Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser1"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser1Config()
+
+        class TestIntentParser1(IntentParser):
+            unit_name = "test_intent_parser1"
+            config_type = TestIntentParser1Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text, intents=None):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                config = cls.config_type()
+                return TestIntentParser1(config)
+
+        class TestIntentParser2Config(ProcessingUnitConfig):
+            unit_name = "test_intent_parser2"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParser2Config()
+
+        class TestIntentParser2(IntentParser):
+            unit_name = "test_intent_parser2"
+            config_type = TestIntentParser2Config
+
+            def fit(self, dataset, intents):
+                return self
+
+            def get_intent(self, text, intents=None):
+                return None
+
+            def get_slots(self, text, intent):
+                return []
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                config = cls.config_type()
+                return TestIntentParser2(config)
+
+        register_processing_unit(TestIntentParser1)
+        register_processing_unit(TestIntentParser2)
+
+        dataset_metadata = {
+            "language_code": "en",
             "entities": {
                 "Temperature": {
                     "automatically_extensible": True,
@@ -124,83 +365,50 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     }
                 }
             },
-            "intents_data_sizes": {
-                "MakeCoffee": 7,
-                "MakeTea": 4
+            "slot_name_mappings": {
+                "MakeCoffee": {
+                    "number_of_cups": "snips/number"
+                },
+                "MakeTea": {
+                    "beverage_temperature": "Temperature",
+                    "number_of_cups": "snips/number"
+                }
             },
-            "config": NLUConfig().to_dict(),
-            "language": "en",
-            "model": {
-                "rule_based_parser": mocked_rule_based_parser_dict,
-                "probabilistic_parser": mocked_proba_parser_dict
-            },
-            "random_seed": random_state,
-            "model_version": snips_nlu.__model_version__
         }
-
-        self.assertDictEqual(actual_engine_dict, expected_engine_dict)
-
-    @patch('snips_nlu.nlu_engine.ProbabilisticIntentParser.from_dict')
-    @patch('snips_nlu.nlu_engine.RegexIntentParser.from_dict')
-    def test_should_be_deserializable(self, mock_rule_based_parser_from_dict,
-                                      mock_probabilistic_parser_from_dict):
-        # When
-        mocked_rule_based_parser_dict = {
-            "mocked_ruled_based_parser_key": "mocked_ruled_based_parser_value"}
-        mocked_proba_parser_dict = {
-            "mocked_proba_based_parser_key": "mocked_proba_parser_value"}
-        entities = {"Temperature": {"automatically_extensible": True,
-                                    "utterances": {"boiling": "hot",
-                                                   "cold": "cold",
-                                                   "hot": "hot",
-                                                   "iced": "cold"}}}
-        slot_name_mapping = {
-            "MakeCoffee": {
-                "number_of_cups": "snips/number"
-            },
-            "MakeTea": {
-                "number_of_cups": "snips/number",
-                "beverage_temperature": "Temperature"
-            }
-        }
-        intents_data_sizes = {"MakeCoffee": 7, "MakeTea": 4}
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        engine_config = NLUEngineConfig([parser1_config, parser2_config])
         engine_dict = {
-            "slot_name_mapping": slot_name_mapping,
-            "entities": entities,
-            "intents_data_sizes": intents_data_sizes,
-            "config": NLUConfig(),
-            "language": "en",
-            "model": {
-                "rule_based_parser": mocked_rule_based_parser_dict,
-                "probabilistic_parser": mocked_proba_parser_dict
-            },
-            "random_seed": 1,
-            "model_version": snips_nlu.__model_version__
+            "unit_name": "nlu_engine",
+            "dataset_metadata": dataset_metadata,
+            "config": engine_config.to_dict(),
+            "intent_parsers": [
+                {"unit_name": "test_intent_parser1"},
+                {"unit_name": "test_intent_parser2"},
+            ],
+            "model_version": snips_nlu.version.__model_version__,
+            "training_package_version": snips_nlu.__version__
         }
         engine = SnipsNLUEngine.from_dict(engine_dict)
 
         # Then
-        mock_rule_based_parser_from_dict.assert_called_once_with(
-            mocked_rule_based_parser_dict)
+        parser1_config = TestIntentParser1Config()
+        parser2_config = TestIntentParser2Config()
+        expected_engine_config = NLUEngineConfig(
+            [parser1_config, parser2_config]).to_dict()
+        self.assertDictEqual(engine.dataset_metadata, dataset_metadata)
+        self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
-        mock_probabilistic_parser_from_dict.assert_called_once_with(
-            mocked_proba_parser_dict)
-
-        self.assertEqual(engine.language, Language.EN)
-        self.assertDictEqual(engine.intents_data_sizes, intents_data_sizes)
-        self.assertDictEqual(engine.slot_name_mapping, slot_name_mapping)
-        self.assertDictEqual(engine.entities, entities)
-
-    def test_end_to_end_serialization(self):
+    def test_should_parse_after_deserialization(self):
         # Given
         dataset = BEVERAGE_DATASET
-        engine = SnipsNLUEngine(Language.EN).fit(dataset)
-        text = "Give me 3 cups of hot tea please"
+        engine = SnipsNLUEngine().fit(dataset)
+        input_ = "Give me 3 cups of hot tea please"
 
         # When
         engine_dict = engine.to_dict()
-        engine = SnipsNLUEngine.from_dict(engine_dict)
-        result = engine.parse(text)
+        deserialized_engine = SnipsNLUEngine.from_dict(engine_dict)
+        result = deserialized_engine.parse(input_)
 
         # Then
         try:
@@ -210,19 +418,19 @@ class TestSnipsNLUEngine(unittest.TestCase):
             self.fail("SnipsNLUEngine dict should be json serializable "
                       "to utf-8.\n{}\n{}".format(e, trace))
         expected_slots = [
-            ParsedSlot((8, 9), '3', 'snips/number',
-                       'number_of_cups').as_dict(),
-            ParsedSlot((18, 21), 'hot', 'Temperature',
-                       'beverage_temperature').as_dict()
+            resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
+                          'snips/number', 'number_of_cups'),
+            custom_slot(_slot((18, 21), 'hot', 'Temperature',
+                              'beverage_temperature'))
         ]
-        self.assertEqual(result['text'], text)
-        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
-        self.assertListEqual(result['slots'], expected_slots)
+        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
+        self.assertListEqual(result[RES_SLOTS], expected_slots)
 
     def test_should_fail_when_missing_intents(self):
         # Given
         incomplete_intents = {"MakeCoffee"}
-        engine = SnipsNLUEngine(Language.EN)
+        engine = SnipsNLUEngine()
 
         # Then
         with self.assertRaises(Exception) as context:
@@ -231,45 +439,44 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertTrue("These intents must be trained: set([u'MakeTea'])"
                         in context.exception)
 
-    def test_should_use_fitted_tagger(self):
+    def test_should_use_fitted_slot_filler(self):
         # Given
-        text = "Give me 3 cups of hot tea please"
-        trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
-        trained_tagger = trained_engine.probabilistic_parser.crf_taggers[
-            "MakeTea"]
-        trained_tagger_data = trained_tagger.to_dict()
+        input_ = "Give me 3 cups of hot tea please"
+        fitted_slot_filler = get_fitted_slot_filler(
+            SnipsNLUEngine(), BEVERAGE_DATASET, "MakeTea")
 
         # When
-        engine = SnipsNLUEngine(Language.EN)
-        engine.add_fitted_tagger("MakeTea", trained_tagger_data)
+        engine = SnipsNLUEngine()
+        add_fitted_slot_filler(engine, "MakeTea", fitted_slot_filler.to_dict())
         engine.fit(BEVERAGE_DATASET, intents=["MakeCoffee"])
-        result = engine.parse(text)
+        result = engine.parse(input_)
 
         # Then
         expected_slots = [
-            ParsedSlot((8, 9), '3', 'snips/number',
-                       'number_of_cups').as_dict(),
-            ParsedSlot((18, 21), 'hot', 'Temperature',
-                       'beverage_temperature').as_dict()
+            resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
+                          'snips/number', 'number_of_cups'),
+            custom_slot(_slot((18, 21), 'hot', 'Temperature',
+                              'beverage_temperature'))
         ]
-        self.assertEqual(result['text'], text)
-        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
-        self.assertListEqual(result['slots'], expected_slots)
+        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
+        self.assertListEqual(result[RES_SLOTS], expected_slots)
 
-    def test_should_be_serializable_after_fitted_tagger_is_added(self):
+    def test_should_be_serializable_after_fitted_slot_filler_is_added(self):
         # Given
-        text = "Give me 3 cups of hot tea please"
-        trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
-        taggers = trained_engine.probabilistic_parser.crf_taggers
-        trained_tagger_coffee = taggers["MakeCoffee"]
-        trained_tagger_tea = taggers["MakeTea"]
-        trained_tagger_data_coffee = trained_tagger_coffee.to_dict()
-        trained_tagger_data_tea = trained_tagger_tea.to_dict()
+        input_ = "Give me 3 cups of hot tea please"
+        engine = SnipsNLUEngine()
+        trained_slot_filler_coffee = get_fitted_slot_filler(
+            engine, BEVERAGE_DATASET, "MakeCoffee")
+        trained_slot_filler_tea = get_fitted_slot_filler(
+            engine, BEVERAGE_DATASET, "MakeTea")
 
         # When
-        engine = SnipsNLUEngine(Language.EN)
-        engine.add_fitted_tagger("MakeCoffee", trained_tagger_data_coffee)
-        engine.add_fitted_tagger("MakeTea", trained_tagger_data_tea)
+        engine = SnipsNLUEngine()
+        add_fitted_slot_filler(engine, "MakeCoffee",
+                               trained_slot_filler_coffee.to_dict())
+        add_fitted_slot_filler(engine, "MakeTea",
+                               trained_slot_filler_tea.to_dict())
         engine.fit(BEVERAGE_DATASET, intents=[])
 
         try:
@@ -278,34 +485,31 @@ class TestSnipsNLUEngine(unittest.TestCase):
         except Exception, e:  # pylint: disable=W0703
             self.fail('Exception raised: %s\n%s' %
                       (e.message, tb.format_exc()))
-        result = new_engine.parse(text)
+        result = new_engine.parse(input_)
 
         # Then
         expected_slots = [
-            ParsedSlot((8, 9), '3', 'snips/number',
-                       'number_of_cups').as_dict(),
-            ParsedSlot((18, 21), 'hot', 'Temperature',
-                       'beverage_temperature').as_dict()
+            resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
+                          'snips/number', 'number_of_cups'),
+            custom_slot(_slot((18, 21), 'hot', 'Temperature',
+                              'beverage_temperature'))
         ]
-        self.assertEqual(result['text'], text)
-        self.assertEqual(result['intent']['intent_name'], 'MakeTea')
+        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
         self.assertListEqual(result['slots'], expected_slots)
 
-    @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.get_slots")
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.get_intent")
-    @patch("snips_nlu.intent_parser.regex_intent_parser.RegexIntentParser"
-           ".get_intent")
+    @patch("snips_nlu.intent_parser.deterministic_intent_parser"
+           ".DeterministicIntentParser.get_intent")
     def test_should_handle_keyword_entities(self, mocked_regex_get_intent,
                                             mocked_crf_get_intent,
-                                            mocked_crf_get_slots,
-                                            mocked_default_features):
+                                            mocked_crf_get_slots):
         # Given
-        language = Language.EN
         dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
@@ -362,25 +566,24 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": "en"
         }
 
-        mocked_default_features.return_value = []
-        mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
-        mocked_crf_slots = [ParsedSlot(match_range=(0, 7),
-                                       value="dummy_3",
-                                       entity="dummy_entity_1",
-                                       slot_name="dummy_slot_name"),
-                            ParsedSlot(match_range=(8, 15),
-                                       value="dummy_4",
-                                       entity="dummy_entity_2",
-                                       slot_name="other_dummy_slot_name")]
+        mocked_crf_intent = intent_classification_result("dummy_intent_1", 1.0)
+        mocked_crf_slots = [_slot(match_range=(0, 7),
+                                  value="dummy_3",
+                                  entity="dummy_entity_1",
+                                  slot_name="dummy_slot_name"),
+                            _slot(match_range=(8, 15),
+                                  value="dummy_4",
+                                  entity="dummy_entity_2",
+                                  slot_name="other_dummy_slot_name")]
 
         mocked_regex_get_intent.return_value = None
         mocked_crf_get_intent.return_value = mocked_crf_intent
         mocked_crf_get_slots.return_value = mocked_crf_slots
 
-        engine = SnipsNLUEngine(language)
+        engine = SnipsNLUEngine()
         text = "dummy_3 dummy_4"
 
         # When
@@ -388,29 +591,25 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_result = Result(
-            text, parsed_intent=mocked_crf_intent,
-            parsed_slots=[ParsedSlot(match_range=(8, 15), value="dummy_4",
-                                     entity="dummy_entity_2",
-                                     slot_name="other_dummy_slot_name")]) \
-            .as_dict()
-        self.assertEqual(result, expected_result)
+        expected_slot = custom_slot(_slot(
+            match_range=(8, 15), value="dummy_4", entity="dummy_entity_2",
+            slot_name="other_dummy_slot_name"))
+        expected_result = parsing_result(text, intent=mocked_crf_intent,
+                                         slots=[expected_slot])
+        self.assertEqual(expected_result, result)
 
-    @patch("snips_nlu.slot_filler.feature_functions.default_features")
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.get_slots")
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.get_intent")
-    @patch("snips_nlu.intent_parser.regex_intent_parser.RegexIntentParser"
-           ".get_intent")
-    def test_synonyms_should_point_to_base_value(self, mocked_regex_get_intent,
-                                                 mocked_crf_get_intent,
-                                                 mocked_crf_get_slots,
-                                                 mocked_default_features):
+    @patch("snips_nlu.intent_parser.deterministic_intent_parser"
+           ".DeterministicIntentParser.get_intent")
+    def test_synonyms_should_point_to_base_value(self, mocked_deter_get_intent,
+                                                 mocked_proba_get_intent,
+                                                 mocked_proba_get_slots):
         # Given
-        language = Language.EN
         dataset = {
             "snips_nlu_version": "1.1.1",
             "intents": {
@@ -443,33 +642,40 @@ class TestSnipsNLUEngine(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": "en"
         }
 
-        mocked_default_features.return_value = []
-        mocked_crf_intent = IntentClassificationResult("dummy_intent_1", 1.0)
-        mocked_crf_slots = [ParsedSlot(match_range=(0, 10), value="dummy1_bis",
-                                       entity="dummy_entity_1",
-                                       slot_name="dummy_slot_name")]
+        mocked_proba_parser_intent = intent_classification_result(
+            "dummy_intent_1", 1.0)
+        mocked_proba_parser_slots = [
+            _slot(match_range=(0, 10), value="dummy1_bis",
+                  entity="dummy_entity_1",
+                  slot_name="dummy_slot_name")]
 
-        mocked_regex_get_intent.return_value = None
-        mocked_crf_get_intent.return_value = mocked_crf_intent
-        mocked_crf_get_slots.return_value = mocked_crf_slots
+        mocked_deter_get_intent.return_value = None
+        mocked_proba_get_intent.return_value = mocked_proba_parser_intent
+        mocked_proba_get_slots.return_value = mocked_proba_parser_slots
 
-        engine = SnipsNLUEngine(language).fit(dataset)
+        engine = SnipsNLUEngine().fit(dataset)
         text = "dummy1_bis"
 
         # When
         result = engine.parse(text)
 
         # Then
-        expected_result = Result(
-            text, parsed_intent=mocked_crf_intent,
-            parsed_slots=[ParsedSlot(match_range=(0, 10), value="dummy1",
-                                     entity="dummy_entity_1",
-                                     slot_name="dummy_slot_name")]) \
-            .as_dict()
-        self.assertEqual(result, expected_result)
+        expected_slot = {
+            RES_MATCH_RANGE: [0, 10],
+            RES_RAW_VALUE: "dummy1_bis",
+            RES_VALUE: {
+                "kind": "Custom",
+                "value": "dummy1"
+            },
+            RES_ENTITY: "dummy_entity_1",
+            RES_SLOT_NAME: "dummy_slot_name"
+        }
+        expected_result = parsing_result(
+            text, intent=mocked_proba_parser_intent, slots=[expected_slot])
+        self.assertEqual(expected_result, result)
 
     def test_enrich_slots(self):
         # Given
@@ -477,88 +683,88 @@ class TestSnipsNLUEngine(unittest.TestCase):
             # Adjacent
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((2, 6), "", "", ""),
-                    ParsedSlot((8, 10), "", "", "")
+                    _slot((2, 6), "", "", ""),
+                    _slot((8, 10), "", "", "")
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", ""),
-                    ParsedSlot((2, 6), "", "", ""),
-                    ParsedSlot((8, 10), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", ""),
+                    _slot((2, 6), "", "", ""),
+                    _slot((8, 10), "", "", "")
                 ]
             },
             # Equality
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((6, 8), "", "", ""),
+                    _slot((6, 8), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Inclusion
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((5, 7), "", "", ""),
+                    _slot((5, 7), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Cross upper
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((7, 10), "", "", ""),
+                    _slot((7, 10), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Cross lower
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((5, 7), "", "", ""),
+                    _slot((5, 7), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             },
             # Full overlap
             {
                 "slots": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ],
                 "other_slots": [
-                    ParsedSlot((4, 12), "", "", ""),
+                    _slot((4, 12), "", "", ""),
                 ],
                 "enriched": [
-                    ParsedSlot((0, 2), "", "", ""),
-                    ParsedSlot((6, 8), "", "", "")
+                    _slot((0, 2), "", "", ""),
+                    _slot((6, 8), "", "", "")
                 ]
             }
         ]
@@ -579,7 +785,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
-        engine = SnipsNLUEngine(Language.EN).fit(dataset)
+        engine = SnipsNLUEngine().fit(dataset)
 
         # Then
         for s in naughty_strings:
@@ -602,7 +808,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         naughty_dataset = validate_and_format_dataset({
             "intents": {
                 "naughty_intent": {
-                    "engineType": "regex",
                     "utterances": utterances
                 }
             },
@@ -613,14 +818,13 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         try:
-            SnipsNLUEngine(Language.EN).fit(naughty_dataset)
+            SnipsNLUEngine().fit(naughty_dataset)
         except:  # pylint: disable=W0702
             trace = tb.format_exc()
             self.fail('Exception raised:\n %s' % trace)
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
-        language = Language.EN
         dataset = validate_and_format_dataset({
             "intents": {
                 "dummy": {
@@ -640,124 +844,37 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "entities": {
                 "snips/datetime": {}
             },
-            "language": language.iso_code,
+            "language": "en",
             "snips_nlu_version": "0.0.1"
         })
 
         # When / Then
         try:
-            SnipsNLUEngine(language).fit(dataset)
+            SnipsNLUEngine().fit(dataset)
         except:  # pylint: disable=W0702
             self.fail("NLU engine should fit builtin")
 
-    def test_should_not_create_regex_when_having_enough_queries(self):
+    def test_get_fitted_slot_filler_should_return_same_slot_filler_as_fit(
+            self):
         # Given
-        language = Language.EN
-        max_queries = 5
-        intent_name = "dummy"
-        regex_config = RegexTrainingConfig(max_queries=max_queries)
-        config = NLUConfig(regex_training_config=regex_config)
-        dataset = validate_and_format_dataset({
-            "intents": {
-                intent_name: {
-                    "utterances": [{
-                        "data": [
-                            {
-                                "text": "10p.m.",
-                                "entity": "snips/datetime",
-                                "slot_name": "startTime"
-                            }
-                        ]
-                    }] * max_queries
-                }
-            },
-            "entities": {
-                "snips/datetime": {}
-            },
-            "language": language.iso_code,
-            "snips_nlu_version": "0.0.1"
-        })
-        # When
-        engine = SnipsNLUEngine(language, config=config).fit(dataset)
-
-        # Then
-        self.assertEqual(
-            len(engine.rule_based_parser.regexes_per_intent[intent_name]), 0)
-
-    def test_should_not_create_regex_when_having_enough_entities(self):
-        # Given
-        language = Language.EN
-        intent_name = "dummy"
-        max_entities = 10
-        config = NLUConfig(
-            regex_training_config=RegexTrainingConfig(max_entities=10))
-        dataset = {
-            "intents": {
-                intent_name: {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "a_time",
-                                    "entity": "time",
-                                    "slot_name": "startTime"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            },
-            "entities": {
-                "time": {
-                    "use_synonyms": True,
-                    "automatically_extensible": True,
-                    "data": [
-                        {
-                            "synonyms": [str(i) for i in
-                                         xrange(1, max_entities)],
-                            "value": "0"
-                        }
-                    ]
-                }
-            },
-            "language": language.iso_code,
-            "snips_nlu_version": "0.0.1"
-        }
-        # When
-        engine = SnipsNLUEngine(language, config=config).fit(dataset)
-
-        # Then
-        self.assertEqual(
-            len(engine.rule_based_parser.regexes_per_intent[intent_name]), 0)
-
-    @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
-           "augment_utterances")
-    def test_get_fitted_tagger_should_return_same_tagger_as_fit(
-            self, mocked_augment_utterances):
-        # Given
-        # pylint: disable=W0613
-        def augment_utterances(dataset, intent_name, language, min_utterances,
-                               capitalization_ratio, random_state):
-            return dataset[INTENTS][intent_name][UTTERANCES]
-
-        # pylint: enable=W0613
-
-        mocked_augment_utterances.side_effect = augment_utterances
-
         intent = "MakeCoffee"
-        trained_engine = SnipsNLUEngine(Language.EN).fit(BEVERAGE_DATASET)
+        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        parser_config = ProbabilisticIntentParserConfig(
+            slot_filler_config=slot_filler_config)
+        config = NLUEngineConfig(intent_parsers_configs=[parser_config])
+        trained_engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
 
         # When
-        engine = SnipsNLUEngine(Language.EN)
-        tagger = engine.get_fitted_tagger(BEVERAGE_DATASET, intent)
+        engine = SnipsNLUEngine(config)
+        slot_filler = get_fitted_slot_filler(engine, BEVERAGE_DATASET, intent)
 
         # Then
-        expected_tagger = trained_engine.probabilistic_parser.crf_taggers[
-            intent]
-        self.assertEqual(tagger.crf_model.state_features_,
-                         expected_tagger.crf_model.state_features_)
-        self.assertEqual(tagger.crf_model.transition_features_,
-                         expected_tagger.crf_model.transition_features_)
+        expected_slot_filler = \
+            trained_engine.intent_parsers[0].slot_fillers[intent]
+        self.assertEqual(expected_slot_filler.crf_model.state_features_,
+                         slot_filler.crf_model.state_features_)
+        self.assertEqual(expected_slot_filler.crf_model.transition_features_,
+                         slot_filler.crf_model.transition_features_)
 
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
            "ProbabilisticIntentParser.get_slots")
@@ -767,22 +884,22 @@ class TestSnipsNLUEngine(unittest.TestCase):
             self, mocked_probabilistic_get_intent,
             mocked_probabilistic_get_slots):
         # Given
-        language = Language.EN
         dataset = deepcopy(SAMPLE_DATASET)
         dataset["entities"]["dummy_entity_1"][
             "automatically_extensible"] = True
-        engine = SnipsNLUEngine(language).fit(dataset)
+        engine = SnipsNLUEngine().fit(dataset)
         intent = "dummy_intent_1"
         text = "This is another weird weird query"
 
-        intent_classif_result = IntentClassificationResult(intent, .8)
-        expected_intent_classif_result = IntentClassificationResult(intent,
-                                                                    1.0)
+        intent_classif_result = intent_classification_result(intent, .8)
+        expected_intent_classif_result = intent_classification_result(intent,
+                                                                      1.0)
         mocked_probabilistic_get_intent.return_value = intent_classif_result
 
-        parsed_slots = [ParsedSlot(match_range=(16, 27), value="weird weird",
-                                   entity="dummy_entity_1",
-                                   slot_name="dummy slot nàme")]
+        parsed_slots = [
+            _slot(match_range=(16, 27), value="weird weird",
+                  entity="dummy_entity_1",
+                  slot_name="dummy slot nàme")]
         mocked_probabilistic_get_slots.return_value = parsed_slots
 
         # When
@@ -791,16 +908,18 @@ class TestSnipsNLUEngine(unittest.TestCase):
         # Then
         mocked_probabilistic_get_intent.assert_called_once()
         mocked_probabilistic_get_slots.assert_called_once()
-        expected_parse = Result(text, expected_intent_classif_result,
-                                parsed_slots).as_dict()
-        self.assertEqual(parse, expected_parse)
+        resolved_slots = [custom_slot(s) for s in parsed_slots]
+        expected_parse = parsing_result(text, expected_intent_classif_result,
+                                        resolved_slots)
+        self.assertEqual(expected_parse, parse)
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given
         text = "brew me an expresso"
-        dataset = deepcopy(BEVERAGE_DATASET)
         for l in Language:
-            engine = SnipsNLUEngine(l)
+            dataset = deepcopy(BEVERAGE_DATASET)
+            dataset[LANGUAGE] = l.iso_code
+            engine = SnipsNLUEngine()
 
             # When / Then
             try:

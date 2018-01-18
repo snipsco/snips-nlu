@@ -10,8 +10,7 @@ from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 SNIPS_NLU_VERSION, CAPITALIZE,
-                                 NORMALIZED_TEXT)
+                                 SNIPS_NLU_VERSION, CAPITALIZE)
 from snips_nlu.languages import Language
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
@@ -70,10 +69,6 @@ def validate_and_format_intent(intent, entities):
         for chunk in utterance[DATA]:
             validate_type(chunk, dict)
             validate_key(chunk, TEXT, object_label="chunk")
-            if NORMALIZED_TEXT in chunk:
-                validate_type(chunk[NORMALIZED_TEXT], (str, unicode))
-                chunk[TEXT] = chunk[NORMALIZED_TEXT]
-                chunk.pop(NORMALIZED_TEXT)
             if ENTITY in chunk or SLOT_NAME in chunk:
                 mandatory_keys = [ENTITY, SLOT_NAME]
                 validate_keys(chunk, mandatory_keys, object_label="chunk")

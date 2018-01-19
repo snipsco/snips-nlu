@@ -197,7 +197,7 @@ class RustlingParser(object):
             _SUPPORTED_BUILTINS_BY_LANGUAGE[self.language])
 
     def parse(self, text, scope=None):
-        text = text.lower()  # Rustling only work with lowercase
+        text = text.lower()  # Rustling only works with lowercase
         if scope is not None:
             scope = [e.rustling_dim_kind for e in scope]
         cache_key = (text, str(scope))
@@ -236,16 +236,17 @@ def get_builtin_entities(text, language, scope=None):
     if not parser:
         return []
 
-    if scope is None:
-        scope = set(RUSTLING_ENTITIES)
+    if scope is not None:
+        entities = (e for e in scope if parser.supports_entity(e))
+    else:
+        entities = (e for e in RUSTLING_ENTITIES if parser.supports_entity(e))
 
     # Don't detect entities that are not supported BuiltInEntity
     # a entity can be supported in Rustling but we may want not to support it
-    entities = [e for e in scope if parser.supports_entity(e)]
-    entities_parsed_dims = set(e.rustling_dim_kind for e in entities)
+    supported_parsed_dims = set(e.rustling_dim_kind for e in entities)
     parsed_entities = []
     for entity in parser.parse(text, scope=scope):
-        if entity["dim"] in entities_parsed_dims:
+        if entity["dim"] in supported_parsed_dims:
             parsed_entity = {
                 RES_MATCH_RANGE: (entity["char_range"]["start"],
                                   entity["char_range"]["end"]),

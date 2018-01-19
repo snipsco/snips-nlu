@@ -2,8 +2,6 @@
 
 Snips NLU (Natural Language understanding) is a python library for extracting meaning from text.
 
-It uses a machine learning approach which means you can train Snips on a specific corpus and then use it to parse new sentences.
-
 Here is an example of a possible use case:
 
 Input:
@@ -131,7 +129,7 @@ trained_engine = SnipsNLUEngine.from_dict(trained_engine_dict)
 ```
 
 ### Versioning
-The NLU Engine has a separated versioning for the underlying model:
+The NLU Engine has a separate versioning for the underlying model:
 ``` python
 import snips_nlu
 

@@ -12,8 +12,9 @@ from snips_nlu.tokenization import tokenize_light
 
 def capitalize(text, language):
     tokens = tokenize_light(text, language)
+    stop_words = get_stop_words(language)
     return language.default_sep.join(
-        t.title() if t.lower() not in get_stop_words(language)
+        t.title() if t.lower() not in stop_words
         else t.lower() for t in tokens)
 
 

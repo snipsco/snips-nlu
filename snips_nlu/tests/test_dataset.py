@@ -143,17 +143,15 @@ class TestDataset(unittest.TestCase):
                         "entity two": "Entity_1",
                     },
                     "automatically_extensible": False,
-                    "capitalize": True
+                    "capitalize": False
                 }
             },
             "language": "en",
             "snips_nlu_version": "1.1.1"
         }
-        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(
-            dataset, capitalization_threshold=capitalization_threshold)
+        dataset = validate_and_format_dataset(dataset)
 
         # Then
         self.assertDictEqual(dataset, expected_dataset)
@@ -255,11 +253,9 @@ class TestDataset(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "1.1.1"
         }
-        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(
-            dataset, capitalization_threshold=capitalization_threshold)
+        dataset = validate_and_format_dataset(dataset)
 
         # Then
         self.assertEqual(dataset, expected_dataset)
@@ -389,11 +385,9 @@ class TestDataset(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "0.0.1",
         }
-        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(
-            dataset, capitalization_threshold)
+        dataset = validate_and_format_dataset(dataset)
 
         # Then
         self.assertEqual(dataset, expected_dataset)
@@ -530,18 +524,15 @@ class TestDataset(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "0.0.1"
         }
-        capitalization_threshold = .1
 
         # When
-        dataset = validate_and_format_dataset(
-            dataset, capitalization_threshold)
+        dataset = validate_and_format_dataset(dataset)
 
         # Then
         self.assertEqual(dataset, expected_dataset)
 
     def test_should_add_capitalize_field(self):
         # Given
-        capitalization_threshold = .3
         dataset = {
             "intents": {
                 "intent1": {
@@ -669,7 +660,7 @@ class TestDataset(unittest.TestCase):
                             "entity1": "entity1"
                         },
                     "automatically_extensible": True,
-                    "capitalize": False
+                    "capitalize": True
                 },
                 "entity2": {
                     "utterances": {
@@ -689,7 +680,7 @@ class TestDataset(unittest.TestCase):
                             "mentity3": "m_entity3"
                         },
                     "automatically_extensible": True,
-                    "capitalize": True
+                    "capitalize": False
                 }
             },
             "language": "en",
@@ -697,8 +688,7 @@ class TestDataset(unittest.TestCase):
         }
 
         # When
-        dataset = validate_and_format_dataset(
-            dataset, capitalization_threshold)
+        dataset = validate_and_format_dataset(dataset)
 
         # Then
         self.assertDictEqual(dataset, expected_dataset)
@@ -802,7 +792,7 @@ class TestDataset(unittest.TestCase):
                     "entity 2": "Ëntity 1",
                     "entity two": "Ëntity 1"
                 },
-                CAPITALIZE: True
+                CAPITALIZE: False
             }
         }
 

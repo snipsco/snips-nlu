@@ -28,7 +28,7 @@ def extract_queries_entities(dataset):
     return {k: list(v) for k, v in entities_values.iteritems()}
 
 
-def validate_and_format_dataset(dataset, capitalization_threshold=.1):
+def validate_and_format_dataset(dataset):
     dataset = deepcopy(dataset)
     dataset = json.loads(json.dumps(dataset))
     validate_type(dataset, dict)
@@ -52,8 +52,7 @@ def validate_and_format_dataset(dataset, capitalization_threshold=.1):
                 validate_and_format_builtin_entity(entity)
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
-                entity, queries_entities_values[entity_name], language,
-                capitalization_threshold)
+                entity, queries_entities_values[entity_name], language)
 
     return dataset
 
@@ -84,18 +83,12 @@ def get_text_from_chunks(chunks):
     return ''.join(chunk[TEXT] for chunk in chunks)
 
 
-def capitalization_ratio(entity_utterances, language):
-    capitalizations = []
+def has_any_capitalization(entity_utterances, language):
     for utterance in entity_utterances:
         tokens = tokenize_light(utterance, language)
-        for t in tokens:
-            if t.isupper() or t.istitle():
-                capitalizations.append(1.0)
-            else:
-                capitalizations.append(0.0)
-    if not capitalizations:
-        return 0
-    return sum(capitalizations) / float(len(capitalizations))
+        if any(t.isupper() or t.istitle() for t in tokens):
+            return True
+    return False
 
 
 def add_variation_if_needed(utterances, variation, utterance, language):
@@ -112,8 +105,7 @@ def add_variation_if_needed(utterances, variation, utterance, language):
     return utterances
 
 
-def validate_and_format_custom_entity(entity, queries_entities, language,
-                                      capitalization_threshold):
+def validate_and_format_custom_entity(entity, queries_entities, language):
     validate_type(entity, dict)
     mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA]
     validate_keys(entity, mandatory_keys, object_label="entity")
@@ -142,13 +134,8 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
 
     # Compute capitalization before normalizing
     # Normalization lowercase and hence lead to bad capitalization calculation
-    if use_synonyms:
-        entities = [s for entry in entity[DATA]
-                    for s in entry[SYNONYMS] + [entry[VALUE]]]
-    else:
-        entities = [entry[VALUE] for entry in entity[DATA]]
-    ratio = capitalization_ratio(entities + queries_entities, language)
-    formatted_entity[CAPITALIZE] = ratio > capitalization_threshold
+    formatted_entity[CAPITALIZE] = has_any_capitalization(queries_entities,
+                                                          language)
 
     # Normalize
     normalize_data = dict()

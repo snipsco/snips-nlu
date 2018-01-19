@@ -1,8 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
-from builtins import range
 
 import unittest
+from builtins import range
 
 from mock import patch, MagicMock
 
@@ -509,7 +509,7 @@ class TestCRFSlotFiller(unittest.TestCase):
             ("O", "b"),
             ("O", "O"),
         }
-        self.assertItemsEqual(perms, expected_perms)
+        self.assertSetEqual(set(perms), expected_perms)
 
     @patch("snips_nlu.slot_filler.crf_slot_filler"
            ".exhaustive_slots_permutations")
@@ -617,4 +617,4 @@ class TestCRFSlotFiller(unittest.TestCase):
                 possible_slots,
                 conf["exhaustive_permutations_threshold"])
             # Then
-            self.assertItemsEqual(conf["slots"], slots)
+            self.assertSetEqual(set(conf["slots"]), set(slots))

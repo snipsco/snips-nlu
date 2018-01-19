@@ -4,6 +4,7 @@ import unittest
 
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
+from snips_nlu.intent_parser.intent_parser import NotTrained
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
@@ -24,11 +25,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
 
         # When / Then
-        expected_missing_intent = "MakeCoffee"
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(NotTrained):
             parser.fit(dataset, {intent})
-        self.assertTrue("These intents must be trained: set([u'%s'])"
-                        % expected_missing_intent in context.exception)
 
     def test_should_be_serializable_before_fitting(self):
         # Given
@@ -246,8 +244,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         # Then
         self.assertDictEqual(parser.config.to_dict(), config.to_dict())
         self.assertIsNotNone(parser.intent_classifier)
-        self.assertItemsEqual(list(parser.slot_fillers.keys()),
-                              ["MakeCoffee", "MakeTea"])
+        self.assertListEqual(sorted(list(parser.slot_fillers.keys())),
+                             ["MakeCoffee", "MakeTea"])
 
     def test_fitting_should_be_reproducible_after_serialization(self):
         # Given

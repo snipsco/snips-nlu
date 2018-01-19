@@ -1,9 +1,9 @@
 # coding=utf-8
 from __future__ import unicode_literals
-from builtins import range
 
 import re
 import unittest
+from builtins import range
 
 from mock import patch
 
@@ -375,7 +375,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
             # When
             slots = parser.get_slots(text, intent="dummy_intent_1")
             # Then
-            self.assertItemsEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, slots)
 
     def test_should_get_slots_after_deserialization(self):
         # Given
@@ -445,7 +445,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
             slots = deserialized_parser.get_slots(text,
                                                   intent="dummy_intent_1")
             # Then
-            self.assertItemsEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, slots)
 
     def test_should_be_serializable_before_fitting(self):
         # Given
@@ -719,44 +719,45 @@ class TestDeterministicIntentParser(unittest.TestCase):
         utterance = {
             DATA: [
                 {
-                    TEXT: "Be the first to choose the "
+                    TEXT: "Raise temperature in room number one to "
                 },
                 {
-                    TEXT: "second option",
-                    SLOT_NAME: "option",
-                    ENTITY: "option_entity"
+                    TEXT: "five degrees",
+                    SLOT_NAME: "room_temperature",
+                    ENTITY: "temperature"
                 },
                 {
                     TEXT: " at "
                 },
                 {
                     TEXT: "9pm",
-                    SLOT_NAME: "choosing time",
+                    SLOT_NAME: "time",
                     ENTITY: "snips/datetime"
                 },
             ]
         }
 
         # When
+
         processed_utterance = preprocess_builtin_entities(utterance, language)
 
         # Then
         expected_utterance = {
             DATA: [
                 {
-                    TEXT: "Be %SNIPSORDINAL% to choose the "
+                    TEXT: "Raise temperature in room number %SNIPSNUMBER% to "
                 },
                 {
-                    TEXT: "%SNIPSORDINAL% option",
-                    SLOT_NAME: "option",
-                    ENTITY: "option_entity"
+                    TEXT: "%SNIPSTEMPERATURE%",
+                    SLOT_NAME: "room_temperature",
+                    ENTITY: "temperature"
                 },
                 {
                     TEXT: " at "
                 },
                 {
                     TEXT: "%SNIPSDATETIME%",
-                    SLOT_NAME: "choosing time",
+                    SLOT_NAME: "time",
                     ENTITY: "snips/datetime"
                 },
             ]

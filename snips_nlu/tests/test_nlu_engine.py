@@ -16,7 +16,7 @@ from snips_nlu.constants import DATA, TEXT, LANGUAGE, RES_INTENT, \
     RES_INTENT_NAME, RES_INPUT, RES_SLOTS, RES_MATCH_RANGE, RES_RAW_VALUE, \
     RES_VALUE, RES_ENTITY, RES_SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.intent_parser.intent_parser import IntentParser, NotTrained
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
 from snips_nlu.nlu_engine.utils import enrich_slots, get_fitted_slot_filler, \
@@ -433,11 +433,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         engine = SnipsNLUEngine()
 
         # Then
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(NotTrained):
             engine.fit(BEVERAGE_DATASET, intents=incomplete_intents)
-
-        self.assertTrue("These intents must be trained: set([u'MakeTea'])"
-                        in context.exception)
 
     def test_should_use_fitted_slot_filler(self):
         # Given

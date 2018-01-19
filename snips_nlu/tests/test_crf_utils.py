@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
-from builtins import range
 
 import unittest
+from builtins import range
 
 from mock import patch
 

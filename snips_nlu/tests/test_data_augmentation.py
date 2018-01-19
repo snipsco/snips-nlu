@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
-from builtins import next
-from builtins import range
 
 import unittest
+from builtins import next
+from builtins import range
 
 import numpy as np
 from mock import patch
@@ -63,12 +63,12 @@ class TestDataAugmentation(unittest.TestCase):
         self.assertIn("entity1", it_dict)
         expected_seq = ["entity 1", "entity 11", "entity 111"]
         seq = [next(it_dict["entity1"]) for _ in range(len(expected_seq))]
-        self.assertItemsEqual(seq, expected_seq)
+        self.assertListEqual(expected_seq, sorted(seq))
 
         self.assertIn("entity2", it_dict)
         expected_seq = ["entity 2", "entity 22", "entity 222"]
         seq = [next(it_dict["entity2"]) for _ in range(len(expected_seq))]
-        self.assertItemsEqual(seq, expected_seq)
+        self.assertListEqual(expected_seq, sorted(seq))
 
     def test_generate_utterance(self):
         # Given

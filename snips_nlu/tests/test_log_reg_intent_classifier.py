@@ -1,10 +1,10 @@
 # coding=utf-8
 from __future__ import unicode_literals
-from builtins import next
-from builtins import str
-from builtins import range
 
 import unittest
+from builtins import next
+from builtins import range
+from builtins import str
 
 import numpy as np
 from mock import patch

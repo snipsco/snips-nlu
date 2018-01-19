@@ -84,7 +84,7 @@ class LogRegIntentClassifier(IntentClassifier):
         X = self.featurizer.transform([text])  # pylint: disable=C0103
         proba_vec = self.classifier.predict_proba(X)[0]
         intents_probas = sorted(zip(self.intent_list, proba_vec),
-                                cmp=lambda p1, p2: -1 if p1[1] > p2[1] else 1)
+                                key=lambda p: -p[1])
         for intent, proba in intents_probas:
             if intent is None:
                 return None

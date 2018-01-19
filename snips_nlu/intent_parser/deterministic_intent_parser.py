@@ -292,6 +292,8 @@ class DeterministicIntentParser(IntentParser):
                     slots.append(parsed_slot)
                 parsed_slots = deduplicate_overlapping_slots(
                     slots, self.language)
+                parsed_slots = sorted(parsed_slots,
+                                      key=lambda s: s[RES_MATCH_RANGE][0])
                 return parsing_result(text, parsed_intent, parsed_slots)
         return empty_result(text)
 

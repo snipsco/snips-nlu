@@ -4,14 +4,15 @@ from __future__ import unicode_literals
 import json
 import traceback as tb
 import unittest
+from builtins import bytes
 
 from mock import patch
 
-from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, get_tfidf_vectorizer, get_utterances_to_features_names)
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.tokenization import tokenize_light
 
 
@@ -63,7 +64,8 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
 
         # Then
         try:
-            dumped = json.dumps(serialized_featurizer).decode("utf8")
+            dumped = bytes(json.dumps(serialized_featurizer),
+                           encoding="utf8").decode("utf8")
         except:  # pylint: disable=W0702
             self.fail("Featurizer dict should be json serializable to utf8.\n"
                       "Traceback:\n%s" % tb.format_exc())

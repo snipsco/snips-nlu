@@ -1,22 +1,23 @@
-from __future__ import unicode_literals
 from __future__ import division
-from builtins import range
-from builtins import object
+from __future__ import unicode_literals
 
+from builtins import object
+from builtins import range
 from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
+from future.utils import iteritems
 from nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_stop_words, get_word_clusters, \
     get_stems
@@ -82,9 +83,9 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
 
     features = language.default_sep.join(normalized_stemmed_tokens)
     if entities_features:
-        features += " " + " ".join(entities_features)
+        features += " " + " ".join(sorted(entities_features))
     if word_clusters_features:
-        features += " " + " ".join(word_clusters_features)
+        features += " " + " ".join(sorted(word_clusters_features))
     return features
 
 
@@ -145,7 +146,6 @@ class Featurizer(object):
         for q in queries:
             processed_query = preprocess_query(
                 q, self.language, self.entity_utterances_to_feature_names)
-            processed_query = processed_query.encode("utf8")
             preprocessed_queries.append(processed_query)
         return preprocessed_queries
 
@@ -208,7 +208,8 @@ class Featurizer(object):
     def to_dict(self):
         if hasattr(self.tfidf_vectorizer, "vocabulary_"):
             # pylint: # pylint: disable=W0212
-            vocab = self.tfidf_vectorizer.vocabulary_
+            vocab = {k: int(v) for k, v in
+                     iteritems(self.tfidf_vectorizer.vocabulary_)}
             idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
             # pylint: enable=W0212
             entity_utterances_to_entity_names = {

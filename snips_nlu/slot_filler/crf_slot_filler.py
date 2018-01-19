@@ -9,7 +9,7 @@ import tempfile
 from copy import copy
 from itertools import groupby, permutations, product
 
-from builtins import range
+from builtins import range, bytes
 from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
@@ -63,7 +63,7 @@ class CRFSlotFiller(SlotFiller):
     def labels(self):
         labels = []
         if self.crf_model.tagger_ is not None:
-            labels = [label.decode('utf8') for label in
+            labels = [bytes(label, encoding='utf8').decode('utf8') for label in
                       self.crf_model.tagger_.labels()]
         return labels
 
@@ -79,7 +79,7 @@ class CRFSlotFiller(SlotFiller):
         if not tokens:
             return []
         features = self.compute_features(tokens)
-        tags = [tag.decode('utf8') for tag in
+        tags = [bytes(tag, encoding='utf8').decode('utf8') for tag in
                 self.crf_model.predict_single(features)]
         slots = tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
                               self.slot_name_mapping)

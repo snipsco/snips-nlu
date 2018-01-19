@@ -8,7 +8,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # Given/When/Then
         with self.assertRaises(ValueError) as ctx:
             LimitedSizeDict()
-        self.assertEqual(ctx.exception.message,
+        self.assertEqual(str(ctx.exception.args[0]),
                          "'size_limit' must be passed as a keyword argument")
 
     def test_should_initialize_with_argument(self):
@@ -18,7 +18,8 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(sequence, size_limit=size_limit)
         # Then
-        self.assertItemsEqual(list(d.items()), sequence)
+        items = sorted(list(d.items()), key=lambda i: i[0])
+        self.assertListEqual(items, sequence)
 
     def test_should_initialize_without_argument(self):
         # Given
@@ -26,7 +27,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(size_limit=size_limit)
         # Then
-        self.assertItemsEqual(list(d.items()), [])
+        self.assertListEqual(list(d.items()), [])
 
     def test_should_wrong_when_initialization_should_raise_error(self):
         # Given
@@ -35,7 +36,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When/Then
         with self.assertRaises(ValueError) as ctx:
             LimitedSizeDict(sequence, size_limit=size_limit)
-        self.assertEqual(ctx.exception.message,
+        self.assertEqual(str(ctx.exception.args[0]),
                          "Tried to initialize LimitedSizedDict with more "
                          "value than permitted with 'limit_size'")
 
@@ -48,7 +49,8 @@ class TestLimitedSizeDict(unittest.TestCase):
         for k, v in sequence[size_limit:]:
             my_dict[k] = v
         # Then
-        self.assertItemsEqual(list(my_dict.items()), sequence[size_limit:])
+        items = sorted(list(my_dict.items()), key=lambda i: i[0])
+        self.assertListEqual(items, sequence[size_limit:])
 
 
 class TestUtils(unittest.TestCase):

@@ -6,7 +6,7 @@ from snips_nlu import __version__, __model_version__
 
 
 class TestVersion(unittest.TestCase):
-    def version_should_be_semantic(self):
+    def test_version_should_be_semantic(self):
         # Given
         version = __version__
 
@@ -21,7 +21,7 @@ class TestVersion(unittest.TestCase):
         # Then
         self.assertTrue(valid, "Version number '%s' is not semantically valid")
 
-    def model_version_should_be_semantic(self):
+    def test_model_version_should_be_semantic(self):
         # Given
         model_version = __model_version__
 

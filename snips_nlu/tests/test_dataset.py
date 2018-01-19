@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import unittest
+from builtins import str
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
@@ -36,7 +37,7 @@ class TestDataset(unittest.TestCase):
         # When/Then
         with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
+        self.assertEqual(str(ctx.exception.args[0]),
                          "Expected chunk to have key: 'slot_name'")
 
     def test_unknown_entity_should_raise_exception(self):
@@ -71,7 +72,7 @@ class TestDataset(unittest.TestCase):
         # When/Then
         with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
+        self.assertEqual(str(ctx.exception.args[0]),
                          "Expected entities to have key: 'unknown_entity'")
 
     def test_missing_entity_key_should_raise_exception(self):
@@ -91,7 +92,7 @@ class TestDataset(unittest.TestCase):
         # When/Then
         with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message,
+        self.assertEqual(str(ctx.exception.args[0]),
                          "Expected entity to have key: 'use_synonyms'")
 
     def test_invalid_language_should_raise_exception(self):
@@ -106,7 +107,7 @@ class TestDataset(unittest.TestCase):
         # When/Then
         with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(ctx.exception.message, "Unknown iso_code 'eng'")
+        self.assertEqual(str(ctx.exception.args[0]), "Unknown iso_code 'eng'")
 
     def test_should_format_dataset_by_adding_synonyms(self):
         # Given
@@ -272,7 +273,8 @@ class TestDataset(unittest.TestCase):
             validate_and_format_dataset(dataset)
         expected_exception_message = "Expected dataset to have key:" \
                                      " 'snips_nlu_version'"
-        self.assertEqual(ctx.exception.message, expected_exception_message)
+        self.assertEqual(str(ctx.exception.args[0]),
+                         expected_exception_message)
 
     def test_dataset_require_semantic_version(self):
         # Given
@@ -284,9 +286,7 @@ class TestDataset(unittest.TestCase):
         # Then
         with self.assertRaises(ValueError) as ctx:
             validate_and_format_dataset(dataset)
-        expected_exception_message = "Invalid version string:" \
-                                     " u'1.1.1.1.1.1.1.1.1.1'"
-        self.assertEqual(ctx.exception.message, expected_exception_message)
+        self.assertTrue("Invalid version string" in str(ctx.exception.args[0]))
 
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
             self):

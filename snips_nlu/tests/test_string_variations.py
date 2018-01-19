@@ -23,15 +23,15 @@ class TestStringVariations(unittest.TestCase):
                  "a & b & c",
                  "a and b and c"
              }),
-            ("random", {}),
-            ("be&you", {})
+            ("random", set()),
+            ("be&you", set())
         ]
 
         for string, expected_variations in data:
             # When
             variations = and_variations(string, language)
             # Then
-            self.assertItemsEqual(variations, expected_variations)
+            self.assertSetEqual(variations, expected_variations)
 
     def test_punctuation_variations(self):
         # Given
@@ -48,7 +48,7 @@ class TestStringVariations(unittest.TestCase):
                  "a ?b c",
                  "a b c",
              }),
-            ("random", {}),
+            ("random", set()),
         ]
 
         for string, expected_variations in data:
@@ -56,7 +56,7 @@ class TestStringVariations(unittest.TestCase):
             variations = punctuation_variations(string, language)
 
             # Then
-            self.assertItemsEqual(variations, expected_variations)
+            self.assertSetEqual(variations, expected_variations)
 
     def test_alphabetic_value(self):
         # Given
@@ -94,7 +94,7 @@ class TestStringVariations(unittest.TestCase):
             "a & b two",
             "a b two"
         }
-        self.assertItemsEqual(variations, expected_variations)
+        self.assertSetEqual(variations, expected_variations)
 
     def test_get_france_24(self):
         # Given
@@ -127,4 +127,4 @@ class TestStringVariations(unittest.TestCase):
             "7.62 mm caliber 2 and 6",
             "7.62 mm caliber two and 6",
         }
-        self.assertItemsEqual(variations, expected_variations)
+        self.assertSetEqual(variations, expected_variations)

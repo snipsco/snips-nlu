@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 from snips_nlu.constants import INTENTS
-from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.intent_parser.intent_parser import IntentParser, NotTrained
 from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
@@ -48,8 +48,8 @@ class ProbabilisticIntentParser(IntentParser):
     def fit(self, dataset, intents=None):
         missing_intents = self.get_missing_intents(dataset, intents)
         if missing_intents:
-            raise ValueError("These intents must be trained: %s"
-                             % missing_intents)
+            raise NotTrained(
+                "These intents must be trained: %s" % missing_intents)
         if intents is None:
             intents = dataset[INTENTS].keys()
 

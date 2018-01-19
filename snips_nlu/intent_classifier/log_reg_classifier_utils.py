@@ -3,10 +3,7 @@ from __future__ import unicode_literals
 
 import itertools
 import re
-from builtins import next
-from builtins import range
-from builtins import str
-from builtins import zip
+from builtins import next, range, zip, str
 from copy import deepcopy
 from uuid import uuid4
 

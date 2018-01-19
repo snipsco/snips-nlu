@@ -90,7 +90,7 @@ class TestBuiltInEntities(unittest.TestCase):
         dims = scope_to_dim_kinds(scope)
 
         # Then
-        self.assertItemsEqual(expected_dim_kinds, dims)
+        self.assertListEqual(sorted(expected_dim_kinds), sorted(dims))
 
     def test_built_in_label_uniqueness(self):
         # Given
@@ -116,13 +116,13 @@ class TestBuiltInEntities(unittest.TestCase):
     def test_builtins_should_have_exactly_ontology_entities(self):
         # Given
         ontology = get_ontology()
-        ontology_entities = [e["label"] for e in ontology["entities"]]
+        ontology_entities = sorted([e["label"] for e in ontology["entities"]])
 
         # When
-        entities = [e.label for e in BuiltInEntity]
+        entities = sorted([e.label for e in BuiltInEntity])
 
         # Then
-        self.assertItemsEqual(ontology_entities, entities)
+        self.assertListEqual(ontology_entities, entities)
 
     def test_entities_rustling_dim_kinds_should_exist(self):
         # Given

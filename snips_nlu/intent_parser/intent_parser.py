@@ -17,3 +17,7 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
     @abstractmethod
     def get_slots(self, text, intent):
         pass
+
+
+class NotTrained(LookupError):
+    pass

@@ -154,7 +154,7 @@ class CRFSlotFiller(SlotFiller):
             print("%s %s: %s" % (state_1, state_2, weight))
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
-            feature_weights.items(),
+            iteritems(feature_weights),
             key=lambda feature_weight: math.fabs(feature_weight[1]),
             reverse=True)
         print("\nFeature weights: \n\n")

@@ -153,7 +153,7 @@ class Featurizer(object):
         utterances_to_features = get_utterances_to_features_names(
             dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
-        for k, v in utterances_to_features.items():
+        for k, v in iteritems(utterances_to_features):
             normalized_utterances_to_features[
                 normalize_stem(k, self.language)].update(v)
         if self.unknown_words_replacement_string is not None \
@@ -214,7 +214,7 @@ class Featurizer(object):
             # pylint: enable=W0212
             entity_utterances_to_entity_names = {
                 k: list(v)
-                for k, v in self.entity_utterances_to_feature_names.items()
+                for k, v in iteritems(self.entity_utterances_to_feature_names)
             }
         else:
             vocab = None
@@ -246,7 +246,7 @@ class Featurizer(object):
             obj_dict["tfidf_vectorizer"], language, config)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
-            obj_dict['entity_utterances_to_feature_names'].items()
+            iteritems(obj_dict['entity_utterances_to_feature_names'])
         }
         self = cls(
             language=language,

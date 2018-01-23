@@ -203,14 +203,14 @@ class DeterministicIntentParser(IntentParser):
     def patterns(self):
         if self.regexes_per_intent is not None:
             return {i: [r.pattern for r in regex_list] for i, regex_list in
-                    self.regexes_per_intent.items()}
+                    iteritems(self.regexes_per_intent)}
         return None
 
     @patterns.setter
     def patterns(self, value):
         if value is not None:
             self.regexes_per_intent = dict()
-            for intent, pattern_list in value.items():
+            for intent, pattern_list in iteritems(value):
                 regexes = [re.compile(r"%s" % p, re.IGNORECASE)
                            for p in pattern_list]
                 self.regexes_per_intent[intent] = regexes
@@ -226,7 +226,7 @@ class DeterministicIntentParser(IntentParser):
         joined_entity_utterances = get_joined_entity_utterances(
             dataset, self.language)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
-        for intent_name, intent in dataset[INTENTS].items():
+        for intent_name, intent in iteritems(dataset[INTENTS]):
             if not self.is_trainable(intent, dataset):
                 self.regexes_per_intent[intent_name] = []
                 continue
@@ -270,7 +270,7 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)
 
-        for intent, regexes in self.regexes_per_intent.items():
+        for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
                 continue
             for regex in regexes:

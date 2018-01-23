@@ -174,6 +174,7 @@ def check_random_state(seed):
     Otherwise raise ValueError.
     """
     # pylint: disable=W0212
+    # pylint: disable=c-extension-no-member
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
     if isinstance(seed, (numbers.Integral, np.integer)):

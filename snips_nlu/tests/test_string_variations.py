@@ -96,6 +96,22 @@ class TestStringVariations(unittest.TestCase):
         }
         self.assertItemsEqual(variations, expected_variations)
 
+    def test_get_france_24(self):
+        # Given
+        language = Language.FR
+        string = "france 24"
+
+        # When
+        variations = get_string_variations(string, language)
+
+        # Then
+        expected_variations = {
+            "france vingt-quatre",
+            "france vingt quatre",
+            "france 24"
+        }
+        self.assertItemsEqual(variations, expected_variations)
+
     def test_numbers_variations_should_handle_floats(self):
         # Given
         language = Language.EN

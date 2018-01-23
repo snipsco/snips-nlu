@@ -1,5 +1,5 @@
 import unittest
-
+from future.utils import iteritems
 from snips_nlu.utils import LimitedSizeDict, ranges_overlap
 
 
@@ -18,7 +18,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(sequence, size_limit=size_limit)
         # Then
-        items = sorted(list(d.items()), key=lambda i: i[0])
+        items = sorted(iteritems(d), key=lambda i: i[0])
         self.assertListEqual(items, sequence)
 
     def test_should_initialize_without_argument(self):
@@ -27,7 +27,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         # When
         d = LimitedSizeDict(size_limit=size_limit)
         # Then
-        self.assertListEqual(list(d.items()), [])
+        self.assertListEqual(list(d), [])
 
     def test_should_wrong_when_initialization_should_raise_error(self):
         # Given
@@ -49,7 +49,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         for k, v in sequence[size_limit:]:
             my_dict[k] = v
         # Then
-        items = sorted(list(my_dict.items()), key=lambda i: i[0])
+        items = sorted(list(iteritems(my_dict)), key=lambda i: i[0])
         self.assertListEqual(items, sequence[size_limit:])
 
 

@@ -7,6 +7,7 @@ from builtins import range
 import itertools
 import re
 
+from future.utils import iteritems
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
@@ -25,7 +26,7 @@ AND_REGEXES = {
     language: re.compile(
         r"|".join(r"(?<=\s)%s(?=\s)" % re.escape(u) for u in utterances),
         re.IGNORECASE)
-    for language, utterances in AND_UTTERANCES.items()
+    for language, utterances in iteritems(AND_UTTERANCES)
 }
 
 

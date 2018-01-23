@@ -203,7 +203,7 @@ def get_slot_name_mappings(dataset):
     Returns a dict which maps intents to their slot name mapping
     """
     return {intent: get_slot_name_mapping(dataset, intent)
-            for intent in dataset[INTENTS].keys()}
+            for intent in dataset[INTENTS]}
 
 
 def ranges_overlap(lhs_range, rhs_range):

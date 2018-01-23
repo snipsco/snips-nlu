@@ -5,6 +5,7 @@ from builtins import object
 from collections import defaultdict
 
 from enum import Enum
+from future.utils import itervalues, iteritems
 from rustling import (RustlingParser as _RustlingParser, RustlingError,
                       all_configs)
 
@@ -159,7 +160,7 @@ class BuiltInEntity(Enum):
 
 _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE = dict()
 
-for k, v in all_configs().items():
+for k, v in iteritems(all_configs()):
     try:
         lang = Language.from_rustling_code(k)
     except KeyError:
@@ -178,7 +179,7 @@ for builtin_entity in BuiltInEntity:
         _SUPPORTED_BUILTINS_BY_LANGUAGE[lang].add(builtin_entity)
 
 RUSTLING_ENTITIES = set(
-    kind for kinds in _RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE.values()
+    kind for kinds in itervalues(_RUSTLING_SUPPORTED_BUILTINS_BY_LANGUAGE)
     for kind in kinds)
 
 _DIM_KIND_TO_ENTITY = {e.rustling_dim_kind: e for e in RUSTLING_ENTITIES}

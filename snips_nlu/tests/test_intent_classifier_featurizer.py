@@ -4,8 +4,9 @@ from __future__ import unicode_literals
 import json
 import traceback as tb
 import unittest
-from builtins import bytes
 
+from builtins import bytes
+from future.utils import iteritems
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
@@ -142,7 +143,7 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
             featurizer.entity_utterances_to_feature_names,
             {
                 k: set(v) for k, v
-                in entity_utterances_to_feature_names.items()
+                in iteritems(entity_utterances_to_feature_names)
             })
 
     def test_get_utterances_entities(self):

@@ -3,11 +3,14 @@ from __future__ import unicode_literals
 
 import itertools
 import re
+
 from builtins import next, range, zip, str
 from copy import deepcopy
 from uuid import uuid4
 
 import numpy as np
+
+from future.utils import iteritems, itervalues
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
@@ -24,7 +27,7 @@ UNKNOWNWORD_REGEX = re.compile(r"%s(\s+%s)*" % (UNKNOWNWORD, UNKNOWNWORD))
 
 def remove_builtin_slots(dataset):
     filtered_dataset = deepcopy(dataset)
-    for intent_data in filtered_dataset[INTENTS].values():
+    for intent_data in itervalues(filtered_dataset[INTENTS]):
         for utterance in intent_data[UTTERANCES]:
             utterance[DATA] = [
                 chunk for chunk in utterance[DATA]
@@ -34,7 +37,7 @@ def remove_builtin_slots(dataset):
 
 def get_regularization_factor(dataset):
     intents = dataset[INTENTS]
-    nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
+    nb_utterances = [len(intent[UTTERANCES]) for intent in itervalues(intents)]
     avg_utterances = np.mean(nb_utterances)
     total_utterances = sum(nb_utterances)
     alpha = 1.0 / (4 * (total_utterances + 5 * avg_utterances))
@@ -111,11 +114,11 @@ def build_training_data(dataset, language, data_augmentation_config,
     noise_class = intent_index
 
     # Computing dataset statistics
-    nb_utterances = [len(intent[UTTERANCES]) for intent in intents.values()]
+    nb_utterances = [len(intent[UTTERANCES]) for intent in itervalues(intents)]
 
     augmented_utterances = []
     utterance_classes = []
-    for nb_utterance, intent_name in zip(nb_utterances, intents.keys()):
+    for nb_utterance, intent_name in zip(nb_utterances, intents):
         min_utterances_to_generate = max(
             data_augmentation_config.min_utterances, nb_utterance)
         utterances = augment_utterances(
@@ -144,9 +147,9 @@ def build_training_data(dataset, language, data_augmentation_config,
     if noisy_utterances:
         classes_mapping[NOISE_NAME] = noise_class
 
-    nb_classes = len(set(classes_mapping.values()))
+    nb_classes = len(set(itervalues(classes_mapping)))
     intent_mapping = [None for _ in range(nb_classes)]
-    for intent, intent_class in classes_mapping.items():
+    for intent, intent_class in iteritems(classes_mapping):
         if intent == NOISE_NAME:
             intent_mapping[intent_class] = None
         else:

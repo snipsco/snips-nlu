@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import unittest
 
+from future.utils import iteritems
 from nlu_metrics import (compute_cross_val_metrics,
                          compute_cross_val_nlu_metrics)
 from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
@@ -52,7 +53,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
         self.check_metrics(results)
 
     def check_metrics(self, results):
-        for intent_name, intent_metrics in results["metrics"].items():
+        for intent_name, intent_metrics in iteritems(results["metrics"]):
             if intent_name is None or intent_name == "null":
                 continue
             classification_precision = intent_metrics["intent"]["precision"]
@@ -65,7 +66,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
                 classification_recall, INTENT_CLASSIFICATION_THRESHOLD,
                 "Intent classification recall is too low (%.3f) for intent "
                 "'%s'" % (classification_recall, intent_name))
-            for slot_name, slot_metrics in intent_metrics["slots"].items():
+            for slot_name, slot_metrics in iteritems(intent_metrics["slots"]):
                 precision = slot_metrics["precision"]
                 recall = slot_metrics["recall"]
                 self.assertGreaterEqual(

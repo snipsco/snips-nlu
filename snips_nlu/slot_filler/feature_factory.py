@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from builtins import map
 from builtins import object
 
-from future.utils import with_metaclass
+from future.utils import with_metaclass, iteritems
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities, \
@@ -294,10 +294,10 @@ class EntityMatchFactory(CRFFeatureFactory):
 
         intent_entities = get_intent_custom_entities(dataset, intent)
         self.collections = dict()
-        for entity_name, entity in intent_entities.items():
+        for entity_name, entity in iteritems(intent_entities):
             if not entity[UTTERANCES]:
                 continue
-            collection = list(preprocess(e) for e in entity[UTTERANCES].keys())
+            collection = list(preprocess(e) for e in entity[UTTERANCES])
             self.collections[entity_name] = collection
         self.args["collections"] = self.collections
         return self
@@ -307,7 +307,7 @@ class EntityMatchFactory(CRFFeatureFactory):
 
     def build_features(self):
         features = []
-        for name, collection in self.collections.items():
+        for name, collection in iteritems(self.collections):
             # We need to call this wrapper in order to properly capture
             # `collection`
             collection_match = self._build_collection_match_fn(collection)

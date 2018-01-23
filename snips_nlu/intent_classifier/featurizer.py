@@ -91,10 +91,10 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
 
 def get_utterances_to_features_names(dataset, language):
     utterances_to_features = defaultdict(set)
-    for entity_name, entity_data in dataset[ENTITIES].items():
+    for entity_name, entity_data in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             continue
-        for u in entity_data[UTTERANCES].keys():
+        for u in entity_data[UTTERANCES]:
             utterances_to_features[u].add(entity_name_to_feature(
                 entity_name, language))
     return dict(utterances_to_features)

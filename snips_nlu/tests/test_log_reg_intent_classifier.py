@@ -7,6 +7,7 @@ from builtins import range
 from builtins import str
 
 import numpy as np
+from future.utils import itervalues
 from mock import patch
 
 from snips_nlu.constants import INTENTS, DATA, UTTERANCES, RES_INTENT_NAME
@@ -101,7 +102,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        intent_list = list(SAMPLE_DATASET[INTENTS].keys()) + [None]
+        intent_list = list(SAMPLE_DATASET[INTENTS])
+        intent_list.append(None)
         expected_dict = {
             "unit_name": "log_reg_intent_classifier",
             "config": IntentClassifierConfig().to_dict(),
@@ -221,7 +223,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
-                               in dataset[INTENTS].values() for utterance in
+                               in itervalues(dataset[INTENTS]) for utterance in
                                intent[UTTERANCES]]
         expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
         self.assertListEqual(utterances, expected_utterances)
@@ -265,7 +267,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
-                               for intent in dataset[INTENTS].values()
+                               for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(mocked_noises)
@@ -275,7 +277,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                                 random_state)
         noisy_utterances = [next(noise_it) for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = list(dataset["intents"].keys()) + [None]
+        expected_intent_mapping = list(dataset["intents"])
+        expected_intent_mapping.append(None)
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
@@ -318,7 +321,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
-                               for intent in dataset[INTENTS].values()
+                               for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(mocked_noises)
@@ -326,7 +329,8 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                              len(noise)))
         noisy_utterances = [replacement_string for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = list(dataset["intents"].keys()) + [None]
+        expected_intent_mapping = list(dataset["intents"])
+        expected_intent_mapping.append(None)
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 

@@ -5,6 +5,7 @@ import json
 from copy import deepcopy
 
 from builtins import str
+from future.utils import itervalues, iteritems
 from nlu_utils import normalize
 from semantic_version import Version
 
@@ -22,12 +23,12 @@ from snips_nlu.utils import validate_type, validate_key, validate_keys
 def extract_queries_entities(dataset):
     entities_values = {ent_name: [] for ent_name in dataset[ENTITIES]}
 
-    for intent in dataset[INTENTS].values():
+    for intent in itervalues(dataset[INTENTS]):
         for query in intent[UTTERANCES]:
             for chunk in query[DATA]:
                 if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]):
                     entities_values[chunk[ENTITY]].append(chunk[TEXT])
-    return {k: list(v) for k, v in entities_values.items()}
+    return {k: list(v) for k, v in iteritems(entities_values)}
 
 
 def validate_and_format_dataset(dataset):
@@ -43,12 +44,12 @@ def validate_and_format_dataset(dataset):
     validate_type(dataset[LANGUAGE], str)
     language = Language.from_iso_code(dataset[LANGUAGE])
 
-    for intent in dataset[INTENTS].values():
+    for intent in itervalues(dataset[INTENTS]):
         validate_and_format_intent(intent, dataset[ENTITIES])
 
     queries_entities_values = extract_queries_entities(dataset)
 
-    for entity_name, entity in dataset[ENTITIES].items():
+    for entity_name, entity in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
                 validate_and_format_builtin_entity(entity)

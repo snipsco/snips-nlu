@@ -10,6 +10,7 @@ from copy import copy
 from itertools import groupby, permutations, product
 
 from builtins import range, bytes
+from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
@@ -85,7 +86,7 @@ class CRFSlotFiller(SlotFiller):
                               self.slot_name_mapping)
 
         builtin_slots_names = set(slot_name for (slot_name, entity) in
-                                  self.slot_name_mapping.items()
+                                  iteritems(self.slot_name_mapping)
                                   if is_builtin_entity(entity))
         if not builtin_slots_names:
             return slots
@@ -145,7 +146,7 @@ class CRFSlotFiller(SlotFiller):
     def print_weights(self):
         transition_features = self.crf_model.transition_features_
         transition_features = sorted(
-            transition_features.items(),
+            iteritems(transition_features),
             key=lambda transition_weight: math.fabs(transition_weight[1]),
             reverse=True)
         print("\nTransition weights: \n\n")

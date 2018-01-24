@@ -29,7 +29,7 @@ class Feature(object):
 
     def compute(self, token_index, cache):
         if not 0 <= (token_index + self.offset) < len(cache):
-            return
+            return None
 
         if self.base_name in cache[token_index + self.offset]:
             return cache[token_index + self.offset][self.base_name]

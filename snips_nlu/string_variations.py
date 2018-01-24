@@ -84,7 +84,7 @@ def digit_value(number_entity):
 def alphabetic_value(number_entity, language):
     value = number_entity[VALUE][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
-        return
+        return None
     return num2words(value, lang=language.iso_code)
 
 
@@ -128,6 +128,11 @@ def get_string_variations(string, language):
         flatten(punctuation_variations(v, language) for v in variations))
     variations.update(
         flatten(numbers_variations(v, language) for v in variations))
-    variations = set(language.default_sep.join(tokenize_light(v, language))
-                     for v in variations)
+    # Filter double spaces
+    variations = set(" ".join(v.split()) for v in variations)
+    # Add tokenized variations
+    tokenized_variations = set(
+        language.default_sep.join(tokenize_light(v, language)) for v in
+        variations)
+    variations.update(tokenized_variations)
     return variations

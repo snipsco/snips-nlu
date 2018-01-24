@@ -27,10 +27,9 @@ class Feature(object):
         self._name = _offset_name(value, self.offset)
         self._base_name = _offset_name(value, 0)
 
-    # pylint: disable=inconsistent-return-statements
     def compute(self, token_index, cache):
         if not 0 <= (token_index + self.offset) < len(cache):
-            return
+            return None
 
         if self.base_name in cache[token_index + self.offset]:
             return cache[token_index + self.offset][self.base_name]
@@ -39,7 +38,6 @@ class Feature(object):
         value = self.function(tokens, token_index + self.offset)
         cache[token_index + self.offset][self.base_name] = value
         return value
-    # pylint: enable=inconsistent-return-statements
 
 
 def _offset_name(name, offset):

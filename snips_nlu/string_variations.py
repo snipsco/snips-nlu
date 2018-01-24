@@ -81,15 +81,12 @@ def digit_value(number_entity):
     return unicode(number_entity[VALUE][VALUE])
 
 
-# pylint: disable=inconsistent-return-statements
 def alphabetic_value(number_entity, language):
     value = number_entity[VALUE][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
-        return
+        return None
     return num2words(value, lang=language.iso_code)
 
-
-# pylint: enable=inconsistent-return-statements
 
 def numbers_variations(string, language):
     variations = set()

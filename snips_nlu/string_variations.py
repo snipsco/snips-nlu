@@ -136,4 +136,3 @@ def get_string_variations(string, language):
         variations)
     variations.update(tokenized_variations)
     return variations
-

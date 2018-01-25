@@ -6,29 +6,30 @@ import io
 import math
 import os
 import tempfile
+from builtins import range
 from copy import copy
 from itertools import groupby, permutations, product
 
-from builtins import range, bytes
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity, \
-    get_builtin_entities
+from snips_nlu.builtin_entities import (
+    is_builtin_entity, BuiltInEntity, get_builtin_entities)
 from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.preprocessing import stem
-from snips_nlu.slot_filler.crf_utils import TOKENS, TAGS, OUTSIDE, \
-    tags_to_slots, tag_name_to_slot_name, tags_to_preslots, positive_tagging, \
-    utterance_to_sample
+from snips_nlu.slot_filler.crf_utils import (
+    TOKENS, TAGS, OUTSIDE, tags_to_slots, tag_name_to_slot_name,
+    tags_to_preslots, positive_tagging, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
-from snips_nlu.utils import UnupdatableDict, mkdir_p, check_random_state, \
-    get_slot_name_mapping, ranges_overlap
+from snips_nlu.utils import (
+    UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
+    ranges_overlap)
 
 
 class CRFSlotFiller(SlotFiller):
@@ -64,7 +65,7 @@ class CRFSlotFiller(SlotFiller):
     def labels(self):
         labels = []
         if self.crf_model.tagger_ is not None:
-            labels = [bytes(label, encoding='utf8').decode('utf8') for label in
+            labels = [decode_tag(label) for label in
                       self.crf_model.tagger_.labels()]
         return labels
 
@@ -80,7 +81,7 @@ class CRFSlotFiller(SlotFiller):
         if not tokens:
             return []
         features = self.compute_features(tokens)
-        tags = [bytes(tag, encoding='utf8').decode('utf8') for tag in
+        tags = [decode_tag(tag) for tag in
                 self.crf_model.predict_single(features)]
         slots = tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
                               self.slot_name_mapping)
@@ -103,9 +104,9 @@ class CRFSlotFiller(SlotFiller):
         # training
         substitution_label = OUTSIDE if OUTSIDE in self.labels else \
             self.labels[0]
-        cleaned_labels = [substitution_label if l not in self.labels else l for
-                          l in labels]
-        cleaned_labels = [label.encode('utf8') for label in cleaned_labels]
+        cleaned_labels = [
+            encode_tag(substitution_label if l not in self.labels else l)
+            for l in labels]
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
@@ -131,7 +132,8 @@ class CRFSlotFiller(SlotFiller):
         # pylint: disable=C0103
         X = [self.compute_features(sample[TOKENS], drop_out=True)
              for sample in crf_samples]
-        Y = [[tag.encode('utf8') for tag in sample[TAGS]]
+        # ensure ascii tags
+        Y = [[encode_tag(tag) for tag in sample[TAGS]]
              for sample in crf_samples]
         # pylint: enable=C0103
         self.crf_model = get_crf_model(self.config.crf_args)
@@ -151,7 +153,8 @@ class CRFSlotFiller(SlotFiller):
             reverse=True)
         print("\nTransition weights: \n\n")
         for (state_1, state_2), weight in transition_features:
-            print("%s %s: %s" % (state_1, state_2, weight))
+            print("%s %s: %s" %
+                  (encode_tag(state_1), encode_tag(state_2), weight))
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
             iteritems(feature_weights),
@@ -348,6 +351,14 @@ def spans_to_tokens_indexes(spans, tokens):
                 indexes.append(i)
         tokens_indexes.append(indexes)
     return tokens_indexes
+
+
+def encode_tag(tag):
+    return base64.b64encode(tag.encode("utf8"))
+
+
+def decode_tag(tag):
+    return base64.b64decode(tag).decode("utf8")
 
 
 def serialize_crf_model(crf_model):

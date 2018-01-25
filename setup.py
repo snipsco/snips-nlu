@@ -31,8 +31,8 @@ extras_require = {
     "test": [
         "mock==2.0.0",
         "nlu_metrics==0.10.0",
-        "snips_nlu_rust==0.51.16",
-        "pylint==1.8.1",
+        # "snips_nlu_rust==0.51.16",
+        "pylint==1.8.2",
         "coverage==4.4.1"
     ]
 }

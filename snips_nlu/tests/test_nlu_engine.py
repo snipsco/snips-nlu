@@ -1,9 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import io
 import json
-import os
 import traceback as tb
 import unittest
 from copy import deepcopy
@@ -12,26 +10,27 @@ from mock import patch
 
 import snips_nlu
 import snips_nlu.version
-from snips_nlu.constants import DATA, TEXT, LANGUAGE, RES_INTENT, \
-    RES_INTENT_NAME, RES_INPUT, RES_SLOTS, RES_MATCH_RANGE, RES_RAW_VALUE, \
-    RES_VALUE, RES_ENTITY, RES_SLOT_NAME
+from snips_nlu.constants import (
+    LANGUAGE, RES_INTENT, RES_INTENT_NAME, RES_INPUT, RES_SLOTS,
+    RES_MATCH_RANGE, RES_RAW_VALUE, RES_VALUE, RES_ENTITY, RES_SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser, NotTrained
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
-from snips_nlu.nlu_engine.utils import enrich_slots, get_fitted_slot_filler, \
-    add_fitted_slot_filler
+from snips_nlu.nlu_engine.utils import (
+    get_fitted_slot_filler, add_fitted_slot_filler)
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
 from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
-from snips_nlu.pipeline.units_registry import register_processing_unit, \
-    reset_processing_units
-from snips_nlu.result import parsing_result, _slot, \
-    intent_classification_result, empty_result, custom_slot, resolved_slot
+from snips_nlu.pipeline.units_registry import (register_processing_unit,
+                                               reset_processing_units)
+from snips_nlu.result import (
+    parsing_result, _slot, intent_classification_result, empty_result,
+    custom_slot, resolved_slot)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, get_empty_dataset, TEST_PATH, BEVERAGE_DATASET)
+    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET)
 
 
 class TestSnipsNLUEngine(unittest.TestCase):
@@ -481,7 +480,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             new_engine = SnipsNLUEngine.from_dict(engine_dict)
         except Exception as e:  # pylint: disable=W0703
             self.fail('Exception raised: %s\n%s' %
-                      (e.message, tb.format_exc()))
+                      (str(e.args[0]), tb.format_exc()))
         result = new_engine.parse(input_)
 
         # Then
@@ -772,53 +771,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
             # Then
             self.assertEqual(enriched, data["enriched"])
-
-    def test_should_parse_naughty_strings(self):
-        # Given
-        dataset = SAMPLE_DATASET
-        naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.txt")
-        with io.open(naughty_strings_path, encoding='utf8') as f:
-            naughty_strings = [line.strip("\n") for line in f.readlines()]
-
-        # When
-        engine = SnipsNLUEngine().fit(dataset)
-
-        # Then
-        for s in naughty_strings:
-            try:
-                engine.parse(s)
-            except:  # pylint: disable=W0702
-                trace = tb.format_exc()
-                self.fail('Exception raised:\n %s' % trace)
-
-    def test_should_fit_with_naughty_strings(self):
-        # Given
-        naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.txt")
-        with io.open(naughty_strings_path, encoding='utf8') as f:
-            naughty_strings = [line.strip("\n") for line in f.readlines()]
-        utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
-                      naughty_strings]
-
-        # When
-        naughty_dataset = validate_and_format_dataset({
-            "intents": {
-                "naughty_intent": {
-                    "utterances": utterances
-                }
-            },
-            "entities": dict(),
-            "language": "en",
-            "snips_nlu_version": "0.0.1"
-        })
-
-        # Then
-        try:
-            SnipsNLUEngine().fit(naughty_dataset)
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given

@@ -22,11 +22,6 @@ def language_specific_features(dataset, intent, config):
             "factory_name": "get_prefix_fn",
             "args": {"prefix_size": 5},
             "offsets": [0]
-        },
-        {
-            "factory_name": "get_suffix_fn",
-            "args": {"suffix_size": 2},
-            "offsets": [0]
         }
     ]
 

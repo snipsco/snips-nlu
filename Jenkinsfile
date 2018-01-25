@@ -1,5 +1,4 @@
 def packagePath = "snips_nlu"
-def VENV = ". venv/bin/activate"
 
 
 def version(path) {
@@ -18,16 +17,16 @@ def executeInVirtualEnv(pythonPath, venvPath, cmd) {
 }
 
 def uploadWheel(pythonPath, venvPath) {
-    cmd = "python setup.py bdist_wheel upload -r pypisnips"
+    cmd = "python setup.py bdist_wheel --universal upload -r pypisnips"
     executeInVirtualEnv(pythonPath, venvPath, cmd)
 }
 
 def buildWheel(pythonPath, venvPath) {
-    cmd = "python setup.py bdist_wheel"
+    cmd = "python setup.py bdist_wheel --universal"
     executeInVirtualEnv(pythonPath, venvPath, cmd)
 }
 
-def setupAndBuild(pythonPath, venvPath) {
+def installAndTest(pythonPath, venvPath) {
     stage('Checkout') {
         deleteDir()
         checkout scm
@@ -52,7 +51,7 @@ def setupAndBuild(pythonPath, venvPath) {
     }
 }
 
-node('macos') {
+node('minimac1-highsierra-1||minimac2-highsierra-1') {
     def branchName = "${env.BRANCH_NAME}"
 
     def python27path = sh(returnStdout: true, script: 'which python2.7').trim()
@@ -60,10 +59,10 @@ node('macos') {
     def python35path = sh(returnStdout: true, script: 'which python3.5').trim()
     def python36path = sh(returnStdout: true, script: 'which python3.6').trim()
 
-    setupAndBuild(python27path, "venv27")
-    setupAndBuild(python34path, "venv34")
-    setupAndBuild(python35path, "venv35")
-    setupAndBuild(python36path, "venv36")
+    installAndTest(python27path, "venv27")
+    installAndTest(python34path, "venv34")
+    installAndTest(python35path, "venv35")
+    installAndTest(python36path, "venv36")
 
     switch (branchName) {
         case "master":
@@ -91,18 +90,12 @@ node('macos') {
                 """
             }
 
-            stage('Upload wheels') {
+            stage('Upload wheel') {
                 uploadWheel(python27path, venv27path)
-                uploadWheel(python34path, venv34path)
-                uploadWheel(python35path, venv35path)
-                uploadWheel(python36path, venv36path)
             }
         default:
-            stage('Build wheels') {
+            stage('Build wheel') {
                 buildWheel(python27path, venv27path)
-                buildWheel(python34path, venv34path)
-                buildWheel(python35path, venv35path)
-                buildWheel(python36path, venv36path)
             }
     }
 }

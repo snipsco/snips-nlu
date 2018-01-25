@@ -103,11 +103,11 @@ def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
 
 def build_training_data(dataset, language, data_augmentation_config,
                         random_state):
-    # Creating class mapping
+    # Create class mapping
     intents = dataset[INTENTS]
     intent_index = 0
     classes_mapping = dict()
-    for intent in intents:
+    for intent in sorted(intents):
         classes_mapping[intent] = intent_index
         intent_index += 1
 

@@ -110,7 +110,7 @@ class TestStringVariations(unittest.TestCase):
             "france vingt quatre",
             "france 24"
         }
-        self.assertItemsEqual(variations, expected_variations)
+        self.assertSetEqual(variations, expected_variations)
 
     def test_numbers_variations_should_handle_floats(self):
         # Given

@@ -102,7 +102,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         classifier_dict = intent_classifier.to_dict()
 
         # Then
-        intent_list = list(SAMPLE_DATASET[INTENTS])
+        intent_list = sorted(SAMPLE_DATASET[INTENTS])
         intent_list.append(None)
         expected_dict = {
             "unit_name": "log_reg_intent_classifier",
@@ -225,7 +225,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
                                in itervalues(dataset[INTENTS]) for utterance in
                                intent[UTTERANCES]]
-        expected_intent_mapping = [u'dummy_intent_2', u'dummy_intent_1']
+        expected_intent_mapping = [u'dummy_intent_1', u'dummy_intent_2']
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
@@ -277,7 +277,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                                 random_state)
         noisy_utterances = [next(noise_it) for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = list(dataset["intents"])
+        expected_intent_mapping = sorted(dataset["intents"])
         expected_intent_mapping.append(None)
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
@@ -329,7 +329,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                              len(noise)))
         noisy_utterances = [replacement_string for _ in range(noise_size)]
         expected_utterances += list(noisy_utterances)
-        expected_intent_mapping = list(dataset["intents"])
+        expected_intent_mapping = sorted(dataset["intents"])
         expected_intent_mapping.append(None)
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)

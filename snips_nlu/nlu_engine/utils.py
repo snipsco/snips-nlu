@@ -9,7 +9,6 @@ from snips_nlu.intent_parser.probabilistic_intent_parser import \
 from snips_nlu.result import (parsing_result, empty_result,
                               intent_classification_result, custom_slot,
                               builtin_slot)
-from snips_nlu.utils import ranges_overlap
 
 
 def parse(text, entities, language, parsers, intent=None):
@@ -87,16 +86,6 @@ def get_intent_slot_name_mapping(dataset, intent):
             if SLOT_NAME in chunk:
                 slot_name_mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_mapping
-
-
-def enrich_slots(slots, other_slots):
-    enriched_slots = list(slots)
-    for slot in other_slots:
-        if any(ranges_overlap(slot[RES_MATCH_RANGE], s[RES_MATCH_RANGE])
-               for s in enriched_slots):
-            continue
-        enriched_slots.append(slot)
-    return enriched_slots
 
 
 def get_fitted_slot_filler(engine, dataset, intent):

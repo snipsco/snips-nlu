@@ -16,14 +16,18 @@ def executeInVirtualEnv(pythonPath, venvPath, cmd) {
     """
 }
 
-def uploadWheel(pythonPath, venvPath) {
-    cmd = "python setup.py bdist_wheel --universal upload -r pypisnips"
-    executeInVirtualEnv(pythonPath, venvPath, cmd)
+def uploadAssets() {
+    def pythonPath = sh(returnStdout: true, script: 'which python2.7').trim()
+    cmd_wheel = "python setup.py bdist_wheel --universal upload -r pypisnips"
+    cmd_sdist = "python setup.py sdist upload -r pypisnips"
+    executeInVirtualEnv(pythonPath, "venv", cmd_wheel)
+    executeInVirtualEnv(pythonPath, "venv", cmd_sdist)
 }
 
-def buildWheel(pythonPath, venvPath) {
+def buildWheel() {
+    def pythonPath = sh(returnStdout: true, script: 'which python2.7').trim()
     cmd = "python setup.py bdist_wheel --universal"
-    executeInVirtualEnv(pythonPath, venvPath, cmd)
+    executeInVirtualEnv(pythonPath, "venv", cmd)
 }
 
 def installAndTest(pythonPath, venvPath) {
@@ -51,7 +55,7 @@ def installAndTest(pythonPath, venvPath) {
     }
 }
 
-node('minimac1-highsierra-1||minimac2-highsierra-1') {
+node('macos') {
     def branchName = "${env.BRANCH_NAME}"
 
     def python27path = sh(returnStdout: true, script: 'which python2.7').trim()
@@ -90,12 +94,12 @@ node('minimac1-highsierra-1||minimac2-highsierra-1') {
                 """
             }
 
-            stage('Upload wheel') {
-                uploadWheel(python27path, venv27path)
+            stage('Upload assets') {
+                uploadAssets()
             }
         default:
             stage('Build wheel') {
-                buildWheel(python27path, venv27path)
+                buildWheel()
             }
     }
 }

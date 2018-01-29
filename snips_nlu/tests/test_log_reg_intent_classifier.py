@@ -109,6 +109,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
             "config": IntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
+            "t_": 701.0,
             "intent_list": intent_list,
             "featurizer": mocked_dict
         }
@@ -134,11 +135,14 @@ class TestLogRegIntentClassifier(unittest.TestCase):
             -0.98
         ]
 
+        t_ = 701.
+
         config = IntentClassifierConfig().to_dict()
 
         classifier_dict = {
             "coeffs": coeffs,
             "intercept": intercept,
+            "t_": t_,
             "intent_list": intent_list,
             "config": config,
             "featurizer": mocked_featurizer.to_dict(),
@@ -154,6 +158,20 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         self.assertListEqual(classifier.classifier.intercept_.tolist(),
                              intercept)
         self.assertDictEqual(classifier.config.to_dict(), config)
+
+    def test_should_get_intent_after_deserialization(self):
+        # Given
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        classifier = LogRegIntentClassifier().fit(dataset)
+        classifier_dict = classifier.to_dict()
+
+        # When
+        loaded_classifier = LogRegIntentClassifier.from_dict(classifier_dict)
+        result = loaded_classifier.get_intent("Make me two cups of tea")
+
+        # Then
+        expected_intent = "MakeTea"
+        self.assertEqual(expected_intent, result[RES_INTENT_NAME])
 
     @patch("snips_nlu.intent_classifier.log_reg_classifier"
            ".build_training_data")

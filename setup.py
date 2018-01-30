@@ -31,9 +31,11 @@ extras_require = {
     "test": [
         "mock==2.0.0",
         "nlu_metrics==0.10.1",
-        # "snips_nlu_rust==0.52.0",
         "pylint==1.8.2",
         "coverage==4.4.2"
+    ],
+    "integration_test": [
+        "snips_nlu_rust==0.52.0",
     ]
 }
 
@@ -48,6 +50,8 @@ setup(name=PACKAGE_NAME,
           "Programming Language :: Python :: 2",
           "Programming Language :: Python :: 2.7",
           "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.4",
+          "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
       ],
       packages=packages,

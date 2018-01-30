@@ -38,7 +38,12 @@ def installAndTest(pythonPath, venvPath) {
     }
 
     stage('Build') {
-        executeInVirtualEnv(pythonPath, venvPath, "pip install .[test]")
+        def branchName = "${env.BRANCH_NAME}"
+        if(branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master") {
+            executeInVirtualEnv(pythonPath, venvPath, "pip install .[test, integration_test]")
+        } else {
+            executeInVirtualEnv(pythonPath, venvPath, "pip install .[test]")
+        }
     }
 
     stage('Tests') {

@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
+from builtins import object
 
 from nlu_utils import (tokenize as _tokenize,
                        tokenize_light as _tokenize_light,

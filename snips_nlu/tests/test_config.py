@@ -3,14 +3,14 @@ import unittest
 
 from snips_nlu.intent_classifier.log_reg_classifier import \
     LogRegIntentClassifier
-from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
-from snips_nlu.pipeline.configs.slot_filler import (
-    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig)
-from snips_nlu.pipeline.configs.intent_parser import (
-    ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
 from snips_nlu.pipeline.configs.intent_classifier import (
     IntentClassifierConfig, IntentClassifierDataAugmentationConfig,
     FeaturizerConfig)
+from snips_nlu.pipeline.configs.intent_parser import (
+    ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
+from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.pipeline.configs.slot_filler import (
+    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig)
 
 
 class TestConfig(unittest.TestCase):

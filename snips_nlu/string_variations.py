@@ -1,9 +1,13 @@
 # coding=utf-8
 from __future__ import unicode_literals
+from builtins import str
+from builtins import zip
+from builtins import range
 
 import itertools
 import re
 
+from future.utils import iteritems
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
@@ -22,7 +26,7 @@ AND_REGEXES = {
     language: re.compile(
         r"|".join(r"(?<=\s)%s(?=\s)" % re.escape(u) for u in utterances),
         re.IGNORECASE)
-    for language, utterances in AND_UTTERANCES.iteritems()
+    for language, utterances in iteritems(AND_UTTERANCES)
 }
 
 
@@ -78,7 +82,7 @@ def punctuation_variations(string, language):
 
 
 def digit_value(number_entity):
-    return unicode(number_entity[VALUE][VALUE])
+    return str(number_entity[VALUE][VALUE])
 
 
 def alphabetic_value(number_entity, language):
@@ -106,10 +110,10 @@ def numbers_variations(string, language):
     alpha_values = [alphabetic_value(e, language) for e in number_entities]
 
     values = [(n[RES_MATCH_RANGE], (d, a)) for (n, d, a) in
-              itertools.izip(number_entities, digit_values, alpha_values)
+              zip(number_entities, digit_values, alpha_values)
               if a is not None]
 
-    combinations = itertools.product(xrange(2), repeat=len(values))
+    combinations = itertools.product(range(2), repeat=len(values))
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])
                                  for i, ix in enumerate(c)]

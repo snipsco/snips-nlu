@@ -1,11 +1,11 @@
 from abc import ABCMeta, abstractmethod
 
+from future.utils import with_metaclass
+
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 
 
-class IntentParser(ProcessingUnit):
-    __metaclass__ = ABCMeta
-
+class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
     @abstractmethod
     def fit(self, dataset, intents):
         pass
@@ -17,3 +17,7 @@ class IntentParser(ProcessingUnit):
     @abstractmethod
     def get_slots(self, text, intent):
         pass
+
+
+class NotTrained(LookupError):
+    pass

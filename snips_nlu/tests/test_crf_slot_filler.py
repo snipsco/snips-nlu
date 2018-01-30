@@ -1,24 +1,29 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
+import os
+import traceback as tb
 import unittest
+from builtins import range
 
 from mock import patch, MagicMock
 
 from snips_nlu.builtin_entities import BuiltInEntity
-from snips_nlu.constants import RES_MATCH_RANGE, VALUE, ENTITY
+from snips_nlu.constants import (
+    RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.result import _slot
-from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, \
-    spans_to_tokens_indexes, filter_overlapping_builtins, \
-    generate_slots_permutations, exhaustive_slots_permutations
-from snips_nlu.slot_filler.crf_utils import TaggingScheme, BEGINNING_PREFIX, \
-    INSIDE_PREFIX
-from snips_nlu.slot_filler.feature_factory import IsDigitFactory, \
-    ShapeNgramFactory, NgramFactory
-from snips_nlu.tests.utils import SAMPLE_DATASET, BEVERAGE_DATASET
+from snips_nlu.slot_filler.crf_slot_filler import (
+    CRFSlotFiller, spans_to_tokens_indexes, filter_overlapping_builtins,
+    generate_slots_permutations, exhaustive_slots_permutations)
+from snips_nlu.slot_filler.crf_utils import (
+    TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX)
+from snips_nlu.slot_filler.feature_factory import (
+    IsDigitFactory, ShapeNgramFactory, NgramFactory)
+from snips_nlu.tests.utils import SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH
 from snips_nlu.tokenization import tokenize, Token
 
 
@@ -41,6 +46,101 @@ class TestCRFSlotFiller(unittest.TestCase):
                   entity='snips/number',
                   slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
+
+    def test_should_parse_naughty_strings(self):
+        # Given
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        naughty_strings_path = os.path.join(TEST_PATH, "resources",
+                                            "naughty_strings.txt")
+        with io.open(naughty_strings_path, encoding='utf8') as f:
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
+
+        # When
+        slot_filler = CRFSlotFiller().fit(dataset, "dummy_intent_1")
+
+        # Then
+        for s in naughty_strings:
+            try:
+                slot_filler.get_slots(s)
+            except:  # pylint: disable=W0702
+                trace = tb.format_exc()
+                self.fail('Exception raised:\n %s' % trace)
+
+    def test_should_fit_with_naughty_strings_no_tags(self):
+        # Given
+        naughty_strings_path = os.path.join(TEST_PATH, "resources",
+                                            "naughty_strings.txt")
+        with io.open(naughty_strings_path, encoding='utf8') as f:
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
+
+        utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
+                      naughty_strings]
+
+        # When
+        naughty_dataset = {
+            "intents": {
+                "naughty_intent": {
+                    "utterances": utterances
+                }
+            },
+            "entities": dict(),
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        # Then
+        try:
+            CRFSlotFiller().fit(naughty_dataset, "naughty_intent")
+        except:  # pylint: disable=W0702
+            trace = tb.format_exc()
+            self.fail('Exception raised:\n %s' % trace)
+
+    def test_should_fit_and_parse_with_non_ascii_tags(self):
+        # Given
+        inputs = ("string%s" % i for i in range(10))
+        utterances = [{
+            DATA: [{
+                TEXT: string,
+                ENTITY: "non_ascìi_entïty",
+                SLOT_NAME: "non_ascìi_slöt"
+            }]
+        } for string in inputs]
+
+        # When
+        naughty_dataset = {
+            "intents": {
+                "naughty_intent": {
+                    "utterances": utterances
+                }
+            },
+            "entities": {
+                "non_ascìi_entïty": {
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "data": []
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        naughty_dataset = validate_and_format_dataset(naughty_dataset)
+
+        # Then
+        try:
+            slot_filler = CRFSlotFiller()
+            slot_filler.fit(naughty_dataset, "naughty_intent")
+            slots = slot_filler.get_slots("string0")
+            expected_slot = {
+                'entity': 'non_ascìi_entïty',
+                'range': [0, 7],
+                'slotName': u'non_ascìi_slöt',
+                'value': u'string0'
+            }
+            self.assertListEqual([expected_slot], slots)
+        except:  # pylint: disable=W0702
+            trace = tb.format_exc()
+            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_get_slots_after_deserialization(self):
         # Given
@@ -459,8 +559,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         language = Language.EN
         text = "Find me a flight before 10pm and after 8pm"
         tokens = tokenize(text, language)
-        tags = ['O' for _ in xrange(5)] + ['B-flight'] + ['O' for _ in
-                                                          xrange(3)]
+        tags = ['O' for _ in range(5)] + ['B-flight'] + ['O' for _ in range(3)]
         tagging_scheme = TaggingScheme.BIO
         builtin_entities = [
             {
@@ -509,7 +608,7 @@ class TestCRFSlotFiller(unittest.TestCase):
             ("O", "b"),
             ("O", "O"),
         }
-        self.assertItemsEqual(perms, expected_perms)
+        self.assertSetEqual(set(perms), expected_perms)
 
     @patch("snips_nlu.slot_filler.crf_slot_filler"
            ".exhaustive_slots_permutations")
@@ -617,4 +716,4 @@ class TestCRFSlotFiller(unittest.TestCase):
                 possible_slots,
                 conf["exhaustive_permutations_threshold"])
             # Then
-            self.assertItemsEqual(conf["slots"], slots)
+            self.assertSetEqual(set(conf["slots"]), set(slots))

@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
+from future.utils import iteritems
+
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import ENTITIES, CAPITALIZE, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
@@ -113,7 +115,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
 def get_dataset_metadata(dataset):
     entities = dict()
-    for entity_name, entity in dataset[ENTITIES].iteritems():
+    for entity_name, entity in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             continue
         ent = deepcopy(entity)

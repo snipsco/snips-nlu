@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import re
 from copy import deepcopy
 
+from future.utils import itervalues, iteritems
+
 from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (
@@ -36,7 +38,7 @@ def generate_new_index(slots_name_to_labels):
     if not slots_name_to_labels:
         index = make_index(0)
     else:
-        max_index = max(slots_name_to_labels.keys(), key=get_index)
+        max_index = max(slots_name_to_labels, key=get_index)
         max_index = get_index(max_index) + 1
         index = make_index(max_index)
     return index
@@ -44,7 +46,7 @@ def generate_new_index(slots_name_to_labels):
 
 def get_slot_names_mapping(dataset):
     slot_names_to_entities = dict()
-    for intent in dataset[INTENTS].values():
+    for intent in itervalues(dataset[INTENTS]):
         for utterance in intent[UTTERANCES]:
             for chunk in utterance[DATA]:
                 if SLOT_NAME in chunk:
@@ -104,13 +106,13 @@ def generate_regexes(intent_queries, joined_entity_utterances,
 
 def get_joined_entity_utterances(dataset, language):
     joined_entity_utterances = dict()
-    for entity_name, entity in dataset[ENTITIES].iteritems():
+    for entity_name, entity in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             utterances = [get_builtin_entity_name(entity_name, language)]
         else:
-            utterances = entity[UTTERANCES].keys()
-        utterances_patterns = [regex_escape(e) for e in utterances]
-        utterances_patterns = [p for p in utterances_patterns if len(p) > 0]
+            utterances = list(entity[UTTERANCES])
+        utterances_patterns = map(regex_escape, utterances)
+        utterances_patterns = (p for p in utterances_patterns if p)
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(utterances_patterns, key=len, reverse=True))
     return joined_entity_utterances
@@ -201,14 +203,14 @@ class DeterministicIntentParser(IntentParser):
     def patterns(self):
         if self.regexes_per_intent is not None:
             return {i: [r.pattern for r in regex_list] for i, regex_list in
-                    self.regexes_per_intent.iteritems()}
+                    iteritems(self.regexes_per_intent)}
         return None
 
     @patterns.setter
     def patterns(self, value):
         if value is not None:
             self.regexes_per_intent = dict()
-            for intent, pattern_list in value.iteritems():
+            for intent, pattern_list in iteritems(value):
                 regexes = [re.compile(r"%s" % p, re.IGNORECASE)
                            for p in pattern_list]
                 self.regexes_per_intent[intent] = regexes
@@ -224,7 +226,7 @@ class DeterministicIntentParser(IntentParser):
         joined_entity_utterances = get_joined_entity_utterances(
             dataset, self.language)
         self.slot_names_to_entities = get_slot_names_mapping(dataset)
-        for intent_name, intent in dataset[INTENTS].iteritems():
+        for intent_name, intent in iteritems(dataset[INTENTS]):
             if not self.is_trainable(intent, dataset):
                 self.regexes_per_intent[intent_name] = []
                 continue
@@ -268,7 +270,7 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)
 
-        for intent, regexes in self.regexes_per_intent.iteritems():
+        for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
                 continue
             for regex in regexes:
@@ -292,6 +294,8 @@ class DeterministicIntentParser(IntentParser):
                     slots.append(parsed_slot)
                 parsed_slots = deduplicate_overlapping_slots(
                     slots, self.language)
+                parsed_slots = sorted(parsed_slots,
+                                      key=lambda s: s[RES_MATCH_RANGE][0])
                 return parsing_result(text, parsed_intent, parsed_slots)
         return empty_result(text)
 

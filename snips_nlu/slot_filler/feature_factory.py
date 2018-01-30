@@ -1,7 +1,10 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
+from builtins import map
+from builtins import object
 
+from future.utils import with_metaclass, iteritems
 from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities, \
@@ -18,9 +21,7 @@ from snips_nlu.slot_filler.features_utils import get_word_chunk, get_shape, \
     get_intent_custom_entities
 
 
-class CRFFeatureFactory(object):
-    __metaclass__ = ABCMeta
-
+class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
     def __init__(self, factory_config):
         self.factory_config = factory_config
 
@@ -48,9 +49,7 @@ class CRFFeatureFactory(object):
         pass
 
 
-class SingleFeatureFactory(CRFFeatureFactory):
-    __metaclass__ = ABCMeta
-
+class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     @property
     def feature_name(self):
         # by default, use the factory name
@@ -295,10 +294,10 @@ class EntityMatchFactory(CRFFeatureFactory):
 
         intent_entities = get_intent_custom_entities(dataset, intent)
         self.collections = dict()
-        for entity_name, entity in intent_entities.iteritems():
+        for entity_name, entity in iteritems(intent_entities):
             if not entity[UTTERANCES]:
                 continue
-            collection = list(preprocess(e) for e in entity[UTTERANCES].keys())
+            collection = list(preprocess(e) for e in entity[UTTERANCES])
             self.collections[entity_name] = collection
         self.args["collections"] = self.collections
         return self
@@ -308,7 +307,7 @@ class EntityMatchFactory(CRFFeatureFactory):
 
     def build_features(self):
         features = []
-        for name, collection in self.collections.iteritems():
+        for name, collection in iteritems(self.collections):
             # We need to call this wrapper in order to properly capture
             # `collection`
             collection_match = self._build_collection_match_fn(collection)
@@ -323,7 +322,7 @@ class EntityMatchFactory(CRFFeatureFactory):
         collection_set = set(collection)
 
         def collection_match(tokens, token_index):
-            normalized_tokens = map(self._transform, tokens)
+            normalized_tokens = list(map(self._transform, tokens))
             ngrams = get_all_ngrams(normalized_tokens)
             ngrams = [ngram for ngram in ngrams if
                       token_index in ngram[TOKEN_INDEXES]]

@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+from builtins import map
+
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
 from snips_nlu.pipeline.configs.intent_parser import (
     ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
@@ -8,14 +10,17 @@ from snips_nlu.utils import classproperty
 
 
 class NLUEngineConfig(ProcessingUnitConfig):
+    # pylint: disable=super-init-not-called
     def __init__(self, intent_parsers_configs=None):
         if intent_parsers_configs is None:
             intent_parsers_configs = [
                 DeterministicIntentParserConfig(),
                 ProbabilisticIntentParserConfig()
             ]
-        self.intent_parsers_configs = map(get_processing_unit_config,
-                                          intent_parsers_configs)
+        self.intent_parsers_configs = list(map(get_processing_unit_config,
+                                               intent_parsers_configs))
+
+    # pylint: enable=super-init-not-called
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument

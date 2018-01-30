@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
+from builtins import next
 
 import glob
 import io
 import os
 
+from future.utils import iteritems
 from nlu_utils import normalize
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
@@ -97,7 +99,7 @@ def load_clusters():
         if WORD_CLUSTERS in RESOURCE_INDEX[language]:
             clusters = dict()
             _WORD_CLUSTERS[language] = clusters
-            for name, path in word_clusters_paths.iteritems():
+            for name, path in iteritems(word_clusters_paths):
                 with io.open(path, encoding="utf8") as f:
                     clusters[name] = dict()
                     for l in f:
@@ -119,7 +121,7 @@ def load_gazetteers():
         }
         gazetteers = dict()
         _GAZETTEERS[language] = gazetteers
-        for name, path in gazetteers_paths.iteritems():
+        for name, path in iteritems(gazetteers_paths):
             with io.open(path, encoding="utf8") as f:
                 gazetteers[name] = set()
                 for l in f:

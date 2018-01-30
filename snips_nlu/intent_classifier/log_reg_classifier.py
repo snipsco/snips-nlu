@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from builtins import zip
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier
@@ -18,7 +19,7 @@ LOG_REG_ARGS = {
     "loss": "log",
     "penalty": "l2",
     "class_weight": "balanced",
-    "n_iter": 5,
+    "max_iter": 5,
     "n_jobs": -1
 }
 
@@ -83,7 +84,7 @@ class LogRegIntentClassifier(IntentClassifier):
         X = self.featurizer.transform([text])  # pylint: disable=C0103
         proba_vec = self.classifier.predict_proba(X)[0]
         intents_probas = sorted(zip(self.intent_list, proba_vec),
-                                cmp=lambda p1, p2: -1 if p1[1] > p2[1] else 1)
+                                key=lambda p: -p[1])
         for intent, proba in intents_probas:
             if intent is None:
                 return None
@@ -97,15 +98,18 @@ class LogRegIntentClassifier(IntentClassifier):
             featurizer_dict = self.featurizer.to_dict()
         coeffs = None
         intercept = None
+        t_ = None
         if self.classifier is not None:
             coeffs = self.classifier.coef_.tolist()
             intercept = self.classifier.intercept_.tolist()
+            t_ = self.classifier.t_
 
         return {
             "unit_name": self.unit_name,
             "config": self.config.to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
+            "t_": t_,
             "intent_list": self.intent_list,
             "featurizer": featurizer_dict,
         }
@@ -117,10 +121,12 @@ class LogRegIntentClassifier(IntentClassifier):
         sgd_classifier = None
         coeffs = unit_dict['coeffs']
         intercept = unit_dict['intercept']
+        t_ = unit_dict["t_"]
         if coeffs is not None and intercept is not None:
             sgd_classifier = SGDClassifier(**LOG_REG_ARGS)
             sgd_classifier.coef_ = np.array(coeffs)
             sgd_classifier.intercept_ = np.array(intercept)
+            sgd_classifier.t_ = t_
         intent_classifier.classifier = sgd_classifier
         intent_classifier.intent_list = unit_dict['intent_list']
         featurizer = unit_dict['featurizer']

@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 from copy import deepcopy
 from itertools import cycle
 
+from builtins import next
+from future.utils import iteritems
+
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
@@ -65,8 +68,9 @@ def get_contexts_iterator(dataset, intent_name, random_state):
 
 def get_entities_iterators(intent_entities, random_state):
     entities_its = dict()
-    for entity_name, entity in intent_entities.iteritems():
-        shuffled_values = random_state.permutation(entity[UTTERANCES].keys())
+    for entity_name, entity in iteritems(intent_entities):
+        shuffled_values = random_state.permutation(
+            list(entity[UTTERANCES]))
         entities_its[entity_name] = cycle(shuffled_values)
     return entities_its
 

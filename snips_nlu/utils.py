@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from builtins import object
 
 import errno
 import numbers
@@ -176,7 +177,7 @@ def check_random_state(seed):
     # pylint: disable=W0212
     # pylint: disable=c-extension-no-member
     if seed is None or seed is np.random:
-        return np.random.mtrand._rand
+        return np.random.mtrand._rand # pylint: disable=c-extension-no-member
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
     if isinstance(seed, np.random.RandomState):
@@ -202,7 +203,7 @@ def get_slot_name_mappings(dataset):
     Returns a dict which maps intents to their slot name mapping
     """
     return {intent: get_slot_name_mapping(dataset, intent)
-            for intent in dataset[INTENTS].keys()}
+            for intent in dataset[INTENTS]}
 
 
 def ranges_overlap(lhs_range, rhs_range):

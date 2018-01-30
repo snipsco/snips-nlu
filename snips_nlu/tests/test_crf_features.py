@@ -388,6 +388,7 @@ class TestCRFFeatures(unittest.TestCase):
 
         # When
         features = factory.build_features()
+        features = sorted(features, key=lambda f: f.base_name)
         res0 = features[0].compute(0, cache)
         res1 = features[0].compute(1, cache)
         res2 = features[0].compute(2, cache)
@@ -444,6 +445,7 @@ class TestCRFFeatures(unittest.TestCase):
 
         # When
         features = factory.build_features()
+        features = sorted(features, key=lambda f: f.base_name)
         res0 = features[0].compute(0, cache)
         res1 = features[0].compute(1, cache)
         res2 = features[0].compute(2, cache)
@@ -460,17 +462,17 @@ class TestCRFFeatures(unittest.TestCase):
         self.assertIsInstance(factory, BuiltinEntityMatchFactory)
         self.assertEqual(len(features), 2)
         self.assertEqual(features[0].base_name,
-                         "builtin_entity_match_snips/number")
-        self.assertEqual(features[1].base_name,
                          "builtin_entity_match_snips/datetime")
+        self.assertEqual(features[1].base_name,
+                         "builtin_entity_match_snips/number")
         self.assertEqual(res0, UNIT_PREFIX)
         self.assertEqual(res1, None)
-        self.assertEqual(res2, None)
-        self.assertEqual(res3, None)
-        self.assertEqual(res4, None)
+        self.assertEqual(res2, BEGINNING_PREFIX)
+        self.assertEqual(res3, INSIDE_PREFIX)
+        self.assertEqual(res4, LAST_PREFIX)
 
         self.assertEqual(res5, UNIT_PREFIX)
         self.assertEqual(res6, None)
-        self.assertEqual(res7, BEGINNING_PREFIX)
-        self.assertEqual(res8, INSIDE_PREFIX)
-        self.assertEqual(res9, LAST_PREFIX)
+        self.assertEqual(res7, None)
+        self.assertEqual(res8, None)
+        self.assertEqual(res9, None)

@@ -1,8 +1,12 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
+import os
 import re
+import traceback as tb
 import unittest
+from builtins import range
 
 from mock import patch
 
@@ -17,7 +21,7 @@ from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
     DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, _slot
-from snips_nlu.tests.utils import SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH
 
 
 class TestDeterministicIntentParser(unittest.TestCase):
@@ -374,7 +378,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
             # When
             slots = parser.get_slots(text, intent="dummy_intent_1")
             # Then
-            self.assertItemsEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, slots)
 
     def test_should_get_slots_after_deserialization(self):
         # Given
@@ -444,7 +448,102 @@ class TestDeterministicIntentParser(unittest.TestCase):
             slots = deserialized_parser.get_slots(text,
                                                   intent="dummy_intent_1")
             # Then
-            self.assertItemsEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, slots)
+
+    def test_should_parse_naughty_strings(self):
+        # Given
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        naughty_strings_path = os.path.join(TEST_PATH, "resources",
+                                            "naughty_strings.txt")
+        with io.open(naughty_strings_path, encoding='utf8') as f:
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
+
+        # When
+        parser = DeterministicIntentParser().fit(dataset)
+
+        # Then
+        for s in naughty_strings:
+            try:
+                parser.get_slots(s, "dummy_intent_1")
+            except:  # pylint: disable=W0702
+                trace = tb.format_exc()
+                self.fail('Exception raised:\n %s' % trace)
+
+    def test_should_fit_with_naughty_strings_no_tags(self):
+        # Given
+        naughty_strings_path = os.path.join(TEST_PATH, "resources",
+                                            "naughty_strings.txt")
+        with io.open(naughty_strings_path, encoding='utf8') as f:
+            naughty_strings = [line.strip("\n") for line in f.readlines()]
+
+        utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
+                      naughty_strings]
+
+        # When
+        naughty_dataset = {
+            "intents": {
+                "naughty_intent": {
+                    "utterances": utterances
+                }
+            },
+            "entities": dict(),
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        # Then
+        try:
+            DeterministicIntentParser().fit(naughty_dataset)
+        except:  # pylint: disable=W0702
+            trace = tb.format_exc()
+            self.fail('Exception raised:\n %s' % trace)
+
+    def test_should_fit_and_parse_with_non_ascii_tags(self):
+        # Given
+        inputs = ("string%s" % i for i in range(10))
+        utterances = [{
+            DATA: [{
+                TEXT: string,
+                ENTITY: "non_ascìi_entïty",
+                SLOT_NAME: "non_ascìi_slöt"
+            }]
+        } for string in inputs]
+
+        # When
+        naughty_dataset = {
+            "intents": {
+                "naughty_intent": {
+                    "utterances": utterances
+                }
+            },
+            "entities": {
+                "non_ascìi_entïty": {
+                    "use_synonyms": False,
+                    "automatically_extensible": True,
+                    "data": []
+                }
+            },
+            "language": "en",
+            "snips_nlu_version": "0.0.1"
+        }
+
+        naughty_dataset = validate_and_format_dataset(naughty_dataset)
+
+        # Then
+        try:
+            parser = DeterministicIntentParser()
+            parser.fit(naughty_dataset)
+            slots = parser.get_slots("string0", "naughty_intent")
+            expected_slot = {
+                'entity': 'non_ascìi_entïty',
+                'range': [0, 7],
+                'slotName': u'non_ascìi_slöt',
+                'value': u'string0'
+            }
+            self.assertListEqual([expected_slot], slots)
+        except:  # pylint: disable=W0702
+            trace = tb.format_exc()
+            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_be_serializable_before_fitting(self):
         # Given
@@ -718,44 +817,45 @@ class TestDeterministicIntentParser(unittest.TestCase):
         utterance = {
             DATA: [
                 {
-                    TEXT: "Be the first to choose the "
+                    TEXT: "Raise temperature in room number one to "
                 },
                 {
-                    TEXT: "second option",
-                    SLOT_NAME: "option",
-                    ENTITY: "option_entity"
+                    TEXT: "five degrees",
+                    SLOT_NAME: "room_temperature",
+                    ENTITY: "temperature"
                 },
                 {
                     TEXT: " at "
                 },
                 {
                     TEXT: "9pm",
-                    SLOT_NAME: "choosing time",
+                    SLOT_NAME: "time",
                     ENTITY: "snips/datetime"
                 },
             ]
         }
 
         # When
+
         processed_utterance = preprocess_builtin_entities(utterance, language)
 
         # Then
         expected_utterance = {
             DATA: [
                 {
-                    TEXT: "Be %SNIPSORDINAL% to choose the "
+                    TEXT: "Raise temperature in room number %SNIPSNUMBER% to "
                 },
                 {
-                    TEXT: "%SNIPSORDINAL% option",
-                    SLOT_NAME: "option",
-                    ENTITY: "option_entity"
+                    TEXT: "%SNIPSTEMPERATURE%",
+                    SLOT_NAME: "room_temperature",
+                    ENTITY: "temperature"
                 },
                 {
                     TEXT: " at "
                 },
                 {
                     TEXT: "%SNIPSDATETIME%",
-                    SLOT_NAME: "choosing time",
+                    SLOT_NAME: "time",
                     ENTITY: "snips/datetime"
                 },
             ]

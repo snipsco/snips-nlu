@@ -16,24 +16,26 @@ with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
 
 required = [
     "enum34==1.1.6",
-    "numpy==1.12.1",
-    "scipy==0.19.0",
-    "scikit-learn==0.18.1",
-    "sklearn-crfsuite==0.3.5",
-    "builtin_entities_ontology==0.5.1",
+    "numpy==1.14.0",
+    "scipy==1.0.0",
+    "scikit-learn==0.19.1",
+    "sklearn-crfsuite==0.3.6",
+    "builtin_entities_ontology==0.5.3",
     "semantic_version==2.6.0",
-    "rustling==8.3",
-    "nlu_utils==0.5.0",
-    "num2words==0.5.5"
+    "rustling==8.4.1",
+    "nlu_utils==0.5.3",
+    "num2words==0.5.6"
 ]
 
 extras_require = {
     "test": [
         "mock==2.0.0",
-        "nlu_metrics==0.10.0",
-        "snips_nlu_rust==0.51.16",
-        "pylint==1.7.4",
-        "coverage==4.4.1"
+        "nlu_metrics==0.10.1",
+        "pylint==1.8.2",
+        "coverage==4.4.2"
+    ],
+    "integration_test": [
+        "snips_nlu_rust==0.52.0",
     ]
 }
 
@@ -44,6 +46,14 @@ setup(name=PACKAGE_NAME,
       license="MIT",
       install_requires=required,
       extras_require=extras_require,
+      classifiers=[
+          "Programming Language :: Python :: 2",
+          "Programming Language :: Python :: 2.7",
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.4",
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6",
+      ],
       packages=packages,
       package_data={
           "": [

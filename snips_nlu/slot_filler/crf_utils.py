@@ -1,3 +1,4 @@
+from builtins import range
 from enum import Enum, unique
 
 from snips_nlu.constants import TEXT, SLOT_NAME
@@ -143,14 +144,14 @@ def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
 
 def positive_tagging(tagging_scheme, slot_name, slot_size):
     if slot_name == OUTSIDE:
-        return [OUTSIDE for _ in xrange(slot_size)]
+        return [OUTSIDE for _ in range(slot_size)]
 
     if tagging_scheme == TaggingScheme.IO:
-        tags = [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
+        tags = [INSIDE_PREFIX + slot_name for _ in range(slot_size)]
     elif tagging_scheme == TaggingScheme.BIO:
         if slot_size > 0:
             tags = [BEGINNING_PREFIX + slot_name]
-            tags += [INSIDE_PREFIX + slot_name for _ in xrange(1, slot_size)]
+            tags += [INSIDE_PREFIX + slot_name for _ in range(1, slot_size)]
         else:
             tags = []
     elif tagging_scheme == TaggingScheme.BILOU:
@@ -161,7 +162,7 @@ def positive_tagging(tagging_scheme, slot_name, slot_size):
         else:
             tags = [BEGINNING_PREFIX + slot_name]
             tags += [INSIDE_PREFIX + slot_name
-                     for _ in xrange(1, slot_size - 1)]
+                     for _ in range(1, slot_size - 1)]
             tags.append(LAST_PREFIX + slot_name)
     else:
         raise ValueError("Invalid tagging scheme %s" % tagging_scheme)
@@ -169,7 +170,7 @@ def positive_tagging(tagging_scheme, slot_name, slot_size):
 
 
 def negative_tagging(size):
-    return [OUTSIDE for _ in xrange(size)]
+    return [OUTSIDE for _ in range(size)]
 
 
 def utterance_to_sample(query_data, tagging_scheme, language):

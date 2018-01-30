@@ -8,6 +8,7 @@ from snips_nlu.utils import classproperty
 
 
 class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
+    # pylint: disable=super-init-not-called
     def __init__(self, intent_classifier_config=None, slot_filler_config=None):
         if intent_classifier_config is None:
             intent_classifier_config = IntentClassifierConfig()
@@ -17,6 +18,8 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
             intent_classifier_config)
         self.slot_filler_config = get_processing_unit_config(
             slot_filler_config)
+
+    # pylint: enable=super-init-not-called
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
@@ -41,9 +44,12 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
 
 
 class DeterministicIntentParserConfig(ProcessingUnitConfig):
+    # pylint: disable=super-init-not-called
     def __init__(self, max_queries=50, max_entities=200):
         self.max_queries = max_queries
         self.max_entities = max_entities
+
+    # pylint: enable=super-init-not-called
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument

@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from builtins import str
 from copy import deepcopy
 
 from future.utils import iteritems

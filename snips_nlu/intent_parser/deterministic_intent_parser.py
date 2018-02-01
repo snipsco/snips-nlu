@@ -18,7 +18,7 @@ from snips_nlu.pipeline.configs.intent_parser import \
 from snips_nlu.result import (_slot, parsing_result,
                               intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import regex_escape, ranges_overlap
+from snips_nlu.utils import regex_escape, ranges_overlap, NotTrained
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"

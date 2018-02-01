@@ -15,7 +15,7 @@ from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_classifier import \
     IntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import check_random_state
+from snips_nlu.utils import check_random_state, NotTrained
 
 LOG_REG_ARGS = {
     "loss": "log",
@@ -72,8 +72,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
     def get_intent(self, text, intents_filter=None):
         if not self.fitted:
-            raise AssertionError('LogRegIntentClassifier instance must be '
-                                 'fitted before `get_intent` can be called')
+            raise NotTrained('LogRegIntentClassifier must be fitted')
 
         if not text or not self.intent_list \
                 or self.featurizer is None or self.classifier is None:

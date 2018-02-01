@@ -30,7 +30,7 @@ from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import (
     UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap)
+    ranges_overlap, NotTrained)
 
 
 class CRFSlotFiller(SlotFiller):

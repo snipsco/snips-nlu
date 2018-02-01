@@ -4,7 +4,6 @@ import unittest
 
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
-from snips_nlu.intent_parser.intent_parser import NotTrained
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig

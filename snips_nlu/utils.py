@@ -15,6 +15,10 @@ REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
 
 
+class NotTrained(LookupError):
+    pass
+
+
 class ClassPropertyDescriptor(object):
     def __init__(self, fget, fset=None):
         self.fget = fget

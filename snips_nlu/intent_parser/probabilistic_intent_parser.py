@@ -11,6 +11,7 @@ from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
+from snips_nlu.utils import NotTrained
 
 
 class ProbabilisticIntentParser(IntentParser):

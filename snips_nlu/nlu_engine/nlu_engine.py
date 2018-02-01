@@ -12,7 +12,7 @@ from snips_nlu.nlu_engine.utils import parse
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
-from snips_nlu.utils import get_slot_name_mappings
+from snips_nlu.utils import get_slot_name_mappings, NotTrained
 from snips_nlu.version import __model_version__, __version__
 
 

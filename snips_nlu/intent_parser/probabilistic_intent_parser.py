@@ -83,14 +83,7 @@ class ProbabilisticIntentParser(IntentParser):
             already_fitted_intents)
         return missing_intents
 
-    def add_fitted_slot_filler(self, intent, slot_filler_data):
-        if self.slot_fillers is None:
-            self.slot_fillers = dict()
-        self.slot_fillers[intent] = load_processing_unit(slot_filler_data)
 
-    def get_fitted_slot_filler(self, dataset, intent):
-        slot_filler = build_processing_unit(self.config.slot_filler_config)
-        return slot_filler.fit(dataset, intent)
 
     def to_dict(self):
         slot_fillers = None

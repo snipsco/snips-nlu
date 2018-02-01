@@ -4,8 +4,6 @@ from snips_nlu.constants import (
     UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
     RES_MATCH_RANGE, RES_INTENT_NAME, RES_VALUE, RES_ENTITY, VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_parser.probabilistic_intent_parser import \
-    ProbabilisticIntentParser
 from snips_nlu.result import (parsing_result, empty_result,
                               intent_classification_result, custom_slot,
                               builtin_slot)
@@ -86,32 +84,3 @@ def get_intent_slot_name_mapping(dataset, intent):
             if SLOT_NAME in chunk:
                 slot_name_mapping[chunk[SLOT_NAME]] = chunk[ENTITY]
     return slot_name_mapping
-
-
-def get_fitted_slot_filler(engine, dataset, intent):
-    dataset = validate_and_format_dataset(dataset)
-    probabilistic_parser = _get_probabilistic_intent_parser(engine)
-    return probabilistic_parser.get_fitted_slot_filler(dataset, intent)
-
-
-def add_fitted_slot_filler(engine, intent, model_data):
-    probabilistic_parser = _get_probabilistic_intent_parser(engine)
-    probabilistic_parser.add_fitted_slot_filler(intent, model_data)
-
-
-def _get_probabilistic_intent_parser(engine):
-    probabilistic_parser = None
-    for intent_parser in engine.intent_parsers:
-        if intent_parser.unit_name == ProbabilisticIntentParser.unit_name:
-            probabilistic_parser = intent_parser
-    if probabilistic_parser is None:
-        probabilistic_parser_config = None
-        for parser_config in engine.config.intent_parsers_configs:
-            if parser_config.unit_name == \
-                    ProbabilisticIntentParser.unit_name:
-                probabilistic_parser_config = parser_config
-                break
-        probabilistic_parser = ProbabilisticIntentParser(
-            probabilistic_parser_config)
-        engine.intent_parsers.append(probabilistic_parser)
-    return probabilistic_parser

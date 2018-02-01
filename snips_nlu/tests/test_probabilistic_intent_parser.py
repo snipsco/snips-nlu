@@ -274,24 +274,3 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         feature_weights_2 = fitted_parser_2.slot_fillers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
-
-    def test_get_fitted_slot_filler_should_return_same_slot_filler_as_fit(
-            self):
-        # Given
-        intent = "MakeCoffee"
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        config = ProbabilisticIntentParserConfig(
-            slot_filler_config=slot_filler_config)
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
-        fitted_parser = ProbabilisticIntentParser(config).fit(dataset)
-
-        # When
-        parser = ProbabilisticIntentParser(config)
-        slot_filler = parser.get_fitted_slot_filler(dataset, intent)
-
-        # Then
-        expected_slot_filler = fitted_parser.slot_fillers[intent]
-        self.assertEqual(slot_filler.crf_model.state_features_,
-                         expected_slot_filler.crf_model.state_features_)
-        self.assertEqual(slot_filler.crf_model.transition_features_,
-                         expected_slot_filler.crf_model.transition_features_)

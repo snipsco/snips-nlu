@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import re
+from builtins import str
 from copy import deepcopy
 
 from future.utils import itervalues, iteritems
@@ -243,6 +244,9 @@ class DeterministicIntentParser(IntentParser):
     def parse(self, text, intents=None):
         if not self.fitted:
             raise NotTrained("DeterministicIntentParser must be fitted")
+
+        if isinstance(intents, str):
+            intents = [intents]
 
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)

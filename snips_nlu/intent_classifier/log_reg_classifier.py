@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from builtins import zip
+from builtins import str, zip
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier
@@ -73,6 +73,9 @@ class LogRegIntentClassifier(IntentClassifier):
     def get_intent(self, text, intents_filter=None):
         if not self.fitted:
             raise NotTrained('LogRegIntentClassifier must be fitted')
+
+        if isinstance(intents_filter, str):
+            intents_filter = [intents_filter]
 
         if not text or not self.intent_list \
                 or self.featurizer is None or self.classifier is None:

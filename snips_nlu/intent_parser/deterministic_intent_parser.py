@@ -10,6 +10,7 @@ from snips_nlu.builtin_entities import is_builtin_entity, \
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
     RES_MATCH_RANGE, LANGUAGE, RES_INTENT, RES_SLOTS, RES_VALUE)
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_parser import \
@@ -220,6 +221,7 @@ class DeterministicIntentParser(IntentParser):
         return self.regexes_per_intent is not None
 
     def fit(self, dataset, intents=None):
+        dataset = validate_and_format_dataset(dataset)
         self.language = Language.from_iso_code(dataset[LANGUAGE])
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()

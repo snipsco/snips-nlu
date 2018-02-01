@@ -6,6 +6,7 @@ from future.utils import itervalues, iteritems
 
 from snips_nlu.constants import INTENTS
 from snips_nlu.intent_parser.intent_parser import IntentParser, NotTrained
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
@@ -47,17 +48,15 @@ class ProbabilisticIntentParser(IntentParser):
                and all(slot_filler is not None and slot_filler.fitted
                        for slot_filler in itervalues(self.slot_fillers))
 
-    def fit(self, dataset, intents=None):
-        missing_intents = self.get_missing_intents(dataset, intents)
-        if missing_intents:
-            raise NotTrained(
-                "These intents must be trained: %s" % missing_intents)
-        if intents is None:
-            intents = list(dataset[INTENTS])
+    def fit(self, dataset, force_retrain=True):
+        dataset = validate_and_format_dataset(dataset)
+        intents = list(dataset[INTENTS])
+        if self.intent_classifier is None:
+            self.intent_classifier = build_processing_unit(
+                self.config.intent_classifier_config)
+        if force_retrain or not self.intent_classifier.fitted:
+            self.intent_classifier.fit(dataset)
 
-        self.intent_classifier = build_processing_unit(
-            self.config.intent_classifier_config)
-        self.intent_classifier.fit(dataset)
         if self.slot_fillers is None:
             self.slot_fillers = dict()
         for intent_name in intents:

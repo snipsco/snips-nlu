@@ -2,8 +2,12 @@ from __future__ import unicode_literals
 
 import unittest
 
+from mock import patch
+
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
+from snips_nlu.intent_classifier.log_reg_classifier import \
+    LogRegIntentClassifier
 from snips_nlu.intent_parser.probabilistic_intent_parser import \
     ProbabilisticIntentParser
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
@@ -12,20 +16,67 @@ from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.pipeline.units_registry import register_processing_unit
+from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET
 
 
 class TestProbabilisticIntentParser(unittest.TestCase):
+    def test_should_retrain_intent_classifier_when_force_retrain(self):
         # Given
         parser = ProbabilisticIntentParser()
+        intent_classifier = LogRegIntentClassifier()
+        intent_classifier.fit(BEVERAGE_DATASET)
+        parser.intent_classifier = intent_classifier
 
         # When / Then
+        with patch("snips_nlu.intent_classifier.log_reg_classifier"
+                   ".LogRegIntentClassifier.fit") as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=True)
+            mock_fit.assert_called_once()
+
+    def test_should_not_retrain_intent_classifier_when_no_force_retrain(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+        intent_classifier = LogRegIntentClassifier()
+        intent_classifier.fit(BEVERAGE_DATASET)
+        parser.intent_classifier = intent_classifier
+
+        # When / Then
+        with patch("snips_nlu.intent_classifier.log_reg_classifier"
+                   ".LogRegIntentClassifier.fit") as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=False)
+            mock_fit.assert_not_called()
+
+    def test_should_retrain_slot_filler_when_force_retrain(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+        slot_filler = CRFSlotFiller()
+        slot_filler.fit(BEVERAGE_DATASET, "MakeCoffee")
+        parser.slot_fillers["MakeCoffee"] = slot_filler
+
+        # When / Then
+        with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
+                as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=True)
+            self.assertEqual(2, mock_fit.call_count)
+
+    def test_should_not_retrain_slot_filler_when_no_force_retrain(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+        slot_filler = CRFSlotFiller()
+        slot_filler.fit(BEVERAGE_DATASET, "MakeCoffee")
+        parser.slot_fillers["MakeCoffee"] = slot_filler
+
+        # When / Then
+        with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
+                as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=False)
+            self.assertEqual(1, mock_fit.call_count)
 
     def test_should_be_serializable_before_fitting(self):
         # Given
-        parser_config = ProbabilisticIntentParserConfig()
-        parser = ProbabilisticIntentParser(parser_config)
+        parser = ProbabilisticIntentParser()
 
         # When
         actual_parser_dict = parser.to_dict()

@@ -47,10 +47,12 @@ class ProbabilisticIntentParser(IntentParser):
             self.slot_fillers = dict()
         for intent_name in intents:
             # We need to copy the slot filler config as it may be mutated
-            slot_filler_config = deepcopy(self.config.slot_filler_config)
-            self.slot_fillers[intent_name] = build_processing_unit(
-                slot_filler_config)
-            self.slot_fillers[intent_name].fit(dataset, intent_name)
+            if self.slot_fillers.get(intent_name) is None:
+                slot_filler_config = deepcopy(self.config.slot_filler_config)
+                self.slot_fillers[intent_name] = build_processing_unit(
+                    slot_filler_config)
+            if force_retrain or not self.slot_fillers[intent_name].fitted:
+                self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
 
     def parse(self, text, intents=None):

@@ -148,7 +148,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
+            "snips_nlu_version": "1.1.1",
+            "validated": True
         }
 
         # When
@@ -252,7 +253,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
+            "snips_nlu_version": "1.1.1",
+            "validated": True
         }
 
         # When
@@ -384,6 +386,7 @@ class TestDataset(unittest.TestCase):
             },
             "language": "en",
             "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -522,7 +525,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -684,7 +688,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -749,7 +754,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.1.0"
+            "snips_nlu_version": "0.1.0",
+            "validated": True
         }
 
         # When

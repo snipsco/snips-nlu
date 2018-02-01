@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
+
 from builtins import zip
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.constants import (LANGUAGE)
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import \
@@ -41,6 +43,7 @@ class LogRegIntentClassifier(IntentClassifier):
         return self.intent_list is not None
 
     def fit(self, dataset):
+        dataset = validate_and_format_dataset(dataset)
         language = Language.from_iso_code(dataset[LANGUAGE])
         random_state = check_random_state(self.config.random_seed)
         filtered_dataset = remove_builtin_slots(dataset)

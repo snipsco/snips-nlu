@@ -17,6 +17,7 @@ from snips_nlu.builtin_entities import (
     is_builtin_entity, BuiltInEntity, get_builtin_entities)
 from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA
 from snips_nlu.data_augmentation import augment_utterances
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.preprocessing import stem
@@ -112,6 +113,7 @@ class CRFSlotFiller(SlotFiller):
 
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent, verbose=False):
+        dataset = validate_and_format_dataset(dataset)
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
         self.language = Language.from_iso_code(dataset[LANGUAGE])

@@ -370,7 +370,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         parser2_config = TestIntentParser2Config()
         expected_engine_config = NLUEngineConfig(
             [parser1_config, parser2_config]).to_dict()
-        self.assertDictEqual(engine.dataset_metadata, dataset_metadata)
+        self.assertDictEqual(engine._dataset_metadata, dataset_metadata)
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
     def test_should_parse_after_deserialization(self):

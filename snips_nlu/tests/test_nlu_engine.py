@@ -17,8 +17,6 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser, NotTrained
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
-from snips_nlu.nlu_engine.utils import (
-    get_fitted_slot_filler, add_fitted_slot_filler)
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
 from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
@@ -435,64 +433,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
         with self.assertRaises(NotTrained):
             engine.fit(BEVERAGE_DATASET, intents=incomplete_intents)
 
-    def test_should_use_fitted_slot_filler(self):
-        # Given
-        input_ = "Give me 3 cups of hot tea please"
-        fitted_slot_filler = get_fitted_slot_filler(
-            SnipsNLUEngine(), BEVERAGE_DATASET, "MakeTea")
-
-        # When
-        engine = SnipsNLUEngine()
-        add_fitted_slot_filler(engine, "MakeTea", fitted_slot_filler.to_dict())
-        engine.fit(BEVERAGE_DATASET, intents=["MakeCoffee"])
-        result = engine.parse(input_)
-
-        # Then
-        expected_slots = [
-            resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
-                          'snips/number', 'number_of_cups'),
-            custom_slot(_slot((18, 21), 'hot', 'Temperature',
-                              'beverage_temperature'))
-        ]
-        self.assertEqual(result[RES_INPUT], input_)
-        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
-        self.assertListEqual(result[RES_SLOTS], expected_slots)
-
-    def test_should_be_serializable_after_fitted_slot_filler_is_added(self):
-        # Given
-        input_ = "Give me 3 cups of hot tea please"
-        engine = SnipsNLUEngine()
-        trained_slot_filler_coffee = get_fitted_slot_filler(
-            engine, BEVERAGE_DATASET, "MakeCoffee")
-        trained_slot_filler_tea = get_fitted_slot_filler(
-            engine, BEVERAGE_DATASET, "MakeTea")
-
-        # When
-        engine = SnipsNLUEngine()
-        add_fitted_slot_filler(engine, "MakeCoffee",
-                               trained_slot_filler_coffee.to_dict())
-        add_fitted_slot_filler(engine, "MakeTea",
-                               trained_slot_filler_tea.to_dict())
-        engine.fit(BEVERAGE_DATASET, intents=[])
-
-        try:
-            engine_dict = engine.to_dict()
-            new_engine = SnipsNLUEngine.from_dict(engine_dict)
-        except Exception as e:  # pylint: disable=W0703
-            self.fail('Exception raised: %s\n%s' %
-                      (str(e.args[0]), tb.format_exc()))
-        result = new_engine.parse(input_)
-
-        # Then
-        expected_slots = [
-            resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
-                          'snips/number', 'number_of_cups'),
-            custom_slot(_slot((18, 21), 'hot', 'Temperature',
-                              'beverage_temperature'))
-        ]
-        self.assertEqual(result[RES_INPUT], input_)
-        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
-        self.assertListEqual(result['slots'], expected_slots)
 
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
@@ -703,28 +643,6 @@ class TestSnipsNLUEngine(unittest.TestCase):
             SnipsNLUEngine().fit(dataset)
         except:  # pylint: disable=W0702
             self.fail("NLU engine should fit builtin")
-
-    def test_get_fitted_slot_filler_should_return_same_slot_filler_as_fit(
-            self):
-        # Given
-        intent = "MakeCoffee"
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        parser_config = ProbabilisticIntentParserConfig(
-            slot_filler_config=slot_filler_config)
-        config = NLUEngineConfig(intent_parsers_configs=[parser_config])
-        trained_engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
-
-        # When
-        engine = SnipsNLUEngine(config)
-        slot_filler = get_fitted_slot_filler(engine, BEVERAGE_DATASET, intent)
-
-        # Then
-        expected_slot_filler = \
-            trained_engine.intent_parsers[0].slot_fillers[intent]
-        self.assertEqual(expected_slot_filler.crf_model.state_features_,
-                         slot_filler.crf_model.state_features_)
-        self.assertEqual(expected_slot_filler.crf_model.transition_features_,
-                         slot_filler.crf_model.transition_features_)
 
     @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
            "ProbabilisticIntentParser.get_slots")

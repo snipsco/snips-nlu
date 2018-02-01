@@ -24,7 +24,7 @@ class ProbabilisticIntentParser(IntentParser):
             config = self.config_type()
         super(ProbabilisticIntentParser, self).__init__(config)
         self.intent_classifier = None
-        self.slot_fillers = None
+        self.slot_fillers = dict()
 
 
     @property
@@ -71,15 +71,14 @@ class ProbabilisticIntentParser(IntentParser):
         return parsing_result(text, intent_result, slots)
 
     def to_dict(self):
-        slot_fillers = None
         intent_classifier_dict = None
 
         if self.intent_classifier is not None:
             intent_classifier_dict = self.intent_classifier.to_dict()
-        if self.slot_fillers is not None:
-            slot_fillers = {
-                intent: slot_filler.to_dict()
-                for intent, slot_filler in iteritems(self.slot_fillers)}
+
+        slot_fillers = {
+            intent: slot_filler.to_dict()
+            for intent, slot_filler in iteritems(self.slot_fillers)}
 
         return {
             "unit_name": self.unit_name,
@@ -90,12 +89,10 @@ class ProbabilisticIntentParser(IntentParser):
 
     @classmethod
     def from_dict(cls, unit_dict):
-        slot_fillers = None
-        if unit_dict["slot_fillers"] is not None:
-            slot_fillers = {
-                intent: load_processing_unit(slot_filler_dict) for
-                intent, slot_filler_dict in
-                iteritems(unit_dict["slot_fillers"])}
+        slot_fillers = {
+            intent: load_processing_unit(slot_filler_dict) for
+            intent, slot_filler_dict in
+            iteritems(unit_dict["slot_fillers"])}
         classifier = None
         if unit_dict["intent_classifier"] is not None:
             classifier = load_processing_unit(unit_dict["intent_classifier"])

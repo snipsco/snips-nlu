@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from builtins import range
 from enum import Enum, unique
 
@@ -5,15 +7,15 @@ from snips_nlu.constants import TEXT, SLOT_NAME
 from snips_nlu.result import _slot
 from snips_nlu.tokenization import tokenize, Token
 
-BEGINNING_PREFIX = u'B-'
-INSIDE_PREFIX = u'I-'
-LAST_PREFIX = u'L-'
-UNIT_PREFIX = u'U-'
-OUTSIDE = u'O'
+BEGINNING_PREFIX = "B-"
+INSIDE_PREFIX = "I-"
+LAST_PREFIX = "L-"
+UNIT_PREFIX = "U-"
+OUTSIDE = "O"
 
-RANGE = u"range"
-TAGS = u"tags"
-TOKENS = u"tokens"
+RANGE = "range"
+TAGS = "tags"
+TOKENS = "tokens"
 
 
 @unique

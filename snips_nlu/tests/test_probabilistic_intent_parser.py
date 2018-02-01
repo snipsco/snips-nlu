@@ -90,7 +90,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
                 "intent_classifier_config": IntentClassifierConfig().to_dict()
             },
             "intent_classifier": None,
-            "slot_fillers": None,
+            "slot_fillers": dict(),
         }
         self.assertDictEqual(actual_parser_dict, expected_parser_dict)
 
@@ -101,7 +101,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "unit_name": "probabilistic_intent_parser",
             "config": config,
             "intent_classifier": None,
-            "slot_fillers": None,
+            "slot_fillers": dict(),
         }
 
         # When
@@ -110,7 +110,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         # Then
         self.assertEqual(parser.config.to_dict(), config)
         self.assertIsNone(parser.intent_classifier)
-        self.assertIsNone(parser.slot_fillers)
+        self.assertDictEqual(dict(), parser.slot_fillers)
 
     def test_should_be_serializable(self):
         # Given

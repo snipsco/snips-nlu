@@ -1,15 +1,15 @@
 from __future__ import unicode_literals
-from builtins import object
 
 import errno
 import numbers
 import os
+from builtins import object
 from collections import OrderedDict, namedtuple, Mapping
 
 import numpy as np
 
-from snips_nlu.constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY, \
-    RESOURCES_PATH
+from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
+                                 RESOURCES_PATH)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -181,7 +181,7 @@ def check_random_state(seed):
     # pylint: disable=W0212
     # pylint: disable=c-extension-no-member
     if seed is None or seed is np.random:
-        return np.random.mtrand._rand # pylint: disable=c-extension-no-member
+        return np.random.mtrand._rand  # pylint: disable=c-extension-no-member
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
     if isinstance(seed, np.random.RandomState):

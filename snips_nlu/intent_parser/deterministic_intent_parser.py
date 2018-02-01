@@ -240,19 +240,6 @@ class DeterministicIntentParser(IntentParser):
             self.regexes_per_intent[intent_name] = regexes
         return self
 
-    def is_trainable(self, intent, dataset):
-        if len(intent[UTTERANCES]) >= self.config.max_queries:
-            return False
-
-        intent_entities = set(chunk[ENTITY] for query in intent[UTTERANCES]
-                              for chunk in query[DATA] if ENTITY in chunk)
-        total_entities = sum(len(dataset[ENTITIES][ent][UTTERANCES])
-                             for ent in intent_entities
-                             if not is_builtin_entity(ent))
-        if total_entities > self.config.max_entities:
-            return False
-        return True
-
     def parse(self, text, intents=None):
         if not self.fitted:
             raise NotTrained("DeterministicIntentParser must be fitted")
@@ -288,6 +275,19 @@ class DeterministicIntentParser(IntentParser):
                                       key=lambda s: s[RES_MATCH_RANGE][0])
                 return parsing_result(text, parsed_intent, parsed_slots)
         return empty_result(text)
+
+    def is_trainable(self, intent, dataset):
+        if len(intent[UTTERANCES]) >= self.config.max_queries:
+            return False
+
+        intent_entities = set(chunk[ENTITY] for query in intent[UTTERANCES]
+                              for chunk in query[DATA] if ENTITY in chunk)
+        total_entities = sum(len(dataset[ENTITIES][ent][UTTERANCES])
+                             for ent in intent_entities
+                             if not is_builtin_entity(ent))
+        if total_entities > self.config.max_entities:
+            return False
+        return True
 
     def to_dict(self):
         language_code = None

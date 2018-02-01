@@ -4,13 +4,14 @@ from copy import deepcopy
 
 from future.utils import itervalues, iteritems
 
-from snips_nlu.constants import INTENTS
-from snips_nlu.intent_parser.intent_parser import IntentParser, NotTrained
+from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs.intent_parser import \
     ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
+from snips_nlu.result import empty_result, parsing_result
 from snips_nlu.utils import NotTrained
 
 
@@ -25,22 +26,6 @@ class ProbabilisticIntentParser(IntentParser):
         self.intent_classifier = None
         self.slot_fillers = None
 
-    def get_intent(self, text, intents=None):
-        if not self.fitted:
-            raise ValueError("ProbabilisticIntentParser must be fitted before "
-                             "`get_intent` is called")
-        return self.intent_classifier.get_intent(text, intents)
-
-    def get_slots(self, text, intent):
-        if intent is None:
-            raise ValueError("intent can't be None")
-        if not self.fitted:
-            raise ValueError("ProbabilisticIntentParser must be fitted before "
-                             "`get_slots` is called")
-        if intent not in self.slot_fillers:
-            raise KeyError("Invalid intent '%s'" % intent)
-
-        return self.slot_fillers[intent].get_slots(text)
 
     @property
     def fitted(self):
@@ -68,22 +53,20 @@ class ProbabilisticIntentParser(IntentParser):
             self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
 
-    def get_missing_intents(self, dataset, intents_to_fit):
-        if intents_to_fit is None:
-            return set()
-        all_intents = set(dataset[INTENTS])
-        implicit_fitted_intents = all_intents.difference(intents_to_fit)
-        if self.slot_fillers is None:
-            already_fitted_intents = set()
-        else:
-            already_fitted_intents = set(
-                intent_name for intent_name, slot_filler
-                in iteritems(self.slot_fillers) if slot_filler.fitted)
-        missing_intents = implicit_fitted_intents.difference(
-            already_fitted_intents)
-        return missing_intents
+    def parse(self, text, intents=None):
+        if not self.fitted:
+            raise NotTrained("ProbabilisticIntentParser must be fitted")
 
+        if isinstance(intents, str):
+            intents = [intents]
 
+        intent_result = self.intent_classifier.get_intent(text, intents)
+        if intent_result is None:
+            return empty_result(text)
+
+        intent_name = intent_result[RES_INTENT_NAME]
+        slots = self.slot_fillers[intent_name].get_slots(text)
+        return parsing_result(text, intent_result, slots)
 
     def to_dict(self):
         slot_fillers = None

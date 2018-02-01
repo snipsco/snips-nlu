@@ -17,15 +17,10 @@ from snips_nlu.tests.utils import BEVERAGE_DATASET
 
 
 class TestProbabilisticIntentParser(unittest.TestCase):
-    def test_should_not_allow_to_fit_with_missing_intents(self):
         # Given
-        intent = "MakeTea"
         parser = ProbabilisticIntentParser()
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
 
         # When / Then
-        with self.assertRaises(NotTrained):
-            parser.fit(dataset, {intent})
 
     def test_should_be_serializable_before_fitting(self):
         # Given

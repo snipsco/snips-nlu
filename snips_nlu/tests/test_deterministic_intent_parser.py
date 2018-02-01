@@ -12,7 +12,8 @@ from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
-                                 SLOT_NAME, RES_INTENT_NAME)
+                                 SLOT_NAME, RES_INTENT_NAME, RES_SLOTS,
+                                 RES_INTENT)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, deduplicate_overlapping_slots,
@@ -267,14 +268,14 @@ class TestDeterministicIntentParser(unittest.TestCase):
                "10p.m. or at 12p.m."
 
         # When
-        intent = parser.get_intent(text)
+        parsing = parser.parse(text)
 
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
             intent_name="dummy_intent_1", probability=probability)
 
-        self.assertEqual(intent, expected_intent)
+        self.assertEqual(expected_intent, parsing[RES_INTENT])
 
     def test_should_get_intent_when_filter(self):
         # Given
@@ -287,12 +288,12 @@ class TestDeterministicIntentParser(unittest.TestCase):
         intent_name_2 = "dummy_intent_2"
 
         # When
-        res_1 = parser.get_intent(text, [intent_name_1])
-        res_2 = parser.get_intent(text, [intent_name_2])
+        res_1 = parser.parse(text, intent_name_1)
+        res_2 = parser.parse(text, [intent_name_2])
 
         # Then
-        self.assertEqual(res_1[RES_INTENT_NAME], intent_name_1)
-        self.assertEqual(res_2[RES_INTENT_NAME], intent_name_2)
+        self.assertEqual(intent_name_1, res_1[RES_INTENT][RES_INTENT_NAME])
+        self.assertEqual(intent_name_2, res_2[RES_INTENT][RES_INTENT_NAME])
 
     def test_should_get_intent_after_deserialization(self):
         # Given
@@ -305,13 +306,13 @@ class TestDeterministicIntentParser(unittest.TestCase):
                "10p.m. or at 12p.m."
 
         # When
-        intent = deserialized_parser.get_intent(text)
+        parsing = deserialized_parser.parse(text)
 
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
             intent_name="dummy_intent_1", probability=probability)
-        self.assertEqual(intent, expected_intent)
+        self.assertEqual(expected_intent, parsing[RES_INTENT])
 
     def test_should_get_slots(self):
         # Given
@@ -376,9 +377,10 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         for text, expected_slots in texts:
             # When
-            slots = parser.get_slots(text, intent="dummy_intent_1")
+            parsing = parser.parse(text)
+
             # Then
-            self.assertListEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
     def test_should_get_slots_after_deserialization(self):
         # Given
@@ -445,10 +447,10 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         for text, expected_slots in texts:
             # When
-            slots = deserialized_parser.get_slots(text,
-                                                  intent="dummy_intent_1")
+            parsing = deserialized_parser.parse(text)
+
             # Then
-            self.assertListEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
     def test_should_parse_naughty_strings(self):
         # Given
@@ -464,7 +466,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
         # Then
         for s in naughty_strings:
             try:
-                parser.get_slots(s, "dummy_intent_1")
+                parser.parse(s)
             except:  # pylint: disable=W0702
                 trace = tb.format_exc()
                 self.fail('Exception raised:\n %s' % trace)
@@ -533,14 +535,17 @@ class TestDeterministicIntentParser(unittest.TestCase):
         try:
             parser = DeterministicIntentParser()
             parser.fit(naughty_dataset)
-            slots = parser.get_slots("string0", "naughty_intent")
+            parsing = parser.parse("string0")
+
             expected_slot = {
                 'entity': 'non_ascìi_entïty',
                 'range': [0, 7],
                 'slotName': u'non_ascìi_slöt',
                 'value': u'string0'
             }
-            self.assertListEqual([expected_slot], slots)
+            intent_name = parsing[RES_INTENT][RES_INTENT_NAME]
+            self.assertEqual("naughty_intent", intent_name)
+            self.assertListEqual([expected_slot], parsing[RES_SLOTS])
         except:  # pylint: disable=W0702
             trace = tb.format_exc()
             self.fail('Exception raised:\n %s' % trace)

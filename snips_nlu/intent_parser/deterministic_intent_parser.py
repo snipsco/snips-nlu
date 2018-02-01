@@ -9,7 +9,7 @@ from snips_nlu.builtin_entities import is_builtin_entity, \
     get_builtin_entities
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_INTENT, RES_SLOTS, RES_VALUE)
+    RES_MATCH_RANGE, LANGUAGE, RES_VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
@@ -220,7 +220,7 @@ class DeterministicIntentParser(IntentParser):
     def fitted(self):
         return self.regexes_per_intent is not None
 
-    def fit(self, dataset, intents=None):
+    def fit(self, dataset):
         dataset = validate_and_format_dataset(dataset)
         self.language = Language.from_iso_code(dataset[LANGUAGE])
         self.regexes_per_intent = dict()
@@ -253,22 +253,10 @@ class DeterministicIntentParser(IntentParser):
             return False
         return True
 
-    def get_intent(self, text, intents=None):
+    def parse(self, text, intents=None):
         if not self.fitted:
-            raise AssertionError("DeterministicIntentParser must be fitted "
-                                 "before calling `get_intent`")
-        return self._parse(text, intents)[RES_INTENT]
+            raise NotTrained("DeterministicIntentParser must be fitted")
 
-    def get_slots(self, text, intent):
-        if not self.fitted:
-            raise AssertionError("DeterministicIntentParser must be fitted "
-                                 "before calling `get_slots`")
-        if intent not in self.regexes_per_intent:
-            raise KeyError("Intent not found in DeterministicIntentParser: %s"
-                           % intent)
-        return self._parse(text, [intent])[RES_SLOTS]
-
-    def _parse(self, text, intents=None):
         ranges_mapping, processed_text = replace_builtin_entities(
             text, self.language)
 

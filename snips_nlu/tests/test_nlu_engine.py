@@ -18,10 +18,7 @@ from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_parser import \
-    ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.pipeline.units_registry import (register_processing_unit,
                                                reset_processing_units)
 from snips_nlu.result import (
@@ -38,7 +35,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
     def test_should_use_parsers_sequentially(self):
         # Given
         input_text = "hello world"
-        result = intent_classification_result(
+        intent = intent_classification_result(
             intent_name='dummy_intent_1', probability=0.7)
         slots = [_slot(match_range=(6, 11),
                        value='world',
@@ -59,14 +56,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset, intents):
+            def fit(self, dataset):
                 return self
 
-            def get_intent(self, text, intents=None):
-                return None
-
-            def get_slots(self, text, intent):
-                return []
+            def parse(self, text, intents):
+                return empty_result(text)
 
             def to_dict(self):
                 return {
@@ -92,18 +86,13 @@ class TestSnipsNLUEngine(unittest.TestCase):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset, intents):
+            def fit(self, dataset):
                 return self
 
-            def get_intent(self, text, intents=None):
+            def parse(self, text, intents):
                 if text == input_text:
-                    return result
-                return None
-
-            def get_slots(self, text, intent):
-                if text == input_text:
-                    return slots
-                return []
+                    return parsing_result(text, intent, slots)
+                return empty_result(text)
 
             def to_dict(self):
                 return {
@@ -136,14 +125,14 @@ class TestSnipsNLUEngine(unittest.TestCase):
         config = NLUEngineConfig([TestIntentParser1Config(),
                                   TestIntentParser2Config()])
         engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
-        engine.dataset_metadata = mocked_dataset_metadata
+        engine._dataset_metadata = mocked_dataset_metadata
 
         # When
         parse = engine.parse(input_text)
 
         # Then
         expected_slots = [custom_slot(s) for s in slots]
-        expected_parse = parsing_result(input_text, result, expected_slots)
+        expected_parse = parsing_result(input_text, intent, expected_slots)
         self.assertDictEqual(expected_parse, parse)
 
     def test_should_handle_empty_dataset(self):
@@ -173,14 +162,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset, intents):
+            def fit(self, dataset):
                 return self
 
-            def get_intent(self, text, intents=None):
-                return None
-
-            def get_slots(self, text, intent):
-                return []
+            def parse(self, text, intents):
+                return empty_result(text)
 
             def to_dict(self):
                 return {
@@ -206,14 +192,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset, intents):
+            def fit(self, dataset):
                 return self
 
-            def get_intent(self, text, intents=None):
-                return None
-
-            def get_slots(self, text, intent):
-                return []
+            def parse(self, text, intents):
+                return empty_result(text)
 
             def to_dict(self):
                 return {
@@ -294,14 +277,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset, intents):
+            def fit(self, dataset):
                 return self
 
-            def get_intent(self, text, intents=None):
-                return None
-
-            def get_slots(self, text, intent):
-                return []
+            def parse(self, text, intents):
+                return empty_result(text)
 
             def to_dict(self):
                 return {
@@ -327,14 +307,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset, intents):
+            def fit(self, dataset):
                 return self
 
-            def get_intent(self, text, intents=None):
-                return None
-
-            def get_slots(self, text, intent):
-                return []
+            def parse(self, text, intents):
+                return empty_result(text)
 
             def to_dict(self):
                 return {
@@ -424,27 +401,13 @@ class TestSnipsNLUEngine(unittest.TestCase):
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
         self.assertListEqual(result[RES_SLOTS], expected_slots)
 
-    def test_should_fail_when_missing_intents(self):
-        # Given
-        incomplete_intents = {"MakeCoffee"}
-        engine = SnipsNLUEngine()
-
-        # Then
-        with self.assertRaises(NotTrained):
-            engine.fit(BEVERAGE_DATASET, intents=incomplete_intents)
-
-
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
-        ".ProbabilisticIntentParser.get_slots")
-    @patch(
-        "snips_nlu.intent_parser.probabilistic_intent_parser"
-        ".ProbabilisticIntentParser.get_intent")
+        ".ProbabilisticIntentParser.parse")
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           ".DeterministicIntentParser.get_intent")
-    def test_should_handle_keyword_entities(self, mocked_regex_get_intent,
-                                            mocked_crf_get_intent,
-                                            mocked_crf_get_slots):
+           ".DeterministicIntentParser.parse")
+    def test_should_handle_keyword_entities(self, mocked_regex_parse,
+                                            mocked_crf_parse):
         # Given
         dataset = {
             "snips_nlu_version": "1.1.1",
@@ -505,6 +468,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "language": "en"
         }
 
+        text = "dummy_3 dummy_4"
         mocked_crf_intent = intent_classification_result("dummy_intent_1", 1.0)
         mocked_crf_slots = [_slot(match_range=(0, 7),
                                   value="dummy_3",
@@ -515,12 +479,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
                                   entity="dummy_entity_2",
                                   slot_name="other_dummy_slot_name")]
 
-        mocked_regex_get_intent.return_value = None
-        mocked_crf_get_intent.return_value = mocked_crf_intent
-        mocked_crf_get_slots.return_value = mocked_crf_slots
+        mocked_regex_parse.return_value = empty_result(text)
+        mocked_crf_parse.return_value = parsing_result(
+            text, mocked_crf_intent, mocked_crf_slots)
 
         engine = SnipsNLUEngine()
-        text = "dummy_3 dummy_4"
 
         # When
         engine = engine.fit(dataset)
@@ -536,15 +499,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
-        ".ProbabilisticIntentParser.get_slots")
-    @patch(
-        "snips_nlu.intent_parser.probabilistic_intent_parser"
-        ".ProbabilisticIntentParser.get_intent")
+        ".ProbabilisticIntentParser.parse")
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           ".DeterministicIntentParser.get_intent")
-    def test_synonyms_should_point_to_base_value(self, mocked_deter_get_intent,
-                                                 mocked_proba_get_intent,
-                                                 mocked_proba_get_slots):
+           ".DeterministicIntentParser.parse")
+    def test_synonyms_should_point_to_base_value(self, mocked_deter_parse,
+                                                 mocked_proba_parse):
         # Given
         dataset = {
             "snips_nlu_version": "1.1.1",
@@ -581,6 +540,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
             "language": "en"
         }
 
+        text = "dummy1_bis"
         mocked_proba_parser_intent = intent_classification_result(
             "dummy_intent_1", 1.0)
         mocked_proba_parser_slots = [
@@ -588,12 +548,11 @@ class TestSnipsNLUEngine(unittest.TestCase):
                   entity="dummy_entity_1",
                   slot_name="dummy_slot_name")]
 
-        mocked_deter_get_intent.return_value = None
-        mocked_proba_get_intent.return_value = mocked_proba_parser_intent
-        mocked_proba_get_slots.return_value = mocked_proba_parser_slots
+        mocked_deter_parse.return_value = empty_result(text)
+        mocked_proba_parse.return_value = parsing_result(
+            text, mocked_proba_parser_intent, mocked_proba_parser_slots)
 
         engine = SnipsNLUEngine().fit(dataset)
-        text = "dummy1_bis"
 
         # When
         result = engine.parse(text)
@@ -639,47 +598,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         })
 
         # When / Then
-        try:
-            SnipsNLUEngine().fit(dataset)
-        except:  # pylint: disable=W0702
-            self.fail("NLU engine should fit builtin")
-
-    @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
-           "ProbabilisticIntentParser.get_slots")
-    @patch("snips_nlu.intent_parser.probabilistic_intent_parser."
-           "ProbabilisticIntentParser.get_intent")
-    def test_parse_should_call_probabilistic_intent_parser_when_given_intent(
-            self, mocked_probabilistic_get_intent,
-            mocked_probabilistic_get_slots):
-        # Given
-        dataset = deepcopy(SAMPLE_DATASET)
-        dataset["entities"]["dummy_entity_1"][
-            "automatically_extensible"] = True
-        engine = SnipsNLUEngine().fit(dataset)
-        intent = "dummy_intent_1"
-        text = "This is another weird weird query"
-
-        intent_classif_result = intent_classification_result(intent, .8)
-        expected_intent_classif_result = intent_classification_result(intent,
-                                                                      1.0)
-        mocked_probabilistic_get_intent.return_value = intent_classif_result
-
-        parsed_slots = [
-            _slot(match_range=(16, 27), value="weird weird",
-                  entity="dummy_entity_1",
-                  slot_name="dummy slot nàme")]
-        mocked_probabilistic_get_slots.return_value = parsed_slots
-
-        # When
-        parse = engine.parse(text, intent=intent)
-
-        # Then
-        mocked_probabilistic_get_intent.assert_called_once()
-        mocked_probabilistic_get_slots.assert_called_once()
-        resolved_slots = [custom_slot(s) for s in parsed_slots]
-        expected_parse = parsing_result(text, expected_intent_classif_result,
-                                        resolved_slots)
-        self.assertEqual(expected_parse, parse)
+        SnipsNLUEngine().fit(dataset)  # This should not raise any error
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given

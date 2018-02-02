@@ -34,10 +34,19 @@ from snips_nlu.utils import (
 
 
 class CRFSlotFiller(SlotFiller):
+    """Slot filler which uses Linear-Chain Conditional Random Fields underneath
+
+    Check https://en.wikipedia.org/wiki/Conditional_random_field to learn
+    more about CRFs
+    """
+
     unit_name = "crf_slot_filler"
     config_type = CRFSlotFillerConfig
 
     def __init__(self, config=None):
+        """The CRF slot filler can be configured by passing a
+            :class:`.CRFSlotFillerConfig`"""
+
         if config is None:
             config = self.config_type()
         super(CRFSlotFiller, self).__init__(config)
@@ -51,6 +60,7 @@ class CRFSlotFiller(SlotFiller):
 
     @property
     def features(self):
+        """List of :class:`.Feature` used by the CRF"""
         if self._features is None:
             self._features = []
             feature_names = set()
@@ -64,6 +74,12 @@ class CRFSlotFiller(SlotFiller):
 
     @property
     def labels(self):
+        """List of CRF labels
+
+        These labels differ from the slot names as they contain an additional
+        prefix which depends on the :class:`.TaggingScheme` that is used
+        (BIO by default).
+        """
         labels = []
         if self.crf_model.tagger_ is not None:
             labels = [_decode_tag(label) for label in
@@ -72,11 +88,24 @@ class CRFSlotFiller(SlotFiller):
 
     @property
     def fitted(self):
+        """Whether or not the slot filler has already been fitted"""
         return self.crf_model is not None \
                and self.crf_model.tagger_ is not None
 
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent, verbose=False):
+        """Fit the slot filler
+
+        Args:
+            dataset (dict): A valid Snips dataset
+            intent (str): The specific intent of the dataset to train
+                the slot filler on
+            verbose (bool, optional): If *True*, it will print the weights
+                of the CRF once the training is done
+
+        Returns:
+            :class:`CRFSlotFiller`: The same instance, trained
+        """
         dataset = validate_and_format_dataset(dataset)
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
@@ -115,7 +144,10 @@ class CRFSlotFiller(SlotFiller):
         """Extracts slots from the provided text
 
         Returns:
-            :obj:`list` of :obj:`dict`: A list of slots
+            list of dict: The list of extracted slots
+
+        Raises:
+            NotTrained: When the slot filler is not fitted
         """
         if not self.fitted:
             raise NotTrained("CRFSlotFiller must be fitted")
@@ -139,6 +171,12 @@ class CRFSlotFiller(SlotFiller):
         return self._augment_slots(text, tokens, tags, builtin_slots_names)
 
     def compute_features(self, tokens, drop_out=False):
+        """Compute features on the provided tokens
+
+        The *drop_out* parameters allows to activate drop out on features that
+        have a positive drop out ratio. This should only be used during
+        training.
+        """
         tokens = [
             Token(t.value, t.start, t.end,
                   stem=stem(t.normalized_value, self.language))
@@ -162,10 +200,9 @@ class CRFSlotFiller(SlotFiller):
         """Gives the joint probability of a sequence of tokens and CRF labels
 
         Args:
-            tokens (:obj:`list` of :class:`snips_nlu.tokenization.Token`):
-                list of tokens
-            labels (:obj:`list` of :obj:`str`): CRF labels with their tagging
-                scheme prefix ("B-color", "I-color", "O", etc)
+            tokens (list of :class:`.Token`): list of tokens
+            labels (list of str): CRF labels with their tagging scheme prefix
+                ("B-color", "I-color", "O", etc)
 
         Note:
             The absolute value returned here is generally not very useful,
@@ -254,6 +291,7 @@ class CRFSlotFiller(SlotFiller):
                              self.slot_name_mapping)
 
     def to_dict(self):
+        """Returns a json-serializable dict"""
         language_code = None
         crf_model_data = None
 
@@ -273,6 +311,10 @@ class CRFSlotFiller(SlotFiller):
 
     @classmethod
     def from_dict(cls, unit_dict):
+        """Creates a :class:`CRFSlotFiller` instance from a dict
+
+        The dict must have been generated with :func:`~CRFSlotFiller.to_dict`
+        """
         slot_filler_config = cls.config_type.from_dict(unit_dict["config"])
         slot_filler = cls(config=slot_filler_config)
 

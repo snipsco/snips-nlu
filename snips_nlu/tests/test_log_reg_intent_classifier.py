@@ -21,7 +21,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     build_training_data
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.intent_classifier import (
-    IntentClassifierConfig, IntentClassifierDataAugmentationConfig)
+    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset, \
     BEVERAGE_DATASET
 
@@ -106,7 +106,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         intent_list.append(None)
         expected_dict = {
             "unit_name": "log_reg_intent_classifier",
-            "config": IntentClassifierConfig().to_dict(),
+            "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
             "t_": 701.0,
@@ -137,7 +137,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
         t_ = 701.
 
-        config = IntentClassifierConfig().to_dict()
+        config = LogRegIntentClassifierConfig().to_dict()
 
         classifier_dict = {
             "coeffs": coeffs,
@@ -359,7 +359,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         random_state = np.random.RandomState(1)
 
         # When
-        data_augmentation_config = IntentClassifierConfig() \
+        data_augmentation_config = LogRegIntentClassifierConfig() \
             .data_augmentation_config
         utterances, _, intent_mapping = build_training_data(
             dataset, language, data_augmentation_config, random_state)

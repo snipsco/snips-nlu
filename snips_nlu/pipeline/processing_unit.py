@@ -8,6 +8,15 @@ from snips_nlu.utils import classproperty
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):
+    """Abstraction of a NLU pipeline unit
+
+    Pipeline processing units such as intent parsers, intent classifiers and
+    slot fillers must implement this class.
+
+    A :class:`ProcessingUnit` is associated with a *config_type*, which
+    represents the :class:`.ProcessingUnitConfig` used to initialize it.
+    """
+
     def __init__(self, config):
         if config is None or isinstance(config, ProcessingUnitConfig):
             self.config = config
@@ -43,9 +52,8 @@ def _get_unit_type(unit_name):
 
 
 def get_processing_unit_config(unit_config):
-    """
-    Returns the `Config` object associated with this processing unit
-    """
+    """Returns the :class:`.ProcessingUnitConfig` corresponding to
+        *unit_config*"""
     if isinstance(unit_config, ProcessingUnitConfig):
         return unit_config
     elif isinstance(unit_config, dict):
@@ -59,16 +67,17 @@ def get_processing_unit_config(unit_config):
 
 
 def build_processing_unit(unit_config):
-    """
-    Create a new `ProcessingUnit` from the unit config
+    """Creates a new :class:`ProcessingUnit` from the provided *unit_config*
+
+    Args:
+        unit_config (:class:`.ProcessingUnitConfig`): The processing unit
+            config
     """
     unit = _get_unit_type(unit_config.unit_name)
     return unit(unit_config)
 
 
 def load_processing_unit(unit_dict):
-    """
-    Load a `ProcessingUnit` from a persisted processing unit dict
-    """
+    """Load a :class:`ProcessingUnit` from a persisted processing unit dict"""
     unit = _get_unit_type(unit_dict["unit_name"])
     return unit.from_dict(unit_dict)

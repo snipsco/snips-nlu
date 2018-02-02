@@ -1,17 +1,26 @@
 from copy import deepcopy
 
 from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_classifier import IntentClassifierConfig
+from snips_nlu.pipeline.configs.intent_classifier import \
+    LogRegIntentClassifierConfig
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
 from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.utils import classproperty
 
 
 class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.ProbabilisticIntentParser` object
+
+    Args:
+        intent_classifier_config (:class:`.ProcessingUnitConfig`): The
+            configuration of the underlying intent classifier, by default
+            it uses a :class:`.LogRegIntentClassifierConfig`
+    """
+
     # pylint: disable=super-init-not-called
     def __init__(self, intent_classifier_config=None, slot_filler_config=None):
         if intent_classifier_config is None:
-            intent_classifier_config = IntentClassifierConfig()
+            intent_classifier_config = LogRegIntentClassifierConfig()
         if slot_filler_config is None:
             slot_filler_config = CRFSlotFillerConfig()
         self.intent_classifier_config = get_processing_unit_config(
@@ -44,6 +53,23 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
 
 
 class DeterministicIntentParserConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.DeterministicIntentParser`
+
+    Args:
+        max_queries (int, optional): If the number of utterances for an intent
+            in the dataset is above *max_queries* then the patterns for this
+            intent will be skipped. 50 by default.
+        max_entities (int, optional): Same as *max_queries* but regarding
+            entity values.
+
+    This allows to deactivate the usage of regular expression when they are
+    too big to avoid explosion in time and memory
+
+    Notes:
+        In the future, a FST will be used insted of regexps, removing the need
+        for all this
+    """
+
     # pylint: disable=super-init-not-called
     def __init__(self, max_queries=50, max_entities=200):
         self.max_queries = max_queries

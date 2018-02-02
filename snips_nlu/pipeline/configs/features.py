@@ -5,6 +5,9 @@ from snips_nlu.slot_filler.feature_factory import (
 
 
 def default_features_factories():
+    """These are the default features used by the :class:`.CRFSlotFiller`
+        objects"""
+
     return [
         {
             "args": {

@@ -6,7 +6,7 @@ from builtins import range
 from mock import patch
 
 from snips_nlu.languages import Language
-from snips_nlu.result import _slot
+from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
     utterance_to_sample, TaggingScheme, negative_tagging,
@@ -38,7 +38,7 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(7, 16),
                         value="blue bird",
                         entity=slot_name,
@@ -51,7 +51,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [OUTSIDE, OUTSIDE, OUTSIDE,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(7, 11),
                         value="bird",
                         entity=slot_name,
@@ -63,7 +63,7 @@ class TestCRFUtils(unittest.TestCase):
                 "text": "bird",
                 "tags": [INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 4),
                         value="bird",
                         entity=slot_name,
@@ -76,7 +76,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 9),
                         value="blue bird",
                         entity=slot_name,
@@ -92,7 +92,7 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 25),
                         value="light blue bird blue bird",
                         entity=slot_name,
@@ -105,7 +105,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 10),
                         value="bird birdy",
                         entity=slot_name,
@@ -147,7 +147,7 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(7, 16),
                         value="blue bird",
                         entity=slot_name,
@@ -160,7 +160,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [OUTSIDE, OUTSIDE, OUTSIDE,
                          BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(7, 11),
                         value="bird",
                         entity=slot_name,
@@ -172,7 +172,7 @@ class TestCRFUtils(unittest.TestCase):
                 "text": "bird",
                 "tags": [BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 4),
                         value="bird",
                         entity=slot_name,
@@ -185,7 +185,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 9),
                         value="blue bird",
                         entity=slot_name,
@@ -201,13 +201,13 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 15),
                         value="light blue bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(16, 25),
                         value="blue bird",
                         entity=slot_name,
@@ -220,13 +220,13 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name,
                          BEGINNING_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 4),
                         value="bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(5, 10),
                         value="birdy",
                         entity=slot_name,
@@ -242,13 +242,13 @@ class TestCRFUtils(unittest.TestCase):
                          INSIDE_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 9),
                         value="blue bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(14, 24),
                         value="white bird",
                         entity=slot_name,
@@ -289,7 +289,7 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(7, 16),
                         value="blue bird",
                         entity=slot_name,
@@ -302,7 +302,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [OUTSIDE, OUTSIDE, OUTSIDE,
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(7, 11),
                         value="bird",
                         entity=slot_name,
@@ -314,7 +314,7 @@ class TestCRFUtils(unittest.TestCase):
                 "text": "bird",
                 "tags": [UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 4),
                         value="bird",
                         entity=slot_name,
@@ -327,7 +327,7 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [BEGINNING_PREFIX + slot_name,
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 9),
                         value="blue bird",
                         entity=slot_name,
@@ -343,13 +343,13 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          LAST_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 15),
                         value="light blue bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(16, 25),
                         value="blue bird",
                         entity=slot_name,
@@ -362,13 +362,13 @@ class TestCRFUtils(unittest.TestCase):
                 "tags": [UNIT_PREFIX + slot_name,
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 4),
                         value="bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(5, 10),
                         value="birdy",
                         entity=slot_name,
@@ -384,19 +384,19 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          INSIDE_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 10),
                         value="light bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(11, 15),
                         value="bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(16, 25),
                         value="blue bird",
                         entity=slot_name,
@@ -410,19 +410,19 @@ class TestCRFUtils(unittest.TestCase):
                          BEGINNING_PREFIX + slot_name,
                          UNIT_PREFIX + slot_name],
                 "expected_slots": [
-                    _slot(
+                    unresolved_slot(
                         match_range=(0, 4),
                         value="bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(5, 9),
                         value="bird",
                         entity=slot_name,
                         slot_name=slot_name
                     ),
-                    _slot(
+                    unresolved_slot(
                         match_range=(10, 14),
                         value="bird",
                         entity=slot_name,

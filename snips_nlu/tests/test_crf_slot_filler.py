@@ -15,7 +15,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
-from snips_nlu.result import _slot
+from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
     CRFSlotFiller, _spans_to_tokens_indexes, _filter_overlapping_builtins,
     _generate_slots_permutations, _exhaustive_slots_permutations)
@@ -41,10 +41,10 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(match_range=(8, 11),
-                  value='two',
-                  entity='snips/number',
-                  slot_name='number_of_cups')]
+            unresolved_slot(match_range=(8, 11),
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_parse_naughty_strings(self):
@@ -158,10 +158,10 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(match_range=(8, 11),
-                  value='two',
-                  entity='snips/number',
-                  slot_name='number_of_cups')]
+            unresolved_slot(match_range=(8, 11),
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_be_serializable_before_fit(self):
@@ -537,8 +537,10 @@ class TestCRFSlotFiller(unittest.TestCase):
             "end_date": "snips/datetime",
         }
 
+        # pylint:disable=protected-access
         slot_filler._get_sequence_probability = MagicMock(
             side_effect=mocked_sequence_probability)
+        # pylint:enable=protected-access
 
         slot_filler.compute_features = MagicMock(return_value=None)
 
@@ -550,8 +552,8 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(value='after 8pm', match_range=(33, 42),
-                  entity='snips/datetime', slot_name='end_date')
+            unresolved_slot(value='after 8pm', match_range=(33, 42),
+                            entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
 

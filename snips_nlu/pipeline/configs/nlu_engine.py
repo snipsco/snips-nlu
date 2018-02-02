@@ -10,6 +10,14 @@ from snips_nlu.utils import classproperty
 
 
 class NLUEngineConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.SnipsNLUEngine` object
+
+    Args:
+        intent_parsers_configs (list): List of intent parser configs
+            (:class:`.ProcessingUnitConfig`). The order in the list determines
+            the order in which each parser will be called by the nlu engine.
+    """
+
     # pylint: disable=super-init-not-called
     def __init__(self, intent_parsers_configs=None):
         if intent_parsers_configs is None:

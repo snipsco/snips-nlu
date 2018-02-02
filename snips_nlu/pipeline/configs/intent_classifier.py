@@ -4,44 +4,21 @@ from snips_nlu.pipeline.configs.config import Config, ProcessingUnitConfig
 from snips_nlu.utils import classproperty
 
 
-class IntentClassifierDataAugmentationConfig(Config):
-    def __init__(self, min_utterances=20, noise_factor=5, unknown_word_prob=0,
-                 unknown_words_replacement_string=None):
-        self.min_utterances = min_utterances
-        self.noise_factor = noise_factor
-        self.unknown_word_prob = unknown_word_prob
-        self.unknown_words_replacement_string = \
-            unknown_words_replacement_string
+class LogRegIntentClassifierConfig(ProcessingUnitConfig):
+    # pylint: disable=line-too-long
+    """Configuration of a :class:`.LogRegIntentClassifier`
 
-    def to_dict(self):
-        return {
-            "min_utterances": self.min_utterances,
-            "noise_factor": self.noise_factor,
-            "unknown_word_prob": self.unknown_word_prob,
-            "unknown_words_replacement_string":
-                self.unknown_words_replacement_string,
-        }
+    Args:
+        data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
+            Defines the strategy of the underlying data augmentation
+        featurizer_config (:class:`FeaturizerConfig`): Configuration of the
+            :class:`.Featurizer` used underneath
+        random_seed (int, optional): Allows to fix the seed ot have
+            reproducible trainings
+    """
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
+    # pylint: enable=line-too-long
 
-
-class FeaturizerConfig(Config):
-    def __init__(self, sublinear_tf=False):
-        self.sublinear_tf = sublinear_tf
-
-    def to_dict(self):
-        return {
-            "sublinear_tf": self.sublinear_tf
-        }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
-
-
-class IntentClassifierConfig(ProcessingUnitConfig):
     # pylint: disable=super-init-not-called
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
                  random_seed=None):
@@ -110,3 +87,59 @@ class IntentClassifierConfig(ProcessingUnitConfig):
             d = deepcopy(obj_dict)
             d.pop("unit_name")
         return cls(**d)
+
+
+class IntentClassifierDataAugmentationConfig(Config):
+    """Configuration used by a :class:`.LogRegIntentClassifier` which defines
+        how to augment data to improve the training of the classifier
+
+    Args:
+        min_utterances (int, optional): The minimum number of utterances to
+            automatically generate for each intent, based on the existing
+            utterances. Default is 20.
+        noise_factor (int, optional): Defines the size of the noise to
+            generate to train the implicit *None* intent, as a multiplier of
+            the average size of the other intents. Default is 5.
+    """
+
+    def __init__(self, min_utterances=20, noise_factor=5, unknown_word_prob=0,
+                 unknown_words_replacement_string=None):
+        self.min_utterances = min_utterances
+        self.noise_factor = noise_factor
+        self.unknown_word_prob = unknown_word_prob
+        self.unknown_words_replacement_string = \
+            unknown_words_replacement_string
+
+    def to_dict(self):
+        return {
+            "min_utterances": self.min_utterances,
+            "noise_factor": self.noise_factor,
+            "unknown_word_prob": self.unknown_word_prob,
+            "unknown_words_replacement_string":
+                self.unknown_words_replacement_string,
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)
+
+
+class FeaturizerConfig(Config):
+    """Configuration of a :class:`.Featurizer` object
+
+    Args:
+         sublinear_tf (bool, optional): Whether or not to use sublinear
+            (vs linear) term frequencies, default is *False*.
+    """
+
+    def __init__(self, sublinear_tf=False):
+        self.sublinear_tf = sublinear_tf
+
+    def to_dict(self):
+        return {
+            "sublinear_tf": self.sublinear_tf
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)

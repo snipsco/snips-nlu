@@ -18,25 +18,45 @@ from snips_nlu.utils import NotTrained
 
 
 class ProbabilisticIntentParser(IntentParser):
+    """Intent parser which consists in two steps: intent classification then
+        slot filling"""
+
     unit_name = "probabilistic_intent_parser"
     config_type = ProbabilisticIntentParserConfig
 
+    # pylint:disable=line-too-long
     def __init__(self, config=None):
+        """The CRF slot filler can be configured by passing a
+            :class:`.ProbabilisticIntentParserConfig`"""
         if config is None:
             config = self.config_type()
         super(ProbabilisticIntentParser, self).__init__(config)
         self.intent_classifier = None
         self.slot_fillers = dict()
 
+    # pylint:enable=line-too-long
 
     @property
     def fitted(self):
+        """Whether or not the intent parser has already been fitted"""
         return self.intent_classifier is not None \
                and self.intent_classifier.fitted \
                and all(slot_filler is not None and slot_filler.fitted
                        for slot_filler in itervalues(self.slot_fillers))
 
+    # pylint:disable=arguments-differ
     def fit(self, dataset, force_retrain=True):
+        """Fit the slot filler
+
+        Args:
+            dataset (dict): A valid Snips dataset
+            force_retrain (bool, optional): If *False*, will not retrain intent
+                classifier and slot fillers when they are already fitted.
+                Default to *True*.
+
+        Returns:
+            :class:`ProbabilisticIntentParser`: The same instance, trained
+        """
         dataset = validate_and_format_dataset(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
@@ -57,7 +77,25 @@ class ProbabilisticIntentParser(IntentParser):
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
         return self
 
+    # pylint:enable=arguments-differ
+
     def parse(self, text, intents=None):
+        """Performs intent parsing on the provided *text* by first classifying
+            the intent and then using the correspond slot filler to extract
+            slots
+
+        Args:
+            text (str): Input
+            intents (str or list of str): If provided, reduces the scope of
+                intent parsing to the provided list of intents
+
+        Returns:
+            dict: The most likely intent along with the extracted slots. See
+                :func:`.parsing_result` for the output format.
+
+        Raises:
+            NotTrained: When the intent parser is not fitted
+        """
         if not self.fitted:
             raise NotTrained("ProbabilisticIntentParser must be fitted")
 
@@ -73,6 +111,7 @@ class ProbabilisticIntentParser(IntentParser):
         return parsing_result(text, intent_result, slots)
 
     def to_dict(self):
+        """Returns a json-serializable dict"""
         intent_classifier_dict = None
 
         if self.intent_classifier is not None:
@@ -91,6 +130,11 @@ class ProbabilisticIntentParser(IntentParser):
 
     @classmethod
     def from_dict(cls, unit_dict):
+        """Creates a :class:`ProbabilisticIntentParser` instance from a dict
+
+        The dict must have been generated with
+        :func:`~ProbabilisticIntentParser.to_dict`
+        """
         slot_fillers = {
             intent: load_processing_unit(slot_filler_dict) for
             intent, slot_filler_dict in

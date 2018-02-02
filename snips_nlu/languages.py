@@ -18,6 +18,8 @@ COMMONLY_IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(
 
 
 class Language(Enum):
+    """List of NLU supported languages"""
+
     EN = {ISO_CODE: "en", RUSTLING_CODE: "EN"}
     ES = {ISO_CODE: "es", RUSTLING_CODE: "ES"}
     FR = {ISO_CODE: "fr", RUSTLING_CODE: "FR"}

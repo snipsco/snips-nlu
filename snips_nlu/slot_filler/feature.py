@@ -1,10 +1,30 @@
 from __future__ import unicode_literals
+
 from builtins import object
 
 TOKEN_NAME = "token"
 
 
 class Feature(object):
+    """CRF Feature which is used by :class:`.CRFSlotFiller`
+
+    Attributes:
+        base_name (str): Feature name (e.g. 'is_digit', 'is_first' etc)
+        func (function): The actual feature function for example:
+
+            def is_first(tokens, token_index):
+                return "1" if token_index == 0 else None
+
+        offset (int, optional): Token offset to consider when computing
+            the feature (e.g -1 for computing the feature on the previous word)
+        drop_out (float, optional): Drop out to use when computing the
+            feature during training
+
+    Note:
+        The easiest way to add additional features to the existing ones is
+        to create a :class:`.CRFFeatureFactory`
+    """
+
     def __init__(self, base_name, func, offset=0, drop_out=0):
         if base_name == TOKEN_NAME:
             raise ValueError("'%s' name is reserved" % TOKEN_NAME)

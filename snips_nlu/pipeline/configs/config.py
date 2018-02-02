@@ -17,6 +17,9 @@ class Config(with_metaclass(ABCMeta, object)):
 
 
 class ProcessingUnitConfig(with_metaclass(ABCMeta, Config)):
+    """Represents the configuration object needed to initialize a
+        :class:`.ProcessingUnit`"""
+
     @classproperty
     def unit_name(self):
         raise NotImplementedError

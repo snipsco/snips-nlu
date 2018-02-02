@@ -22,7 +22,8 @@ from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 from snips_nlu.pipeline.units_registry import (register_processing_unit,
                                                reset_processing_units)
 from snips_nlu.result import (
-    parsing_result, _slot, intent_classification_result, empty_result,
+    parsing_result, unresolved_slot, intent_classification_result,
+    empty_result,
     custom_slot, resolved_slot)
 from snips_nlu.tests.utils import (
     SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET)
@@ -37,10 +38,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
         input_text = "hello world"
         intent = intent_classification_result(
             intent_name='dummy_intent_1', probability=0.7)
-        slots = [_slot(match_range=(6, 11),
-                       value='world',
-                       entity='mocked_entity',
-                       slot_name='mocked_slot_name')]
+        slots = [unresolved_slot(match_range=(6, 11),
+                                 value='world',
+                                 entity='mocked_entity',
+                                 slot_name='mocked_slot_name')]
 
         class TestIntentParser1Config(ProcessingUnitConfig):
             unit_name = "test_intent_parser1"
@@ -125,7 +126,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         config = NLUEngineConfig([TestIntentParser1Config(),
                                   TestIntentParser2Config()])
         engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
+        # pylint:disable=protected-access
         engine._dataset_metadata = mocked_dataset_metadata
+        # pylint:enable=protected-access
 
         # When
         parse = engine.parse(input_text)
@@ -370,7 +373,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         parser2_config = TestIntentParser2Config()
         expected_engine_config = NLUEngineConfig(
             [parser1_config, parser2_config]).to_dict()
+        # pylint:disable=protected-access
         self.assertDictEqual(engine._dataset_metadata, dataset_metadata)
+        # pylint:enable=protected-access
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
     def test_should_parse_after_deserialization(self):
@@ -394,8 +399,8 @@ class TestSnipsNLUEngine(unittest.TestCase):
         expected_slots = [
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
-            custom_slot(_slot((18, 21), 'hot', 'Temperature',
-                              'beverage_temperature'))
+            custom_slot(unresolved_slot((18, 21), 'hot', 'Temperature',
+                                        'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
@@ -470,14 +475,14 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         text = "dummy_3 dummy_4"
         mocked_crf_intent = intent_classification_result("dummy_intent_1", 1.0)
-        mocked_crf_slots = [_slot(match_range=(0, 7),
-                                  value="dummy_3",
-                                  entity="dummy_entity_1",
-                                  slot_name="dummy_slot_name"),
-                            _slot(match_range=(8, 15),
-                                  value="dummy_4",
-                                  entity="dummy_entity_2",
-                                  slot_name="other_dummy_slot_name")]
+        mocked_crf_slots = [unresolved_slot(match_range=(0, 7),
+                                            value="dummy_3",
+                                            entity="dummy_entity_1",
+                                            slot_name="dummy_slot_name"),
+                            unresolved_slot(match_range=(8, 15),
+                                            value="dummy_4",
+                                            entity="dummy_entity_2",
+                                            slot_name="other_dummy_slot_name")]
 
         mocked_regex_parse.return_value = empty_result(text)
         mocked_crf_parse.return_value = parsing_result(
@@ -490,7 +495,7 @@ class TestSnipsNLUEngine(unittest.TestCase):
         result = engine.parse(text)
 
         # Then
-        expected_slot = custom_slot(_slot(
+        expected_slot = custom_slot(unresolved_slot(
             match_range=(8, 15), value="dummy_4", entity="dummy_entity_2",
             slot_name="other_dummy_slot_name"))
         expected_result = parsing_result(text, intent=mocked_crf_intent,
@@ -544,9 +549,9 @@ class TestSnipsNLUEngine(unittest.TestCase):
         mocked_proba_parser_intent = intent_classification_result(
             "dummy_intent_1", 1.0)
         mocked_proba_parser_slots = [
-            _slot(match_range=(0, 10), value="dummy1_bis",
-                  entity="dummy_entity_1",
-                  slot_name="dummy_slot_name")]
+            unresolved_slot(match_range=(0, 10), value="dummy1_bis",
+                            entity="dummy_entity_1",
+                            slot_name="dummy_slot_name")]
 
         mocked_deter_parse.return_value = empty_result(text)
         mocked_proba_parse.return_value = parsing_result(

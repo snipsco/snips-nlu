@@ -30,7 +30,7 @@ def buildWheel() {
     executeInVirtualEnv(pythonPath, "venv", cmd)
 }
 
-def installAndTest(pythonPath, venvPath) {
+def installAndTest(pythonPath, venvPath, includeIntegrationTest=false) {
     stage('Checkout') {
         deleteDir()
         checkout scm
@@ -39,7 +39,7 @@ def installAndTest(pythonPath, venvPath) {
 
     stage('Build') {
         def branchName = "${env.BRANCH_NAME}"
-        if(branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master") {
+        if(includeIntegrationTest && (branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master")) {
             executeInVirtualEnv(pythonPath, venvPath, "pip install '.[test, integration_test]'")
         } else {
             executeInVirtualEnv(pythonPath, venvPath, "pip install .[test]")
@@ -54,7 +54,7 @@ def installAndTest(pythonPath, venvPath) {
         python -m unittest discover
         """
 
-        if(branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master") {
+        if(includeIntegrationTest && (branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master")) {
             sh """
             . ${venvPath}/bin/activate
             python -m unittest discover -p 'integration_test*.py'
@@ -71,10 +71,10 @@ node('macos') {
     def python35path = sh(returnStdout: true, script: 'which python3.5').trim()
     def python36path = sh(returnStdout: true, script: 'which python3.6').trim()
 
+    installAndTest(python36path, "venv36", true)
     installAndTest(python27path, "venv27")
     installAndTest(python34path, "venv34")
     installAndTest(python35path, "venv35")
-    installAndTest(python36path, "venv36")
 
     switch (branchName) {
         case "master":

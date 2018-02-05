@@ -1,0 +1,200 @@
+{
+  "intents": {
+    "SampleGetWeather": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "What kind of weather should I expect "
+            },
+            {
+              "text": "today",
+              "entity": "snips/datetime",
+              "slot_name": "weather_date"
+            },
+            {
+              "text": "? "
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Will it be sunny in "
+            },
+            {
+              "text": "Tokyo",
+              "entity": "location",
+              "slot_name": "weather_location"
+            },
+            {
+              "text": " "
+            },
+            {
+              "text": "at the end of the day",
+              "entity": "snips/datetime",
+              "slot_name": "weather_date"
+            },
+            {
+              "text": " ?"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "What will be the weather in "
+            },
+            {
+              "text": "London",
+              "entity": "location",
+              "slot_name": "weather_location"
+            },
+            {
+              "text": ", "
+            },
+            {
+              "text": "tomorrow morning",
+              "entity": "snips/datetime",
+              "slot_name": "weather_date"
+            },
+            {
+              "text": "?"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Tell me if it is going to rain "
+            },
+            {
+              "text": "this afternoon",
+              "entity": "snips/datetime",
+              "slot_name": "weather_date"
+            },
+            {
+              "text": " in "
+            },
+            {
+              "text": "Moscow",
+              "entity": "location",
+              "slot_name": "weather_location"
+            },
+            {
+              "text": ", please"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "What is the weather in "
+            },
+            {
+              "text": "Paris",
+              "entity": "location",
+              "slot_name": "weather_location"
+            },
+            {
+              "text": "?"
+            }
+          ]
+        }
+      ],
+      "version": "0.0.1",
+      "language": "en"
+    },
+    "SampleTurnOnLight": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "The "
+            },
+            {
+              "text": "bedroom",
+              "entity": "room",
+              "slot_name": "room"
+            },
+            {
+              "text": " is dark, please turn on the light !"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Can you enlight the "
+            },
+            {
+              "text": "living room",
+              "entity": "room",
+              "slot_name": "room"
+            },
+            {
+              "text": " ?"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "I need some light in the "
+            },
+            {
+              "text": "basement",
+              "entity": "room",
+              "slot_name": "room"
+            },
+            {
+              "text": " please"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Please put some lights in the "
+            },
+            {
+              "text": "bathroom",
+              "entity": "room",
+              "slot_name": "room"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Turn on the lights in the "
+            },
+            {
+              "text": "kitchen",
+              "entity": "room",
+              "slot_name": "room"
+            }
+          ]
+        }
+      ],
+      "engineType": "regex",
+      "version": "0.0.1",
+      "language": "en"
+    }
+  },
+  "entities": {
+    "location": {
+      "data": [],
+      "use_synonyms": true,
+      "automatically_extensible": true
+    },
+    "snips/datetime": {},
+    "room": {
+      "data": [],
+      "use_synonyms": true,
+      "automatically_extensible": false
+    }
+  },
+  "language": "en",
+  "snips_nlu_version": "0.11.0"
+}

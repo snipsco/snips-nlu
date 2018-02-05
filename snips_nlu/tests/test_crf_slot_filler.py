@@ -95,6 +95,7 @@ class TestCRFSlotFiller(unittest.TestCase):
             trace = tb.format_exc()
             self.fail('Exception raised:\n %s' % trace)
 
+    @unittest.skip("Skip until the bug is fixed on the Rust side")
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
         inputs = ("string%s" % i for i in range(10))

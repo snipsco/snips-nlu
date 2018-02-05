@@ -1,8 +1,24 @@
 # Snips NLU
 
-[![Build Status](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/job/master/badge/icon)](https://jenkins2.snips.ai/job/SDK/job/snips-nlu/job/master/)
+Snips NLU (Natural Language understanding) is a python library for extracting meaning from text.
 
-**Model Version (0.10.0)**
+Here is an example of a possible use case:
+
+Input:
+```
+    text: Set the light to red in the living room please
+```
+
+Extracted information:
+
+```    
+    intent: SetLightColor
+    slots:
+        - color: red
+        - room: living room
+```
+
+This tools uses machine learning, which means you can train it on a specific corpus and Snips will be able to parse out of corpus sentences.
 
 ## Production Use
 
@@ -40,7 +56,7 @@ Install the package in edition mode:
 ## API
 
 ### Data
-The input of the NLU engine training is a dataset which format can be found [here](https://github.com/snipsco/snips-nlu/blob/develop/snips_nlu/tests/resources/sample_dataset.json)
+The input of the NLU engine training is a dataset which format can be found [here](https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/tests/resources/sample_dataset.json)
 
 ### Code
 
@@ -49,15 +65,15 @@ import io
 import json
 from pprint import pprint
 
-from snips_nlu.nlu_engine import SnipsNLUEngine, NLUConfig
+from snips_nlu import SnipsNLUEngine, NLUEngineConfig
 
 ############## Initialization ##############
 
 # The nlu config is optional here
 with io.open("config.json") as f:
-    nlu_config = NLUConfig.from_dict(json.load(f))
+    nlu_config = NLUEngineConfig.from_dict(json.load(f))
 
-engine = SnipsNLUEngine(language='en', config=nlu_config)
+engine = SnipsNLUEngine(config=nlu_config)
 
 
 ############## Training ####################
@@ -108,12 +124,12 @@ trained_engine = SnipsNLUEngine.from_dict(trained_engine_dict)
 ### CLI
 
 ```bash
->>> train-engine en /path/to/input/dataset.json /path/to/output/trained_engine.json
+>>> train-engine /path/to/input/dataset.json /path/to/output/trained_engine.json
 >>> engine-inference /path/to/output/trained_engine.json
 ```
 
 ### Versioning
-The NLU Engine has a separated versioning for the underlying model:
+The NLU Engine has a separate versioning for the underlying model:
 ``` python
 import snips_nlu
 

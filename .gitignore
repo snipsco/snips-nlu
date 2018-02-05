@@ -2,9 +2,12 @@
 *.py[cod]
 *.egg-info
 *build
+*.bak
 .idea
 /dist
 snips_nlu/snips-nlu-resources/*
 /venv
+/venv3
+/.tox
 .coverage
 pylint.log

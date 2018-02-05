@@ -1,13 +1,17 @@
 # coding=utf-8
 from __future__ import unicode_literals
+from builtins import str
+from builtins import zip
+from builtins import range
 
 import itertools
 import re
 
+from future.utils import iteritems
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
-from snips_nlu.constants import VALUE, MATCH_RANGE
+from snips_nlu.constants import VALUE, RES_MATCH_RANGE
 from snips_nlu.languages import Language
 from snips_nlu.tokenization import tokenize_light
 
@@ -22,7 +26,7 @@ AND_REGEXES = {
     language: re.compile(
         r"|".join(r"(?<=\s)%s(?=\s)" % re.escape(u) for u in utterances),
         re.IGNORECASE)
-    for language, utterances in AND_UTTERANCES.iteritems()
+    for language, utterances in iteritems(AND_UTTERANCES)
 }
 
 
@@ -78,13 +82,13 @@ def punctuation_variations(string, language):
 
 
 def digit_value(number_entity):
-    return unicode(number_entity[VALUE][VALUE])
+    return str(number_entity[VALUE][VALUE])
 
 
 def alphabetic_value(number_entity, language):
     value = number_entity[VALUE][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
-        return
+        return None
     return num2words(value, lang=language.iso_code)
 
 
@@ -105,11 +109,11 @@ def numbers_variations(string, language):
     digit_values = [digit_value(e) for e in number_entities]
     alpha_values = [alphabetic_value(e, language) for e in number_entities]
 
-    values = [(n[MATCH_RANGE], (d, a)) for (n, d, a) in
-              itertools.izip(number_entities, digit_values, alpha_values)
+    values = [(n[RES_MATCH_RANGE], (d, a)) for (n, d, a) in
+              zip(number_entities, digit_values, alpha_values)
               if a is not None]
 
-    combinations = itertools.product(xrange(2), repeat=len(values))
+    combinations = itertools.product(range(2), repeat=len(values))
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])
                                  for i, ix in enumerate(c)]

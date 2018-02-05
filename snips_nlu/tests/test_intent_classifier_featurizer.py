@@ -5,18 +5,20 @@ import json
 import traceback as tb
 import unittest
 
+from builtins import bytes
+from future.utils import iteritems
 from mock import patch
 
-from snips_nlu.config import FeaturizerConfig
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier.feature_extraction import (
+from snips_nlu.intent_classifier.featurizer import (
     Featurizer, get_tfidf_vectorizer, get_utterances_to_features_names)
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.tokenization import tokenize_light
 
 
-class TestIntentClassifierFeatureExtraction(unittest.TestCase):
-    @patch("snips_nlu.intent_classifier.feature_extraction."
+class TestIntentClassifierFeaturizer(unittest.TestCase):
+    @patch("snips_nlu.intent_classifier.featurizer."
            "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
     def test_should_be_serializable(self):
         # Given
@@ -63,7 +65,8 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
 
         # Then
         try:
-            dumped = json.dumps(serialized_featurizer).decode("utf8")
+            dumped = bytes(json.dumps(serialized_featurizer),
+                           encoding="utf8").decode("utf8")
         except:  # pylint: disable=W0702
             self.fail("Featurizer dict should be json serializable to utf8.\n"
                       "Traceback:\n%s" % tb.format_exc())
@@ -96,7 +99,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         }
         self.assertDictEqual(expected_serialized, serialized_featurizer)
 
-    @patch("snips_nlu.intent_classifier.feature_extraction."
+    @patch("snips_nlu.intent_classifier.featurizer."
            "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
     def test_should_be_deserializable(self):
         # Given
@@ -140,7 +143,7 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
             featurizer.entity_utterances_to_feature_names,
             {
                 k: set(v) for k, v
-                in entity_utterances_to_feature_names.iteritems()
+                in iteritems(entity_utterances_to_feature_names)
             })
 
     def test_get_utterances_entities(self):
@@ -216,9 +219,9 @@ class TestIntentClassifierFeatureExtraction(unittest.TestCase):
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)
 
-    @patch("snips_nlu.intent_classifier.feature_extraction.get_word_clusters")
-    @patch("snips_nlu.intent_classifier.feature_extraction.stem")
-    @patch("snips_nlu.intent_classifier.feature_extraction."
+    @patch("snips_nlu.intent_classifier.featurizer.get_word_clusters")
+    @patch("snips_nlu.intent_classifier.featurizer.stem")
+    @patch("snips_nlu.intent_classifier.featurizer."
            "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
     def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
         # Given

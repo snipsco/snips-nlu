@@ -1,13 +1,16 @@
 from __future__ import unicode_literals
 
 import unittest
+from builtins import next
+from builtins import range
 
 import numpy as np
 from mock import patch
 
 from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_entities_iterators,
-    generate_utterance)
+    generate_utterance, capitalize_utterances, capitalize)
+from snips_nlu.languages import Language
 
 
 def np_random_permutation(x):
@@ -20,14 +23,14 @@ class TestDataAugmentation(unittest.TestCase):
         # Given
         dataset = {
             "intents": {
-                "dummy": {"utterances": range(3)}
+                "dummy": {"utterances": list(range(3))}
             }
         }
         random_state = np.random.RandomState(1)
 
         # When
         it = get_contexts_iterator(dataset, "dummy", random_state)
-        context = [next(it) for _ in xrange(5)]
+        context = [next(it) for _ in range(5)]
 
         # Then
         self.assertEqual(context, [0, 2, 1, 0, 2])
@@ -59,13 +62,13 @@ class TestDataAugmentation(unittest.TestCase):
         # When
         self.assertIn("entity1", it_dict)
         expected_seq = ["entity 1", "entity 11", "entity 111"]
-        seq = [next(it_dict["entity1"]) for _ in xrange(len(expected_seq))]
-        self.assertItemsEqual(seq, expected_seq)
+        seq = [next(it_dict["entity1"]) for _ in range(len(expected_seq))]
+        self.assertListEqual(expected_seq, sorted(seq))
 
         self.assertIn("entity2", it_dict)
         expected_seq = ["entity 2", "entity 22", "entity 222"]
-        seq = [next(it_dict["entity2"]) for _ in xrange(len(expected_seq))]
-        self.assertItemsEqual(seq, expected_seq)
+        seq = [next(it_dict["entity2"]) for _ in range(len(expected_seq))]
+        self.assertListEqual(expected_seq, sorted(seq))
 
     def test_generate_utterance(self):
         # Given
@@ -89,11 +92,11 @@ class TestDataAugmentation(unittest.TestCase):
                 }
             ]
         }
-        context_iterator = (context for _ in xrange(1))
+        context_iterator = (context for _ in range(1))
 
         entities_iterators = {
-            "entity1": ("entity one" for _ in xrange(1)),
-            "entity2": ("entity two" for _ in xrange(1)),
+            "entity1": ("entity one" for _ in range(1)),
+            "entity2": ("entity two" for _ in range(1)),
         }
 
         # When
@@ -121,3 +124,108 @@ class TestDataAugmentation(unittest.TestCase):
             ]
         }
         self.assertEqual(utterance, expected_utterance)
+
+    def test_capitalize(self):
+        # Given
+        language = Language.EN
+        texts = [
+            ("university of new york", "University of New York"),
+            ("JOHN'S SMITH", "John s Smith"),
+            ("is that it", "is that it")
+        ]
+
+        # When
+        capitalized_texts = [capitalize(text[0], language) for text in texts]
+
+        # Then
+        expected_capitalized_texts = [text[1] for text in texts]
+        self.assertSequenceEqual(capitalized_texts, expected_capitalized_texts)
+
+    def test_should_capitalize_only_right_entities(self):
+        # Given
+        language = Language.EN
+        ratio = 1
+        entities = {
+            "someOneHouse": {
+                "capitalize": False
+            },
+            "university": {
+                "capitalize": True
+            }
+        }
+        utterances = [
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "university of new york",
+                        "entity": "university"
+                    },
+                    {
+                        "text": " right now or "
+                    },
+                    {
+                        "text": "university of London",
+                        "entity": "university"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "john's smith house",
+                        "entity": "someOneHouse"
+                    },
+                    {
+                        "text": " right now"
+                    }
+                ]
+            }
+        ]
+        random_state = np.random.RandomState(1)
+
+        # When
+        capitalized_utterances = capitalize_utterances(
+            utterances, entities, language, ratio, random_state)
+
+        # Then
+        expected_utterances = [
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "University of New York",
+                        "entity": "university"
+                    },
+                    {
+                        "text": " right now or "
+                    },
+                    {
+                        "text": "University of London",
+                        "entity": "university"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "let's go the "
+                    },
+                    {
+                        "text": "john's smith house",
+                        "entity": "someOneHouse"
+                    },
+                    {
+                        "text": " right now"
+                    }
+                ]
+            }
+        ]
+        self.assertEqual(capitalized_utterances, expected_utterances)

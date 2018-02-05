@@ -1,23 +1,24 @@
+from __future__ import print_function
+
 import argparse
 import io
 import json
 import os
+from builtins import bytes, input
 from pprint import pprint
 
 
 def main_train_engine():
     parser = argparse.ArgumentParser("Train an NLU engine and persist it in "
                                      "a json file")
-    parser.add_argument("language", type=unicode,
-                        help="language (iso code) of the engine")
-    parser.add_argument("dataset_path", type=unicode)
-    parser.add_argument("output_path", type=unicode)
-    parser.add_argument("-c", "--config-path", type=unicode,
+    parser.add_argument("dataset_path", type=str)
+    parser.add_argument("output_path", type=str)
+    parser.add_argument("-c", "--config-path", type=str,
                         help="Path to the NLU engine configuration")
     args = vars(parser.parse_args())
 
     from snips_nlu import SnipsNLUEngine
-    from snips_nlu.config import NLUConfig
+    from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
     dataset_path = args.pop("dataset_path")
     with io.open(dataset_path, "r", encoding="utf8") as f:
@@ -28,23 +29,22 @@ def main_train_engine():
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)
     else:
-        config = NLUConfig()
+        config = NLUEngineConfig()
 
-    language = args.pop("language")
-    engine = SnipsNLUEngine(language, config).fit(dataset)
-    print "Create and train the engine..."
+    engine = SnipsNLUEngine(config).fit(dataset)
+    print("Create and train the engine...")
 
     output_path = args.pop("output_path")
-    serialized_engine = json.dumps(engine.to_dict()).decode("utf8")
+    serialized_engine = bytes(json.dumps(engine.to_dict()), encoding="utf8")
     with io.open(output_path, "w", encoding="utf8") as f:
-        f.write(serialized_engine)
-    print "Saved the trained engine to %s" % output_path
+        f.write(serialized_engine.decode("utf8"))
+    print("Saved the trained engine to %s" % output_path)
 
 
 def main_engine_inference():
     parser = argparse.ArgumentParser("Load a trained NLU engine and play with "
                                      "its parsing API")
-    parser.add_argument("training_path", type=unicode,
+    parser.add_argument("training_path", type=str,
                         help="Path to a json-serialized trained engine")
     args = vars(parser.parse_args())
 
@@ -56,8 +56,8 @@ def main_engine_inference():
     engine = SnipsNLUEngine.from_dict(engine_dict)
 
     while True:
-        query = raw_input("Enter a query (type 'q' to quit): ").strip()
-        if isinstance(query, str):
+        query = input("Enter a query (type 'q' to quit): ").strip()
+        if isinstance(query, bytes):
             query = query.decode("utf8")
         if query == "q":
             break
@@ -67,8 +67,8 @@ def main_engine_inference():
 def main_cross_val_metrics():
     parser = argparse.ArgumentParser("Compute cross validation metrics on a "
                                      "given dataset")
-    parser.add_argument("dataset_path", type=unicode)
-    parser.add_argument("output_path", type=unicode)
+    parser.add_argument("dataset_path", type=str)
+    parser.add_argument("output_path", type=str)
     parser.add_argument("-n", "--nb-folds", type=int,
                         help="Number of folds to use for the cross-validation")
     parser.add_argument("-t", "--train-size-ratio", type=float,
@@ -87,7 +87,7 @@ def main_cross_val_metrics():
     output_path = args.pop("output_path")
 
     def progression_handler(progress):
-        print "%d%%" % int(progress * 100)
+        print("%d%%" % int(progress * 100))
 
     metrics_args = dict(
         dataset=dataset_path,
@@ -109,15 +109,15 @@ def main_cross_val_metrics():
         metrics.pop("errors")
 
     with io.open(output_path, mode="w") as f:
-        f.write(json.dumps(metrics).decode())
+        f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))
 
 
 def main_train_test_metrics():
     parser = argparse.ArgumentParser("Compute train/test metrics on a given "
                                      "pair training set/testing set")
-    parser.add_argument("train_dataset_path", type=unicode)
-    parser.add_argument("test_dataset_path", type=unicode)
-    parser.add_argument("output_path", type=unicode)
+    parser.add_argument("train_dataset_path", type=str)
+    parser.add_argument("test_dataset_path", type=str)
+    parser.add_argument("output_path", type=str)
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")
 
@@ -145,4 +145,4 @@ def main_train_test_metrics():
         metrics.pop("errors")
 
     with io.open(output_path, mode="w") as f:
-        f.write(json.dumps(metrics).decode())
+        f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))

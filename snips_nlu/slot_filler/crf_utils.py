@@ -1,7 +1,8 @@
+from builtins import range
 from enum import Enum, unique
 
 from snips_nlu.constants import TEXT, SLOT_NAME
-from snips_nlu.result import ParsedSlot
+from snips_nlu.result import _slot
 from snips_nlu.tokenization import tokenize, Token
 
 BEGINNING_PREFIX = u'B-'
@@ -100,7 +101,7 @@ def end_of_bilou_slot(tags, i):
     return False
 
 
-def _tags_to_slots(tags, tokens, is_start_of_slot, is_end_of_slot):
+def _tags_to_preslots(tags, tokens, is_start_of_slot, is_end_of_slot):
     slots = []
     current_slot_start = 0
     for i, tag in enumerate(tags):
@@ -117,13 +118,14 @@ def _tags_to_slots(tags, tokens, is_start_of_slot, is_end_of_slot):
 
 def tags_to_preslots(tokens, tags, tagging_scheme):
     if tagging_scheme == TaggingScheme.IO:
-        slots = _tags_to_slots(tags, tokens, start_of_io_slot, end_of_io_slot)
+        slots = _tags_to_preslots(tags, tokens, start_of_io_slot,
+                                  end_of_io_slot)
     elif tagging_scheme == TaggingScheme.BIO:
-        slots = _tags_to_slots(tags, tokens, start_of_bio_slot,
-                               end_of_bio_slot)
+        slots = _tags_to_preslots(tags, tokens, start_of_bio_slot,
+                                  end_of_bio_slot)
     elif tagging_scheme == TaggingScheme.BILOU:
-        slots = _tags_to_slots(tags, tokens, start_of_bilou_slot,
-                               end_of_bilou_slot)
+        slots = _tags_to_preslots(tags, tokens, start_of_bilou_slot,
+                                  end_of_bilou_slot)
     else:
         raise ValueError("Unknown tagging scheme %s" % tagging_scheme)
     return slots
@@ -132,24 +134,24 @@ def tags_to_preslots(tokens, tags, tagging_scheme):
 def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     return [
-        ParsedSlot(match_range=slot["range"],
-                   value=text[slot["range"][0]:slot["range"][1]],
-                   entity=intent_slots_mapping[slot[SLOT_NAME]],
-                   slot_name=slot[SLOT_NAME])
+        _slot(match_range=slot["range"],
+              value=text[slot["range"][0]:slot["range"][1]],
+              entity=intent_slots_mapping[slot[SLOT_NAME]],
+              slot_name=slot[SLOT_NAME])
         for slot in slots
     ]
 
 
 def positive_tagging(tagging_scheme, slot_name, slot_size):
     if slot_name == OUTSIDE:
-        return [OUTSIDE for _ in xrange(slot_size)]
+        return [OUTSIDE for _ in range(slot_size)]
 
     if tagging_scheme == TaggingScheme.IO:
-        tags = [INSIDE_PREFIX + slot_name for _ in xrange(slot_size)]
+        tags = [INSIDE_PREFIX + slot_name for _ in range(slot_size)]
     elif tagging_scheme == TaggingScheme.BIO:
         if slot_size > 0:
             tags = [BEGINNING_PREFIX + slot_name]
-            tags += [INSIDE_PREFIX + slot_name for _ in xrange(1, slot_size)]
+            tags += [INSIDE_PREFIX + slot_name for _ in range(1, slot_size)]
         else:
             tags = []
     elif tagging_scheme == TaggingScheme.BILOU:
@@ -160,7 +162,7 @@ def positive_tagging(tagging_scheme, slot_name, slot_size):
         else:
             tags = [BEGINNING_PREFIX + slot_name]
             tags += [INSIDE_PREFIX + slot_name
-                     for _ in xrange(1, slot_size - 1)]
+                     for _ in range(1, slot_size - 1)]
             tags.append(LAST_PREFIX + slot_name)
     else:
         raise ValueError("Invalid tagging scheme %s" % tagging_scheme)
@@ -168,7 +170,7 @@ def positive_tagging(tagging_scheme, slot_name, slot_size):
 
 
 def negative_tagging(size):
-    return [OUTSIDE for _ in xrange(size)]
+    return [OUTSIDE for _ in range(size)]
 
 
 def utterance_to_sample(query_data, tagging_scheme, language):

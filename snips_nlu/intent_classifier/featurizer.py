@@ -1,19 +1,23 @@
+from __future__ import division
 from __future__ import unicode_literals
 
+from builtins import object
+from builtins import range
 from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
+from future.utils import iteritems
 from nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.config import FeaturizerConfig
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
+from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_stop_words, get_word_clusters, \
     get_stems
@@ -79,18 +83,18 @@ def preprocess_query(query, language, entity_utterances_to_features_names):
 
     features = language.default_sep.join(normalized_stemmed_tokens)
     if entities_features:
-        features += " " + " ".join(entities_features)
+        features += " " + " ".join(sorted(entities_features))
     if word_clusters_features:
-        features += " " + " ".join(word_clusters_features)
+        features += " " + " ".join(sorted(word_clusters_features))
     return features
 
 
 def get_utterances_to_features_names(dataset, language):
     utterances_to_features = defaultdict(set)
-    for entity_name, entity_data in dataset[ENTITIES].iteritems():
+    for entity_name, entity_data in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             continue
-        for u in entity_data[UTTERANCES].keys():
+        for u in entity_data[UTTERANCES]:
             utterances_to_features[u].add(entity_name_to_feature(
                 entity_name, language))
     return dict(utterances_to_features)
@@ -105,8 +109,8 @@ def deserialize_tfidf_vectorizer(vectorizer_dict, language, featurizer_config):
         tfidf_vectorizer.vocabulary_ = vocab
         idf_diag_data = np.array(vectorizer_dict["idf_diag"])
         idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
-        row = range(idf_diag_shape[0])
-        col = range(idf_diag_shape[0])
+        row = list(range(idf_diag_shape[0]))
+        col = list(range(idf_diag_shape[0]))
         idf_diag = sp.csr_matrix((idf_diag_data, (row, col)),
                                  shape=idf_diag_shape)
         tfidf_transformer._idf_diag = idf_diag  # pylint: disable=W0212
@@ -142,7 +146,6 @@ class Featurizer(object):
         for q in queries:
             processed_query = preprocess_query(
                 q, self.language, self.entity_utterances_to_feature_names)
-            processed_query = processed_query.encode("utf8")
             preprocessed_queries.append(processed_query)
         return preprocessed_queries
 
@@ -150,12 +153,12 @@ class Featurizer(object):
         utterances_to_features = get_utterances_to_features_names(
             dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
-        for k, v in utterances_to_features.iteritems():
+        for k, v in iteritems(utterances_to_features):
             normalized_utterances_to_features[
                 normalize_stem(k, self.language)].update(v)
         if self.unknown_words_replacement_string is not None \
                 and self.unknown_words_replacement_string in \
-                        normalized_utterances_to_features:
+                normalized_utterances_to_features:
             normalized_utterances_to_features.pop(
                 self.unknown_words_replacement_string)
         self.entity_utterances_to_feature_names = dict(
@@ -205,12 +208,13 @@ class Featurizer(object):
     def to_dict(self):
         if hasattr(self.tfidf_vectorizer, "vocabulary_"):
             # pylint: # pylint: disable=W0212
-            vocab = self.tfidf_vectorizer.vocabulary_
+            vocab = {k: int(v) for k, v in
+                     iteritems(self.tfidf_vectorizer.vocabulary_)}
             idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
             # pylint: enable=W0212
             entity_utterances_to_entity_names = {
                 k: list(v)
-                for k, v in self.entity_utterances_to_feature_names.iteritems()
+                for k, v in iteritems(self.entity_utterances_to_feature_names)
             }
         else:
             vocab = None
@@ -242,14 +246,14 @@ class Featurizer(object):
             obj_dict["tfidf_vectorizer"], language, config)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
-            obj_dict['entity_utterances_to_feature_names'].iteritems()
+            iteritems(obj_dict['entity_utterances_to_feature_names'])
         }
         self = cls(
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
             pvalue_threshold=obj_dict['pvalue_threshold'],
-            entity_utterances_to_feature_names= \
-                entity_utterances_to_entity_names,
+            entity_utterances_to_feature_names=
+            entity_utterances_to_entity_names,
             best_features=obj_dict['best_features'],
             config=config,
             unknown_words_replacement_string=obj_dict[

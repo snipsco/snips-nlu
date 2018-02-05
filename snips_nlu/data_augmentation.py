@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 from copy import deepcopy
 from itertools import cycle
 
+from builtins import next
+from future.utils import iteritems
+
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
@@ -12,8 +15,9 @@ from snips_nlu.tokenization import tokenize_light
 
 def capitalize(text, language):
     tokens = tokenize_light(text, language)
+    stop_words = get_stop_words(language)
     return language.default_sep.join(
-        t.title() if t.lower() not in get_stop_words(language)
+        t.title() if t.lower() not in stop_words
         else t.lower() for t in tokens)
 
 
@@ -64,8 +68,9 @@ def get_contexts_iterator(dataset, intent_name, random_state):
 
 def get_entities_iterators(intent_entities, random_state):
     entities_its = dict()
-    for entity_name, entity in intent_entities.iteritems():
-        shuffled_values = random_state.permutation(entity[UTTERANCES].keys())
+    for entity_name, entity in iteritems(intent_entities):
+        shuffled_values = random_state.permutation(
+            list(entity[UTTERANCES]))
         entities_its[entity_name] = cycle(shuffled_values)
     return entities_its
 

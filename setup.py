@@ -35,7 +35,7 @@ extras_require = {
         "coverage==4.4.2"
     ],
     "integration_test": [
-        "snips_nlu_rust==0.52.0",
+        "snips_nlu_rust==0.52.3",
     ]
 }
 

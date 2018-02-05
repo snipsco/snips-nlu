@@ -6,7 +6,7 @@ import io
 import math
 import os
 import tempfile
-from builtins import range
+from builtins import bytes, range
 from copy import copy
 from itertools import groupby, permutations, product
 
@@ -354,11 +354,11 @@ def spans_to_tokens_indexes(spans, tokens):
 
 
 def encode_tag(tag):
-    return base64.b64encode(tag.encode("utf8"))
+    return tag.encode('utf8')
 
 
 def decode_tag(tag):
-    return base64.b64decode(tag).decode("utf8")
+    return bytes(tag, encoding='utf8').decode('utf8')
 
 
 def serialize_crf_model(crf_model):

@@ -4,7 +4,7 @@ import argparse
 import io
 import json
 import os
-from builtins import input
+from builtins import bytes, input
 from pprint import pprint
 
 
@@ -35,9 +35,9 @@ def main_train_engine():
     print("Create and train the engine...")
 
     output_path = args.pop("output_path")
-    serialized_engine = json.dumps(engine.to_dict()).decode("utf8")
+    serialized_engine = bytes(json.dumps(engine.to_dict()), encoding="utf8")
     with io.open(output_path, "w", encoding="utf8") as f:
-        f.write(serialized_engine)
+        f.write(serialized_engine.decode("utf8"))
     print("Saved the trained engine to %s" % output_path)
 
 
@@ -57,7 +57,7 @@ def main_engine_inference():
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()
-        if isinstance(query, str):
+        if isinstance(query, bytes):
             query = query.decode("utf8")
         if query == "q":
             break
@@ -109,7 +109,7 @@ def main_cross_val_metrics():
         metrics.pop("errors")
 
     with io.open(output_path, mode="w") as f:
-        f.write(json.dumps(metrics).decode())
+        f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))
 
 
 def main_train_test_metrics():
@@ -145,4 +145,4 @@ def main_train_test_metrics():
         metrics.pop("errors")
 
     with io.open(output_path, mode="w") as f:
-        f.write(json.dumps(metrics).decode())
+        f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))

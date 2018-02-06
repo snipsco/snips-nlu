@@ -140,7 +140,7 @@
               -1,
               0
             ],
-            "drop_out": 0.1
+            "drop_out": 0.5
           },
           {
             "args": {
@@ -168,7 +168,7 @@
         "exhaustive_permutations_threshold": 64,
         "data_augmentation_config": {
           "min_utterances": 200,
-          "capitalization_ratio": 0.0
+          "capitalization_ratio": 0.2
         },
         "random_seed": null
       },
@@ -177,8 +177,8 @@
         "data_augmentation_config": {
           "min_utterances": 20,
           "noise_factor": 5,
-          "unknown_word_prob": 0.2,
-          "unknown_words_replacement_string": "unknownword"
+          "unknown_word_prob": 0.0,
+          "unknown_words_replacement_string": null
         },
         "featurizer_config": {
           "sublinear_tf": false

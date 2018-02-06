@@ -55,15 +55,7 @@ setup(name=PACKAGE_NAME,
           "Programming Language :: Python :: 3.6",
       ],
       packages=packages,
-      package_data={
-          "": [
-              VERSION,
-              "snips-nlu-resources/en/*",
-              "snips-nlu-resources/fr/*",
-              "snips-nlu-resources/es/*",
-              "snips-nlu-resources/de/*",
-              "snips-nlu-resources/ko/*",
-          ]},
+      include_package_data=True,
       entry_points={
           "console_scripts": [
               "train-engine=cli.cli:main_train_engine",
@@ -72,5 +64,4 @@ setup(name=PACKAGE_NAME,
               "train-test-metrics=cli.cli:main_train_test_metrics"
           ]
       },
-      include_package_data=True,
       zip_safe=False)

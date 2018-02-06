@@ -56,7 +56,7 @@ Install the package in edition mode:
 ## API
 
 ### Data
-The input of the NLU engine training is a dataset which format can be found [here](https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/tests/resources/sample_dataset.json)
+The input of the NLU engine training is a dataset which format can be found [here](https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json)
 
 ### Code
 
@@ -65,13 +65,13 @@ import io
 import json
 from pprint import pprint
 
-from snips_nlu import SnipsNLUEngine, NLUEngineConfig
+from snips_nlu import SnipsNLUEngine
 
 ############## Initialization ##############
 
 # The nlu config is optional here
 with io.open("config.json") as f:
-    nlu_config = NLUEngineConfig.from_dict(json.load(f))
+    nlu_config = json.load(f)
 
 engine = SnipsNLUEngine(config=nlu_config)
 
@@ -124,8 +124,8 @@ trained_engine = SnipsNLUEngine.from_dict(trained_engine_dict)
 ### CLI
 
 ```bash
->>> train-engine /path/to/input/dataset.json /path/to/output/trained_engine.json
->>> engine-inference /path/to/output/trained_engine.json
+train-engine /path/to/input/dataset.json /path/to/output/trained_engine.json
+engine-inference /path/to/output/trained_engine.json
 ```
 
 ### Versioning

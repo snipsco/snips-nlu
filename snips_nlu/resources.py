@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
-from builtins import next
 
 import glob
 import io
 import os
 
+from builtins import next
 from future.utils import iteritems
 from nlu_utils import normalize
 
@@ -17,8 +17,6 @@ from snips_nlu.utils import get_resources_path
 RESOURCE_INDEX = {
     Language.EN: {
         GAZETTEERS: [
-            "top_10000_nouns.txt",
-            "stop_words.txt",
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
@@ -33,6 +31,9 @@ RESOURCE_INDEX = {
         NOISE: "noise.txt",
     },
     Language.ES: {
+        GAZETTEERS: [
+            "top_10000_words.txt"
+        ],
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     },
@@ -41,7 +42,9 @@ RESOURCE_INDEX = {
         NOISE: "noise.txt",
     },
     Language.DE: {
-        GAZETTEERS: [],
+        GAZETTEERS: [
+            "top_10000_words.txt"
+        ],
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     }

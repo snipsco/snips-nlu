@@ -5,6 +5,12 @@ def version(path) {
     readFile("${path}/__version__").split("\n")[0]
 }
 
+def checkout() {
+    deleteDir()
+    checkout scm
+    sh "git submodule update --init --recursive"
+}
+
 def executeInVirtualEnv(pythonPath, venvPath, cmd) {
     def credentials = "${env.NEXUS_USERNAME_PYPI}:${env.NEXUS_PASSWORD_PYPI}"
     sh """
@@ -32,9 +38,7 @@ def buildWheel() {
 
 def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLintingTest=false) {
     stage('Checkout') {
-        deleteDir()
-        checkout scm
-        sh "git submodule update --init --recursive"
+        checkout()
     }
 
     stage('Build') {
@@ -86,8 +90,7 @@ node('macos') {
     switch (branchName) {
         case "master":
             stage('Publish') {
-                deleteDir()
-                checkout scm
+                checkout()
                 def rootPath = pwd()
                 def path = "${rootPath}/${packagePath}"
                 def newVersion = version(path)

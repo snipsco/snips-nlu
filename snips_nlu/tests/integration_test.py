@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import os
 import unittest
 
 from future.utils import iteritems
@@ -10,7 +9,7 @@ from nlu_metrics import (compute_cross_val_metrics,
 from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
-from snips_nlu.tests.utils import TEST_PATH
+from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.8
 SLOT_FILLING_THRESHOLD = 0.6
@@ -19,8 +18,7 @@ SLOT_FILLING_THRESHOLD = 0.6
 class IntegrationTestSnipsNLUEngine(unittest.TestCase):
     def test_pure_python_engine_performance(self):
         # Given
-        dataset_path = os.path.join(TEST_PATH, "resources",
-                                    "performance_dataset.json")
+        dataset_path = PERFORMANCE_DATASET_PATH
 
         # When
         results = compute_cross_val_metrics(
@@ -36,8 +34,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
 
     def test_python_rust_engine_performance(self):
         # Given
-        dataset_path = os.path.join(TEST_PATH, "resources",
-                                    "performance_dataset.json")
+        dataset_path = PERFORMANCE_DATASET_PATH
 
         # When
         results = compute_cross_val_nlu_metrics(

@@ -30,7 +30,7 @@ def buildWheel() {
     executeInVirtualEnv(pythonPath, "venv", cmd)
 }
 
-def installAndTest(pythonPath, venvPath, includeIntegrationTest=false) {
+def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLintingTest=false) {
     stage('Checkout') {
         deleteDir()
         checkout scm
@@ -54,6 +54,13 @@ def installAndTest(pythonPath, venvPath, includeIntegrationTest=false) {
         python -m unittest discover
         """
 
+        if(includeLintingTest) {
+            sh """
+            . ${venvPath}/bin/activate
+            python -m unittest discover -p 'linting_test*.py'
+            """
+        }
+
         if(includeIntegrationTest && (branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master")) {
             sh """
             . ${venvPath}/bin/activate
@@ -71,7 +78,7 @@ node('macos') {
     def python35path = sh(returnStdout: true, script: 'which python3.5').trim()
     def python36path = sh(returnStdout: true, script: 'which python3.6').trim()
 
-    installAndTest(python36path, "venv36", true)
+    installAndTest(python36path, "venv36", true, true)
     installAndTest(python27path, "venv27")
     installAndTest(python34path, "venv34")
     installAndTest(python35path, "venv35")

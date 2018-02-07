@@ -8,10 +8,6 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.utils import classproperty
 
 
-def _default_entities_offsets():
-    return [-2, -1, 0]
-
-
 class CRFSlotFillerConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.CRFSlotFiller`
 
@@ -35,22 +31,18 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
     # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=TaggingScheme.BIO, crf_args=None,
-                 entities_offsets=None,
                  exhaustive_permutations_threshold=4 ** 3,
                  data_augmentation_config=None, random_seed=None):
         if feature_factory_configs is None:
             feature_factory_configs = default_features_factories()
         if crf_args is None:
             crf_args = _default_crf_args()
-        if entities_offsets is None:
-            entities_offsets = _default_entities_offsets()
         if data_augmentation_config is None:
             data_augmentation_config = SlotFillerDataAugmentationConfig()
         self.feature_factory_configs = feature_factory_configs
         self._tagging_scheme = None
         self.tagging_scheme = tagging_scheme
         self.crf_args = crf_args
-        self.entities_offsets = entities_offsets
         self.exhaustive_permutations_threshold = \
             exhaustive_permutations_threshold
         self._data_augmentation_config = None
@@ -100,7 +92,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
             "feature_factory_configs": self.feature_factory_configs,
             "crf_args": self.crf_args,
             "tagging_scheme": self.tagging_scheme.value,
-            "entities_offsets": self.entities_offsets,
             "exhaustive_permutations_threshold":
                 self.exhaustive_permutations_threshold,
             "data_augmentation_config":

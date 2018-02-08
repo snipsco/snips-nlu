@@ -5,6 +5,26 @@
         {
           "data": [
             {
+              "text": "give me the weather forecast for "
+            },
+            {
+              "text": "los angeles",
+              "entity": "location",
+              "slot_name": "weather_location"
+            },
+            {
+              "text": " "
+            },
+            {
+              "text": "this weekend",
+              "entity": "snips/datetime",
+              "slot_name": "weather_date"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
               "text": "What kind of weather should I expect "
             },
             {
@@ -13,7 +33,15 @@
               "slot_name": "weather_date"
             },
             {
-              "text": "? "
+              "text": " in "
+            },
+            {
+              "text": "rio de janeiro",
+              "entity": "location",
+              "slot_name": "weather_location"
+            },
+            {
+              "text": " ? "
             }
           ]
         },
@@ -77,7 +105,7 @@
               "text": " in "
             },
             {
-              "text": "Moscow",
+              "text": "tel aviv",
               "entity": "location",
               "slot_name": "weather_location"
             },
@@ -101,9 +129,7 @@
             }
           ]
         }
-      ],
-      "version": "0.0.1",
-      "language": "en"
+      ]
     },
     "SampleTurnOnLight": {
       "utterances": [
@@ -176,10 +202,7 @@
             }
           ]
         }
-      ],
-      "engineType": "regex",
-      "version": "0.0.1",
-      "language": "en"
+      ]
     }
   },
   "entities": {
@@ -195,6 +218,5 @@
       "automatically_extensible": false
     }
   },
-  "language": "en",
-  "snips_nlu_version": "0.11.0"
+  "language": "en"
 }

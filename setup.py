@@ -28,6 +28,9 @@ required = [
 ]
 
 extras_require = {
+    "metrics": [
+        "nlu_metrics==0.10.2",
+    ],
     "test": [
         "mock==2.0.0",
         "nlu_metrics==0.10.2",
@@ -35,6 +38,7 @@ extras_require = {
         "coverage==4.4.2"
     ],
     "integration_test": [
+        "nlu_metrics==0.10.2",
         "snips_nlu_rust==0.52.3",
     ]
 }

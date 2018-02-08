@@ -7,13 +7,12 @@ from copy import deepcopy
 
 from future.utils import itervalues, iteritems
 from nlu_utils import normalize
-from semantic_version import Version
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 SNIPS_NLU_VERSION, CAPITALIZE, VALIDATED)
+                                 CAPITALIZE, VALIDATED)
 from snips_nlu.languages import Language
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
@@ -39,10 +38,9 @@ def validate_and_format_dataset(dataset):
     dataset = deepcopy(dataset)
     dataset = json.loads(json.dumps(dataset))
     validate_type(dataset, dict)
-    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE, SNIPS_NLU_VERSION]
+    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
     for key in mandatory_keys:
         validate_key(dataset, key, object_label="dataset")
-    Version(dataset[SNIPS_NLU_VERSION])  # Check that the version is semantic
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
     validate_type(dataset[LANGUAGE], str)

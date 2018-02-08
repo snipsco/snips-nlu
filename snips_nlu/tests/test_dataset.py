@@ -278,18 +278,6 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(str(ctx.exception.args[0]),
                          expected_exception_message)
 
-    def test_dataset_require_semantic_version(self):
-        # Given
-        dataset = dict(SAMPLE_DATASET)
-
-        # When
-        dataset["snips_nlu_version"] = "1.1.1.1.1.1.1.1.1.1"
-
-        # Then
-        with self.assertRaises(ValueError) as ctx:
-            validate_and_format_dataset(dataset)
-        self.assertTrue("Invalid version string" in str(ctx.exception.args[0]))
-
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
             self):
         # Given

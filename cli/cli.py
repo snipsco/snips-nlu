@@ -79,9 +79,8 @@ def main_cross_val_metrics():
 
     args = vars(parser.parse_args())
 
-    from snips_nlu import SnipsNLUEngine as TrainingEngine
-    from snips_nlu_rust import NLUEngine as InferenceEngine
-    from nlu_metrics import compute_cross_val_nlu_metrics
+    from snips_nlu import SnipsNLUEngine
+    from nlu_metrics import compute_cross_val_metrics
 
     dataset_path = args.pop("dataset_path")
     output_path = args.pop("output_path")
@@ -91,8 +90,7 @@ def main_cross_val_metrics():
 
     metrics_args = dict(
         dataset=dataset_path,
-        training_engine_class=TrainingEngine,
-        inference_engine_class=InferenceEngine,
+        engine_class=SnipsNLUEngine,
         progression_handler=progression_handler
     )
     if args.get("nb_folds") is not None:
@@ -104,7 +102,7 @@ def main_cross_val_metrics():
 
     include_errors = args.get("include_errors", False)
 
-    metrics = compute_cross_val_nlu_metrics(**metrics_args)
+    metrics = compute_cross_val_metrics(**metrics_args)
     if not include_errors:
         metrics.pop("parsing_errors")
 
@@ -123,9 +121,8 @@ def main_train_test_metrics():
 
     args = vars(parser.parse_args())
 
-    from snips_nlu import SnipsNLUEngine as TrainingEngine
-    from snips_nlu_rust import NLUEngine as InferenceEngine
-    from nlu_metrics import compute_train_test_nlu_metrics
+    from snips_nlu import SnipsNLUEngine
+    from nlu_metrics import compute_train_test_metrics
 
     train_dataset_path = args.pop("train_dataset_path")
     test_dataset_path = args.pop("test_dataset_path")
@@ -134,13 +131,12 @@ def main_train_test_metrics():
     metrics_args = dict(
         train_dataset=train_dataset_path,
         test_dataset=test_dataset_path,
-        training_engine_class=TrainingEngine,
-        inference_engine_class=InferenceEngine,
+        engine_class=SnipsNLUEngine
     )
 
     include_errors = args.get("include_errors", False)
 
-    metrics = compute_train_test_nlu_metrics(**metrics_args)
+    metrics = compute_train_test_metrics(**metrics_args)
     if not include_errors:
         metrics.pop("parsing_errors")
 

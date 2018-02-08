@@ -36,7 +36,7 @@ def buildWheel() {
     executeInVirtualEnv(pythonPath, "venv", cmd)
 }
 
-def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLintingTest=false) {
+def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLintingTest=false, includeSampleTest=false) {
     stage('Checkout') {
         checkout()
     }
@@ -65,7 +65,14 @@ def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLi
             """
         }
 
-        if(includeIntegrationTest && (branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master")) {
+        if(includeSampleTest) {
+            sh """
+            . ${venvPath}/bin/activate
+            python -m unittest discover -p 'samples_test*.py'
+            """
+        }
+
+        if(includeIntegrationTest) {
             sh """
             . ${venvPath}/bin/activate
             python -m unittest discover -p 'integration_test*.py'
@@ -82,42 +89,46 @@ node('macos') {
     def python35path = sh(returnStdout: true, script: 'which python3.5').trim()
     def python36path = sh(returnStdout: true, script: 'which python3.6').trim()
 
-    installAndTest(python36path, "venv36", true, true)
-    installAndTest(python27path, "venv27")
-    installAndTest(python34path, "venv34")
-    installAndTest(python35path, "venv35")
+    if(branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master") {
+        installAndTest(python36path, "venv36", true, true, true)
+        installAndTest(python27path, "venv27")
+        installAndTest(python34path, "venv34")
+        installAndTest(python35path, "venv35")
+    } else {
+        installAndTest(python36path, "venv36", true, true)
+        installAndTest(python27path, "venv27")
+    }
 
-    switch (branchName) {
-        case "master":
-            stage('Publish') {
-                checkout()
-                def rootPath = pwd()
-                def path = "${rootPath}/${packagePath}"
-                def newVersion = version(path)
+    if (branchName == "master") {
+        stage('Publish') {
+            checkout()
+            def rootPath = pwd()
+            def path = "${rootPath}/${packagePath}"
+            def newVersion = version(path)
 
-                def gitTagExists = sh(returnStdout: true, script: 'git tag -l $newVersion')
+            def gitTagExists = sh(returnStdout: true, script: 'git tag -l $newVersion')
 
-                if (gitTagExists) {
-                    echo "tag $newVersion already exists."
-                    exit 1
-                }
-
-                sh """
-                git tag $newVersion
-                git remote rm origin
-                git remote add origin 'git@github.com:snipsco/snips-nlu.git'
-                git config --global user.email 'jenkins@snips.ai'
-                git config --global user.name 'Jenkins'
-                git push --tags
-                """
+            if (gitTagExists) {
+                echo "tag $newVersion already exists."
+                exit 1
             }
 
-            stage('Upload assets') {
-                uploadAssets()
-            }
-        default:
-            stage('Build wheel') {
-                buildWheel()
-            }
+            sh """
+            git tag $newVersion
+            git remote rm origin
+            git remote add origin 'git@github.com:snipsco/snips-nlu.git'
+            git config --global user.email 'jenkins@snips.ai'
+            git config --global user.name 'Jenkins'
+            git push --tags
+            """
+        }
+
+        stage('Upload assets') {
+            uploadAssets()
+        }
+    } else {
+        stage('Build wheel') {
+            buildWheel()
+        }
     }
 }

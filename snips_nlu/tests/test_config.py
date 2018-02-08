@@ -101,7 +101,6 @@ class TestConfig(unittest.TestCase):
                 "c2": .3,
                 "algorithm": "lbfgs"
             },
-            "entities_offsets": [-2, 0, 3],
             "exhaustive_permutations_threshold": 42,
             "data_augmentation_config":
                 SlotFillerDataAugmentationConfig().to_dict(),

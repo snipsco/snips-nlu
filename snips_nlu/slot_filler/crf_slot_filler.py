@@ -6,10 +6,10 @@ import io
 import math
 import os
 import tempfile
-from builtins import bytes, range
 from copy import copy
 from itertools import groupby, permutations, product
 
+from builtins import range
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
@@ -422,11 +422,11 @@ def _spans_to_tokens_indexes(spans, tokens):
 
 
 def _encode_tag(tag):
-    return tag.encode('utf8')
+    return base64.b64encode(tag.encode("utf8"))
 
 
 def _decode_tag(tag):
-    return bytes(tag, encoding='utf8').decode('utf8')
+    return base64.b64decode(tag).decode("utf8")
 
 
 def _serialize_crf_model(crf_model):

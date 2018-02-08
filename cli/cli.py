@@ -106,7 +106,7 @@ def main_cross_val_metrics():
 
     metrics = compute_cross_val_nlu_metrics(**metrics_args)
     if not include_errors:
-        metrics.pop("errors")
+        metrics.pop("parsing_errors")
 
     with io.open(output_path, mode="w") as f:
         f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))
@@ -142,7 +142,7 @@ def main_train_test_metrics():
 
     metrics = compute_train_test_nlu_metrics(**metrics_args)
     if not include_errors:
-        metrics.pop("errors")
+        metrics.pop("parsing_errors")
 
     with io.open(output_path, mode="w") as f:
         f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))

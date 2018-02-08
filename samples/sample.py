@@ -14,4 +14,6 @@ with io.open("configs/config_en.json") as f:
 nlu_engine = SnipsNLUEngine(config=config)
 nlu_engine.fit(sample_dataset)
 
-print(nlu_engine.parse("Could you please turn the lights on in the kitchen ?"))
+text = "What will be the weather in San Francisco next week?"
+parsing = nlu_engine.parse(text)
+print(json.dumps(parsing, indent=2))

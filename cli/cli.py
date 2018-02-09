@@ -13,7 +13,7 @@ def main_train_engine():
                                      "a json file")
     parser.add_argument("dataset_path", type=str)
     parser.add_argument("output_path", type=str)
-    parser.add_argument("-c", "--config-path", type=str,
+    parser.add_argument("-c", "--config-path", type=str, metavar="",
                         help="Path to the NLU engine configuration")
     args = vars(parser.parse_args())
 
@@ -69,9 +69,9 @@ def main_cross_val_metrics():
                                      "given dataset")
     parser.add_argument("dataset_path", type=str)
     parser.add_argument("output_path", type=str)
-    parser.add_argument("-n", "--nb-folds", type=int,
+    parser.add_argument("-n", "--nb-folds", type=int, metavar="",
                         help="Number of folds to use for the cross-validation")
-    parser.add_argument("-t", "--train-size-ratio", type=float,
+    parser.add_argument("-t", "--train-size-ratio", type=float, metavar="",
                         help="Fraction of the data that we want to use for "
                              "training (between 0 and 1")
     parser.add_argument("-i", "--include-errors", action="store_true",

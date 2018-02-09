@@ -263,21 +263,6 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertEqual(dataset, expected_dataset)
 
-    def test_dataset_should_require_nlu_version(self):
-        # Given
-        dataset = dict(SAMPLE_DATASET)
-
-        # When
-        dataset.pop("snips_nlu_version")
-
-        # Then
-        with self.assertRaises(KeyError) as ctx:
-            validate_and_format_dataset(dataset)
-        expected_exception_message = "Expected dataset to have key:" \
-                                     " 'snips_nlu_version'"
-        self.assertEqual(str(ctx.exception.args[0]),
-                         expected_exception_message)
-
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
             self):
         # Given

@@ -64,10 +64,10 @@ You should get something that looks like this:
       },
       "slots": [
         {
-          "range": [
-            28,
-            41
-          ],
+          "range": {
+            "start": 28,
+            "end": 41
+          },
           "rawValue": "San Francisco",
           "value": {
             "kind": "Custom",
@@ -77,10 +77,10 @@ You should get something that looks like this:
           "slotName": "weather_location"
         },
         {
-          "range": [
-            42,
-            51
-          ],
+          "range": {
+            "start": 42,
+            "end": 51
+          },
           "rawValue": "next week",
           "value": {
             "type": "value",

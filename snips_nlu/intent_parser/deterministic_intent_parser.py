@@ -10,7 +10,7 @@ from snips_nlu.builtin_entities import (is_builtin_entity,
                                         get_builtin_entities)
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_VALUE)
+    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
@@ -141,7 +141,7 @@ class DeterministicIntentParser(IntentParser):
                 parsed_slots = _deduplicate_overlapping_slots(
                     slots, self.language)
                 parsed_slots = sorted(parsed_slots,
-                                      key=lambda s: s[RES_MATCH_RANGE][0])
+                                      key=lambda s: s[RES_MATCH_RANGE][START])
                 return parsing_result(text, parsed_intent, parsed_slots)
         return empty_result(text)
 

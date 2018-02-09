@@ -564,7 +564,10 @@ class TestSnipsNLUEngine(unittest.TestCase):
 
         # Then
         expected_slot = {
-            RES_MATCH_RANGE: [0, 10],
+            RES_MATCH_RANGE: {
+                "start": 0,
+                "end": 10
+            },
             RES_RAW_VALUE: "dummy1_bis",
             RES_VALUE: {
                 "kind": "Custom",

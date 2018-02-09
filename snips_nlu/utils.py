@@ -9,7 +9,7 @@ from collections import OrderedDict, namedtuple, Mapping
 import numpy as np
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
-                                 RESOURCES_PATH)
+                                 RESOURCES_PATH, END, START)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -172,6 +172,7 @@ def regex_escape(s):
         escaped_string += c
     return escaped_string
 
+
 # pylint:enable=line-too-long
 
 
@@ -213,4 +214,12 @@ def get_slot_name_mappings(dataset):
 
 
 def ranges_overlap(lhs_range, rhs_range):
-    return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]
+    if isinstance(lhs_range, dict) and isinstance(rhs_range, dict):
+        return lhs_range[END] > rhs_range[START] \
+               and lhs_range[START] < rhs_range[END]
+    elif isinstance(lhs_range, (tuple, list)) \
+            and isinstance(rhs_range, (tuple, list)):
+        return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]
+    else:
+        raise TypeError("Cannot check overlap on objects of type: %s"
+                        % type(lhs_range))

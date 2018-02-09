@@ -539,7 +539,10 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
             expected_slot = {
                 'entity': 'non_ascìi_entïty',
-                'range': [0, 7],
+                'range': {
+                    "start": 0,
+                    "end": 7
+                },
                 'slotName': u'non_ascìi_slöt',
                 'value': u'string0'
             }

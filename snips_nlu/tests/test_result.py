@@ -31,7 +31,7 @@ class TestResult(unittest.TestCase):
 
         expected_result = {
             RES_INTENT: {RES_INTENT_NAME: 'world', RES_PROBABILITY: 0.5},
-            RES_SLOTS: [{RES_MATCH_RANGE: [3, 5],
+            RES_SLOTS: [{RES_MATCH_RANGE: {"start": 3, "end": 5},
                          RES_ENTITY: 'slot_entity',
                          RES_SLOT_NAME: 'slot_name',
                          RES_VALUE: 'slot_value'}],

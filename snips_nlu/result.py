@@ -31,13 +31,16 @@ def unresolved_slot(match_range, value, entity, slot_name):
         >>> unresolved_slot([0, 8], "tomorrow", "snips/datetime", "startDate")
         {
             "value": "tomorrow",
-            "range": [0, 8],
+            "range": {
+                "start": 0,
+                "end": 8
+            },
             "entity": "snips/datetime",
             "slotName": "startDate"
         }
     """
     return {
-        RES_MATCH_RANGE: list(match_range),
+        RES_MATCH_RANGE: _convert_range(match_range),
         RES_VALUE: value,
         RES_ENTITY: entity,
         RES_SLOT_NAME: slot_name
@@ -58,7 +61,10 @@ def custom_slot(internal_slot, resolved_value=None):
                 "kind": "Custom",
                 "value": "tea"
             },
-            "range": [10, 19],
+            "range": {
+                "start": 10,
+                "end": 19
+            },
             "entity": "beverage",
             "slotName": "beverage"
         }
@@ -67,7 +73,7 @@ def custom_slot(internal_slot, resolved_value=None):
     if resolved_value is None:
         resolved_value = internal_slot[RES_VALUE]
     return {
-        RES_MATCH_RANGE: internal_slot[RES_MATCH_RANGE],
+        RES_MATCH_RANGE: _convert_range(internal_slot[RES_MATCH_RANGE]),
         RES_RAW_VALUE: internal_slot[RES_VALUE],
         RES_VALUE: {
             "kind": "Custom",
@@ -102,13 +108,16 @@ def builtin_slot(internal_slot, resolved_value):
                 "value": 20,
                 "unit": "celsius"
             },
-            "range": [10, 19],
+            "range": {
+                "start": 10,
+                "end": 19
+            },
             "entity": "beverage",
             "slotName": "beverage"
         }
     """
     return {
-        RES_MATCH_RANGE: list(internal_slot[RES_MATCH_RANGE]),
+        RES_MATCH_RANGE: _convert_range(internal_slot[RES_MATCH_RANGE]),
         RES_RAW_VALUE: internal_slot[RES_VALUE],
         RES_VALUE: resolved_value,
         RES_ENTITY: internal_slot[RES_ENTITY],
@@ -136,7 +145,7 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         ...     "value": 20,
         ...     "unit": "celsius"
         ... }
-        >>> resolved_slot([10, 19], "earl grey", resolved_value, "beverage",
+        >>> resolved_slot((10, 19), "earl grey", resolved_value, "beverage",
         ... "beverage")
         {
             "rawValue": "earl grey",
@@ -145,13 +154,16 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
                 "value": 20,
                 "unit": "celsius"
             },
-            "range": [10, 19],
+            "range": {
+                "start": 10,
+                "end": 19
+            },
             "entity": "beverage",
             "slotName": "beverage"
         }
     """
     return {
-        RES_MATCH_RANGE: list(match_range),
+        RES_MATCH_RANGE: _convert_range(match_range),
         RES_RAW_VALUE: raw_value,
         RES_VALUE: resolved_value,
         RES_ENTITY: entity,
@@ -183,7 +195,10 @@ def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
                     "kind": "Custom",
                     "value": "William",
                 },
-                "range": [6, 10],
+                "range": {
+                    "start": 6,
+                    "end": 10
+                },
                 "entity": "name",
                 "slotName": "greetee"
             }]
@@ -225,3 +240,12 @@ def empty_result(input):  # pylint:disable=redefined-builtin
         }
     """
     return parsing_result(input=input, intent=None, slots=None)
+
+
+def _convert_range(rng):
+    if isinstance(rng, dict):
+        return rng
+    return {
+        "start": rng[0],
+        "end": rng[1]
+    }

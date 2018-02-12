@@ -16,6 +16,8 @@ The task of parsing intents is actually two folds, as the first step is to
 understand what kind of intent the sentence is about, and the second step is
 to extract the parameters, aka the *slots*, of the sentence.
 
+.. _intent:
+
 Intent
 ------
 
@@ -48,6 +50,9 @@ In Snips NLU, this is represented within the parsing output in this way:
 
 So you have an additional information which is the probability that the
 extracted intent correspond to the actual one.
+
+
+.. _slot:
 
 Slot
 ----
@@ -85,6 +90,8 @@ In this context, we call **location** a *slot type* (or *entity*) and
 
     We may refer equally to *slot type* or *entity* to describe the same
     concept
+
+.. _entity_vs_slot_name:
 
 ----------------------
 Slot type VS slot name
@@ -137,6 +144,8 @@ In Snips NLU, extracted slots are represented within the output in this way:
         }
       }
     ]
+
+.. _builtin_entity_resolution:
 
 -------------------------------
 Builtin Entities and resolution

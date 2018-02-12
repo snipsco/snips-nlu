@@ -23,6 +23,12 @@ class AssistantDataset(object):
 
     @classmethod
     def from_files(cls, language, file_names):
+        """Creates an :class:AssistantDataset from a language and a list of
+        text files
+
+        The assistant will associate each file to an intent, the name of the
+        file being the intent name.
+        """
         datasets = [IntentDataset.from_file(language, f) for f in file_names]
         return cls(language, datasets)
 
@@ -42,7 +48,8 @@ class AssistantDataset(object):
                 if entity not in entities:
                     entities[entity] = data
                 elif entity not in BUILTIN_ENTITIES:
-                    entities["data"].append(data["data"])
+                    if data["data"]:
+                        entities[entity]["data"].append(data["data"])
 
         return dict(language=self.language,
                     intents=intents,

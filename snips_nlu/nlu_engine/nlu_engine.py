@@ -90,7 +90,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by calling its intent
-            parsers successively
+        parsers successively
 
         Args:
             text (str): Input
@@ -99,7 +99,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
         Returns:
             dict: The most likely intent along with the extracted slots. See
-                :func:`.parsing_result` for the output format.
+            :func:`.parsing_result` for the output format.
 
         Raises:
             NotTrained: When the nlu engine is not fitted

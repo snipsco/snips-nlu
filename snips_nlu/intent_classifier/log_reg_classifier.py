@@ -34,7 +34,7 @@ class LogRegIntentClassifier(IntentClassifier):
     # pylint:disable=line-too-long
     def __init__(self, config=None):
         """The LogReg intent classifier can be configured by passing a
-            :class:`.LogRegIntentClassifierConfig`"""
+        :class:`.LogRegIntentClassifierConfig`"""
         if config is None:
             config = LogRegIntentClassifierConfig()
         super(LogRegIntentClassifier, self).__init__(config)
@@ -93,7 +93,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
         Returns:
             dict or None: The most likely intent along with its probability or
-                *None* if no intent was found
+            *None* if no intent was found
 
         Raises:
             NotTrained: When the intent classifier is not fitted

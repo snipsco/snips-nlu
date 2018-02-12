@@ -26,10 +26,11 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
     A :class:`CRFFeatureFactory` is initialized with a dict which describes
     the feature, it must contains the three following keys:
 
-    - 'factory_name'
-    - 'args': the parameters of the feature, if any
-    - 'offsets': the offsets to consider when using the feature in the CRF.
+    -   'factory_name'
+    -   'args': the parameters of the feature, if any
+    -   'offsets': the offsets to consider when using the feature in the CRF.
         An empty list corresponds to no feature.
+
 
     In addition, a 'drop_out' to use during train time can be specified.
     """
@@ -169,16 +170,17 @@ class LengthFactory(SingleFeatureFactory):
 
 class NgramFactory(SingleFeatureFactory):
     """Feature: the n-gram consisting of the considered token and potentially
-        the following ones
+    the following ones
 
     This feature has several parameters:
 
-    - 'n' (int): Corresponds to the size of the n-gram. n=1 corresponds
-        to a unigram, n=2 is a bigram etc
-    - 'use_stemming' (bool): Whether or not to stem the n-gram
-    - 'common_words_gazetteer_name' (str, optional): If defined, use a
-        gazetteer of common words and replace out-of-corpus ngram with the
-        alias 'rare_word'
+    -   'n' (int): Corresponds to the size of the n-gram. n=1 corresponds to a
+        unigram, n=2 is a bigram etc
+    -   'use_stemming' (bool): Whether or not to stem the n-gram
+    -   'common_words_gazetteer_name' (str, optional): If defined, use a
+        gazetteer of common words and replace out-of-corpus ngram with the alias
+        'rare_word'
+
     """
 
     name = "ngram"
@@ -241,17 +243,17 @@ class NgramFactory(SingleFeatureFactory):
 
 class ShapeNgramFactory(SingleFeatureFactory):
     """Feature: the shape of the n-gram consisting of the considered token and
-        potentially the following ones
+    potentially the following ones
 
     This feature has one parameters, *n*, which corresponds to the size of the
     n-gram.
 
     Possible types of shape are:
 
-    - xxx: lowercased
-    - Xxx: Capitalized
-    - XXX: UPPERCASED
-    - xX: anything else
+        -   xxx: lowercased
+        -   Xxx: Capitalized
+        -   XXX: UPPERCASED
+        -   xX: anything else
     """
 
     name = "shape_ngram"
@@ -295,9 +297,9 @@ class WordClusterFactory(SingleFeatureFactory):
 
     This feature has several parameters:
 
-    - 'cluster_name' (str): the name of the word cluster to use
-    - 'use_stemming' (bool): whether or not to stem the token before
-        looking for its cluster
+    -   'cluster_name' (str): the name of the word cluster to use
+    -   'use_stemming' (bool): whether or not to stem the token before looking
+        for its cluster
 
     Typical words clusters are the Brown Clusters in which words are
     clustered into a binary tree resulting in clusters of the form '100111001'
@@ -341,16 +343,16 @@ class WordClusterFactory(SingleFeatureFactory):
 
 class EntityMatchFactory(CRFFeatureFactory):
     """Features: does the considered token belongs to the values of one of the
-        entities in the training dataset
+    entities in the training dataset
 
     This factory builds as many features as there are entities in the dataset,
     one per entity.
 
     It has the following parameters:
 
-    - 'use_stemming' (bool): whether or not to stem the token before
-        looking for it among the (stemmed) entity values
-    - 'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
+    -   'use_stemming' (bool): whether or not to stem the token before looking
+        for it among the (stemmed) entity values
+    -   'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
         allows to give more information about the match.
     """
 
@@ -431,7 +433,7 @@ class EntityMatchFactory(CRFFeatureFactory):
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):
     """Features: is the considered token part of a builtin entity such as a
-        date, a temperature etc
+    date, a temperature etc
 
     This factory builds as many features as there are builtin entities
     available in the considered language.
@@ -518,7 +520,7 @@ FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
 
 def get_feature_factory(factory_config):
     """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
-        config"""
+    config"""
     factory_name = factory_config["factory_name"]
     for factory in FACTORIES:
         if factory_name == factory.name:

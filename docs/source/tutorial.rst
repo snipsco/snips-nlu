@@ -33,8 +33,8 @@ You have two options to create your dataset. You can build it manually by
 respecting the format used in the sample or alternatively you can use the
 dataset creation CLI that is contained in the lib.
 
-We will go for the second option here and start by creating two files
-corresponding to our two intents:
+We will go for the second option here and start by creating three files
+corresponding to our three intents:
 
 - ``TurnLightOn.txt``
 - ``TurnLightOff.txt``
@@ -83,10 +83,200 @@ that would help us resolve properly the temperature values.
 
 We are now ready to generate our dataset:
 
-.. code-block:: console
+.. code-block:: bash
 
     generate-dataset --language en TurnLightOn.txt TurnLightOff.txt SetTemperature.txt > dataset.json
+
+Let's have a look at what has been generated and more precisely the
+``"entities"`` part of the json:
+
+.. code-block:: json
+
+    {
+      "entities": {
+        "room": {
+          "use_synonyms": true,
+          "automatically_extensible": true,
+          "data": []
+        },
+        "snips/temperature": {}
+      }
+    }
+
+By default, the ``room`` entity is set to be
+:ref:`automatically extensible <auto_extensible>` but in our case we don't want
+to handle any entity value that would not be part of the dataset, so we set
+this attribute to ``false``.
+Moreover we are going to add some rooms that were not in the previous sentences
+and that we want our assistant to cover. We also add some :ref:`synonyms`, so
+at the end this is what we have:
+
+.. code-block:: json
+
+    {
+      "entities": {
+        "room": {
+          "use_synonyms": true,
+          "automatically_extensible": false,
+          "data": [
+            {
+              "value": "basement",
+              "synonyms": [
+                "cellar"
+              ]
+            },
+            {
+              "value": "living room",
+              "synonyms": [
+                "lounge",
+                "family room"
+              ]
+            }
+          ]
+        },
+        "snips/temperature": {}
+      }
+    }
+
+We don't need to edit the ``snips/temperature`` entity as it is a builtin entity.
+
+Now that we have our dataset ready, let's move to the next step which is to
+create an NLU engine.
+
+The Snips NLU Engine
+--------------------
+
+The main API of Snips NLU is an object called a :class:`.SnipsNLUEngine`. This
+engine is the one you will train and use for parsing.
+
+The simplest way to create an NLU engine is the following:
+
+.. code-block:: python
+
+    from snips_nlu import SnipsNLUEngine
+
+    default_engine = SnipsNLUEngine()
+
+In this example the engine was created with default parameters which, in
+many cases, will be sufficient.
+
+However, in some cases it may be required to tune a bit the engine and provide
+a customized configuration. Typically, different languages may require
+different sets of features. You can check the :class:`.NLUEngineConfig` to get
+more details about what can be configured.
+
+We created a list of `sample configurations`_, one per supported language, that
+have some language specific enhancements. In this tutorial we will use the
+`english one`_.
+
+.. code-block:: python
+
+    import io
+    import json
+
+    from snips_nlu import SnipsNLUEngine
+
+    with io.open("config_en.json") as f:
+        config = json.load(f)
+
+    engine = SnipsNLUEngine(config=config)
+
+At this point, we can try to parse something:
+
+.. code-block:: python
+
+    engine.parse(u"Please give me some lights in the entrance !")
+
+That will raise a ``NotTrained`` error, as we did not train the engine with
+the dataset that we created.
+
+
+Training the engine
+-------------------
+
+In order to use the engine we created, we need to *train* it or *fit* it with
+the dataset we generated earlier:
+
+.. code-block:: python
+
+    with io.open("dataset.json") as f:
+        dataset = json.load(f)
+
+    engine.fit(dataset)
+
+
+Parsing
+-------
+
+We are now ready to parse:
+
+.. code-block:: python
+
+    parsing = engine.parse(u"Hey, lights on in the entrance !")
+    print(json.dumps(parsing, indent=2))
+
+You should get the following output (with a slightly different ``probability``
+value):
+
+.. code-block:: json
+
+    {
+      "input": "Hey, lights on in the lounge !",
+      "intent": {
+        "intentName": "TurnLightOn",
+        "probability": 0.4879843917522865
+      },
+      "slots": [
+        {
+          "range": {
+            "start": 22,
+            "end": 28
+          },
+          "rawValue": "lounge",
+          "value": {
+            "kind": "Custom",
+            "value": "living room"
+          },
+          "entity": "room",
+          "slotName": "room"
+        }
+      ]
+    }
+
+Notice that the ``lounge`` slot value points to ``living room`` as defined
+earlier in the entity synonyms of the dataset.
+
+Persisting
+----------
+
+As a final step, we will persist the engine in a json. That may be useful in
+various contexts, for instance if you want to train on a machine and parse on
+another one.
+
+You can persist the engine with the following API:
+
+.. code-block:: python
+
+    engine_json = json.dumps(engine.to_dict())
+    with io.open("trained_engine.json", mode="w") as f:
+        # f.write(engine_json.decode("utf8"))  # Python 2
+        f.write(engine_json)  # Python 3
+
+
+And load it:
+
+.. code-block:: python
+
+
+    with io.open("trained_engine.json") as f:
+        engine_dict = json.load(f)
+
+    loaded_engine = SnipsNLUEngine.from_dict(engine_dict)
+
+    loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
 
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
+.. _sample configurations: https://github.com/snipsco/snips-nlu/blob/master/samples/configs
+.. _english one: https://github.com/snipsco/snips-nlu/blob/master/samples/configs/config_en.json

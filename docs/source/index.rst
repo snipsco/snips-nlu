@@ -1,5 +1,5 @@
-Snips NLU
-=========
+Snips Natural Language Understanding
+====================================
 
 Welcome to Snips NLU's documentation.
 

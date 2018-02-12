@@ -24,10 +24,10 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
         Args:
             text (str): Input
             intents (str or list of str): If provided, reduces the scope of
-                intent parsing to the provided list of intents
+            intent parsing to the provided list of intents
 
         Returns:
             dict: The most likely intent along with the extracted slots. See
-                :func:`.parsing_result` for the output format.
+            :func:`.parsing_result` for the output format.
         """
         pass

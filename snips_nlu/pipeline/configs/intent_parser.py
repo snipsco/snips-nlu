@@ -12,6 +12,9 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
         intent_classifier_config (:class:`.ProcessingUnitConfig`): The
             configuration of the underlying intent classifier, by default
             it uses a :class:`.LogRegIntentClassifierConfig`
+        slot_filler_config (:class:`.ProcessingUnitConfig`): The configuration
+            that will be used for the underlying slot fillers, by default it
+            uses a :class:`.CRFSlotFillerConfig`
     """
 
     # pylint: disable=super-init-not-called
@@ -63,7 +66,7 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
     This allows to deactivate the usage of regular expression when they are
     too big to avoid explosion in time and memory
 
-    Notes:
+    Note:
         In the future, a FST will be used insted of regexps, removing the need
         for all this
     """

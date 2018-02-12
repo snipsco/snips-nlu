@@ -97,11 +97,11 @@ class DeterministicIntentParser(IntentParser):
         Args:
             text (str): Input
             intents (str or list of str): If provided, reduces the scope of
-                intent parsing to the provided list of intents
+            intent parsing to the provided list of intents
 
         Returns:
             dict: The matched intent, if any, along with the extracted slots.
-                See :func:`.parsing_result` for the output format.
+            See :func:`.parsing_result` for the output format.
 
         Raises:
             NotTrained: When the intent parser is not fitted

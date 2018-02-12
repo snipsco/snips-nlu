@@ -32,8 +32,7 @@ class IntentClassifier(with_metaclass(ABCMeta, ProcessingUnit)):
 
         Returns:
             dict or None: The most likely intent along with its probability or
-                *None* if no intent was found. See
-                :func:`.intent_classification_result` for
-                the output format.
+            *None* if no intent was found. See
+            :func:`.intent_classification_result` for the output format.
         """
         pass

@@ -17,7 +17,7 @@ from snips_nlu.utils import NotTrained
 
 class ProbabilisticIntentParser(IntentParser):
     """Intent parser which consists in two steps: intent classification then
-        slot filling"""
+    slot filling"""
 
     unit_name = "probabilistic_intent_parser"
     config_type = ProbabilisticIntentParserConfig
@@ -25,7 +25,7 @@ class ProbabilisticIntentParser(IntentParser):
     # pylint:disable=line-too-long
     def __init__(self, config=None):
         """The CRF slot filler can be configured by passing a
-            :class:`.ProbabilisticIntentParserConfig`"""
+        :class:`.ProbabilisticIntentParserConfig`"""
         if config is None:
             config = self.config_type()
         super(ProbabilisticIntentParser, self).__init__(config)
@@ -79,8 +79,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by first classifying
-            the intent and then using the correspond slot filler to extract
-            slots
+        the intent and then using the correspond slot filler to extract slots
 
         Args:
             text (str): Input
@@ -89,7 +88,7 @@ class ProbabilisticIntentParser(IntentParser):
 
         Returns:
             dict: The most likely intent along with the extracted slots. See
-                :func:`.parsing_result` for the output format.
+            :func:`.parsing_result` for the output format.
 
         Raises:
             NotTrained: When the intent parser is not fitted

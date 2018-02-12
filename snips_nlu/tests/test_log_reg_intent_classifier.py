@@ -12,15 +12,14 @@ from mock import patch
 
 from snips_nlu.constants import INTENTS, DATA, UTTERANCES, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
+from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
-from snips_nlu.intent_classifier.log_reg_classifier import (
-    LogRegIntentClassifier)
 from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     remove_builtin_slots, get_noise_it, generate_smart_noise, \
     generate_noise_utterances, add_unknown_word_to_utterances, \
     build_training_data
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_classifier import (
+from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset, \
     BEVERAGE_DATASET

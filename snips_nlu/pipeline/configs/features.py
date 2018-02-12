@@ -1,12 +1,11 @@
-from snips_nlu.slot_filler.crf_utils import TaggingScheme
-from snips_nlu.slot_filler.feature_factory import (
-    NgramFactory, IsDigitFactory, IsFirstFactory, IsLastFactory,
-    ShapeNgramFactory, EntityMatchFactory, BuiltinEntityMatchFactory)
-
-
 def default_features_factories():
     """These are the default features used by the :class:`.CRFSlotFiller`
         objects"""
+
+    from snips_nlu.slot_filler.crf_utils import TaggingScheme
+    from snips_nlu.slot_filler.feature_factory import (
+        NgramFactory, IsDigitFactory, IsFirstFactory, IsLastFactory,
+        ShapeNgramFactory, EntityMatchFactory, BuiltinEntityMatchFactory)
 
     return [
         {

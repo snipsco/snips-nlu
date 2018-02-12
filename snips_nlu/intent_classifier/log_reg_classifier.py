@@ -5,15 +5,14 @@ from builtins import str, zip
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.constants import (LANGUAGE)
+from snips_nlu.constants import LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     remove_builtin_slots, get_regularization_factor, build_training_data
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_classifier import \
-    LogRegIntentClassifierConfig
+from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state, NotTrained
 

@@ -11,7 +11,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.utils import resolve_slots
-from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, is_empty, parsing_result

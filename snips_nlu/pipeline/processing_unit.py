@@ -3,7 +3,7 @@ from builtins import object
 
 from future.utils import with_metaclass
 
-from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
+from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.utils import classproperty
 
 

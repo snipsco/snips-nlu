@@ -1,16 +1,14 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
 from builtins import str
+from copy import deepcopy
 
 from future.utils import itervalues, iteritems
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
-from snips_nlu.pipeline.configs.intent_parser import \
-    ProbabilisticIntentParserConfig
+from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result

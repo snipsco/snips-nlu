@@ -1,9 +1,6 @@
 from copy import deepcopy
 
-from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_classifier import \
-    LogRegIntentClassifierConfig
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.utils import classproperty
 
@@ -20,8 +17,10 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
     # pylint: disable=super-init-not-called
     def __init__(self, intent_classifier_config=None, slot_filler_config=None):
         if intent_classifier_config is None:
+            from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
             intent_classifier_config = LogRegIntentClassifierConfig()
         if slot_filler_config is None:
+            from snips_nlu.pipeline.configs import CRFSlotFillerConfig
             slot_filler_config = CRFSlotFillerConfig()
         self.intent_classifier_config = get_processing_unit_config(
             intent_classifier_config)
@@ -32,8 +31,7 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.intent_parser.probabilistic_intent_parser import \
-            ProbabilisticIntentParser
+        from snips_nlu.intent_parser import ProbabilisticIntentParser
         return ProbabilisticIntentParser.unit_name
 
     def to_dict(self):

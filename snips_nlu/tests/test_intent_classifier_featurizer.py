@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 import json
 import traceback as tb
 import unittest
-
 from builtins import bytes
+
 from future.utils import iteritems
 from mock import patch
 
@@ -13,7 +13,7 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
+from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.tokenization import tokenize_light
 
 

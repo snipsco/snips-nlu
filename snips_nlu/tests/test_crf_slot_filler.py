@@ -14,7 +14,7 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
     CRFSlotFiller, _spans_to_tokens_indexes, _filter_overlapping_builtins,

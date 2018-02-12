@@ -14,8 +14,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_parser import \
-    DeterministicIntentParserConfig
+from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light

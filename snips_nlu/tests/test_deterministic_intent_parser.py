@@ -19,8 +19,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
     _replace_builtin_entities, _preprocess_builtin_entities)
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_parser import \
-    DeterministicIntentParserConfig
+from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH
 

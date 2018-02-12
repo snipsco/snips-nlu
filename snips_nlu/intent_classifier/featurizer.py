@@ -16,7 +16,7 @@ from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
+from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import (get_stop_words, get_word_clusters,
                                  get_stems)

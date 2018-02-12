@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from snips_nlu.pipeline.configs.config import Config, ProcessingUnitConfig
+from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.utils import classproperty
 
 
@@ -67,8 +67,7 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.intent_classifier.log_reg_classifier import \
-            LogRegIntentClassifier
+        from snips_nlu.intent_classifier import LogRegIntentClassifier
         return LogRegIntentClassifier.unit_name
 
     def to_dict(self):

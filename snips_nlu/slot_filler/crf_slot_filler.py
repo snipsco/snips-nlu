@@ -6,10 +6,10 @@ import io
 import math
 import os
 import tempfile
+from builtins import range
 from copy import copy
 from itertools import groupby, permutations, product
 
-from builtins import range
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
@@ -19,7 +19,7 @@ from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import (
     TOKENS, TAGS, OUTSIDE, tags_to_slots, tag_name_to_slot_name,

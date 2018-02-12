@@ -5,20 +5,14 @@ import unittest
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
-from snips_nlu.intent_classifier.log_reg_classifier import \
-    LogRegIntentClassifier
-from snips_nlu.intent_parser.probabilistic_intent_parser import \
-    ProbabilisticIntentParser
-from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_classifier import \
-    LogRegIntentClassifierConfig
-from snips_nlu.pipeline.configs.intent_parser import \
-    ProbabilisticIntentParserConfig
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.intent_classifier import IntentClassifier
+from snips_nlu.intent_classifier import LogRegIntentClassifier
+from snips_nlu.intent_parser import ProbabilisticIntentParser
+from snips_nlu.pipeline.configs import (
+    CRFSlotFillerConfig, LogRegIntentClassifierConfig,
+    ProbabilisticIntentParserConfig, ProcessingUnitConfig)
 from snips_nlu.pipeline.units_registry import register_processing_unit
-from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
-from snips_nlu.slot_filler.slot_filler import SlotFiller
+from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET
 
 

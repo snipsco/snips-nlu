@@ -14,11 +14,10 @@ from snips_nlu.constants import (
     LANGUAGE, RES_INTENT, RES_INTENT_NAME, RES_INPUT, RES_SLOTS,
     RES_MATCH_RANGE, RES_RAW_VALUE, RES_VALUE, RES_ENTITY, RES_SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.intent_parser import IntentParser
 from snips_nlu.languages import Language
-from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
+from snips_nlu.nlu_engine import SnipsNLUEngine
+from snips_nlu.pipeline.configs import ProcessingUnitConfig, NLUEngineConfig
 from snips_nlu.pipeline.units_registry import (register_processing_unit,
                                                reset_processing_units)
 from snips_nlu.result import (

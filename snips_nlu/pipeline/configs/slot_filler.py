@@ -2,9 +2,8 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.pipeline.configs.config import Config, ProcessingUnitConfig
-from snips_nlu.pipeline.configs.features import default_features_factories
-from snips_nlu.slot_filler.crf_utils import TaggingScheme
+from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
+from snips_nlu.pipeline.configs import default_features_factories
 from snips_nlu.utils import classproperty
 
 
@@ -30,9 +29,12 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
 
     # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
-                 tagging_scheme=TaggingScheme.BIO, crf_args=None,
+                 tagging_scheme=None, crf_args=None,
                  exhaustive_permutations_threshold=4 ** 3,
                  data_augmentation_config=None, random_seed=None):
+        if tagging_scheme is None:
+            from snips_nlu.slot_filler.crf_utils import TaggingScheme
+            tagging_scheme = TaggingScheme.BIO
         if feature_factory_configs is None:
             feature_factory_configs = default_features_factories()
         if crf_args is None:
@@ -57,6 +59,7 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
 
     @tagging_scheme.setter
     def tagging_scheme(self, value):
+        from snips_nlu.slot_filler.crf_utils import TaggingScheme
         if isinstance(value, TaggingScheme):
             self._tagging_scheme = value
         elif isinstance(value, int):
@@ -83,7 +86,7 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller
+        from snips_nlu.slot_filler import CRFSlotFiller
         return CRFSlotFiller.unit_name
 
     def to_dict(self):

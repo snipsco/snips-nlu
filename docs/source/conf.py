@@ -39,7 +39,7 @@ extensions = [
 # Autodoc settings
 autoclass_content = 'both'
 autodoc_member_order = 'bysource'
-autodoc_default_flags = ['members', 'show-inheritance']
+autodoc_default_flags = ['members', 'no-show-inheritance']
 
 # Napoleon settings
 napoleon_google_docstring = True

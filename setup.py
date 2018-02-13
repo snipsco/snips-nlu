@@ -14,6 +14,8 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
+nlu_metrics_version = "0.10.2"
+
 required = [
     "enum34==1.1.6",
     "numpy==1.14.0",
@@ -28,17 +30,22 @@ required = [
 ]
 
 extras_require = {
+    "doc": [
+        "sphinx==1.6.7",
+        "sphinxcontrib-napoleon==0.6.1",
+        "sphinx-rtd-theme==0.2.4"
+    ],
     "metrics": [
-        "nlu_metrics==0.10.2",
+        "nlu_metrics==%s" % nlu_metrics_version,
     ],
     "test": [
         "mock==2.0.0",
-        "nlu_metrics==0.10.2",
+        "nlu_metrics==%s" % nlu_metrics_version,
         "pylint==1.8.2",
         "coverage==4.4.2"
     ],
     "integration_test": [
-        "nlu_metrics==0.10.2",
+        "nlu_metrics==%s" % nlu_metrics_version,
         "snips_nlu_rust==0.52.3",
     ]
 }

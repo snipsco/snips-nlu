@@ -81,6 +81,13 @@ def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLi
     }
 }
 
+def buildDoc(pythonPath, venvPath) {
+    stage('Build documentation') {
+        checkout()
+        executeInVirtualEnv(pythonPath, venvPath, "cd docs && make html && cd ..")
+    }
+}
+
 node('macos') {
     def branchName = "${env.BRANCH_NAME}"
 
@@ -98,6 +105,8 @@ node('macos') {
         installAndTest(python36path, "venv36", true, true)
         installAndTest(python27path, "venv27")
     }
+
+    buildDoc(python36path, "venv36")
 
     if (branchName == "master") {
         stage('Publish') {

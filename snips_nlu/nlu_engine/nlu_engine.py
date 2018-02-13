@@ -103,7 +103,12 @@ class SnipsNLUEngine(ProcessingUnit):
 
         Raises:
             NotTrained: When the nlu engine is not fitted
+            TypeError: When input type is not unicode
         """
+
+        if not isinstance(text, str):
+            raise TypeError("Expected unicode but received: %s" % type(text))
+
         if not self.fitted:
             raise NotTrained("SnipsNLUEngine must be fitted")
 

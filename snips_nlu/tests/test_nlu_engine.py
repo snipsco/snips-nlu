@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import json
 import traceback as tb
 import unittest
+from builtins import str
 from copy import deepcopy
 
 from mock import patch
@@ -627,3 +628,14 @@ class TestSnipsNLUEngine(unittest.TestCase):
             except:  # pylint: disable=W0702
                 self.fail("Could not fit engine in '%s': %s"
                           % (l.iso_code, tb.format_exc()))
+
+    def test_nlu_engine_should_raise_error_with_bytes_input(self):
+        # Given
+        bytes_input = b"brew me an espresso"
+        engine = SnipsNLUEngine().fit(BEVERAGE_DATASET)
+
+        # When / Then
+        with self.assertRaises(TypeError) as cm:
+            engine.parse(bytes_input)
+        message = str(cm.exception.args[0])
+        self.assertTrue("Expected unicode but received" in message)

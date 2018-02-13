@@ -7,7 +7,7 @@ from snips_nlu.constants import (
 
 def intent_classification_result(intent_name, probability):
     """Creates an intent classification result to be returned by
-        :meth:`.IntentClassifier.get_intent`
+    :meth:`.IntentClassifier.get_intent`
 
     Example:
 
@@ -49,7 +49,7 @@ def unresolved_slot(match_range, value, entity, slot_name):
 
 def custom_slot(internal_slot, resolved_value=None):
     """Creates a custom slot with *resolved_value* being the reference value
-        of the slot
+    of the slot
 
     Example:
 
@@ -86,7 +86,7 @@ def custom_slot(internal_slot, resolved_value=None):
 
 def builtin_slot(internal_slot, resolved_value):
     """Creates a builtin slot with *resolved_value* being the resolved value
-        of the slot
+    of the slot
 
     Example:
 
@@ -173,7 +173,7 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
 
 def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
     """Create the final output of :meth:`.SnipsNLUEngine.parse` or
-        :meth:`.IntentParser.parse`
+    :meth:`.IntentParser.parse`
 
     Example:
 
@@ -225,7 +225,7 @@ def is_empty(result):
 
 def empty_result(input):  # pylint:disable=redefined-builtin
     """Creates an empty parsing result of the same format as the one of
-        :func:`parsing_result`
+    :func:`parsing_result`
 
     An empty is typically returned by a :class:`.SnipsNLUEngine` or
     :class:`.IntentParser` when no intent nor slots were found.

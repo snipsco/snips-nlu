@@ -42,8 +42,7 @@ def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLi
     }
 
     stage('Build') {
-        def branchName = "${env.BRANCH_NAME}"
-        if(includeIntegrationTest && (branchName.startsWith("release/") || branchName.startsWith("hotfix/") || branchName == "master")) {
+        if(includeIntegrationTest) {
             executeInVirtualEnv(pythonPath, venvPath, "pip install '.[test, integration_test]'")
         } else {
             executeInVirtualEnv(pythonPath, venvPath, "pip install .[test]")

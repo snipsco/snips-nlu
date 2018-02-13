@@ -1,8 +1,7 @@
 .. _data_model:
 
-
-Snips NLU Concepts & Data Model
-===============================
+Key Concepts & Data Model
+=========================
 
 This section is meant to explain the concepts and data model that we use to
 represent input and output data.
@@ -32,7 +31,7 @@ Lets' consider for instance the following sentences:
     "Turn on the light"
     "It's too dark in this room, can you fix this?"
 
-They both express the same intent which is **Switch Light On**, but they
+They both express the same intent which is **SwitchLightOn**, but they
 are expressed in two very different ways.
 
 Thus, the first task in intent parsing is to be able to detect the *intent* of
@@ -44,7 +43,7 @@ In Snips NLU, this is represented within the parsing output in this way:
 .. code-block:: json
 
     {
-        "intentName": "Switch Light On",
+        "intentName": "SwitchLightOn",
         "probability": 0.87
     }
 
@@ -66,7 +65,7 @@ For example, let's consider this sentence:
 
     "Turn on the light in the kitchen"
 
-As before the intent is **Switch Light On**, however there is now an
+As before the intent is **SwitchLightOn**, however there is now an
 additional piece of information which is contained in the word **kitchen**.
 
 This intent contains one slot, which is the *room* in which the light is to be
@@ -145,9 +144,15 @@ In Snips NLU, extracted slots are represented within the output in this way:
       }
     ]
 
+In this example, the slot value contains a ``"kind"`` attribute which value
+here is ``"Custom"``. There are two classes of slot types or entity:
+
+-   **Builtin entities**
+-   **Custom entities**
+
+
 .. _builtin_entity_resolution:
 
--------------------------------
 Builtin Entities and resolution
 -------------------------------
 
@@ -181,7 +186,7 @@ Here is how the slot extracted by Snips NLU would look like in this case:
 
 As you can see, the ``"value"`` field here contains more information than in
 the previous example. This is because the entity used here,
-``"snips/datetime"``, is what we call a **builtin entity**.
+``"snips/datetime"``, is what we call a **Builtin Entity**.
 
 Snips NLU supports multiple builtin entities that are typically strongly typed
 entities such as date, temperatures, numbers etc, and for which a specific
@@ -190,3 +195,153 @@ extractor is available.
 These entities have special labels starting with ``"snips/"`` and making use
 of them when appropriate will not only give better results, but it will also
 provide some *entity resolution* such as an ISO format for a date.
+
+Builtin entities and their underlying extractors are maintained by the Snips
+team. On the other hand, entities that are declared by the developer are called
+*custom* entities.
+
+Custom Entities
+---------------
+
+As soon as you use a slot type which is not part of Snips builtin entities, you
+are using a custom entity. There are several things you can do to customize it,
+and make it fit with your use case.
+
+.. _synonyms:
+
+------------------------
+Entity Values & Synonyms
+------------------------
+
+The first thing you can do is add a list of possible values for your entity.
+
+By providing a list of example values for your entity, you help Snips NLU
+grasp what the entity is about.
+
+Let's say you are creating an assistant which purpose is to let you set the
+color of your connected light bulbs. What you will do is define a ``"color"``
+entity. On top of that you can provide a list of sample colors by editing the
+entity in your dataset as follow:
+
+.. code-block:: json
+
+    {
+      "color": {
+        "automatically_extensible": true,
+        "use_synonyms": true,
+        "data": [
+          {
+            "value": "white",
+            "synonyms": []
+          },
+          {
+            "value": "yellow",
+            "synonyms": []
+          },
+          {
+            "value": "pink",
+            "synonyms": []
+          },
+          {
+            "value": "blue",
+            "synonyms": []
+          }
+        ]
+      }
+    }
+
+Now imagine that you want to allow some variations around these values e.g.
+using ``"pinky"`` instead of ``"pink"``. You could add these variations in the
+list by adding a new value, however in this case what you want is to tell the
+NLU to consider ``"pinky"`` as a *synonym* of ``"pink"``:
+
+.. code-block:: json
+
+    {
+      "value": "pink",
+      "synonyms": ["pinky"]
+    }
+
+In this context, Snips NLU will map ``"pinky"`` to its reference value,
+``"pink"``, in its output.
+
+Let's consider this sentence:
+
+.. code-block:: console
+
+    Please make the light pinky
+
+Here is the kind of NLU output that you would get in this context:
+
+.. code-block:: json
+
+    {
+      "input": "Please make the light pinky",
+      "intent": {
+        "intentName": "SetLightColor",
+        "probability": 0.95
+      },
+      "slots": [
+        {
+          "rawValue": "pinky",
+          "value": {
+            "kind": "Custom",
+            "value": "pink"
+          },
+          "entity": "color",
+          "slotName": "light_color",
+          "range": {
+            "start": 22,
+            "end": 27
+          }
+        }
+      ]
+    }
+
+The ``"rawValue"`` field contains the color value as written within the input,
+but now the ``"value"`` field has been *resolved* and it contains the reference
+color, ``"pink"``, that the synonym refers to.
+
+
+.. _auto_extensible:
+
+---------------------------------
+Automatically Extensible Entities
+---------------------------------
+
+On top of declaring color values and color synonyms, you can also decide how
+Snips NLU reacts to unknown entity values.
+
+In the light color assistant example, one of the first thing to do would be
+to check what are the colors that are supported by the bulb, for instance:
+
+.. code-block:: json
+
+    ["white", "yellow", "red", "blue", "green", "pink", "purple"]
+
+As you can only handle these colors, you can enforce Snips NLU to
+**filter out slot values that are not part of this list**, so that the output
+always contain valid values, i.e. supported colors.
+
+On the contrary, let's say you want to build a smart music assistant that will
+let you control your speakers and play any artist you want.
+
+Obviously, you can't list all the artist and songs that you might want to
+listen to at some point. This means that your dataset will contain some
+examples of such artist but you expect Snips NLU to **extend beyond these values**
+and extract any other artist or song that appear in the same context.
+
+Your entity must be *automatically extensible*.
+
+Now in practice, there is a flag in the dataset that lets you choose whether or
+not your custom entity is automatically extensible:
+
+.. code-block:: json
+
+    {
+      "my_custom_entity": {
+        "automatically_extensible": true,
+        "use_synonyms": true,
+        "data": []
+      }
+    }

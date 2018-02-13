@@ -13,7 +13,7 @@ from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.9
-SLOT_FILLING_THRESHOLD = 0.6
+SLOT_FILLING_THRESHOLD = 0.7
 
 
 class IntegrationTestSnipsNLUEngine(unittest.TestCase):

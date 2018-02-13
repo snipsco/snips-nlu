@@ -23,7 +23,8 @@ from snips_nlu.slot_filler.crf_utils import (
     TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX)
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, ShapeNgramFactory, NgramFactory)
-from snips_nlu.tests.utils import SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH
+from snips_nlu.tests.utils import (
+    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET)
 from snips_nlu.tokenization import tokenize, Token
 
 
@@ -45,6 +46,30 @@ class TestCRFSlotFiller(unittest.TestCase):
                             value='two',
                             entity='snips/number',
                             slot_name='number_of_cups')]
+        self.assertListEqual(slots, expected_slots)
+
+    def test_should_get_builtin_slots(self):
+        # Given
+        dataset = validate_and_format_dataset(WEATHER_DATASET)
+        config = CRFSlotFillerConfig(random_seed=42)
+        intent = "SearchWeatherForecast"
+        slot_filler = CRFSlotFiller(config)
+        slot_filler.fit(dataset, intent)
+
+        # When
+        slots = slot_filler.get_slots("Give me the weather at 9p.m. in Paris")
+
+        # Then
+        expected_slots = [
+            unresolved_slot(match_range=(20, 28),
+                            value='at 9p.m.',
+                            entity='snips/datetime',
+                            slot_name='datetime'),
+            unresolved_slot(match_range=(32, 37),
+                            value='Paris',
+                            entity='weather_location',
+                            slot_name='location')
+        ]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_parse_naughty_strings(self):

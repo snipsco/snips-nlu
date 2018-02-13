@@ -1,5 +1,4 @@
 {
-  "snips_nlu_version": "0.4.1",
   "language": "en",
   "intents": {
     "MakeCoffee": {
@@ -7,196 +6,105 @@
         {
           "data": [
             {
-              "text": "Make me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "Make me "
             },
             {
               "text": "five thousands and one",
-              "range": {
-                "start": 8,
-                "end": 30
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " cups of coffee",
-              "range": {
-                "start": 30,
-                "end": 45
-              }
+              "text": " cups of coffee"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Brew me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "Brew me "
             },
             {
               "text": "two hundreds",
-              "range": {
-                "start": 8,
-                "end": 20
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " coffee cups",
-              "range": {
-                "start": 20,
-                "end": 32
-              }
+              "text": " coffee cups"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "make me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "make me "
             },
             {
               "text": "twenty three",
-              "range": {
-                "start": 8,
-                "end": 20
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " cups of coffee",
-              "range": {
-                "start": 20,
-                "end": 35
-              }
+              "text": " cups of coffee"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Brew ",
-              "range": {
-                "start": 0,
-                "end": 5
-              }
+              "text": "Brew "
             },
             {
               "text": "four",
-              "range": {
-                "start": 5,
-                "end": 9
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " coffee cups",
-              "range": {
-                "start": 9,
-                "end": 21
-              }
+              "text": " coffee cups"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Make me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "Make me "
             },
             {
               "text": "12",
-              "range": {
-                "start": 8,
-                "end": 10
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " cups of coffee",
-              "range": {
-                "start": 10,
-                "end": 25
-              }
+              "text": " cups of coffee"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "give me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "give me "
             },
             {
               "text": "six",
-              "range": {
-                "start": 8,
-                "end": 11
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " coffees please",
-              "range": {
-                "start": 11,
-                "end": 26
-              }
+              "text": " coffees please"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Make me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "Make me "
             },
             {
               "text": "one",
-              "range": {
-                "start": 8,
-                "end": 11
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " cup of coffee",
-              "range": {
-                "start": 11,
-                "end": 25
-              }
+              "text": " cup of coffee"
             }
           ]
         }
@@ -207,163 +115,84 @@
         {
           "data": [
             {
-              "text": "Make ",
-              "range": {
-                "start": 0,
-                "end": 5
-              }
+              "text": "Make "
             },
             {
               "text": "twenty two",
-              "range": {
-                "start": 5,
-                "end": 15
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " ",
-              "range": {
-                "start": 15,
-                "end": 16
-              }
+              "text": " "
             },
             {
               "text": "iced",
-              "range": {
-                "start": 16,
-                "end": 20
-              },
               "slot_name": "beverage_temperature",
-              "entity": "Temperature",
-              "id": "entity_H1PpjZQlZ"
+              "entity": "Temperature"
             },
             {
-              "text": " teas",
-              "range": {
-                "start": 20,
-                "end": 25
-              }
+              "text": " teas"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Please, can I get ",
-              "range": {
-                "start": 0,
-                "end": 18
-              }
+              "text": "Please, can I get "
             },
             {
               "text": "five",
-              "range": {
-                "start": 18,
-                "end": 22
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " ",
-              "range": {
-                "start": 22,
-                "end": 23
-              }
+              "text": " "
             },
             {
               "text": "cold",
-              "range": {
-                "start": 23,
-                "end": 27
-              },
               "slot_name": "beverage_temperature",
-              "entity": "Temperature",
-              "id": "entity_H1PpjZQlZ"
+              "entity": "Temperature"
             },
             {
-              "text": " teas ?",
-              "range": {
-                "start": 27,
-                "end": 34
-              }
+              "text": " teas ?"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Prepare ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "Prepare "
             },
             {
               "text": "three",
-              "range": {
-                "start": 8,
-                "end": 13
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " cups of ",
-              "range": {
-                "start": 13,
-                "end": 22
-              }
+              "text": " cups of "
             },
             {
               "text": "hot",
-              "range": {
-                "start": 22,
-                "end": 25
-              },
               "slot_name": "beverage_temperature",
-              "entity": "Temperature",
-              "id": "entity_H1PpjZQlZ"
+              "entity": "Temperature"
             },
             {
-              "text": " tea",
-              "range": {
-                "start": 25,
-                "end": 29
-              }
+              "text": " tea"
             }
           ]
         },
         {
           "data": [
             {
-              "text": "Make me ",
-              "range": {
-                "start": 0,
-                "end": 8
-              }
+              "text": "Make me "
             },
             {
               "text": "one",
-              "range": {
-                "start": 8,
-                "end": 11
-              },
               "slot_name": "number_of_cups",
-              "entity": "snips/number",
-              "id": "numbers.number"
+              "entity": "snips/number"
             },
             {
-              "text": " tea",
-              "range": {
-                "start": 11,
-                "end": 15
-              }
+              "text": " tea"
             }
           ]
         }

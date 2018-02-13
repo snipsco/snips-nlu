@@ -8,7 +8,6 @@ from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
     ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestDataset(unittest.TestCase):

@@ -12,7 +12,7 @@ from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 
-INTENT_CLASSIFICATION_THRESHOLD = 0.8
+INTENT_CLASSIFICATION_THRESHOLD = 0.9
 SLOT_FILLING_THRESHOLD = 0.6
 
 

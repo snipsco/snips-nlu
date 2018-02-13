@@ -83,7 +83,8 @@ def installAndTest(pythonPath, venvPath, includeIntegrationTest=false, includeLi
 def buildDoc(pythonPath, venvPath) {
     stage('Build documentation') {
         checkout()
-        executeInVirtualEnv(pythonPath, venvPath, "cd docs && make html && cd ..")
+        cmd = "pip install .[doc] && cd docs && make html && cd .."
+        executeInVirtualEnv(pythonPath, venvPath, cmd)
     }
 }
 

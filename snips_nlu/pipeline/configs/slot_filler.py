@@ -8,6 +8,7 @@ from snips_nlu.utils import classproperty
 
 
 class CRFSlotFillerConfig(ProcessingUnitConfig):
+    # pylint: disable=line-too-long
     """Configuration of a :class:`.CRFSlotFiller`
 
     Args:
@@ -26,6 +27,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         random_seed (int, optional): Specify to make the CRF training
             deterministic and reproducible (default=None)
     """
+
+    # pylint: enable=line-too-long
 
     # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,

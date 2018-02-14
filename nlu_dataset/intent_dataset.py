@@ -1,11 +1,13 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 import io
+import itertools
 import os
+
 from builtins import object
 
-from nlu_dataset.builtin_entities import BUILTIN_ENTITIES
+from nlu_dataset.builtin_entities import BUILTIN_ENTITIES, BuiltinEntity
+from nlu_dataset.custom_entities import CustomEntity, EntityUtterance
 
 
 class IntentDataset(object):
@@ -83,19 +85,21 @@ class IntentDataset(object):
     @property
     def entities(self):
         """retun all entities in json format for datasets"""
-        return dict((slot.entity, self.mk_entity(slot)) for
-                    slot in self.slots)
+        ents = dict()
+        for s in self.slots:
+            if s.entity not in ents:
+                ents[s.entity] = self.mk_entity(s)
+            elif s.entity not in BUILTIN_ENTITIES:
+                ents[s.entity].utterances.append(EntityUtterance(s.text))
+        return ents
 
     @classmethod
-    def mk_entity(cls, slot):
+    def mk_entity(cls, slot, automatically_extensible=True, use_synonyms=True):
         if slot.entity in BUILTIN_ENTITIES:
-            return dict()
+            return BuiltinEntity(slot.entity)
         else:
-            return dict(
-                use_synonyms=True,
-                automatically_extensible=True,
-                data=[]
-            )
+            return CustomEntity([EntityUtterance(slot.text)],
+                                automatically_extensible, use_synonyms)
 
     @property
     def json_slots(self):
@@ -105,7 +109,6 @@ class IntentDataset(object):
     @property
     def slots(self):
         """:return: an iter of the unique slots in the dataset"""
-        import itertools
         all_slots = [
             s for u in self.utterances
             for s in u.slots
@@ -113,7 +116,7 @@ class IntentDataset(object):
         ]
         all_slots.sort(key=lambda s: s.name)
         groups = itertools.groupby(all_slots, lambda s: s.entity)
-        return (s for (r, g) in groups for s in itertools.islice(g, 1))
+        return (s for r, g in groups for s in g)
 
     @property
     def annotated(self):

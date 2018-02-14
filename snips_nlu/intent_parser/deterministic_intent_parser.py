@@ -36,8 +36,8 @@ class DeterministicIntentParser(IntentParser):
     config_type = DeterministicIntentParserConfig
 
     def __init__(self, config=None):
-        """The CRF slot filler can be configured by passing a
-            :class:`.DeterministicIntentParserConfig`"""
+        """The deterministic intent parser can be configured by passing a
+        :class:`.DeterministicIntentParserConfig`"""
         if config is None:
             config = self.config_type()
         super(DeterministicIntentParser, self).__init__(config)

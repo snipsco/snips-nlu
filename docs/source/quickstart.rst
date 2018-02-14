@@ -8,8 +8,8 @@ some data before it can start extracting information. Thus, the first thing to
 do is to build a dataset that can be fed into Snips NLU.
 For now, we will use this `sample dataset`_ which contains data for two intents:
 
-- ``SampleGetWeather``
-- ``SampleTurnOnLight``
+- ``sampleGetWeather`` -> ``"What will be the weather in Tokyo tomorrow?"``
+- ``sampleTurnOnLight`` -> ``"Turn on the light in the kitchen"``
 
 The format used here is json so let's load it into a python dict:
 
@@ -59,7 +59,7 @@ You should get something that looks like this:
     {
       "input": "What will be the weather in San Francisco next week?",
       "intent": {
-        "intentName": "SampleGetWeather",
+        "intentName": "sampleGetWeather",
         "probability": 0.641227710154331
       },
       "slots": [
@@ -74,7 +74,7 @@ You should get something that looks like this:
             "value": "San Francisco"
           },
           "entity": "location",
-          "slotName": "weather_location"
+          "slotName": "weatherLocation"
         },
         {
           "range": {
@@ -90,7 +90,7 @@ You should get something that looks like this:
             "value": "2018-02-12 00:00:00 +01:00"
           },
           "entity": "snips/datetime",
-          "slotName": "weather_date"
+          "slotName": "weatherDate"
         }
       ]
     }

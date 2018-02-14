@@ -28,7 +28,7 @@ such as:
          {
             "value": "paris",
             "entity": "locality",
-            "slotName": "forecast_locality"
+            "slotName": "forecastLocality"
          },
          {
             "value": {
@@ -36,7 +36,7 @@ such as:
                "value": "2018-02-08 20:00:00 +00:00",
             },
             "entity": "snips/datetime",
-            "slotName": "forecast_start_datetime"
+            "slotName": "forecastStartDatetime"
          }
       ]
    }
@@ -66,6 +66,7 @@ the :ref:`api` documentation or alternatively check the `github repository`_.
    quickstart
    tutorial
    data_model
+   languages
    api
 
 

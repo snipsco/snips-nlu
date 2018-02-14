@@ -1,6 +1,6 @@
 {
   "intents": {
-    "SampleGetWeather": {
+    "sampleGetWeather": {
       "utterances": [
         {
           "data": [
@@ -10,7 +10,7 @@
             {
               "text": "los angeles",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": " "
@@ -18,7 +18,7 @@
             {
               "text": "this weekend",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             }
           ]
         },
@@ -30,7 +30,7 @@
             {
               "text": "today",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": " in "
@@ -38,7 +38,7 @@
             {
               "text": "rio de janeiro",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": " ? "
@@ -53,7 +53,7 @@
             {
               "text": "Tokyo",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": " "
@@ -61,7 +61,7 @@
             {
               "text": "at the end of the day",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": " ?"
@@ -76,7 +76,7 @@
             {
               "text": "London",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": ", "
@@ -84,7 +84,7 @@
             {
               "text": "tomorrow morning",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": "?"
@@ -99,7 +99,7 @@
             {
               "text": "this afternoon",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": " in "
@@ -107,7 +107,7 @@
             {
               "text": "tel aviv",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": ", please"
@@ -122,7 +122,7 @@
             {
               "text": "Paris",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": "?"
@@ -131,7 +131,7 @@
         }
       ]
     },
-    "SampleTurnOnLight": {
+    "sampleTurnOnLight": {
       "utterances": [
         {
           "data": [

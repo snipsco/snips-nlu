@@ -10,9 +10,9 @@ class TestDatasetGenerationHelper(unittest.TestCase):
     def test_should_generate_dataset_from_file(self):
         # Given
         dataset_path_1 = os.path.join(ROOT_PATH, "nlu_dataset", "examples",
-                                      "who_is_game.txt")
+                                      "whoIsGame.txt")
         dataset_path_2 = os.path.join(ROOT_PATH, "nlu_dataset", "examples",
-                                      "get_weather.txt")
+                                      "getWeather.txt")
         dataset = AssistantDataset.from_files(
             "en", [dataset_path_1, dataset_path_2])
         dataset_dict = dataset.json

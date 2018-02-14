@@ -44,7 +44,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
     def __init__(self, config=None):
         """The NLU engine can be configured by passing a
-            :class:`.NLUEngineConfig`"""
+        :class:`.NLUEngineConfig`"""
         if config is None:
             config = self.config_type()
         super(SnipsNLUEngine, self).__init__(config)

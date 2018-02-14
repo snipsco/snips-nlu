@@ -24,7 +24,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     # pylint:disable=line-too-long
     def __init__(self, config=None):
-        """The CRF slot filler can be configured by passing a
+        """The probabilistic intent parser can be configured by passing a
         :class:`.ProbabilisticIntentParserConfig`"""
         if config is None:
             config = self.config_type()

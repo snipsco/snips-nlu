@@ -7,14 +7,14 @@ In this section, we will build an NLU assistant for home automation tasks that
 will be able to understand queries about lights and thermostat. More precisely
 our assistant will contain two :ref:`intents <intent>`:
 
-- ``TurnLightOn``
-- ``TurnLightOff``
-- ``SetTemperature``
+- ``turnLightOn``
+- ``turnLightOff``
+- ``setTemperature``
 
 The first two intents will be about turning on and off the lights in a specific
 room. Thus, these intents will have one :ref:`slot` which will be the ``room``.
 The third intent will let you control the temperature of a specific room, thus
-it will have two slots: the ``room_temperature`` and the ``room``.
+it will have two slots: the ``roomTemperature`` and the ``room``.
 
 The first step is to create an appropriate dataset for this task.
 
@@ -36,14 +36,14 @@ dataset creation CLI that is contained in the lib.
 We will go for the second option here and start by creating three files
 corresponding to our three intents:
 
-- ``TurnLightOn.txt``
-- ``TurnLightOff.txt``
-- ``SetTemperature.txt``
+- ``turnLightOn.txt``
+- ``turnLightOff.txt``
+- ``setTemperature.txt``
 
 The name of each file is important as the tool will map it to the intent name.
 
 Let's add training examples for the first intent by inserting the following
-lines in the first file, ``TurnLightOn.txt``:
+lines in the first file, ``turnLightOn.txt``:
 
 .. code-block:: console
 
@@ -58,7 +58,7 @@ components: :ref:`the slot name and the entity <entity_vs_slot_name>`. In our
 case we used the same value, ``room``, to describe both. The parts with
 parenthesis, like ``(kitchen)``, correspond to the text value of the slot.
 
-Let's move on to the second intent, and insert this into ``TurnLightOff.txt``:
+Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
 
 .. code-block:: console
 
@@ -67,17 +67,17 @@ Let's move on to the second intent, and insert this into ``TurnLightOff.txt``:
     switch off the light the [room:room](kitchen), will you?
     Switch the [room:room](bedroom)'s lights off please
 
-And now the last file, ``SetTemperature.txt``:
+And now the last file, ``setTemperature.txt``:
 
 .. code-block:: console
 
-    Set the temperature to [room_temperature:snips/temperature](19 degrees) in the [room:room](bedroom)
-    please set the [room:room](living room)'s temperature to [room_temperature:snips/temperature](twenty two degrees celsius)
-    I want [room_temperature:snips/temperature](75 degrees fahrenheit) in the [room:room](bathroom) please
-    Can you increase the temperature to [room_temperature:snips/temperature](22 degrees) ?
+    Set the temperature to [roomTemperature:snips/temperature](19 degrees) in the [room:room](bedroom)
+    please set the [room:room](living room)'s temperature to [roomTemperature:snips/temperature](twenty two degrees celsius)
+    I want [roomTemperature:snips/temperature](75 degrees fahrenheit) in the [room:room](bathroom) please
+    Can you increase the temperature to [roomTemperature:snips/temperature](22 degrees) ?
 
 As you can see here, we used a new slot, ``[room_temperature:snips/temperature]``,
-which name is ``room_temperature`` and type is ``snips/temperature``. The slot
+which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
 type that we used here is a :ref:`builtin entity <builtin_entity_resolution>`
 that would help us resolve properly the temperature values.
 
@@ -85,7 +85,12 @@ We are now ready to generate our dataset:
 
 .. code-block:: bash
 
-    generate-dataset --language en TurnLightOn.txt TurnLightOff.txt SetTemperature.txt > dataset.json
+    generate-dataset --language en turnLightOn.txt turnLightOff.txt setTemperature.txt > dataset.json
+
+.. note::
+
+    We used ``en`` as the language here but other languages are supported,
+    please check the :ref:`languages` section to know more.
 
 Let's have a look at what has been generated and more precisely the
 ``"entities"`` part of the json:
@@ -223,7 +228,7 @@ value):
     {
       "input": "Hey, lights on in the lounge !",
       "intent": {
-        "intentName": "TurnLightOn",
+        "intentName": "turnLightOn",
         "probability": 0.4879843917522865
       },
       "slots": [

@@ -45,7 +45,7 @@ class CRFSlotFiller(SlotFiller):
 
     def __init__(self, config=None):
         """The CRF slot filler can be configured by passing a
-            :class:`.CRFSlotFillerConfig`"""
+        :class:`.CRFSlotFillerConfig`"""
 
         if config is None:
             config = self.config_type()

@@ -31,7 +31,7 @@ Lets' consider for instance the following sentences:
     "Turn on the light"
     "It's too dark in this room, can you fix this?"
 
-They both express the same intent which is **SwitchLightOn**, but they
+They both express the same intent which is **switchLightOn**, but they
 are expressed in two very different ways.
 
 Thus, the first task in intent parsing is to be able to detect the *intent* of
@@ -43,7 +43,7 @@ In Snips NLU, this is represented within the parsing output in this way:
 .. code-block:: json
 
     {
-        "intentName": "SwitchLightOn",
+        "intentName": "switchLightOn",
         "probability": 0.87
     }
 
@@ -65,7 +65,7 @@ For example, let's consider this sentence:
 
     "Turn on the light in the kitchen"
 
-As before the intent is **SwitchLightOn**, however there is now an
+As before the intent is **switchLightOn**, however there is now an
 additional piece of information which is contained in the word **kitchen**.
 
 This intent contains one slot, which is the *room* in which the light is to be
@@ -77,7 +77,7 @@ Let's consider another example:
 
     "Find me a flight from Paris to Tokyo"
 
-Here the intent would be **Search Flight**, and now there are two slots in the
+Here the intent would be **searchFlight**, and now there are two slots in the
 sentence being contained in ``"Paris"`` and ``"Tokyo"``. These two values are
 of the same type as they both correspond to a **location** however they have
 different roles, as Paris is the **departure** and Tokyo is the **arrival**.
@@ -92,9 +92,9 @@ In this context, we call **location** a *slot type* (or *entity*) and
 
 .. _entity_vs_slot_name:
 
-----------------------
-Slot type VS slot name
-----------------------
+-----------------------
+Slot type vs. slot name
+-----------------------
 
 A slot type or entity is to NLU what a type is to coding. It describes the
 nature of the value. In a piece of code, multiple variables can be of the same
@@ -181,7 +181,7 @@ Here is how the slot extracted by Snips NLU would look like in this case:
         "end": 36
       },
       "entity": "snips/datetime",
-      "slotName": "weather_date"
+      "slotName": "weatherDate"
     }
 
 As you can see, the ``"value"`` field here contains more information than in
@@ -278,7 +278,7 @@ Here is the kind of NLU output that you would get in this context:
     {
       "input": "Please make the light pinky",
       "intent": {
-        "intentName": "SetLightColor",
+        "intentName": "setLightColor",
         "probability": 0.95
       },
       "slots": [
@@ -289,7 +289,7 @@ Here is the kind of NLU output that you would get in this context:
             "value": "pink"
           },
           "entity": "color",
-          "slotName": "light_color",
+          "slotName": "lightColor",
           "range": {
             "start": 22,
             "end": 27

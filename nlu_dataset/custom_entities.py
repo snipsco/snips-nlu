@@ -52,7 +52,7 @@ class CustomEntity(object):
         entity_dict = dict()
         entity_dict["automatically_extensible"] = self.automatically_extensible
         entity_dict["use_synonyms"] = self.use_synonyms
-        entity_dict["utterances"] = [u.json for u in self.utterances]
+        entity_dict["data"] = [u.json for u in self.utterances]
         return entity_dict
 
 

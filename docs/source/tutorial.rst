@@ -34,13 +34,14 @@ respecting the format used in the sample or alternatively you can use the
 dataset creation CLI that is contained in the lib.
 
 We will go for the second option here and start by creating three files
-corresponding to our three intents:
+corresponding to our three intents and one entity file corresponding to the ``room`` entity:
 
 - ``turnLightOn.txt``
 - ``turnLightOff.txt``
 - ``setTemperature.txt``
+- ``room.txt``
 
-The name of each file is important as the tool will map it to the intent name.
+The name of each file is important as the tool will map it to the intent or entity name.
 
 Let's add training examples for the first intent by inserting the following
 lines in the first file, ``turnLightOn.txt``:
@@ -67,7 +68,7 @@ Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
     switch off the light the [room:room](kitchen), will you?
     Switch the [room:room](bedroom)'s lights off please
 
-And now the last file, ``setTemperature.txt``:
+the last file, ``setTemperature.txt``:
 
 .. code-block:: console
 
@@ -81,11 +82,23 @@ which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
 type that we used here is a :ref:`builtin entity <builtin_entity_resolution>`
 that would help us resolve properly the temperature values.
 
+and the ``room.txt`` entity file:
+
+.. code-block:: console
+
+    bedroom
+    living room,main room
+    garden,yard,"backyard,"
+
+The entity file is a comma (``,``) separated file. Each line correspond to a entity value followed by its potential :ref:`synonyms <synonyms>`.
+
+If a value or a synonym has a comma in it, the value must be put between double quotes ``"``, if the value contains double quotes, it must be doubled to be escaped like this:  ``"A value with a "","" in it"`` which correspond to the actual value ``A value with a "," in it``
+
 We are now ready to generate our dataset:
 
 .. code-block:: bash
 
-    generate-dataset --language en turnLightOn.txt turnLightOff.txt setTemperature.txt > dataset.json
+    generate-dataset --language en --intent-files   turnLightOn.txt turnLightOff.txt setTemperature.txt --entity-files room.txt > dataset.json
 
 .. note::
 
@@ -102,18 +115,37 @@ Let's have a look at what has been generated and more precisely the
         "room": {
           "use_synonyms": true,
           "automatically_extensible": true,
-          "data": []
+          "data": [
+            {
+              "value": "bedroom",
+              "synonyms": []
+            },
+            {
+              "value": "living room",
+              "synonyms": ["main room"]
+            },
+            {
+              "value": "bathroom",
+              "synonyms": []
+            },
+            {
+              "value": "garden",
+              "synonyms": ["yard", "backyard,"]
+            }
+          ]
         },
         "snips/temperature": {}
       }
     }
+
+You can see that both entities from the intent utterances and from the ``room`` entity file were added.
 
 By default, the ``room`` entity is set to be
 :ref:`automatically extensible <auto_extensible>` but in our case we don't want
 to handle any entity value that would not be part of the dataset, so we set
 this attribute to ``false``.
 Moreover we are going to add some rooms that were not in the previous sentences
-and that we want our assistant to cover. We also add some :ref:`synonyms`, so
+and that we want our assistant to cover. We also add some mode :ref:`synonyms <synonyms>`, so
 at the end this is what we have:
 
 .. code-block:: json
@@ -125,17 +157,20 @@ at the end this is what we have:
           "automatically_extensible": false,
           "data": [
             {
-              "value": "basement",
-              "synonyms": [
-                "cellar"
-              ]
+              "value": "bedroom",
+              "synonyms": ["sleeping room"]
             },
             {
               "value": "living room",
-              "synonyms": [
-                "lounge",
-                "family room"
-              ]
+              "synonyms": ["main room"]
+            },
+            {
+              "value": "bathroom",
+              "synonyms": []
+            },
+            {
+              "value": "garden",
+              "synonyms": ["yard", "backyard,"]
             }
           ]
         },

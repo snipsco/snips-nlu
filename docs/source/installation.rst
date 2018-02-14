@@ -25,12 +25,32 @@ Snips NLU can be installed via pip with the following command:
 Extra dependencies
 ------------------
 
+-------
+Metrics
+-------
+
 If at some point you want to compute metrics, you will need some extra
 dependencies that can be installed via:
 
 .. code-block:: sh
 
     pip install 'snips-nlu[metrics]'
+
+-----
+Tests
+-----
+
+.. code-block:: sh
+
+    pip install 'snips-nlu[test]'
+
+-------------
+Documentation
+-------------
+
+.. code-block:: sh
+
+    pip install 'snips-nlu[doc]'
 
 
 .. _virtual environment: https://virtualenv.pypa.io/

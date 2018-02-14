@@ -2,18 +2,17 @@ from __future__ import division
 from __future__ import unicode_literals
 
 import json
+from builtins import str
 from copy import deepcopy
 
-from builtins import str
 from future.utils import itervalues, iteritems
 from nlu_utils import normalize
-from semantic_version import Version
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 SNIPS_NLU_VERSION, CAPITALIZE)
+                                 CAPITALIZE, VALIDATED)
 from snips_nlu.languages import Language
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
@@ -32,13 +31,16 @@ def extract_queries_entities(dataset):
 
 
 def validate_and_format_dataset(dataset):
+    """Checks that the dataset is valid and format it"""
+    # Make this function idempotent
+    if dataset.get(VALIDATED, False):
+        return dataset
     dataset = deepcopy(dataset)
     dataset = json.loads(json.dumps(dataset))
     validate_type(dataset, dict)
-    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE, SNIPS_NLU_VERSION]
+    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
     for key in mandatory_keys:
         validate_key(dataset, key, object_label="dataset")
-    Version(dataset[SNIPS_NLU_VERSION])  # Check that the version is semantic
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
     validate_type(dataset[LANGUAGE], str)
@@ -56,7 +58,7 @@ def validate_and_format_dataset(dataset):
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
                 entity, queries_entities_values[entity_name], language)
-
+    dataset[VALIDATED] = True
     return dataset
 
 

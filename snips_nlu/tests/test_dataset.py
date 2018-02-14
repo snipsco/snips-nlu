@@ -8,7 +8,6 @@ from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
     ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.tests.utils import SAMPLE_DATASET
 
 
 class TestDataset(unittest.TestCase):
@@ -148,7 +147,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
+            "snips_nlu_version": "1.1.1",
+            "validated": True
         }
 
         # When
@@ -252,7 +252,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
+            "snips_nlu_version": "1.1.1",
+            "validated": True
         }
 
         # When
@@ -260,33 +261,6 @@ class TestDataset(unittest.TestCase):
 
         # Then
         self.assertEqual(dataset, expected_dataset)
-
-    def test_dataset_should_require_nlu_version(self):
-        # Given
-        dataset = dict(SAMPLE_DATASET)
-
-        # When
-        dataset.pop("snips_nlu_version")
-
-        # Then
-        with self.assertRaises(KeyError) as ctx:
-            validate_and_format_dataset(dataset)
-        expected_exception_message = "Expected dataset to have key:" \
-                                     " 'snips_nlu_version'"
-        self.assertEqual(str(ctx.exception.args[0]),
-                         expected_exception_message)
-
-    def test_dataset_require_semantic_version(self):
-        # Given
-        dataset = dict(SAMPLE_DATASET)
-
-        # When
-        dataset["snips_nlu_version"] = "1.1.1.1.1.1.1.1.1.1"
-
-        # Then
-        with self.assertRaises(ValueError) as ctx:
-            validate_and_format_dataset(dataset)
-        self.assertTrue("Invalid version string" in str(ctx.exception.args[0]))
 
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
             self):
@@ -384,6 +358,7 @@ class TestDataset(unittest.TestCase):
             },
             "language": "en",
             "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -522,7 +497,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -684,7 +660,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -749,7 +726,8 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.1.0"
+            "snips_nlu_version": "0.1.0",
+            "validated": True
         }
 
         # When

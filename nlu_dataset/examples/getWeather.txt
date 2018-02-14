@@ -1,0 +1,3 @@
+what is the weather in [weatherLocation:location](Paris)?
+Will it rain [weatherDate:snips/datetime](tomorrow) in [weatherLocation:location](Moscow)?
+How is the weather in [weatherLocation:location](San Francisco) [weatherDate:snips/datetime](today)?

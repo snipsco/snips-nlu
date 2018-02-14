@@ -12,15 +12,15 @@ from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
-                                 SLOT_NAME, RES_INTENT_NAME)
+                                 SLOT_NAME, RES_INTENT_NAME, RES_SLOTS,
+                                 RES_INTENT)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
-    DeterministicIntentParser, deduplicate_overlapping_slots,
-    replace_builtin_entities, preprocess_builtin_entities)
+    DeterministicIntentParser, _deduplicate_overlapping_slots,
+    _replace_builtin_entities, _preprocess_builtin_entities)
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_parser import \
-    DeterministicIntentParserConfig
-from snips_nlu.result import intent_classification_result, _slot
+from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
+from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH
 
 
@@ -267,14 +267,14 @@ class TestDeterministicIntentParser(unittest.TestCase):
                "10p.m. or at 12p.m."
 
         # When
-        intent = parser.get_intent(text)
+        parsing = parser.parse(text)
 
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
             intent_name="dummy_intent_1", probability=probability)
 
-        self.assertEqual(intent, expected_intent)
+        self.assertEqual(expected_intent, parsing[RES_INTENT])
 
     def test_should_get_intent_when_filter(self):
         # Given
@@ -287,12 +287,12 @@ class TestDeterministicIntentParser(unittest.TestCase):
         intent_name_2 = "dummy_intent_2"
 
         # When
-        res_1 = parser.get_intent(text, [intent_name_1])
-        res_2 = parser.get_intent(text, [intent_name_2])
+        res_1 = parser.parse(text, intent_name_1)
+        res_2 = parser.parse(text, [intent_name_2])
 
         # Then
-        self.assertEqual(res_1[RES_INTENT_NAME], intent_name_1)
-        self.assertEqual(res_2[RES_INTENT_NAME], intent_name_2)
+        self.assertEqual(intent_name_1, res_1[RES_INTENT][RES_INTENT_NAME])
+        self.assertEqual(intent_name_2, res_2[RES_INTENT][RES_INTENT_NAME])
 
     def test_should_get_intent_after_deserialization(self):
         # Given
@@ -305,13 +305,13 @@ class TestDeterministicIntentParser(unittest.TestCase):
                "10p.m. or at 12p.m."
 
         # When
-        intent = deserialized_parser.get_intent(text)
+        parsing = deserialized_parser.parse(text)
 
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
             intent_name="dummy_intent_1", probability=probability)
-        self.assertEqual(intent, expected_intent)
+        self.assertEqual(expected_intent, parsing[RES_INTENT])
 
     def test_should_get_slots(self):
         # Given
@@ -324,61 +324,62 @@ class TestDeterministicIntentParser(unittest.TestCase):
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
                 " 12p.m.",
                 [
-                    _slot(match_range=(10, 17), value="dummy a",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name"),
-                    _slot(match_range=(37, 44), value="dummy_c",
-                          entity="dummy_entity_2",
-                          slot_name="dummy_slot_name2"),
-                    _slot(match_range=(45, 54), value="at 10p.m.",
-                          entity="snips/datetime",
-                          slot_name="startTime"),
-                    _slot(match_range=(58, 67), value="at 12p.m.",
-                          entity="snips/datetime",
-                          slot_name="startTime")
+                    unresolved_slot(match_range=(10, 17), value="dummy a",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name"),
+                    unresolved_slot(match_range=(37, 44), value="dummy_c",
+                                    entity="dummy_entity_2",
+                                    slot_name="dummy_slot_name2"),
+                    unresolved_slot(match_range=(45, 54), value="at 10p.m.",
+                                    entity="snips/datetime",
+                                    slot_name="startTime"),
+                    unresolved_slot(match_range=(58, 67), value="at 12p.m.",
+                                    entity="snips/datetime",
+                                    slot_name="startTime")
                 ]
             ),
             (
                 "this, is,, a, dummy a query with another dummy_c at 10pm or "
                 "at 12p.m.",
                 [
-                    _slot(match_range=(14, 21), value="dummy a",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name"),
-                    _slot(match_range=(41, 48), value="dummy_c",
-                          entity="dummy_entity_2",
-                          slot_name="dummy_slot_name2"),
-                    _slot(match_range=(49, 56), value="at 10pm",
-                          entity="snips/datetime",
-                          slot_name="startTime"),
-                    _slot(match_range=(60, 69), value="at 12p.m.",
-                          entity="snips/datetime",
-                          slot_name="startTime")
+                    unresolved_slot(match_range=(14, 21), value="dummy a",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name"),
+                    unresolved_slot(match_range=(41, 48), value="dummy_c",
+                                    entity="dummy_entity_2",
+                                    slot_name="dummy_slot_name2"),
+                    unresolved_slot(match_range=(49, 56), value="at 10pm",
+                                    entity="snips/datetime",
+                                    slot_name="startTime"),
+                    unresolved_slot(match_range=(60, 69), value="at 12p.m.",
+                                    entity="snips/datetime",
+                                    slot_name="startTime")
                 ]
             ),
             (
                 "this is a dummy b",
                 [
-                    _slot(match_range=(10, 17), value="dummy b",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name")
+                    unresolved_slot(match_range=(10, 17), value="dummy b",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name")
                 ]
             ),
             (
                 " this is a dummy b ",
                 [
-                    _slot(match_range=(11, 18), value="dummy b",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name")
+                    unresolved_slot(match_range=(11, 18), value="dummy b",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name")
                 ]
             )
         ]
 
         for text, expected_slots in texts:
             # When
-            slots = parser.get_slots(text, intent="dummy_intent_1")
+            parsing = parser.parse(text)
+
             # Then
-            self.assertListEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
     def test_should_get_slots_after_deserialization(self):
         # Given
@@ -393,62 +394,62 @@ class TestDeterministicIntentParser(unittest.TestCase):
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
                 " 12p.m.",
                 [
-                    _slot(match_range=(10, 17), value="dummy a",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name"),
-                    _slot(match_range=(37, 44), value="dummy_c",
-                          entity="dummy_entity_2",
-                          slot_name="dummy_slot_name2"),
-                    _slot(match_range=(45, 54), value="at 10p.m.",
-                          entity="snips/datetime",
-                          slot_name="startTime"),
-                    _slot(match_range=(58, 67), value="at 12p.m.",
-                          entity="snips/datetime",
-                          slot_name="startTime")
+                    unresolved_slot(match_range=(10, 17), value="dummy a",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name"),
+                    unresolved_slot(match_range=(37, 44), value="dummy_c",
+                                    entity="dummy_entity_2",
+                                    slot_name="dummy_slot_name2"),
+                    unresolved_slot(match_range=(45, 54), value="at 10p.m.",
+                                    entity="snips/datetime",
+                                    slot_name="startTime"),
+                    unresolved_slot(match_range=(58, 67), value="at 12p.m.",
+                                    entity="snips/datetime",
+                                    slot_name="startTime")
                 ]
             ),
             (
                 "this, is,, a, dummy a query with another dummy_c at 10pm or "
                 "at 12p.m.",
                 [
-                    _slot(match_range=(14, 21), value="dummy a",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name"),
-                    _slot(match_range=(41, 48), value="dummy_c",
-                          entity="dummy_entity_2",
-                          slot_name="dummy_slot_name2"),
-                    _slot(match_range=(49, 56), value="at 10pm",
-                          entity="snips/datetime",
-                          slot_name="startTime"),
-                    _slot(match_range=(60, 69), value="at 12p.m.",
-                          entity="snips/datetime",
-                          slot_name="startTime")
+                    unresolved_slot(match_range=(14, 21), value="dummy a",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name"),
+                    unresolved_slot(match_range=(41, 48), value="dummy_c",
+                                    entity="dummy_entity_2",
+                                    slot_name="dummy_slot_name2"),
+                    unresolved_slot(match_range=(49, 56), value="at 10pm",
+                                    entity="snips/datetime",
+                                    slot_name="startTime"),
+                    unresolved_slot(match_range=(60, 69), value="at 12p.m.",
+                                    entity="snips/datetime",
+                                    slot_name="startTime")
                 ]
             ),
             (
                 "this is a dummy b",
                 [
-                    _slot(match_range=(10, 17), value="dummy b",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name")
+                    unresolved_slot(match_range=(10, 17), value="dummy b",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name")
                 ]
             ),
             (
                 " this is a dummy b ",
                 [
-                    _slot(match_range=(11, 18), value="dummy b",
-                          entity="dummy_entity_1",
-                          slot_name="dummy_slot_name")
+                    unresolved_slot(match_range=(11, 18), value="dummy b",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name")
                 ]
             )
         ]
 
         for text, expected_slots in texts:
             # When
-            slots = deserialized_parser.get_slots(text,
-                                                  intent="dummy_intent_1")
+            parsing = deserialized_parser.parse(text)
+
             # Then
-            self.assertListEqual(expected_slots, slots)
+            self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
     def test_should_parse_naughty_strings(self):
         # Given
@@ -464,7 +465,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
         # Then
         for s in naughty_strings:
             try:
-                parser.get_slots(s, "dummy_intent_1")
+                parser.parse(s)
             except:  # pylint: disable=W0702
                 trace = tb.format_exc()
                 self.fail('Exception raised:\n %s' % trace)
@@ -533,14 +534,20 @@ class TestDeterministicIntentParser(unittest.TestCase):
         try:
             parser = DeterministicIntentParser()
             parser.fit(naughty_dataset)
-            slots = parser.get_slots("string0", "naughty_intent")
+            parsing = parser.parse("string0")
+
             expected_slot = {
                 'entity': 'non_ascìi_entïty',
-                'range': [0, 7],
+                'range': {
+                    "start": 0,
+                    "end": 7
+                },
                 'slotName': u'non_ascìi_slöt',
                 'value': u'string0'
             }
-            self.assertListEqual([expected_slot], slots)
+            intent_name = parsing[RES_INTENT][RES_INTENT_NAME]
+            self.assertEqual("naughty_intent", intent_name)
+            self.assertListEqual([expected_slot], parsing[RES_SLOTS])
         except:  # pylint: disable=W0702
             trace = tb.format_exc()
             self.fail('Exception raised:\n %s' % trace)
@@ -571,7 +578,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
         self.assertDictEqual(actual_dict, expected_dict)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           ".generate_regexes")
+           "._generate_regexes")
     def test_should_be_serializable(self, mocked_generate_regexes):
         # Given
 
@@ -677,7 +684,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
         expected_parser.slot_names_to_entities = slot_names_to_entities
         expected_parser.patterns = patterns
 
-        self.assertEqual(parser, expected_parser)
+        self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
     def test_should_be_deserializable_before_fitting(self):
         # Given
@@ -699,37 +706,37 @@ class TestDeterministicIntentParser(unittest.TestCase):
         config = DeterministicIntentParserConfig(max_queries=42,
                                                  max_entities=43)
         expected_parser = DeterministicIntentParser(config=config)
-        self.assertEqual(parser, expected_parser)
+        self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
     def test_should_deduplicate_overlapping_slots(self):
         # Given
         language = Language.EN
         slots = [
-            _slot(
+            unresolved_slot(
                 [3, 7],
                 "non_overlapping1",
                 "e",
                 "s1"
             ),
-            _slot(
+            unresolved_slot(
                 [9, 16],
                 "aaaaaaa",
                 "e1",
                 "s2"
             ),
-            _slot(
+            unresolved_slot(
                 [10, 18],
                 "bbbbbbbb",
                 "e1",
                 "s3"
             ),
-            _slot(
+            unresolved_slot(
                 [17, 23],
                 "b cccc",
                 "e1",
                 "s4"
             ),
-            _slot(
+            unresolved_slot(
                 [50, 60],
                 "non_overlapping2",
                 "e",
@@ -738,23 +745,23 @@ class TestDeterministicIntentParser(unittest.TestCase):
         ]
 
         # When
-        deduplicated_slots = deduplicate_overlapping_slots(slots, language)
+        deduplicated_slots = _deduplicate_overlapping_slots(slots, language)
 
         # Then
         expected_slots = [
-            _slot(
+            unresolved_slot(
                 [3, 7],
                 "non_overlapping1",
                 "e",
                 "s1"
             ),
-            _slot(
+            unresolved_slot(
                 [17, 23],
                 "b cccc",
                 "e1",
                 "s4"
             ),
-            _slot(
+            unresolved_slot(
                 [50, 60],
                 "non_overlapping2",
                 "e",
@@ -797,7 +804,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
         ]
 
         # When
-        range_mapping, processed_text = replace_builtin_entities(
+        range_mapping, processed_text = _replace_builtin_entities(
             text=text, language=Language.EN)
 
         # Then
@@ -837,7 +844,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         # When
 
-        processed_utterance = preprocess_builtin_entities(utterance, language)
+        processed_utterance = _preprocess_builtin_entities(utterance, language)
 
         # Then
         expected_utterance = {

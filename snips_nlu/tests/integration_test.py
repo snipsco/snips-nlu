@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import unittest
+from unittest import skip
 
 from future.utils import iteritems
 from nlu_metrics import (compute_cross_val_metrics,
@@ -11,7 +12,7 @@ from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 
-INTENT_CLASSIFICATION_THRESHOLD = 0.8
+INTENT_CLASSIFICATION_THRESHOLD = 0.9
 SLOT_FILLING_THRESHOLD = 0.6
 
 
@@ -32,6 +33,7 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.check_metrics(results)
 
+    @skip("Skip this test until crf tags are fixed in snips-nlu-rs")
     def test_python_rust_engine_performance(self):
         # Given
         dataset_path = PERFORMANCE_DATASET_PATH

@@ -14,11 +14,11 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
-from snips_nlu.result import _slot
+from snips_nlu.pipeline.configs import CRFSlotFillerConfig
+from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, spans_to_tokens_indexes, filter_overlapping_builtins,
-    generate_slots_permutations, exhaustive_slots_permutations)
+    CRFSlotFiller, _spans_to_tokens_indexes, _filter_overlapping_builtins,
+    _generate_slots_permutations, _exhaustive_slots_permutations)
 from snips_nlu.slot_filler.crf_utils import (
     TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX)
 from snips_nlu.slot_filler.feature_factory import (
@@ -41,10 +41,10 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(match_range=(8, 11),
-                  value='two',
-                  entity='snips/number',
-                  slot_name='number_of_cups')]
+            unresolved_slot(match_range=(8, 11),
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_parse_naughty_strings(self):
@@ -95,7 +95,6 @@ class TestCRFSlotFiller(unittest.TestCase):
             trace = tb.format_exc()
             self.fail('Exception raised:\n %s' % trace)
 
-    @unittest.skip("Skip until the bug is fixed on the Rust side")
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
         inputs = ("string%s" % i for i in range(10))
@@ -134,7 +133,10 @@ class TestCRFSlotFiller(unittest.TestCase):
             slots = slot_filler.get_slots("string0")
             expected_slot = {
                 'entity': 'non_ascìi_entïty',
-                'range': [0, 7],
+                'range': {
+                    "start": 0,
+                    "end": 7
+                },
                 'slotName': u'non_ascìi_slöt',
                 'value': u'string0'
             }
@@ -158,10 +160,10 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(match_range=(8, 11),
-                  value='two',
-                  entity='snips/number',
-                  slot_name='number_of_cups')]
+            unresolved_slot(match_range=(8, 11),
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
 
     def test_should_be_serializable_before_fit(self):
@@ -199,7 +201,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertDictEqual(actual_slot_filler_dict,
                              expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler.deserialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
     def test_should_be_deserializable_before_fit(self,
                                                  mock_deserialize_crf_model):
         # Given
@@ -258,7 +260,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertDictEqual(expected_config.to_dict(),
                              slot_filler.config.to_dict())
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler.serialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler._serialize_crf_model')
     def test_should_be_serializable(self, mock_serialize_crf_model):
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
@@ -317,7 +319,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertDictEqual(actual_slot_filler_dict,
                              expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler.deserialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
     def test_should_be_deserializable(self, mock_deserialize_crf_model):
         # Given
         language = Language.EN
@@ -432,7 +434,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         ]
 
         # When
-        indexes = spans_to_tokens_indexes(spans, tokens)
+        indexes = _spans_to_tokens_indexes(spans, tokens)
 
         # Then
         expected_indexes = [[0], [0, 1], [1], [2]]
@@ -537,8 +539,10 @@ class TestCRFSlotFiller(unittest.TestCase):
             "end_date": "snips/datetime",
         }
 
-        slot_filler.get_sequence_probability = MagicMock(
+        # pylint:disable=protected-access
+        slot_filler._get_sequence_probability = MagicMock(
             side_effect=mocked_sequence_probability)
+        # pylint:enable=protected-access
 
         slot_filler.compute_features = MagicMock(return_value=None)
 
@@ -550,8 +554,8 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(value='after 8pm', match_range=(33, 42),
-                  entity='snips/datetime', slot_name='end_date')
+            unresolved_slot(value='after 8pm', match_range=(33, 42),
+                            entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
 
@@ -576,8 +580,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         ]
 
         # When
-        entities = filter_overlapping_builtins(builtin_entities, tokens, tags,
-                                               tagging_scheme)
+        entities = _filter_overlapping_builtins(builtin_entities, tokens, tags,
+                                                tagging_scheme)
 
         # Then
         expected_entities = [
@@ -595,7 +599,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         possible_slots_names = ["a", "b"]
 
         # When
-        perms = exhaustive_slots_permutations(n_builtins, possible_slots_names)
+        perms = _exhaustive_slots_permutations(n_builtins,
+                                               possible_slots_names)
 
         # Then
         expected_perms = {
@@ -612,7 +617,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertSetEqual(set(perms), expected_perms)
 
     @patch("snips_nlu.slot_filler.crf_slot_filler"
-           ".exhaustive_slots_permutations")
+           "._exhaustive_slots_permutations")
     def test_slot_permutations_should_be_exhaustive(
             self, mocked_exhaustive_slots):
         # Given
@@ -621,14 +626,14 @@ class TestCRFSlotFiller(unittest.TestCase):
         exhaustive_permutations_threshold = 100
 
         # When
-        generate_slots_permutations(n_builtins, possible_slots_names,
-                                    exhaustive_permutations_threshold)
+        _generate_slots_permutations(n_builtins, possible_slots_names,
+                                     exhaustive_permutations_threshold)
 
         # Then
         mocked_exhaustive_slots.assert_called_once()
 
     @patch("snips_nlu.slot_filler.crf_slot_filler"
-           ".conservative_slots_permutations")
+           "._conservative_slots_permutations")
     def test_slot_permutations_should_be_conservative(
             self, mocked_conservative_slots):
         # Given
@@ -637,8 +642,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         exhaustive_permutations_threshold = 8
 
         # When
-        generate_slots_permutations(n_builtins, possible_slots_names,
-                                    exhaustive_permutations_threshold)
+        _generate_slots_permutations(n_builtins, possible_slots_names,
+                                     exhaustive_permutations_threshold)
 
         # Then
         mocked_conservative_slots.assert_called_once()
@@ -712,7 +717,7 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         for conf in configs:
             # When
-            slots = generate_slots_permutations(
+            slots = _generate_slots_permutations(
                 conf["n_builtins_in_sentence"],
                 possible_slots,
                 conf["exhaustive_permutations_threshold"])

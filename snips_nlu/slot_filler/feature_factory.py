@@ -1,27 +1,40 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
-from builtins import map
-from builtins import object
+from builtins import map, object
 
 from future.utils import with_metaclass, iteritems
 from nlu_utils import normalize
 
-from snips_nlu.builtin_entities import get_builtin_entities, \
-    get_supported_builtin_entities, BuiltInEntity
-from snips_nlu.constants import LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, \
-    RES_MATCH_RANGE
+from snips_nlu.builtin_entities import (
+    get_builtin_entities, get_supported_builtin_entities, BuiltInEntity)
+from snips_nlu.constants import (
+    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE)
 from snips_nlu.languages import Language
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
-from snips_nlu.slot_filler.features_utils import get_word_chunk, get_shape, \
-    get_all_ngrams, initial_string_from_tokens, entity_filter, \
-    get_intent_custom_entities
+from snips_nlu.slot_filler.features_utils import (
+    get_word_chunk, get_shape, get_all_ngrams, initial_string_from_tokens,
+    entity_filter, get_intent_custom_entities)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
+    """Abstraction to implement to build CRF features
+
+    A :class:`CRFFeatureFactory` is initialized with a dict which describes
+    the feature, it must contains the three following keys:
+
+    -   'factory_name'
+    -   'args': the parameters of the feature, if any
+    -   'offsets': the offsets to consider when using the feature in the CRF.
+        An empty list corresponds to no feature.
+
+
+    In addition, a 'drop_out' to use during train time can be specified.
+    """
+
     def __init__(self, factory_config):
         self.factory_config = factory_config
 
@@ -42,14 +55,19 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         return self.factory_config.get("drop_out", 0.0)
 
     def fit(self, dataset, intent):  # pylint: disable=unused-argument
+        """Fit the factory, if needed, with the provided *dataset* and *intent*
+        """
         return self
 
     @abstractmethod
     def build_features(self):
+        """Build a list of :class:`.Feature`"""
         pass
 
 
 class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
+    """A CRF feature factory which produces only one feature"""
+
     @property
     def feature_name(self):
         # by default, use the factory name
@@ -70,6 +88,8 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
 
 
 class IsDigitFactory(SingleFeatureFactory):
+    """Feature: is the considered token a digit?"""
+
     name = "is_digit"
 
     def compute_feature(self, tokens, token_index):
@@ -77,6 +97,8 @@ class IsDigitFactory(SingleFeatureFactory):
 
 
 class IsFirstFactory(SingleFeatureFactory):
+    """Feature: is the considered token the first in the input?"""
+
     name = "is_first"
 
     def compute_feature(self, tokens, token_index):
@@ -84,6 +106,8 @@ class IsFirstFactory(SingleFeatureFactory):
 
 
 class IsLastFactory(SingleFeatureFactory):
+    """Feature: is the considered token the last in the input?"""
+
     name = "is_last"
 
     def compute_feature(self, tokens, token_index):
@@ -91,6 +115,12 @@ class IsLastFactory(SingleFeatureFactory):
 
 
 class PrefixFactory(SingleFeatureFactory):
+    """Feature: a prefix of the considered token
+
+    This feature has one parameter, *prefix_size*, which specifies the size of
+    the prefix
+    """
+
     name = "prefix"
 
     @property
@@ -107,6 +137,12 @@ class PrefixFactory(SingleFeatureFactory):
 
 
 class SuffixFactory(SingleFeatureFactory):
+    """Feature: a suffix of the considered token
+
+    This feature has one parameter, *suffix_size*, which specifies the size of
+    the suffix
+    """
+
     name = "suffix"
 
     @property
@@ -124,6 +160,8 @@ class SuffixFactory(SingleFeatureFactory):
 
 
 class LengthFactory(SingleFeatureFactory):
+    """Feature: the length (characters) of the considered token"""
+
     name = "length"
 
     def compute_feature(self, tokens, token_index):
@@ -131,6 +169,20 @@ class LengthFactory(SingleFeatureFactory):
 
 
 class NgramFactory(SingleFeatureFactory):
+    """Feature: the n-gram consisting of the considered token and potentially
+    the following ones
+
+    This feature has several parameters:
+
+    -   'n' (int): Corresponds to the size of the n-gram. n=1 corresponds to a
+        unigram, n=2 is a bigram etc
+    -   'use_stemming' (bool): Whether or not to stem the n-gram
+    -   'common_words_gazetteer_name' (str, optional): If defined, use a
+        gazetteer of common words and replace out-of-corpus ngram with the alias
+        'rare_word'
+
+    """
+
     name = "ngram"
 
     def __init__(self, factory_config):
@@ -190,6 +242,20 @@ class NgramFactory(SingleFeatureFactory):
 
 
 class ShapeNgramFactory(SingleFeatureFactory):
+    """Feature: the shape of the n-gram consisting of the considered token and
+    potentially the following ones
+
+    This feature has one parameters, *n*, which corresponds to the size of the
+    n-gram.
+
+    Possible types of shape are:
+
+        -   xxx: lowercased
+        -   Xxx: Capitalized
+        -   XXX: UPPERCASED
+        -   xX: anything else
+    """
+
     name = "shape_ngram"
 
     def __init__(self, factory_config):
@@ -227,6 +293,19 @@ class ShapeNgramFactory(SingleFeatureFactory):
 
 
 class WordClusterFactory(SingleFeatureFactory):
+    """Feature: The cluster which the considered token belongs to, if any
+
+    This feature has several parameters:
+
+    -   'cluster_name' (str): the name of the word cluster to use
+    -   'use_stemming' (bool): whether or not to stem the token before looking
+        for its cluster
+
+    Typical words clusters are the Brown Clusters in which words are
+    clustered into a binary tree resulting in clusters of the form '100111001'
+    See https://en.wikipedia.org/wiki/Brown_clustering
+    """
+
     name = "word_cluster"
 
     def __init__(self, factory_config):
@@ -263,6 +342,20 @@ class WordClusterFactory(SingleFeatureFactory):
 
 
 class EntityMatchFactory(CRFFeatureFactory):
+    """Features: does the considered token belongs to the values of one of the
+    entities in the training dataset
+
+    This factory builds as many features as there are entities in the dataset,
+    one per entity.
+
+    It has the following parameters:
+
+    -   'use_stemming' (bool): whether or not to stem the token before looking
+        for it among the (stemmed) entity values
+    -   'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
+        allows to give more information about the match.
+    """
+
     name = "entity_match"
 
     def __init__(self, factory_config):
@@ -339,6 +432,17 @@ class EntityMatchFactory(CRFFeatureFactory):
 
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):
+    """Features: is the considered token part of a builtin entity such as a
+    date, a temperature etc
+
+    This factory builds as many features as there are builtin entities
+    available in the considered language.
+
+    It has one parameter, *tagging_scheme_code*, which represents a
+    :class:`.TaggingScheme`. This allows to give more information about the
+    match.
+    """
+
     name = "builtin_entity_match"
 
     def __init__(self, factory_config):
@@ -415,6 +519,8 @@ FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
 
 
 def get_feature_factory(factory_config):
+    """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
+    config"""
     factory_name = factory_config["factory_name"]
     for factory in FACTORIES:
         if factory_name == factory.name:

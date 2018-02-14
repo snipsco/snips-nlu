@@ -8,6 +8,16 @@ from nlu_utils import (tokenize as _tokenize,
 
 
 class Token(object):
+    """Token object which is output by the tokenization
+
+    Attributes:
+        value (str): Tokenized string
+        normalized (str): Normalized value of the tokenized string
+        stem (str, optional): Stemmed value, if defined, of the tokenized
+            string
+        start (int): Start position of the token within the sentence
+        end (int): End position of the token within the sentence
+    """
     def __init__(self, value, start, end, normalized=None, stem=None):
         self.value = value
         self.start = start
@@ -35,6 +45,15 @@ class Token(object):
 
 
 def tokenize(string, language):
+    """Tokenizes the input
+
+    Args:
+        string (str): Input to tokenize
+        language (:class:`.Language`): Language to use during tokenization
+
+    Returns:
+        list of :class:`.Token`: The list of tokenized values
+    """
     tokens = [Token(value=token["value"],
                     start=token["char_range"]["start"],
                     end=token["char_range"]["end"])
@@ -43,5 +62,7 @@ def tokenize(string, language):
 
 
 def tokenize_light(string, language):
+    """Same behavior as :func:`tokenize` but returns tokenized strings instead
+        of :class:`Token` objects"""
     tokenized_string = _tokenize_light(string, language.iso_code)
     return tokenized_string

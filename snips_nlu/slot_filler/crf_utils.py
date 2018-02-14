@@ -1,26 +1,34 @@
+from __future__ import unicode_literals
+
 from builtins import range
 from enum import Enum, unique
 
 from snips_nlu.constants import TEXT, SLOT_NAME
-from snips_nlu.result import _slot
+from snips_nlu.result import unresolved_slot
 from snips_nlu.tokenization import tokenize, Token
 
-BEGINNING_PREFIX = u'B-'
-INSIDE_PREFIX = u'I-'
-LAST_PREFIX = u'L-'
-UNIT_PREFIX = u'U-'
-OUTSIDE = u'O'
+BEGINNING_PREFIX = "B-"
+INSIDE_PREFIX = "I-"
+LAST_PREFIX = "L-"
+UNIT_PREFIX = "U-"
+OUTSIDE = "O"
 
-RANGE = u"range"
-TAGS = u"tags"
-TOKENS = u"tokens"
+RANGE = "range"
+TAGS = "tags"
+TOKENS = "tokens"
 
 
 @unique
 class TaggingScheme(Enum):
+    """CRF Coding Scheme"""
+
     IO = 0
+    """Inside-Outside scheme"""
     BIO = 1
+    """Beginning-Inside-Outside scheme"""
     BILOU = 2
+    """Beginning-Inside-Last-Outside-Unit scheme, sometimes referred as
+         BWEMO"""
 
 
 def tag_name_to_slot_name(tag):
@@ -134,10 +142,10 @@ def tags_to_preslots(tokens, tags, tagging_scheme):
 def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     return [
-        _slot(match_range=slot["range"],
-              value=text[slot["range"][0]:slot["range"][1]],
-              entity=intent_slots_mapping[slot[SLOT_NAME]],
-              slot_name=slot[SLOT_NAME])
+        unresolved_slot(match_range=slot["range"],
+                        value=text[slot["range"][0]:slot["range"][1]],
+                        entity=intent_slots_mapping[slot[SLOT_NAME]],
+                        slot_name=slot[SLOT_NAME])
         for slot in slots
     ]
 

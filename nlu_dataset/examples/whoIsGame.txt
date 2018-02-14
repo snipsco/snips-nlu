@@ -1,0 +1,3 @@
+who is the [role:role](president) of [country:country](France)
+who is the [role:role](prime minister) of [country:country](UK)
+who is the [role:role](CEO) of [company:company](Google) please

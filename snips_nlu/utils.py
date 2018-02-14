@@ -1,18 +1,23 @@
 from __future__ import unicode_literals
-from builtins import object
 
 import errno
 import numbers
 import os
+from builtins import object
 from collections import OrderedDict, namedtuple, Mapping
 
 import numpy as np
 
-from snips_nlu.constants import INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY, \
-    RESOURCES_PATH
+from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
+                                 RESOURCES_PATH, END, START)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
+
+
+class NotTrained(LookupError):
+    """Exception used when a processing unit is used while not fitted"""
+    pass
 
 
 class ClassPropertyDescriptor(object):
@@ -130,8 +135,9 @@ def get_resources_path(language):
 
 
 def mkdir_p(path):
-    """
-    Reproduces the mkdir -p shell command, see
+    """Reproduces the 'mkdir -p shell' command
+
+    See
     http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     try:
@@ -143,20 +149,21 @@ def mkdir_p(path):
             raise
 
 
+# pylint:disable=line-too-long
 def regex_escape(s):
-    """
-    Escapes all regular expression meta characters in `text`.
+    """Escapes all regular expression meta characters in *s*
 
     The string returned may be safely used as a literal in a regular
-     expression.
+    expression.
 
-    This function is more precise than `re.escape`, the latter escapes
+    This function is more precise than :func:`re.escape`, the latter escapes
     all non-alphanumeric characters which can cause cross-platform
     compatibility issues.
 
     References:
-        https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
-        https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
+
+    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
+    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
     """
     escaped_string = ""
     for c in s:
@@ -166,8 +173,11 @@ def regex_escape(s):
     return escaped_string
 
 
+# pylint:enable=line-too-long
+
+
 def check_random_state(seed):
-    """Turn seed into a np.random.RandomState instance
+    """Turn seed into a :class:`numpy.random.RandomState` instance
 
     If seed is None, return the RandomState singleton used by np.random.
     If seed is an int, return a new RandomState instance seeded with seed.
@@ -177,7 +187,7 @@ def check_random_state(seed):
     # pylint: disable=W0212
     # pylint: disable=c-extension-no-member
     if seed is None or seed is np.random:
-        return np.random.mtrand._rand # pylint: disable=c-extension-no-member
+        return np.random.mtrand._rand  # pylint: disable=c-extension-no-member
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
     if isinstance(seed, np.random.RandomState):
@@ -187,8 +197,7 @@ def check_random_state(seed):
 
 
 def get_slot_name_mapping(dataset, intent):
-    """
-    Returns a dict which maps slot names to entities for the provided intent
+    """Returns a dict which maps slot names to entities for the provided intent
     """
     slot_name_mapping = dict()
     for utterance in dataset[INTENTS][intent][UTTERANCES]:
@@ -199,12 +208,18 @@ def get_slot_name_mapping(dataset, intent):
 
 
 def get_slot_name_mappings(dataset):
-    """
-    Returns a dict which maps intents to their slot name mapping
-    """
+    """Returns a dict which maps intents to their slot name mapping"""
     return {intent: get_slot_name_mapping(dataset, intent)
             for intent in dataset[INTENTS]}
 
 
 def ranges_overlap(lhs_range, rhs_range):
-    return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]
+    if isinstance(lhs_range, dict) and isinstance(rhs_range, dict):
+        return lhs_range[END] > rhs_range[START] \
+               and lhs_range[START] < rhs_range[END]
+    elif isinstance(lhs_range, (tuple, list)) \
+            and isinstance(rhs_range, (tuple, list)):
+        return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]
+    else:
+        raise TypeError("Cannot check overlap on objects of type: %s"
+                        % type(lhs_range))

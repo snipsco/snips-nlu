@@ -1,18 +1,27 @@
+from builtins import map
 from copy import deepcopy
 
-from builtins import map
-
-from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_parser import (
-    ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
+from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.utils import classproperty
 
 
 class NLUEngineConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.SnipsNLUEngine` object
+
+    Args:
+        intent_parsers_configs (list): List of intent parser configs
+            (:class:`.ProcessingUnitConfig`). The order in the list determines
+            the order in which each parser will be called by the nlu engine.
+    """
+
     # pylint: disable=super-init-not-called
     def __init__(self, intent_parsers_configs=None):
+
         if intent_parsers_configs is None:
+            from snips_nlu.pipeline.configs import (
+                ProbabilisticIntentParserConfig,
+                DeterministicIntentParserConfig)
             intent_parsers_configs = [
                 DeterministicIntentParserConfig(),
                 ProbabilisticIntentParserConfig()

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import io
 import os
+import traceback as tb
 
 from builtins import range
 from mock import patch, MagicMock

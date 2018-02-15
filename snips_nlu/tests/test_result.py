@@ -1,16 +1,16 @@
 from __future__ import unicode_literals
 
 import json
+import unittest
 
 from snips_nlu.constants import (RES_INTENT, RES_SLOTS, RES_INTENT_NAME,
                                  RES_PROBABILITY, RES_MATCH_RANGE, RES_INPUT,
                                  RES_ENTITY, RES_SLOT_NAME, RES_VALUE)
 from snips_nlu.result import (parsing_result, intent_classification_result,
                               unresolved_slot)
-from snips_nlu.tests.utils import SnipsTest
 
 
-class TestResult(SnipsTest):
+class TestResult(unittest.TestCase):
     def test_should_serialize_results(self):
         # Given
         input_ = "hello world"

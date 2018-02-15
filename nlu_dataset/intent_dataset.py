@@ -3,7 +3,6 @@ from __future__ import print_function
 
 import io
 import os
-
 from builtins import object
 
 from nlu_dataset.builtin_entities import BUILTIN_ENTITIES
@@ -91,11 +90,12 @@ class IntentDataset(object):
     def mk_entity(cls, slot):
         if slot.entity in BUILTIN_ENTITIES:
             return dict()
-        return dict(
-            use_synonyms=True,
-            automatically_extensible=True,
-            data=[]
-        )
+        else:
+            return dict(
+                use_synonyms=True,
+                automatically_extensible=True,
+                data=[]
+            )
 
     @property
     def json_slots(self):
@@ -136,10 +136,10 @@ class IntentDataset(object):
                 entity=slot.entity,
                 text=slot.text,
             )
-
-        return dict(
-            text=slot.text,
-        )
+        else:
+            return dict(
+                text=slot.text,
+            )
 
 
 class Utterance(object):
@@ -270,7 +270,7 @@ class SM(object):
 
         :param text: string the text that was tagged
         """
-        assert self.slots
+        assert (len(self.slots) > 0)
         slot = self.slots[-1]
         slot.text = text
         slot.tag_range.end = self.current - 1
@@ -297,9 +297,9 @@ class SM(object):
 
     def __getitem__(self, key):
         current = self.current
-        if isinstance(key, int):
+        if type(key) == int:
             return self.input[current + key]
-        elif isinstance(key, slice):
+        elif type(key) == slice:
             start = current + key.start if key.start else current
             return self.input[slice(start, key.stop, key.step)]
         else:
@@ -310,7 +310,7 @@ def capture_text(state):
     next_pos = state.find('[')
     sub = state[:] if next_pos < 0 else state[:next_pos]
 
-    if sub.strip():
+    if len(sub.strip()) > 0:
         state.add_text(sub)
     if next_pos >= 0:
         state.move(next_pos)

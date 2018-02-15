@@ -68,8 +68,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             dumped = bytes(json.dumps(serialized_featurizer),
                            encoding="utf8").decode("utf8")
 
-        msg = "SnipsNLUEngine should be deserializable from dict with unicode" \
-              " values"
+        msg = "SnipsNLUEngine should be deserializable from dict with unicode " \
+              "values"
         with self.fail_if_exception(msg):
             _ = Featurizer.from_dict(json.loads(dumped))
 

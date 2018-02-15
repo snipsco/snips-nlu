@@ -612,7 +612,7 @@ class TestSnipsNLUEngine(SnipsTest):
             engine = SnipsNLUEngine()
 
             # When / Then
-            msg = "Could not fit engine in '%s'" % l.iso_code
+            msg = "Could not fit engine in '%s': %s" % l.iso_code
             with self.fail_if_exception(msg):
                 engine = engine.fit(dataset)
 

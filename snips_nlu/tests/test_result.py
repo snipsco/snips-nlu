@@ -24,9 +24,10 @@ class TestResult(unittest.TestCase):
         result = parsing_result(input=input_, intent=intent, slots=slots)
 
         # Then
-        msg = "Result dict should be json serializable"
-        with self.fail_if_exception(msg):
+        try:
             json.dumps(result)
+        except:  # pylint: disable=W0702
+            self.fail("Result dict should be json serializable")
 
         expected_result = {
             RES_INTENT: {RES_INTENT_NAME: 'world', RES_PROBABILITY: 0.5},

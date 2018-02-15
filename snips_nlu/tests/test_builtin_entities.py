@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import traceback as tb
+import unittest
+
 import rustling
 from builtin_entities_ontology import get_ontology
 from future.utils import itervalues
@@ -10,10 +13,9 @@ from snips_nlu.builtin_entities import (
     RUSTLING_ENTITIES, RustlingParser)
 from snips_nlu.constants import RES_MATCH_RANGE, VALUE, ENTITY
 from snips_nlu.languages import Language
-from snips_nlu.tests.utils import SnipsTest
 
 
-class TestBuiltInEntities(SnipsTest):
+class TestBuiltInEntities(unittest.TestCase):
     def test_rustling_parser_should_parse(self):
         # Given
         language = Language.EN
@@ -153,10 +155,12 @@ class TestBuiltInEntities(SnipsTest):
         text = ""
 
         for l in Language:
-            msg = "get_builtin_entities does not support %s." % l.iso_code
-            with self.fail_if_exception(msg):
-                # When / Then
+            # When / Then
+            try:
                 get_builtin_entities(text, l)
+            except:  # pylint: disable=W0702
+                self.fail("get_builtin_entities does not support %s."
+                          "\n%s" % (l.iso_code, tb.format_exc()))
 
     def test_get_builtin_entities_should_respect_scope(self):
         # Given

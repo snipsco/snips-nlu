@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import json
 import unittest
 from unittest import skip
 
@@ -16,7 +15,7 @@ from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 from snips_nlu.tokenization import tokenize_light
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.8
-SLOT_FILLING_THRESHOLD = 0.8
+SLOT_FILLING_THRESHOLD = 0.7
 
 SKIPPED_DATE_PREFIXES = {"at", "in", "for", "on"}
 
@@ -34,8 +33,6 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
             train_size_ratio=1.0,
             slot_matching_lambda=_slot_matching_lambda,
             progression_handler=None)
-
-        print(json.dumps(results, indent=2))
 
         # Then
         self.check_metrics(results)

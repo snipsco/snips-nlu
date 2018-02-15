@@ -138,15 +138,16 @@ Let's have a look at what has been generated and more precisely the
       }
     }
 
-You can see that both entities from the intent utterances and from the ``room`` entity file were added.
+You can see that both entities from the intent utterances and from the ``room``
+entity file were added.
 
 By default, the ``room`` entity is set to be
 :ref:`automatically extensible <auto_extensible>` but in our case we don't want
 to handle any entity value that would not be part of the dataset, so we set
 this attribute to ``false``.
 Moreover we are going to add some rooms that were not in the previous sentences
-and that we want our assistant to cover. We also add some mode :ref:`synonyms <synonyms>`, so
-at the end this is what we have:
+and that we want our assistant to cover. We also add some
+:ref:`synonyms <synonyms>`, so at the end this is what we have:
 
 .. code-block:: json
 

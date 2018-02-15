@@ -6,7 +6,6 @@ import io
 import json
 import os
 from builtins import input, bytes
-from pprint import pprint
 
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
@@ -29,7 +28,7 @@ def debug_training(dataset_path, config_path=None):
             query = query.decode("utf8")
         if query == "q":
             break
-        pprint(engine.parse(query))
+        print(json.dumps(engine.parse(query), indent=2))
 
 
 def debug_inference(engine_path):
@@ -43,7 +42,7 @@ def debug_inference(engine_path):
             query = query.decode("utf8")
         if query == "q":
             break
-        pprint(engine.parse(query))
+        print(json.dumps(engine.parse(query), indent=2))
 
 
 def main_debug():

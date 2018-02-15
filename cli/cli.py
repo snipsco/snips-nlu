@@ -5,8 +5,6 @@ import io
 import json
 import os
 import sys
-from pprint import pprint
-
 from builtins import bytes, input
 
 
@@ -70,7 +68,7 @@ def main_engine_inference():
             query = query.decode("utf8")
         if query == "q":
             break
-        pprint(engine.parse(query))
+        print(json.dumps(engine.parse(query), indent=2))
 
 
 def parse_cross_val_args(args):

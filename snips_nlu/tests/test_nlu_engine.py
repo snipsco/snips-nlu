@@ -2,9 +2,11 @@
 from __future__ import unicode_literals
 
 import json
+import traceback as tb
+import unittest
+from builtins import str
 from copy import deepcopy
 
-from builtins import str
 from mock import patch
 
 import snips_nlu
@@ -24,10 +26,10 @@ from snips_nlu.result import (
     empty_result,
     custom_slot, resolved_slot)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET, SnipsTest)
+    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET)
 
 
-class TestSnipsNLUEngine(SnipsTest):
+class TestSnipsNLUEngine(unittest.TestCase):
     def setUp(self):
         reset_processing_units()
 
@@ -388,9 +390,12 @@ class TestSnipsNLUEngine(SnipsTest):
         result = deserialized_engine.parse(input_)
 
         # Then
-        msg = "SnipsNLUEngine dict should be json serializable to utf-8"
-        with self.fail_if_exception(msg):
+        try:
             json.dumps(engine_dict).encode("utf-8")
+        except Exception as e:  # pylint: disable=W0703
+            trace = tb.format_exc()
+            self.fail("SnipsNLUEngine dict should be json serializable "
+                      "to utf-8.\n{}\n{}".format(e, trace))
         expected_slots = [
             resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
                           'snips/number', 'number_of_cups'),
@@ -612,13 +617,17 @@ class TestSnipsNLUEngine(SnipsTest):
             engine = SnipsNLUEngine()
 
             # When / Then
-            msg = "Could not fit engine in '%s': %s" % l.iso_code
-            with self.fail_if_exception(msg):
+            try:
                 engine = engine.fit(dataset)
+            except:  # pylint: disable=W0702
+                self.fail("Could not fit engine in '%s': %s"
+                          % (l.iso_code, tb.format_exc()))
 
-            msg = "Could not parse in '%s': %s" % l.iso_code
-            with self.fail_if_exception(msg):
+            try:
                 engine.parse(text)
+            except:  # pylint: disable=W0702
+                self.fail("Could not fit engine in '%s': %s"
+                          % (l.iso_code, tb.format_exc()))
 
     def test_nlu_engine_should_raise_error_with_bytes_input(self):
         # Given

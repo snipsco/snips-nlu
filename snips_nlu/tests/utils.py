@@ -3,9 +3,6 @@ from __future__ import unicode_literals
 import io
 import json
 import os
-import traceback as tb
-from contextlib import contextmanager
-from unittest import TestCase
 
 TEST_PATH = os.path.dirname(os.path.abspath(__file__))
 SAMPLE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
@@ -17,17 +14,6 @@ WEATHER_DATASET_PATH = os.path.join(TEST_PATH, "resources",
 
 PERFORMANCE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
                                         "performance_dataset.json")
-
-
-class SnipsTest(TestCase):
-
-    @contextmanager
-    def fail_if_exception(self, msg):
-        try:
-            yield
-        except Exception:  # pylint: disable=W0702
-            trace = tb.format_exc
-            self.fail("{}\b{}".format(msg, trace))
 
 
 def get_empty_dataset(language):

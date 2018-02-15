@@ -1,16 +1,16 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import unittest
 from builtins import str
 
 from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
     ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.tests.utils import SnipsTest
 
 
-class TestDataset(SnipsTest):
+class TestDataset(unittest.TestCase):
     def test_missing_intent_key_should_raise_exception(self):
         # Given
         dataset = {
@@ -396,8 +396,10 @@ class TestDataset(SnipsTest):
         }
 
         # When / Then
-        with self.fail_if_exception("Could not validate dataset"):
+        try:
             validate_and_format_dataset(dataset)
+        except:  # pylint: disable=W0702
+            self.fail("Could not validate dataset")
 
     def test_should_remove_empty_entities_value_and_empty_synonyms(self):
         # Given

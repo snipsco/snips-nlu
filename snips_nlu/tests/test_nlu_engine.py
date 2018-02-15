@@ -616,7 +616,7 @@ class TestSnipsNLUEngine(SnipsTest):
             with self.fail_if_exception(msg):
                 engine = engine.fit(dataset)
 
-            msg = "Could not parse in '%s': %s" % l.iso_code
+            msg = "Could not parse in '%s'" % l.iso_code
             with self.fail_if_exception(msg):
                 engine.parse(text)
 

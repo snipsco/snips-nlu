@@ -10,6 +10,7 @@ RCFILEPATH = os.path.join(ROOT_PATH, "tools", "pylintrc")
 
 class TestLinting(unittest.TestCase):
     def test_linting(self):
+        assert False
         args = ["--output-format", "parseable", "--rcfile", RCFILEPATH]
         args += all_python_files()
 

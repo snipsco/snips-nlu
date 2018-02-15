@@ -15,7 +15,8 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import (
     is_builtin_entity, BuiltInEntity, get_builtin_entities)
-from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA
+from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA, \
+    RES_ENTITY, START, END, RES_VALUE
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.languages import Language
@@ -286,9 +287,10 @@ class CRFSlotFiller(SlotFiller):
                     best_updated_tags = updated_tags
                     best_permutation_score = score
             augmented_tags = best_updated_tags
-        return tags_to_slots(text, tokens, augmented_tags,
-                             self.config.tagging_scheme,
-                             self.slot_name_mapping)
+        slots = tags_to_slots(text, tokens, augmented_tags,
+                              self.config.tagging_scheme,
+                              self.slot_name_mapping)
+        return _reconciliate_builtin_slots(text, slots, builtin_entities)
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -419,6 +421,30 @@ def _spans_to_tokens_indexes(spans, tokens):
                 indexes.append(i)
         tokens_indexes.append(indexes)
     return tokens_indexes
+
+
+def _reconciliate_builtin_slots(text, slots, builtin_entities):
+    for slot in slots:
+        if not is_builtin_entity(slot[RES_ENTITY]):
+            continue
+        for be in builtin_entities:
+            if be[ENTITY].label != slot[RES_ENTITY]:
+                continue
+            be_start = be[RES_MATCH_RANGE][0]
+            be_end = be[RES_MATCH_RANGE][1]
+            be_length = be_end - be_start
+            slot_start = slot[RES_MATCH_RANGE][START]
+            slot_end = slot[RES_MATCH_RANGE][END]
+            slot_length = slot_end - slot_start
+            if be_start <= slot_start and be_end >= slot_end \
+                    and be_length > slot_length:
+                slot[RES_MATCH_RANGE] = {
+                    START: be_start,
+                    END: be_end
+                }
+                slot[RES_VALUE] = text[be_start: be_end]
+                break
+    return slots
 
 
 def _encode_tag(tag):

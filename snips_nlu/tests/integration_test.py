@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import json
 import unittest
 from unittest import skip
 
@@ -9,11 +10,15 @@ from nlu_metrics import (compute_cross_val_metrics,
                          compute_cross_val_nlu_metrics)
 from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 
+from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
+from snips_nlu.tokenization import tokenize_light
 
-INTENT_CLASSIFICATION_THRESHOLD = 0.9
-SLOT_FILLING_THRESHOLD = 0.6
+INTENT_CLASSIFICATION_THRESHOLD = 0.8
+SLOT_FILLING_THRESHOLD = 0.8
+
+SKIPPED_DATE_PREFIXES = {"at", "in", "for", "on"}
 
 
 class IntegrationTestSnipsNLUEngine(unittest.TestCase):
@@ -27,8 +32,10 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
             engine_class=TrainingEngine,
             nb_folds=5,
             train_size_ratio=1.0,
-            slot_matching_lambda=None,
+            slot_matching_lambda=_slot_matching_lambda,
             progression_handler=None)
+
+        print(json.dumps(results, indent=2))
 
         # Then
         self.check_metrics(results)
@@ -76,3 +83,19 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
                     recall, SLOT_FILLING_THRESHOLD,
                     "Slot recall is too low (%.3f) for slot '%s' of intent "
                     "'%s'" % (recall, slot_name, intent_name))
+
+
+def _slot_matching_lambda(lhs_slot, rhs_slot):
+    lhs_value = lhs_slot["text"]
+    rhs_value = rhs_slot["rawValue"]
+    if lhs_slot["entity"] != "snips/datetime":
+        return lhs_value == rhs_value
+    else:
+        # Allow fuzzy matching when comparing datetimes
+        lhs_tokens = tokenize_light(lhs_value, Language.EN)
+        rhs_tokens = tokenize_light(rhs_value, Language.EN)
+        if lhs_tokens and lhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:
+            lhs_tokens = lhs_tokens[1:]
+        if rhs_tokens and rhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:
+            rhs_tokens = rhs_tokens[1:]
+        return lhs_tokens == rhs_tokens

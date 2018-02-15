@@ -97,9 +97,8 @@ class IntentDataset(object):
     def mk_entity(cls, slot, automatically_extensible=True, use_synonyms=True):
         if slot.entity in BUILTIN_ENTITIES:
             return BuiltinEntity(slot.entity)
-        else:
-            return CustomEntity([EntityUtterance(slot.text)],
-                                automatically_extensible, use_synonyms)
+        return CustomEntity([EntityUtterance(slot.text)],
+                            automatically_extensible, use_synonyms)
 
     @property
     def json_slots(self):

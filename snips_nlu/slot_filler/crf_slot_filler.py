@@ -6,10 +6,10 @@ import io
 import math
 import os
 import tempfile
-from builtins import range
 from copy import copy
 from itertools import groupby, permutations, product
 
+from builtins import range
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 

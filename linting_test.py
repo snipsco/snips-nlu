@@ -1,16 +1,19 @@
+from __future__ import unicode_literals
+
 import os
 import unittest
 
 from pylint.lint import Run
 
-from snips_nlu.constants import PACKAGE_PATH, ROOT_PATH
+ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 RCFILEPATH = os.path.join(ROOT_PATH, "tools", "pylintrc")
+
+TESTED_PACKAGES = ["snips_nlu", "cli", "debug", "nlu_dataset", "samples"]
 
 
 class TestLinting(unittest.TestCase):
     def test_linting(self):
-        assert False
         args = ["--output-format", "parseable", "--rcfile", RCFILEPATH]
         args += all_python_files()
 
@@ -20,11 +23,11 @@ class TestLinting(unittest.TestCase):
 
 def all_python_files():
     files = []
-    for dirpath, _, filenames in os.walk(PACKAGE_PATH):
-        if "snips-nlu-resources" in dirpath:
-            continue
-        files += [
-            os.sep.join([dirpath, f]) for f in filenames if f.endswith(".py")
-        ]
+    for p in TESTED_PACKAGES:
+        for dirpath, _, filenames in os.walk(os.path.join(ROOT_PATH, p)):
+            files += [
+                os.sep.join([dirpath, f]) for f in filenames if
+                f.endswith(".py")
+            ]
 
     return files

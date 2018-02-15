@@ -68,7 +68,7 @@ Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
     switch off the light the [room:room](kitchen), will you?
     Switch the [room:room](bedroom)'s lights off please
 
-the last file, ``setTemperature.txt``:
+And now the last file, ``setTemperature.txt``:
 
 .. code-block:: console
 
@@ -82,7 +82,7 @@ which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
 type that we used here is a :ref:`builtin entity <builtin_entity_resolution>`
 that would help us resolve properly the temperature values.
 
-and the ``room.txt`` entity file:
+Let's move to the ``room.txt`` entity file:
 
 .. code-block:: console
 

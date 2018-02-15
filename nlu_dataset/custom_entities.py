@@ -1,10 +1,11 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from future.builtins import object
-
 import csv
 import io
+
+import six
+from future.builtins import object
 
 
 def utf_8_encoder(f):
@@ -16,7 +17,7 @@ class CustomEntity(object):
     """Entity of a :class:AssistantDataset
 
         Attributes:
-            :class:CustomEntity.utterances: language of the dataset
+            :class:CustomEntity.utterances: list of :class:EntityUtterance
             :class:CustomEntity.automatically_extensible: should the NLU output
              be filtered on
             :class:CustomEntity.use_synonyms: should the synonyms be used in
@@ -33,10 +34,14 @@ class CustomEntity(object):
     @classmethod
     def from_file(cls, entity_file_name):
         utterances = []
-        with io.open(entity_file_name, "r", encoding="utf8") as f:
-            reader = csv.reader(list(utf_8_encoder(f)))
+        with io.open(entity_file_name, "r", encoding="utf-8") as f:
+            it = f
+            if six.PY2:
+                it = list(utf_8_encoder(it))
+            reader = csv.reader(list(it))
             for row in reader:
-                row = [cell.encode("utf-8") for cell in row]
+                if six.PY2:
+                    row = [cell.decode("utf-8") for cell in row]
                 value = row[0]
                 if len(row) > 1:
                     synonyms = row[1:]
@@ -45,7 +50,6 @@ class CustomEntity(object):
                 utterances.append(EntityUtterance(value, synonyms))
         return cls(utterances, automatically_extensible=True,
                    use_synonyms=True)
-
 
     @property
     def json(self):
@@ -57,6 +61,14 @@ class CustomEntity(object):
 
 
 class EntityUtterance(object):
+    """Represent a value of an :class:CustomEntity with potential synonyms
+
+    Attributes:
+        :class:CustomEntity.value: str entity value
+        :class:CustomEntity.synonyms: list of str. The value to remap to the
+        utterance value
+        """
+
     def __init__(self, value, synonyms=None):
         self.value = value
         if synonyms is None:

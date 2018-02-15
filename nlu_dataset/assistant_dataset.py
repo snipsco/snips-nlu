@@ -4,9 +4,9 @@ from __future__ import unicode_literals
 import argparse
 import json
 import os
-
 from copy import deepcopy
-from future.utils import iteritems, itervalues
+
+from future.utils import iteritems
 
 from nlu_dataset.builtin_entities import BUILTIN_ENTITIES
 from nlu_dataset.custom_entities import CustomEntity
@@ -63,12 +63,21 @@ class AssistantDataset(object):
             for intent_name, dataset_json in iteritems(intent_datasets_json)
         }
         ents = deepcopy(self.entities)
+        ents_values = dict()
+        for entity_name, entity in iteritems(self.entities):
+            ents_values[entity_name] = set(a.value for a in entity.utterances)
+            if entity.use_synonyms:
+                ents_values[entity_name].update(
+                    set(t for s in entity.utterances for t in s.synonyms))
+
         for dataset in self.intent_datasets:
             for ent_name, ent in iteritems(dataset.entities):
                 if ent_name not in ents:
                     ents[ent_name] = ent
                 elif ent_name not in BUILTIN_ENTITIES:
-                    ents[ent_name].utterances.extend(ent.utterances)
+                    for u in ent.utterances:
+                        if u.value not in ents_values:
+                            ents[ent_name].utterances.append(u)
         ents = {
             entity_name: entity.json
             for entity_name, entity in iteritems(ents)

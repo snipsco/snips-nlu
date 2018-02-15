@@ -15,4 +15,4 @@ class BuiltinEntity(object):
 
     @property
     def json(self):
-        return {}
+        return dict()

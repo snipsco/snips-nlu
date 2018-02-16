@@ -35,4 +35,4 @@ class TestSamples(unittest.TestCase):
 
             # Then
             intent_name = result[RES_INTENT][RES_INTENT_NAME]
-            self.assertEqual("SampleGetWeather", intent_name)
+            self.assertEqual("sampleGetWeather", intent_name)

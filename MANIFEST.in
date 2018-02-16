@@ -9,3 +9,5 @@ recursive-include snips_nlu/snips-nlu-resources/fr *
 recursive-include snips_nlu/snips-nlu-resources/ko *
 recursive-include snips_nlu/snips-nlu-resources/zh *
 global-exclude __pycache__ *.py[cod]
+exclude cli/tests/*
+exclude samples/tests/*

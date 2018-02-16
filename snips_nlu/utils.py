@@ -131,7 +131,7 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
 
 
 def get_resources_path(language):
-    return os.path.join(RESOURCES_PATH, language.iso_code)
+    return os.path.join(RESOURCES_PATH, language)
 
 
 def mkdir_p(path):

@@ -4,19 +4,18 @@ from __future__ import unicode_literals
 import io
 import os
 import re
-
 from builtins import range
+
 from mock import patch
 
-from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
                                  SLOT_NAME, RES_INTENT_NAME, RES_SLOTS,
-                                 RES_INTENT)
+                                 RES_INTENT, LANGUAGE_EN, SNIPS_ORDINAL,
+                                 SNIPS_DATETIME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
     _replace_builtin_entities, _preprocess_builtin_entities)
-from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
@@ -668,7 +667,7 @@ class TestDeterministicIntentParser(SnipsTest):
         config = DeterministicIntentParserConfig(max_queries=42,
                                                  max_entities=43)
         expected_parser = DeterministicIntentParser(config=config)
-        expected_parser.language = Language.EN
+        expected_parser.language = LANGUAGE_EN
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
         expected_parser.slot_names_to_entities = slot_names_to_entities
         expected_parser.patterns = patterns
@@ -699,7 +698,7 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_deduplicate_overlapping_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         slots = [
             unresolved_slot(
                 [3, 7],
@@ -783,18 +782,18 @@ class TestDeterministicIntentParser(SnipsTest):
             {
                 RES_MATCH_RANGE: (7, 12),
                 VALUE: "first",
-                ENTITY: BuiltInEntity.ORDINAL
+                ENTITY: SNIPS_ORDINAL
             },
             {
                 RES_MATCH_RANGE: (28, 31),
                 VALUE: "9pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY: SNIPS_DATETIME
             }
         ]
 
         # When
         range_mapping, processed_text = _replace_builtin_entities(
-            text=text, language=Language.EN)
+            text=text, language=LANGUAGE_EN)
 
         # Then
         expected_mapping = {
@@ -809,7 +808,7 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_preprocess_builtin_entities(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         utterance = {
             DATA: [
                 {

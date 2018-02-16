@@ -9,7 +9,7 @@ from nlu_metrics import (compute_cross_val_metrics,
                          compute_cross_val_nlu_metrics)
 from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 
-from snips_nlu.languages import Language
+from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 from snips_nlu.tokenization import tokenize_light
@@ -89,8 +89,8 @@ def _slot_matching_lambda(lhs_slot, rhs_slot):
         return lhs_value == rhs_value
     else:
         # Allow fuzzy matching when comparing datetimes
-        lhs_tokens = tokenize_light(lhs_value, Language.EN)
-        rhs_tokens = tokenize_light(rhs_value, Language.EN)
+        lhs_tokens = tokenize_light(lhs_value, LANGUAGE_EN)
+        rhs_tokens = tokenize_light(rhs_value, LANGUAGE_EN)
         if lhs_tokens and lhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:
             lhs_tokens = lhs_tokens[1:]
         if rhs_tokens and rhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:

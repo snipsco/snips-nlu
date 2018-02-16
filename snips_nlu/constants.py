@@ -51,3 +51,19 @@ UNKNOWNWORD = "unknownword"
 VALIDATED = "validated"
 START = "start"
 END = "end"
+
+# builtin entities
+SNIPS_AMOUNT_OF_MONEY = "snips/amountOfMoney"
+SNIPS_DATETIME = "snips/datetime"
+SNIPS_DURATION = "snips/duration"
+SNIPS_NUMBER = "snips/number"
+SNIPS_ORDINAL = "snips/ordinal"
+SNIPS_PERCENTAGE = "snips/percentage"
+SNIPS_TEMPERATURE = "snips/temperature"
+
+# languages
+LANGUAGE_DE = "de"
+LANGUAGE_EN = "en"
+LANGUAGE_ES = "es"
+LANGUAGE_FR = "fr"
+LANGUAGE_KO = "ko"

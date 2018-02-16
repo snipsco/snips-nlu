@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 
 import itertools
 import re
+from builtins import range
+from builtins import str
+from builtins import zip
 
 from builtins import range
 from builtins import str
@@ -11,16 +14,19 @@ from future.utils import iteritems
 from nlu_utils import normalize
 from num2words import num2words
 
-from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
-from snips_nlu.constants import VALUE, RES_MATCH_RANGE
-from snips_nlu.languages import Language
+from snips_nlu.builtin_entities import get_builtin_entities
+from snips_nlu.constants import (
+    VALUE, RES_MATCH_RANGE, SNIPS_NUMBER, LANGUAGE_EN, LANGUAGE_ES,
+    LANGUAGE_FR, LANGUAGE_DE)
+from snips_nlu.languages import get_punctuation_regex, supports_num2words, \
+    get_default_sep
 from snips_nlu.tokenization import tokenize_light
 
 AND_UTTERANCES = {
-    Language.EN: ["and", "&"],
-    Language.FR: ["et", "&"],
-    Language.ES: ["y", "&"],
-    Language.DE: ["und", "&"],
+    LANGUAGE_EN: ["and", "&"],
+    LANGUAGE_FR: ["et", "&"],
+    LANGUAGE_ES: ["y", "&"],
+    LANGUAGE_DE: ["und", "&"],
 }
 
 AND_REGEXES = {
@@ -67,7 +73,7 @@ def and_variations(string, language):
 
 def punctuation_variations(string, language):
     variations = set()
-    matches = [m for m in language.punctuation_regex.finditer(string)]
+    matches = [m for m in get_punctuation_regex(language).finditer(string)]
     if not matches:
         return variations
 
@@ -90,16 +96,16 @@ def alphabetic_value(number_entity, language):
     value = number_entity[VALUE][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
         return None
-    return num2words(value, lang=language.iso_code)
+    return num2words(value, lang=language)
 
 
 def numbers_variations(string, language):
     variations = set()
-    if not language.supports_num2words:
+    if not supports_num2words(language):
         return variations
 
     number_entities = get_builtin_entities(
-        string, language, scope=[BuiltInEntity.NUMBER])
+        string, language, scope=[SNIPS_NUMBER])
 
     number_entities = [ent for ent in number_entities if
                        not ("latent" in ent[VALUE] and ent[VALUE]["latent"])]
@@ -151,7 +157,7 @@ def get_string_variations(string, language):
     variations.update(single_space_variations)
     # Add tokenized variations
     tokenized_variations = set(
-        language.default_sep.join(tokenize_light(v, language)) for v in
+        get_default_sep(language).join(tokenize_light(v, language)) for v in
         variations)
     variations.update(tokenized_variations)
     return variations

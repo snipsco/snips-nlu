@@ -5,7 +5,7 @@ from builtins import range
 
 from mock import patch
 
-from snips_nlu.languages import Language
+from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
@@ -18,7 +18,7 @@ from snips_nlu.tokenization import tokenize, Token
 class TestCRFUtils(unittest.TestCase):
     def test_io_tags_to_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         slot_name = "animal"
         intent_slots_mapping = {"animal": "animal"}
         tags = [
@@ -127,7 +127,7 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_bio_tags_to_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         slot_name = "animal"
         intent_slots_mapping = {"animal": "animal"}
         tags = [
@@ -269,7 +269,7 @@ class TestCRFUtils(unittest.TestCase):
 
     def test_bilou_tags_to_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         slot_name = "animal"
         intent_slots_mapping = {"animal": "animal"}
         tags = [
@@ -458,7 +458,7 @@ class TestCRFUtils(unittest.TestCase):
     @patch('snips_nlu.slot_filler.crf_utils.positive_tagging')
     def test_utterance_to_sample(self, mocked_positive_tagging):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
 
         def mock_positive_tagging(_, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in range(slot_size)]
@@ -489,7 +489,7 @@ class TestCRFUtils(unittest.TestCase):
                                                     mocked_positive_tagging):
 
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
 
         def mock_positive_tagging(_, slot, slot_size):
             return [INSIDE_PREFIX + slot for _ in range(slot_size)]

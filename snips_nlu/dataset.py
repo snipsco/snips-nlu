@@ -6,13 +6,13 @@ from builtins import str
 from copy import deepcopy
 
 from future.utils import itervalues, iteritems
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
                                  CAPITALIZE, VALIDATED)
-from snips_nlu.languages import Language
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
 from snips_nlu.utils import validate_type, validate_key, validate_keys
@@ -42,8 +42,10 @@ def validate_and_format_dataset(dataset):
         validate_key(dataset, key, object_label="dataset")
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
-    validate_type(dataset[LANGUAGE], str)
-    language = Language.from_iso_code(dataset[LANGUAGE])
+    language = dataset[LANGUAGE]
+    validate_type(language, str)
+    if language not in get_all_languages():
+        raise ValueError("Unknown language: %s" % language)
 
     for intent in itervalues(dataset[INTENTS]):
         validate_and_format_intent(intent, dataset[ENTITIES])

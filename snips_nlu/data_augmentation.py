@@ -1,14 +1,15 @@
 from __future__ import unicode_literals
 
+from builtins import next
 from copy import deepcopy
 from itertools import cycle
 
-from builtins import next
 from future.utils import iteritems
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
+from snips_nlu.languages import get_default_sep
 from snips_nlu.resources import get_stop_words
 from snips_nlu.tokenization import tokenize_light
 
@@ -16,7 +17,7 @@ from snips_nlu.tokenization import tokenize_light
 def capitalize(text, language):
     tokens = tokenize_light(text, language)
     stop_words = get_stop_words(language)
-    return language.default_sep.join(
+    return get_default_sep(language).join(
         t.title() if t.lower() not in stop_words
         else t.lower() for t in tokens)
 

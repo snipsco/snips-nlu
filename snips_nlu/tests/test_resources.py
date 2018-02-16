@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-from snips_nlu.languages import Language
+from snips_nlu_ontology_rust import get_all_languages
+
 from snips_nlu.resources import RESOURCE_INDEX, get_stop_words
 
 
@@ -12,19 +13,17 @@ class TestResources(unittest.TestCase):
         index = RESOURCE_INDEX
 
         # When
-        languages = list(index)
+        languages = set(index)
 
         # Then
-        self.assertEqual(len(languages), len(Language.__members__))
+        self.assertSetEqual(languages, get_all_languages())
 
     def test_all_languages_should_have_stop_words(self):
         # The capitalization for the CRF assumes all languages have stop_words
         # Given
-        languages = Language
-
-        for l in languages:
+        for language in get_all_languages():
             try:
                 # When/Then
-                get_stop_words(l)
+                get_stop_words(language)
             except:  # pylint: disable=W0702
-                self.fail("%s has not stop words" % l.iso_code)
+                self.fail("%s has not stop words" % language)

@@ -3,15 +3,14 @@ from __future__ import unicode_literals
 
 import io
 import os
-
 from builtins import range
+
 from mock import patch, MagicMock
 
-from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
-    RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME)
+    RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
+    SNIPS_DATETIME)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
@@ -336,12 +335,12 @@ class TestCRFSlotFiller(SnipsTest):
     @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
     def test_should_be_deserializable(self, mock_deserialize_crf_model):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         mock_deserialize_crf_model.return_value = None
         feature_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
-                "args": {"n": 1, "language_code": language.iso_code},
+                "args": {"n": 1, "language_code": language},
                 "offsets": [0]
             },
             {
@@ -370,11 +369,11 @@ class TestCRFSlotFiller(SnipsTest):
         # Then
         mock_deserialize_crf_model.assert_called_once_with(
             "mocked_crf_model_data")
-        expected_language = Language.EN
+        expected_language = LANGUAGE_EN
         expected_feature_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
-                "args": {"n": 1, "language_code": language.iso_code},
+                "args": {"n": 1, "language_code": language},
                 "offsets": [0]
             },
             {
@@ -417,7 +416,7 @@ class TestCRFSlotFiller(SnipsTest):
             feature_factory_configs=features_factories, random_seed=40)
         slot_filler = CRFSlotFiller(slot_filler_config)
 
-        tokens = tokenize("foo hello world bar", Language.EN)
+        tokens = tokenize("foo hello world bar", LANGUAGE_EN)
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         slot_filler.fit(dataset, intent="dummy_intent_1")
 
@@ -456,7 +455,7 @@ class TestCRFSlotFiller(SnipsTest):
 
     def test_augment_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         text = "Find me a flight before 10pm and after 8pm"
         tokens = tokenize(text, language)
         missing_slots = {"start_date", "end_date"}
@@ -546,7 +545,7 @@ class TestCRFSlotFiller(SnipsTest):
         slot_filler_config = CRFSlotFillerConfig(
             random_seed=42, exhaustive_permutations_threshold=2)
         slot_filler = CRFSlotFiller(config=slot_filler_config)
-        slot_filler.language = Language.EN
+        slot_filler.language = LANGUAGE_EN
         slot_filler.intent = "intent1"
         slot_filler.slot_name_mapping = {
             "start_date": "snips/datetime",
@@ -575,7 +574,7 @@ class TestCRFSlotFiller(SnipsTest):
 
     def test_filter_overlapping_builtins(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         text = "Find me a flight before 10pm and after 8pm"
         tokens = tokenize(text, language)
         tags = ['O' for _ in range(5)] + ['B-flight'] + ['O' for _ in range(3)]
@@ -584,12 +583,12 @@ class TestCRFSlotFiller(SnipsTest):
             {
                 RES_MATCH_RANGE: (17, 28),
                 VALUE: "before 10pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY: SNIPS_DATETIME
             },
             {
                 RES_MATCH_RANGE: (33, 42),
                 VALUE: "after 8pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY: SNIPS_DATETIME
             }
         ]
 
@@ -602,7 +601,7 @@ class TestCRFSlotFiller(SnipsTest):
             {
                 RES_MATCH_RANGE: (33, 42),
                 VALUE: "after 8pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY: SNIPS_DATETIME
             }
         ]
         self.assertEqual(entities, expected_entities)

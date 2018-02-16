@@ -5,9 +5,8 @@ from builtins import str
 
 from mock import mock
 
-from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
-    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
+    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE, SNIPS_DATETIME)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SnipsTest
 
@@ -106,9 +105,9 @@ class TestDataset(SnipsTest):
         }
 
         # When/Then
-        with self.assertRaises(KeyError) as ctx:
+        with self.assertRaises(ValueError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(str(ctx.exception.args[0]), "Unknown iso_code 'eng'")
+        self.assertEqual(str(ctx.exception.args[0]), "Unknown language: 'eng'")
 
     @mock.patch("snips_nlu.dataset.get_string_variations")
     def test_should_format_dataset_by_adding_synonyms(
@@ -393,7 +392,7 @@ class TestDataset(SnipsTest):
                                 },
                                 {
                                     "text": "10p.m",
-                                    "entity": BuiltInEntity.DATETIME.label,
+                                    "entity": SNIPS_DATETIME,
                                     "slot_name": "startTime"
                                 }
                             ]
@@ -402,7 +401,7 @@ class TestDataset(SnipsTest):
                 }
             },
             "entities": {
-                BuiltInEntity.DATETIME.label: {}
+                SNIPS_DATETIME: {}
             },
             "language": "en",
             "snips_nlu_version": "0.1.0"

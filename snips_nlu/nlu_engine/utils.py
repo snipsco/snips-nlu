@@ -1,10 +1,8 @@
-from snips_nlu.builtin_entities import (
-    get_builtin_entities, is_builtin_entity, BuiltInEntity)
+from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
 from snips_nlu.constants import (
     UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
     RES_MATCH_RANGE, RES_VALUE, RES_ENTITY, VALUE)
-from snips_nlu.result import (custom_slot,
-                              builtin_slot)
+from snips_nlu.result import custom_slot, builtin_slot
 
 
 # pylint:disable=redefined-builtin
@@ -17,16 +15,15 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
         if is_builtin_entity(entity_name):
             found = False
             for ent in builtin_entities:
-                if ent[ENTITY].label == entity_name and \
+                if ent[ENTITY] == entity_name and \
                         ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
                     resolved_slot = builtin_slot(slot, ent[VALUE])
                     resolved_slots.append(resolved_slot)
                     found = True
                     break
             if not found:
-                builtin_entity = BuiltInEntity.from_label(entity_name)
                 builtin_matches = get_builtin_entities(raw_value, language,
-                                                       scope=[builtin_entity])
+                                                       scope=[entity_name])
                 if builtin_matches:
                     resolved_slot = builtin_slot(slot,
                                                  builtin_matches[0][VALUE])

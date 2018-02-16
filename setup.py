@@ -22,7 +22,6 @@ required = [
     "scipy==1.0.0",
     "scikit-learn==0.19.1",
     "sklearn-crfsuite==0.3.6",
-    "builtin_entities_ontology==0.5.4",
     "semantic_version==2.6.0",
     "rustling==8.4.1",
     "nlu_utils==0.5.3",

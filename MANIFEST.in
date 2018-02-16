@@ -11,3 +11,4 @@ recursive-include snips_nlu/snips-nlu-resources/zh *
 global-exclude __pycache__ *.py[cod]
 exclude cli/tests/*
 exclude samples/tests/*
+exclude nlu_dataset/tests/*

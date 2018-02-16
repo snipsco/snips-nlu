@@ -1,22 +1,25 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import argparse
 import io
 import json
 import os
+import sys
 from builtins import bytes, input
-from pprint import pprint
 
 
-def main_train_engine():
+def parse_train_args(args):
     parser = argparse.ArgumentParser("Train an NLU engine and persist it in "
                                      "a json file")
     parser.add_argument("dataset_path", type=str)
     parser.add_argument("output_path", type=str)
     parser.add_argument("-c", "--config-path", type=str, metavar="",
                         help="Path to the NLU engine configuration")
-    args = vars(parser.parse_args())
+    return parser.parse_args(args)
 
+
+def main_train_engine():
+    args = vars(parse_train_args(sys.argv[1:]))
     from snips_nlu import SnipsNLUEngine
     from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
@@ -41,12 +44,16 @@ def main_train_engine():
     print("Saved the trained engine to %s" % output_path)
 
 
-def main_engine_inference():
+def parse_inference_args(args):
     parser = argparse.ArgumentParser("Load a trained NLU engine and play with "
                                      "its parsing API")
     parser.add_argument("training_path", type=str,
                         help="Path to a json-serialized trained engine")
-    args = vars(parser.parse_args())
+    return parser.parse_args(args)
+
+
+def main_engine_inference():
+    args = vars(parse_inference_args(sys.argv[1:]))
 
     from snips_nlu import SnipsNLUEngine
 
@@ -61,10 +68,10 @@ def main_engine_inference():
             query = query.decode("utf8")
         if query == "q":
             break
-        pprint(engine.parse(query))
+        print(json.dumps(engine.parse(query), indent=2))
 
 
-def main_cross_val_metrics():
+def parse_cross_val_args(args):
     parser = argparse.ArgumentParser("Compute cross validation metrics on a "
                                      "given dataset")
     parser.add_argument("dataset_path", type=str)
@@ -76,8 +83,11 @@ def main_cross_val_metrics():
                              "training (between 0 and 1")
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")
+    return parser.parse_args(args)
 
-    args = vars(parser.parse_args())
+
+def main_cross_val_metrics():
+    args = vars(parse_cross_val_args(sys.argv[1:]))
 
     from snips_nlu import SnipsNLUEngine
     from nlu_metrics import compute_cross_val_metrics
@@ -110,7 +120,7 @@ def main_cross_val_metrics():
         f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))
 
 
-def main_train_test_metrics():
+def parse_train_test_args(args):
     parser = argparse.ArgumentParser("Compute train/test metrics on a given "
                                      "pair training set/testing set")
     parser.add_argument("train_dataset_path", type=str)
@@ -118,8 +128,11 @@ def main_train_test_metrics():
     parser.add_argument("output_path", type=str)
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")
+    return parser.parse_args(args)
 
-    args = vars(parser.parse_args())
+
+def main_train_test_metrics():
+    args = vars(parse_train_test_args(sys.argv[1:]))
 
     from snips_nlu import SnipsNLUEngine
     from nlu_metrics import compute_train_test_metrics

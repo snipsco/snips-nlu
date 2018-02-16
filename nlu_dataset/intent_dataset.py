@@ -97,9 +97,8 @@ class IntentDataset(object):
     def mk_entity(cls, slot, automatically_extensible=True, use_synonyms=True):
         if slot.entity in BUILTIN_ENTITIES:
             return BuiltinEntity(slot.entity)
-        else:
-            return CustomEntity([EntityUtterance(slot.text)],
-                                automatically_extensible, use_synonyms)
+        return CustomEntity([EntityUtterance(slot.text)],
+                            automatically_extensible, use_synonyms)
 
     @property
     def json_slots(self):
@@ -139,10 +138,10 @@ class IntentDataset(object):
                 entity=slot.entity,
                 text=slot.text,
             )
-        else:
-            return dict(
-                text=slot.text,
-            )
+
+        return dict(
+            text=slot.text,
+        )
 
 
 class Utterance(object):
@@ -273,7 +272,7 @@ class SM(object):
 
         :param text: string the text that was tagged
         """
-        assert (len(self.slots) > 0)
+        assert self.slots
         slot = self.slots[-1]
         slot.text = text
         slot.tag_range.end = self.current - 1
@@ -300,9 +299,9 @@ class SM(object):
 
     def __getitem__(self, key):
         current = self.current
-        if type(key) == int:
+        if isinstance(key, int):
             return self.input[current + key]
-        elif type(key) == slice:
+        elif isinstance(key, slice):
             start = current + key.start if key.start else current
             return self.input[slice(start, key.stop, key.step)]
         else:
@@ -313,7 +312,7 @@ def capture_text(state):
     next_pos = state.find('[')
     sub = state[:] if next_pos < 0 else state[:next_pos]
 
-    if len(sub.strip()) > 0:
+    if sub.strip():
         state.add_text(sub)
     if next_pos >= 0:
         state.move(next_pos)

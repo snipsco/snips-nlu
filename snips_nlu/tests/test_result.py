@@ -1,16 +1,16 @@
 from __future__ import unicode_literals
 
 import json
-import unittest
 
 from snips_nlu.constants import (RES_INTENT, RES_SLOTS, RES_INTENT_NAME,
                                  RES_PROBABILITY, RES_MATCH_RANGE, RES_INPUT,
                                  RES_ENTITY, RES_SLOT_NAME, RES_VALUE)
 from snips_nlu.result import (parsing_result, intent_classification_result,
                               unresolved_slot)
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestResult(unittest.TestCase):
+class TestResult(SnipsTest):
     def test_should_serialize_results(self):
         # Given
         input_ = "hello world"
@@ -24,10 +24,9 @@ class TestResult(unittest.TestCase):
         result = parsing_result(input=input_, intent=intent, slots=slots)
 
         # Then
-        try:
+        msg = "Result dict should be json serializable"
+        with self.fail_if_exception(msg):
             json.dumps(result)
-        except:  # pylint: disable=W0702
-            self.fail("Result dict should be json serializable")
 
         expected_result = {
             RES_INTENT: {RES_INTENT_NAME: 'world', RES_PROBABILITY: 0.5},

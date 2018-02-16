@@ -2,10 +2,8 @@
 from __future__ import unicode_literals
 
 import json
-import traceback as tb
-import unittest
-from builtins import bytes
 
+from builtins import bytes
 from future.utils import iteritems
 from mock import patch
 
@@ -14,10 +12,11 @@ from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs import FeaturizerConfig
+from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.tokenization import tokenize_light
 
 
-class TestIntentClassifierFeaturizer(unittest.TestCase):
+class TestIntentClassifierFeaturizer(SnipsTest):
     @patch("snips_nlu.intent_classifier.featurizer."
            "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
     def test_should_be_serializable(self):
@@ -64,18 +63,15 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
         serialized_featurizer = featurizer.to_dict()
 
         # Then
-        try:
+        msg = "Featurizer dict should be json serializable to utf8."
+        with self.fail_if_exception(msg):
             dumped = bytes(json.dumps(serialized_featurizer),
                            encoding="utf8").decode("utf8")
-        except:  # pylint: disable=W0702
-            self.fail("Featurizer dict should be json serializable to utf8.\n"
-                      "Traceback:\n%s" % tb.format_exc())
 
-        try:
+        msg = "SnipsNLUEngine should be deserializable from dict with unicode" \
+              " values"
+        with self.fail_if_exception(msg):
             _ = Featurizer.from_dict(json.loads(dumped))
-        except:  # pylint: disable=W0702
-            self.fail("SnipsNLUEngine should be deserializable from dict with "
-                      "unicode values\nTraceback:\n%s" % tb.format_exc())
 
         vocabulary = tfidf_vectorizer.vocabulary_
         # pylint: disable=W0212

@@ -3,10 +3,8 @@ from __future__ import unicode_literals
 
 import io
 import os
-import traceback as tb
-import unittest
-from builtins import range
 
+from builtins import range
 from mock import patch, MagicMock
 
 from snips_nlu.builtin_entities import BuiltInEntity
@@ -24,11 +22,11 @@ from snips_nlu.slot_filler.crf_utils import (
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, ShapeNgramFactory, NgramFactory)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET)
+    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET, SnipsTest)
 from snips_nlu.tokenization import tokenize, Token
 
 
-class TestCRFSlotFiller(unittest.TestCase):
+class TestCRFSlotFiller(SnipsTest):
     def test_should_get_slots(self):
         # Given
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
@@ -85,11 +83,8 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         for s in naughty_strings:
-            try:
+            with self.fail_if_exception("Naughty string crashes"):
                 slot_filler.get_slots(s)
-            except:  # pylint: disable=W0702
-                trace = tb.format_exc()
-                self.fail('Exception raised:\n %s' % trace)
 
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
@@ -114,11 +109,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         }
 
         # Then
-        try:
+        with self.fail_if_exception("Naughty string crashes"):
             CRFSlotFiller().fit(naughty_dataset, "naughty_intent")
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
@@ -152,7 +144,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         naughty_dataset = validate_and_format_dataset(naughty_dataset)
 
         # Then
-        try:
+        with self.fail_if_exception("Naughty string make NLU crash"):
             slot_filler = CRFSlotFiller()
             slot_filler.fit(naughty_dataset, "naughty_intent")
             slots = slot_filler.get_slots("string0")
@@ -166,9 +158,6 @@ class TestCRFSlotFiller(unittest.TestCase):
                 'value': u'string0'
             }
             self.assertListEqual([expected_slot], slots)
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_get_slots_after_deserialization(self):
         # Given

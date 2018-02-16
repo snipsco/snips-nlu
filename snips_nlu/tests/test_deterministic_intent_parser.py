@@ -4,10 +4,8 @@ from __future__ import unicode_literals
 import io
 import os
 import re
-import traceback as tb
-import unittest
-from builtins import range
 
+from builtins import range
 from mock import patch
 
 from snips_nlu.builtin_entities import BuiltInEntity
@@ -21,10 +19,10 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH
+from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
 
 
-class TestDeterministicIntentParser(unittest.TestCase):
+class TestDeterministicIntentParser(SnipsTest):
     def setUp(self):
         self.intent_dataset = {
             "entities": {
@@ -464,11 +462,8 @@ class TestDeterministicIntentParser(unittest.TestCase):
 
         # Then
         for s in naughty_strings:
-            try:
+            with self.fail_if_exception("Exception raised"):
                 parser.parse(s)
-            except:  # pylint: disable=W0702
-                trace = tb.format_exc()
-                self.fail('Exception raised:\n %s' % trace)
 
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
@@ -493,11 +488,8 @@ class TestDeterministicIntentParser(unittest.TestCase):
         }
 
         # Then
-        try:
+        with self.fail_if_exception("Exception raised"):
             DeterministicIntentParser().fit(naughty_dataset)
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
@@ -531,7 +523,7 @@ class TestDeterministicIntentParser(unittest.TestCase):
         naughty_dataset = validate_and_format_dataset(naughty_dataset)
 
         # Then
-        try:
+        with self.fail_if_exception("Exception raised"):
             parser = DeterministicIntentParser()
             parser.fit(naughty_dataset)
             parsing = parser.parse("string0")
@@ -548,9 +540,6 @@ class TestDeterministicIntentParser(unittest.TestCase):
             intent_name = parsing[RES_INTENT][RES_INTENT_NAME]
             self.assertEqual("naughty_intent", intent_name)
             self.assertListEqual([expected_slot], parsing[RES_SLOTS])
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_be_serializable_before_fitting(self):
         # Given

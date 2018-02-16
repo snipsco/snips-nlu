@@ -33,7 +33,7 @@ such as:
          {
             "value": {
                "kind": "InstantTime",
-               "value": "2018-02-08 20:00:00 +00:00",
+               "value": "2018-02-08 20:00:00 +00:00"
             },
             "entity": "snips/datetime",
             "slotName": "forecastStartDatetime"

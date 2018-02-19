@@ -9,7 +9,7 @@ information.
 
 It's the library that powers the NLU engine used in the
 `Snips Console <https://console.snips.ai/>`_ that you can use to create awesome
-and private-by-design voice assistants. However
+and private-by-design voice assistants.
 
 Let's take an example to illustrate the main purpose of this lib, and consider
 the following sentence:

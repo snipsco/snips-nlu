@@ -7,6 +7,10 @@ This tool is a Natural Language Understanding python library that allows to
 parse sentences written in natural language and extracts structured
 information.
 
+It's the library that powers the NLU engine used in the
+`Snips Console <https://console.snips.ai/>`_ that you can use to create awesome
+and private-by-design voice assistants.
+
 Let's take an example to illustrate the main purpose of this lib, and consider
 the following sentence:
 

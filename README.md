@@ -1,146 +1,53 @@
 # Snips NLU
 
-Snips NLU (Natural Language understanding) is a python library for extracting meaning from text.
 
-Here is an example of a possible use case:
-
-Input:
-```
-    text: Set the light to red in the living room please
-```
-
-Extracted information:
-
-```    
-    intent: SetLightColor
-    slots:
-        - color: red
-        - room: living room
-```
-
-This tools uses machine learning, which means you can train it on a specific corpus and Snips will be able to parse out of corpus sentences.
-
-## Production Use
-
-Python wheels of the `snips-nlu` package can be found on the nexus repository at this URL: https://nexus-repository.snips.ai/#browse/browse/components:pypi-internal
-
-You will need to be signed in to access the repo.
-
-## Development
-
-Create a virtual env:
-
-    virtualenv venv
+The [Snips NLU](https://snips-nlu.readthedocs.io) (Natural Language Understanding) is a Python library that allows to parse sentences written in natural language and extracts structured information.
 
 
-Activate it:
-
-    . venv/bin/activate
-
-
-Update the submodules:
-
-    git submodule update --init --recursive
-
-
-Then create a pip.conf file within the virtual env (replacing `<username>` and `<password>` with appropriate values):
-
-    echo "[global]\nindex = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/pypi\nindex-url = https://pypi.python.org/simple/\nextra-index-url = https://<username>:<password>@nexus-repository.snips.ai/repository/pypi-internal/simple" >> venv/pip.conf
-
-
-Install the package in edition mode:
-
-    pip install -e ".[test]"
-    
-
-## API
-
-### Data
-The input of the NLU engine training is a dataset which format can be found [here](https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json)
-
-### Code
-
-```python
-import io
-import json
-from pprint import pprint
-
-from snips_nlu import SnipsNLUEngine
-
-############## Initialization ##############
-
-# The nlu config is optional here
-with io.open("config.json") as f:
-    nlu_config = json.load(f)
-
-engine = SnipsNLUEngine(config=nlu_config)
-
-
-############## Training ####################
-
-with io.open("path/to/dataset.json") as f:
-    dataset = json.load(f)
-    
-engine.fit(dataset)
-
-############## Parsing #####################
-
-parsing = engine.parse("Turn on the light in the kitchen")
-pprint(parsing)
-# {
-#     "text": "Turn on the light in the kitchen", 
-#     "intent": {
-#         "intent_name": "switch_light",
-#         "probability": 0.95
-#     }
-#     "slots": [
-#         {
-#             "value": "on"
-#             "range": [5, 7],
-#             "slot_name": "light_on_off",
-#         },
-#         {
-#             "value": "kitchen"
-#             "range": [25, 32],
-#             "slot_name": "light_room",
-#         }
-#     ]
-# }
-
-
-############## Serialization ###############
-
-with io.open("path/to/trained_engine.json", mode="w", encoding="utf8") as f:
-    f.write(json.dumps(engine.to_dict()).decode())
-
-############## Deserialization #############
-
-with io.open("path/to/trained_engine.json") as f:
-    trained_engine_dict = json.load(f)
-    
-trained_engine = SnipsNLUEngine.from_dict(trained_engine_dict)
-```
-
-### CLI
+## Installing
 
 ```bash
-train-engine /path/to/input/dataset.json /path/to/output/trained_engine.json
-engine-inference /path/to/output/trained_engine.json
+pip install snips-nlu
 ```
 
-### Versioning
-The NLU Engine has a separate versioning for the underlying model:
-``` python
-import snips_nlu
+## A simple example
 
-model_version = snips_nlu.__model_version__
-python_package_version = snips_nlu.__version__
+Let’s take an example to illustrate the main purpose of this lib, and consider the following sentence:
+
+```
+"What will be the weather in paris at 9pm?"
 ```
 
+Properly trained, the Snips NLU engine will be able to extract structured data such as:
 
-## Test coverage
-
-```bash
-venv/bin/coverage run --source=snips_nlu -m unittest discover -s snips_nlu/tests/
-venv/bin/coverage report -m
+```json
+{
+   "intent": {
+      "intentName": "searchWeatherForecast",
+      "probability": 0.95
+   },
+   "slots": [
+      {
+         "value": "paris",
+         "entity": "locality",
+         "slotName": "forecast_locality"
+      },
+      {
+         "value": {
+            "kind": "InstantTime",
+            "value": "2018-02-08 20:00:00 +00:00"
+         },
+         "entity": "snips/datetime",
+         "slotName": "forecast_start_datetime"
+      }
+   ]
+}
 ```
+## Documentation
+
+To find out how to use the Snips NLU please refer to our [documentation](https://snips-nlu.readthedocs.io), it will provide you with a step-by-step guide on how to use and setup our library.
+
+
+## Links
+- [Snips](https://snips.ai/)
+- [Bug tracker](https://github.com/snipsco/snips-nlu/issues)

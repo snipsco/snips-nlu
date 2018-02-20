@@ -9,7 +9,7 @@ from snips_nlu_ontology_rust.builtin_entities import get_supported_entities
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
-    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE)
+    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
@@ -466,7 +466,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
-        self.builtin_entities = get_supported_entities(self.language)
+        self.builtin_entities = list(get_supported_entities(self.language))
         self.args["entity_labels"] = self.builtin_entities
 
     def build_features(self):
@@ -496,8 +496,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
             for ent in builtin_entities:
-                entity_start = ent[RES_MATCH_RANGE][0]
-                entity_end = ent[RES_MATCH_RANGE][1]
+                entity_start = ent[RES_MATCH_RANGE][START]
+                entity_end = ent[RES_MATCH_RANGE][END]
                 indexes = []
                 for index, token in enumerate(tokens):
                     if (entity_start <= token.start < entity_end) \

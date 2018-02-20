@@ -17,12 +17,19 @@ _PUNCTUATION_REGEXES = dict()
 _NUM2WORDS_SUPPORT = dict()
 
 
+# pylint:disable=unused-argument
 def get_default_sep(language):
     return " "
 
 
+# pylint:enable=unused-argument
+
+# pylint:disable=unused-argument
 def get_punctuation(language):
     return string.punctuation
+
+
+# pylint:enable=unused-argument
 
 
 def get_punctuation_regex(language):
@@ -33,8 +40,12 @@ def get_punctuation_regex(language):
     return _PUNCTUATION_REGEXES[language]
 
 
+# pylint:disable=unused-argument
 def get_ignored_characters_pattern(language):
     return COMMONLY_IGNORED_CHARACTERS_PATTERN
+
+
+# pylint:enable=unused-argument
 
 
 def supports_num2words(language):

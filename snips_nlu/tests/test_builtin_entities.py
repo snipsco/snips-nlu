@@ -4,7 +4,7 @@ from snips_nlu_ontology_rust import get_all_languages
 
 from snips_nlu.builtin_entities import (
     get_builtin_entities, BuiltinEntityParser)
-from snips_nlu.constants import ENTITY
+from snips_nlu.constants import ENTITY_KIND
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -19,14 +19,16 @@ class TestBuiltInEntities(SnipsTest):
 
         expected_parse = [
             {
-                "char_range": {
-                    "start": 9, "end": 10
-                }, "dim": "Number",
-                "latent": False,
-                "value": {
-                    "type": "value",
-                    "value": 2
-                }
+                "entity": {
+                    "kind": "Number",
+                    "value": 2.0
+                },
+                "entity_kind": "snips/number",
+                "range": {
+                    "end": 10,
+                    "start": 9
+                },
+                "value": "2"
             }
         ]
         self.assertEqual(parse, expected_parse)
@@ -51,4 +53,4 @@ class TestBuiltInEntities(SnipsTest):
 
         # Then
         self.assertEqual(len(parse), 1)
-        self.assertEqual(parse[0][ENTITY], "snips/number")
+        self.assertEqual(parse[0][ENTITY_KIND], "snips/number")

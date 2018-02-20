@@ -1,7 +1,7 @@
 from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
 from snips_nlu.constants import (
     UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
-    RES_MATCH_RANGE, RES_VALUE, RES_ENTITY, VALUE)
+    RES_MATCH_RANGE, RES_VALUE, RES_ENTITY, VALUE, ENTITY_KIND)
 from snips_nlu.result import custom_slot, builtin_slot
 
 
@@ -15,9 +15,9 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
         if is_builtin_entity(entity_name):
             found = False
             for ent in builtin_entities:
-                if ent[ENTITY] == entity_name and \
+                if ent[ENTITY_KIND] == entity_name and \
                         ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
-                    resolved_slot = builtin_slot(slot, ent[VALUE])
+                    resolved_slot = builtin_slot(slot, ent[ENTITY])
                     resolved_slots.append(resolved_slot)
                     found = True
                     break

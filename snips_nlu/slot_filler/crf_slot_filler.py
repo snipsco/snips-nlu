@@ -15,7 +15,8 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
 from snips_nlu.constants import (
-    RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA, RES_ENTITY, START, END, RES_VALUE)
+    RES_MATCH_RANGE, LANGUAGE, DATA, RES_ENTITY, START, END, RES_VALUE,
+    ENTITY_KIND)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
@@ -253,7 +254,8 @@ class CRFSlotFiller(SlotFiller):
         builtin_entities = _filter_overlapping_builtins(
             builtin_entities, tokens, tags, self.config.tagging_scheme)
 
-        grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
+        grouped_entities = groupby(builtin_entities,
+                                   key=lambda s: s[ENTITY_KIND])
         features = None
         for entity, matches in grouped_entities:
             spans_ranges = [match[RES_MATCH_RANGE] for match in matches]
@@ -405,10 +407,10 @@ def _conservative_slots_permutations(n_detected_builtins,
 
 def _spans_to_tokens_indexes(spans, tokens):
     tokens_indexes = []
-    for span_start, span_end in spans:
+    for span in spans:
         indexes = []
         for i, token in enumerate(tokens):
-            if span_end > token.start and span_start < token.end:
+            if span[END] > token.start and span[START] < token.end:
                 indexes.append(i)
         tokens_indexes.append(indexes)
     return tokens_indexes
@@ -419,10 +421,10 @@ def _reconciliate_builtin_slots(text, slots, builtin_entities):
         if not is_builtin_entity(slot[RES_ENTITY]):
             continue
         for be in builtin_entities:
-            if be[ENTITY] != slot[RES_ENTITY]:
+            if be[ENTITY_KIND] != slot[RES_ENTITY]:
                 continue
-            be_start = be[RES_MATCH_RANGE][0]
-            be_end = be[RES_MATCH_RANGE][1]
+            be_start = be[RES_MATCH_RANGE][START]
+            be_end = be[RES_MATCH_RANGE][END]
             be_length = be_end - be_start
             slot_start = slot[RES_MATCH_RANGE][START]
             slot_end = slot[RES_MATCH_RANGE][END]

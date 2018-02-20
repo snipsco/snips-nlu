@@ -9,7 +9,7 @@ from mock import patch, MagicMock
 
 from snips_nlu.constants import (
     RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
-    SNIPS_DATETIME)
+    SNIPS_DATETIME, END, START, ENTITY_KIND)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.result import unresolved_slot
@@ -39,7 +39,7 @@ class TestCRFSlotFiller(SnipsTest):
 
         # Then
         expected_slots = [
-            unresolved_slot(match_range=(8, 11),
+            unresolved_slot(match_range={START: 8, END: 11},
                             value='two',
                             entity='snips/number',
                             slot_name='number_of_cups')]
@@ -58,16 +58,16 @@ class TestCRFSlotFiller(SnipsTest):
 
         # Then
         expected_slots = [
-            unresolved_slot(match_range=(20, 28),
+            unresolved_slot(match_range={START: 20, END: 28},
                             value='at 9p.m.',
                             entity='snips/datetime',
                             slot_name='datetime'),
-            unresolved_slot(match_range=(32, 37),
+            unresolved_slot(match_range={START: 32, END: 37},
                             value='Paris',
                             entity='weather_location',
                             slot_name='location')
         ]
-        self.assertListEqual(slots, expected_slots)
+        self.assertListEqual(expected_slots, slots)
 
     def test_should_parse_naughty_strings(self):
         # Given
@@ -148,13 +148,13 @@ class TestCRFSlotFiller(SnipsTest):
             slot_filler.fit(naughty_dataset, "naughty_intent")
             slots = slot_filler.get_slots("string0")
             expected_slot = {
-                'entity': 'non_ascìi_entïty',
-                'range': {
+                "entity": "non_ascìi_entïty",
+                "range": {
                     "start": 0,
                     "end": 7
                 },
-                'slotName': u'non_ascìi_slöt',
-                'value': u'string0'
+                "slotName": u"non_ascìi_slöt",
+                "value": u"string0"
             }
             self.assertListEqual([expected_slot], slots)
 
@@ -173,11 +173,11 @@ class TestCRFSlotFiller(SnipsTest):
 
         # Then
         expected_slots = [
-            unresolved_slot(match_range=(8, 11),
+            unresolved_slot(match_range={START: 8, END: 11},
                             value='two',
                             entity='snips/number',
                             slot_name='number_of_cups')]
-        self.assertListEqual(slots, expected_slots)
+        self.assertListEqual(expected_slots, slots)
 
     def test_should_be_serializable_before_fit(self):
         # Given
@@ -435,10 +435,10 @@ class TestCRFSlotFiller(SnipsTest):
     def test_spans_to_tokens_indexes(self):
         # Given
         spans = [
-            (0, 1),
-            (2, 6),
-            (5, 6),
-            (9, 15)
+            {START: 0, END: 1},
+            {START: 2, END: 6},
+            {START: 5, END: 6},
+            {START: 9, END: 15}
         ]
         tokens = [
             Token(value="abc", start=0, end=3, stem="abc"),
@@ -567,7 +567,8 @@ class TestCRFSlotFiller(SnipsTest):
 
         # Then
         expected_slots = [
-            unresolved_slot(value='after 8pm', match_range=(33, 42),
+            unresolved_slot(value='after 8pm',
+                            match_range={START: 33, END: 42},
                             entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
@@ -581,14 +582,14 @@ class TestCRFSlotFiller(SnipsTest):
         tagging_scheme = TaggingScheme.BIO
         builtin_entities = [
             {
-                RES_MATCH_RANGE: (17, 28),
+                RES_MATCH_RANGE: {START: 17, END: 28},
                 VALUE: "before 10pm",
-                ENTITY: SNIPS_DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             },
             {
-                RES_MATCH_RANGE: (33, 42),
+                RES_MATCH_RANGE: {START: 33, END: 42},
                 VALUE: "after 8pm",
-                ENTITY: SNIPS_DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             }
         ]
 
@@ -599,9 +600,9 @@ class TestCRFSlotFiller(SnipsTest):
         # Then
         expected_entities = [
             {
-                RES_MATCH_RANGE: (33, 42),
+                RES_MATCH_RANGE: {START: 33, END: 42},
                 VALUE: "after 8pm",
-                ENTITY: SNIPS_DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             }
         ]
         self.assertEqual(entities, expected_entities)

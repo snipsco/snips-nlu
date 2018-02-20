@@ -4,7 +4,7 @@ from nlu_utils import compute_all_ngrams
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
-    RES_MATCH_RANGE, INTENTS, UTTERANCES, DATA, ENTITY, ENTITIES)
+    RES_MATCH_RANGE, INTENTS, UTTERANCES, DATA, ENTITY, ENTITIES, END, START)
 from snips_nlu.utils import LimitedSizeDict
 
 _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
@@ -53,8 +53,10 @@ def initial_string_from_tokens(tokens):
 
 
 def entity_filter(entity, start, end):
-    return (entity[RES_MATCH_RANGE][0] <= start < entity[RES_MATCH_RANGE][1]) \
-           and (entity[RES_MATCH_RANGE][0] < end <= entity[RES_MATCH_RANGE][1])
+    entity_start = entity[RES_MATCH_RANGE][START]
+    entity_end = entity[RES_MATCH_RANGE][END]
+    return (entity_start <= start < entity_end) \
+           and (entity_start < end <= entity_end)
 
 
 def get_intent_custom_entities(dataset, intent):

@@ -13,7 +13,7 @@ import snips_nlu.version
 from snips_nlu.constants import (
     LANGUAGE, RES_INTENT, RES_INTENT_NAME, RES_INPUT, RES_SLOTS,
     RES_MATCH_RANGE, RES_RAW_VALUE, RES_VALUE, RES_ENTITY, RES_SLOT_NAME,
-    LANGUAGE_EN)
+    LANGUAGE_EN, END, START)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
@@ -397,10 +397,12 @@ class TestSnipsNLUEngine(SnipsTest):
         with self.fail_if_exception(msg):
             json.dumps(engine_dict).encode("utf-8")
         expected_slots = [
-            resolved_slot((8, 9), '3', {'type': 'value', 'value': 3},
+            resolved_slot({START: 8, END: 9}, '3',
+                          {'kind': 'Number', 'value': 3.0},
                           'snips/number', 'number_of_cups'),
-            custom_slot(unresolved_slot((18, 21), 'hot', 'Temperature',
-                                        'beverage_temperature'))
+            custom_slot(
+                unresolved_slot({START: 18, END: 21}, 'hot', 'Temperature',
+                                'beverage_temperature'))
         ]
         self.assertEqual(result[RES_INPUT], input_)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')

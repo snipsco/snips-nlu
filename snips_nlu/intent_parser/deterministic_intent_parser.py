@@ -1,16 +1,16 @@
 from __future__ import unicode_literals
 
 import re
-from builtins import str
 from copy import deepcopy
 
+from builtins import str
 from future.utils import itervalues, iteritems
 
 from snips_nlu.builtin_entities import (is_builtin_entity,
                                         get_builtin_entities)
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START)
+    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START, END, ENTITY_KIND)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.languages import get_ignored_characters_pattern
@@ -132,7 +132,9 @@ class DeterministicIntentParser(IntentParser):
                     value = match.group(group_name)
                     if rng in ranges_mapping:
                         rng = ranges_mapping[rng]
-                        value = text[rng[0]:rng[1]]
+                        value = text[rng[START]:rng[END]]
+                    else:
+                        rng = {START: rng[0], END: rng[1]}
                     parsed_slot = unresolved_slot(
                         match_range=rng, value=value, entity=entity,
                         slot_name=slot_name)
@@ -325,16 +327,17 @@ def _replace_builtin_entities(text, language):
     offset = 0
     current_ix = 0
     builtin_entities = sorted(builtin_entities,
-                              key=lambda e: e[RES_MATCH_RANGE][0])
+                              key=lambda e: e[RES_MATCH_RANGE][START])
     for ent in builtin_entities:
-        ent_start = ent[RES_MATCH_RANGE][0]
-        ent_end = ent[RES_MATCH_RANGE][1]
+        ent_start = ent[RES_MATCH_RANGE][START]
+        ent_end = ent[RES_MATCH_RANGE][END]
         rng_start = ent_start + offset
 
         processed_text += text[current_ix:ent_start]
 
-        entity_length = ent[RES_MATCH_RANGE][1] - ent[RES_MATCH_RANGE][0]
-        entity_place_holder = _get_builtin_entity_name(ent[ENTITY], language)
+        entity_length = ent_end - ent_start
+        entity_place_holder = _get_builtin_entity_name(ent[ENTITY_KIND],
+                                                       language)
 
         offset += len(entity_place_holder) - entity_length
 

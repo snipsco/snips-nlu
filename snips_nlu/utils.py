@@ -221,5 +221,5 @@ def ranges_overlap(lhs_range, rhs_range):
             and isinstance(rhs_range, (tuple, list)):
         return lhs_range[1] > rhs_range[0] and lhs_range[0] < rhs_range[1]
     else:
-        raise TypeError("Cannot check overlap on objects of type: %s"
-                        % type(lhs_range))
+        raise TypeError("Cannot check overlap on objects of type: %s and %s"
+                        % (type(lhs_range), type(rhs_range)))

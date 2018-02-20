@@ -17,7 +17,7 @@ from num2words import num2words
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
     VALUE, RES_MATCH_RANGE, SNIPS_NUMBER, LANGUAGE_EN, LANGUAGE_ES,
-    LANGUAGE_FR, LANGUAGE_DE)
+    LANGUAGE_FR, LANGUAGE_DE, ENTITY, START, END)
 from snips_nlu.languages import get_punctuation_regex, supports_num2words, \
     get_default_sep
 from snips_nlu.tokenization import tokenize_light
@@ -40,8 +40,9 @@ AND_REGEXES = {
 def build_variated_query(string, ranges_and_utterances):
     variated_string = ""
     current_ix = 0
-    for m, u in ranges_and_utterances:
-        start, end = m
+    for rng, u in ranges_and_utterances:
+        start = rng[START]
+        end = rng[END]
         variated_string += string[current_ix:start]
         variated_string += u
         current_ix = end
@@ -60,7 +61,7 @@ def and_variations(string, language):
         return variations
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [((m.start(), m.end()), AND_UTTERANCES[language])
+    values = [({START: m.start(), END: m.end()}, AND_UTTERANCES[language])
               for m in matches]
     combinations = itertools.product(range(len(AND_UTTERANCES[language])),
                                      repeat=len(values))
@@ -78,7 +79,8 @@ def punctuation_variations(string, language):
         return variations
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [((m.start(), m.end()), (m.group(0), "")) for m in matches]
+    values = [({START: m.start(), END: m.end()}, (m.group(0), ""))
+              for m in matches]
 
     combinations = itertools.product(range(2), repeat=len(matches))
     for c in combinations:
@@ -89,11 +91,15 @@ def punctuation_variations(string, language):
 
 
 def digit_value(number_entity):
-    return str(number_entity[VALUE][VALUE])
+    value = number_entity[ENTITY][VALUE]
+    if value == int(value):
+        # Convert 24.0 into "24" instead of "24.0"
+        value = int(value)
+    return str(value)
 
 
 def alphabetic_value(number_entity, language):
-    value = number_entity[VALUE][VALUE]
+    value = number_entity[ENTITY][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
         return None
     return num2words(value, lang=language)
@@ -107,9 +113,8 @@ def numbers_variations(string, language):
     number_entities = get_builtin_entities(
         string, language, scope=[SNIPS_NUMBER])
 
-    number_entities = [ent for ent in number_entities if
-                       not ("latent" in ent[VALUE] and ent[VALUE]["latent"])]
-    number_entities = sorted(number_entities, key=lambda x: x["range"])
+    number_entities = sorted(number_entities,
+                             key=lambda x: x[RES_MATCH_RANGE][START])
     if not number_entities:
         return variations
 

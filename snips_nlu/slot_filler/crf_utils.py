@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from builtins import range
 from enum import Enum, unique
 
-from snips_nlu.constants import TEXT, SLOT_NAME
+from snips_nlu.constants import TEXT, SLOT_NAME, START, END
 from snips_nlu.result import unresolved_slot
 from snips_nlu.tokenization import tokenize, Token
 
@@ -117,7 +117,10 @@ def _tags_to_preslots(tags, tokens, is_start_of_slot, is_end_of_slot):
             current_slot_start = i
         if is_end_of_slot(tags, i):
             slots.append({
-                RANGE: (tokens[current_slot_start].start, tokens[i].end),
+                RANGE: {
+                    START: tokens[current_slot_start].start,
+                    END: tokens[i].end
+                },
                 SLOT_NAME: tag_name_to_slot_name(tag)
             })
             current_slot_start = i
@@ -142,8 +145,8 @@ def tags_to_preslots(tokens, tags, tagging_scheme):
 def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     return [
-        unresolved_slot(match_range=slot["range"],
-                        value=text[slot["range"][0]:slot["range"][1]],
+        unresolved_slot(match_range=slot[RANGE],
+                        value=text[slot[RANGE][START]:slot[RANGE][END]],
                         entity=intent_slots_mapping[slot[SLOT_NAME]],
                         slot_name=slot[SLOT_NAME])
         for slot in slots

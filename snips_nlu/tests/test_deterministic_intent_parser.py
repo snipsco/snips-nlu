@@ -11,7 +11,7 @@ from mock import patch
 from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
                                  SLOT_NAME, RES_INTENT_NAME, RES_SLOTS,
                                  RES_INTENT, LANGUAGE_EN, SNIPS_ORDINAL,
-                                 SNIPS_DATETIME)
+                                 SNIPS_DATETIME, START, END, ENTITY_KIND)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
@@ -780,14 +780,14 @@ class TestDeterministicIntentParser(SnipsTest):
         text = "Be the first to be there at 9pm"
         mock_get_builtin_entities.return_value = [
             {
-                RES_MATCH_RANGE: (7, 12),
+                RES_MATCH_RANGE: {START: 7, END: 12},
                 VALUE: "first",
-                ENTITY: SNIPS_ORDINAL
+                ENTITY_KIND: SNIPS_ORDINAL
             },
             {
-                RES_MATCH_RANGE: (28, 31),
+                RES_MATCH_RANGE: {START: 28, END: 31},
                 VALUE: "9pm",
-                ENTITY: SNIPS_DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             }
         ]
 
@@ -797,8 +797,8 @@ class TestDeterministicIntentParser(SnipsTest):
 
         # Then
         expected_mapping = {
-            (7, 21): (7, 12),
-            (37, 52): (28, 31)
+            (7, 21): {START: 7, END: 12},
+            (37, 52): {START: 28, END: 31}
         }
         expected_processed_text = \
             "Be the %SNIPSORDINAL% to be there at %SNIPSDATETIME%"

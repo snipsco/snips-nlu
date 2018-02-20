@@ -45,7 +45,7 @@ def validate_and_format_dataset(dataset):
     language = dataset[LANGUAGE]
     validate_type(language, str)
     if language not in get_all_languages():
-        raise ValueError("Unknown language: %s" % language)
+        raise ValueError("Unknown language: '%s'" % language)
 
     for intent in itervalues(dataset[INTENTS]):
         validate_and_format_intent(intent, dataset[ENTITIES])

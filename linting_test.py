@@ -26,8 +26,8 @@ def all_python_files():
     for p in TESTED_PACKAGES:
         for dirpath, _, filenames in os.walk(os.path.join(ROOT_PATH, p)):
             files += [
-                os.sep.join([dirpath, f]) for f in filenames if
-                f.endswith(".py")
+                os.sep.join([dirpath, f]) for f in filenames
+                if f.endswith(".py") and "test" not in f
             ]
 
     return files

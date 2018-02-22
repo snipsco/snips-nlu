@@ -11,12 +11,20 @@ from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
                                  RESOURCES_PATH, LANGUAGE_EN, LANGUAGE_FR,
-                                 LANGUAGE_ES, LANGUAGE_KO, LANGUAGE_DE)
+                                 LANGUAGE_ES, LANGUAGE_KO, LANGUAGE_DE,
+                                 LANGUAGE_JA)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import get_resources_path
 
 RESOURCE_INDEX = {
+    LANGUAGE_DE: {
+        GAZETTEERS: [
+            "top_10000_words.txt"
+        ],
+        STOP_WORDS: "stop_words.txt",
+        NOISE: "noise.txt",
+    },
     LANGUAGE_EN: {
         GAZETTEERS: [
             "top_10000_words.txt"
@@ -25,13 +33,6 @@ RESOURCE_INDEX = {
         NOISE: "noise.txt",
         WORD_CLUSTERS: ["brown_clusters.txt"]
     },
-    LANGUAGE_FR: {
-        GAZETTEERS: [
-            "top_10000_words.txt"
-        ],
-        STOP_WORDS: "stop_words.txt",
-        NOISE: "noise.txt",
-    },
     LANGUAGE_ES: {
         GAZETTEERS: [
             "top_10000_words.txt"
@@ -39,17 +40,21 @@ RESOURCE_INDEX = {
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     },
-    LANGUAGE_KO: {
-        STOP_WORDS: "stop_words.txt",
-        NOISE: "noise.txt",
-    },
-    LANGUAGE_DE: {
+    LANGUAGE_FR: {
         GAZETTEERS: [
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
-    }
+    },
+    LANGUAGE_JA: {
+        STOP_WORDS: "stop_words.txt",
+        NOISE: "noise.txt",
+    },
+    LANGUAGE_KO: {
+        STOP_WORDS: "stop_words.txt",
+        NOISE: "noise.txt",
+    },
 }
 
 _STOP_WORDS = dict()

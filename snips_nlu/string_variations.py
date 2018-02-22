@@ -1,13 +1,14 @@
 # coding=utf-8
 from __future__ import unicode_literals
-from builtins import str
-from builtins import zip
-from builtins import range
 
 import itertools
 import re
 
+from builtins import range
+from builtins import str
+from builtins import zip
 from future.utils import iteritems
+from nlu_utils import normalize
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
@@ -121,19 +122,30 @@ def numbers_variations(string, language):
     return variations
 
 
+def case_variations(string):
+    return {string.lower(), string.title()}
+
+
+def normalization_variations(string):
+    return {normalize(string)}
+
+
 def flatten(results):
     return set(i for r in results for i in r)
 
 
 def get_string_variations(string, language):
     variations = {string}
+    variations.update(flatten(case_variations(v) for v in variations))
+    variations.update(flatten(normalization_variations(v) for v in variations))
     variations.update(flatten(and_variations(v, language) for v in variations))
     variations.update(
         flatten(punctuation_variations(v, language) for v in variations))
     variations.update(
         flatten(numbers_variations(v, language) for v in variations))
-    # Filter double spaces
-    variations = set(" ".join(v.split()) for v in variations)
+    # Add single space variations
+    single_space_variations = set(" ".join(v.split()) for v in variations)
+    variations.update(single_space_variations)
     # Add tokenized variations
     tokenized_variations = set(
         language.default_sep.join(tokenize_light(v, language)) for v in

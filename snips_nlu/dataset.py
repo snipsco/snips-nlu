@@ -6,7 +6,6 @@ from builtins import str
 from copy import deepcopy
 
 from future.utils import itervalues, iteritems
-from nlu_utils import normalize
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
@@ -99,11 +98,7 @@ def has_any_capitalization(entity_utterances, language):
 def add_variation_if_needed(utterances, variation, utterance, language):
     if not variation:
         return utterances
-    normalized_variation = normalize(variation)
-    all_variations = get_string_variations(
-        variation, language)
-    all_variations.update(
-        get_string_variations(normalized_variation, language))
+    all_variations = get_string_variations(variation, language)
     for v in all_variations:
         if v not in utterances:
             utterances[v] = utterance
@@ -143,18 +138,18 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
                                                           language)
 
     # Normalize
-    normalize_data = dict()
+    validated_data = dict()
     for entry in entity[DATA]:
         entry_value = entry[VALUE]
-        normalize_data = add_variation_if_needed(
-            normalize_data, entry_value, entry_value, language)
+        validated_data = add_variation_if_needed(
+            validated_data, entry_value, entry_value, language)
 
         if use_synonyms:
             for s in entry[SYNONYMS]:
-                normalize_data = add_variation_if_needed(
-                    normalize_data, s, entry_value, language)
+                validated_data = add_variation_if_needed(
+                    validated_data, s, entry_value, language)
 
-    formatted_entity[UTTERANCES] = normalize_data
+    formatted_entity[UTTERANCES] = validated_data
     # Merge queries_entities
     for value in queries_entities:
         formatted_entity = add_entity_value_if_missing(

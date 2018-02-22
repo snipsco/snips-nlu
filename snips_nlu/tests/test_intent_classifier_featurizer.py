@@ -2,10 +2,10 @@
 from __future__ import unicode_literals
 
 import json
-
 from builtins import bytes
+
 from future.utils import iteritems
-from mock import patch
+from mock import patch, mock
 
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
@@ -142,8 +142,13 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 in iteritems(entity_utterances_to_feature_names)
             })
 
-    def test_get_utterances_entities(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_get_utterances_entities(self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation, variation.lower()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -193,25 +198,16 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         # Then
         expected_utterance_to_entity_names = {
-            "entity 1": {"entityfeatureentity1", "entityfeatureentity2"},
-            "entity one": {"entityfeatureentity1", "entityfeatureentity2"},
+            "entity 1": {"entityfeatureentity2", "entityfeatureentity1"},
             "éntity 1": {"entityfeatureentity1"},
-            "éntity one": {"entityfeatureentity1"},
-            "Éntity_2": {"entityfeatureentity2"},
-            "Éntity2": {"entityfeatureentity2"},
-            "Éntity_two": {"entityfeatureentity2"},
-            "entity_2": {"entityfeatureentity2"},
-            "entity_two": {"entityfeatureentity2"},
-            "entity two": {"entityfeatureentity2"},
-            "entity2": {"entityfeatureentity2"},
+            "éntity 2": {"entityfeatureentity2"},
             "Éntity 2": {"entityfeatureentity2"},
-            "Éntity two": {"entityfeatureentity2"},
-            "entity 2": {"entityfeatureentity2"},
-            "Alternative entity 2": {"entityfeatureentity2"},
-            "Alternative entity two": {"entityfeatureentity2"},
+            "Éntity_2": {"entityfeatureentity2"},
+            "éntity_2": {"entityfeatureentity2"},
             "alternative entity 2": {"entityfeatureentity2"},
-            "alternative entity two": {"entityfeatureentity2"}
+            "Alternative entity 2": {"entityfeatureentity2"}
         }
+
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)
 

@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 import json
+from builtins import str
 from copy import deepcopy
 
-from builtins import str
 from mock import patch
 
 import snips_nlu
@@ -235,9 +235,13 @@ class TestSnipsNLUEngine(SnipsTest):
                         "automatically_extensible": True,
                         "utterances": {
                             "boiling": "hot",
+                            "Boiling": "hot",
                             "cold": "cold",
+                            "Cold": "cold",
                             "hot": "hot",
-                            "iced": "cold"
+                            "Hot": "hot",
+                            "iced": "cold",
+                            "Iced": "cold"
                         }
                     }
                 },

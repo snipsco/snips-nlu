@@ -92,7 +92,36 @@ class TestStringVariations(unittest.TestCase):
             "a b 2",
             "a and b two",
             "a & b two",
-            "a b two"
+            "a b two",
+            "A B two",
+            "A And B two",
+            "A  B 2",
+            "A and B two",
+            "A & B two",
+            "A & B 2",
+            "A  B two",
+            "A and B 2",
+            "a  b 2",
+            "a  b two",
+            "A B 2",
+            "A And B 2",
+        }
+        self.assertSetEqual(variations, expected_variations)
+
+    def test_should_variate_case_and_normalization(self):
+        # Given
+        language = Language.EN
+        string = "Küche"
+
+        # When
+        variations = get_string_variations(string, language)
+
+        # Then
+        expected_variations = {
+            "kuche",
+            "küche",
+            "Kuche",
+            "Küche"
         }
         self.assertSetEqual(variations, expected_variations)
 
@@ -107,8 +136,11 @@ class TestStringVariations(unittest.TestCase):
         # Then
         expected_variations = {
             "france vingt-quatre",
+            "France vingt-quatre",
             "france vingt quatre",
-            "france 24"
+            "France vingt quatre",
+            "france 24",
+            "France 24",
         }
         self.assertSetEqual(variations, expected_variations)
 

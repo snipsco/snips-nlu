@@ -584,7 +584,7 @@ class TestDeterministicIntentParser(SnipsTest):
         mocked_generate_regexes.side_effect = mock_generate_regexes
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_entities=100)
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
@@ -596,7 +596,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_entities": 43
+                "max_entities": 100
             },
             "language_code": "en",
             "group_names_to_slot_names": {

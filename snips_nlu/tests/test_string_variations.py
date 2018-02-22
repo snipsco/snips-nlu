@@ -108,6 +108,23 @@ class TestStringVariations(unittest.TestCase):
         }
         self.assertSetEqual(variations, expected_variations)
 
+    def test_should_variate_case_and_normalization(self):
+        # Given
+        language = Language.EN
+        string = "Küche"
+
+        # When
+        variations = get_string_variations(string, language)
+
+        # Then
+        expected_variations = {
+            "kuche",
+            "küche",
+            "Kuche",
+            "Küche"
+        }
+        self.assertSetEqual(variations, expected_variations)
+
     def test_get_france_24(self):
         # Given
         language = Language.FR

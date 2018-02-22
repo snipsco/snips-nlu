@@ -138,6 +138,9 @@ def get_string_variations(string, language):
     variations = {string}
     variations.update(flatten(case_variations(v) for v in variations))
     variations.update(flatten(normalization_variations(v) for v in variations))
+    # We re-generate case variations as normalization can produce new
+    # variations
+    variations.update(flatten(case_variations(v) for v in variations))
     variations.update(flatten(and_variations(v, language) for v in variations))
     variations.update(
         flatten(punctuation_variations(v, language) for v in variations))

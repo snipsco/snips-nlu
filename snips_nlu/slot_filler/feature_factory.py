@@ -4,8 +4,8 @@ from abc import ABCMeta, abstractmethod
 from builtins import map, object
 
 from future.utils import with_metaclass, iteritems
-from nlu_utils import normalize
-from snips_nlu_ontology_rust.builtin_entities import get_supported_entities
+from snips_nlu_utils import normalize
+from snips_nlu_ontology.builtin_entities import get_supported_entities
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (

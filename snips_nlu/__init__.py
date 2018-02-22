@@ -1,4 +1,4 @@
-from snips_nlu_ontology_rust import get_ontology_version
+from snips_nlu_ontology import get_ontology_version
 
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import NLUEngineConfig

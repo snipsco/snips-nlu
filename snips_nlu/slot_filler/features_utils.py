@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from nlu_utils import compute_all_ngrams
+from snips_nlu_utils import compute_all_ngrams
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (

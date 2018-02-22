@@ -110,7 +110,7 @@ class TestStringVariations(unittest.TestCase):
 
     def test_should_variate_case_and_normalization(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         string = "Küche"
 
         # When

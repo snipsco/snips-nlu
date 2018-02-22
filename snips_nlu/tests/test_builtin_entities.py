@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from snips_nlu_ontology_rust import get_all_languages
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.builtin_entities import (
     get_builtin_entities, BuiltinEntityParser)

@@ -37,7 +37,6 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.check_metrics(results)
 
-    @skip("Skip this test until crf tags are fixed in snips-nlu-rs")
     def test_python_rust_engine_performance(self):
         # Given
         dataset_path = PERFORMANCE_DATASET_PATH

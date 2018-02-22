@@ -1,10 +1,11 @@
 # coding=utf-8
 from __future__ import unicode_literals
+
 from builtins import object
 
-from nlu_utils import (tokenize as _tokenize,
-                       tokenize_light as _tokenize_light,
-                       normalize)
+from snips_nlu_utils import (tokenize as _tokenize,
+                             tokenize_light as _tokenize_light,
+                             normalize)
 
 
 class Token(object):
@@ -18,6 +19,7 @@ class Token(object):
         start (int): Start position of the token within the sentence
         end (int): End position of the token within the sentence
     """
+
     def __init__(self, value, start, end, normalized=None, stem=None):
         self.value = value
         self.start = start

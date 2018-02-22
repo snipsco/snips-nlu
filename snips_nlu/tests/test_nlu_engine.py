@@ -6,7 +6,7 @@ from builtins import str
 from copy import deepcopy
 
 from mock import patch
-from snips_nlu_ontology_rust import get_all_languages
+from snips_nlu_ontology import get_all_languages
 
 import snips_nlu
 import snips_nlu.version

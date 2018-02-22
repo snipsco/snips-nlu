@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from builtins import object
 from builtins import str
 
-from snips_nlu_ontology_rust import (
+from snips_nlu_ontology import (
     get_all_builtin_entities, BuiltinEntityParser as _BuiltinEntityParser,
     get_supported_entities)
 

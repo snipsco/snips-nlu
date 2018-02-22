@@ -5,7 +5,7 @@ import json
 import os
 import unittest
 
-from snips_nlu_ontology_rust import get_all_languages
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.constants import ROOT_PATH, LANGUAGE, RES_INTENT, \

@@ -8,7 +8,7 @@ from collections import defaultdict
 import numpy as np
 import scipy.sparse as sp
 from future.utils import iteritems
-from nlu_utils import normalize
+from snips_nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 

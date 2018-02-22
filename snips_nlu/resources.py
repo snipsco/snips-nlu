@@ -6,8 +6,8 @@ import os
 from builtins import next
 
 from future.utils import iteritems
-from nlu_utils import normalize
-from snips_nlu_ontology_rust import get_all_languages
+from snips_nlu_utils import normalize
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
                                  RESOURCES_PATH, LANGUAGE_EN, LANGUAGE_FR,

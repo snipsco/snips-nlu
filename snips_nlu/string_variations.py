@@ -3,15 +3,12 @@ from __future__ import unicode_literals
 
 import itertools
 import re
-from builtins import range
-from builtins import str
-from builtins import zip
 
 from builtins import range
 from builtins import str
 from builtins import zip
 from future.utils import iteritems
-from nlu_utils import normalize
+from snips_nlu_utils import normalize
 from num2words import num2words
 
 from snips_nlu.builtin_entities import get_builtin_entities

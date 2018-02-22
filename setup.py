@@ -14,7 +14,7 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
-nlu_metrics_version = "0.10.2"
+nlu_metrics_version = "0.11.1"
 
 required = [
     "enum34==1.1.6",
@@ -23,7 +23,8 @@ required = [
     "scikit-learn==0.19.1",
     "sklearn-crfsuite==0.3.6",
     "semantic_version==2.6.0",
-    "nlu_utils==0.5.3",
+    "snips_nlu_utils==0.6.0",
+    "snips_nlu_ontology==0.53.0",
     "num2words==0.5.6"
 ]
 
@@ -34,17 +35,17 @@ extras_require = {
         "sphinx-rtd-theme==0.2.4"
     ],
     "metrics": [
-        "nlu_metrics==%s" % nlu_metrics_version,
+        "snips_nlu_metrics==%s" % nlu_metrics_version,
     ],
     "test": [
         "mock==2.0.0",
-        "nlu_metrics==%s" % nlu_metrics_version,
+        "snips_nlu_metrics==%s" % nlu_metrics_version,
         "pylint==1.8.2",
         "coverage==4.4.2"
     ],
     "integration_test": [
-        "nlu_metrics==%s" % nlu_metrics_version,
-        "snips_nlu_rust==0.52.3",
+        "snips_nlu_metrics==%s" % nlu_metrics_version,
+        "snips_nlu_rust==0.53.0",
     ]
 }
 

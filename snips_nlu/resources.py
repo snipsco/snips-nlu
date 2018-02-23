@@ -86,7 +86,7 @@ def get_resource(language, resource_name):
             " '{}'".format(resource_name, language))
 
 
-def load_stop_words(language):
+def _load_stop_words(language):
     if STOP_WORDS in RESOURCE_INDEX[language]:
         stop_words_file_path = os.path.join(
             get_resources_path(language),
@@ -100,7 +100,7 @@ def get_stop_words(language):
     return get_resource(language, STOP_WORDS)
 
 
-def load_noises(language):
+def _load_noises(language):
     if NOISE in RESOURCE_INDEX[language]:
         noise_path = os.path.join(
             get_resources_path(language),
@@ -118,7 +118,7 @@ def get_noises(language):
     return get_resource(language, NOISE)
 
 
-def load_clusters(language):
+def _load_clusters(language):
     word_clusters_paths = {
         os.path.splitext(name)[0]: os.path.join(
             get_resources_path(language), name)
@@ -140,7 +140,7 @@ def get_word_clusters(language):
     return get_resource(language, WORD_CLUSTERS)
 
 
-def load_gazetteers(language):
+def _load_gazetteers(language):
     gazetteers_paths = {
         os.path.splitext(name)[0]: os.path.join(
             get_resources_path(language), name)
@@ -167,7 +167,7 @@ def get_gazetteer(language, gazetteer_name):
     return get_gazetteers(language)[gazetteer_name]
 
 
-def verbs_lexemes(language):
+def _verbs_lexemes(language):
     stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language,
                                          "top_*_verbs_lexemes.txt"))
     if not stems_paths:
@@ -184,7 +184,7 @@ def verbs_lexemes(language):
     return verb_lexemes
 
 
-def word_inflections(language):
+def _word_inflections(language):
     inflection_paths = glob.glob(os.path.join(RESOURCES_PATH, language,
                                               "top_*_words_inflected.txt"))
     if not inflection_paths:
@@ -198,9 +198,9 @@ def word_inflections(language):
     return inflections
 
 
-def load_stems(language):
-    stems = word_inflections(language)
-    stems.update(verbs_lexemes(language))
+def _load_stems(language):
+    stems = _word_inflections(language)
+    stems.update(_verbs_lexemes(language))
     _RESOURCES[language][STEMS] = stems
 
 
@@ -216,8 +216,8 @@ def load_resources(language):
     """
     if language in _RESOURCES:
         return
-    load_clusters(language)
-    load_gazetteers(language)
-    load_stop_words(language)
-    load_noises(language)
-    load_stems(language)
+    _load_clusters(language)
+    _load_gazetteers(language)
+    _load_stop_words(language)
+    _load_noises(language)
+    _load_stems(language)

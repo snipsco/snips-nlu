@@ -220,7 +220,7 @@ resources used to improve performance with the :func:`.load_resources` function.
 
     from snips_nlu import SnipsNLUEngine, load_resources
 
-    load_resources("en")
+    load_resources(u"en")
 
     with io.open("config_en.json") as f:
         config = json.load(f)

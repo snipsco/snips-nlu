@@ -72,7 +72,7 @@ def get_language_resource(language):
     if language not in _RESOURCES:
         raise UnloadedResources(
             "Missing resources for '{}', please load them with the "
-            "load_resources function".format(language.iso_code))
+            "load_resources function".format(language))
     return _RESOURCES[language]
 
 

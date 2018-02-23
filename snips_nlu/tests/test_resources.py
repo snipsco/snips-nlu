@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from mock import patch
-
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import RESOURCE_INDEX, get_stop_words, get_resource, \
@@ -37,7 +36,7 @@ class TestResources(SnipsTest):
         # When
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
             with self.assertRaises(UnloadedResources) as ctx:
-                get_resource(Language.EN, "")
+                get_resource("en", "")
             self.assertEqual(
                 ctx.exception.message,
                 "Missing resources for 'en', please load them with the "
@@ -45,13 +44,13 @@ class TestResources(SnipsTest):
 
     def test_should_raise_non_existing_resources(self):
         # Given
-        mocked_value = {Language.EN: dict()}
+        mocked_value = {"en": dict()}
 
         # When
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
             with self.assertRaises(NonExistingResource) as ctx:
-                get_resource(Language.EN, "my_resource")
+                get_resource("en", "my_resource")
             self.assertEqual(
                 ctx.exception.message,
                 "Non existing resource 'my_resource' for language "
-                "'Language.EN'")
+                "'en'")

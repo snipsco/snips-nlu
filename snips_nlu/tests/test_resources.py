@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from future.builtins import str
 from mock import patch
 from snips_nlu_ontology import get_all_languages
 
@@ -38,7 +39,7 @@ class TestResources(SnipsTest):
             with self.assertRaises(UnloadedResources) as ctx:
                 get_resource("en", "")
         self.assertEqual(
-            ctx.exception.message,
+            str(ctx.exception.args[0]),
             "Missing resources for 'en', please load them with the "
             "load_resources function")
 
@@ -51,5 +52,5 @@ class TestResources(SnipsTest):
             with self.assertRaises(UnknownResource) as ctx:
                 get_resource("en", "my_resource")
         self.assertEqual(
-            ctx.exception.message,
+            str(ctx.exception.args[0]),
             "Unknown resource 'my_resource' for 'en' language")

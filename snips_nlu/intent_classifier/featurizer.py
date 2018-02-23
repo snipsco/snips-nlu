@@ -8,9 +8,9 @@ import scipy.sparse as sp
 from builtins import object
 from builtins import range
 from future.utils import iteritems
-from snips_nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
+from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import ENTITIES, UTTERANCES

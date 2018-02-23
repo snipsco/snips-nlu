@@ -3,11 +3,12 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
+
+
+from builtins import object, range
+from future.utils import iteritems
 import numpy as np
 import scipy.sparse as sp
-from builtins import object
-from builtins import range
-from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize

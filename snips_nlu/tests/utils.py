@@ -7,7 +7,8 @@ import traceback as tb
 from contextlib import contextmanager
 from unittest import TestCase
 
-from snips_nlu.languages import Language
+from snips_nlu_ontology import get_all_languages
+
 from snips_nlu.resources import load_resources
 
 TEST_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +27,7 @@ class SnipsTest(TestCase):
 
     def __init__(self, methodName='runTest'):
         super(SnipsTest, self).__init__(methodName)
-        for l in Language:
+        for l in get_all_languages():
             load_resources(l)
 
     @contextmanager

@@ -13,6 +13,7 @@ from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
                                  RESOURCES_PATH, LANGUAGE_EN, LANGUAGE_FR,
                                  LANGUAGE_ES, LANGUAGE_KO, LANGUAGE_DE,
                                  LANGUAGE_JA, STEMS)
+from snips_nlu.languages import get_ignored_characters_pattern
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import get_resources_path
 
@@ -152,7 +153,7 @@ def load_gazetteers(language):
             for l in f:
                 normalized = normalize(l.strip())
                 if normalized:
-                    normalized = language.default_sep.join(
+                    normalized = get_ignored_characters_pattern(language).join(
                         [t.value for t in tokenize(normalized, language)])
                     gazetteers[name].add(normalized)
     _RESOURCES[language][GAZETTEERS] = gazetteers

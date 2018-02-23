@@ -63,7 +63,9 @@ def main_engine_inference():
     with io.open(os.path.abspath(training_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
     engine = SnipsNLUEngine.from_dict(engine_dict)
-    load_resources(engine._dataset_metadata["language_code"])
+    language = engine._dataset_metadata[  # pylint: disable=protected-access
+        "language_code"]
+    load_resources(language)
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()

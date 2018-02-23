@@ -60,7 +60,7 @@ RESOURCE_INDEX = {
 _RESOURCES = defaultdict(dict)
 
 
-class NonExistingResource(LookupError):
+class UnknownResource(LookupError):
     pass
 
 
@@ -81,9 +81,8 @@ def get_resource(language, resource_name):
     try:
         return language_resource[resource_name]
     except KeyError:
-        raise NonExistingResource(
-            "Non existing resource '{}' for language"
-            " '{}'".format(resource_name, language))
+        raise UnknownResource("Unknown resource '{}' for '{}' "
+                              "language".format(resource_name, language))
 
 
 def _load_stop_words(language):

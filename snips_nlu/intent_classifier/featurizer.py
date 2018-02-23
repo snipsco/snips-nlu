@@ -19,7 +19,7 @@ from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import (get_stop_words, get_word_clusters,
-                                 NonExistingResource)
+                                 UnknownResource)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize_light
 
@@ -193,7 +193,7 @@ def _normalize_stem(text, language):
     normalized_stemmed = normalize(text)
     try:
         normalized_stemmed = stem(normalized_stemmed, language)
-    except NonExistingResource:
+    except UnknownResource:
         pass
     return normalized_stemmed
 

@@ -4,7 +4,7 @@ from mock import patch
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import RESOURCE_INDEX, get_stop_words, get_resource, \
-    UnloadedResources, NonExistingResource
+    UnloadedResources, UnknownResource
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -48,7 +48,7 @@ class TestResources(SnipsTest):
 
         # When
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
-            with self.assertRaises(NonExistingResource) as ctx:
+            with self.assertRaises(UnknownResource) as ctx:
                 get_resource("en", "my_resource")
             self.assertEqual(
                 ctx.exception.message,

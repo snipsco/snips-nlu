@@ -3,13 +3,11 @@ from __future__ import unicode_literals
 
 import itertools
 import re
-
 from builtins import next, range, zip, str
 from copy import deepcopy
 from uuid import uuid4
 
 import numpy as np
-
 from future.utils import iteritems, itervalues
 
 from snips_nlu.builtin_entities import is_builtin_entity

@@ -1,19 +1,19 @@
 from __future__ import unicode_literals
 
 import re
-from builtins import str
 from copy import deepcopy
 
+from builtins import str
 from future.utils import itervalues, iteritems
 
 from snips_nlu.builtin_entities import (is_builtin_entity,
                                         get_builtin_entities)
 from snips_nlu.constants import (
     TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START)
+    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START, END, ENTITY_KIND)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
-from snips_nlu.languages import Language
+from snips_nlu.languages import get_ignored_characters_pattern
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
@@ -71,7 +71,7 @@ class DeterministicIntentParser(IntentParser):
     def fit(self, dataset):
         """Fit the intent parser with a valid Snips dataset"""
         dataset = validate_and_format_dataset(dataset)
-        self.language = Language.from_iso_code(dataset[LANGUAGE])
+        self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = _get_joined_entity_utterances(
@@ -132,7 +132,9 @@ class DeterministicIntentParser(IntentParser):
                     value = match.group(group_name)
                     if rng in ranges_mapping:
                         rng = ranges_mapping[rng]
-                        value = text[rng[0]:rng[1]]
+                        value = text[rng[START]:rng[END]]
+                    else:
+                        rng = {START: rng[0], END: rng[1]}
                     parsed_slot = unresolved_slot(
                         match_range=rng, value=value, entity=entity,
                         slot_name=slot_name)
@@ -159,13 +161,10 @@ class DeterministicIntentParser(IntentParser):
 
     def to_dict(self):
         """Returns a json-serializable dict"""
-        language_code = None
-        if self.language is not None:
-            language_code = self.language.iso_code
         return {
             "unit_name": self.unit_name,
             "config": self.config.to_dict(),
-            "language_code": language_code,
+            "language_code": self.language,
             "patterns": self.patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
             "slot_names_to_entities": self.slot_names_to_entities
@@ -180,11 +179,8 @@ class DeterministicIntentParser(IntentParser):
         """
         config = cls.config_type.from_dict(unit_dict["config"])
         parser = cls(config=config)
-        language = None
-        if unit_dict["language_code"] is not None:
-            language = Language.from_iso_code(unit_dict["language_code"])
         parser.patterns = unit_dict["patterns"]
-        parser.language = language
+        parser.language = unit_dict["language_code"]
         parser.group_names_to_slot_names = unit_dict[
             "group_names_to_slot_names"]
         parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
@@ -238,9 +234,10 @@ def _query_to_pattern(query, joined_entity_utterances,
         else:
             tokens = tokenize_light(chunk[TEXT], language)
             pattern += [regex_escape(t) for t in tokens]
-    pattern = r"^%s%s%s$" % (language.ignored_characters_pattern,
-                             language.ignored_characters_pattern.join(pattern),
-                             language.ignored_characters_pattern)
+    ignored_char_pattern = get_ignored_characters_pattern(language)
+    pattern = r"^%s%s%s$" % (ignored_char_pattern,
+                             ignored_char_pattern.join(pattern),
+                             ignored_char_pattern)
     return pattern, group_names_to_slot_names
 
 
@@ -330,16 +327,16 @@ def _replace_builtin_entities(text, language):
     offset = 0
     current_ix = 0
     builtin_entities = sorted(builtin_entities,
-                              key=lambda e: e[RES_MATCH_RANGE][0])
+                              key=lambda e: e[RES_MATCH_RANGE][START])
     for ent in builtin_entities:
-        ent_start = ent[RES_MATCH_RANGE][0]
-        ent_end = ent[RES_MATCH_RANGE][1]
+        ent_start = ent[RES_MATCH_RANGE][START]
+        ent_end = ent[RES_MATCH_RANGE][END]
         rng_start = ent_start + offset
 
         processed_text += text[current_ix:ent_start]
 
-        entity_length = ent[RES_MATCH_RANGE][1] - ent[RES_MATCH_RANGE][0]
-        entity_place_holder = _get_builtin_entity_name(ent[ENTITY].label,
+        entity_length = ent_end - ent_start
+        entity_place_holder = _get_builtin_entity_name(ent[ENTITY_KIND],
                                                        language)
 
         offset += len(entity_place_holder) - entity_length

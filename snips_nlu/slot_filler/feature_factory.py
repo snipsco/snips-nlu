@@ -4,13 +4,13 @@ from abc import ABCMeta, abstractmethod
 from builtins import map, object
 
 from future.utils import with_metaclass, iteritems
-from nlu_utils import normalize
+from snips_nlu_utils import normalize
+from snips_nlu_ontology.builtin_entities import get_supported_entities
 
-from snips_nlu.builtin_entities import (
-    get_builtin_entities, get_supported_builtin_entities, BuiltInEntity)
+from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
-    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE)
-from snips_nlu.languages import Language
+    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END)
+from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
@@ -205,8 +205,8 @@ class NgramFactory(SingleFeatureFactory):
     @language.setter
     def language(self, value):
         if value is not None:
-            self._language = Language.from_iso_code(value)
-            self.args["language_code"] = self.language.iso_code
+            self._language = value
+            self.args["language_code"] = self.language
             if self.common_words_gazetteer_name is not None:
                 gazetteer = get_gazetteer(self.language,
                                           self.common_words_gazetteer_name)
@@ -227,9 +227,9 @@ class NgramFactory(SingleFeatureFactory):
         if 0 <= token_index < max_len and end <= max_len:
             if self.gazetteer is None:
                 if self.use_stemming:
-                    return self.language.default_sep.join(
+                    return get_default_sep(self.language).join(
                         t.stem for t in tokens[token_index:end])
-                return self.language.default_sep.join(
+                return get_default_sep(self.language).join(
                     t.normalized_value for t in tokens[token_index:end])
             words = []
             for t in tokens[token_index:end]:
@@ -237,7 +237,7 @@ class NgramFactory(SingleFeatureFactory):
                     t.normalized_value
                 words.append(normalized if normalized in self.gazetteer
                              else "rare_word")
-            return self.language.default_sep.join(words)
+            return get_default_sep(self.language).join(words)
         return None
 
 
@@ -273,7 +273,7 @@ class ShapeNgramFactory(SingleFeatureFactory):
     @language.setter
     def language(self, value):
         if value is not None:
-            self._language = Language.from_iso_code(value)
+            self._language = value
             self.args["language_code"] = value
 
     @property
@@ -287,7 +287,7 @@ class ShapeNgramFactory(SingleFeatureFactory):
         max_len = len(tokens)
         end = token_index + self.n
         if 0 <= token_index < max_len and end <= max_len:
-            return self.language.default_sep.join(
+            return get_default_sep(self.language).join(
                 get_shape(t.value) for t in tokens[token_index:end])
         return None
 
@@ -327,9 +327,9 @@ class WordClusterFactory(SingleFeatureFactory):
     @language.setter
     def language(self, value):
         if value is not None:
-            self._language = Language.from_iso_code(value)
+            self._language = value
             self.cluster = get_word_clusters(self.language)[self.cluster_name]
-            self.args["language_code"] = self.language.iso_code
+            self.args["language_code"] = self.language
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
@@ -374,8 +374,8 @@ class EntityMatchFactory(CRFFeatureFactory):
     @language.setter
     def language(self, value):
         if value is not None:
-            self._language = Language.from_iso_code(value)
-            self.args["language_code"] = self.language.iso_code
+            self._language = value
+            self.args["language_code"] = self.language
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
@@ -450,10 +450,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
         self.builtin_entities = None
-        entity_labels = self.args.get("entity_labels")
-        if entity_labels is not None:
-            self.builtin_entities = [BuiltInEntity.from_label(label)
-                                     for label in entity_labels]
+        self.builtin_entities = self.args.get("entity_labels")
         self._language = None
         self.language = self.args.get("language_code")
 
@@ -464,14 +461,13 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
     @language.setter
     def language(self, value):
         if value is not None:
-            self._language = Language.from_iso_code(value)
-            self.args["language_code"] = self.language.iso_code
+            self._language = value
+            self.args["language_code"] = self.language
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
-        self.builtin_entities = get_supported_builtin_entities(self.language)
-        self.args["entity_labels"] = [entity.label for entity in
-                                      self.builtin_entities]
+        self.builtin_entities = list(get_supported_entities(self.language))
+        self.args["entity_labels"] = self.builtin_entities
 
     def build_features(self):
         features = []
@@ -481,7 +477,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
             # `builtin_entity`
             builtin_entity_match = self._build_entity_match_fn(builtin_entity)
             for offset in self.offsets:
-                feature_name = "builtin_entity_match_%s" % builtin_entity.label
+                feature_name = "builtin_entity_match_%s" % builtin_entity
                 feature = Feature(feature_name, builtin_entity_match, offset,
                                   self.drop_out)
                 features.append(feature)
@@ -500,8 +496,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
             for ent in builtin_entities:
-                entity_start = ent[RES_MATCH_RANGE][0]
-                entity_end = ent[RES_MATCH_RANGE][1]
+                entity_start = ent[RES_MATCH_RANGE][START]
+                entity_end = ent[RES_MATCH_RANGE][END]
                 indexes = []
                 for index, token in enumerate(tokens):
                     if (entity_start <= token.start < entity_end) \

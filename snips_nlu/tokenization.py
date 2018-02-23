@@ -1,10 +1,11 @@
 # coding=utf-8
 from __future__ import unicode_literals
+
 from builtins import object
 
-from nlu_utils import (tokenize as _tokenize,
-                       tokenize_light as _tokenize_light,
-                       normalize)
+from snips_nlu_utils import (tokenize as _tokenize,
+                             tokenize_light as _tokenize_light,
+                             normalize)
 
 
 class Token(object):
@@ -18,6 +19,7 @@ class Token(object):
         start (int): Start position of the token within the sentence
         end (int): End position of the token within the sentence
     """
+
     def __init__(self, value, start, end, normalized=None, stem=None):
         self.value = value
         self.start = start
@@ -49,7 +51,7 @@ def tokenize(string, language):
 
     Args:
         string (str): Input to tokenize
-        language (:class:`.Language`): Language to use during tokenization
+        language (str): Language to use during tokenization
 
     Returns:
         list of :class:`.Token`: The list of tokenized values
@@ -57,12 +59,12 @@ def tokenize(string, language):
     tokens = [Token(value=token["value"],
                     start=token["char_range"]["start"],
                     end=token["char_range"]["end"])
-              for token in _tokenize(string, language.iso_code)]
+              for token in _tokenize(string, language)]
     return tokens
 
 
 def tokenize_light(string, language):
     """Same behavior as :func:`tokenize` but returns tokenized strings instead
         of :class:`Token` objects"""
-    tokenized_string = _tokenize_light(string, language.iso_code)
+    tokenized_string = _tokenize_light(string, language)
     return tokenized_string

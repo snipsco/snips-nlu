@@ -129,7 +129,8 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
     """Creates a resolved slot
 
     Args:
-        match_range (range or tuple): Range of the slot within the sentence
+        match_range (dict): Range of the slot within the sentence
+            (ex: {"start": 3, "end": 10})
         raw_value (str): Slot value as it appears in the sentence
         resolved_value (dict): Resolved value of the slot
         entity (str): Entity which the slot belongs to
@@ -145,8 +146,8 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         ...     "value": 20,
         ...     "unit": "celsius"
         ... }
-        >>> resolved_slot((10, 19), "earl grey", resolved_value, "beverage",
-        ... "beverage")
+        >>> resolved_slot({"start": 10, "end": 19}, "earl grey",
+        ... resolved_value, "beverage", "beverage")
         {
             "rawValue": "earl grey",
             "value": {
@@ -163,7 +164,7 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         }
     """
     return {
-        RES_MATCH_RANGE: _convert_range(match_range),
+        RES_MATCH_RANGE: match_range,
         RES_RAW_VALUE: raw_value,
         RES_VALUE: resolved_value,
         RES_ENTITY: entity,

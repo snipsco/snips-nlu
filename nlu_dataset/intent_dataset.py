@@ -6,8 +6,9 @@ import os
 
 from builtins import object
 
-from nlu_dataset.builtin_entities import BUILTIN_ENTITIES, BuiltinEntity
+from nlu_dataset.builtin_entities import BuiltinEntity
 from nlu_dataset.custom_entities import CustomEntity, EntityUtterance
+from snips_nlu.builtin_entities import is_builtin_entity
 
 
 class IntentDataset(object):
@@ -89,13 +90,13 @@ class IntentDataset(object):
         for s in self.slots:
             if s.entity not in ents:
                 ents[s.entity] = self.mk_entity(s)
-            elif s.entity not in BUILTIN_ENTITIES:
+            elif not is_builtin_entity(s.entity):
                 ents[s.entity].utterances.append(EntityUtterance(s.text))
         return ents
 
     @classmethod
     def mk_entity(cls, slot, automatically_extensible=True, use_synonyms=True):
-        if slot.entity in BUILTIN_ENTITIES:
+        if is_builtin_entity(slot.entity):
             return BuiltinEntity(slot.entity)
         return CustomEntity([EntityUtterance(slot.text)],
                             automatically_extensible, use_synonyms)

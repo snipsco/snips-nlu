@@ -8,9 +8,9 @@ from copy import deepcopy
 
 from future.utils import iteritems
 
-from nlu_dataset.builtin_entities import BUILTIN_ENTITIES
 from nlu_dataset.custom_entities import CustomEntity
 from nlu_dataset.intent_dataset import IntentDataset
+from snips_nlu.builtin_entities import is_builtin_entity
 
 
 class AssistantDataset(object):
@@ -74,7 +74,7 @@ class AssistantDataset(object):
             for ent_name, ent in iteritems(dataset.entities):
                 if ent_name not in ents:
                     ents[ent_name] = ent
-                elif ent_name not in BUILTIN_ENTITIES:
+                elif not is_builtin_entity(ent_name):
                     for u in ent.utterances:
                         if u.value not in ents_values:
                             ents[ent_name].utterances.append(u)

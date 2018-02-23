@@ -8,14 +8,14 @@ from collections import defaultdict
 import numpy as np
 import scipy.sparse as sp
 from future.utils import iteritems
-from nlu_utils import normalize
+from snips_nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import ENTITIES, UTTERANCES
 from snips_nlu.constants import NGRAM
-from snips_nlu.languages import Language
+from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import (get_stop_words, get_word_clusters,
@@ -133,7 +133,7 @@ class Featurizer(object):
         }
 
         return {
-            'language_code': self.language.iso_code,
+            'language_code': self.language,
             'tfidf_vectorizer': tfidf_vectorizer,
             'best_features': self.best_features,
             'pvalue_threshold': self.pvalue_threshold,
@@ -150,7 +150,7 @@ class Featurizer(object):
 
         The dict must have been generated with :func:`~Featurizer.to_dict`
         """
-        language = Language.from_iso_code(obj_dict['language_code'])
+        language = obj_dict['language_code']
         config = FeaturizerConfig.from_dict(obj_dict["config"])
         tfidf_vectorizer = _deserialize_tfidf_vectorizer(
             obj_dict["tfidf_vectorizer"], language, config)
@@ -228,7 +228,7 @@ def _preprocess_query(query, language, entity_utterances_to_features_names):
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
-    features = language.default_sep.join(normalized_stemmed_tokens)
+    features = get_default_sep(language).join(normalized_stemmed_tokens)
     if entities_features:
         features += " " + " ".join(sorted(entities_features))
     if word_clusters_features:

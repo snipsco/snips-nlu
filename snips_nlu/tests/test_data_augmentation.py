@@ -7,10 +7,10 @@ from builtins import range
 import numpy as np
 from mock import patch
 
+from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_entities_iterators,
     generate_utterance, capitalize_utterances, capitalize)
-from snips_nlu.languages import Language
 
 
 def np_random_permutation(x):
@@ -127,7 +127,7 @@ class TestDataAugmentation(unittest.TestCase):
 
     def test_capitalize(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         texts = [
             ("university of new york", "University of New York"),
             ("JOHN'S SMITH", "John s Smith"),
@@ -143,7 +143,7 @@ class TestDataAugmentation(unittest.TestCase):
 
     def test_should_capitalize_only_right_entities(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         ratio = 1
         entities = {
             "someOneHouse": {

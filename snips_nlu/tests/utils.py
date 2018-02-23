@@ -34,7 +34,7 @@ def get_empty_dataset(language):
     return {
         "intents": {},
         "entities": {},
-        "language": language.iso_code,
+        "language": language,
         "snips_nlu_version": "1.1.1"
     }
 

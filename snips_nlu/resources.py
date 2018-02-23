@@ -3,19 +3,29 @@ from __future__ import unicode_literals
 import glob
 import io
 import os
-
 from builtins import next
+
 from future.utils import iteritems
-from nlu_utils import normalize
+from snips_nlu_utils import normalize
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
-                                 RESOURCES_PATH)
-from snips_nlu.languages import Language
+                                 RESOURCES_PATH, LANGUAGE_EN, LANGUAGE_FR,
+                                 LANGUAGE_ES, LANGUAGE_KO, LANGUAGE_DE,
+                                 LANGUAGE_JA)
+from snips_nlu.languages import get_default_sep
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import get_resources_path
 
 RESOURCE_INDEX = {
-    Language.EN: {
+    LANGUAGE_DE: {
+        GAZETTEERS: [
+            "top_10000_words.txt"
+        ],
+        STOP_WORDS: "stop_words.txt",
+        NOISE: "noise.txt",
+    },
+    LANGUAGE_EN: {
         GAZETTEERS: [
             "top_10000_words.txt"
         ],
@@ -23,31 +33,28 @@ RESOURCE_INDEX = {
         NOISE: "noise.txt",
         WORD_CLUSTERS: ["brown_clusters.txt"]
     },
-    Language.FR: {
+    LANGUAGE_ES: {
         GAZETTEERS: [
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     },
-    Language.ES: {
+    LANGUAGE_FR: {
         GAZETTEERS: [
             "top_10000_words.txt"
         ],
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     },
-    Language.KO: {
+    LANGUAGE_JA: {
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
     },
-    Language.DE: {
-        GAZETTEERS: [
-            "top_10000_words.txt"
-        ],
+    LANGUAGE_KO: {
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
-    }
+    },
 }
 
 _STOP_WORDS = dict()
@@ -59,7 +66,7 @@ _LANGUAGE_STEMS = dict()
 
 
 def load_stop_words():
-    for language in Language:
+    for language in get_all_languages():
         if STOP_WORDS in RESOURCE_INDEX[language]:
             stop_words_file_path = os.path.join(
                 get_resources_path(language),
@@ -74,7 +81,7 @@ def get_stop_words(language):
 
 
 def load_noises():
-    for language in Language:
+    for language in get_all_languages():
         if NOISE in RESOURCE_INDEX[language]:
             noise_path = os.path.join(
                 get_resources_path(language),
@@ -93,7 +100,7 @@ def get_noises(language):
 
 
 def load_clusters():
-    for language in Language:
+    for language in get_all_languages():
         word_clusters_paths = {
             os.path.splitext(name)[0]: os.path.join(
                 get_resources_path(language), name)
@@ -116,7 +123,7 @@ def get_word_clusters(language):
 
 
 def load_gazetteers():
-    for language in Language:
+    for language in get_all_languages():
         gazetteers_paths = {
             os.path.splitext(name)[0]: os.path.join(
                 get_resources_path(language), name)
@@ -130,7 +137,7 @@ def load_gazetteers():
                 for l in f:
                     normalized = normalize(l)
                     if normalized:
-                        normalized = language.default_sep.join(
+                        normalized = get_default_sep(language).join(
                             [t.value for t in tokenize(normalized, language)])
                         gazetteers[name].add(normalized)
 
@@ -144,7 +151,7 @@ def get_gazetteer(language, gazetteer_name):
 
 
 def verbs_lexemes(language):
-    stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language.iso_code,
+    stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language,
                                          "top_*_verbs_lexemes.txt"))
     if not stems_paths:
         return dict()
@@ -161,8 +168,7 @@ def verbs_lexemes(language):
 
 
 def word_inflections(language):
-    inflection_paths = glob.glob(os.path.join(RESOURCES_PATH,
-                                              language.iso_code,
+    inflection_paths = glob.glob(os.path.join(RESOURCES_PATH, language,
                                               "top_*_words_inflected.txt"))
     if not inflection_paths:
         return dict()
@@ -179,7 +185,7 @@ def word_inflections(language):
 
 def load_stems():
     global _LANGUAGE_STEMS
-    for language in Language:
+    for language in get_all_languages():
         _LANGUAGE_STEMS[language] = word_inflections(language)
         _LANGUAGE_STEMS[language].update(verbs_lexemes(language))
 

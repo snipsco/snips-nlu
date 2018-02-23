@@ -2,20 +2,19 @@
 from __future__ import unicode_literals, print_function
 
 import unittest
-from unittest import skip
 
 from future.utils import iteritems
-from nlu_metrics import (compute_cross_val_metrics,
-                         compute_cross_val_nlu_metrics)
+from snips_nlu_metrics import (compute_cross_val_metrics,
+                               compute_cross_val_nlu_metrics)
 from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 
-from snips_nlu.languages import Language
+from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
 from snips_nlu.tokenization import tokenize_light
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.8
-SLOT_FILLING_THRESHOLD = 0.7
+SLOT_FILLING_THRESHOLD = 0.6
 
 SKIPPED_DATE_PREFIXES = {"at", "in", "for", "on"}
 
@@ -37,7 +36,6 @@ class IntegrationTestSnipsNLUEngine(unittest.TestCase):
         # Then
         self.check_metrics(results)
 
-    @skip("Skip this test until crf tags are fixed in snips-nlu-rs")
     def test_python_rust_engine_performance(self):
         # Given
         dataset_path = PERFORMANCE_DATASET_PATH
@@ -89,8 +87,8 @@ def _slot_matching_lambda(lhs_slot, rhs_slot):
         return lhs_value == rhs_value
     else:
         # Allow fuzzy matching when comparing datetimes
-        lhs_tokens = tokenize_light(lhs_value, Language.EN)
-        rhs_tokens = tokenize_light(rhs_value, Language.EN)
+        lhs_tokens = tokenize_light(lhs_value, LANGUAGE_EN)
+        rhs_tokens = tokenize_light(rhs_value, LANGUAGE_EN)
         if lhs_tokens and lhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:
             lhs_tokens = lhs_tokens[1:]
         if rhs_tokens and rhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:

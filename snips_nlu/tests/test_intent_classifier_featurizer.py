@@ -7,10 +7,11 @@ from builtins import bytes
 from future.utils import iteritems
 from mock import patch, mock
 
+from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
-from snips_nlu.languages import Language
+from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.tokenization import tokenize_light
@@ -18,10 +19,10 @@ from snips_nlu.tokenization import tokenize_light
 
 class TestIntentClassifierFeaturizer(SnipsTest):
     @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
+           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_should_be_serializable(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         tfidf_vectorizer = _get_tfidf_vectorizer(language)
 
         pvalue_threshold = 0.42
@@ -96,10 +97,10 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         self.assertDictEqual(expected_serialized, serialized_featurizer)
 
     @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
+           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_should_be_deserializable(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         idf_diag = [1.52, 1.21, 1.04]
         vocabulary = {"hello": 0, "beautiful": 1, "world": 2}
 
@@ -111,7 +112,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         featurizer_dict = {
             "config": FeaturizerConfig().to_dict(),
-            "language_code": language.iso_code,
+            "language_code": language,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
             "pvalue_threshold": pvalue_threshold,
@@ -189,7 +190,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "language": "en",
             "snips_nlu_version": "0.0.1"
         }
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = validate_and_format_dataset(dataset)
 
         # When
@@ -214,10 +215,10 @@ class TestIntentClassifierFeaturizer(SnipsTest):
     @patch("snips_nlu.intent_classifier.featurizer.get_word_clusters")
     @patch("snips_nlu.intent_classifier.featurizer.stem")
     @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
+           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
 
         def _stem(t):
             if t == "beautiful":
@@ -231,7 +232,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             return s
 
         def stem_function(text, language):
-            return language.default_sep.join(
+            return get_default_sep(language).join(
                 [_stem(t) for t in tokenize_light(text, language)])
 
         mocked_word_cluster.return_value = {
@@ -314,7 +315,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
     def test_featurizer_should_exclude_replacement_string(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = {
             "entities": {
                 "dummy1": {
@@ -341,7 +342,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
     def test_featurizer_should_be_serialized_when_not_fitted(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         featurizer = Featurizer(language, None)
         # When
         featurizer.to_dict()

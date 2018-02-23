@@ -11,7 +11,6 @@ from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     remove_builtin_slots, get_regularization_factor, build_training_data
-from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state, NotTrained
@@ -56,7 +55,7 @@ class LogRegIntentClassifier(IntentClassifier):
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
         dataset = validate_and_format_dataset(dataset)
-        language = Language.from_iso_code(dataset[LANGUAGE])
+        language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
         filtered_dataset = remove_builtin_slots(dataset)
         data_augmentation_config = self.config.data_augmentation_config

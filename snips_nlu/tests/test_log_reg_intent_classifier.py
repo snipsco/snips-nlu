@@ -10,7 +10,8 @@ import numpy as np
 from future.utils import itervalues
 from mock import patch
 
-from snips_nlu.constants import INTENTS, DATA, UTTERANCES, RES_INTENT_NAME
+from snips_nlu.constants import INTENTS, DATA, UTTERANCES, RES_INTENT_NAME, \
+    LANGUAGE_EN
 from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
@@ -18,7 +19,6 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     remove_builtin_slots, get_noise_it, generate_smart_noise, \
     generate_noise_utterances, add_unknown_word_to_utterances, \
     build_training_data
-from snips_nlu.languages import Language
 from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset, \
@@ -73,7 +73,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
     def test_should_get_none_if_empty_dataset(self):
         # Given
-        dataset = validate_and_format_dataset(get_empty_dataset(Language.EN))
+        dataset = validate_and_format_dataset(get_empty_dataset(LANGUAGE_EN))
         classifier = LogRegIntentClassifier().fit(dataset)
         text = "this is a dummy query"
 
@@ -117,7 +117,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
     @patch('snips_nlu.intent_classifier.featurizer.Featurizer.from_dict')
     def test_should_be_deserializable(self, mock_from_dict):
         # Given
-        mocked_featurizer = Featurizer(Language.EN, None)
+        mocked_featurizer = Featurizer(LANGUAGE_EN, None)
         mock_from_dict.return_value = mocked_featurizer
 
         intent_list = ["MakeCoffee", "MakeTea", None]
@@ -177,7 +177,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
     def test_empty_vocabulary_should_fit_and_return_none_intent(
             self, mocked_build_training):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = {
             "snips_nlu_version": "0.0.1",
             "entities": {
@@ -207,7 +207,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language
         }
         dataset = validate_and_format_dataset(dataset)
 
@@ -236,7 +236,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             noise_factor=0)
         utterances, _, intent_mapping = build_training_data(
-            dataset, Language.EN, data_augmentation_config, random_state)
+            dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
@@ -280,7 +280,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=None)
         utterances, _, intent_mapping = build_training_data(
-            dataset, Language.EN, data_augmentation_config, random_state)
+            dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
@@ -334,7 +334,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=replacement_string)
         utterances, _, intent_mapping = build_training_data(
-            dataset, Language.EN, data_augmentation_config, random_state)
+            dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
         expected_utterances = [get_text_from_chunks(utterance[DATA])
@@ -353,7 +353,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
     def test_should_build_training_data_with_no_data(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = validate_and_format_dataset(get_empty_dataset(language))
         random_state = np.random.RandomState(1)
 
@@ -372,7 +372,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
     def test_generate_noise_utterances(self, mocked_get_noises):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         num_intents = 2
         noise_factor = 1
         utterances_length = 5
@@ -521,7 +521,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                 ]
             }
         ]
-        language = Language.EN
+        language = LANGUAGE_EN
         mocked_noise.return_value = ["hello", "dear", "you", "fool"]
         replacement_string = "unknownword"
 
@@ -535,7 +535,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
 
     def test_remove_builtin_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = {
             "snips_nlu_version": "0.0.1",
             "entities": {
@@ -577,7 +577,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language
         }
 
         # When
@@ -615,7 +615,7 @@ class TestLogRegIntentClassifier(unittest.TestCase):
                     ]
                 }
             },
-            "language": language.iso_code
+            "language": language
         }
 
         self.assertDictEqual(expected_dataset, filtered_dataset)

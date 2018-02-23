@@ -90,7 +90,7 @@ def main_cross_val_metrics():
     args = vars(parse_cross_val_args(sys.argv[1:]))
 
     from snips_nlu import SnipsNLUEngine
-    from nlu_metrics import compute_cross_val_metrics
+    from snips_nlu_metrics import compute_cross_val_metrics
 
     dataset_path = args.pop("dataset_path")
     output_path = args.pop("output_path")
@@ -135,7 +135,7 @@ def main_train_test_metrics():
     args = vars(parse_train_test_args(sys.argv[1:]))
 
     from snips_nlu import SnipsNLUEngine
-    from nlu_metrics import compute_train_test_metrics
+    from snips_nlu_metrics import compute_train_test_metrics
 
     train_dataset_path = args.pop("train_dataset_path")
     test_dataset_path = args.pop("test_dataset_path")

@@ -5,11 +5,10 @@ from copy import deepcopy
 
 from future.utils import iteritems
 
-from snips_nlu.builtin_entities import is_builtin_entity, BuiltInEntity
+from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     ENTITIES, CAPITALIZE, LANGUAGE, RES_SLOTS, RES_ENTITY, RES_INTENT)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.languages import Language
 from snips_nlu.nlu_engine.utils import resolve_slots
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
@@ -115,8 +114,7 @@ class SnipsNLUEngine(ProcessingUnit):
         if isinstance(intents, str):
             intents = [intents]
 
-        language = Language.from_iso_code(
-            self._dataset_metadata["language_code"])
+        language = self._dataset_metadata["language_code"]
         entities = self._dataset_metadata["entities"]
 
         for parser in self.intent_parsers:
@@ -124,7 +122,7 @@ class SnipsNLUEngine(ProcessingUnit):
             if is_empty(res):
                 continue
             slots = res[RES_SLOTS]
-            scope = [BuiltInEntity.from_label(s[RES_ENTITY]) for s in slots
+            scope = [s[RES_ENTITY] for s in slots
                      if is_builtin_entity(s[RES_ENTITY])]
             resolved_slots = resolve_slots(text, slots, entities, language,
                                            scope)

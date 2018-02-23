@@ -2,11 +2,10 @@
 from __future__ import unicode_literals, print_function
 
 import unittest
-from unittest import skip
 
 from future.utils import iteritems
-from nlu_metrics import (compute_cross_val_metrics,
-                         compute_cross_val_nlu_metrics)
+from snips_nlu_metrics import (compute_cross_val_metrics,
+                               compute_cross_val_nlu_metrics)
 from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 
 from snips_nlu.constants import LANGUAGE_EN

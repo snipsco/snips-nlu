@@ -7,7 +7,8 @@ import os
 import sys
 
 from builtins import bytes, input
-from nlu_metrics import compute_cross_val_metrics, compute_train_test_metrics
+from snips_nlu_metrics import (
+    compute_cross_val_metrics, compute_train_test_metrics)
 
 from snips_nlu import SnipsNLUEngine, NLUEngineConfig, load_resources
 
@@ -52,7 +53,6 @@ def parse_inference_args(args):
                                      "its parsing API")
     parser.add_argument("training_path", type=str,
                         help="Path to a json-serialized trained engine")
-    parser.add_argument("language", type=str, help="Inference language")
     return parser.parse_args(args)
 
 
@@ -63,7 +63,7 @@ def main_engine_inference():
     with io.open(os.path.abspath(training_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
     engine = SnipsNLUEngine.from_dict(engine_dict)
-    load_resources(args["language"])
+    load_resources(engine._dataset_metadata["language_code"])
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()

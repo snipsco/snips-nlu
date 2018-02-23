@@ -210,12 +210,17 @@ We created a list of `sample configurations`_, one per supported language, that
 have some language specific enhancements. In this tutorial we will use the
 `english one`_.
 
+Before training the engine, note that you need to load language specific
+resources used to improve performance with the :func:`.load_resources` function.
+
 .. code-block:: python
 
     import io
     import json
 
-    from snips_nlu import SnipsNLUEngine
+    from snips_nlu import SnipsNLUEngine, load_resources
+
+    load_resources("en")
 
     with io.open("config_en.json") as f:
         config = json.load(f)

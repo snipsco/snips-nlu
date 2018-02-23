@@ -208,6 +208,11 @@ def get_stems(language):
 
 
 def load_resources(language):
+    """Load language specific resources
+
+    Args:
+        language (str): language
+    """
     if language in _RESOURCES:
         return
     load_clusters(language)

@@ -6,6 +6,13 @@ API reference
 This part of the documentation covers the most important interfaces of the
 Snips NLU package.
 
+Resources
+---------
+
+.. automodule:: snips_nlu.resources
+   :members:
+
+
 NLU engine
 ----------
 

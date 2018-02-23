@@ -30,7 +30,7 @@ resources used to improve performance with the :func:`.load_resources` function.
 
     from snips_nlu import load_resources, SnipsNLUEngine
 
-    load_resources("en")
+    load_resources(u"en")
     nlu_engine = SnipsNLUEngine()
 
 Now that we have our engine object created, we need to feed it with our sample

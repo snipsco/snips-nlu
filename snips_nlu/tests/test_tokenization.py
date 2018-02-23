@@ -1,15 +1,14 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
-
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.tokenization import tokenize, Token
 
 
-class TestTokenization(unittest.TestCase):
+class TestTokenization(SnipsTest):
     def test_should_tokenize_empty_string(self):
         # Given
         language = LANGUAGE_EN

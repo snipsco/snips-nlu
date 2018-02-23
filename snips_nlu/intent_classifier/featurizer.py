@@ -1,12 +1,12 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from builtins import object
-from builtins import range
 from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
+from builtins import object
+from builtins import range
 from future.utils import iteritems
 from snips_nlu_utils import normalize
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
@@ -19,7 +19,7 @@ from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import (get_stop_words, get_word_clusters,
-                                 get_stems)
+                                 NonExistingResource)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize_light
 
@@ -191,8 +191,10 @@ def _entity_name_to_feature(entity_name, language):
 
 def _normalize_stem(text, language):
     normalized_stemmed = normalize(text)
-    if language in get_stems():
+    try:
         normalized_stemmed = stem(normalized_stemmed, language)
+    except NonExistingResource:
+        pass
     return normalized_stemmed
 
 

@@ -1,23 +1,22 @@
 from __future__ import unicode_literals
 
-import unittest
+import numpy as np
 from builtins import next
 from builtins import range
-
-import numpy as np
 from mock import patch
 
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_entities_iterators,
     generate_utterance, capitalize_utterances, capitalize)
+from snips_nlu.tests.utils import SnipsTest
 
 
 def np_random_permutation(x):
     return x
 
 
-class TestDataAugmentation(unittest.TestCase):
+class TestDataAugmentation(SnipsTest):
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_context_iterator(self, _):
         # Given

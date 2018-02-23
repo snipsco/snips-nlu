@@ -7,9 +7,10 @@ from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
     FeaturizerConfig, NLUEngineConfig, ProbabilisticIntentParserConfig,
     DeterministicIntentParserConfig)
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestConfig(unittest.TestCase):
+class TestConfig(SnipsTest):
     def test_intent_classifier_data_augmentation_config(self):
         # Given
         config_dict = {

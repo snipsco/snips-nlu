@@ -37,10 +37,10 @@ class TestResources(SnipsTest):
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
             with self.assertRaises(UnloadedResources) as ctx:
                 get_resource("en", "")
-            self.assertEqual(
-                ctx.exception.message,
-                "Missing resources for 'en', please load them with the "
-                "load_resources function")
+        self.assertEqual(
+            ctx.exception.message,
+            "Missing resources for 'en', please load them with the "
+            "load_resources function")
 
     def test_should_raise_non_existing_resources(self):
         # Given
@@ -50,7 +50,6 @@ class TestResources(SnipsTest):
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
             with self.assertRaises(UnknownResource) as ctx:
                 get_resource("en", "my_resource")
-            self.assertEqual(
-                ctx.exception.message,
-                "Non existing resource 'my_resource' for language "
-                "'en'")
+        self.assertEqual(
+            ctx.exception.message,
+            "Unknown resource 'my_resource' for 'en' language")

@@ -10,7 +10,7 @@ from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
 
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
-from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH
+from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH, SnipsTest
 from snips_nlu.tokenization import tokenize_light
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.8
@@ -19,7 +19,7 @@ SLOT_FILLING_THRESHOLD = 0.6
 SKIPPED_DATE_PREFIXES = {"at", "in", "for", "on"}
 
 
-class IntegrationTestSnipsNLUEngine(unittest.TestCase):
+class IntegrationTestSnipsNLUEngine(SnipsTest):
     def test_pure_python_engine_performance(self):
         # Given
         dataset_path = PERFORMANCE_DATASET_PATH

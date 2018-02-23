@@ -1,13 +1,12 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
-
 from snips_nlu.constants import NGRAM, TOKEN_INDEXES
 from snips_nlu.slot_filler.features_utils import get_all_ngrams, get_shape
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestFeaturesUtils(unittest.TestCase):
+class TestFeaturesUtils(SnipsTest):
     def test_get_all_ngrams(self):
         # Given
         tokens = ["this", "is", "a", "simple", "sentence"]

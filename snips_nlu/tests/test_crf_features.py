@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
 from copy import deepcopy
 
 from mock import patch, MagicMock
@@ -16,11 +15,11 @@ from snips_nlu.slot_filler.feature_factory import (
     IsLastFactory, PrefixFactory, SuffixFactory, LengthFactory, NgramFactory,
     ShapeNgramFactory, WordClusterFactory, EntityMatchFactory,
     BuiltinEntityMatchFactory)
-from snips_nlu.tests.utils import SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, SnipsTest
 from snips_nlu.tokenization import tokenize
 
 
-class TestCRFFeatures(unittest.TestCase):
+class TestCRFFeatures(SnipsTest):
     def test_feature_should_work(self):
         # Given
         def fn(tokens, token_index):

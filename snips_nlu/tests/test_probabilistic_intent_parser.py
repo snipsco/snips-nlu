@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import unittest
-
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
@@ -13,10 +11,10 @@ from snips_nlu.pipeline.configs import (
     ProbabilisticIntentParserConfig, ProcessingUnitConfig)
 from snips_nlu.pipeline.units_registry import register_processing_unit
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
-from snips_nlu.tests.utils import BEVERAGE_DATASET
+from snips_nlu.tests.utils import BEVERAGE_DATASET, SnipsTest
 
 
-class TestProbabilisticIntentParser(unittest.TestCase):
+class TestProbabilisticIntentParser(SnipsTest):
     def test_should_retrain_intent_classifier_when_force_retrain(self):
         # Given
         parser = ProbabilisticIntentParser()

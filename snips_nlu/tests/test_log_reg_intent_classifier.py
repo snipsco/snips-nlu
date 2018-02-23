@@ -1,12 +1,10 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
+import numpy as np
 from builtins import next
 from builtins import range
 from builtins import str
-
-import numpy as np
 from future.utils import itervalues
 from mock import patch
 
@@ -22,7 +20,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
 from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset, \
-    BEVERAGE_DATASET
+    BEVERAGE_DATASET, SnipsTest
 
 
 # pylint: disable=W0613
@@ -35,7 +33,7 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 # pylint: enable=W0613
 
 
-class TestLogRegIntentClassifier(unittest.TestCase):
+class TestLogRegIntentClassifier(SnipsTest):
     def test_intent_classifier_should_get_intent(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)

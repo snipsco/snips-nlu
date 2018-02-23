@@ -1,17 +1,16 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
-
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import RES_MATCH_RANGE, LANGUAGE_EN, LANGUAGE_FR, \
     START
 from snips_nlu.string_variations import (
     and_variations, alphabetic_value, punctuation_variations,
     get_string_variations, numbers_variations)
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestStringVariations(unittest.TestCase):
+class TestStringVariations(SnipsTest):
     def test_and_variations(self):
         # Given
         language = LANGUAGE_EN

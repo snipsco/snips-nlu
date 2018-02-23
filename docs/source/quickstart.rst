@@ -23,11 +23,14 @@ The format used here is json so let's load it into a python dict:
 
 Now that we have our dataset, we can move forward to the next step which is
 building a :class:`.SnipsNLUEngine` which is the main object of this lib.
+Before training the engine, note that you need to load language specific
+resources used to improve performance with the :func:`.load_resources` function.
 
 .. code-block:: python
 
-    from snips_nlu import SnipsNLUEngine
+    from snips_nlu import load_resources, SnipsNLUEngine
 
+    load_resources(u"en")
     nlu_engine = SnipsNLUEngine()
 
 Now that we have our engine object created, we need to feed it with our sample

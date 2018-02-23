@@ -1,8 +1,6 @@
 from __future__ import unicode_literals
 
-import unittest
 from builtins import range
-
 from mock import patch
 
 from snips_nlu.constants import LANGUAGE_EN
@@ -12,10 +10,11 @@ from snips_nlu.slot_filler.crf_utils import (
     utterance_to_sample, TaggingScheme, negative_tagging,
     positive_tagging, end_of_bio_slot, start_of_bio_slot, start_of_bilou_slot,
     end_of_bilou_slot, tags_to_slots)
+from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.tokenization import tokenize, Token
 
 
-class TestCRFUtils(unittest.TestCase):
+class TestCRFUtils(SnipsTest):
     def test_io_tags_to_slots(self):
         # Given
         language = LANGUAGE_EN

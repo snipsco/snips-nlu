@@ -5,7 +5,12 @@ import io
 import json
 import os
 import sys
+
 from builtins import bytes, input
+from snips_nlu_metrics import (
+    compute_cross_val_metrics, compute_train_test_metrics)
+
+from snips_nlu import SnipsNLUEngine, NLUEngineConfig, load_resources
 
 
 def parse_train_args(args):
@@ -20,8 +25,6 @@ def parse_train_args(args):
 
 def main_train_engine():
     args = vars(parse_train_args(sys.argv[1:]))
-    from snips_nlu import SnipsNLUEngine
-    from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
     dataset_path = args.pop("dataset_path")
     with io.open(dataset_path, "r", encoding="utf8") as f:
@@ -34,6 +37,7 @@ def main_train_engine():
     else:
         config = NLUEngineConfig()
 
+    load_resources(dataset["language"])
     engine = SnipsNLUEngine(config).fit(dataset)
     print("Create and train the engine...")
 
@@ -55,12 +59,13 @@ def parse_inference_args(args):
 def main_engine_inference():
     args = vars(parse_inference_args(sys.argv[1:]))
 
-    from snips_nlu import SnipsNLUEngine
-
     training_path = args.pop("training_path")
     with io.open(os.path.abspath(training_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
     engine = SnipsNLUEngine.from_dict(engine_dict)
+    language = engine._dataset_metadata[  # pylint: disable=protected-access
+        "language_code"]
+    load_resources(language)
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()
@@ -89,9 +94,6 @@ def parse_cross_val_args(args):
 def main_cross_val_metrics():
     args = vars(parse_cross_val_args(sys.argv[1:]))
 
-    from snips_nlu import SnipsNLUEngine
-    from snips_nlu_metrics import compute_cross_val_metrics
-
     dataset_path = args.pop("dataset_path")
     output_path = args.pop("output_path")
 
@@ -111,6 +113,9 @@ def main_cross_val_metrics():
         metrics_args.update(dict(train_size_ratio=train_size_ratio))
 
     include_errors = args.get("include_errors", False)
+
+    with io.open(dataset_path, "r", encoding="utf-8") as f:
+        load_resources(json.load(f)["language"])
 
     metrics = compute_cross_val_metrics(**metrics_args)
     if not include_errors:
@@ -134,9 +139,6 @@ def parse_train_test_args(args):
 def main_train_test_metrics():
     args = vars(parse_train_test_args(sys.argv[1:]))
 
-    from snips_nlu import SnipsNLUEngine
-    from snips_nlu_metrics import compute_train_test_metrics
-
     train_dataset_path = args.pop("train_dataset_path")
     test_dataset_path = args.pop("test_dataset_path")
     output_path = args.pop("output_path")
@@ -148,6 +150,8 @@ def main_train_test_metrics():
     )
 
     include_errors = args.get("include_errors", False)
+    with io.open(train_dataset_path, "r", encoding="utf-8") as f:
+        load_resources(json.load(f)["language"])
 
     metrics = compute_train_test_metrics(**metrics_args)
     if not include_errors:

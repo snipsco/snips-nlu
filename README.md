@@ -50,4 +50,5 @@ To find out how to use the Snips NLU please refer to our [documentation](https:/
 
 ## Links
 - [Snips](https://snips.ai/)
+- [Rustling](https://github.com/snipsco/rustling-ontology) (Snips NLU builtin entities parser)
 - [Bug tracker](https://github.com/snipsco/snips-nlu/issues)

@@ -197,7 +197,13 @@ of them when appropriate will not only give better results, but it will also
 provide some *entity resolution* such as an ISO format for a date.
 
 Builtin entities and their underlying extractors are maintained by the Snips
-team. On the other hand, entities that are declared by the developer are called
+team. You can find the list of all the builtin entities supported per language
+in the `Snips NLU Ontology <https://github.com/snipsco/snips-nlu-ontology>`_
+repository. The Snips NLU uses the powerful
+`Rustling <https://github.com/snipsco/rustling-ontology>`_ library to extract
+builtin entities from text.
+
+On the other hand, entities that are declared by the developer are called
 *custom* entities.
 
 Custom Entities

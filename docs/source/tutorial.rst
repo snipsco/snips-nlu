@@ -5,7 +5,7 @@ Tutorial
 
 In this section, we will build an NLU assistant for home automation tasks that
 will be able to understand queries about lights and thermostat. More precisely
-our assistant will contain two :ref:`intents <intent>`:
+our assistant will contain three :ref:`intents <intent>`:
 
 - ``turnLightOn``
 - ``turnLightOff``

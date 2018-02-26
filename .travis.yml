@@ -26,6 +26,7 @@ matrix:
 before_install: |
   # Install Rust
   curl https://sh.rustup.rs -sSf | bash -s -- -y
+  export PATH="/usr/local/bin:$HOME/.cargo/bin:$PATH"
   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew update || brew update
 

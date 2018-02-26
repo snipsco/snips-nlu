@@ -6,8 +6,8 @@ matrix:
   include:
     - python: 3.6
       env: TOXENV=py36,docs-html
-    - python: 3.6
-      env: TOXENV=integration-test
+#    - python: 3.6
+#      env: TOXENV=integration-test
     - python: 3.6
       env: TOXENV=sample-test
     - python: 3.5

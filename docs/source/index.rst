@@ -3,16 +3,15 @@ Snips Natural Language Understanding
 
 Welcome to Snips NLU's documentation.
 
-This tool is a Natural Language Understanding python library that allows to
-parse sentences written in natural language and extracts structured
+Snips NLU is a Natural Language Understanding python library that allows to
+parse sentences written in natural language, and extract structured
 information.
 
 It's the library that powers the NLU engine used in the
 `Snips Console <https://console.snips.ai/>`_ that you can use to create awesome
 and private-by-design voice assistants.
 
-Let's take an example to illustrate the main purpose of this lib, and consider
-the following sentence:
+Let's look at the following example, to illustrate the main purpose of this lib:
 
 .. code-block:: console
 
@@ -50,14 +49,15 @@ such as:
    The exact output is a bit richer, the point here is to give a glimpse on
    what kind of information can be extracted.
 
-This documentation is divided into different parts, it is recommended to
+This documentation is divided into different parts. It is recommended to
 start by the first two ones.
 
-The :ref:`installation` part will get you setup then the :ref:`quickstart`
+The :ref:`installation` part will get you set up. Then, the :ref:`quickstart`
 section will help you build a toy example.
+
 After this, you can either start the :ref:`tutorial` which will guide you
-through the steps to create your own NLU engine and start parsing sentences or
-alternatively you can check the :ref:`data_model` to know more about the NLU
+through the steps to create your own NLU engine and start parsing sentences, or
+you can alternatively check the :ref:`data_model` to know more about the NLU
 concepts used in this lib.
 
 If you want to dive into the codebase or customize some parts, you can use

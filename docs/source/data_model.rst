@@ -6,14 +6,11 @@ Key Concepts & Data Model
 This section is meant to explain the concepts and data model that we use to
 represent input and output data.
 
-The main task that this lib performs falls into a category of tasks that are
-called *Information Extraction* tasks. In our case, the task is more
-specifically called *Intent Parsing*. At this point, the output may still not
-be very clear.
+The main task that this lib performs is *Information Extraction*, or *Intent Parsing*, to be even more specific. At this point, the output of the engine may still not be very clear to you.
 
-The task of parsing intents is actually two folds, as the first step is to
-understand what kind of intent the sentence is about, and the second step is
-to extract the parameters, aka the *slots*, of the sentence.
+The task of parsing intents is actually two-folds. The first step is to
+understand which intent the sentence is about. The second step is
+to extract the parameters, a.k.a. the *slots* of the sentence.
 
 .. _intent:
 

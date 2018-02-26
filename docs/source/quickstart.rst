@@ -11,7 +11,7 @@ For now, we will use this `sample dataset`_ which contains data for two intents:
 - ``sampleGetWeather`` -> ``"What will be the weather in Tokyo tomorrow?"``
 - ``sampleTurnOnLight`` -> ``"Turn on the light in the kitchen"``
 
-The format used here is json so let's load it into a python dict:
+The format used here is json, so let's load it into a python dict:
 
 .. code-block:: python
 
@@ -22,8 +22,8 @@ The format used here is json so let's load it into a python dict:
         sample_dataset = json.load(f)
 
 Now that we have our dataset, we can move forward to the next step which is
-building a :class:`.SnipsNLUEngine` which is the main object of this lib.
-Before training the engine, note that you need to load language specific
+building a :class:`.SnipsNLUEngine`. This is the main object of this lib.
+Before training the engine, note that you need to load language-specific
 resources used to improve performance with the :func:`.load_resources` function.
 
 .. code-block:: python

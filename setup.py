@@ -8,6 +8,7 @@ packages = [p for p in find_packages()
 
 PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+README = os.path.join(ROOT_PATH, "README.rst")
 PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
 VERSION = "__version__"
 
@@ -49,11 +50,16 @@ extras_require = {
     ]
 }
 
+with io.open(README, encoding="utf8") as f:
+    readme = f.read()
+
 setup(name=PACKAGE_NAME,
+      description="Python wrapper of the Snips NLU ontology",
+      long_description=readme,
       version=version,
       author="Clement Doumouro, Adrien Ball",
       author_email="clement.doumouro@snips.ai, adrien.ball@snips.ai",
-      license="MIT",
+      license="Apache 2.0",
       install_requires=required,
       extras_require=extras_require,
       classifiers=[
@@ -71,7 +77,7 @@ setup(name=PACKAGE_NAME,
               "train-engine=cli.cli:main_train_engine",
               "engine-inference=cli.cli:main_engine_inference",
               "cross-val-metrics=cli.cli:main_cross_val_metrics",
-              "train-test-metrics=cli.cli:main_train_test_metrics",
+              "train-teest-metrics=cli.cli:main_train_test_metrics",
               "generate-dataset=nlu_dataset:main_generate_dataset"
           ]
       },

@@ -54,7 +54,7 @@ with io.open(README, encoding="utf8") as f:
     readme = f.read()
 
 setup(name=PACKAGE_NAME,
-      description="Python wrapper of the Snips NLU ontology",
+      description="Snips Natural Language Understanding library",
       long_description=readme,
       version=version,
       author="Clement Doumouro, Adrien Ball",

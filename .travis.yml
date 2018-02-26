@@ -23,8 +23,8 @@ matrix:
       language: generic
       env: TOXENV=py27
 
-before_install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+before_install: |
+  if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew update || brew update
 
     brew outdated openssl || brew upgrade openssl

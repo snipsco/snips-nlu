@@ -5,7 +5,11 @@ language: python
 matrix:
   include:
     - python: 3.6
-      env: TOXENV=py36,codecov,docs-html
+      env: TOXENV=py36,docs-html
+    - python: 3.6
+      env: TOXENV=integration-test
+    - python: 3.6
+      env: TOXENV=sample-test
     - python: 3.5
       env: TOXENV=py35
     - python: 3.4
@@ -51,7 +55,11 @@ install:
   - pip install tox
 
 script:
-  - ./tools/travis/run_travis_tests.sh
+  - tox
+
+after_success:
+  - tox -e codecov
+  - codecov
 
 cache:
   - pip

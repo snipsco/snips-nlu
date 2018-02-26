@@ -55,7 +55,7 @@ before_install: |
   fi
 
 install:
-  - pip install tox
+  - python -m pip install tox
 
 script:
   - tox

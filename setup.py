@@ -77,7 +77,7 @@ setup(name=PACKAGE_NAME,
               "train-engine=cli.cli:main_train_engine",
               "engine-inference=cli.cli:main_engine_inference",
               "cross-val-metrics=cli.cli:main_cross_val_metrics",
-              "train-teest-metrics=cli.cli:main_train_test_metrics",
+              "train-test-metrics=cli.cli:main_train_test_metrics",
               "generate-dataset=nlu_dataset:main_generate_dataset"
           ]
       },

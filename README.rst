@@ -2,7 +2,7 @@ Snips NLU
 =========
 
 
-The `Snips NLU <https://snips-nlu.readthedocs.io>`_ (Natural Language Understanding) is a Python library that allows to parse sentences written in natural language and extracts structured information.
+`Snips NLU <https://snips-nlu.readthedocs.io>`_ (Natural Language Understanding) is a Python library that allows to parse sentences written in natural language and extracts structured information.
 
 
 Installing
@@ -52,7 +52,7 @@ Properly trained, the Snips NLU engine will be able to extract structured data s
 Documentation
 -------------
 
-To find out how to use the Snips NLU please refer to our `documentation <https://snips-nlu.readthedocs.io>`_, it will provide you with a step-by-step guide on how to use and setup our library.
+To find out how to use Snips NLU please refer to our `documentation <https://snips-nlu.readthedocs.io>`_, it will provide you with a step-by-step guide on how to use and setup our library.
 
 
 Links

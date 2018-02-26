@@ -1,6 +1,15 @@
 Snips Natural Language Understanding
 ====================================
 
+.. image:: https://travis-ci.org/snipsco/snips-nlu.svg?branch=master
+   :target: https://travis-ci.org/snipsco/snips-nlu
+
+.. image:: https://img.shields.io/pypi/v/snips-nlu.svg?branch=master
+    :target: https://pypi.python.org/pypi/snips-nlu
+
+.. image:: https://img.shields.io/pypi/pyversions/snips-nlu.svg?branch=master
+    :target: https://pypi.python.org/pypi/snips-nlu
+
 Welcome to Snips NLU's documentation.
 
 Snips NLU is a Natural Language Understanding python library that allows to

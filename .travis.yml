@@ -54,8 +54,12 @@ before_install: |
     python --version
   fi
 
-install:
-  - python -m pip install tox
+install: |
+  if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+    python -m pip install --user tox
+  else
+    python -m pip install tox
+  fi
 
 script:
   - tox

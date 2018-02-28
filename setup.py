@@ -25,7 +25,7 @@ required = [
     "sklearn-crfsuite==0.3.6",
     "semantic_version==2.6.0",
     "snips_nlu_utils==0.6.0",
-    "snips_nlu_ontology==0.53.1",
+    "snips_nlu_ontology==0.53.2",
     "num2words==0.5.6"
 ]
 

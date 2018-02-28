@@ -25,7 +25,7 @@ required = [
     "sklearn-crfsuite==0.3.6",
     "semantic_version==2.6.0",
     "snips_nlu_utils==0.6.0",
-    "snips_nlu_ontology==0.53.0",
+    "snips_nlu_ontology==0.53.2",
     "num2words==0.5.6"
 ]
 
@@ -44,10 +44,10 @@ extras_require = {
         "pylint==1.8.2",
         "coverage==4.4.2"
     ],
-    "integration_test": [
-        "snips_nlu_metrics==%s" % nlu_metrics_version,
-        "snips_nlu_rust==0.53.0-RC1",
-    ]
+    # "integration_test": [
+    #     "snips_nlu_metrics==%s" % nlu_metrics_version,
+    #     "snips_nlu_rust==0.53.0-RC1",
+    # ]
 }
 
 with io.open(README, encoding="utf8") as f:

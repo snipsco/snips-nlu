@@ -164,7 +164,7 @@ class TestSnipsNLUEngine(SnipsTest):
             config_type = TestIntentParserConfig
 
             def __init__(self, config):
-                super().__init__(config)
+                super(TestIntentParser, self).__init__(config)
                 self.sub_unit_1 = dict(fitted=False, calls=0)
                 self.sub_unit_2 = dict(fitted=False, calls=0)
 

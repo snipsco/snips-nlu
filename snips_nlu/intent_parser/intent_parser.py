@@ -18,7 +18,7 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
 
         Args:
             dataset (dict): Valid Snips NLU dataset
-            force_retrain (bool): Specify whether or not sub components of the
+            force_retrain (bool): Specify whether or not sub units of the
             intent parser that may be already trained should be retrained
         """
         pass

@@ -124,11 +124,6 @@
           "algorithm": "lbfgs"
         },
         "tagging_scheme": 1,
-        "entities_offsets": [
-          -2,
-          -1,
-          0
-        ],
         "exhaustive_permutations_threshold": 64,
         "data_augmentation_config": {
           "min_utterances": 200,

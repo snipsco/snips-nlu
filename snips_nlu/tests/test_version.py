@@ -1,11 +1,10 @@
-import unittest
-
 from semantic_version import Version
 
 from snips_nlu import __version__, __model_version__
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestVersion(unittest.TestCase):
+class TestVersion(SnipsTest):
     def test_version_should_be_semantic(self):
         # Given
         version = __version__

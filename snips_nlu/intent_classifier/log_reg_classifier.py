@@ -1,19 +1,19 @@
 from __future__ import unicode_literals
-from builtins import zip
+
+from builtins import str, zip
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.constants import (LANGUAGE)
+from snips_nlu.constants import LANGUAGE
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     remove_builtin_slots, get_regularization_factor, build_training_data
-from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_classifier import \
-    IntentClassifierConfig
+from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import check_random_state
+from snips_nlu.utils import check_random_state, NotTrained
 
 LOG_REG_ARGS = {
     "loss": "log",
@@ -25,23 +25,37 @@ LOG_REG_ARGS = {
 
 
 class LogRegIntentClassifier(IntentClassifier):
-    unit_name = "log_reg_intent_classifier"
-    config_type = IntentClassifierConfig
+    """Intent classifier which uses a Logistic Regression underneath"""
 
+    unit_name = "log_reg_intent_classifier"
+    config_type = LogRegIntentClassifierConfig
+
+    # pylint:disable=line-too-long
     def __init__(self, config=None):
+        """The LogReg intent classifier can be configured by passing a
+        :class:`.LogRegIntentClassifierConfig`"""
         if config is None:
-            config = IntentClassifierConfig()
+            config = LogRegIntentClassifierConfig()
         super(LogRegIntentClassifier, self).__init__(config)
         self.classifier = None
         self.intent_list = None
         self.featurizer = None
 
+    # pylint:enable=line-too-long
+
     @property
     def fitted(self):
+        """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
     def fit(self, dataset):
-        language = Language.from_iso_code(dataset[LANGUAGE])
+        """Fit the intent classifier with a valid Snips dataset
+
+        Returns:
+            :class:`LogRegIntentClassifier`: The same instance, trained
+        """
+        dataset = validate_and_format_dataset(dataset)
+        language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
         filtered_dataset = remove_builtin_slots(dataset)
         data_augmentation_config = self.config.data_augmentation_config
@@ -68,9 +82,27 @@ class LogRegIntentClassifier(IntentClassifier):
         return self
 
     def get_intent(self, text, intents_filter=None):
+        """Performs intent classification on the provided *text*
+
+        Args:
+            text (str): Input
+            intents_filter (str or list of str): When defined, it will find
+                the most likely intent among the list, otherwise it will use
+                the whole list of intents defined in the dataset
+
+        Returns:
+            dict or None: The most likely intent along with its probability or
+            *None* if no intent was found
+
+        Raises:
+            NotTrained: When the intent classifier is not fitted
+
+        """
         if not self.fitted:
-            raise AssertionError('LogRegIntentClassifier instance must be '
-                                 'fitted before `get_intent` can be called')
+            raise NotTrained('LogRegIntentClassifier must be fitted')
+
+        if isinstance(intents_filter, str):
+            intents_filter = [intents_filter]
 
         if not text or not self.intent_list \
                 or self.featurizer is None or self.classifier is None:
@@ -93,6 +125,7 @@ class LogRegIntentClassifier(IntentClassifier):
         return None
 
     def to_dict(self):
+        """Returns a json-serializable dict"""
         featurizer_dict = None
         if self.featurizer is not None:
             featurizer_dict = self.featurizer.to_dict()
@@ -116,7 +149,12 @@ class LogRegIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_dict(cls, unit_dict):
-        config = IntentClassifierConfig.from_dict(unit_dict["config"])
+        """Creates a :class:`LogRegIntentClassifier` instance from a dict
+
+        The dict must have been generated with
+        :func:`~LogRegIntentClassifier.to_dict`
+        """
+        config = LogRegIntentClassifierConfig.from_dict(unit_dict["config"])
         intent_classifier = cls(config=config)
         sgd_classifier = None
         coeffs = unit_dict['coeffs']

@@ -11,4 +11,4 @@ def stem(string, language):
 
 
 def _stem(string, language):
-    return get_stems()[language].get(string, string)
+    return get_stems(language).get(string, string)

@@ -6,19 +6,20 @@ import io
 import math
 import os
 import tempfile
-from builtins import bytes, range
+from builtins import range
 from copy import copy
 from itertools import groupby, permutations, product
 
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import (
-    is_builtin_entity, BuiltInEntity, get_builtin_entities)
-from snips_nlu.constants import RES_MATCH_RANGE, ENTITY, LANGUAGE, DATA
+from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
+from snips_nlu.constants import (
+    RES_MATCH_RANGE, LANGUAGE, DATA, RES_ENTITY, START, END, RES_VALUE,
+    ENTITY_KIND)
 from snips_nlu.data_augmentation import augment_utterances
-from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import stem
 from snips_nlu.slot_filler.crf_utils import (
     TOKENS, TAGS, OUTSIDE, tags_to_slots, tag_name_to_slot_name,
@@ -29,14 +30,23 @@ from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import (
     UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap)
+    ranges_overlap, NotTrained)
 
 
 class CRFSlotFiller(SlotFiller):
+    """Slot filler which uses Linear-Chain Conditional Random Fields underneath
+
+    Check https://en.wikipedia.org/wiki/Conditional_random_field to learn
+    more about CRFs
+    """
+
     unit_name = "crf_slot_filler"
     config_type = CRFSlotFillerConfig
 
     def __init__(self, config=None):
+        """The CRF slot filler can be configured by passing a
+        :class:`.CRFSlotFillerConfig`"""
+
         if config is None:
             config = self.config_type()
         super(CRFSlotFiller, self).__init__(config)
@@ -50,6 +60,7 @@ class CRFSlotFiller(SlotFiller):
 
     @property
     def features(self):
+        """List of :class:`.Feature` used by the CRF"""
         if self._features is None:
             self._features = []
             feature_names = set()
@@ -63,58 +74,42 @@ class CRFSlotFiller(SlotFiller):
 
     @property
     def labels(self):
+        """List of CRF labels
+
+        These labels differ from the slot names as they contain an additional
+        prefix which depends on the :class:`.TaggingScheme` that is used
+        (BIO by default).
+        """
         labels = []
         if self.crf_model.tagger_ is not None:
-            labels = [decode_tag(label) for label in
+            labels = [_decode_tag(label) for label in
                       self.crf_model.tagger_.labels()]
         return labels
 
     @property
     def fitted(self):
+        """Whether or not the slot filler has already been fitted"""
         return self.crf_model is not None \
                and self.crf_model.tagger_ is not None
 
-    def get_slots(self, text):
-        if not self.fitted:
-            raise AssertionError("Model must be fitted before using predict")
-        tokens = tokenize(text, self.language)
-        if not tokens:
-            return []
-        features = self.compute_features(tokens)
-        tags = [decode_tag(tag) for tag in
-                self.crf_model.predict_single(features)]
-        slots = tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
-                              self.slot_name_mapping)
-
-        builtin_slots_names = set(slot_name for (slot_name, entity) in
-                                  iteritems(self.slot_name_mapping)
-                                  if is_builtin_entity(entity))
-        if not builtin_slots_names:
-            return slots
-
-        # Replace tags corresponding to builtin entities by outside tags
-        tags = replace_builtin_tags(tags, builtin_slots_names)
-        return self._augment_slots(text, tokens, tags, builtin_slots_names)
-
-    def get_sequence_probability(self, features, labels):
-        if not self.fitted:
-            raise AssertionError("Model must be fitted before using predict")
-
-        # Use a default substitution label when a label was not seen during
-        # training
-        substitution_label = OUTSIDE if OUTSIDE in self.labels else \
-            self.labels[0]
-        cleaned_labels = [
-            encode_tag(substitution_label if l not in self.labels else l)
-            for l in labels]
-        self.crf_model.tagger_.set(features)
-        return self.crf_model.tagger_.probability(cleaned_labels)
-
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent, verbose=False):
+        """Fit the slot filler
+
+        Args:
+            dataset (dict): A valid Snips dataset
+            intent (str): The specific intent of the dataset to train
+                the slot filler on
+            verbose (bool, optional): If *True*, it will print the weights
+                of the CRF once the training is done
+
+        Returns:
+            :class:`CRFSlotFiller`: The same instance, trained
+        """
+        dataset = validate_and_format_dataset(dataset)
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
-        self.language = Language.from_iso_code(dataset[LANGUAGE])
+        self.language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
             dataset, self.intent, language=self.language,
@@ -133,10 +128,10 @@ class CRFSlotFiller(SlotFiller):
         X = [self.compute_features(sample[TOKENS], drop_out=True)
              for sample in crf_samples]
         # ensure ascii tags
-        Y = [[encode_tag(tag) for tag in sample[TAGS]]
+        Y = [[_encode_tag(tag) for tag in sample[TAGS]]
              for sample in crf_samples]
         # pylint: enable=C0103
-        self.crf_model = get_crf_model(self.config.crf_args)
+        self.crf_model = _get_crf_model(self.config.crf_args)
         self.crf_model.fit(X, Y)
         if verbose:
             self.print_weights()
@@ -145,26 +140,43 @@ class CRFSlotFiller(SlotFiller):
 
     # pylint:enable=arguments-differ
 
-    def print_weights(self):
-        transition_features = self.crf_model.transition_features_
-        transition_features = sorted(
-            iteritems(transition_features),
-            key=lambda transition_weight: math.fabs(transition_weight[1]),
-            reverse=True)
-        print("\nTransition weights: \n\n")
-        for (state_1, state_2), weight in transition_features:
-            print("%s %s: %s" %
-                  (encode_tag(state_1), encode_tag(state_2), weight))
-        feature_weights = self.crf_model.state_features_
-        feature_weights = sorted(
-            iteritems(feature_weights),
-            key=lambda feature_weight: math.fabs(feature_weight[1]),
-            reverse=True)
-        print("\nFeature weights: \n\n")
-        for (feat, tag), weight in feature_weights:
-            print("%s %s: %s" % (feat, tag, weight))
+    def get_slots(self, text):
+        """Extracts slots from the provided text
+
+        Returns:
+            list of dict: The list of extracted slots
+
+        Raises:
+            NotTrained: When the slot filler is not fitted
+        """
+        if not self.fitted:
+            raise NotTrained("CRFSlotFiller must be fitted")
+        tokens = tokenize(text, self.language)
+        if not tokens:
+            return []
+        features = self.compute_features(tokens)
+        tags = [_decode_tag(tag) for tag in
+                self.crf_model.predict_single(features)]
+        slots = tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
+                              self.slot_name_mapping)
+
+        builtin_slots_names = set(slot_name for (slot_name, entity) in
+                                  iteritems(self.slot_name_mapping)
+                                  if is_builtin_entity(entity))
+        if not builtin_slots_names:
+            return slots
+
+        # Replace tags corresponding to builtin entities by outside tags
+        tags = _replace_builtin_tags(tags, builtin_slots_names)
+        return self._augment_slots(text, tokens, tags, builtin_slots_names)
 
     def compute_features(self, tokens, drop_out=False):
+        """Compute features on the provided tokens
+
+        The *drop_out* parameters allows to activate drop out on features that
+        have a positive drop out ratio. This should only be used during
+        training.
+        """
         tokens = [
             Token(t.value, t.start, t.end,
                   stem=stem(t.normalized_value, self.language))
@@ -184,28 +196,78 @@ class CRFSlotFiller(SlotFiller):
             features.append(token_features)
         return features
 
+    def get_sequence_probability(self, tokens, labels):
+        """Gives the joint probability of a sequence of tokens and CRF labels
+
+        Args:
+            tokens (list of :class:`.Token`): list of tokens
+            labels (list of str): CRF labels with their tagging scheme prefix
+                ("B-color", "I-color", "O", etc)
+
+        Note:
+            The absolute value returned here is generally not very useful,
+            however it can be used to compare a sequence of labels relatively
+            to another one.
+        """
+        features = self.compute_features(tokens)
+        return self._get_sequence_probability(features, labels)
+
+    def _get_sequence_probability(self, features, labels):
+        if not self.fitted:
+            raise NotTrained("CRFSlotFiller must be fitted")
+
+        # Use a default substitution label when a label was not seen during
+        # training
+        substitution_label = OUTSIDE if OUTSIDE in self.labels else \
+            self.labels[0]
+        cleaned_labels = [
+            _encode_tag(substitution_label if l not in self.labels else l)
+            for l in labels]
+        self.crf_model.tagger_.set(features)
+        return self.crf_model.tagger_.probability(cleaned_labels)
+
+    def print_weights(self):
+        """Print both the label-to-label and label-to-features weights"""
+        transition_features = self.crf_model.transition_features_
+        transition_features = sorted(
+            iteritems(transition_features),
+            key=lambda transition_weight: math.fabs(transition_weight[1]),
+            reverse=True)
+        print("\nTransition weights: \n\n")
+        for (state_1, state_2), weight in transition_features:
+            print("%s %s: %s" %
+                  (_encode_tag(state_1), _encode_tag(state_2), weight))
+        feature_weights = self.crf_model.state_features_
+        feature_weights = sorted(
+            iteritems(feature_weights),
+            key=lambda feature_weight: math.fabs(feature_weight[1]),
+            reverse=True)
+        print("\nFeature weights: \n\n")
+        for (feat, tag), weight in feature_weights:
+            print("%s %s: %s" % (feat, tag, weight))
+
     def _augment_slots(self, text, tokens, tags, builtin_slots_names):
         augmented_tags = tags
-        scope = [BuiltInEntity.from_label(self.slot_name_mapping[slot])
-                 for slot in builtin_slots_names]
+        scope = [self.slot_name_mapping[slot] for slot in builtin_slots_names]
         builtin_entities = get_builtin_entities(text, self.language, scope)
 
-        builtin_entities = filter_overlapping_builtins(
+        builtin_entities = _filter_overlapping_builtins(
             builtin_entities, tokens, tags, self.config.tagging_scheme)
 
-        grouped_entities = groupby(builtin_entities, key=lambda s: s[ENTITY])
+        grouped_entities = groupby(builtin_entities,
+                                   key=lambda s: s[ENTITY_KIND])
         features = None
         for entity, matches in grouped_entities:
             spans_ranges = [match[RES_MATCH_RANGE] for match in matches]
             num_possible_builtins = len(spans_ranges)
-            tokens_indexes = spans_to_tokens_indexes(spans_ranges, tokens)
+            tokens_indexes = _spans_to_tokens_indexes(spans_ranges, tokens)
             related_slots = list(
                 set(s for s in builtin_slots_names if
-                    self.slot_name_mapping[s] == entity.label))
+                    self.slot_name_mapping[s] == entity))
             best_updated_tags = augmented_tags
             best_permutation_score = -1
 
-            for slots in generate_slots_permutations(
+            for slots in _generate_slots_permutations(
                     num_possible_builtins, related_slots,
                     self.config.exhaustive_permutations_threshold):
                 updated_tags = copy(augmented_tags)
@@ -219,27 +281,26 @@ class CRFSlotFiller(SlotFiller):
                         sub_tags_sequence
                 if features is None:
                     features = self.compute_features(tokens)
-                score = self.get_sequence_probability(features, updated_tags)
+                score = self._get_sequence_probability(features, updated_tags)
                 if score > best_permutation_score:
                     best_updated_tags = updated_tags
                     best_permutation_score = score
             augmented_tags = best_updated_tags
-        return tags_to_slots(text, tokens, augmented_tags,
-                             self.config.tagging_scheme,
-                             self.slot_name_mapping)
+        slots = tags_to_slots(text, tokens, augmented_tags,
+                              self.config.tagging_scheme,
+                              self.slot_name_mapping)
+        return _reconciliate_builtin_slots(text, slots, builtin_entities)
 
     def to_dict(self):
-        language_code = None
+        """Returns a json-serializable dict"""
         crf_model_data = None
 
-        if self.language is not None:
-            language_code = self.language.iso_code
         if self.crf_model is not None:
-            crf_model_data = serialize_crf_model(self.crf_model)
+            crf_model_data = _serialize_crf_model(self.crf_model)
 
         return {
             "unit_name": self.unit_name,
-            "language_code": language_code,
+            "language_code": self.language,
             "intent": self.intent,
             "slot_name_mapping": self.slot_name_mapping,
             "crf_model_data": crf_model_data,
@@ -248,17 +309,18 @@ class CRFSlotFiller(SlotFiller):
 
     @classmethod
     def from_dict(cls, unit_dict):
+        """Creates a :class:`CRFSlotFiller` instance from a dict
+
+        The dict must have been generated with :func:`~CRFSlotFiller.to_dict`
+        """
         slot_filler_config = cls.config_type.from_dict(unit_dict["config"])
         slot_filler = cls(config=slot_filler_config)
 
         crf_model_data = unit_dict["crf_model_data"]
         if crf_model_data is not None:
-            crf = deserialize_crf_model(crf_model_data)
+            crf = _deserialize_crf_model(crf_model_data)
             slot_filler.crf_model = crf
-        language_code = unit_dict["language_code"]
-        if language_code is not None:
-            language = Language.from_iso_code(language_code)
-            slot_filler.language = language
+        slot_filler.language = unit_dict["language_code"]
         slot_filler.intent = unit_dict["intent"]
         slot_filler.slot_name_mapping = unit_dict["slot_name_mapping"]
         return slot_filler
@@ -272,7 +334,7 @@ class CRFSlotFiller(SlotFiller):
             pass
 
 
-def get_crf_model(crf_args):
+def _get_crf_model(crf_args):
     model_filename = crf_args.get("model_filename", None)
     if model_filename is not None:
         directory = os.path.dirname(model_filename)
@@ -282,7 +344,7 @@ def get_crf_model(crf_args):
     return CRF(model_filename=model_filename, **crf_args)
 
 
-def replace_builtin_tags(tags, builtin_slot_names):
+def _replace_builtin_tags(tags, builtin_slot_names):
     new_tags = []
     for tag in tags:
         if tag == OUTSIDE:
@@ -296,8 +358,8 @@ def replace_builtin_tags(tags, builtin_slot_names):
     return new_tags
 
 
-def filter_overlapping_builtins(builtin_entities, tokens, tags,
-                                tagging_scheme):
+def _filter_overlapping_builtins(builtin_entities, tokens, tags,
+                                 tagging_scheme):
     slots = tags_to_preslots(tokens, tags, tagging_scheme)
     ents = []
     for ent in builtin_entities:
@@ -308,23 +370,24 @@ def filter_overlapping_builtins(builtin_entities, tokens, tags,
     return ents
 
 
-def generate_slots_permutations(n_detected_builtins, possible_slots_names,
-                                exhaustive_permutations_threshold):
+def _generate_slots_permutations(n_detected_builtins, possible_slots_names,
+                                 exhaustive_permutations_threshold):
     num_exhaustive_perms = (len(possible_slots_names) + 1) \
                            ** n_detected_builtins
     if num_exhaustive_perms <= exhaustive_permutations_threshold:
-        return exhaustive_slots_permutations(
+        return _exhaustive_slots_permutations(
             n_detected_builtins, possible_slots_names)
-    return conservative_slots_permutations(
+    return _conservative_slots_permutations(
         n_detected_builtins, possible_slots_names)
 
 
-def exhaustive_slots_permutations(n_detected_builtins, possible_slots_names):
+def _exhaustive_slots_permutations(n_detected_builtins, possible_slots_names):
     pool = possible_slots_names + [OUTSIDE]
     return [p for p in product(pool, repeat=n_detected_builtins) if len(p)]
 
 
-def conservative_slots_permutations(n_detected_builtins, possible_slots_names):
+def _conservative_slots_permutations(n_detected_builtins,
+                                     possible_slots_names):
     if n_detected_builtins == 0:
         return []
     # Add n_detected_builtins "O" slots to the possible slots.
@@ -342,32 +405,56 @@ def conservative_slots_permutations(n_detected_builtins, possible_slots_names):
     return list(set(perms))
 
 
-def spans_to_tokens_indexes(spans, tokens):
+def _spans_to_tokens_indexes(spans, tokens):
     tokens_indexes = []
-    for span_start, span_end in spans:
+    for span in spans:
         indexes = []
         for i, token in enumerate(tokens):
-            if span_end > token.start and span_start < token.end:
+            if span[END] > token.start and span[START] < token.end:
                 indexes.append(i)
         tokens_indexes.append(indexes)
     return tokens_indexes
 
 
-def encode_tag(tag):
-    return tag.encode('utf8')
+def _reconciliate_builtin_slots(text, slots, builtin_entities):
+    for slot in slots:
+        if not is_builtin_entity(slot[RES_ENTITY]):
+            continue
+        for be in builtin_entities:
+            if be[ENTITY_KIND] != slot[RES_ENTITY]:
+                continue
+            be_start = be[RES_MATCH_RANGE][START]
+            be_end = be[RES_MATCH_RANGE][END]
+            be_length = be_end - be_start
+            slot_start = slot[RES_MATCH_RANGE][START]
+            slot_end = slot[RES_MATCH_RANGE][END]
+            slot_length = slot_end - slot_start
+            if be_start <= slot_start and be_end >= slot_end \
+                    and be_length > slot_length:
+                slot[RES_MATCH_RANGE] = {
+                    START: be_start,
+                    END: be_end
+                }
+                slot[RES_VALUE] = text[be_start: be_end]
+                break
+    return slots
 
 
-def decode_tag(tag):
-    return bytes(tag, encoding='utf8').decode('utf8')
+def _encode_tag(tag):
+    return base64.b64encode(tag.encode("utf8"))
 
 
-def serialize_crf_model(crf_model):
+def _decode_tag(tag):
+    return base64.b64decode(tag).decode("utf8")
+
+
+def _serialize_crf_model(crf_model):
     with io.open(crf_model.modelfile.name, mode='rb') as f:
         crfsuite_data = base64.b64encode(f.read()).decode('ascii')
     return crfsuite_data
 
 
-def deserialize_crf_model(crf_model_data):
+def _deserialize_crf_model(crf_model_data):
     b64_data = base64.b64decode(crf_model_data)
     with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",
                                      delete=False) as f:

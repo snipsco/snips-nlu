@@ -1,19 +1,16 @@
 # coding=utf-8
 import unittest
 
-from snips_nlu.intent_classifier.log_reg_classifier import \
-    LogRegIntentClassifier
-from snips_nlu.pipeline.configs.intent_classifier import (
-    IntentClassifierConfig, IntentClassifierDataAugmentationConfig,
-    FeaturizerConfig)
-from snips_nlu.pipeline.configs.intent_parser import (
-    ProbabilisticIntentParserConfig, DeterministicIntentParserConfig)
-from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
-from snips_nlu.pipeline.configs.slot_filler import (
-    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig)
+from snips_nlu.intent_classifier import LogRegIntentClassifier
+from snips_nlu.pipeline.configs import (
+    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig,
+    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
+    FeaturizerConfig, NLUEngineConfig, ProbabilisticIntentParserConfig,
+    DeterministicIntentParserConfig)
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestConfig(unittest.TestCase):
+class TestConfig(SnipsTest):
     def test_intent_classifier_data_augmentation_config(self):
         # Given
         config_dict = {
@@ -68,7 +65,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When
-        config = IntentClassifierConfig.from_dict(config_dict)
+        config = LogRegIntentClassifierConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -101,7 +98,6 @@ class TestConfig(unittest.TestCase):
                 "c2": .3,
                 "algorithm": "lbfgs"
             },
-            "entities_offsets": [-2, 0, 3],
             "exhaustive_permutations_threshold": 42,
             "data_augmentation_config":
                 SlotFillerDataAugmentationConfig().to_dict(),
@@ -119,7 +115,8 @@ class TestConfig(unittest.TestCase):
         # Given
         config_dict = {
             "unit_name": "probabilistic_intent_parser",
-            "intent_classifier_config": IntentClassifierConfig().to_dict(),
+            "intent_classifier_config":
+                LogRegIntentClassifierConfig().to_dict(),
             "slot_filler_config": CRFSlotFillerConfig().to_dict(),
         }
 

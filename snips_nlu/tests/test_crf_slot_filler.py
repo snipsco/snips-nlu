@@ -3,31 +3,29 @@ from __future__ import unicode_literals
 
 import io
 import os
-import traceback as tb
-import unittest
 from builtins import range
 
 from mock import patch, MagicMock
 
-from snips_nlu.builtin_entities import BuiltInEntity
 from snips_nlu.constants import (
-    RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME)
+    RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
+    SNIPS_DATETIME, END, START, ENTITY_KIND)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
-from snips_nlu.result import _slot
+from snips_nlu.pipeline.configs import CRFSlotFillerConfig
+from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, spans_to_tokens_indexes, filter_overlapping_builtins,
-    generate_slots_permutations, exhaustive_slots_permutations)
+    CRFSlotFiller, _spans_to_tokens_indexes, _filter_overlapping_builtins,
+    _generate_slots_permutations, _exhaustive_slots_permutations)
 from snips_nlu.slot_filler.crf_utils import (
     TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX)
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, ShapeNgramFactory, NgramFactory)
-from snips_nlu.tests.utils import SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH
+from snips_nlu.tests.utils import (
+    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET, SnipsTest)
 from snips_nlu.tokenization import tokenize, Token
 
 
-class TestCRFSlotFiller(unittest.TestCase):
+class TestCRFSlotFiller(SnipsTest):
     def test_should_get_slots(self):
         # Given
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
@@ -41,11 +39,35 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(match_range=(8, 11),
-                  value='two',
-                  entity='snips/number',
-                  slot_name='number_of_cups')]
+            unresolved_slot(match_range={START: 8, END: 11},
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
         self.assertListEqual(slots, expected_slots)
+
+    def test_should_get_builtin_slots(self):
+        # Given
+        dataset = validate_and_format_dataset(WEATHER_DATASET)
+        config = CRFSlotFillerConfig(random_seed=42)
+        intent = "SearchWeatherForecast"
+        slot_filler = CRFSlotFiller(config)
+        slot_filler.fit(dataset, intent)
+
+        # When
+        slots = slot_filler.get_slots("Give me the weather at 9p.m. in Paris")
+
+        # Then
+        expected_slots = [
+            unresolved_slot(match_range={START: 20, END: 28},
+                            value='at 9p.m.',
+                            entity='snips/datetime',
+                            slot_name='datetime'),
+            unresolved_slot(match_range={START: 32, END: 37},
+                            value='Paris',
+                            entity='weather_location',
+                            slot_name='location')
+        ]
+        self.assertListEqual(expected_slots, slots)
 
     def test_should_parse_naughty_strings(self):
         # Given
@@ -60,11 +82,8 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         for s in naughty_strings:
-            try:
+            with self.fail_if_exception("Naughty string crashes"):
                 slot_filler.get_slots(s)
-            except:  # pylint: disable=W0702
-                trace = tb.format_exc()
-                self.fail('Exception raised:\n %s' % trace)
 
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
@@ -89,13 +108,9 @@ class TestCRFSlotFiller(unittest.TestCase):
         }
 
         # Then
-        try:
+        with self.fail_if_exception("Naughty string crashes"):
             CRFSlotFiller().fit(naughty_dataset, "naughty_intent")
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
-    @unittest.skip("Skip until the bug is fixed on the Rust side")
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
         inputs = ("string%s" % i for i in range(10))
@@ -128,20 +143,20 @@ class TestCRFSlotFiller(unittest.TestCase):
         naughty_dataset = validate_and_format_dataset(naughty_dataset)
 
         # Then
-        try:
+        with self.fail_if_exception("Naughty string make NLU crash"):
             slot_filler = CRFSlotFiller()
             slot_filler.fit(naughty_dataset, "naughty_intent")
             slots = slot_filler.get_slots("string0")
             expected_slot = {
-                'entity': 'non_ascìi_entïty',
-                'range': [0, 7],
-                'slotName': u'non_ascìi_slöt',
-                'value': u'string0'
+                "entity": "non_ascìi_entïty",
+                "range": {
+                    "start": 0,
+                    "end": 7
+                },
+                "slotName": u"non_ascìi_slöt",
+                "value": u"string0"
             }
             self.assertListEqual([expected_slot], slots)
-        except:  # pylint: disable=W0702
-            trace = tb.format_exc()
-            self.fail('Exception raised:\n %s' % trace)
 
     def test_should_get_slots_after_deserialization(self):
         # Given
@@ -158,11 +173,11 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(match_range=(8, 11),
-                  value='two',
-                  entity='snips/number',
-                  slot_name='number_of_cups')]
-        self.assertListEqual(slots, expected_slots)
+            unresolved_slot(match_range={START: 8, END: 11},
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
+        self.assertListEqual(expected_slots, slots)
 
     def test_should_be_serializable_before_fit(self):
         # Given
@@ -199,7 +214,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertDictEqual(actual_slot_filler_dict,
                              expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler.deserialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
     def test_should_be_deserializable_before_fit(self,
                                                  mock_deserialize_crf_model):
         # Given
@@ -258,7 +273,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertDictEqual(expected_config.to_dict(),
                              slot_filler.config.to_dict())
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler.serialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler._serialize_crf_model')
     def test_should_be_serializable(self, mock_serialize_crf_model):
         # Given
         mock_serialize_crf_model.return_value = "mocked_crf_model_data"
@@ -317,15 +332,15 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertDictEqual(actual_slot_filler_dict,
                              expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler.deserialize_crf_model')
+    @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
     def test_should_be_deserializable(self, mock_deserialize_crf_model):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         mock_deserialize_crf_model.return_value = None
         feature_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
-                "args": {"n": 1, "language_code": language.iso_code},
+                "args": {"n": 1, "language_code": language},
                 "offsets": [0]
             },
             {
@@ -354,11 +369,11 @@ class TestCRFSlotFiller(unittest.TestCase):
         # Then
         mock_deserialize_crf_model.assert_called_once_with(
             "mocked_crf_model_data")
-        expected_language = Language.EN
+        expected_language = LANGUAGE_EN
         expected_feature_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
-                "args": {"n": 1, "language_code": language.iso_code},
+                "args": {"n": 1, "language_code": language},
                 "offsets": [0]
             },
             {
@@ -401,7 +416,7 @@ class TestCRFSlotFiller(unittest.TestCase):
             feature_factory_configs=features_factories, random_seed=40)
         slot_filler = CRFSlotFiller(slot_filler_config)
 
-        tokens = tokenize("foo hello world bar", Language.EN)
+        tokens = tokenize("foo hello world bar", LANGUAGE_EN)
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         slot_filler.fit(dataset, intent="dummy_intent_1")
 
@@ -420,10 +435,10 @@ class TestCRFSlotFiller(unittest.TestCase):
     def test_spans_to_tokens_indexes(self):
         # Given
         spans = [
-            (0, 1),
-            (2, 6),
-            (5, 6),
-            (9, 15)
+            {START: 0, END: 1},
+            {START: 2, END: 6},
+            {START: 5, END: 6},
+            {START: 9, END: 15}
         ]
         tokens = [
             Token(value="abc", start=0, end=3, stem="abc"),
@@ -432,7 +447,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         ]
 
         # When
-        indexes = spans_to_tokens_indexes(spans, tokens)
+        indexes = _spans_to_tokens_indexes(spans, tokens)
 
         # Then
         expected_indexes = [[0], [0, 1], [1], [2]]
@@ -440,7 +455,7 @@ class TestCRFSlotFiller(unittest.TestCase):
 
     def test_augment_slots(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         text = "Find me a flight before 10pm and after 8pm"
         tokens = tokenize(text, language)
         missing_slots = {"start_date", "end_date"}
@@ -530,15 +545,17 @@ class TestCRFSlotFiller(unittest.TestCase):
         slot_filler_config = CRFSlotFillerConfig(
             random_seed=42, exhaustive_permutations_threshold=2)
         slot_filler = CRFSlotFiller(config=slot_filler_config)
-        slot_filler.language = Language.EN
+        slot_filler.language = LANGUAGE_EN
         slot_filler.intent = "intent1"
         slot_filler.slot_name_mapping = {
             "start_date": "snips/datetime",
             "end_date": "snips/datetime",
         }
 
-        slot_filler.get_sequence_probability = MagicMock(
+        # pylint:disable=protected-access
+        slot_filler._get_sequence_probability = MagicMock(
             side_effect=mocked_sequence_probability)
+        # pylint:enable=protected-access
 
         slot_filler.compute_features = MagicMock(return_value=None)
 
@@ -550,41 +567,42 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         # Then
         expected_slots = [
-            _slot(value='after 8pm', match_range=(33, 42),
-                  entity='snips/datetime', slot_name='end_date')
+            unresolved_slot(value='after 8pm',
+                            match_range={START: 33, END: 42},
+                            entity='snips/datetime', slot_name='end_date')
         ]
         self.assertListEqual(augmented_slots, expected_slots)
 
     def test_filter_overlapping_builtins(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         text = "Find me a flight before 10pm and after 8pm"
         tokens = tokenize(text, language)
         tags = ['O' for _ in range(5)] + ['B-flight'] + ['O' for _ in range(3)]
         tagging_scheme = TaggingScheme.BIO
         builtin_entities = [
             {
-                RES_MATCH_RANGE: (17, 28),
+                RES_MATCH_RANGE: {START: 17, END: 28},
                 VALUE: "before 10pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             },
             {
-                RES_MATCH_RANGE: (33, 42),
+                RES_MATCH_RANGE: {START: 33, END: 42},
                 VALUE: "after 8pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             }
         ]
 
         # When
-        entities = filter_overlapping_builtins(builtin_entities, tokens, tags,
-                                               tagging_scheme)
+        entities = _filter_overlapping_builtins(builtin_entities, tokens, tags,
+                                                tagging_scheme)
 
         # Then
         expected_entities = [
             {
-                RES_MATCH_RANGE: (33, 42),
+                RES_MATCH_RANGE: {START: 33, END: 42},
                 VALUE: "after 8pm",
-                ENTITY: BuiltInEntity.DATETIME
+                ENTITY_KIND: SNIPS_DATETIME
             }
         ]
         self.assertEqual(entities, expected_entities)
@@ -595,7 +613,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         possible_slots_names = ["a", "b"]
 
         # When
-        perms = exhaustive_slots_permutations(n_builtins, possible_slots_names)
+        perms = _exhaustive_slots_permutations(n_builtins,
+                                               possible_slots_names)
 
         # Then
         expected_perms = {
@@ -612,7 +631,7 @@ class TestCRFSlotFiller(unittest.TestCase):
         self.assertSetEqual(set(perms), expected_perms)
 
     @patch("snips_nlu.slot_filler.crf_slot_filler"
-           ".exhaustive_slots_permutations")
+           "._exhaustive_slots_permutations")
     def test_slot_permutations_should_be_exhaustive(
             self, mocked_exhaustive_slots):
         # Given
@@ -621,14 +640,14 @@ class TestCRFSlotFiller(unittest.TestCase):
         exhaustive_permutations_threshold = 100
 
         # When
-        generate_slots_permutations(n_builtins, possible_slots_names,
-                                    exhaustive_permutations_threshold)
+        _generate_slots_permutations(n_builtins, possible_slots_names,
+                                     exhaustive_permutations_threshold)
 
         # Then
         mocked_exhaustive_slots.assert_called_once()
 
     @patch("snips_nlu.slot_filler.crf_slot_filler"
-           ".conservative_slots_permutations")
+           "._conservative_slots_permutations")
     def test_slot_permutations_should_be_conservative(
             self, mocked_conservative_slots):
         # Given
@@ -637,8 +656,8 @@ class TestCRFSlotFiller(unittest.TestCase):
         exhaustive_permutations_threshold = 8
 
         # When
-        generate_slots_permutations(n_builtins, possible_slots_names,
-                                    exhaustive_permutations_threshold)
+        _generate_slots_permutations(n_builtins, possible_slots_names,
+                                     exhaustive_permutations_threshold)
 
         # Then
         mocked_conservative_slots.assert_called_once()
@@ -712,7 +731,7 @@ class TestCRFSlotFiller(unittest.TestCase):
 
         for conf in configs:
             # When
-            slots = generate_slots_permutations(
+            slots = _generate_slots_permutations(
                 conf["n_builtins_in_sentence"],
                 possible_slots,
                 conf["exhaustive_permutations_threshold"])

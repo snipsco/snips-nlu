@@ -2,19 +2,17 @@ from __future__ import division
 from __future__ import unicode_literals
 
 import json
+from builtins import str
 from copy import deepcopy
 
-from builtins import str
 from future.utils import itervalues, iteritems
-from nlu_utils import normalize
-from semantic_version import Version
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 SNIPS_NLU_VERSION, CAPITALIZE)
-from snips_nlu.languages import Language
+                                 CAPITALIZE, VALIDATED)
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.tokenization import tokenize_light
 from snips_nlu.utils import validate_type, validate_key, validate_keys
@@ -32,17 +30,22 @@ def extract_queries_entities(dataset):
 
 
 def validate_and_format_dataset(dataset):
+    """Checks that the dataset is valid and format it"""
+    # Make this function idempotent
+    if dataset.get(VALIDATED, False):
+        return dataset
     dataset = deepcopy(dataset)
     dataset = json.loads(json.dumps(dataset))
     validate_type(dataset, dict)
-    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE, SNIPS_NLU_VERSION]
+    mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
     for key in mandatory_keys:
         validate_key(dataset, key, object_label="dataset")
-    Version(dataset[SNIPS_NLU_VERSION])  # Check that the version is semantic
     validate_type(dataset[ENTITIES], dict)
     validate_type(dataset[INTENTS], dict)
-    validate_type(dataset[LANGUAGE], str)
-    language = Language.from_iso_code(dataset[LANGUAGE])
+    language = dataset[LANGUAGE]
+    validate_type(language, str)
+    if language not in get_all_languages():
+        raise ValueError("Unknown language: '%s'" % language)
 
     for intent in itervalues(dataset[INTENTS]):
         validate_and_format_intent(intent, dataset[ENTITIES])
@@ -56,7 +59,7 @@ def validate_and_format_dataset(dataset):
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
                 entity, queries_entities_values[entity_name], language)
-
+    dataset[VALIDATED] = True
     return dataset
 
 
@@ -97,11 +100,7 @@ def has_any_capitalization(entity_utterances, language):
 def add_variation_if_needed(utterances, variation, utterance, language):
     if not variation:
         return utterances
-    normalized_variation = normalize(variation)
-    all_variations = get_string_variations(
-        variation, language)
-    all_variations.update(
-        get_string_variations(normalized_variation, language))
+    all_variations = get_string_variations(variation, language)
     for v in all_variations:
         if v not in utterances:
             utterances[v] = utterance
@@ -141,18 +140,18 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
                                                           language)
 
     # Normalize
-    normalize_data = dict()
+    validated_data = dict()
     for entry in entity[DATA]:
         entry_value = entry[VALUE]
-        normalize_data = add_variation_if_needed(
-            normalize_data, entry_value, entry_value, language)
+        validated_data = add_variation_if_needed(
+            validated_data, entry_value, entry_value, language)
 
         if use_synonyms:
             for s in entry[SYNONYMS]:
-                normalize_data = add_variation_if_needed(
-                    normalize_data, s, entry_value, language)
+                validated_data = add_variation_if_needed(
+                    validated_data, s, entry_value, language)
 
-    formatted_entity[UTTERANCES] = normalize_data
+    formatted_entity[UTTERANCES] = validated_data
     # Merge queries_entities
     for value in queries_entities:
         formatted_entity = add_entity_value_if_missing(

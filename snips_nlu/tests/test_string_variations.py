@@ -1,20 +1,19 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
-
 from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import RES_MATCH_RANGE
-from snips_nlu.languages import Language
+from snips_nlu.constants import RES_MATCH_RANGE, LANGUAGE_EN, LANGUAGE_FR, \
+    START
 from snips_nlu.string_variations import (
     and_variations, alphabetic_value, punctuation_variations,
     get_string_variations, numbers_variations)
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestStringVariations(unittest.TestCase):
+class TestStringVariations(SnipsTest):
     def test_and_variations(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         data = [
             ("a and b and c",
              {
@@ -35,7 +34,7 @@ class TestStringVariations(unittest.TestCase):
 
     def test_punctuation_variations(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         data = [
             ("a! ?b .c",
              {
@@ -60,10 +59,10 @@ class TestStringVariations(unittest.TestCase):
 
     def test_alphabetic_value(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         string = "1 time and 23 times and one thousand and sixty and 1.2"
         entities = get_builtin_entities(string, language)
-        entities = sorted(entities, key=lambda x: x[RES_MATCH_RANGE])
+        entities = sorted(entities, key=lambda x: x[RES_MATCH_RANGE][START])
 
         expected_values = ["one", "twenty-three", "one thousand and sixty",
                            None]
@@ -79,7 +78,7 @@ class TestStringVariations(unittest.TestCase):
 
     def test_get_string_variations(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         string = "a and b 2"
 
         # When
@@ -92,13 +91,42 @@ class TestStringVariations(unittest.TestCase):
             "a b 2",
             "a and b two",
             "a & b two",
-            "a b two"
+            "a b two",
+            "A B two",
+            "A And B two",
+            "A  B 2",
+            "A and B two",
+            "A & B two",
+            "A & B 2",
+            "A  B two",
+            "A and B 2",
+            "a  b 2",
+            "a  b two",
+            "A B 2",
+            "A And B 2",
+        }
+        self.assertSetEqual(variations, expected_variations)
+
+    def test_should_variate_case_and_normalization(self):
+        # Given
+        language = LANGUAGE_EN
+        string = "Küche"
+
+        # When
+        variations = get_string_variations(string, language)
+
+        # Then
+        expected_variations = {
+            "kuche",
+            "küche",
+            "Kuche",
+            "Küche"
         }
         self.assertSetEqual(variations, expected_variations)
 
     def test_get_france_24(self):
         # Given
-        language = Language.FR
+        language = LANGUAGE_FR
         string = "france 24"
 
         # When
@@ -107,14 +135,17 @@ class TestStringVariations(unittest.TestCase):
         # Then
         expected_variations = {
             "france vingt-quatre",
+            "France vingt-quatre",
             "france vingt quatre",
-            "france 24"
+            "France vingt quatre",
+            "france 24",
+            "France 24",
         }
         self.assertSetEqual(variations, expected_variations)
 
     def test_numbers_variations_should_handle_floats(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         string = "7.62 mm caliber 2 and six"
 
         # When

@@ -8,11 +8,14 @@ packages = [p for p in find_packages()
 
 PACKAGE_NAME = "snips_nlu"
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+README = os.path.join(ROOT_PATH, "README.rst")
 PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
 VERSION = "__version__"
 
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
+
+nlu_metrics_version = "0.11.1"
 
 required = [
     "enum34==1.1.6",
@@ -20,30 +23,43 @@ required = [
     "scipy==1.0.0",
     "scikit-learn==0.19.1",
     "sklearn-crfsuite==0.3.6",
-    "builtin_entities_ontology==0.5.3",
     "semantic_version==2.6.0",
-    "rustling==8.4.1",
-    "nlu_utils==0.5.3",
+    "snips_nlu_utils==0.6.0",
+    "snips_nlu_ontology==0.53.2",
     "num2words==0.5.6"
 ]
 
 extras_require = {
+    "doc": [
+        "sphinx==1.6.7",
+        "sphinxcontrib-napoleon==0.6.1",
+        "sphinx-rtd-theme==0.2.4"
+    ],
+    "metrics": [
+        "snips_nlu_metrics==%s" % nlu_metrics_version,
+    ],
     "test": [
         "mock==2.0.0",
-        "nlu_metrics==0.10.1",
+        "snips_nlu_metrics==%s" % nlu_metrics_version,
         "pylint==1.8.2",
         "coverage==4.4.2"
     ],
-    "integration_test": [
-        "snips_nlu_rust==0.52.3",
-    ]
+    # "integration_test": [
+    #     "snips_nlu_metrics==%s" % nlu_metrics_version,
+    #     "snips_nlu_rust==0.53.0",
+    # ]
 }
 
+with io.open(README, encoding="utf8") as f:
+    readme = f.read()
+
 setup(name=PACKAGE_NAME,
+      description="Snips Natural Language Understanding library",
+      long_description=readme,
       version=version,
       author="Clement Doumouro, Adrien Ball",
       author_email="clement.doumouro@snips.ai, adrien.ball@snips.ai",
-      license="MIT",
+      license="Apache 2.0",
       install_requires=required,
       extras_require=extras_require,
       classifiers=[
@@ -61,7 +77,8 @@ setup(name=PACKAGE_NAME,
               "train-engine=cli.cli:main_train_engine",
               "engine-inference=cli.cli:main_engine_inference",
               "cross-val-metrics=cli.cli:main_cross_val_metrics",
-              "train-test-metrics=cli.cli:main_train_test_metrics"
+              "train-test-metrics=cli.cli:main_train_test_metrics",
+              "generate-dataset=nlu_dataset:main_generate_dataset"
           ]
       },
       zip_safe=False)

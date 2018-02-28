@@ -1,9 +1,10 @@
-import unittest
 from future.utils import iteritems
+
+from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.utils import LimitedSizeDict, ranges_overlap
 
 
-class TestLimitedSizeDict(unittest.TestCase):
+class TestLimitedSizeDict(SnipsTest):
     def test_should_raise_when_no_size_limit(self):
         # Given/When/Then
         with self.assertRaises(ValueError) as ctx:
@@ -53,7 +54,7 @@ class TestLimitedSizeDict(unittest.TestCase):
         self.assertListEqual(items, sequence[size_limit:])
 
 
-class TestUtils(unittest.TestCase):
+class TestUtils(SnipsTest):
     def test_ranges_overlap(self):
         # Given
         range1 = [4, 8]

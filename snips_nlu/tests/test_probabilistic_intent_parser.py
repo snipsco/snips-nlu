@@ -1,37 +1,75 @@
 from __future__ import unicode_literals
 
-import unittest
+from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
-from snips_nlu.intent_parser.intent_parser import NotTrained
-from snips_nlu.intent_parser.probabilistic_intent_parser import \
-    ProbabilisticIntentParser
-from snips_nlu.pipeline.configs.config import ProcessingUnitConfig
-from snips_nlu.pipeline.configs.intent_classifier import IntentClassifierConfig
-from snips_nlu.pipeline.configs.intent_parser import \
-    ProbabilisticIntentParserConfig
-from snips_nlu.pipeline.configs.slot_filler import CRFSlotFillerConfig
+from snips_nlu.intent_classifier import IntentClassifier
+from snips_nlu.intent_classifier import LogRegIntentClassifier
+from snips_nlu.intent_parser import ProbabilisticIntentParser
+from snips_nlu.pipeline.configs import (
+    CRFSlotFillerConfig, LogRegIntentClassifierConfig,
+    ProbabilisticIntentParserConfig, ProcessingUnitConfig)
 from snips_nlu.pipeline.units_registry import register_processing_unit
-from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.tests.utils import BEVERAGE_DATASET
+from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
+from snips_nlu.tests.utils import BEVERAGE_DATASET, SnipsTest
 
 
-class TestProbabilisticIntentParser(unittest.TestCase):
-    def test_should_not_allow_to_fit_with_missing_intents(self):
+class TestProbabilisticIntentParser(SnipsTest):
+    def test_should_retrain_intent_classifier_when_force_retrain(self):
         # Given
-        intent = "MakeTea"
         parser = ProbabilisticIntentParser()
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        intent_classifier = LogRegIntentClassifier()
+        intent_classifier.fit(BEVERAGE_DATASET)
+        parser.intent_classifier = intent_classifier
 
         # When / Then
-        with self.assertRaises(NotTrained):
-            parser.fit(dataset, {intent})
+        with patch("snips_nlu.intent_classifier.log_reg_classifier"
+                   ".LogRegIntentClassifier.fit") as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=True)
+            mock_fit.assert_called_once()
+
+    def test_should_not_retrain_intent_classifier_when_no_force_retrain(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+        intent_classifier = LogRegIntentClassifier()
+        intent_classifier.fit(BEVERAGE_DATASET)
+        parser.intent_classifier = intent_classifier
+
+        # When / Then
+        with patch("snips_nlu.intent_classifier.log_reg_classifier"
+                   ".LogRegIntentClassifier.fit") as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=False)
+            mock_fit.assert_not_called()
+
+    def test_should_retrain_slot_filler_when_force_retrain(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+        slot_filler = CRFSlotFiller()
+        slot_filler.fit(BEVERAGE_DATASET, "MakeCoffee")
+        parser.slot_fillers["MakeCoffee"] = slot_filler
+
+        # When / Then
+        with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
+                as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=True)
+            self.assertEqual(2, mock_fit.call_count)
+
+    def test_should_not_retrain_slot_filler_when_no_force_retrain(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+        slot_filler = CRFSlotFiller()
+        slot_filler.fit(BEVERAGE_DATASET, "MakeCoffee")
+        parser.slot_fillers["MakeCoffee"] = slot_filler
+
+        # When / Then
+        with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
+                as mock_fit:
+            parser.fit(BEVERAGE_DATASET, force_retrain=False)
+            self.assertEqual(1, mock_fit.call_count)
 
     def test_should_be_serializable_before_fitting(self):
         # Given
-        parser_config = ProbabilisticIntentParserConfig()
-        parser = ProbabilisticIntentParser(parser_config)
+        parser = ProbabilisticIntentParser()
 
         # When
         actual_parser_dict = parser.to_dict()
@@ -42,10 +80,11 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "config": {
                 "unit_name": "probabilistic_intent_parser",
                 "slot_filler_config": CRFSlotFillerConfig().to_dict(),
-                "intent_classifier_config": IntentClassifierConfig().to_dict()
+                "intent_classifier_config":
+                    LogRegIntentClassifierConfig().to_dict()
             },
             "intent_classifier": None,
-            "slot_fillers": None,
+            "slot_fillers": dict(),
         }
         self.assertDictEqual(actual_parser_dict, expected_parser_dict)
 
@@ -56,7 +95,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
             "unit_name": "probabilistic_intent_parser",
             "config": config,
             "intent_classifier": None,
-            "slot_fillers": None,
+            "slot_fillers": dict(),
         }
 
         # When
@@ -65,7 +104,7 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         # Then
         self.assertEqual(parser.config.to_dict(), config)
         self.assertIsNone(parser.intent_classifier)
-        self.assertIsNone(parser.slot_fillers)
+        self.assertDictEqual(dict(), parser.slot_fillers)
 
     def test_should_be_serializable(self):
         # Given
@@ -255,7 +294,8 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         seed1 = 666
         seed2 = 42
         config = ProbabilisticIntentParserConfig(
-            intent_classifier_config=IntentClassifierConfig(random_seed=seed1),
+            intent_classifier_config=LogRegIntentClassifierConfig(
+                random_seed=seed1),
             slot_filler_config=CRFSlotFillerConfig(random_seed=seed2)
         )
         parser = ProbabilisticIntentParser(config)
@@ -274,24 +314,3 @@ class TestProbabilisticIntentParser(unittest.TestCase):
         feature_weights_2 = fitted_parser_2.slot_fillers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
-
-    def test_get_fitted_slot_filler_should_return_same_slot_filler_as_fit(
-            self):
-        # Given
-        intent = "MakeCoffee"
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        config = ProbabilisticIntentParserConfig(
-            slot_filler_config=slot_filler_config)
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
-        fitted_parser = ProbabilisticIntentParser(config).fit(dataset)
-
-        # When
-        parser = ProbabilisticIntentParser(config)
-        slot_filler = parser.get_fitted_slot_filler(dataset, intent)
-
-        # Then
-        expected_slot_filler = fitted_parser.slot_fillers[intent]
-        self.assertEqual(slot_filler.crf_model.state_features_,
-                         expected_slot_filler.crf_model.state_features_)
-        self.assertEqual(slot_filler.crf_model.transition_features_,
-                         expected_slot_filler.crf_model.transition_features_)

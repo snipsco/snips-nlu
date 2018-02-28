@@ -1,25 +1,29 @@
 # coding=utf-8
 from __future__ import unicode_literals
-from builtins import str
-from builtins import zip
-from builtins import range
 
 import itertools
 import re
 
+from builtins import range
+from builtins import str
+from builtins import zip
 from future.utils import iteritems
+from snips_nlu_utils import normalize
 from num2words import num2words
 
-from snips_nlu.builtin_entities import get_builtin_entities, BuiltInEntity
-from snips_nlu.constants import VALUE, RES_MATCH_RANGE
-from snips_nlu.languages import Language
+from snips_nlu.builtin_entities import get_builtin_entities
+from snips_nlu.constants import (
+    VALUE, RES_MATCH_RANGE, SNIPS_NUMBER, LANGUAGE_EN, LANGUAGE_ES,
+    LANGUAGE_FR, LANGUAGE_DE, ENTITY, START, END)
+from snips_nlu.languages import get_punctuation_regex, supports_num2words, \
+    get_default_sep
 from snips_nlu.tokenization import tokenize_light
 
 AND_UTTERANCES = {
-    Language.EN: ["and", "&"],
-    Language.FR: ["et", "&"],
-    Language.ES: ["y", "&"],
-    Language.DE: ["und", "&"],
+    LANGUAGE_EN: ["and", "&"],
+    LANGUAGE_FR: ["et", "&"],
+    LANGUAGE_ES: ["y", "&"],
+    LANGUAGE_DE: ["und", "&"],
 }
 
 AND_REGEXES = {
@@ -33,8 +37,9 @@ AND_REGEXES = {
 def build_variated_query(string, ranges_and_utterances):
     variated_string = ""
     current_ix = 0
-    for m, u in ranges_and_utterances:
-        start, end = m
+    for rng, u in ranges_and_utterances:
+        start = rng[START]
+        end = rng[END]
         variated_string += string[current_ix:start]
         variated_string += u
         current_ix = end
@@ -53,7 +58,7 @@ def and_variations(string, language):
         return variations
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [((m.start(), m.end()), AND_UTTERANCES[language])
+    values = [({START: m.start(), END: m.end()}, AND_UTTERANCES[language])
               for m in matches]
     combinations = itertools.product(range(len(AND_UTTERANCES[language])),
                                      repeat=len(values))
@@ -66,12 +71,13 @@ def and_variations(string, language):
 
 def punctuation_variations(string, language):
     variations = set()
-    matches = [m for m in language.punctuation_regex.finditer(string)]
+    matches = [m for m in get_punctuation_regex(language).finditer(string)]
     if not matches:
         return variations
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [((m.start(), m.end()), (m.group(0), "")) for m in matches]
+    values = [({START: m.start(), END: m.end()}, (m.group(0), ""))
+              for m in matches]
 
     combinations = itertools.product(range(2), repeat=len(matches))
     for c in combinations:
@@ -82,27 +88,30 @@ def punctuation_variations(string, language):
 
 
 def digit_value(number_entity):
-    return str(number_entity[VALUE][VALUE])
+    value = number_entity[ENTITY][VALUE]
+    if value == int(value):
+        # Convert 24.0 into "24" instead of "24.0"
+        value = int(value)
+    return str(value)
 
 
 def alphabetic_value(number_entity, language):
-    value = number_entity[VALUE][VALUE]
+    value = number_entity[ENTITY][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
         return None
-    return num2words(value, lang=language.iso_code)
+    return num2words(value, lang=language)
 
 
 def numbers_variations(string, language):
     variations = set()
-    if not language.supports_num2words:
+    if not supports_num2words(language):
         return variations
 
     number_entities = get_builtin_entities(
-        string, language, scope=[BuiltInEntity.NUMBER])
+        string, language, scope=[SNIPS_NUMBER])
 
-    number_entities = [ent for ent in number_entities if
-                       not ("latent" in ent[VALUE] and ent[VALUE]["latent"])]
-    number_entities = sorted(number_entities, key=lambda x: x["range"])
+    number_entities = sorted(number_entities,
+                             key=lambda x: x[RES_MATCH_RANGE][START])
     if not number_entities:
         return variations
 
@@ -121,22 +130,36 @@ def numbers_variations(string, language):
     return variations
 
 
+def case_variations(string):
+    return {string.lower(), string.title()}
+
+
+def normalization_variations(string):
+    return {normalize(string)}
+
+
 def flatten(results):
     return set(i for r in results for i in r)
 
 
 def get_string_variations(string, language):
     variations = {string}
+    variations.update(flatten(case_variations(v) for v in variations))
+    variations.update(flatten(normalization_variations(v) for v in variations))
+    # We re-generate case variations as normalization can produce new
+    # variations
+    variations.update(flatten(case_variations(v) for v in variations))
     variations.update(flatten(and_variations(v, language) for v in variations))
     variations.update(
         flatten(punctuation_variations(v, language) for v in variations))
     variations.update(
         flatten(numbers_variations(v, language) for v in variations))
-    # Filter double spaces
-    variations = set(" ".join(v.split()) for v in variations)
+    # Add single space variations
+    single_space_variations = set(" ".join(v.split()) for v in variations)
+    variations.update(single_space_variations)
     # Add tokenized variations
     tokenized_variations = set(
-        language.default_sep.join(tokenize_light(v, language)) for v in
+        get_default_sep(language).join(tokenize_light(v, language)) for v in
         variations)
     variations.update(tokenized_variations)
     return variations

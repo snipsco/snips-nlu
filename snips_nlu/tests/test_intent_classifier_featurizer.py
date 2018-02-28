@@ -2,28 +2,28 @@
 from __future__ import unicode_literals
 
 import json
-import traceback as tb
-import unittest
-
 from builtins import bytes
-from future.utils import iteritems
-from mock import patch
 
+from future.utils import iteritems
+from mock import patch, mock
+
+from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
-    Featurizer, get_tfidf_vectorizer, get_utterances_to_features_names)
-from snips_nlu.languages import Language
-from snips_nlu.pipeline.configs.intent_classifier import FeaturizerConfig
+    Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
+from snips_nlu.languages import get_default_sep
+from snips_nlu.pipeline.configs import FeaturizerConfig
+from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.tokenization import tokenize_light
 
 
-class TestIntentClassifierFeaturizer(unittest.TestCase):
+class TestIntentClassifierFeaturizer(SnipsTest):
     @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
+           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_should_be_serializable(self):
         # Given
-        language = Language.EN
-        tfidf_vectorizer = get_tfidf_vectorizer(language)
+        language = LANGUAGE_EN
+        tfidf_vectorizer = _get_tfidf_vectorizer(language)
 
         pvalue_threshold = 0.42
         featurizer = Featurizer(language,
@@ -64,18 +64,15 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
         serialized_featurizer = featurizer.to_dict()
 
         # Then
-        try:
+        msg = "Featurizer dict should be json serializable to utf8."
+        with self.fail_if_exception(msg):
             dumped = bytes(json.dumps(serialized_featurizer),
                            encoding="utf8").decode("utf8")
-        except:  # pylint: disable=W0702
-            self.fail("Featurizer dict should be json serializable to utf8.\n"
-                      "Traceback:\n%s" % tb.format_exc())
 
-        try:
+        msg = "SnipsNLUEngine should be deserializable from dict with unicode" \
+              " values"
+        with self.fail_if_exception(msg):
             _ = Featurizer.from_dict(json.loads(dumped))
-        except:  # pylint: disable=W0702
-            self.fail("SnipsNLUEngine should be deserializable from dict with "
-                      "unicode values\nTraceback:\n%s" % tb.format_exc())
 
         vocabulary = tfidf_vectorizer.vocabulary_
         # pylint: disable=W0212
@@ -100,10 +97,10 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
         self.assertDictEqual(expected_serialized, serialized_featurizer)
 
     @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
+           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_should_be_deserializable(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         idf_diag = [1.52, 1.21, 1.04]
         vocabulary = {"hello": 0, "beautiful": 1, "world": 2}
 
@@ -115,7 +112,7 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
 
         featurizer_dict = {
             "config": FeaturizerConfig().to_dict(),
-            "language_code": language.iso_code,
+            "language_code": language,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
             "pvalue_threshold": pvalue_threshold,
@@ -146,8 +143,13 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
                 in iteritems(entity_utterances_to_feature_names)
             })
 
-    def test_get_utterances_entities(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_get_utterances_entities(self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation, variation.lower()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -188,44 +190,35 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
             "language": "en",
             "snips_nlu_version": "0.0.1"
         }
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = validate_and_format_dataset(dataset)
 
         # When
-        utterance_to_feature_names = get_utterances_to_features_names(
+        utterance_to_feature_names = _get_utterances_to_features_names(
             dataset, language)
 
         # Then
         expected_utterance_to_entity_names = {
-            "entity 1": {"entityfeatureentity1", "entityfeatureentity2"},
-            "entity one": {"entityfeatureentity1", "entityfeatureentity2"},
+            "entity 1": {"entityfeatureentity2", "entityfeatureentity1"},
             "éntity 1": {"entityfeatureentity1"},
-            "éntity one": {"entityfeatureentity1"},
-            "Éntity_2": {"entityfeatureentity2"},
-            "Éntity2": {"entityfeatureentity2"},
-            "Éntity_two": {"entityfeatureentity2"},
-            "entity_2": {"entityfeatureentity2"},
-            "entity_two": {"entityfeatureentity2"},
-            "entity two": {"entityfeatureentity2"},
-            "entity2": {"entityfeatureentity2"},
+            "éntity 2": {"entityfeatureentity2"},
             "Éntity 2": {"entityfeatureentity2"},
-            "Éntity two": {"entityfeatureentity2"},
-            "entity 2": {"entityfeatureentity2"},
-            "Alternative entity 2": {"entityfeatureentity2"},
-            "Alternative entity two": {"entityfeatureentity2"},
+            "Éntity_2": {"entityfeatureentity2"},
+            "éntity_2": {"entityfeatureentity2"},
             "alternative entity 2": {"entityfeatureentity2"},
-            "alternative entity two": {"entityfeatureentity2"}
+            "Alternative entity 2": {"entityfeatureentity2"}
         }
+
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)
 
     @patch("snips_nlu.intent_classifier.featurizer.get_word_clusters")
     @patch("snips_nlu.intent_classifier.featurizer.stem")
     @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {Language.EN: "brown_clusters"})
+           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
 
         def _stem(t):
             if t == "beautiful":
@@ -239,7 +232,7 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
             return s
 
         def stem_function(text, language):
-            return language.default_sep.join(
+            return get_default_sep(language).join(
                 [_stem(t) for t in tokenize_light(text, language)])
 
         mocked_word_cluster.return_value = {
@@ -322,7 +315,7 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
 
     def test_featurizer_should_exclude_replacement_string(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         dataset = {
             "entities": {
                 "dummy1": {
@@ -349,7 +342,7 @@ class TestIntentClassifierFeaturizer(unittest.TestCase):
 
     def test_featurizer_should_be_serialized_when_not_fitted(self):
         # Given
-        language = Language.EN
+        language = LANGUAGE_EN
         featurizer = Featurizer(language, None)
         # When
         featurizer.to_dict()

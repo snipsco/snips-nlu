@@ -1,14 +1,12 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
 from copy import deepcopy
 
 from mock import patch, MagicMock
 
-from snips_nlu.builtin_entities import BuiltInEntity
+from snips_nlu.constants import SNIPS_NUMBER, SNIPS_DATETIME, LANGUAGE_EN
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.languages import Language
 from snips_nlu.slot_filler.crf_utils import (
     TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, UNIT_PREFIX)
 from snips_nlu.slot_filler.feature import TOKEN_NAME, Feature
@@ -17,11 +15,11 @@ from snips_nlu.slot_filler.feature_factory import (
     IsLastFactory, PrefixFactory, SuffixFactory, LengthFactory, NgramFactory,
     ShapeNgramFactory, WordClusterFactory, EntityMatchFactory,
     BuiltinEntityMatchFactory)
-from snips_nlu.tests.utils import SAMPLE_DATASET
+from snips_nlu.tests.utils import SAMPLE_DATASET, SnipsTest
 from snips_nlu.tokenization import tokenize
 
 
-class TestCRFFeatures(unittest.TestCase):
+class TestCRFFeatures(SnipsTest):
     def test_feature_should_work(self):
         # Given
         def fn(tokens, token_index):
@@ -29,7 +27,7 @@ class TestCRFFeatures(unittest.TestCase):
             return "%s_%s" % (value, len(value))
 
         cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", Language.EN)]
+                 tokenize("hello beautiful world", LANGUAGE_EN)]
         feature = Feature("test_feature", fn)
 
         # When
@@ -45,7 +43,7 @@ class TestCRFFeatures(unittest.TestCase):
             return "%s_%s" % (value, len(value))
 
         cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", Language.EN)]
+                 tokenize("hello beautiful world", LANGUAGE_EN)]
         feature = Feature("test_feature", fn, offset=1)
 
         # When
@@ -63,7 +61,7 @@ class TestCRFFeatures(unittest.TestCase):
         mocked_fn = MagicMock(side_effect=fn)
 
         cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", Language.EN)]
+                 tokenize("hello beautiful world", LANGUAGE_EN)]
         feature = Feature("test_feature", mocked_fn, offset=0)
         feature.compute(2, cache)
         feature1 = Feature("test_feature", mocked_fn, offset=1)
@@ -96,7 +94,7 @@ class TestCRFFeatures(unittest.TestCase):
         factory.fit(None, None)
         features = factory.build_features()
         cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", Language.EN)]
+                 tokenize("hello beautiful world", LANGUAGE_EN)]
 
         # When
         res_0 = features[0].compute(0, cache)
@@ -116,7 +114,7 @@ class TestCRFFeatures(unittest.TestCase):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello 1 world", Language.EN)
+        tokens = tokenize("hello 1 world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
@@ -139,7 +137,7 @@ class TestCRFFeatures(unittest.TestCase):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", Language.EN)
+        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
@@ -162,7 +160,7 @@ class TestCRFFeatures(unittest.TestCase):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", Language.EN)
+        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
@@ -187,7 +185,7 @@ class TestCRFFeatures(unittest.TestCase):
             },
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", Language.EN)
+        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
@@ -210,7 +208,7 @@ class TestCRFFeatures(unittest.TestCase):
             },
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", Language.EN)
+        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
@@ -231,7 +229,7 @@ class TestCRFFeatures(unittest.TestCase):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", Language.EN)
+        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
@@ -256,7 +254,7 @@ class TestCRFFeatures(unittest.TestCase):
             },
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", Language.EN)
+        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -285,7 +283,7 @@ class TestCRFFeatures(unittest.TestCase):
         }
 
         mock_get_gazetteer.return_value = {"hello", "beautiful", "world"}
-        tokens = tokenize("hello beautiful foobar world", Language.EN)
+        tokens = tokenize("hello beautiful foobar world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -310,7 +308,7 @@ class TestCRFFeatures(unittest.TestCase):
             "offsets": [0]
         }
 
-        tokens = tokenize("hello Beautiful foObar world", Language.EN)
+        tokens = tokenize("hello Beautiful foObar world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -329,7 +327,7 @@ class TestCRFFeatures(unittest.TestCase):
     def test_word_cluster_factory(self, mock_get_word_clusters):
         # Given
         def mocked_get_word_clusters(language):
-            if language == Language.EN:
+            if language == LANGUAGE_EN:
                 return {
                     "mocked_cluster": {
                         "word1": "00",
@@ -349,7 +347,7 @@ class TestCRFFeatures(unittest.TestCase):
             "offsets": [0]
         }
 
-        tokens = tokenize("hello word1 word2", Language.EN)
+        tokens = tokenize("hello word1 word2", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -379,7 +377,7 @@ class TestCRFFeatures(unittest.TestCase):
             "offsets": [0]
         }
 
-        tokens = tokenize("2 dummy a and dummy_c", Language.EN)
+        tokens = tokenize("2 dummy a and dummy_c", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         dataset = deepcopy(SAMPLE_DATASET)
@@ -418,13 +416,12 @@ class TestCRFFeatures(unittest.TestCase):
         self.assertEqual(res8, None)
         self.assertEqual(res9, UNIT_PREFIX)
 
-    @patch("snips_nlu.slot_filler.feature_factory"
-           ".get_supported_builtin_entities")
+    @patch("snips_nlu.slot_filler.feature_factory.get_supported_entities")
     def test_builtin_entity_match_factory(self, mock_supported_entities):
         # Given
         def mocked_supported_entities(language):
-            if language == Language.EN:
-                return {BuiltInEntity.NUMBER, BuiltInEntity.DATETIME}
+            if language == LANGUAGE_EN:
+                return {SNIPS_NUMBER, SNIPS_DATETIME}
             return set()
 
         mock_supported_entities.side_effect = mocked_supported_entities
@@ -437,7 +434,7 @@ class TestCRFFeatures(unittest.TestCase):
             "offsets": [0]
         }
 
-        tokens = tokenize("one tea tomorrow at 2pm", Language.EN)
+        tokens = tokenize("one tea tomorrow at 2pm", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}

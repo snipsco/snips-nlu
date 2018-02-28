@@ -1,17 +1,17 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import unittest
 from builtins import str
 
-from snips_nlu.builtin_entities import BuiltInEntity
+from mock import mock
+
 from snips_nlu.constants import (
-    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE)
+    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE, SNIPS_DATETIME)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.tests.utils import SAMPLE_DATASET
+from snips_nlu.tests.utils import SnipsTest
 
 
-class TestDataset(unittest.TestCase):
+class TestDataset(SnipsTest):
     def test_missing_intent_key_should_raise_exception(self):
         # Given
         dataset = {
@@ -105,12 +105,18 @@ class TestDataset(unittest.TestCase):
         }
 
         # When/Then
-        with self.assertRaises(KeyError) as ctx:
+        with self.assertRaises(ValueError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual(str(ctx.exception.args[0]), "Unknown iso_code 'eng'")
+        self.assertEqual(str(ctx.exception.args[0]), "Unknown language: 'eng'")
 
-    def test_should_format_dataset_by_adding_synonyms(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_should_format_dataset_by_adding_synonyms(
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation.lower(), variation.title()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {},
             "entities": {
@@ -135,20 +141,17 @@ class TestDataset(unittest.TestCase):
                 "entity1": {
                     "utterances": {
                         "Entity_1": "Entity_1",
-                        "Entity_one": "Entity_1",
-                        "Entity1": "Entity_1",
                         "entity_1": "Entity_1",
-                        "entity_one": "Entity_1",
-                        "entity1": "Entity_1",
                         "entity 2": "Entity_1",
-                        "entity two": "Entity_1",
+                        "Entity 2": "Entity_1",
                     },
                     "automatically_extensible": False,
                     "capitalize": False
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
+            "snips_nlu_version": "1.1.1",
+            "validated": True
         }
 
         # When
@@ -157,8 +160,14 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertDictEqual(dataset, expected_dataset)
 
-    def test_should_format_dataset_by_adding_entity_values(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_should_format_dataset_by_adding_entity_values(
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation, variation.title()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -241,18 +250,19 @@ class TestDataset(unittest.TestCase):
                 "entity1": {
                     "utterances": {
                         "entity 1 bis": "entity 1",
-                        "entity one bis": "entity 1",
+                        "Entity 1 Bis": "entity 1",
                         "entity 1": "entity 1",
-                        "entity one": "entity 1",
+                        "Entity 1": "entity 1",
                         "alternative entity 1": "alternative entity 1",
-                        "alternative entity one": "alternative entity 1"
+                        "Alternative Entity 1": "alternative entity 1",
                     },
                     "automatically_extensible": False,
                     "capitalize": False
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
+            "snips_nlu_version": "1.1.1",
+            "validated": True
         }
 
         # When
@@ -261,36 +271,14 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertEqual(dataset, expected_dataset)
 
-    def test_dataset_should_require_nlu_version(self):
-        # Given
-        dataset = dict(SAMPLE_DATASET)
-
-        # When
-        dataset.pop("snips_nlu_version")
-
-        # Then
-        with self.assertRaises(KeyError) as ctx:
-            validate_and_format_dataset(dataset)
-        expected_exception_message = "Expected dataset to have key:" \
-                                     " 'snips_nlu_version'"
-        self.assertEqual(str(ctx.exception.args[0]),
-                         expected_exception_message)
-
-    def test_dataset_require_semantic_version(self):
-        # Given
-        dataset = dict(SAMPLE_DATASET)
-
-        # When
-        dataset["snips_nlu_version"] = "1.1.1.1.1.1.1.1.1.1"
-
-        # Then
-        with self.assertRaises(ValueError) as ctx:
-            validate_and_format_dataset(dataset)
-        self.assertTrue("Invalid version string" in str(ctx.exception.args[0]))
-
+    @mock.patch("snips_nlu.dataset.get_string_variations")
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
-            self):
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -374,9 +362,7 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "alternative entity 1": "alternative entity 1",
-                            "alternative entity one": "alternative entity 1",
                             "entity 1": "entity 1",
-                            "entity one": "entity 1",
                         },
                     "automatically_extensible": False,
                     "capitalize": False
@@ -384,6 +370,7 @@ class TestDataset(unittest.TestCase):
             },
             "language": "en",
             "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -405,7 +392,7 @@ class TestDataset(unittest.TestCase):
                                 },
                                 {
                                     "text": "10p.m",
-                                    "entity": BuiltInEntity.DATETIME.label,
+                                    "entity": SNIPS_DATETIME,
                                     "slot_name": "startTime"
                                 }
                             ]
@@ -414,20 +401,24 @@ class TestDataset(unittest.TestCase):
                 }
             },
             "entities": {
-                BuiltInEntity.DATETIME.label: {}
+                SNIPS_DATETIME: {}
             },
             "language": "en",
             "snips_nlu_version": "0.1.0"
         }
 
         # When / Then
-        try:
+        with self.fail_if_exception("Could not validate dataset"):
             validate_and_format_dataset(dataset)
-        except:  # pylint: disable=W0702
-            self.fail("Could not validate dataset")
 
-    def test_should_remove_empty_entities_value_and_empty_synonyms(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_should_remove_empty_entities_value_and_empty_synonyms(
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation, variation.title()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -515,14 +506,15 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "entity 1": "entity 1",
-                            "entity one": "entity 1"
+                            "Entity 1": "entity 1",
                         },
                     "capitalize": False,
                     "automatically_extensible": False
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -531,8 +523,14 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertEqual(dataset, expected_dataset)
 
-    def test_should_add_capitalize_field(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_should_add_capitalize_field(
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation, variation.title()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -656,8 +654,9 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "My entity1": "My entity1",
-                            "my entity1": "My entity1",
-                            "entity1": "entity1"
+                            "My Entity1": "My entity1",
+                            "entity1": "entity1",
+                            "Entity1": "entity1",
                         },
                     "automatically_extensible": True,
                     "capitalize": True
@@ -665,8 +664,9 @@ class TestDataset(unittest.TestCase):
                 "entity2": {
                     "utterances": {
                         "My entity2": "My entity2",
-                        "my entity2": "My entity2",
-                        "myentity2": "myentity2"
+                        "My Entity2": "My entity2",
+                        "myentity2": "myentity2",
+                        "Myentity2": "myentity2"
                     },
                     "automatically_extensible": True,
                     "capitalize": True
@@ -675,16 +675,16 @@ class TestDataset(unittest.TestCase):
                     "utterances":
                         {
                             "Entity3": "Entity3",
-                            "entity3": "Entity3",
                             "m_entity3": "m_entity3",
-                            "mentity3": "m_entity3"
+                            "M_Entity3": "m_entity3"
                         },
                     "automatically_extensible": True,
                     "capitalize": False
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
+            "snips_nlu_version": "0.0.1",
+            "validated": True
         }
 
         # When
@@ -693,8 +693,14 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertDictEqual(dataset, expected_dataset)
 
-    def test_should_normalize_synonyms(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_should_normalize_synonyms(
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation.lower(), variation.title()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {
                 "intent1": {
@@ -702,7 +708,7 @@ class TestDataset(unittest.TestCase):
                         {
                             "data": [
                                 {
-                                    "text": "éNtity",
+                                    "text": "ëNtity",
                                     "entity": "entity1",
                                     "slot_name": "startTime"
                                 }
@@ -729,7 +735,7 @@ class TestDataset(unittest.TestCase):
                         {
                             "data": [
                                 {
-                                    "text": "éNtity",
+                                    "text": "ëNtity",
                                     "entity": "entity1",
                                     "slot_name": "startTime"
                                 }
@@ -741,15 +747,16 @@ class TestDataset(unittest.TestCase):
             "entities": {
                 "entity1": {
                     "utterances": {
-                        "éNtity": "éNtity",
-                        "entity": "éNtity",
+                        "ëntity": "ëNtity",
+                        "Ëntity": "ëNtity",
                     },
                     "automatically_extensible": True,
                     "capitalize": False
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.1.0"
+            "snips_nlu_version": "0.1.0",
+            "validated": True
         }
 
         # When
@@ -758,8 +765,14 @@ class TestDataset(unittest.TestCase):
         # Then
         self.assertDictEqual(dataset, expected_dataset)
 
-    def test_dataset_should_handle_synonyms(self):
+    @mock.patch("snips_nlu.dataset.get_string_variations")
+    def test_dataset_should_handle_synonyms(
+            self, mocked_get_string_variations):
         # Given
+        def mock_get_string_variations(variation, language):
+            return {variation.lower(), variation.title()}
+
+        mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
             "intents": {},
             "entities": {
@@ -786,11 +799,9 @@ class TestDataset(unittest.TestCase):
                 AUTOMATICALLY_EXTENSIBLE: True,
                 UTTERANCES: {
                     "Ëntity 1": "Ëntity 1",
-                    "Ëntity one": "Ëntity 1",
-                    "entity 1": "Ëntity 1",
-                    "entity one": "Ëntity 1",
+                    "ëntity 1": "Ëntity 1",
                     "entity 2": "Ëntity 1",
-                    "entity two": "Ëntity 1"
+                    "Entity 2": "Ëntity 1",
                 },
                 CAPITALIZE: False
             }

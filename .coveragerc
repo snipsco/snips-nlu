@@ -1,7 +1,19 @@
 [run]
+branch = True
+source =
+  snips_nlu
 omit =
-  */tests/*
+  snips_nlu/tests/*
+  cli/tests/*
+  sample/test/*
 
 [report]
 omit =
-  */tests/*
+  snips_nlu/tests/*
+  cli/tests/*
+  sample/test/*
+
+[paths]
+source =
+    snips_nlu
+    .tox/*/lib/python*/site-packages/snips_nlu

@@ -1,7 +1,27 @@
 {
   "intents": {
-    "SampleGetWeather": {
+    "sampleGetWeather": {
       "utterances": [
+        {
+          "data": [
+            {
+              "text": "give me the weather forecast for "
+            },
+            {
+              "text": "los angeles",
+              "entity": "location",
+              "slot_name": "weatherLocation"
+            },
+            {
+              "text": " "
+            },
+            {
+              "text": "this weekend",
+              "entity": "snips/datetime",
+              "slot_name": "weatherDate"
+            }
+          ]
+        },
         {
           "data": [
             {
@@ -10,10 +30,18 @@
             {
               "text": "today",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
-              "text": "? "
+              "text": " in "
+            },
+            {
+              "text": "rio de janeiro",
+              "entity": "location",
+              "slot_name": "weatherLocation"
+            },
+            {
+              "text": " ? "
             }
           ]
         },
@@ -25,7 +53,7 @@
             {
               "text": "Tokyo",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": " "
@@ -33,7 +61,7 @@
             {
               "text": "at the end of the day",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": " ?"
@@ -48,7 +76,7 @@
             {
               "text": "London",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": ", "
@@ -56,7 +84,7 @@
             {
               "text": "tomorrow morning",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": "?"
@@ -71,15 +99,15 @@
             {
               "text": "this afternoon",
               "entity": "snips/datetime",
-              "slot_name": "weather_date"
+              "slot_name": "weatherDate"
             },
             {
               "text": " in "
             },
             {
-              "text": "Moscow",
+              "text": "tel aviv",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": ", please"
@@ -94,18 +122,16 @@
             {
               "text": "Paris",
               "entity": "location",
-              "slot_name": "weather_location"
+              "slot_name": "weatherLocation"
             },
             {
               "text": "?"
             }
           ]
         }
-      ],
-      "version": "0.0.1",
-      "language": "en"
+      ]
     },
-    "SampleTurnOnLight": {
+    "sampleTurnOnLight": {
       "utterances": [
         {
           "data": [
@@ -176,10 +202,7 @@
             }
           ]
         }
-      ],
-      "engineType": "regex",
-      "version": "0.0.1",
-      "language": "en"
+      ]
     }
   },
   "entities": {
@@ -190,11 +213,24 @@
     },
     "snips/datetime": {},
     "room": {
-      "data": [],
+      "data": [
+        {
+          "value": "basement",
+          "synonyms": [
+            "cellar"
+          ]
+        },
+        {
+          "value": "living room",
+          "synonyms": [
+            "lounge",
+            "family room"
+          ]
+        }
+      ],
       "use_synonyms": true,
       "automatically_extensible": false
     }
   },
-  "language": "en",
-  "snips_nlu_version": "0.11.0"
+  "language": "en"
 }

@@ -9,8 +9,7 @@ Snips NLU package.
 Resources
 ---------
 
-.. automodule:: snips_nlu.resources
-   :members:
+.. autofunction:: snips_nlu.resources.load_resources
 
 
 NLU engine

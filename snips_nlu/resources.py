@@ -86,13 +86,15 @@ def get_resource(language, resource_name):
 
 
 def _load_stop_words(language):
+    stop_words = set()
     if STOP_WORDS in RESOURCE_INDEX[language]:
         stop_words_file_path = os.path.join(
             get_resources_path(language),
             RESOURCE_INDEX[language][STOP_WORDS])
         with io.open(stop_words_file_path, encoding='utf8') as f:
             lines = (normalize(l) for l in f)
-            _RESOURCES[language][STOP_WORDS] = set(l for l in lines if l)
+            stop_words = set(l for l in lines if l)
+    return stop_words
 
 
 def get_stop_words(language):
@@ -100,6 +102,7 @@ def get_stop_words(language):
 
 
 def _load_noises(language):
+    noise = ""
     if NOISE in RESOURCE_INDEX[language]:
         noise_path = os.path.join(
             get_resources_path(language),
@@ -110,7 +113,8 @@ def _load_noises(language):
             # We don't really care about tokenizing precisely as this noise
             #  is just used to generate fake query that will be
             # re-tokenized
-            _RESOURCES[language][NOISE] = next(f).split()
+            noise = next(f).split()
+    return noise
 
 
 def get_noises(language):
@@ -123,8 +127,8 @@ def _load_clusters(language):
             get_resources_path(language), name)
         for name in RESOURCE_INDEX[language].get(WORD_CLUSTERS, [])
     }
+    clusters = dict()
     if WORD_CLUSTERS in RESOURCE_INDEX[language]:
-        clusters = dict()
         for name, path in iteritems(word_clusters_paths):
             with io.open(path, encoding="utf8") as f:
                 clusters[name] = dict()
@@ -132,7 +136,7 @@ def _load_clusters(language):
                     split = l.rstrip().split("\t")
                     if len(split) == 2:
                         clusters[name][split[0]] = split[1]
-        _RESOURCES[language][WORD_CLUSTERS] = clusters
+    return clusters
 
 
 def get_word_clusters(language):
@@ -155,7 +159,7 @@ def _load_gazetteers(language):
                     normalized = get_ignored_characters_pattern(language).join(
                         [t.value for t in tokenize(normalized, language)])
                     gazetteers[name].add(normalized)
-    _RESOURCES[language][GAZETTEERS] = gazetteers
+    return gazetteers
 
 
 def get_gazetteers(language):
@@ -200,11 +204,27 @@ def _word_inflections(language):
 def _load_stems(language):
     stems = _word_inflections(language)
     stems.update(_verbs_lexemes(language))
-    _RESOURCES[language][STEMS] = stems
+    return stems
 
 
 def get_stems(language):
     return get_resource(language, STEMS)
+
+
+def _load_resources(language):
+    resources = dict()
+    resources_fns = {
+        WORD_CLUSTERS: _load_clusters,
+        GAZETTEERS: _load_gazetteers,
+        STOP_WORDS: _load_stop_words,
+        NOISE: _load_noises,
+        STEMS: _load_stems
+    }
+    for resources_name, resource_fn in iteritems(resources_fns):
+        resource = resource_fn(language)
+        if resource:  # Don't add the resource if it's an emtpy dict or string
+            resources[resources_name] = resource
+    return resources
 
 
 def load_resources(language):
@@ -218,8 +238,4 @@ def load_resources(language):
     """
     if language in _RESOURCES:
         return
-    _load_clusters(language)
-    _load_gazetteers(language)
-    _load_stop_words(language)
-    _load_noises(language)
-    _load_stems(language)
+    _RESOURCES[language] = _load_resources(language)

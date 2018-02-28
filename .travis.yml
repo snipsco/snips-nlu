@@ -65,8 +65,7 @@ script:
   - tox
 
 after_success:
-  - tox -e codecov
+  - tox -e coverage-report
   - codecov
 
-cache:
-  - pip
+cache: pip

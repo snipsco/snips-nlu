@@ -46,7 +46,7 @@ extras_require = {
     ],
     # "integration_test": [
     #     "snips_nlu_metrics==%s" % nlu_metrics_version,
-    #     "snips_nlu_rust==0.53.0-RC1",
+    #     "snips_nlu_rust==0.53.0",
     # ]
 }
 

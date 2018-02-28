@@ -1,6 +1,18 @@
 Snips NLU
 =========
 
+.. image:: https://travis-ci.org/snipsco/snips-nlu.svg?branch=develop
+    :target: https://travis-ci.org/snipsco/snips-nlu
+
+.. image:: https://img.shields.io/pypi/v/snips-nlu.svg?branch=develop
+    :target: https://pypi.python.org/pypi/snips-nlu
+
+.. image:: https://img.shields.io/pypi/pyversions/snips-nlu.svg?branch=develop
+    :target: https://pypi.python.org/pypi/snips-nlu
+
+.. image:: https://codecov.io/gh/snipsco/snips-nlu/branch/develop/graph/badge.svg
+   :target: https://codecov.io/gh/snipsco/snips-nlu
+
 
 `Snips NLU <https://snips-nlu.readthedocs.io>`_ (Natural Language Understanding) is a Python library that allows to parse sentences written in natural language and extracts structured information.
 

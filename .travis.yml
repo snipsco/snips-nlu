@@ -56,9 +56,9 @@ before_install: |
 
 install: |
   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    python -m pip install --user tox
+    python -m pip install --user tox codecov
   else
-    python -m pip install tox
+    python -m pip install tox codecov
   fi
 
 script:

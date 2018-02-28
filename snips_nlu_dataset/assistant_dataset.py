@@ -8,8 +8,8 @@ from copy import deepcopy
 
 from future.utils import iteritems
 
-from nlu_dataset.custom_entities import CustomEntity
-from nlu_dataset.intent_dataset import IntentDataset
+from snips_nlu_dataset.custom_entities import CustomEntity
+from snips_nlu_dataset.intent_dataset import IntentDataset
 from snips_nlu.builtin_entities import is_builtin_entity
 
 

@@ -81,7 +81,7 @@ class SnipsNLUEngine(ProcessingUnit):
             if recycled_parser is None:
                 recycled_parser = build_processing_unit(parser_config)
             if force_retrain or not recycled_parser.fitted:
-                recycled_parser.fit(dataset)
+                recycled_parser.fit(dataset, force_retrain)
             parsers.append(recycled_parser)
 
         self.intent_parsers = parsers

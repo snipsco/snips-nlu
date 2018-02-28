@@ -6,8 +6,8 @@ import os
 
 from builtins import object
 
-from nlu_dataset.builtin_entities import BuiltinEntity
-from nlu_dataset.custom_entities import CustomEntity, EntityUtterance
+from snips_nlu_dataset.builtin_entities import BuiltinEntity
+from snips_nlu_dataset.custom_entities import CustomEntity, EntityUtterance
 from snips_nlu.builtin_entities import is_builtin_entity
 
 

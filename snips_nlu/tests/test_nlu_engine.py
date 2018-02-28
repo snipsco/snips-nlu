@@ -56,8 +56,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -86,8 +91,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 if text == input_text:
@@ -137,6 +147,80 @@ class TestSnipsNLUEngine(SnipsTest):
         expected_parse = parsing_result(input_text, intent, expected_slots)
         self.assertDictEqual(expected_parse, parse)
 
+    def test_should_retrain_only_non_trained_subunits(self):
+        # Given
+        class TestIntentParserConfig(ProcessingUnitConfig):
+            unit_name = "test_intent_parser"
+
+            def to_dict(self):
+                return {"unit_name": self.unit_name}
+
+            @classmethod
+            def from_dict(cls, obj_dict):
+                return TestIntentParserConfig()
+
+        class TestIntentParser(IntentParser):
+            unit_name = "test_intent_parser"
+            config_type = TestIntentParserConfig
+
+            def __init__(self, config):
+                super(TestIntentParser, self).__init__(config)
+                self.sub_unit_1 = dict(fitted=False, calls=0)
+                self.sub_unit_2 = dict(fitted=False, calls=0)
+
+            def fit(self, dataset, force_retrain):
+                if force_retrain:
+                    self.sub_unit_1["fitted"] = True
+                    self.sub_unit_1["calls"] += 1
+                    self.sub_unit_2["fitted"] = True
+                    self.sub_unit_2["calls"] += 1
+                else:
+                    if not self.sub_unit_1["fitted"]:
+                        self.sub_unit_1["fitted"] = True
+                        self.sub_unit_1["calls"] += 1
+                    if not self.sub_unit_2["fitted"]:
+                        self.sub_unit_2["fitted"] = True
+                        self.sub_unit_2["calls"] += 1
+
+                return self
+
+            @property
+            def fitted(self):
+                return self.sub_unit_1["fitted"] and \
+                       self.sub_unit_2["fitted"]
+
+            def parse(self, text, intents):
+                return empty_result(text)
+
+            def to_dict(self):
+                return {
+                    "unit_name": self.unit_name,
+                }
+
+            @classmethod
+            def from_dict(cls, unit_dict):
+                conf = cls.config_type()
+                return TestIntentParser(conf)
+
+        register_processing_unit(TestIntentParser)
+
+        intent_parser_config = TestIntentParserConfig()
+        nlu_engine_config = NLUEngineConfig([intent_parser_config])
+        nlu_engine = SnipsNLUEngine(nlu_engine_config)
+
+        intent_parser = TestIntentParser(intent_parser_config)
+        intent_parser.sub_unit_1.update(dict(fitted=True, calls=0))
+        nlu_engine.intent_parsers.append(intent_parser)
+
+        # When
+        nlu_engine.fit(SAMPLE_DATASET, force_retrain=False)
+
+        # Then
+        self.assertDictEqual(dict(fitted=True, calls=0),
+                             intent_parser.sub_unit_1)
+        self.assertDictEqual(dict(fitted=True, calls=1),
+                             intent_parser.sub_unit_2)
+
     def test_should_handle_empty_dataset(self):
         # Given
         dataset = validate_and_format_dataset(get_empty_dataset(LANGUAGE_EN))
@@ -164,8 +248,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -194,8 +283,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -283,8 +377,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -313,8 +412,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)

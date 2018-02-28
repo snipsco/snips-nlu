@@ -170,7 +170,7 @@ def get_gazetteer(language, gazetteer_name):
     return get_gazetteers(language)[gazetteer_name]
 
 
-def _verbs_lexemes(language):
+def _load_verbs_lexemes(language):
     stems_paths = glob.glob(os.path.join(RESOURCES_PATH, language,
                                          "top_*_verbs_lexemes.txt"))
     if not stems_paths:
@@ -187,7 +187,7 @@ def _verbs_lexemes(language):
     return verb_lexemes
 
 
-def _word_inflections(language):
+def _load_words_inflections(language):
     inflection_paths = glob.glob(os.path.join(RESOURCES_PATH, language,
                                               "top_*_words_inflected.txt"))
     if not inflection_paths:
@@ -202,8 +202,8 @@ def _word_inflections(language):
 
 
 def _load_stems(language):
-    stems = _word_inflections(language)
-    stems.update(_verbs_lexemes(language))
+    stems = _load_words_inflections(language)
+    stems.update(_load_verbs_lexemes(language))
     return stems
 
 
@@ -239,3 +239,15 @@ def load_resources(language):
     if language in _RESOURCES:
         return
     _RESOURCES[language] = _load_resources(language)
+
+
+def resource_exists(language, resource_name):
+    """Tell if the resource specified by the resource_name exist
+
+        Args:
+            language (str): language
+            resource_name (str): the resource name
+        Returns:
+            bool: whether the resource exists or not
+    """
+    return resource_name in _RESOURCES[language]

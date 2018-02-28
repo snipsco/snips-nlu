@@ -212,6 +212,9 @@ def load_resources(language):
 
     Args:
         language (str): language
+
+    Note:
+        Language resources must be loaded before fitting or parsing
     """
     if language in _RESOURCES:
         return

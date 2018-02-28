@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 from future.utils import with_metaclass
 
@@ -13,8 +13,19 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
     """
 
     @abstractmethod
-    def fit(self, dataset):
-        """Fit the intent parser with a valid Snips dataset"""
+    def fit(self, dataset, force_retrain):
+        """Fit the intent parser with a valid Snips dataset
+
+        Args:
+            dataset (dict): Valid Snips NLU dataset
+            force_retrain (bool): Specify whether or not sub components of the
+            intent parser that may be already trained should be retrained
+        """
+        pass
+
+    @abstractproperty
+    def fitted(self):
+        """Whether or not the intent parser has already been trained"""
         pass
 
     @abstractmethod

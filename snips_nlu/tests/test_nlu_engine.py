@@ -56,8 +56,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -86,8 +91,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 if text == input_text:
@@ -164,8 +174,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -194,8 +209,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -283,8 +303,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser1"
             config_type = TestIntentParser1Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)
@@ -313,8 +338,13 @@ class TestSnipsNLUEngine(SnipsTest):
             unit_name = "test_intent_parser2"
             config_type = TestIntentParser2Config
 
-            def fit(self, dataset):
+            def fit(self, dataset, force_retrain):
+                self._fitted = True
                 return self
+
+            @property
+            def fitted(self):
+                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 return empty_result(text)

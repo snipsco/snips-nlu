@@ -68,7 +68,7 @@ class DeterministicIntentParser(IntentParser):
         """Whether or not the intent parser has already been trained"""
         return self.regexes_per_intent is not None
 
-    def fit(self, dataset):
+    def fit(self, dataset, force_retrain=True):
         """Fit the intent parser with a valid Snips dataset"""
         dataset = validate_and_format_dataset(dataset)
         self.language = dataset[LANGUAGE]

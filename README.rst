@@ -71,6 +71,6 @@ Links
 -----
 * `Snips NLU <https://github.com/snipsco/snips-nlu>`_
 * `Snips NLU Rust <https://github.com/snipsco/snips-nlu-rs>`_: Rust inference pipeline implementation and bindings (C, Swift, Kotlin, Python)
-* `Snips <https://snips.ai/>`_
 * `Rustling <https://github.com/snipsco/rustling-ontology>`_: Snips NLU builtin entities parser
+* `Snips <https://snips.ai/>`_
 * `Bug tracker <https://github.com/snipsco/snips-nlu/issues>`_

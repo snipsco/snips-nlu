@@ -52,7 +52,7 @@ Properly trained, the Snips NLU engine will be able to extract structured data s
           {
              "value": {
                 "kind": "InstantTime",
-                "value": "2018-02-08 20:00:00 +00:00"
+                "value": "2018-02-08 21:00:00 +00:00"
              },
              "entity": "snips/datetime",
              "slotName": "forecast_start_datetime"

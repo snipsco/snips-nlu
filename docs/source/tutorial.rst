@@ -258,7 +258,7 @@ We are now ready to parse:
 
 .. code-block:: python
 
-    parsing = engine.parse(u"Hey, lights on in the entrance !")
+    parsing = engine.parse(u"Hey, lights on in the lounge !")
     print(json.dumps(parsing, indent=2))
 
 You should get the following output (with a slightly different ``probability``

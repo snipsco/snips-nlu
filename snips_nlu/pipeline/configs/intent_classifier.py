@@ -88,6 +88,13 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
         return cls(**d)
 
 
+class LogRegIntentClassifierAllClsConfig(LogRegIntentClassifierConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier import LogRegIntentClassifierAllCls
+        return LogRegIntentClassifierAllCls.unit_name
+
+
 class IntentClassifierDataAugmentationConfig(Config):
     """Configuration used by a :class:`.LogRegIntentClassifier` which defines
         how to augment data to improve the training of the classifier

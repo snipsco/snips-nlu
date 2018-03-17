@@ -1,2 +1,3 @@
 from .intent_classifier import IntentClassifier
 from .log_reg_classifier import LogRegIntentClassifier
+from .log_reg_classifier_all_cls import LogRegIntentClassifierAllCls

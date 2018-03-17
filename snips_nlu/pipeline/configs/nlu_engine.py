@@ -21,10 +21,12 @@ class NLUEngineConfig(ProcessingUnitConfig):
         if intent_parsers_configs is None:
             from snips_nlu.pipeline.configs import (
                 ProbabilisticIntentParserConfig,
+                ProbabilisticIntentParserAllClsConfig,
                 DeterministicIntentParserConfig)
             intent_parsers_configs = [
                 DeterministicIntentParserConfig(),
-                ProbabilisticIntentParserConfig()
+                ProbabilisticIntentParserConfig(),
+                ProbabilisticIntentParserAllClsConfig()
             ]
         self.intent_parsers_configs = list(map(get_processing_unit_config,
                                                intent_parsers_configs))
@@ -51,3 +53,10 @@ class NLUEngineConfig(ProcessingUnitConfig):
             d = deepcopy(obj_dict)
             d.pop("unit_name")
         return cls(**d)
+
+
+class DENLUEngineConfig(NLUEngineConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.nlu_engine.de_nlu_engine import DESnipsNLUEngine
+        return DESnipsNLUEngine.unit_name

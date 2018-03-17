@@ -53,6 +53,13 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
         return cls(**d)
 
 
+class ProbabilisticIntentParserAllClsConfig(ProbabilisticIntentParserConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_parser import ProbabilisticIntentParserAllCls
+        return ProbabilisticIntentParserAllCls.unit_name
+
+
 class DeterministicIntentParserConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.DeterministicIntentParser`
 

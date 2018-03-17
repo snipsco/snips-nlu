@@ -1,9 +1,11 @@
 from .config import Config, ProcessingUnitConfig
 from .features import default_features_factories
 from .intent_classifier import (
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
+    LogRegIntentClassifierConfig, LogRegIntentClassifierAllClsConfig, IntentClassifierDataAugmentationConfig,
     FeaturizerConfig)
 from .intent_parser import (DeterministicIntentParserConfig,
-                            ProbabilisticIntentParserConfig)
-from .nlu_engine import NLUEngineConfig
+                            ProbabilisticIntentParserConfig,
+                            ProbabilisticIntentParserAllClsConfig,
+                            )
+from .nlu_engine import NLUEngineConfig, DENLUEngineConfig
 from .slot_filler import CRFSlotFillerConfig, SlotFillerDataAugmentationConfig

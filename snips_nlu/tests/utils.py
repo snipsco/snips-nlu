@@ -35,7 +35,7 @@ class SnipsTest(TestCase):
         try:
             yield
         except Exception:  # pylint: disable=W0703
-            trace = tb.format_exc
+            trace = tb.format_exc()
             self.fail("{}\b{}".format(msg, trace))
 
 

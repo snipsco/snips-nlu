@@ -1,18 +1,20 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
-from builtins import map, object
 
+from builtins import map, object
 from future.utils import with_metaclass, iteritems
-from snips_nlu_utils import normalize
 from snips_nlu_ontology.builtin_entities import get_supported_entities
+from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
-    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END)
+    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END,
+    STEMS)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import stem
-from snips_nlu.resources import get_gazetteer, get_word_clusters
+from snips_nlu.resources import get_gazetteer, get_word_clusters, \
+    resource_exists
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
@@ -382,8 +384,9 @@ class EntityMatchFactory(CRFFeatureFactory):
 
         def preprocess(string):
             normalized = normalize(string)
-            return stem(normalized, self.language) if self.use_stemming \
-                else normalized
+            if resource_exists(self.language, STEMS) and self.use_stemming:
+                return stem(normalized, self.language)
+            return normalized
 
         intent_entities = get_intent_custom_entities(dataset, intent)
         self.collections = dict()

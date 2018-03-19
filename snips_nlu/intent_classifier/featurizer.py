@@ -1,11 +1,12 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from builtins import object, range
+
 from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
+from future.builtins import object, range
 from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
@@ -28,10 +29,8 @@ CLUSTER_USED_PER_LANGUAGES = {}
 
 class Featurizer(object):
     def __init__(self, language, unknown_words_replacement_string,
-                 config=FeaturizerConfig(),
-                 tfidf_vectorizer=None, best_features=None,
-                 entity_utterances_to_feature_names=None,
-                 pvalue_threshold=0.4):
+                 config=FeaturizerConfig(), tfidf_vectorizer=None,
+                 best_features=None, entity_utterances_to_feature_names=None):
         self.config = config
         self.language = language
         if tfidf_vectorizer is None:
@@ -39,7 +38,6 @@ class Featurizer(object):
                 self.language, self.config.to_dict())
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
-        self.pvalue_threshold = pvalue_threshold
         self.entity_utterances_to_feature_names = \
             entity_utterances_to_feature_names
 
@@ -78,7 +76,7 @@ class Featurizer(object):
 
         _, pval = chi2(X_train_tfidf, classes)
         self.best_features = [i for i, v in enumerate(pval) if
-                              v < self.pvalue_threshold]
+                              v < self.config.pvalue_threshold]
         if not self.best_features:
             self.best_features = [idx for idx, val in enumerate(pval) if
                                   val == pval.min()]
@@ -91,7 +89,8 @@ class Featurizer(object):
 
         for feat in feature_names:
             if feature_names[feat]["word"] in stop_words:
-                if feature_names[feat]["pval"] > self.pvalue_threshold / 2.0:
+                if feature_names[feat]["pval"] > \
+                        self.config.pvalue_threshold / 2.0:
                     self.best_features.remove(feat)
 
         return self

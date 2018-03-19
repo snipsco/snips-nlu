@@ -131,12 +131,14 @@ class FeaturizerConfig(Config):
             (vs linear) term frequencies, default is *False*.
     """
 
-    def __init__(self, sublinear_tf=False):
+    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4):
         self.sublinear_tf = sublinear_tf
+        self.pvalue_threshold = pvalue_threshold
 
     def to_dict(self):
         return {
-            "sublinear_tf": self.sublinear_tf
+            "sublinear_tf": self.sublinear_tf,
+            "pvalue_threshold": self.pvalue_threshold
         }
 
     @classmethod

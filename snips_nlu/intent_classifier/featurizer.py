@@ -175,9 +175,9 @@ class Featurizer(object):
         return self
 
 
-def _get_tfidf_vectorizer(language, sublinear_tf=False):
+def _get_tfidf_vectorizer(language, sublinear_tf=False, ngram_range=(1, 2)):
     return TfidfVectorizer(tokenizer=lambda x: tokenize_light(x, language),
-                           sublinear_tf=sublinear_tf)
+                           sublinear_tf=sublinear_tf, ngram_range=ngram_range)
 
 
 def _get_tokens_clusters(tokens, language, cluster_name):

@@ -45,6 +45,7 @@ class TestConfig(SnipsTest):
         # Given
         config_dict = {
             "sublinear_tf": True,
+            "pvalue_threshold": 0.4
         }
 
         # When

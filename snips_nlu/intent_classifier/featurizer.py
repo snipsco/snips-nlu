@@ -35,7 +35,7 @@ class Featurizer(object):
         self.language = language
         if tfidf_vectorizer is None:
             tfidf_vectorizer = _get_tfidf_vectorizer(
-                self.language, self.config.to_dict())
+                self.language, {"sublinear_tf": self.config.sublinear_tf})
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
         self.entity_utterances_to_feature_names = \
@@ -141,7 +141,6 @@ class Featurizer(object):
             'language_code': self.language,
             'tfidf_vectorizer': tfidf_vectorizer,
             'best_features': self.best_features,
-            'pvalue_threshold': self.pvalue_threshold,
             'entity_utterances_to_feature_names':
                 entity_utterances_to_entity_names,
             'config': self.config.to_dict(),
@@ -158,7 +157,7 @@ class Featurizer(object):
         language = obj_dict['language_code']
         config = FeaturizerConfig.from_dict(obj_dict["config"])
         tfidf_vectorizer = _deserialize_tfidf_vectorizer(
-            obj_dict["tfidf_vectorizer"], language, config)
+            obj_dict["tfidf_vectorizer"], language, config.sublinear_tf)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
             iteritems(obj_dict['entity_utterances_to_feature_names'])
@@ -166,7 +165,6 @@ class Featurizer(object):
         self = cls(
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
-            pvalue_threshold=obj_dict['pvalue_threshold'],
             entity_utterances_to_feature_names=
             entity_utterances_to_entity_names,
             best_features=obj_dict['best_features'],
@@ -177,11 +175,9 @@ class Featurizer(object):
         return self
 
 
-def _get_tfidf_vectorizer(language, extra_args=None):
-    if extra_args is None:
-        extra_args = dict()
+def _get_tfidf_vectorizer(language, sublinear_tf=False):
     return TfidfVectorizer(tokenizer=lambda x: tokenize_light(x, language),
-                           **extra_args)
+                           sublinear_tf=sublinear_tf)
 
 
 def _get_tokens_clusters(tokens, language, cluster_name):
@@ -292,10 +288,8 @@ def _get_utterances_to_features_names(dataset, language):
     return dict(utterances_to_features)
 
 
-def _deserialize_tfidf_vectorizer(vectorizer_dict, language,
-                                  featurizer_config):
-    tfidf_vectorizer = _get_tfidf_vectorizer(language,
-                                             featurizer_config.to_dict())
+def _deserialize_tfidf_vectorizer(vectorizer_dict, language, sublinear_tf):
+    tfidf_vectorizer = _get_tfidf_vectorizer(language, sublinear_tf)
     tfidf_transformer = TfidfTransformer()
     vocab = vectorizer_dict["vocab"]
     if vocab is not None:  # If the vectorizer has been fitted

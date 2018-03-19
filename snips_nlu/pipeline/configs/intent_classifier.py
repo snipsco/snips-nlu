@@ -127,8 +127,10 @@ class FeaturizerConfig(Config):
     """Configuration of a :class:`.Featurizer` object
 
     Args:
-         sublinear_tf (bool, optional): Whether or not to use sublinear
+        sublinear_tf (bool, optional): Whether or not to use sublinear
             (vs linear) term frequencies, default is *False*.
+        pvalue_threshold (float, optional): max pvalue for a feature to be
+        kept in the feature selection
     """
 
     def __init__(self, sublinear_tf=False, pvalue_threshold=0.4):

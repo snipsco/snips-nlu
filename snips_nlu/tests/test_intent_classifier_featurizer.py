@@ -2,7 +2,8 @@
 from __future__ import unicode_literals
 
 import json
-from builtins import bytes
+
+
 
 import numpy as np
 from future.utils import iteritems
@@ -27,10 +28,11 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         tfidf_vectorizer = _get_tfidf_vectorizer(language)
 
         pvalue_threshold = 0.42
-        featurizer = Featurizer(language,
-                                None,
-                                tfidf_vectorizer=tfidf_vectorizer,
-                                pvalue_threshold=pvalue_threshold)
+        featurizer = Featurizer(
+            language,
+            config=FeaturizerConfig(pvalue_threshold=pvalue_threshold),
+            unknown_words_replacement_string=None,
+            tfidf_vectorizer=tfidf_vectorizer)
         dataset = {
             "entities": {
                 "entity2": {
@@ -86,11 +88,13 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         }
 
         expected_serialized = {
-            "config": {'sublinear_tf': False},
+            "config": {
+                'sublinear_tf': False,
+                'pvalue_threshold': pvalue_threshold
+            },
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
-            "pvalue_threshold": pvalue_threshold,
             "entity_utterances_to_feature_names":
                 entity_utterances_to_feature_names,
             "unknown_words_replacement_string": None
@@ -106,17 +110,17 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         vocabulary = {"hello": 0, "beautiful": 1, "world": 2}
 
         best_features = [0, 1]
-        pvalue_threshold = 0.4
+        config = {"pvalue_threshold": 0.4, "sublinear_tf": False}
+
         entity_utterances_to_feature_names = {
             "entity_1": ["entityfeatureentity_1"]
         }
 
         featurizer_dict = {
-            "config": FeaturizerConfig().to_dict(),
+            "config": config,
             "language_code": language,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
-            "pvalue_threshold": pvalue_threshold,
             "entity_utterances_to_feature_names":
                 entity_utterances_to_feature_names,
             "unknown_words_replacement_string": None
@@ -135,7 +139,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         self.assertDictEqual(featurizer.tfidf_vectorizer.vocabulary_,
                              vocabulary)
         self.assertListEqual(featurizer.best_features, best_features)
-        self.assertEqual(featurizer.pvalue_threshold, pvalue_threshold)
+        self.assertEqual(config, featurizer.config.to_dict())
 
         self.assertDictEqual(
             featurizer.entity_utterances_to_feature_names,

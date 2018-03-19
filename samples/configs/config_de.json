@@ -175,7 +175,8 @@
           "unknown_words_replacement_string": null
         },
         "featurizer_config": {
-          "sublinear_tf": false
+          "sublinear_tf": false,
+          "pvalue_threshold": 0.4
         },
         "random_seed": null
       }

@@ -35,7 +35,7 @@ class Featurizer(object):
         self.language = language
         if tfidf_vectorizer is None:
             tfidf_vectorizer = _get_tfidf_vectorizer(
-                self.language, {"sublinear_tf": self.config.sublinear_tf})
+                self.language, sublinear_tf=self.config.sublinear_tf)
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
         self.entity_utterances_to_feature_names = \

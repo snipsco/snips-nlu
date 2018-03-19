@@ -22,6 +22,15 @@ Snips NLU can be installed via pip with the following command:
 
     pip install snips-nlu
 
+
+We currently have pre-built binaries (wheels) for ``snips-nlu`` and its
+dependencies for MacOS and Linux x86_64. If you use a different
+architecture/os you will need to build these dependencies from sources
+which means you will need to install
+`setuptools_rust <https://github.com/PyO3/setuptools-rust>`_ and
+`Rust <https://www.rust-lang.org/en-US/install.html>`_ before running the
+``pip install snips-nlu`` command.
+
 Extra dependencies
 ------------------
 

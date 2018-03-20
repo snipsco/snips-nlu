@@ -3,10 +3,11 @@ from __future__ import unicode_literals
 import errno
 import numbers
 import os
-from builtins import object
 from collections import OrderedDict, namedtuple, Mapping
+from datetime import datetime
 
 import numpy as np
+from builtins import object
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
                                  RESOURCES_PATH, END, START)
@@ -223,3 +224,7 @@ def ranges_overlap(lhs_range, rhs_range):
     else:
         raise TypeError("Cannot check overlap on objects of type: %s and %s"
                         % (type(lhs_range), type(rhs_range)))
+
+
+def elapsed_since(time):
+    return datetime.now() - time

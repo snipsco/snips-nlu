@@ -1,4 +1,3 @@
-from __future__ import print_function
 from __future__ import unicode_literals
 
 import base64
@@ -104,8 +103,6 @@ class CRFSlotFiller(SlotFiller):
             dataset (dict): A valid Snips dataset
             intent (str): The specific intent of the dataset to train
                 the slot filler on
-            verbose (bool, optional): If *True*, it will print the weights
-                of the CRF once the training is done
 
         Returns:
             :class:`CRFSlotFiller`: The same instance, trained

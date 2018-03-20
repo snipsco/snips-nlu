@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 
+import logging
 import re
 from copy import deepcopy
+from datetime import datetime
 
 from builtins import str
 from future.utils import itervalues, iteritems
@@ -18,10 +20,13 @@ from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import regex_escape, ranges_overlap, NotTrained
+from snips_nlu.utils import regex_escape, ranges_overlap, NotTrained, \
+    elapsed_since, json_debug_string
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
+
+logger = logging.getLogger(__name__)
 
 
 class DeterministicIntentParser(IntentParser):
@@ -70,6 +75,8 @@ class DeterministicIntentParser(IntentParser):
 
     def fit(self, dataset, force_retrain=True):
         """Fit the intent parser with a valid Snips dataset"""
+        start = datetime.now()
+        logger.debug("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
@@ -87,6 +94,8 @@ class DeterministicIntentParser(IntentParser):
                 utterances, joined_entity_utterances,
                 self.group_names_to_slot_names, self.language)
             self.regexes_per_intent[intent_name] = regexes
+        logger.debug("Fitted deterministic parser in {}".format(
+            elapsed_since(start)))
         return self
 
     def parse(self, text, intents=None):
@@ -108,6 +117,8 @@ class DeterministicIntentParser(IntentParser):
         """
         if not self.fitted:
             raise NotTrained("DeterministicIntentParser must be fitted")
+        start = datetime.now()
+        logger.debug("DeterministicIntentParser parsing '{}'...".format(text))
 
         if isinstance(intents, str):
             intents = [intents]
@@ -115,21 +126,24 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = _replace_builtin_entities(
             text, self.language)
 
+        found_result = False
+        result = None
         for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
                 continue
             for regex in regexes:
-                match = regex.match(processed_text)
-                if match is None:
+                found_result = regex.match(processed_text)
+                if found_result is None:
                     continue
                 parsed_intent = intent_classification_result(
                     intent_name=intent, probability=1.0)
                 slots = []
-                for group_name in match.groupdict():
+                for group_name in found_result.groupdict():
                     slot_name = self.group_names_to_slot_names[group_name]
                     entity = self.slot_names_to_entities[slot_name]
-                    rng = (match.start(group_name), match.end(group_name))
-                    value = match.group(group_name)
+                    rng = (found_result.start(group_name),
+                           found_result.end(group_name))
+                    value = found_result.group(group_name)
                     if rng in ranges_mapping:
                         rng = ranges_mapping[rng]
                         value = text[rng[START]:rng[END]]
@@ -143,8 +157,16 @@ class DeterministicIntentParser(IntentParser):
                     slots, self.language)
                 parsed_slots = sorted(parsed_slots,
                                       key=lambda s: s[RES_MATCH_RANGE][START])
-                return parsing_result(text, parsed_intent, parsed_slots)
-        return empty_result(text)
+                result = parsing_result(text, parsed_intent, parsed_slots)
+                found_result = True
+                break
+            if found_result:
+                break
+        result = result or empty_result(text)
+        logger.debug("DeterministicIntentParser parsed in {}".format(
+            elapsed_since(start)))
+        logger.debug("Result -> {}".format(json_debug_string(result)))
+        return result
 
     def _is_trainable(self, intent, dataset):
         if len(intent[UTTERANCES]) >= self.config.max_queries:

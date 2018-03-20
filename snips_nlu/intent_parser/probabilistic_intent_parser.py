@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
-from builtins import str
+import logging
 from copy import deepcopy
+from datetime import datetime
 
+from builtins import str
 from future.utils import itervalues, iteritems
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
@@ -12,7 +14,9 @@ from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
-from snips_nlu.utils import NotTrained
+from snips_nlu.utils import NotTrained, elapsed_since, json_debug_string
+
+logger = logging.getLogger(__name__)
 
 
 class ProbabilisticIntentParser(IntentParser):
@@ -55,16 +59,24 @@ class ProbabilisticIntentParser(IntentParser):
         Returns:
             :class:`ProbabilisticIntentParser`: The same instance, trained
         """
+        start = datetime.now()
+        logger.debug("Fitting probabilistic intent parser...")
         dataset = validate_and_format_dataset(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
             self.intent_classifier = build_processing_unit(
                 self.config.intent_classifier_config)
         if force_retrain or not self.intent_classifier.fitted:
+            logger.debug("Fitting intent classifier...")
+            intent_classifier_start = datetime.now()
             self.intent_classifier.fit(dataset)
+            logger.debug("Fitted intent classifier in {}".format(
+                elapsed_since(intent_classifier_start)))
 
         if self.slot_fillers is None:
             self.slot_fillers = dict()
+        logger.debug("Fitting CRF slot filler...")
+        slot_fillers_start = datetime.now()
         for intent_name in intents:
             # We need to copy the slot filler config as it may be mutated
             if self.slot_fillers.get(intent_name) is None:
@@ -73,6 +85,10 @@ class ProbabilisticIntentParser(IntentParser):
                     slot_filler_config)
             if force_retrain or not self.slot_fillers[intent_name].fitted:
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
+        logger.debug("Fitted slot fillers in {}".format(
+            elapsed_since(slot_fillers_start)))
+        logger.debug("Fitted probabilistic intent parser in {}".format(
+            elapsed_since(start)))
         return self
 
     # pylint:enable=arguments-differ
@@ -96,16 +112,25 @@ class ProbabilisticIntentParser(IntentParser):
         if not self.fitted:
             raise NotTrained("ProbabilisticIntentParser must be fitted")
 
+        start = datetime.now()
+        logger.debug("Probabilistic intent parser parsing"
+                     " '{}'...".format(text))
+
         if isinstance(intents, str):
             intents = [intents]
 
         intent_result = self.intent_classifier.get_intent(text, intents)
-        if intent_result is None:
-            return empty_result(text)
 
-        intent_name = intent_result[RES_INTENT_NAME]
-        slots = self.slot_fillers[intent_name].get_slots(text)
-        return parsing_result(text, intent_result, slots)
+        if intent_result is None:
+            result = empty_result(text)
+        else:
+            intent_name = intent_result[RES_INTENT_NAME]
+            slots = self.slot_fillers[intent_name].get_slots(text)
+            result = parsing_result(text, intent_result, slots)
+        logger.debug("ProbabilisticIntentParser parsed in {}".format(
+            elapsed_since(start)))
+        logger.debug("Result -> {}".format(json_debug_string(result)))
+        return result
 
     def to_dict(self):
         """Returns a json-serializable dict"""

@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import errno
+import json
 import numbers
 import os
 from collections import OrderedDict, namedtuple, Mapping
@@ -228,3 +229,7 @@ def ranges_overlap(lhs_range, rhs_range):
 
 def elapsed_since(time):
     return datetime.now() - time
+
+
+def json_debug_string(dict_data):
+    return json.dumps(dict_data, ensure_ascii=False, indent=2)

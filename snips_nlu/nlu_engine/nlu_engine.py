@@ -17,7 +17,8 @@ from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import get_slot_name_mappings, NotTrained, elapsed_since
+from snips_nlu.utils import get_slot_name_mappings, NotTrained, elapsed_since, \
+    json_debug_string
 from snips_nlu.version import __model_version__, __version__
 
 logger = logging.getLogger(__name__)
@@ -114,7 +115,7 @@ class SnipsNLUEngine(ProcessingUnit):
             NotTrained: When the nlu engine is not fitted
             TypeError: When input type is not unicode
         """
-        logging.info("Parsing: '{}'...".format(text))
+        logging.info("NLU engine parsing: '{}'...".format(text))
         if not isinstance(text, str):
             raise TypeError("Expected unicode but received: %s" % type(text))
 
@@ -128,6 +129,7 @@ class SnipsNLUEngine(ProcessingUnit):
         language = self._dataset_metadata["language_code"]
         entities = self._dataset_metadata["entities"]
 
+        result = None
         for parser in self.intent_parsers:
             res = parser.parse(text, intents)
             if is_empty(res):
@@ -137,10 +139,14 @@ class SnipsNLUEngine(ProcessingUnit):
                      if is_builtin_entity(s[RES_ENTITY])]
             resolved_slots = resolve_slots(text, slots, entities, language,
                                            scope)
-            return parsing_result(text, intent=res[RES_INTENT],
-                                  slots=resolved_slots)
+
+            result = parsing_result(text, intent=res[RES_INTENT],
+                                    slots=resolved_slots)
+            break
+        result = result or empty_result(text)
         logging.debug("Parsed query in {}".format(elapsed_since(start)))
-        return empty_result(text)
+        logger.debug("Result -> {}".format(json_debug_string(result)))
+        return result
 
     def to_dict(self):
         """Returns a json-serializable dict"""

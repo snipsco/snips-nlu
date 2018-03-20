@@ -43,6 +43,7 @@ extras_require = {
         "mock==2.0.0",
         "snips_nlu_metrics==%s" % nlu_metrics_version,
         "pylint==1.8.2",
+        "pyaml==17.12.1",
         "coverage==4.4.2"
     ],
     "integration_test": [

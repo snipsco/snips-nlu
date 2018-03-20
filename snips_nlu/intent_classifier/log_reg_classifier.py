@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
-from builtins import str, zip
+import logging
 
 import numpy as np
+from builtins import str, zip, range
+from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.constants import LANGUAGE
@@ -14,6 +16,8 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state, NotTrained
+
+logger = logging.getLogger(__name__)
 
 LOG_REG_ARGS = {
     "loss": "log",
@@ -79,6 +83,7 @@ class LogRegIntentClassifier(IntentClassifier):
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)
         self.classifier.fit(X, classes)
+        logger.debug(self.log_best_features())
         return self
 
     def get_intent(self, text, intents_filter=None):
@@ -171,3 +176,21 @@ class LogRegIntentClassifier(IntentClassifier):
         if featurizer is not None:
             intent_classifier.featurizer = Featurizer.from_dict(featurizer)
         return intent_classifier
+
+    def log_best_features(self, top_n=20):
+        log = "Top {} features weights by intent:\n".format(top_n)
+        voca = {
+            v: k for k, v in
+            iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
+        }
+        features = [voca[i] for i in self.featurizer.best_features]
+        for intent_ix in range(self.classifier.coef_.shape[0]):
+            intent_name = self.intent_list[intent_ix]
+            log += "\n\n\nFor intent {}\n".format(intent_name)
+            top_features_idx = np.argsort(
+                np.absolute(self.classifier.coef_[intent_ix]))[::-1][:top_n]
+            for feature_ix in top_features_idx:
+                feature_name = features[feature_ix]
+                feature_weight = self.classifier.coef_[intent_ix, feature_ix]
+                log += "\n{} -> {}".format(feature_name, feature_weight)
+        return log

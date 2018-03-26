@@ -29,9 +29,9 @@ parse as well as easy to read.
 We created a `sample dataset`_ that you can check to better understand the
 format.
 
-You have two options to create your dataset. You can build it manually by
-respecting the format used in the sample or alternatively you can use the
-dataset creation CLI that is contained in the lib.
+You have three options to create your dataset. You can build it manually by
+respecting the format used in the sample, `chatito`_ a DSL tool for dataset generation or
+alternatively you can use the dataset creation CLI that is contained in the lib.
 
 We will go for the second option here and start by creating three files
 corresponding to our three intents and one entity file corresponding to the ``room`` entity:
@@ -322,7 +322,7 @@ And load it:
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
-
+.. _chatito: https://github.com/rodrigopivi/Chatito
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
 .. _sample configurations: https://github.com/snipsco/snips-nlu/blob/master/samples/configs
 .. _english one: https://github.com/snipsco/snips-nlu/blob/master/samples/configs/config_en.json

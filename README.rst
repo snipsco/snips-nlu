@@ -81,3 +81,14 @@ Links
 * `Rustling <https://github.com/snipsco/rustling-ontology>`_: Snips NLU builtin entities parser
 * `Snips <https://snips.ai/>`_
 * `Bug tracker <https://github.com/snipsco/snips-nlu/issues>`_
+
+
+Contributing
+------------
+
+Please see the `Contribution Guidelines <CONTRIBUTING.rst>`_.
+
+Copyright
+---------
+
+This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.

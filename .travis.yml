@@ -16,16 +16,8 @@ matrix:
       env: TOXENV=py34
     - python: 2.7
       env: TOXENV=py27
-    - os: osx
-      language: generic
-      env: TOXENV=py36
-    - os: osx
-      language: generic
-      env: TOXENV=py27
 
-before_install: . ./.travis/before_install.sh
-
-install: ./.travis/install.sh
+install: python -m pip install tox codecov
 
 script: tox
 

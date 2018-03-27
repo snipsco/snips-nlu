@@ -7,19 +7,22 @@ import json
 import os
 from builtins import input, bytes
 
-from snips_nlu import SnipsNLUEngine
+from snips_nlu import SnipsNLUEngine, load_resources
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
 
 def debug_training(dataset_path, config_path=None):
+    with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
+        dataset = json.load(f)
+
+    load_resources(dataset["language"])
+
     if config_path is None:
         config = NLUEngineConfig()
     else:
         with io.open(config_path, "r", encoding="utf8") as f:
             config = NLUEngineConfig.from_dict(json.load(f))
 
-    with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
-        dataset = json.load(f)
     engine = SnipsNLUEngine(config).fit(dataset)
 
     while True:
@@ -34,6 +37,8 @@ def debug_training(dataset_path, config_path=None):
 def debug_inference(engine_path):
     with io.open(os.path.abspath(engine_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
+
+    load_resources(engine_dict["dataset_metadata"]["language_code"])
     engine = SnipsNLUEngine.from_dict(engine_dict)
 
     while True:

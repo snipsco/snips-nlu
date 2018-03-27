@@ -85,7 +85,7 @@ def parse_cross_val_args(args):
                         help="Number of folds to use for the cross-validation")
     parser.add_argument("-t", "--train-size-ratio", type=float, metavar="",
                         help="Fraction of the data that we want to use for "
-                             "training (between 0 and 1")
+                             "training (between 0 and 1)")
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")
     return parser.parse_args(args)

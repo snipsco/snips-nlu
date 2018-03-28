@@ -11,8 +11,9 @@ from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
-from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import ENTITIES, UTTERANCES
+from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
+from snips_nlu.constants import ENTITIES, UTTERANCES, RES_MATCH_RANGE, START, \
+    END, ENTITY_KIND
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
@@ -194,6 +195,11 @@ def _entity_name_to_feature(entity_name, language):
         entity_name, language=language))
 
 
+def _builtin_entity_to_feature(builtin_entity_label, language):
+    return "builtinentityfeature%s" % "".join(tokenize_light(
+        builtin_entity_label, language=language))
+
+
 def _normalize_stem(text, language):
     normalized_stemmed = normalize(text)
     try:
@@ -237,12 +243,43 @@ def _preprocess_utterance(utterance, language,
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
-    features = get_default_sep(language).join(normalized_stemmed_tokens)
+    builtin_entities = get_builtin_entities(utterance, language)
+    entities_ranges = (
+        e[RES_MATCH_RANGE] for e in
+        sorted(builtin_entities, key=lambda e: e[RES_MATCH_RANGE][START])
+    )
+    builtin_entities_features = [
+        _builtin_entity_to_feature(ent[ENTITY_KIND], language)
+        for ent in builtin_entities
+    ]
+
+    # We remove builtin entities from the utterance to avoid learning specific
+    # examples such as '42'
+    filtered_utterance = _remove_ranges(utterance, entities_ranges)
+    filtered_utterance_tokens = tokenize_light(filtered_utterance, language)
+    filtered_normalized_stemmed_tokens = [_normalize_stem(t, language)
+                                          for t in filtered_utterance_tokens]
+
+    features = get_default_sep(language).join(
+        filtered_normalized_stemmed_tokens)
+    if builtin_entities_features:
+        features += " " + " ".join(sorted(builtin_entities_features))
     if entities_features:
         features += " " + " ".join(sorted(entities_features))
     if word_clusters_features:
         features += " " + " ".join(sorted(word_clusters_features))
+
     return features
+
+
+def _remove_ranges(text, ranges):
+    filtered_text = ""
+    idx = 0
+    for rng in ranges:
+        filtered_text += text[idx:rng[START]]
+        idx = rng[END]
+    filtered_text += text[idx:]
+    return filtered_text
 
 
 def _get_utterances_to_features_names(dataset, language):

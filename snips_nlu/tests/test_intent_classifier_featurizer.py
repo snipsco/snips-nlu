@@ -217,7 +217,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
     @patch("snips_nlu.intent_classifier.featurizer.stem")
     @patch("snips_nlu.intent_classifier.featurizer."
            "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
-    def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
+    def test_preprocess_utterances(self, mocked_stem, mocked_word_cluster):
         # Given
         language = LANGUAGE_EN
 
@@ -288,7 +288,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         dataset = validate_and_format_dataset(dataset)
 
-        queries = [
+        utterances = [
             "hÉllo wOrld Éntity_2",
             "beauTiful World entity 1",
             "Bird bïrdy",
@@ -296,23 +296,26 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         ]
         labels = np.array([0, 0, 1, 1])
 
-        featurizer = Featurizer(language, None).fit(
-            dataset, queries, labels)
+        featurizer = Featurizer(language, None).fit(dataset, utterances,
+                                                    labels)
 
         # When
-        queries = featurizer.preprocess_utterances(queries)
+        utterances = featurizer.preprocess_utterances(utterances)
 
         # Then
-        expected_queries = [
-            "hello world entity_2 entityfeatureentity_2",
-            "beauty world ent 1 entityfeatureentity_1 entityfeatureentity_2 "
+        expected_utterances = [
+            "hello world entity_ builtinentityfeaturesnipsnumber "
+            "entityfeatureentity_2",
+            "beauty world ent builtinentityfeaturesnipsnumber "
+            "entityfeatureentity_1 entityfeatureentity_2 "
             "cluster_1 cluster_3",
             "bird bird",
-            "beauty ent 1 bird entity_2 entityfeatureentity_1 "
+            "beauty ent bird entity_ builtinentityfeaturesnipsnumber "
+            "builtinentityfeaturesnipsnumber entityfeatureentity_1 "
             "entityfeatureentity_2 entityfeatureentity_2 cluster_1"
         ]
 
-        self.assertListEqual(queries, expected_queries)
+        self.assertListEqual(utterances, expected_utterances)
 
     def test_featurizer_should_exclude_replacement_string(self):
         # Given

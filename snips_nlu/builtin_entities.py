@@ -13,7 +13,9 @@ if six.PY2:
 else:
     from functools import lru_cache
 
-SPACE_REGEX = re.compile(r"\s")
+# Here we choose ' ' and not \s to be able to properly reconstruct the string,
+# we make the assumption that only ' ' will be used as space
+NON_SPACE_REGEX = re.compile("[^ ]+")
 
 
 class BuiltinEntityParser(object):
@@ -27,10 +29,58 @@ class BuiltinEntityParser(object):
         self.parse = lru_cache(cache_size)(self.parse)
 
     def parse(self, text, scope=None):
-        text = text.lower()  # Rustling only works with lowercase
+        """Extract builtin entities from a text
+        Args:
+            text (str): text to parse
+            scope (tuple, optional): tuple of the name of the builtin entities
+             to extract
 
-        result = self.parser.parse(text, scope)
-        # reconcilitate_slot
+        Returns:
+            list: a list of builtin entities
+        """
+        text = text.lower()  # Rustling only works with lowercase
+        if self.language not in self.non_space_separated_languages:
+            return self.parser.parse(text, scope)
+
+        non_space_ranges = [(m.start(), m.end())
+                            for m in NON_SPACE_REGEX.finditer(text)]
+        if not non_space_ranges:
+            return []
+
+        new_ranges = [(0, non_space_ranges[0][1] - non_space_ranges[0][0])]
+        for r in non_space_ranges[1:]:
+            new_start = new_ranges[-1][1]
+            new_end = new_start + r[1] - r[0]
+            new_ranges.append((new_start, new_end))
+
+        match_end_to_index = {r[1]: i for i, r in enumerate(new_ranges)}
+
+        joined_text = "".join(text[start:end]
+                              for start, end in non_space_ranges)
+        result = []
+        for res in self.parser.parse(joined_text, scope=scope):
+            start = res["range"]["start"]
+            end = res["range"]["end"]
+            if start == 0:
+                start_ix = 0
+            elif start in match_end_to_index:
+                start_ix = match_end_to_index[start] + 1
+            else:  # match does not correspond to token
+                continue
+
+            if end in match_end_to_index:
+                end_ix = match_end_to_index[end]
+            else:  # match does not correspond to token
+                continue
+
+            initial_start = non_space_ranges[start_ix][0]
+            initial_end = non_space_ranges[end_ix][1]
+            res["range"]["start"] = initial_start
+            res["range"]["end"] = initial_end
+            res["value"] = text[initial_start:initial_end]
+            result.append(res)
+
+        return result
 
     def supports_entity(self, entity):
         return entity in self.supported_entities

@@ -1,8 +1,9 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from builtins import object
+import re
 
+from builtins import object
 from snips_nlu_utils import (tokenize as _tokenize,
                              tokenize_light as _tokenize_light,
                              normalize)
@@ -45,6 +46,18 @@ class Token(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __str__(self):  # Makes debugging easier
+        stem = '"%s"' % self.stem if self.stem is not None else self.stem
+        fmt_dict = {
+            "stem": stem,
+            "value": self.value,
+            "start": self.start,
+            "end": self.end,
+            "normalized": self.normalized_value
+        }
+        return 'Token(value="{value}", start={start}, end={end}, ' \
+               'normalized="{normalized}", stem={stem})'.format(**fmt_dict)
+
 
 def tokenize(string, language):
     """Tokenizes the input
@@ -68,3 +81,13 @@ def tokenize_light(string, language):
         of :class:`Token` objects"""
     tokenized_string = _tokenize_light(string, language)
     return tokenized_string
+
+
+class RegexTokenizer(object):
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self.regex = re.compile(self.pattern)
+
+    def tokenize(self, string):
+        return [Token(string[m.start():m.end()], m.start(), m.end())
+                for m in self.regex.finditer(string)]

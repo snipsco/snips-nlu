@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import re
+
 import six
 from builtins import object
 from snips_nlu_ontology import (
@@ -11,8 +13,11 @@ if six.PY2:
 else:
     from functools import lru_cache
 
+SPACE_REGEX = re.compile(r"\s")
+
 
 class BuiltinEntityParser(object):
+    non_space_separated_languages = {"ja", "zh"}
 
     def __init__(self, language, cache_size=1000):
         self.language = language
@@ -23,7 +28,9 @@ class BuiltinEntityParser(object):
 
     def parse(self, text, scope=None):
         text = text.lower()  # Rustling only works with lowercase
-        return self.parser.parse(text, scope)
+
+        result = self.parser.parse(text, scope)
+        # reconcilitate_slot
 
     def supports_entity(self, entity):
         return entity in self.supported_entities

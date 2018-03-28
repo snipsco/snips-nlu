@@ -1,14 +1,12 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+from builtins import object, range
 from collections import defaultdict
 
-
-
-from builtins import object, range
-from future.utils import iteritems
 import numpy as np
 import scipy.sparse as sp
+from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
@@ -47,7 +45,7 @@ class Featurizer(object):
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
 
-    def fit(self, dataset, queries, y):
+    def fit(self, dataset, utterances, classes):
         utterances_to_features = _get_utterances_to_features_names(
             dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
@@ -62,19 +60,22 @@ class Featurizer(object):
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
-        if all(not "".join(tokenize_light(q, self.language)) for q in queries):
+        if all(not "".join(tokenize_light(q, self.language)) for q in
+               utterances):
             return None
-        preprocessed_queries = self.preprocess_queries(queries)
+        preprocessed_utterances = self.preprocess_utterances(utterances)
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
-            preprocessed_queries)
+            preprocessed_utterances)
         # pylint: enable=C0103
-        list_index_words = {self.tfidf_vectorizer.vocabulary_[x]: x for x in
-                            self.tfidf_vectorizer.vocabulary_}
+        list_index_words = {
+            self.tfidf_vectorizer.vocabulary_[word]: word
+            for word in self.tfidf_vectorizer.vocabulary_
+        }
 
         stop_words = get_stop_words(self.language)
 
-        _, pval = chi2(X_train_tfidf, y)
+        _, pval = chi2(X_train_tfidf, classes)
         self.best_features = [i for i, v in enumerate(pval) if
                               v < self.pvalue_threshold]
         if not self.best_features:
@@ -82,20 +83,23 @@ class Featurizer(object):
                                   val == pval.min()]
 
         feature_names = {}
-        for i in self.best_features:
-            feature_names[i] = {'word': list_index_words[i], 'pval': pval[i]}
+        for utterance_index in self.best_features:
+            feature_names[utterance_index] = {
+                "word": list_index_words[utterance_index],
+                "pval": pval[utterance_index]}
 
         for feat in feature_names:
-            if feature_names[feat]['word'] in stop_words:
-                if feature_names[feat]['pval'] > self.pvalue_threshold / 2.0:
+            if feature_names[feat]["word"] in stop_words:
+                if feature_names[feat]["pval"] > self.pvalue_threshold / 2.0:
                     self.best_features.remove(feat)
 
         return self
 
-    def transform(self, queries):
-        preprocessed_queries = self.preprocess_queries(queries)
+    def transform(self, utterances):
+        preprocessed_utterances = self.preprocess_utterances(utterances)
         # pylint: disable=C0103
-        X_train_tfidf = self.tfidf_vectorizer.transform(preprocessed_queries)
+        X_train_tfidf = self.tfidf_vectorizer.transform(
+            preprocessed_utterances)
         X = X_train_tfidf[:, self.best_features]
         # pylint: enable=C0103
         return X
@@ -103,13 +107,13 @@ class Featurizer(object):
     def fit_transform(self, dataset, queries, y):
         return self.fit(dataset, queries, y).transform(queries)
 
-    def preprocess_queries(self, queries):
-        preprocessed_queries = []
-        for q in queries:
-            processed_query = _preprocess_query(
-                q, self.language, self.entity_utterances_to_feature_names)
-            preprocessed_queries.append(processed_query)
-        return preprocessed_queries
+    def preprocess_utterances(self, utterances):
+        preprocessed_utterances = []
+        for u in utterances:
+            processed_utterance = _preprocess_utterance(
+                u, self.language, self.entity_utterances_to_feature_names)
+            preprocessed_utterances.append(processed_utterance)
+        return preprocessed_utterances
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -223,11 +227,13 @@ def _get_dataset_entities_features(normalized_stemmed_tokens,
     return entity_features
 
 
-def _preprocess_query(query, language, entity_utterances_to_features_names):
-    query_tokens = tokenize_light(query, language)
-    word_clusters_features = _get_word_cluster_features(query_tokens, language)
+def _preprocess_utterance(utterance, language,
+                          entity_utterances_to_features_names):
+    utterance_tokens = tokenize_light(utterance, language)
+    word_clusters_features = _get_word_cluster_features(utterance_tokens,
+                                                        language)
     normalized_stemmed_tokens = [_normalize_stem(t, language)
-                                 for t in query_tokens]
+                                 for t in utterance_tokens]
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import json
 from builtins import bytes
 
+import numpy as np
 from future.utils import iteritems
 from mock import patch, mock
 
@@ -56,7 +57,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "bird birdy",
             "beautiful bird"
         ]
-        classes = [0, 0, 0, 1, 1]
+        classes = np.array([0, 0, 0, 1, 1])
 
         featurizer.fit(dataset, queries, classes)
 
@@ -293,13 +294,13 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "Bird bïrdy",
             "beauTiful éntity 1 bIrd Éntity_2"
         ]
-        labels = [0, 0, 1, 1]
+        labels = np.array([0, 0, 1, 1])
 
         featurizer = Featurizer(language, None).fit(
             dataset, queries, labels)
 
         # When
-        queries = featurizer.preprocess_queries(queries)
+        queries = featurizer.preprocess_utterances(queries)
 
         # Then
         expected_queries = [
@@ -331,7 +332,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             language, unknown_words_replacement_string=replacement_string,
             config=FeaturizerConfig())
         queries = ["hello dude"]
-        y = [1]
+        y = np.array([1])
 
         # When
         featurizer.fit(dataset, queries, y)

@@ -52,13 +52,12 @@ def debug_inference(engine_path):
 
 def main_debug():
     parser = argparse.ArgumentParser(description="Debug snippets")
-    parser.add_argument("mode", type=bytes,
-                        choices=["training", "inference"],
+    parser.add_argument("mode", choices=["training", "inference"],
                         help="'training' to debug training and 'inference to "
                              "debug inference'")
-    parser.add_argument("path", type=bytes,
+    parser.add_argument("path",
                         help="Path to the dataset or trained assistant")
-    parser.add_argument("--config-path", type=bytes,
+    parser.add_argument("--config-path",
                         help="Path to the assistant configuration")
     args = vars(parser.parse_args())
     mode = args.pop("mode")

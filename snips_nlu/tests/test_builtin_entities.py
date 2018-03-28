@@ -54,3 +54,15 @@ class TestBuiltInEntities(SnipsTest):
         # Then
         self.assertEqual(len(parse), 1)
         self.assertEqual(parse[0][ENTITY_KIND], "snips/number")
+
+    def test_builtin_entity_cache(self):
+        # Given
+        language = "en"
+        cache_size = 48
+
+        # When
+        parser = BuiltinEntityParser(language, cache_size=cache_size)
+
+        # Then
+        self.assertTrue(hasattr(parser.parse, "cache_info"))
+        self.assertEqual(cache_size, parser.parse.cache_info().maxsize)

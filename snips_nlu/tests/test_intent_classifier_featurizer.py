@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import json
 from builtins import bytes
 
+import numpy as np
 from future.utils import iteritems
 from mock import patch, mock
 
@@ -56,7 +57,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "bird birdy",
             "beautiful bird"
         ]
-        classes = [0, 0, 0, 1, 1]
+        classes = np.array([0, 0, 0, 1, 1])
 
         featurizer.fit(dataset, queries, classes)
 
@@ -216,7 +217,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
     @patch("snips_nlu.intent_classifier.featurizer.stem")
     @patch("snips_nlu.intent_classifier.featurizer."
            "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
-    def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
+    def test_preprocess_utterances(self, mocked_stem, mocked_word_cluster):
         # Given
         language = LANGUAGE_EN
 
@@ -287,31 +288,34 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         dataset = validate_and_format_dataset(dataset)
 
-        queries = [
+        utterances = [
             "hÉllo wOrld Éntity_2",
             "beauTiful World entity 1",
             "Bird bïrdy",
             "beauTiful éntity 1 bIrd Éntity_2"
         ]
-        labels = [0, 0, 1, 1]
+        labels = np.array([0, 0, 1, 1])
 
-        featurizer = Featurizer(language, None).fit(
-            dataset, queries, labels)
+        featurizer = Featurizer(language, None).fit(dataset, utterances,
+                                                    labels)
 
         # When
-        queries = featurizer.preprocess_queries(queries)
+        utterances = featurizer.preprocess_utterances(utterances)
 
         # Then
-        expected_queries = [
-            "hello world entity_2 entityfeatureentity_2",
-            "beauty world ent 1 entityfeatureentity_1 entityfeatureentity_2 "
+        expected_utterances = [
+            "hello world entity_ builtinentityfeaturesnipsnumber "
+            "entityfeatureentity_2",
+            "beauty world ent builtinentityfeaturesnipsnumber "
+            "entityfeatureentity_1 entityfeatureentity_2 "
             "cluster_1 cluster_3",
             "bird bird",
-            "beauty ent 1 bird entity_2 entityfeatureentity_1 "
+            "beauty ent bird entity_ builtinentityfeaturesnipsnumber "
+            "builtinentityfeaturesnipsnumber entityfeatureentity_1 "
             "entityfeatureentity_2 entityfeatureentity_2 cluster_1"
         ]
 
-        self.assertListEqual(queries, expected_queries)
+        self.assertListEqual(utterances, expected_utterances)
 
     def test_featurizer_should_exclude_replacement_string(self):
         # Given
@@ -331,7 +335,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             language, unknown_words_replacement_string=replacement_string,
             config=FeaturizerConfig())
         queries = ["hello dude"]
-        y = [1]
+        y = np.array([1])
 
         # When
         featurizer.fit(dataset, queries, y)

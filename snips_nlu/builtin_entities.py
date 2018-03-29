@@ -13,9 +13,7 @@ if six.PY2:
 else:
     from functools import lru_cache
 
-# Here we choose ' ' and not \s to be able to properly reconstruct the string,
-# we make the assumption that only ' ' will be used as space
-NON_SPACE_REGEX = re.compile("[^ ]+")
+NON_SPACE_REGEX = re.compile("[^\s]+")
 
 
 class BuiltinEntityParser(object):

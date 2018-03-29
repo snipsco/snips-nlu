@@ -4,10 +4,12 @@ coverage:
   range: "70...100"
 
   status:
+    project: off
     patch:
-      target: "90%"
-      threshold: null
-      base: pr
+      default:
+        target: "90%"
+        threshold: null
+        base: pr
 
 comment:
   layout: "diff"

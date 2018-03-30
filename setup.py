@@ -15,7 +15,7 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
-nlu_metrics_version = "0.11.1"
+nlu_metrics_version = "0.12.0"
 
 required = [
     "enum34==1.1.6",

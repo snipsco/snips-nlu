@@ -6,10 +6,10 @@ import io
 import math
 import os
 import tempfile
-from copy import copy
-from itertools import groupby, permutations, product
-
 from builtins import range
+from copy import copy
+from itertools import groupby, product
+
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
@@ -253,48 +253,56 @@ class CRFSlotFiller(SlotFiller):
             print("%s %s: %s" % (feat, tag, weight))
 
     def _augment_slots(self, text, tokens, tags, builtin_slots_names):
-        augmented_tags = tags
-        scope = [self.slot_name_mapping[slot] for slot in builtin_slots_names]
-        builtin_entities = get_builtin_entities(text, self.language, scope)
-
+        scope = set(self.slot_name_mapping[slot]
+                    for slot in builtin_slots_names)
+        builtin_entities = [be for entity_kind in scope
+                            for be in get_builtin_entities(text, self.language,
+                                                           [entity_kind])]
+        # We remove builtin entities which conflicts with custom slots
+        # extracted by the CRF
         builtin_entities = _filter_overlapping_builtins(
             builtin_entities, tokens, tags, self.config.tagging_scheme)
 
-        grouped_entities = groupby(builtin_entities,
-                                   key=lambda s: s[ENTITY_KIND])
-        features = None
-        for entity, matches in grouped_entities:
-            spans_ranges = [match[RES_MATCH_RANGE] for match in matches]
-            num_possible_builtins = len(spans_ranges)
-            tokens_indexes = _spans_to_tokens_indexes(spans_ranges, tokens)
-            related_slots = list(
-                set(s for s in builtin_slots_names if
-                    self.slot_name_mapping[s] == entity))
-            best_updated_tags = augmented_tags
-            best_permutation_score = -1
+        # We resolve conflicts between builtin entities by keeping the longest
+        # matches. In case when two builtin entities span the same range, we
+        # keep both.
+        builtin_entities = _disambiguate_builtin_entities(builtin_entities)
 
-            for slots in _generate_slots_permutations(
-                    num_possible_builtins, related_slots,
-                    self.config.exhaustive_permutations_threshold):
-                updated_tags = copy(augmented_tags)
-                for slot_index, slot in enumerate(slots):
-                    if slot_index >= len(tokens_indexes):
-                        break
-                    indexes = tokens_indexes[slot_index]
-                    sub_tags_sequence = positive_tagging(
-                        self.config.tagging_scheme, slot, len(indexes))
-                    updated_tags[indexes[0]:indexes[-1] + 1] = \
-                        sub_tags_sequence
-                if features is None:
-                    features = self.compute_features(tokens)
-                score = self._get_sequence_probability(features, updated_tags)
-                if score > best_permutation_score:
-                    best_updated_tags = updated_tags
-                    best_permutation_score = score
-            augmented_tags = best_updated_tags
-        slots = tags_to_slots(text, tokens, augmented_tags,
+        # We group builtin entities based on their position
+        grouped_entities = (
+            list(bes)
+            for _, bes in groupby(builtin_entities,
+                                  key=lambda s: s[RES_MATCH_RANGE][START]))
+        grouped_entities = sorted(
+            grouped_entities,
+            key=lambda entities: entities[0][RES_MATCH_RANGE][START])
+
+        features = self.compute_features(tokens)
+        spans_ranges = [entities[0][RES_MATCH_RANGE]
+                        for entities in grouped_entities]
+        tokens_indexes = _spans_to_tokens_indexes(spans_ranges, tokens)
+
+        # We loop on all possible slots permutations and use the CRF to find
+        # the best one in terms of probability
+        slots_permutations = _get_slots_permutations(
+            grouped_entities, self.slot_name_mapping)
+        best_updated_tags = tags
+        best_permutation_score = -1
+        for slots in slots_permutations:
+            updated_tags = copy(tags)
+            for slot_index, slot in enumerate(slots):
+                indexes = tokens_indexes[slot_index]
+                sub_tags_sequence = positive_tagging(
+                    self.config.tagging_scheme, slot, len(indexes))
+                updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
+            score = self._get_sequence_probability(features, updated_tags)
+            if score > best_permutation_score:
+                best_updated_tags = updated_tags
+                best_permutation_score = score
+        slots = tags_to_slots(text, tokens, best_updated_tags,
                               self.config.tagging_scheme,
                               self.slot_name_mapping)
+
         return _reconciliate_builtin_slots(text, slots, builtin_entities)
 
     def to_dict(self):
@@ -376,41 +384,6 @@ def _filter_overlapping_builtins(builtin_entities, tokens, tags,
     return ents
 
 
-def _generate_slots_permutations(n_detected_builtins, possible_slots_names,
-                                 exhaustive_permutations_threshold):
-    num_exhaustive_perms = (len(possible_slots_names) + 1) \
-                           ** n_detected_builtins
-    if num_exhaustive_perms <= exhaustive_permutations_threshold:
-        return _exhaustive_slots_permutations(
-            n_detected_builtins, possible_slots_names)
-    return _conservative_slots_permutations(
-        n_detected_builtins, possible_slots_names)
-
-
-def _exhaustive_slots_permutations(n_detected_builtins, possible_slots_names):
-    pool = possible_slots_names + [OUTSIDE]
-    return [p for p in product(pool, repeat=n_detected_builtins) if len(p)]
-
-
-def _conservative_slots_permutations(n_detected_builtins,
-                                     possible_slots_names):
-    if n_detected_builtins == 0:
-        return []
-    # Add n_detected_builtins "O" slots to the possible slots.
-    # It's possible that out of the detected builtins the CRF choose that
-    # none of them are likely to be an actually slot, these combination
-    # must be taken into account
-    permutation_pool = range(len(possible_slots_names) + n_detected_builtins)
-    # Generate all permutations
-    perms = permutations(permutation_pool, n_detected_builtins)
-
-    # Replace the indices greater than possible_slots_names by "O"
-    perms = [tuple(possible_slots_names[i] if i < len(possible_slots_names)
-                   else OUTSIDE for i in p) for p in perms]
-    # Make the permutations unique
-    return list(set(perms))
-
-
 def _spans_to_tokens_indexes(spans, tokens):
     tokens_indexes = []
     for span in spans:
@@ -444,6 +417,43 @@ def _reconciliate_builtin_slots(text, slots, builtin_entities):
                 slot[RES_VALUE] = text[be_start: be_end]
                 break
     return slots
+
+
+def _disambiguate_builtin_entities(builtin_entities):
+    if not builtin_entities:
+        return []
+    builtin_entities = sorted(
+        builtin_entities,
+        key=lambda be: be[RES_MATCH_RANGE][END] - be[RES_MATCH_RANGE][START],
+        reverse=True)
+
+    disambiguated_entities = [builtin_entities[0]]
+    for entity in builtin_entities[1:]:
+        entity_rng = entity[RES_MATCH_RANGE]
+        conflict = False
+        for disambiguated_entity in disambiguated_entities:
+            disambiguated_entity_rng = disambiguated_entity[RES_MATCH_RANGE]
+            if ranges_overlap(entity_rng, disambiguated_entity_rng):
+                conflict = True
+                if entity_rng == disambiguated_entity_rng:
+                    disambiguated_entities.append(entity)
+                break
+        if not conflict:
+            disambiguated_entities.append(entity)
+
+    return sorted(disambiguated_entities,
+                  key=lambda be: be[RES_MATCH_RANGE][START])
+
+
+def _get_slots_permutations(grouped_entities, slot_name_mapping):
+    # We associate to each group of entities the list of slot names that
+    # could correspond
+    possible_slots = [
+        list(set(slot_name for slot_name, ent in iteritems(slot_name_mapping)
+                 for entity in entities if ent == entity[ENTITY_KIND]))
+        + [OUTSIDE]
+        for entities in grouped_entities]
+    return product(*possible_slots)
 
 
 def _encode_tag(tag):

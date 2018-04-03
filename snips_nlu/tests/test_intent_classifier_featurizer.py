@@ -6,6 +6,7 @@ import json
 
 
 import numpy as np
+from future.builtins import bytes
 from future.utils import iteritems
 from mock import patch, mock
 

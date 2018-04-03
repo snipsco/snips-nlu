@@ -3,10 +3,10 @@ from __future__ import unicode_literals
 
 import io
 import os
-from builtins import range
+
 
 from mock import patch, MagicMock
-
+from future.builtins import range
 from snips_nlu.constants import (
     RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
     SNIPS_DATETIME, END, START, ENTITY_KIND)

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from copy import deepcopy
 
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
@@ -133,14 +135,19 @@ class FeaturizerConfig(Config):
         kept in the feature selection
     """
 
-    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4):
+    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
+                 word_clusters_names=None):
         self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
+        if word_clusters_names is None:
+            word_clusters_names = []
+        self.word_clusters_names = set(word_clusters_names)
 
     def to_dict(self):
         return {
             "sublinear_tf": self.sublinear_tf,
-            "pvalue_threshold": self.pvalue_threshold
+            "pvalue_threshold": self.pvalue_threshold,
+            "word_clusters_names": list(self.word_clusters_names)
         }
 
     @classmethod

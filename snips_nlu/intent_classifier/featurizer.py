@@ -1,7 +1,6 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-
 from collections import defaultdict
 
 import numpy as np
@@ -23,8 +22,6 @@ from snips_nlu.resources import (get_stop_words, get_word_clusters,
                                  UnknownResource)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.tokenization import tokenize_light
-
-CLUSTER_USED_PER_LANGUAGES = {}
 
 
 class Featurizer(object):
@@ -111,7 +108,9 @@ class Featurizer(object):
         preprocessed_utterances = []
         for u in utterances:
             processed_utterance = _preprocess_utterance(
-                u, self.language, self.entity_utterances_to_feature_names)
+                u, self.language, self.entity_utterances_to_feature_names,
+                self.config.word_clusters_names
+            )
             preprocessed_utterances.append(processed_utterance)
         return preprocessed_utterances
 
@@ -204,17 +203,17 @@ def _normalize_stem(text, language):
     return normalized_stemmed
 
 
-def _get_word_cluster_features(query_tokens, language):
-    cluster_name = CLUSTER_USED_PER_LANGUAGES.get(language, False)
-    if not cluster_name:
+def _get_word_cluster_features(query_tokens, cluster_names, language):
+    if not cluster_names:
         return []
     ngrams = get_all_ngrams(query_tokens)
     cluster_features = []
-    for ngram in ngrams:
-        cluster = get_word_clusters(language)[cluster_name].get(
-            ngram[NGRAM].lower(), None)
-        if cluster is not None:
-            cluster_features.append(cluster)
+    for name in cluster_names:
+        for ngram in ngrams:
+            cluster = get_word_clusters(language)[name].get(
+                ngram[NGRAM].lower(), None)
+            if cluster is not None:
+                cluster_features.append(cluster)
     return cluster_features
 
 
@@ -229,10 +228,11 @@ def _get_dataset_entities_features(normalized_stemmed_tokens,
 
 
 def _preprocess_utterance(utterance, language,
-                          entity_utterances_to_features_names):
+                          entity_utterances_to_features_names,
+                          word_clusters_name):
     utterance_tokens = tokenize_light(utterance, language)
-    word_clusters_features = _get_word_cluster_features(utterance_tokens,
-                                                        language)
+    word_clusters_features = _get_word_cluster_features(
+        utterance_tokens, word_clusters_name, language)
     normalized_stemmed_tokens = [_normalize_stem(t, language)
                                  for t in utterance_tokens]
     entities_features = _get_dataset_entities_features(

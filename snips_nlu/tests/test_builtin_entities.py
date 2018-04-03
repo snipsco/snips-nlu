@@ -65,29 +65,37 @@ class TestBuiltInEntities(SnipsTest):
                 as mocked_parse:
             # joined text "aaabbbcccdddeee"
             mocked_parse.return_value = [
+                # {
+                #     "entity_kind": "dummy_entity",
+                #     "range": {
+                #         "start": 0,
+                #         "end": 6
+                #     },
+                #     "value": "aaabbb"
+                # },
+                # {
+                #     "entity_kind": "dummy_entity",
+                #     "range": {
+                #         "start": 8,
+                #         "end": 10
+                #     },
+                #     "value": "cd"
+                # },
+                # {
+                #     "entity_kind": "dummy_entity",
+                #     "range": {
+                #         "start": 12,
+                #         "end": 15
+                #     },
+                #     "value": "eee"
+                # }
                 {
                     "entity_kind": "dummy_entity",
                     "range": {
-                        "start": 0,
-                        "end": 6
+                        "start": 6,
+                        "end": 12
                     },
-                    "value": "aaabbb"
-                },
-                {
-                    "entity_kind": "dummy_entity",
-                    "range": {
-                        "start": 8,
-                        "end": 10
-                    },
-                    "value": "cd"
-                },
-                {
-                    "entity_kind": "dummy_entity",
-                    "range": {
-                        "start": 12,
-                        "end": 15
-                    },
-                    "value": "eee"
+                    "value": "cccddd"
                 }
             ]
             # When
@@ -95,21 +103,29 @@ class TestBuiltInEntities(SnipsTest):
 
             # Then
             expected_entities = [
+                # {
+                #     "entity_kind": "dummy_entity",
+                #     "range": {
+                #         "start": 1,
+                #         "end": 9
+                #     },
+                #     "value": "aaa  bbb"
+                # },
+                # {
+                #     "entity_kind": "dummy_entity",
+                #     "range": {
+                #         "start": 21,
+                #         "end": 24
+                #     },
+                #     "value": "eee"
+                # },
                 {
                     "entity_kind": "dummy_entity",
                     "range": {
-                        "start": 1,
-                        "end": 9
+                        "start": 11,
+                        "end": 19
                     },
-                    "value": "aaa  bbb"
-                },
-                {
-                    "entity_kind": "dummy_entity",
-                    "range": {
-                        "start": 21,
-                        "end": 24
-                    },
-                    "value": "eee"
+                    "value": "ccc  ddd"
                 }
             ]
         self.assertSequenceEqual(expected_entities, entities)

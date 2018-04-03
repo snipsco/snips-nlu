@@ -2,16 +2,12 @@ from __future__ import unicode_literals
 
 import re
 
-import six
 from builtins import object
 from snips_nlu_ontology import (
     get_all_builtin_entities, BuiltinEntityParser as _BuiltinEntityParser,
     get_supported_entities)
 
-if six.PY2:
-    from backports.functools_lru_cache import lru_cache
-else:
-    from functools import lru_cache
+from snips_nlu.utils import lru_cache
 
 NON_SPACE_REGEX = re.compile("[^\s]+")
 

@@ -5,17 +5,12 @@ from snips_nlu_utils import compute_all_ngrams
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     RES_MATCH_RANGE, INTENTS, UTTERANCES, DATA, ENTITY, ENTITIES, END, START)
-from snips_nlu.utils import LimitedSizeDict
-
-_NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
+from snips_nlu.utils import lru_cache
 
 
+@lru_cache(maxsize=1000)
 def get_all_ngrams(tokens):
-    key = "<||>".join(tokens)
-    if key not in _NGRAMS_CACHE:
-        ngrams = compute_all_ngrams(tokens, len(tokens))
-        _NGRAMS_CACHE[key] = ngrams
-    return _NGRAMS_CACHE[key]
+    return compute_all_ngrams(tokens, len(tokens))
 
 
 def get_shape(string):

@@ -76,7 +76,7 @@ class DeterministicIntentParser(IntentParser):
     def fit(self, dataset, force_retrain=True):
         """Fit the intent parser with a valid Snips dataset"""
         start = datetime.now()
-        logger.debug("Fitting deterministic parser...")
+        logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
@@ -94,7 +94,7 @@ class DeterministicIntentParser(IntentParser):
                 utterances, joined_entity_utterances,
                 self.group_names_to_slot_names, self.language)
             self.regexes_per_intent[intent_name] = regexes
-        logger.debug("Fitted deterministic parser in {}".format(
+        logger.info("Fitted deterministic parser in {}".format(
             elapsed_since(start)))
         return self
 

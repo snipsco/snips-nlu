@@ -60,7 +60,7 @@ class ProbabilisticIntentParser(IntentParser):
             :class:`ProbabilisticIntentParser`: The same instance, trained
         """
         start = datetime.now()
-        logger.debug("Fitting probabilistic intent parser...")
+        logger.info("Fitting probabilistic intent parser...")
         dataset = validate_and_format_dataset(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
@@ -87,7 +87,7 @@ class ProbabilisticIntentParser(IntentParser):
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
         logger.debug("Fitted slot fillers in {}".format(
             elapsed_since(slot_fillers_start)))
-        logger.debug("Fitted probabilistic intent parser in {}".format(
+        logger.info("Fitted probabilistic intent parser in {}".format(
             elapsed_since(start)))
         return self
 

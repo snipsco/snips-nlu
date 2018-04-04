@@ -95,7 +95,7 @@ class SnipsNLUEngine(ProcessingUnit):
             parsers.append(recycled_parser)
 
         self.intent_parsers = parsers
-        logger.debug("Fitted NLU engine in {}".format(elapsed_since(start)))
+        logger.info("Fitted NLU engine in {}".format(elapsed_since(start)))
         return self
 
     def parse(self, text, intents=None):

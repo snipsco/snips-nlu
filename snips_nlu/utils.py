@@ -3,12 +3,13 @@ from __future__ import unicode_literals
 import errno
 import json
 import numbers
-import numpy as np
 import os
 
-from builtins import object
+from builtins import object, str
 from collections import OrderedDict, namedtuple, Mapping
 from datetime import datetime
+
+import numpy as np
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
                                  RESOURCES_PATH, END, START)
@@ -233,3 +234,28 @@ def elapsed_since(time):
 
 def json_debug_string(dict_data):
     return json.dumps(dict_data, ensure_ascii=False, indent=2)
+
+
+def log_result(logger, level, output_msg=None):
+    if output_msg is None:
+        output_msg = "Computed  result in {elapsed_time}:\n{result}"
+
+    def get_wrapper(fn):
+        def wrapped(*args, **kwargs):
+            start = datetime.now()
+            logger.log(level)
+            res = fn(*args, **kwargs)
+            try:
+                res_debug_string = json_debug_string(res)
+            except TypeError:
+                res_debug_string = str(res)
+            msg_fmt = {
+                "elapsed_time": datetime.now() - start,
+                "result": res_debug_string
+            }
+            logger.log(level, output_msg.format(msg_fmt))
+            return res
+
+        return wrapped
+
+    return get_wrapper

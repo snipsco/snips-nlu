@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import logging
 from copy import deepcopy
-from datetime import datetime
 
 from builtins import str
 from future.utils import iteritems
@@ -17,8 +16,8 @@ from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import get_slot_name_mappings, NotTrained, elapsed_since, \
-    json_debug_string
+from snips_nlu.utils import (
+    get_slot_name_mappings, NotTrained, log_result)
 from snips_nlu.version import __model_version__, __version__
 
 logger = logging.getLogger(__name__)
@@ -60,6 +59,7 @@ class SnipsNLUEngine(ProcessingUnit):
         """Whether or not the nlu engine has already been fitted"""
         return self._dataset_metadata is not None
 
+    @log_result(logger, logging.INFO, "Fitted NLU engine in {elasped_time}")
     def fit(self, dataset, force_retrain=True):
         """Fit the NLU engine
 
@@ -71,7 +71,6 @@ class SnipsNLUEngine(ProcessingUnit):
         Returns:
             The same object, trained.
         """
-        start = datetime.now()
         logger.info("Fitting NLU engine...")
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
@@ -95,9 +94,10 @@ class SnipsNLUEngine(ProcessingUnit):
             parsers.append(recycled_parser)
 
         self.intent_parsers = parsers
-        logger.info("Fitted NLU engine in {}".format(elapsed_since(start)))
         return self
 
+    @log_result(logger, logging.DEBUG,
+                "Parsed query in {elapsed_time}.\nResult -> {result}")
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by calling its intent
         parsers successively
@@ -115,7 +115,7 @@ class SnipsNLUEngine(ProcessingUnit):
             NotTrained: When the nlu engine is not fitted
             TypeError: When input type is not unicode
         """
-        logging.info("NLU engine parsing: '{}'...".format(text))
+        logging.info("NLU engine parsing: '%s'...", text)
         if not isinstance(text, str):
             raise TypeError("Expected unicode but received: %s" % type(text))
 
@@ -125,7 +125,6 @@ class SnipsNLUEngine(ProcessingUnit):
         if isinstance(intents, str):
             intents = [intents]
 
-        start = datetime.now()
         language = self._dataset_metadata["language_code"]
         entities = self._dataset_metadata["entities"]
 
@@ -144,8 +143,6 @@ class SnipsNLUEngine(ProcessingUnit):
                                     slots=resolved_slots)
             break
         result = result or empty_result(text)
-        logging.debug("Parsed query in {}".format(elapsed_since(start)))
-        logger.debug("Result -> {}".format(json_debug_string(result)))
         return result
 
     def to_dict(self):

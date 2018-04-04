@@ -1,16 +1,17 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+from builtins import object, range
 from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
-from builtins import object, range
+
 from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
-from snips_nlu_utils import normalize
 
+from snips_nlu_utils import normalize
 from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
 from snips_nlu.constants import (ENTITIES, UTTERANCES, RES_MATCH_RANGE, START,
                                  END, ENTITY_KIND)

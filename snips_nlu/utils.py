@@ -252,7 +252,7 @@ def log_result(logger, level, output_msg=None):
                 "elapsed_time": datetime.now() - start,
                 "result": res_debug_string
             }
-            logger.log(level, output_msg.format(msg_fmt))
+            logger.log(level, output_msg.format(**msg_fmt))
             return res
 
         return wrapped

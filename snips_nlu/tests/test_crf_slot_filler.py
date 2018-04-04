@@ -566,8 +566,7 @@ class TestCRFSlotFiller(SnipsTest):
             else:
                 raise ValueError("Unexpected tag sequence: %s" % tags_)
 
-        slot_filler_config = CRFSlotFillerConfig(
-            random_seed=42, exhaustive_permutations_threshold=2)
+        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         slot_filler = CRFSlotFiller(config=slot_filler_config)
         slot_filler.language = LANGUAGE_EN
         slot_filler.intent = "intent1"

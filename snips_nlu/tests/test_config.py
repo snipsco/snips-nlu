@@ -98,7 +98,6 @@ class TestConfig(SnipsTest):
                 "c2": .3,
                 "algorithm": "lbfgs"
             },
-            "exhaustive_permutations_threshold": 42,
             "data_augmentation_config":
                 SlotFillerDataAugmentationConfig().to_dict(),
             "random_seed": 43

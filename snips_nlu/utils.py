@@ -243,7 +243,6 @@ def log_result(logger, level, output_msg=None):
     def get_wrapper(fn):
         def wrapped(*args, **kwargs):
             start = datetime.now()
-            logger.log(level)
             res = fn(*args, **kwargs)
             try:
                 res_debug_string = json_debug_string(res)

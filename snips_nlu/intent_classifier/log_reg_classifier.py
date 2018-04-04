@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 import logging
-
 import numpy as np
+
 from builtins import str, zip, range
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier

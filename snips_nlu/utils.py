@@ -3,12 +3,12 @@ from __future__ import unicode_literals
 import errno
 import json
 import numbers
+import numpy as np
 import os
+
+from builtins import object
 from collections import OrderedDict, namedtuple, Mapping
 from datetime import datetime
-
-import numpy as np
-from builtins import object
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
                                  RESOURCES_PATH, END, START)

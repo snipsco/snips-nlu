@@ -48,7 +48,7 @@ class TestConfig(SnipsTest):
         config_dict = {
             "sublinear_tf": True,
             "pvalue_threshold": 0.4,
-            "word_clusters_names": []
+            "word_clusters_name": None
         }
 
         # When

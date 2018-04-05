@@ -109,7 +109,7 @@ class Featurizer(object):
         for u in utterances:
             processed_utterance = _preprocess_utterance(
                 u, self.language, self.entity_utterances_to_feature_names,
-                self.config.word_clusters_names
+                self.config.word_clusters_name
             )
             preprocessed_utterances.append(processed_utterance)
         return preprocessed_utterances
@@ -203,17 +203,16 @@ def _normalize_stem(text, language):
     return normalized_stemmed
 
 
-def _get_word_cluster_features(query_tokens, cluster_names, language):
-    if not cluster_names:
+def _get_word_cluster_features(query_tokens, clusters_name, language):
+    if not clusters_name:
         return []
     ngrams = get_all_ngrams(query_tokens)
     cluster_features = []
-    for name in cluster_names:
-        for ngram in ngrams:
-            cluster = get_word_clusters(language)[name].get(
-                ngram[NGRAM].lower(), None)
-            if cluster is not None:
-                cluster_features.append(cluster)
+    for ngram in ngrams:
+        cluster = get_word_clusters(language)[clusters_name].get(
+            ngram[NGRAM].lower(), None)
+        if cluster is not None:
+            cluster_features.append(cluster)
     return cluster_features
 
 

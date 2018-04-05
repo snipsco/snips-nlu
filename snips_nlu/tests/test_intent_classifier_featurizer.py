@@ -28,7 +28,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         featurizer = Featurizer(
             language,
             config=FeaturizerConfig(pvalue_threshold=pvalue_threshold,
-                                    word_clusters_names=["brown_clusters"]),
+                                    word_clusters_name="brown_clusters"),
             unknown_words_replacement_string=None,
             tfidf_vectorizer=tfidf_vectorizer)
         dataset = {
@@ -89,7 +89,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "config": {
                 'sublinear_tf': False,
                 'pvalue_threshold': pvalue_threshold,
-                'word_clusters_names': ["brown_clusters"]
+                'word_clusters_name': "brown_clusters"
             },
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
@@ -110,7 +110,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         config = {
             "pvalue_threshold": 0.4,
             "sublinear_tf": False,
-            "word_clusters_names": ["brown_clusters"]
+            "word_clusters_name": "brown_clusters"
         }
 
         entity_utterances_to_feature_names = {
@@ -302,7 +302,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         featurizer = Featurizer(
             language,
             None,
-            config=FeaturizerConfig(word_clusters_names=["brown_clusters"])
+            config=FeaturizerConfig(word_clusters_name="brown_clusters")
         ).fit(dataset, utterances, labels)
 
         # When

@@ -136,18 +136,16 @@ class FeaturizerConfig(Config):
     """
 
     def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
-                 word_clusters_names=None):
+                 word_clusters_name=None):
         self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
-        if word_clusters_names is None:
-            word_clusters_names = []
-        self.word_clusters_names = set(word_clusters_names)
+        self.word_clusters_name = word_clusters_name
 
     def to_dict(self):
         return {
             "sublinear_tf": self.sublinear_tf,
             "pvalue_threshold": self.pvalue_threshold,
-            "word_clusters_names": list(self.word_clusters_names)
+            "word_clusters_name": self.word_clusters_name
         }
 
     @classmethod

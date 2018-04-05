@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import unicode_literals
+
 import unittest
 
 from snips_nlu.intent_classifier import LogRegIntentClassifier
@@ -45,6 +47,8 @@ class TestConfig(SnipsTest):
         # Given
         config_dict = {
             "sublinear_tf": True,
+            "pvalue_threshold": 0.4,
+            "word_clusters_name": None
         }
 
         # When

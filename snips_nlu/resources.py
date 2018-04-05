@@ -50,6 +50,7 @@ RESOURCE_INDEX = {
     LANGUAGE_JA: {
         STOP_WORDS: "stop_words.txt",
         NOISE: "noise.txt",
+        WORD_CLUSTERS: ["w2v_clusters.txt"]
     },
     LANGUAGE_KO: {
         STOP_WORDS: "stop_words.txt",

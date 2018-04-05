@@ -4,11 +4,12 @@ import errno
 import functools
 import numbers
 import os
+
+from builtins import object
 from collections import Mapping, namedtuple
 from threading import RLock
 
 import numpy as np
-from builtins import object
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
                                  RESOURCES_PATH, END, START)
@@ -136,8 +137,10 @@ def regex_escape(s):
 
     References:
 
-    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
-    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
+    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/
+    lib.rs#L1685
+    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/
+    parser.rs#L1378
     """
     escaped_string = ""
     for c in s:
@@ -219,8 +222,10 @@ def update_wrapper(wrapper,
 
 
 class _HashedSeq(list):
+    # pylint: disable=single-string-used-for-slots
     __slots__ = 'hashvalue'
 
+    # pylint: disable=super-init-not-called
     def __init__(self, tup, hash=hash):
         self[:] = tup
         self.hashvalue = hash(tup)
@@ -228,7 +233,7 @@ class _HashedSeq(list):
     def __hash__(self):
         return self.hashvalue
 
-
+# pylint: disable=dangerous-default-value
 def _make_key(args, kwds, typed,
               kwd_mark=(object(),),
               fasttypes=set([int, str, frozenset, type(None)]),
@@ -263,8 +268,8 @@ def lru_cache(maxsize=100, typed=False):
 
     Arguments to the cached function must be hashable.
 
-    View the cache statistics named tuple (hits, misses, maxsize, currsize) with
-    f.cache_info().  Clear the cache and statistics with f.cache_clear().
+    View the cache statistics named tuple (hits, misses, maxsize, currsize)
+     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
     See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
@@ -280,22 +285,23 @@ def lru_cache(maxsize=100, typed=False):
 
         cache = dict()
         stats = [0, 0]  # make statistics updateable non-locally
-        HITS, MISSES = 0, 1  # names for the stats fields
+        hits, misses = 0, 1  # names for the stats fields
         make_key = _make_key
         cache_get = cache.get  # bound method to lookup key or return None
-        _len = len  # localize the global len() function
+        len_ = len  # localize the global len() function
         lock = RLock()  # because linkedlist updates aren't threadsafe
         root = []  # root of the circular doubly linked list
         root[:] = [root, root, None, None]  # initialize by pointing to self
         nonlocal_root = [root]  # make updateable non-locally
-        PREV, NEXT, KEY, RESULT = 0, 1, 2, 3  # names for the link fields
+        prev_, next_, key_, result_ = 0, 1, 2, 3  # names for the link fields
 
         if maxsize == 0:
 
             def wrapper(*args, **kwds):
-                # no caching, just do a statistics update after a successful call
+                # no caching, just do a statistics update after a successful
+                # call
                 result = user_function(*args, **kwds)
-                stats[MISSES] += 1
+                stats[misses] += 1
                 return result
 
         elif maxsize is None:
@@ -303,14 +309,14 @@ def lru_cache(maxsize=100, typed=False):
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
                 key = make_key(args, kwds, typed)
-                result = cache_get(key,
-                                   root)  # root used here as a unique not-found sentinel
+                # root used here as a unique not-found sentinel
+                result = cache_get(key, root)
                 if result is not root:
-                    stats[HITS] += 1
+                    stats[hits] += 1
                     return result
                 result = user_function(*args, **kwds)
                 cache[key] = result
-                stats[MISSES] += 1
+                stats[misses] += 1
                 return result
 
         else:
@@ -321,50 +327,51 @@ def lru_cache(maxsize=100, typed=False):
                 with lock:
                     link = cache_get(key)
                     if link is not None:
-                        # record recent use of the key by moving it to the front of the list
+                        # record recent use of the key by moving it to the
+                        #  front of the list
                         root, = nonlocal_root
                         link_prev, link_next, key, result = link
-                        link_prev[NEXT] = link_next
-                        link_next[PREV] = link_prev
-                        last = root[PREV]
-                        last[NEXT] = root[PREV] = link
-                        link[PREV] = last
-                        link[NEXT] = root
-                        stats[HITS] += 1
+                        link_prev[next_] = link_next
+                        link_next[prev_] = link_prev
+                        last = root[prev_]
+                        last[next_] = root[prev_] = link
+                        link[prev_] = last
+                        link[next_] = root
+                        stats[hits] += 1
                         return result
                 result = user_function(*args, **kwds)
                 with lock:
                     root, = nonlocal_root
                     if key in cache:
-                        # getting here means that this same key was added to the
-                        # cache while the lock was released.  since the link
-                        # update is already done, we need only return the
+                        # getting here means that this same key was added to
+                        # the cache while the lock was released.  since the
+                        #  link update is already done, we need only return the
                         # computed result and update the count of misses.
                         pass
-                    elif _len(cache) >= maxsize:
+                    elif len_(cache) >= maxsize:
                         # use the old root to store the new key and result
                         oldroot = root
-                        oldroot[KEY] = key
-                        oldroot[RESULT] = result
+                        oldroot[key_] = key
+                        oldroot[result_] = result
                         # empty the oldest link and make it the new root
-                        root = nonlocal_root[0] = oldroot[NEXT]
-                        oldkey = root[KEY]
-                        root[KEY] = root[RESULT] = None
+                        root = nonlocal_root[0] = oldroot[next_]
+                        oldkey = root[key_]
+                        root[key_] = root[result_] = None
                         # now update the cache dictionary for the new links
                         del cache[oldkey]
                         cache[key] = oldroot
                     else:
                         # put result in a new link at the front of the list
-                        last = root[PREV]
+                        last = root[prev_]
                         link = [last, root, key, result]
-                        last[NEXT] = root[PREV] = cache[key] = link
-                    stats[MISSES] += 1
+                        last[next_] = root[prev_] = cache[key] = link
+                    stats[misses] += 1
                 return result
 
         def cache_info():
             """Report cache statistics"""
             with lock:
-                return _CacheInfo(stats[HITS], stats[MISSES], maxsize,
+                return _CacheInfo(stats[hits], stats[misses], maxsize,
                                   len(cache))
 
         def cache_clear():

@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from mock import patch
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.builtin_entities import (
@@ -56,79 +55,6 @@ class TestBuiltInEntities(SnipsTest):
         # Then
         self.assertEqual(len(parse), 1)
         self.assertEqual(parse[0][ENTITY_KIND], "snips/number")
-
-    def test_should_get_entities_for_non_space_separated_languages(self):
-        # Given
-        language = "ja"
-        text = " aaa  bbb  ccc  ddd  eee "
-        with patch("snips_nlu.builtin_entities._BuiltinEntityParser.parse") \
-                as mocked_parse:
-            # joined text "aaabbbcccdddeee"
-            mocked_parse.return_value = [
-                # {
-                #     "entity_kind": "dummy_entity",
-                #     "range": {
-                #         "start": 0,
-                #         "end": 6
-                #     },
-                #     "value": "aaabbb"
-                # },
-                # {
-                #     "entity_kind": "dummy_entity",
-                #     "range": {
-                #         "start": 8,
-                #         "end": 10
-                #     },
-                #     "value": "cd"
-                # },
-                # {
-                #     "entity_kind": "dummy_entity",
-                #     "range": {
-                #         "start": 12,
-                #         "end": 15
-                #     },
-                #     "value": "eee"
-                # }
-                {
-                    "entity_kind": "dummy_entity",
-                    "range": {
-                        "start": 6,
-                        "end": 12
-                    },
-                    "value": "cccddd"
-                }
-            ]
-            # When
-            entities = get_builtin_entities(text, language)
-
-            # Then
-            expected_entities = [
-                # {
-                #     "entity_kind": "dummy_entity",
-                #     "range": {
-                #         "start": 1,
-                #         "end": 9
-                #     },
-                #     "value": "aaa  bbb"
-                # },
-                # {
-                #     "entity_kind": "dummy_entity",
-                #     "range": {
-                #         "start": 21,
-                #         "end": 24
-                #     },
-                #     "value": "eee"
-                # },
-                {
-                    "entity_kind": "dummy_entity",
-                    "range": {
-                        "start": 11,
-                        "end": 19
-                    },
-                    "value": "ccc  ddd"
-                }
-            ]
-        self.assertSequenceEqual(expected_entities, entities)
 
     def test_builtin_entity_cache(self):
         # Given

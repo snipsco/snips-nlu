@@ -15,7 +15,7 @@ VERSION = "__version__"
 with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
     version = f.readline().strip()
 
-nlu_metrics_version = "0.11.1"
+nlu_metrics_version = "0.12.0"
 
 required = [
     "enum34==1.1.6",
@@ -44,10 +44,10 @@ extras_require = {
         "pylint==1.8.2",
         "coverage==4.4.2"
     ],
-    # "integration_test": [
-    #     "snips_nlu_metrics==%s" % nlu_metrics_version,
-    #     "snips_nlu_rust==0.53.0",
-    # ]
+    "integration_test": [
+        "snips_nlu_metrics==%s" % nlu_metrics_version,
+        "snips_nlu_rust==0.55.0",
+    ]
 }
 
 with io.open(README, encoding="utf8") as f:

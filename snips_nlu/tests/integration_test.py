@@ -11,7 +11,7 @@ from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH, SnipsTest
 from snips_nlu.tokenization import tokenize_light
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.9
-SLOT_FILLING_THRESHOLD = 0.9
+SLOT_FILLING_THRESHOLD = 0.85
 
 SKIPPED_DATE_PREFIXES = {"at", "in", "for", "on"}
 

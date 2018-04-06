@@ -35,7 +35,7 @@ class IntegrationTestSnipsNLUEngine(SnipsTest):
 
     def test_python_rust_engine_performance(self):
         # Given
-        from snips_nlu_rs.nlu_engine import NLUEngine as InferenceEngine
+        from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
         dataset_path = PERFORMANCE_DATASET_PATH
 
         # When

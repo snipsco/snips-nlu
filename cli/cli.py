@@ -127,7 +127,8 @@ def main_cross_val_metrics():
         metrics.pop("parsing_errors")
 
     with io.open(output_path, mode="w") as f:
-        f.write(bytes(json.dumps(metrics, indent=2), encoding="utf8").decode("utf8"))
+        json_dump = json.dumps(metrics, indent=2)
+        f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
 
 
 def parse_train_test_args(args):

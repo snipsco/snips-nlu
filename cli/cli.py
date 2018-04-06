@@ -5,8 +5,8 @@ import io
 import json
 import os
 import sys
-
 from builtins import bytes, input
+
 from snips_nlu_metrics import (
     compute_cross_val_metrics, compute_train_test_metrics)
 
@@ -85,7 +85,10 @@ def parse_cross_val_args(args):
                         help="Number of folds to use for the cross-validation")
     parser.add_argument("-t", "--train-size-ratio", type=float, metavar="",
                         help="Fraction of the data that we want to use for "
-                             "training (between 0 and 1")
+                             "training (between 0 and 1)")
+    parser.add_argument(
+        "-esm", "--exclude-slot-metrics", action="store_true",
+        help="Exclude slot metrics and slot errors in the output")
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")
     return parser.parse_args(args)
@@ -96,6 +99,7 @@ def main_cross_val_metrics():
 
     dataset_path = args.pop("dataset_path")
     output_path = args.pop("output_path")
+    exclude_slot_metrics = args.get("exclude_slot_metrics", False)
 
     def progression_handler(progress):
         print("%d%%" % int(progress * 100))
@@ -103,6 +107,7 @@ def main_cross_val_metrics():
     metrics_args = dict(
         dataset=dataset_path,
         engine_class=SnipsNLUEngine,
+        include_slot_metrics=not exclude_slot_metrics,
         progression_handler=progression_handler
     )
     if args.get("nb_folds") is not None:
@@ -122,7 +127,8 @@ def main_cross_val_metrics():
         metrics.pop("parsing_errors")
 
     with io.open(output_path, mode="w") as f:
-        f.write(bytes(json.dumps(metrics), encoding="utf8").decode("utf8"))
+        json_dump = json.dumps(metrics, indent=2)
+        f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
 
 
 def parse_train_test_args(args):
@@ -131,6 +137,9 @@ def parse_train_test_args(args):
     parser.add_argument("train_dataset_path", type=str)
     parser.add_argument("test_dataset_path", type=str)
     parser.add_argument("output_path", type=str)
+    parser.add_argument(
+        "-esm", "--exclude-slot-metrics", action="store_true",
+        help="Exclude slot metrics and slot errors in the output")
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")
     return parser.parse_args(args)
@@ -142,11 +151,13 @@ def main_train_test_metrics():
     train_dataset_path = args.pop("train_dataset_path")
     test_dataset_path = args.pop("test_dataset_path")
     output_path = args.pop("output_path")
+    exclude_slot_metrics = args.get("exclude_slot_metrics", False)
 
     metrics_args = dict(
         train_dataset=train_dataset_path,
         test_dataset=test_dataset_path,
-        engine_class=SnipsNLUEngine
+        engine_class=SnipsNLUEngine,
+        include_slot_metrics=not exclude_slot_metrics
     )
 
     include_errors = args.get("include_errors", False)

@@ -3,10 +3,10 @@ from __future__ import unicode_literals
 
 import io
 import os
-from builtins import range
+
 
 from mock import patch, MagicMock
-
+from future.builtins import range
 from snips_nlu.constants import (
     RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
     SNIPS_DATETIME, END, START, ENTITY_KIND)
@@ -15,7 +15,7 @@ from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
     CRFSlotFiller, _spans_to_tokens_indexes, _filter_overlapping_builtins,
-    _generate_slots_permutations, _exhaustive_slots_permutations)
+    _disambiguate_builtin_entities, _get_slots_permutations)
 from snips_nlu.slot_filler.crf_utils import (
     TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX)
 from snips_nlu.slot_filler.feature_factory import (
@@ -525,6 +525,26 @@ class TestCRFSlotFiller(SnipsTest):
                       'O',
                       'O']
 
+            tags_8 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      '%sstart_date' % BEGINNING_PREFIX,
+                      '%sstart_date' % INSIDE_PREFIX,
+                      'O',
+                      '%sstart_date' % BEGINNING_PREFIX,
+                      '%sstart_date' % INSIDE_PREFIX]
+
+            tags_9 = ['O',
+                      'O',
+                      'O',
+                      'O',
+                      '%send_date' % BEGINNING_PREFIX,
+                      '%send_date' % INSIDE_PREFIX,
+                      'O',
+                      '%send_date' % BEGINNING_PREFIX,
+                      '%send_date' % INSIDE_PREFIX]
+
             if tags_ == tags_1:
                 return 0.6
             elif tags_ == tags_2:
@@ -539,11 +559,14 @@ class TestCRFSlotFiller(SnipsTest):
                 return 0.0
             elif tags_ == tags_7:
                 return 0.0
+            elif tags_ == tags_8:
+                return 0.5
+            elif tags_ == tags_9:
+                return 0.5
             else:
                 raise ValueError("Unexpected tag sequence: %s" % tags_)
 
-        slot_filler_config = CRFSlotFillerConfig(
-            random_seed=42, exhaustive_permutations_threshold=2)
+        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         slot_filler = CRFSlotFiller(config=slot_filler_config)
         slot_filler.language = LANGUAGE_EN
         slot_filler.intent = "intent1"
@@ -607,133 +630,65 @@ class TestCRFSlotFiller(SnipsTest):
         ]
         self.assertEqual(entities, expected_entities)
 
-    def test_exhaustive_slots_permutations(self):
+    def test_should_disambiguate_builtin_entities(self):
         # Given
-        n_builtins = 2
-        possible_slots_names = ["a", "b"]
+        builtin_entities = [
+            {RES_MATCH_RANGE: {START: 7, END: 10}},
+            {RES_MATCH_RANGE: {START: 9, END: 15}},
+            {RES_MATCH_RANGE: {START: 10, END: 17}},
+            {RES_MATCH_RANGE: {START: 12, END: 19}},
+            {RES_MATCH_RANGE: {START: 9, END: 15}},
+            {RES_MATCH_RANGE: {START: 0, END: 5}},
+            {RES_MATCH_RANGE: {START: 0, END: 5}},
+            {RES_MATCH_RANGE: {START: 0, END: 8}},
+            {RES_MATCH_RANGE: {START: 2, END: 5}},
+            {RES_MATCH_RANGE: {START: 0, END: 8}},
+        ]
 
         # When
-        perms = _exhaustive_slots_permutations(n_builtins,
-                                               possible_slots_names)
+        disambiguated_entities = _disambiguate_builtin_entities(
+            builtin_entities)
 
         # Then
-        expected_perms = {
-            ("a", "a"),
-            ("a", "b"),
-            ("a", "O"),
-            ("b", "b"),
-            ("b", "a"),
-            ("b", "O"),
-            ("O", "a"),
-            ("O", "b"),
-            ("O", "O"),
-        }
-        self.assertSetEqual(set(perms), expected_perms)
+        expected_entities = [
+            {RES_MATCH_RANGE: {START: 0, END: 8}},
+            {RES_MATCH_RANGE: {START: 0, END: 8}},
+            {RES_MATCH_RANGE: {START: 10, END: 17}},
+        ]
 
-    @patch("snips_nlu.slot_filler.crf_slot_filler"
-           "._exhaustive_slots_permutations")
-    def test_slot_permutations_should_be_exhaustive(
-            self, mocked_exhaustive_slots):
-        # Given
-        n_builtins = 2
-        possible_slots_names = ["a", "b"]
-        exhaustive_permutations_threshold = 100
-
-        # When
-        _generate_slots_permutations(n_builtins, possible_slots_names,
-                                     exhaustive_permutations_threshold)
-
-        # Then
-        mocked_exhaustive_slots.assert_called_once()
-
-    @patch("snips_nlu.slot_filler.crf_slot_filler"
-           "._conservative_slots_permutations")
-    def test_slot_permutations_should_be_conservative(
-            self, mocked_conservative_slots):
-        # Given
-        n_builtins = 2
-        possible_slots_names = ["a", "b"]
-        exhaustive_permutations_threshold = 8
-
-        # When
-        _generate_slots_permutations(n_builtins, possible_slots_names,
-                                     exhaustive_permutations_threshold)
-
-        # Then
-        mocked_conservative_slots.assert_called_once()
+        self.assertListEqual(expected_entities, disambiguated_entities)
 
     def test_generate_slots_permutations(self):
         # Given
-        possible_slots = ["slot1", "slot22"]
-        configs = [
-            {
-                "n_builtins_in_sentence": 0,
-                "exhaustive_permutations_threshold": 10,
-                "slots": []
-            },
-            {
-                "n_builtins_in_sentence": 1,
-                "exhaustive_permutations_threshold": 10,
-                "slots": [
-                    ("slot1",),
-                    ("slot22",),
-                    ("O",)
-                ]
-            },
-            {
-                "n_builtins_in_sentence": 2,
-                "exhaustive_permutations_threshold": 4,
-                "slots": [
-                    ("slot1", "slot22"),
-                    ("slot22", "slot1"),
-                    ("slot1", "O"),
-                    ("O", "slot1"),
-                    ("slot22", "O"),
-                    ("O", "slot22"),
-                    ("O", "O")
-                ]
-            },
-            {
-                "n_builtins_in_sentence": 2,
-                "exhaustive_permutations_threshold": 100,
-                "slots": [
-                    ("O", "O"),
-                    ("O", "slot1"),
-                    ("O", "slot22"),
-                    ("slot1", "O"),
-                    ("slot1", "slot1"),
-                    ("slot1", "slot22"),
-                    ("slot22", "O"),
-                    ("slot22", "slot1"),
-                    ("slot22", "slot22"),
-                ]
-            },
-            {
-                "n_builtins_in_sentence": 3,
-                "exhaustive_permutations_threshold": 5,
-                "slots": [
-                    ("slot1", "slot22", "O"),
-                    ("slot22", "slot1", "O"),
-                    ("slot22", "O", "slot1"),
-                    ("slot1", "O", "slot22"),
-                    ("O", "slot22", "slot1"),
-                    ("O", "slot1", "slot22"),
-                    ("O", "O", "slot1"),
-                    ("O", "O", "slot22"),
-                    ("O", "slot1", "O"),
-                    ("O", "slot22", "O"),
-                    ("slot1", "O", "O"),
-                    ("slot22", "O", "O"),
-                    ("O", "O", "O")
-                ]
-            }
+        slot_name_mapping = {
+            "start_date": "snips/datetime",
+            "end_date": "snips/datetime",
+            "temperature": "snips/temperature"
+        }
+        grouped_entities = [
+            [
+                {ENTITY_KIND: "snips/datetime"},
+                {ENTITY_KIND: "snips/temperature"}
+            ],
+            [
+                {ENTITY_KIND: "snips/temperature"}
+            ]
         ]
 
-        for conf in configs:
-            # When
-            slots = _generate_slots_permutations(
-                conf["n_builtins_in_sentence"],
-                possible_slots,
-                conf["exhaustive_permutations_threshold"])
-            # Then
-            self.assertSetEqual(set(conf["slots"]), set(slots))
+        # When
+        slots_permutations = set(
+            "||".join(perm) for perm in
+            _get_slots_permutations(grouped_entities, slot_name_mapping))
+
+        # Then
+        expected_permutations = {
+            "start_date||temperature",
+            "end_date||temperature",
+            "temperature||temperature",
+            "O||temperature",
+            "start_date||O",
+            "end_date||O",
+            "temperature||O",
+            "O||O",
+        }
+        self.assertSetEqual(expected_permutations, slots_permutations)

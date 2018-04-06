@@ -7,8 +7,8 @@ import os
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.constants import ROOT_PATH, LANGUAGE, RES_INTENT, \
-    RES_INTENT_NAME
+from snips_nlu.constants import (ROOT_PATH, LANGUAGE, RES_INTENT,
+                                 RES_INTENT_NAME)
 from snips_nlu.tests.utils import SnipsTest
 
 SAMPLES_PATH = os.path.join(ROOT_PATH, "samples")

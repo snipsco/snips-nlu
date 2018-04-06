@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from copy import deepcopy
 
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
@@ -127,16 +129,23 @@ class FeaturizerConfig(Config):
     """Configuration of a :class:`.Featurizer` object
 
     Args:
-         sublinear_tf (bool, optional): Whether or not to use sublinear
+        sublinear_tf (bool, optional): Whether or not to use sublinear
             (vs linear) term frequencies, default is *False*.
+        pvalue_threshold (float, optional): max pvalue for a feature to be
+        kept in the feature selection
     """
 
-    def __init__(self, sublinear_tf=False):
+    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
+                 word_clusters_name=None):
         self.sublinear_tf = sublinear_tf
+        self.pvalue_threshold = pvalue_threshold
+        self.word_clusters_name = word_clusters_name
 
     def to_dict(self):
         return {
-            "sublinear_tf": self.sublinear_tf
+            "sublinear_tf": self.sublinear_tf,
+            "pvalue_threshold": self.pvalue_threshold,
+            "word_clusters_name": self.word_clusters_name
         }
 
     @classmethod

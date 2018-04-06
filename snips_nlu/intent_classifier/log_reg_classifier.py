@@ -9,8 +9,8 @@ from snips_nlu.constants import LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
-from snips_nlu.intent_classifier.log_reg_classifier_utils import \
-    remove_builtin_slots, get_regularization_factor, build_training_data
+from snips_nlu.intent_classifier.log_reg_classifier_utils import (
+    get_regularization_factor, build_training_data)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state, NotTrained
@@ -57,10 +57,10 @@ class LogRegIntentClassifier(IntentClassifier):
         dataset = validate_and_format_dataset(dataset)
         language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
-        filtered_dataset = remove_builtin_slots(dataset)
+
         data_augmentation_config = self.config.data_augmentation_config
-        utterances, y, intent_list = build_training_data(
-            filtered_dataset, language, data_augmentation_config, random_state)
+        utterances, classes, intent_list = build_training_data(
+            dataset, language, data_augmentation_config, random_state)
 
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
@@ -70,15 +70,15 @@ class LogRegIntentClassifier(IntentClassifier):
             language,
             data_augmentation_config.unknown_words_replacement_string,
             self.config.featurizer_config)
-        self.featurizer = self.featurizer.fit(filtered_dataset, utterances, y)
+        self.featurizer = self.featurizer.fit(dataset, utterances, classes)
         if self.featurizer is None:
             return self
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
-        alpha = get_regularization_factor(filtered_dataset)
+        alpha = get_regularization_factor(dataset)
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)
-        self.classifier.fit(X, y)
+        self.classifier.fit(X, classes)
         return self
 
     def get_intent(self, text, intents_filter=None):

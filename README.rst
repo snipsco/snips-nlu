@@ -24,6 +24,13 @@ Installing
 
     pip install snips-nlu
 
+We currently have pre-built binaries (wheels) for ``snips-nlu`` and its
+dependencies for MacOS and Linux x86_64. If you use a different
+architecture/os you will need to build these dependencies from sources
+which means you will need to install
+`setuptools_rust <https://github.com/PyO3/setuptools-rust>`_ and
+`Rust <https://www.rust-lang.org/en-US/install.html>`_ before running the
+``pip install snips-nlu`` command.
 
 A simple example
 ----------------
@@ -70,6 +77,18 @@ To find out how to use Snips NLU please refer to our `documentation <https://sni
 Links
 -----
 * `Snips NLU <https://github.com/snipsco/snips-nlu>`_
+* `Snips NLU Rust <https://github.com/snipsco/snips-nlu-rs>`_: Rust inference pipeline implementation and bindings (C, Swift, Kotlin, Python)
+* `Rustling <https://github.com/snipsco/rustling-ontology>`_: Snips NLU builtin entities parser
 * `Snips <https://snips.ai/>`_
-* `Rustling <https://github.com/snipsco/rustling-ontology>`_ (Snips NLU builtin entities parser)
 * `Bug tracker <https://github.com/snipsco/snips-nlu/issues>`_
+
+
+Contributing
+------------
+
+Please see the `Contribution Guidelines <CONTRIBUTING.rst>`_.
+
+Copyright
+---------
+
+This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.

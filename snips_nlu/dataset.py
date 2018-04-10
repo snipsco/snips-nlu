@@ -6,7 +6,7 @@ from builtins import str
 from copy import deepcopy
 
 from future.utils import itervalues, iteritems
-from snips_nlu_ontology import get_all_languages
+from snips_nlu_ontology import get_all_languages, get_builtin_entity_examples
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
@@ -24,7 +24,7 @@ def extract_queries_entities(dataset):
     for intent in itervalues(dataset[INTENTS]):
         for query in intent[UTTERANCES]:
             for chunk in query[DATA]:
-                if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]):
+                if ENTITY in chunk:
                     entities_values[chunk[ENTITY]].append(chunk[TEXT])
     return {k: list(v) for k, v in iteritems(entities_values)}
 
@@ -53,12 +53,14 @@ def validate_and_format_dataset(dataset):
     queries_entities_values = extract_queries_entities(dataset)
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
+        queries_entities = queries_entities_values[entity_name]
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
-                validate_and_format_builtin_entity(entity)
+                validate_and_format_builtin_entity(entity, entity_name,
+                                                   queries_entities, language)
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
-                entity, queries_entities_values[entity_name], language)
+                entity, queries_entities, language)
     dataset[VALIDATED] = True
     return dataset
 
@@ -160,9 +162,13 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
     return formatted_entity
 
 
-def validate_and_format_builtin_entity(entity):
+def validate_and_format_builtin_entity(entity, entity_name, queries_entities,
+                                       language):
     validate_type(entity, dict)
-    return entity
+    builtin_entity_examples = get_builtin_entity_examples(entity_name,
+                                                          language)
+    entity_utterances = set(queries_entities + builtin_entity_examples)
+    return {UTTERANCES: entity_utterances}
 
 
 def add_entity_value_if_missing(value, entity, language):

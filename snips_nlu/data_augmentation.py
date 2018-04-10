@@ -48,13 +48,10 @@ def generate_utterance(contexts_iterator, entities_iterators):
     context_data = []
     for chunk in context[DATA]:
         if ENTITY in chunk:
-            if not is_builtin_entity(chunk[ENTITY]):
-                new_chunk = dict(chunk)
-                new_chunk[TEXT] = deepcopy(
-                    next(entities_iterators[new_chunk[ENTITY]]))
-                context_data.append(new_chunk)
-            else:
-                context_data.append(chunk)
+            new_chunk = dict(chunk)
+            new_chunk[TEXT] = deepcopy(
+                next(entities_iterators[new_chunk[ENTITY]]))
+            context_data.append(new_chunk)
         else:
             context_data.append(chunk)
     context[DATA] = context_data
@@ -93,11 +90,8 @@ def num_queries_to_generate(dataset, intent_name, min_utterances):
 def augment_utterances(dataset, intent_name, language, min_utterances,
                        capitalization_ratio, random_state):
     contexts_it = get_contexts_iterator(dataset, intent_name, random_state)
-    intent_entities = get_intent_entities(dataset, intent_name)
-    intent_entities = {
-        e: dataset[ENTITIES][e] for e in intent_entities
-        if not is_builtin_entity(e)
-    }
+    intent_entities = {e: dataset[ENTITIES][e]
+                       for e in get_intent_entities(dataset, intent_name)}
     entities_its = get_entities_iterators(intent_entities, random_state)
     generated_utterances = []
     nb_to_generate = num_queries_to_generate(dataset, intent_name,

@@ -7,9 +7,6 @@ import os
 import sys
 from builtins import bytes, input
 
-from snips_nlu_metrics import (
-    compute_cross_val_metrics, compute_train_test_metrics)
-
 from snips_nlu import SnipsNLUEngine, NLUEngineConfig, load_resources
 
 
@@ -122,6 +119,8 @@ def main_cross_val_metrics():
     with io.open(dataset_path, "r", encoding="utf-8") as f:
         load_resources(json.load(f)["language"])
 
+    from snips_nlu_metrics import compute_cross_val_metrics
+
     metrics = compute_cross_val_metrics(**metrics_args)
     if not include_errors:
         metrics.pop("parsing_errors")
@@ -163,6 +162,8 @@ def main_train_test_metrics():
     include_errors = args.get("include_errors", False)
     with io.open(train_dataset_path, "r", encoding="utf-8") as f:
         load_resources(json.load(f)["language"])
+
+    from snips_nlu_metrics import compute_train_test_metrics
 
     metrics = compute_train_test_metrics(**metrics_args)
     if not include_errors:

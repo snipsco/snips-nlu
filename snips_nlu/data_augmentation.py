@@ -1,17 +1,18 @@
 from __future__ import unicode_literals
 
+from builtins import next
 from copy import deepcopy
 from itertools import cycle
 
-from builtins import next
 from future.utils import iteritems
+from snips_nlu_ontology import get_builtin_entity_examples
+
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.resources import get_stop_words
 from snips_nlu.tokenization import tokenize_light
-from snips_nlu_ontology import get_builtin_entity_examples
 
 
 def capitalize(text, language):

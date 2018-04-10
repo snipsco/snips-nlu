@@ -7,7 +7,9 @@
 /dist
 snips_nlu/snips-nlu-resources/*
 /venv
+/venv2
 /venv3
+/venv36
 /.tox
 .coverage
 pylint.log

@@ -67,9 +67,14 @@ def get_contexts_iterator(dataset, intent_name, random_state):
 def get_entities_iterators(intent_entities, random_state):
     entities_its = dict()
     for entity_name, entity in iteritems(intent_entities):
-        shuffled_values = random_state.permutation(
-            list(entity[UTTERANCES]))
-        entities_its[entity_name] = cycle(shuffled_values)
+        if is_builtin_entity(entity_name):
+            # The original order of entity values is kept here in order to
+            # ensure that builtin entity examples are used first
+            entities_values = list(entity[UTTERANCES])
+        else:
+            entities_values = random_state.permutation(
+                list(entity[UTTERANCES]))
+        entities_its[entity_name] = cycle(entities_values)
     return entities_its
 
 

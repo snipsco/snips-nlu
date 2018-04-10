@@ -167,7 +167,9 @@ def validate_and_format_builtin_entity(entity, entity_name, queries_entities,
     validate_type(entity, dict)
     builtin_entity_examples = get_builtin_entity_examples(entity_name,
                                                           language)
-    entity_utterances = set(queries_entities + builtin_entity_examples)
+    # Builtin entity examples must be kept first in this list in order to
+    # ensure that they are used when augmenting data
+    entity_utterances = builtin_entity_examples + list(set(queries_entities))
     return {UTTERANCES: entity_utterances}
 
 

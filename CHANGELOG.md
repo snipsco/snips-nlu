@@ -1,7 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.13.1] - 2018-04-10
+### Changed
+- Bump ontology version from 0.54.1 to 0.54.2
+
+### Fixed
+- Fix CRF parsing of builtin entities by adding builtin entities examples of different length
+- Fix CLI scripts importing metrics package which might not be installed
 
 ## [0.13.0] - 2018-04-06
 ### Added
@@ -22,5 +28,5 @@ All notable changes to this project will be documented in this file.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.13.0...HEAD
+[0.13.1]: https://github.com/snipsco/snips-nlu/compare/0.13.0...0.13.1
 [0.13.0]: https://github.com/snipsco/snips-nlu/compare/0.12.1...0.13.0

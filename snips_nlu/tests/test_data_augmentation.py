@@ -4,7 +4,6 @@ import numpy as np
 from builtins import next
 from builtins import range
 from mock import patch
-
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_entities_iterators,
@@ -37,6 +36,7 @@ class TestDataAugmentation(SnipsTest):
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_entities_iterators(self, _):
         # Given
+        language = "en"
         intent_entities = {
             "entity1": {
                 "utterances": {
@@ -56,7 +56,8 @@ class TestDataAugmentation(SnipsTest):
         random_state = np.random.RandomState(1)
 
         # Then
-        it_dict = get_entities_iterators(intent_entities, random_state)
+        it_dict = get_entities_iterators(intent_entities, language,
+                                         random_state)
 
         # When
         self.assertIn("entity1", it_dict)

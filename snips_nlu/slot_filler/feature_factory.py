@@ -196,9 +196,9 @@ class NgramFactory(SingleFeatureFactory):
         self.use_stemming = self.args["use_stemming"]
         self.common_words_gazetteer_name = self.args[
             "common_words_gazetteer_name"]
+        self.gazetteer = None
         self._language = None
         self.language = self.args.get("language_code")
-        self.gazetteer = None
 
     @property
     def language(self):

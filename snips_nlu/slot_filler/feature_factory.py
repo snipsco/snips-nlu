@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
+from builtins import map, object, str
 
-from builtins import map, object
 from future.utils import with_metaclass, iteritems
 from snips_nlu_ontology.builtin_entities import get_supported_entities
 from snips_nlu_utils import get_shape, normalize
@@ -167,7 +167,7 @@ class LengthFactory(SingleFeatureFactory):
     name = "length"
 
     def compute_feature(self, tokens, token_index):
-        return len(tokens[token_index].value)
+        return str(len(tokens[token_index].value))
 
 
 class NgramFactory(SingleFeatureFactory):

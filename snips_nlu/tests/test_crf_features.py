@@ -241,7 +241,7 @@ class TestCRFFeatures(SnipsTest):
         # Then
         self.assertIsInstance(factory, LengthFactory)
         self.assertEqual(features[0].base_name, "length")
-        self.assertEqual(res, 5)
+        self.assertEqual(res, "5")
 
     def test_ngram_factory(self):
         # Given

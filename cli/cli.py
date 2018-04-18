@@ -7,7 +7,14 @@ import os
 import sys
 from builtins import bytes, input
 
+from pygments import highlight
+from pygments.formatters.terminal import TerminalFormatter
+from pygments.lexers.data import JsonLexer
+
 from snips_nlu import SnipsNLUEngine, NLUEngineConfig, load_resources
+
+JSON_LEXER = JsonLexer()
+TERMINAL_FORMATTER = TerminalFormatter(bg="dark")
 
 
 def parse_train_args(args):
@@ -70,7 +77,9 @@ def main_engine_inference():
             query = query.decode("utf8")
         if query == "q":
             break
-        print(json.dumps(engine.parse(query), indent=2))
+        json_dump = json.dumps(engine.parse(query), sort_keys=True, indent=2)
+        colorful_json = highlight(json_dump, JSON_LEXER, TERMINAL_FORMATTER)
+        print(colorful_json)
 
 
 def parse_cross_val_args(args):

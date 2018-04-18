@@ -45,6 +45,7 @@ extras_require = {
         "coverage==4.4.2"
     ],
     "integration_test": [
+        "pygments==2.2.0",
         "snips_nlu_metrics==%s" % nlu_metrics_version,
     ]
 }

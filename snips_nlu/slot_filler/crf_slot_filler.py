@@ -6,10 +6,10 @@ import logging
 import math
 import os
 import tempfile
-from builtins import range
 from copy import copy
 from itertools import groupby, product
 
+from builtins import range
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
@@ -243,7 +243,7 @@ class CRFSlotFiller(SlotFiller):
         log += "\nTransition weights: \n\n"
         for (state_1, state_2), weight in transition_features:
             log += "\n%s %s: %s" % (
-                _encode_tag(state_1), _encode_tag(state_2), weight)
+                _decode_tag(state_1), _decode_tag(state_2), weight)
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
             iteritems(feature_weights),
@@ -251,7 +251,7 @@ class CRFSlotFiller(SlotFiller):
             reverse=True)
         log += "\n\nFeature weights: \n\n"
         for (feat, tag), weight in feature_weights:
-            log += "\n%s %s: %s" % (feat, tag, weight)
+            log += "\n%s %s: %s" % (feat, _decode_tag(tag), weight)
         return log
 
     def _augment_slots(self, text, tokens, tags, builtin_slots_names):

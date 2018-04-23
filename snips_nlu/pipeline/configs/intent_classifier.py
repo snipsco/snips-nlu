@@ -115,6 +115,9 @@ class IntentClassifierDataAugmentationConfig(Config):
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
+        if unknown_word_prob > 0 and unknown_words_replacement_string is None:
+            raise ValueError("unknown_word_prob is positive (%s) but the "
+                             "replacement string is None" % unknown_word_prob)
 
     def to_dict(self):
         return {

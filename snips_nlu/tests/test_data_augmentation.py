@@ -123,9 +123,14 @@ class TestDataAugmentation(SnipsTest):
         self.assertListEqual(expected_seq, sorted(seq))
 
         self.assertIn("snips/number", it_dict)
-        expected_seq = ["2007", "9", "seventy", "two hundreds and six"]
-        seq = [next(it_dict["snips/number"]) for _ in range(len(expected_seq))]
-        self.assertListEqual(expected_seq, sorted(seq))
+        # Check that entity examples are at the beginning of the iterator
+        expected_seq_start = ["2007", "two hundreds and six"]
+        seq_start = [next(it_dict["snips/number"]) for _ in range(2)]
+        self.assertListEqual(expected_seq_start, seq_start)
+
+        expected_seq_end = ["9", "seventy"]
+        seq_end = [next(it_dict["snips/number"]) for _ in range(2)]
+        self.assertListEqual(expected_seq_end, sorted(seq_end))
 
     def test_generate_utterance(self):
         # Given

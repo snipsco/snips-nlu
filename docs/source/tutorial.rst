@@ -206,8 +206,8 @@ a customized configuration. Typically, different languages may require
 different sets of features. You can check the :class:`.NLUEngineConfig` to get
 more details about what can be configured.
 
-We created a list of `sample configurations`_, one per supported language, that
-have some language specific enhancements. In this tutorial we will use the
+We have built a list of `default configurations`_, one per supported language,
+that have some language specific enhancements. In this tutorial we will use the
 `english one`_.
 
 Before training the engine, note that you need to load language specific
@@ -219,13 +219,11 @@ resources used to improve performance with the :func:`.load_resources` function.
     import json
 
     from snips_nlu import SnipsNLUEngine, load_resources
+    from snips_nlu.default_configs import CONFIG_EN
 
     load_resources(u"en")
 
-    with io.open("config_en.json") as f:
-        config = json.load(f)
-
-    engine = SnipsNLUEngine(config=config)
+    engine = SnipsNLUEngine(config=CONFIG_EN)
 
 At this point, we can try to parse something:
 
@@ -322,7 +320,6 @@ And load it:
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
-
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
-.. _sample configurations: https://github.com/snipsco/snips-nlu/blob/master/samples/configs
-.. _english one: https://github.com/snipsco/snips-nlu/blob/master/samples/configs/config_en.json
+.. _default configurations: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs
+.. _english one: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs/config_en.py

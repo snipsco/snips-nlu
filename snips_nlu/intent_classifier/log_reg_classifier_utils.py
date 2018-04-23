@@ -122,7 +122,10 @@ def build_training_data(dataset, language, data_augmentation_config,
         utterances = augment_utterances(
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,
-            capitalization_ratio=0.0, random_state=random_state)
+            capitalization_ratio=0.0,
+            add_builtin_entities_examples=
+            data_augmentation_config.add_builtin_entities_examples,
+            random_state=random_state)
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               range(len(utterances))]

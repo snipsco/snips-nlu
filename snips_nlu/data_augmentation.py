@@ -65,11 +65,12 @@ def get_contexts_iterator(dataset, intent_name, random_state):
     return cycle(shuffled_utterances)
 
 
-def get_entities_iterators(intent_entities, language, random_state):
+def get_entities_iterators(intent_entities, language,
+                           add_builtin_entities_examples, random_state):
     entities_its = dict()
     for entity_name, entity in iteritems(intent_entities):
         utterance_values = random_state.permutation(list(entity[UTTERANCES]))
-        if is_builtin_entity(entity_name):
+        if add_builtin_entities_examples and is_builtin_entity(entity_name):
             entity_examples = get_builtin_entity_examples(entity_name,
                                                           language)
             # Builtin entity examples must be kept first in the iterator to
@@ -96,11 +97,13 @@ def num_queries_to_generate(dataset, intent_name, min_utterances):
 
 
 def augment_utterances(dataset, intent_name, language, min_utterances,
-                       capitalization_ratio, random_state):
+                       capitalization_ratio, add_builtin_entities_examples,
+                       random_state):
     contexts_it = get_contexts_iterator(dataset, intent_name, random_state)
     intent_entities = {e: dataset[ENTITIES][e]
                        for e in get_intent_entities(dataset, intent_name)}
     entities_its = get_entities_iterators(intent_entities, language,
+                                          add_builtin_entities_examples,
                                           random_state)
     generated_utterances = []
     nb_to_generate = num_queries_to_generate(dataset, intent_name,

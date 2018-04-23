@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
 
-import numpy as np
 from builtins import next
 from builtins import range
+
+import numpy as np
 from mock import patch
+
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
     get_contexts_iterator, get_entities_iterators,
@@ -51,13 +53,16 @@ class TestDataAugmentation(SnipsTest):
                     "entity 22": "entity 22",
                     "entity 222": "entity 222",
                 }
+            },
+            "snips/number": {
+                "utterances": {"two", "21"}
             }
         }
         random_state = np.random.RandomState(1)
 
         # Then
         it_dict = get_entities_iterators(intent_entities, language,
-                                         random_state)
+                                         False, random_state)
 
         # When
         self.assertIn("entity1", it_dict)
@@ -68,6 +73,58 @@ class TestDataAugmentation(SnipsTest):
         self.assertIn("entity2", it_dict)
         expected_seq = ["entity 2", "entity 22", "entity 222"]
         seq = [next(it_dict["entity2"]) for _ in range(len(expected_seq))]
+        self.assertListEqual(expected_seq, sorted(seq))
+
+        self.assertIn("snips/number", it_dict)
+        expected_seq = ["21", "two"]
+        seq = [next(it_dict["snips/number"]) for _ in range(len(expected_seq))]
+        self.assertListEqual(expected_seq, sorted(seq))
+
+    @patch("snips_nlu.data_augmentation.get_builtin_entity_examples")
+    @patch("numpy.random.permutation", side_effect=np_random_permutation)
+    def test_entities_iterators_with_builtin_examples(self, _,
+                                                      mocked_builtin_entity_examples):
+        # Given
+        language = "en"
+
+        def mock_builtin_entity_examples(builtin_entity_kind, language):
+            if builtin_entity_kind == "snips/number":
+                return ["2007", "two hundreds and six"]
+            else:
+                return []
+
+        mocked_builtin_entity_examples.side_effect = \
+            mock_builtin_entity_examples
+
+        intent_entities = {
+            "entity1": {
+                "utterances": {
+                    "entity 1": "entity 1",
+                    "entity 11": "entity 11",
+                    "entity 111": "entity 111",
+                }
+            },
+            "snips/number": {
+                "utterances": {"9", "seventy"}
+            }
+        }
+        random_state = np.random.RandomState(1)
+
+        # Then
+        add_builtin_entities_examples = True
+        it_dict = get_entities_iterators(intent_entities, language,
+                                         add_builtin_entities_examples,
+                                         random_state)
+
+        # When
+        self.assertIn("entity1", it_dict)
+        expected_seq = ["entity 1", "entity 11", "entity 111"]
+        seq = [next(it_dict["entity1"]) for _ in range(len(expected_seq))]
+        self.assertListEqual(expected_seq, sorted(seq))
+
+        self.assertIn("snips/number", it_dict)
+        expected_seq = ["2007", "9", "seventy", "two hundreds and six"]
+        seq = [next(it_dict["snips/number"]) for _ in range(len(expected_seq))]
         self.assertListEqual(expected_seq, sorted(seq))
 
     def test_generate_utterance(self):

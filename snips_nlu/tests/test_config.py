@@ -18,6 +18,7 @@ class TestConfig(SnipsTest):
         config_dict = {
             "min_utterances": 3,
             "noise_factor": 2,
+            "add_builtin_entities_examples": False,
             "unknown_word_prob": 0.1,
             "unknown_words_replacement_string": "foobar",
         }
@@ -33,7 +34,8 @@ class TestConfig(SnipsTest):
         # Given
         config_dict = {
             "min_utterances": 42,
-            "capitalization_ratio": 0.66
+            "capitalization_ratio": 0.66,
+            "add_builtin_entities_examples": False
         }
 
         # When

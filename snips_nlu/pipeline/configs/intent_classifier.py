@@ -101,12 +101,17 @@ class IntentClassifierDataAugmentationConfig(Config):
         noise_factor (int, optional): Defines the size of the noise to
             generate to train the implicit *None* intent, as a multiplier of
             the average size of the other intents. Default is 5.
+        add_builtin_entities_examples (bool, optional): If True, some builtin
+            entity examples will be automatically added to the training data.
+            Default is True.
     """
 
-    def __init__(self, min_utterances=20, noise_factor=5, unknown_word_prob=0,
+    def __init__(self, min_utterances=20, noise_factor=5,
+                 add_builtin_entities_examples=True, unknown_word_prob=0,
                  unknown_words_replacement_string=None):
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
+        self.add_builtin_entities_examples = add_builtin_entities_examples
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
@@ -115,6 +120,8 @@ class IntentClassifierDataAugmentationConfig(Config):
         return {
             "min_utterances": self.min_utterances,
             "noise_factor": self.noise_factor,
+            "add_builtin_entities_examples":
+                self.add_builtin_entities_examples,
             "unknown_word_prob": self.unknown_word_prob,
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string,

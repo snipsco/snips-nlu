@@ -119,16 +119,22 @@ class SlotFillerDataAugmentationConfig(Config):
         capitalization_ratio (float, optional): If an entity has one or more
             capitalized values, the data augmentation will randomly capitalize
             its values with a ratio of *capitalization_ratio* (default=.2)
+        add_builtin_entities_examples (bool, optional): If True, some builtin
+            entity examples will be automatically added to the training data.
+            Default is True.
     """
 
-    def __init__(self, min_utterances=200, capitalization_ratio=.2):
+    def __init__(self, min_utterances=200, capitalization_ratio=.2,
+                 add_builtin_entities_examples=True):
         self.min_utterances = min_utterances
         self.capitalization_ratio = capitalization_ratio
+        self.add_builtin_entities_examples = add_builtin_entities_examples
 
     def to_dict(self):
         return {
             "min_utterances": self.min_utterances,
-            "capitalization_ratio": self.capitalization_ratio
+            "capitalization_ratio": self.capitalization_ratio,
+            "add_builtin_entities_examples": self.add_builtin_entities_examples
         }
 
     @classmethod

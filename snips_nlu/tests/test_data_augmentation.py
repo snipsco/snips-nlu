@@ -2,9 +2,9 @@ from __future__ import unicode_literals
 
 from builtins import next
 from builtins import range
+from mock import patch
 
 import numpy as np
-from mock import patch
 
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
@@ -171,21 +171,21 @@ class TestDataAugmentation(SnipsTest):
                     "text": "this is ",
                 },
                 {
-                    "text": "entity one",
+                    "text": "entity one ",
                     "entity": "entity1",
                     "slot_name": "slot1"
                 },
                 {
-                    "text": " right "
+                    "text": "right "
                 },
                 {
-                    "text": "entity two",
+                    "text": "entity two ",
                     "entity": "entity2",
                     "slot_name": "slot1"
                 }
             ]
         }
-        self.assertEqual(utterance, expected_utterance)
+        self.assertEqual(expected_utterance, utterance)
 
     def test_capitalize(self):
         # Given

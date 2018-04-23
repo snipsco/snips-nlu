@@ -2,17 +2,18 @@ from __future__ import unicode_literals, print_function
 
 import io
 import json
+from os.path import dirname, abspath, join
 
 from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu.default_configs import CONFIG_EN
 
-with io.open("sample_dataset.json") as f:
+SAMPLE_DATASET_PATH = join(dirname(abspath(__file__)), "sample_dataset.json")
+
+with io.open(SAMPLE_DATASET_PATH) as f:
     sample_dataset = json.load(f)
 
-with io.open("configs/config_en.json") as f:
-    config = json.load(f)
-
-load_resources(sample_dataset["language"])
-nlu_engine = SnipsNLUEngine(config=config)
+load_resources("en")
+nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
 nlu_engine.fit(sample_dataset)
 
 text = "What will be the weather in San Francisco next week?"

@@ -9,6 +9,7 @@ from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     ENTITIES, CAPITALIZE, LANGUAGE, RES_SLOTS, RES_ENTITY, RES_INTENT)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
@@ -44,8 +45,6 @@ class SnipsNLUEngine(ProcessingUnit):
     def __init__(self, config=None):
         """The NLU engine can be configured by passing a
         :class:`.NLUEngineConfig`"""
-        if config is None:
-            config = self.config_type()
         super(SnipsNLUEngine, self).__init__(config)
         self.intent_parsers = []
         """list of :class:`.IntentParser`"""
@@ -69,6 +68,14 @@ class SnipsNLUEngine(ProcessingUnit):
         """
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
+
+        if self.config is None:
+            language = self._dataset_metadata["language_code"]
+            if language in DEFAULT_CONFIGS:
+                self.config = self.config_type.from_dict(
+                    DEFAULT_CONFIGS[language])
+            else:
+                self.config = self.config_type()
 
         parsers = []
         for parser_config in self.config.intent_parsers_configs:
@@ -133,11 +140,14 @@ class SnipsNLUEngine(ProcessingUnit):
     def to_dict(self):
         """Returns a json-serializable dict"""
         intent_parsers = [parser.to_dict() for parser in self.intent_parsers]
+        config = None
+        if self.config is not None:
+            config = self.config.to_dict()
         return {
             "unit_name": self.unit_name,
             "dataset_metadata": self._dataset_metadata,
             "intent_parsers": intent_parsers,
-            "config": self.config.to_dict(),
+            "config": config,
             "model_version": __model_version__,
             "training_package_version": __version__
         }

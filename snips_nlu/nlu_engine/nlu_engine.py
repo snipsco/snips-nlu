@@ -71,11 +71,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
         if self.config is None:
             language = self._dataset_metadata["language_code"]
-            if language in DEFAULT_CONFIGS:
-                self.config = self.config_type.from_dict(
-                    DEFAULT_CONFIGS[language])
-            else:
-                self.config = self.config_type()
+            self.config = self.config_type.from_dict(DEFAULT_CONFIGS[language])
 
         parsers = []
         for parser_config in self.config.intent_parsers_configs:

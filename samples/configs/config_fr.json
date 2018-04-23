@@ -126,7 +126,8 @@
         "tagging_scheme": 1,
         "data_augmentation_config": {
           "min_utterances": 200,
-          "capitalization_ratio": 0.2
+          "capitalization_ratio": 0.2,
+          "add_builtin_entities_examples": true
         },
         "random_seed": null
       },
@@ -135,6 +136,7 @@
         "data_augmentation_config": {
           "min_utterances": 20,
           "noise_factor": 5,
+          "add_builtin_entities_examples": true,
           "unknown_word_prob": 0.0,
           "unknown_words_replacement_string": null
         },

@@ -14,7 +14,7 @@ CONFIG = {
                     {
                         "args": {
                             "common_words_gazetteer_name": None,
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "n": 1
                         },
                         "factory_name": "ngram",
@@ -29,13 +29,15 @@ CONFIG = {
                     {
                         "args": {
                             "common_words_gazetteer_name": None,
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "n": 2
                         },
                         "factory_name": "ngram",
                         "offsets": [
                             -2,
-                            1
+                            0,
+                            1,
+                            2
                         ]
                     },
                     {
@@ -44,7 +46,8 @@ CONFIG = {
                         },
                         "factory_name": "prefix",
                         "offsets": [
-                            0
+                            0,
+                            1
                         ]
                     },
                     {
@@ -53,7 +56,8 @@ CONFIG = {
                         },
                         "factory_name": "prefix",
                         "offsets": [
-                            0
+                            0,
+                            1
                         ]
                     },
                     {
@@ -62,7 +66,8 @@ CONFIG = {
                         },
                         "factory_name": "suffix",
                         "offsets": [
-                            0
+                            0,
+                            1
                         ]
                     },
                     {
@@ -71,7 +76,8 @@ CONFIG = {
                         },
                         "factory_name": "suffix",
                         "offsets": [
-                            0
+                            0,
+                            1
                         ]
                     },
                     {
@@ -131,14 +137,15 @@ CONFIG = {
                     },
                     {
                         "args": {
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "tagging_scheme_code": 2
                         },
                         "factory_name": "entity_match",
                         "offsets": [
-                            -2,
                             -1,
-                            0
+                            0,
+                            1,
+                            2
                         ],
                         "drop_out": 0.5
                     },
@@ -148,9 +155,24 @@ CONFIG = {
                         },
                         "factory_name": "builtin_entity_match",
                         "offsets": [
+                            -1,
+                            0,
+                            1,
+                            2
+                        ]
+                    },
+                    {
+                        "args": {
+                            "cluster_name": "w2v_clusters",
+                            "use_stemming": False
+                        },
+                        "factory_name": "word_cluster",
+                        "offsets": [
                             -2,
                             -1,
-                            0
+                            0,
+                            1,
+                            2
                         ]
                     }
                 ],

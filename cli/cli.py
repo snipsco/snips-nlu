@@ -11,7 +11,7 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers.data import JsonLexer
 
-from snips_nlu import SnipsNLUEngine, NLUEngineConfig, load_resources
+from snips_nlu import SnipsNLUEngine, load_resources
 
 JSON_LEXER = JsonLexer()
 TERMINAL_FORMATTER = TerminalFormatter(bg="dark")
@@ -34,12 +34,11 @@ def main_train_engine():
     with io.open(dataset_path, "r", encoding="utf8") as f:
         dataset = json.load(f)
 
+    config = None
     if args.get("config_path") is not None:
         config_path = args.pop("config_path")
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)
-    else:
-        config = NLUEngineConfig()
 
     load_resources(dataset["language"])
     engine = SnipsNLUEngine(config).fit(dataset)

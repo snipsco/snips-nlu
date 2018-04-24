@@ -250,8 +250,11 @@ def _get_queries_with_unique_context(intent_queries, language):
             if ENTITY not in chunk:
                 context += chunk[TEXT]
             else:
-                context += _get_builtin_entity_name(chunk[ENTITY], language)
+                context += _get_entity_name_placeholder(chunk[ENTITY],
+                                                        language)
+        context = context.strip()
         if context not in contexts:
+            contexts.add(context)
             queries.append(query)
     return queries
 
@@ -273,7 +276,7 @@ def _get_joined_entity_utterances(dataset, language):
     joined_entity_utterances = dict()
     for entity_name, entity in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
-            utterances = [_get_builtin_entity_name(entity_name, language)]
+            utterances = [_get_entity_name_placeholder(entity_name, language)]
         else:
             utterances = list(entity[UTTERANCES])
         utterances_patterns = map(regex_escape, utterances)
@@ -303,7 +306,7 @@ def _deduplicate_overlapping_slots(slots, language):
     return deduplicated_slots
 
 
-def _get_builtin_entity_name(entity_label, language):
+def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(
         tokenize_light(entity_label, language)).upper()
 
@@ -336,8 +339,8 @@ def _replace_builtin_entities(text, language):
         processed_text += text[current_ix:ent_start]
 
         entity_length = ent_end - ent_start
-        entity_place_holder = _get_builtin_entity_name(ent[ENTITY_KIND],
-                                                       language)
+        entity_place_holder = _get_entity_name_placeholder(ent[ENTITY_KIND],
+                                                           language)
 
         offset += len(entity_place_holder) - entity_length
 

@@ -26,7 +26,8 @@ required = [
     "semantic_version==2.6.0",
     "snips_nlu_utils==0.6.1",
     "snips_nlu_ontology==0.54.3",
-    "num2words==0.5.6"
+    "num2words==0.5.6",
+    "pygments==2.2.0",
 ]
 
 extras_require = {

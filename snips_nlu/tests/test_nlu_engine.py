@@ -485,6 +485,41 @@ class TestSnipsNLUEngine(SnipsTest):
         # pylint:enable=protected-access
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
+    def test_should_be_serializable_when_empty(self):
+        # Given
+        nlu_engine = SnipsNLUEngine()
+
+        # When
+        engine_dict = nlu_engine.to_dict()
+
+        # Then
+        expected_dict = {
+            "unit_name": "nlu_engine",
+            "dataset_metadata": None,
+            "config": None,
+            "intent_parsers": [],
+            "model_version": snips_nlu.version.__model_version__,
+            "training_package_version": snips_nlu.__version__
+        }
+        self.assertDictEqual(expected_dict, engine_dict)
+
+    def test_should_be_deserializable_when_empty(self):
+        # Given
+        engine_dict = {
+            "unit_name": "nlu_engine",
+            "dataset_metadata": None,
+            "config": None,
+            "intent_parsers": [],
+            "model_version": snips_nlu.version.__model_version__,
+            "training_package_version": snips_nlu.__version__
+        }
+
+        # When
+        engine = SnipsNLUEngine.from_dict(engine_dict)
+
+        # Then
+        self.assertFalse(engine.fitted)
+
     def test_should_parse_after_deserialization(self):
         # Given
         dataset = BEVERAGE_DATASET

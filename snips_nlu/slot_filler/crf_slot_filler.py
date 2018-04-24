@@ -53,7 +53,7 @@ class CRFSlotFiller(SlotFiller):
         super(CRFSlotFiller, self).__init__(config)
         self.crf_model = None
         self.features_factories = [get_feature_factory(conf) for conf in
-                                   config.feature_factory_configs]
+                                   self.config.feature_factory_configs]
         self._features = None
         self.language = None
         self.intent = None

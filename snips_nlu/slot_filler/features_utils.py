@@ -18,19 +18,6 @@ def get_all_ngrams(tokens):
     return _NGRAMS_CACHE[key]
 
 
-def get_shape(string):
-    if string.islower():
-        shape = "xxx"
-    elif string.isupper():
-        shape = "XXX"
-    # Hack for Rust parallelism (we could use istitle but it does not exists)
-    elif len(string) > 1 and string[0].isupper() and string[1:].islower():
-        shape = "Xxx"
-    else:
-        shape = "xX"
-    return shape
-
-
 def get_word_chunk(word, chunk_size, chunk_start, reverse=False):
     if chunk_size < 1:
         raise ValueError("chunk size should be >= 1")

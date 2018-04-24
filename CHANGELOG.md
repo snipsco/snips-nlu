@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.13.3] - 2018-04-24
+### Added
+- Add config parameter to augment data with builtin entity examples
+
+### Changed
+- Bump snips-nlu-ontology to 0.54.3
+- Use language specific configs by default
+- Add right space to chunks in data augmentation
+- Update JA config
+
+### Fixed
+- Fix inconsistency bug with shape ngram CRF feature
+- Fix bug when initializing `CRFSlotFiller` with config dict
+- Fix bug with gazetteer in ngram feature
+- Fix bug with length CRF feature
+
 ## [0.13.1] - 2018-04-10
 ### Changed
 - Bump ontology version from 0.54.1 to 0.54.2
@@ -28,5 +44,6 @@ All notable changes to this project will be documented in this file.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.13.3]: https://github.com/snipsco/snips-nlu/compare/0.13.2...0.13.3
 [0.13.1]: https://github.com/snipsco/snips-nlu/compare/0.13.0...0.13.1
 [0.13.0]: https://github.com/snipsco/snips-nlu/compare/0.12.1...0.13.0

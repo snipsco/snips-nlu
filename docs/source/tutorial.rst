@@ -3,7 +3,7 @@
 Tutorial
 ========
 
-In this section, we will build an NLU assistant for home automation tasks that
+In this section, we will build an NLU assistant for home automation tasks. It
 will be able to understand queries about lights and thermostat. More precisely
 our assistant will contain three :ref:`intents <intent>`:
 
@@ -34,14 +34,16 @@ respecting the format used in the sample or alternatively you can use the
 dataset creation CLI that is contained in the lib.
 
 We will go for the second option here and start by creating three files
-corresponding to our three intents and one entity file corresponding to the ``room`` entity:
+corresponding to our three intents and one entity file corresponding to the
+``room`` entity:
 
 - ``turnLightOn.txt``
 - ``turnLightOff.txt``
 - ``setTemperature.txt``
 - ``room.txt``
 
-The name of each file is important as the tool will map it to the intent or entity name.
+The name of each file is important as the tool will map it to the intent or
+entity name.
 
 Let's add training examples for the first intent by inserting the following
 lines in the first file, ``turnLightOn.txt``:
@@ -79,8 +81,8 @@ And now the last file, ``setTemperature.txt``:
 
 As you can see here, we used a new slot, ``[room_temperature:snips/temperature]``,
 which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
-type that we used here is a :ref:`builtin entity <builtin_entity_resolution>`
-that would help us resolve properly the temperature values.
+type used here is a :ref:`builtin entity <builtin_entity_resolution>`. It
+allows to resolve properly the temperature values.
 
 Let's move to the ``room.txt`` entity file:
 
@@ -90,9 +92,13 @@ Let's move to the ``room.txt`` entity file:
     living room,main room
     garden,yard,"backyard,"
 
-The entity file is a comma (``,``) separated file. Each line correspond to a entity value followed by its potential :ref:`synonyms <synonyms>`.
+The entity file is a comma (``,``) separated file. Each line corresponds to an
+entity value followed by its potential :ref:`synonyms <synonyms>`.
 
-If a value or a synonym has a comma in it, the value must be put between double quotes ``"``, if the value contains double quotes, it must be doubled to be escaped like this:  ``"A value with a "","" in it"`` which correspond to the actual value ``A value with a "," in it``
+If a value or a synonym contains a comma, the value must be put between
+double quotes ``"``. If the value contains double quotes, it must be doubled
+to be escaped like this:  ``"A value with a "","" in it"`` which corresponds
+to the actual value ``A value with a "," in it``.
 
 We are now ready to generate our dataset:
 
@@ -105,8 +111,7 @@ We are now ready to generate our dataset:
     We used ``en`` as the language here but other languages are supported,
     please check the :ref:`languages` section to know more.
 
-Let's have a look at what has been generated and more precisely the
-``"entities"`` part of the json:
+Now, the ``"entities"`` part of the generated json looks like that:
 
 .. code-block:: json
 
@@ -145,9 +150,9 @@ By default, the ``room`` entity is set to be
 :ref:`automatically extensible <auto_extensible>` but in our case we don't want
 to handle any entity value that would not be part of the dataset, so we set
 this attribute to ``false``.
-Moreover we are going to add some rooms that were not in the previous sentences
-and that we want our assistant to cover. We also add some
-:ref:`synonyms <synonyms>`, so at the end this is what we have:
+Moreover, we are going to add some rooms that were not in the previous sentences
+and that we want our assistant to cover. Additionally, we add some
+:ref:`synonyms <synonyms>`. Finally, the entities part looks like that:
 
 .. code-block:: json
 
@@ -163,7 +168,7 @@ and that we want our assistant to cover. We also add some
             },
             {
               "value": "living room",
-              "synonyms": ["main room"]
+              "synonyms": ["main room", "lounge"]
             },
             {
               "value": "bathroom",
@@ -206,8 +211,8 @@ a customized configuration. Typically, different languages may require
 different sets of features. You can check the :class:`.NLUEngineConfig` to get
 more details about what can be configured.
 
-We created a list of `sample configurations`_, one per supported language, that
-have some language specific enhancements. In this tutorial we will use the
+We have built a list of `default configurations`_, one per supported language,
+that have some language specific enhancements. In this tutorial we will use the
 `english one`_.
 
 Before training the engine, note that you need to load language specific
@@ -219,13 +224,11 @@ resources used to improve performance with the :func:`.load_resources` function.
     import json
 
     from snips_nlu import SnipsNLUEngine, load_resources
+    from snips_nlu.default_configs import CONFIG_EN
 
     load_resources(u"en")
 
-    with io.open("config_en.json") as f:
-        config = json.load(f)
-
-    engine = SnipsNLUEngine(config=config)
+    engine = SnipsNLUEngine(config=CONFIG_EN)
 
 At this point, we can try to parse something:
 
@@ -258,7 +261,7 @@ We are now ready to parse:
 
 .. code-block:: python
 
-    parsing = engine.parse(u"Hey, lights on in the entrance !")
+    parsing = engine.parse(u"Hey, lights on in the lounge !")
     print(json.dumps(parsing, indent=2))
 
 You should get the following output (with a slightly different ``probability``
@@ -322,7 +325,6 @@ And load it:
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
-
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
-.. _sample configurations: https://github.com/snipsco/snips-nlu/blob/master/samples/configs
-.. _english one: https://github.com/snipsco/snips-nlu/blob/master/samples/configs/config_en.json
+.. _default configurations: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs
+.. _english one: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs/config_en.py

@@ -2,8 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 from future.utils import iteritems
-from snips_nlu_metrics import (compute_cross_val_metrics,
-                               compute_cross_val_nlu_metrics)
+from snips_nlu_metrics import compute_cross_val_metrics
 
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
@@ -25,24 +24,6 @@ class IntegrationTestSnipsNLUEngine(SnipsTest):
         results = compute_cross_val_metrics(
             dataset_path,
             engine_class=TrainingEngine,
-            nb_folds=5,
-            train_size_ratio=1.0,
-            slot_matching_lambda=_slot_matching_lambda,
-            progression_handler=None)
-
-        # Then
-        self.check_metrics(results)
-
-    def test_python_rust_engine_performance(self):
-        # Given
-        from snips_nlu_rust.nlu_engine import NLUEngine as InferenceEngine
-        dataset_path = PERFORMANCE_DATASET_PATH
-
-        # When
-        results = compute_cross_val_nlu_metrics(
-            dataset_path,
-            training_engine_class=TrainingEngine,
-            inference_engine_class=InferenceEngine,
             nb_folds=5,
             train_size_ratio=1.0,
             slot_matching_lambda=_slot_matching_lambda,

@@ -1,11 +1,11 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
+from builtins import map, object, str
 
-from builtins import map, object
 from future.utils import with_metaclass, iteritems
 from snips_nlu_ontology.builtin_entities import get_supported_entities
-from snips_nlu_utils import normalize
+from snips_nlu_utils import get_shape, normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
@@ -18,7 +18,7 @@ from snips_nlu.resources import get_gazetteer, get_word_clusters, \
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
-    get_word_chunk, get_shape, get_all_ngrams, initial_string_from_tokens,
+    get_word_chunk, get_all_ngrams, initial_string_from_tokens,
     entity_filter, get_intent_custom_entities)
 
 
@@ -167,7 +167,7 @@ class LengthFactory(SingleFeatureFactory):
     name = "length"
 
     def compute_feature(self, tokens, token_index):
-        return len(tokens[token_index].value)
+        return str(len(tokens[token_index].value))
 
 
 class NgramFactory(SingleFeatureFactory):
@@ -196,9 +196,9 @@ class NgramFactory(SingleFeatureFactory):
         self.use_stemming = self.args["use_stemming"]
         self.common_words_gazetteer_name = self.args[
             "common_words_gazetteer_name"]
+        self.gazetteer = None
         self._language = None
         self.language = self.args.get("language_code")
-        self.gazetteer = None
 
     @property
     def language(self):

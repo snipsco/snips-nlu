@@ -245,7 +245,7 @@ class DifferedLoggingMessage(object):
 
 
 def json_debug_string(dict_data):
-    return json.dumps(dict_data, ensure_ascii=False, indent=2)
+    return json.dumps(dict_data, ensure_ascii=False, indent=2, sort_keys=True)
 
 
 def log_elapsed_time(logger, level, output_msg=None):

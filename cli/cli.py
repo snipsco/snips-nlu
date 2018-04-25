@@ -7,10 +7,13 @@ import os
 import sys
 
 from builtins import bytes, input
-
 from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
-from pygments.lexers.data import JsonLexerfrom snips_nlu import SnipsNLUEngine,  load_resourcesJSON_LEXER = JsonLexer()
+from pygments.lexers.data import JsonLexer
+
+from snips_nlu import (SnipsNLUEngine, load_resources)
+
+JSON_LEXER = JsonLexer()
 TERMINAL_FORMATTER = TerminalFormatter(bg="dark")
 
 

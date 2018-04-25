@@ -97,7 +97,7 @@ class SnipsNLUEngine(ProcessingUnit):
         self.intent_parsers = parsers
         return self
 
-    @log_result(logger, logging.DEBUG,"Result -> {result}")
+    @log_result(logger, logging.DEBUG, "Result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed query in {elapsed_time}")
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by calling its intent
@@ -128,7 +128,6 @@ class SnipsNLUEngine(ProcessingUnit):
 
         language = self._dataset_metadata["language_code"]
         entities = self._dataset_metadata["entities"]
-
 
         for parser in self.intent_parsers:
             res = parser.parse(text, intents)

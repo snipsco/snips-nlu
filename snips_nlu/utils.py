@@ -4,12 +4,13 @@ import errno
 import json
 import numbers
 import os
+
+from builtins import object, str
 from collections import OrderedDict, namedtuple, Mapping
 from datetime import datetime
 
 import numpy as np
-from builtins import object, str
-from typing import Dict, Any
+
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
                                  RESOURCES_PATH, END, START)

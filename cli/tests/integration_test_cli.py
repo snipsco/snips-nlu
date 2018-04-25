@@ -10,11 +10,11 @@ import tempfile
 from future.moves import sys
 from mock import patch
 
-from cli.cli import main_train_engine, main_cross_val_metrics, \
-    main_train_test_metrics
+from cli.cli import (
+    main_train_engine, main_cross_val_metrics, main_train_test_metrics)
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.tests.utils import TEST_PATH, BEVERAGE_DATASET_PATH, \
-    SnipsTest
+from snips_nlu.tests.utils import (
+    TEST_PATH, BEVERAGE_DATASET_PATH, SnipsTest)
 
 
 def mk_sys_argv(args):

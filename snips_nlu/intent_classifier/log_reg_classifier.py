@@ -2,10 +2,8 @@ from __future__ import unicode_literals
 
 import logging
 
-from builtins import str, zip, range
-
 import numpy as np
-
+from builtins import str, zip, range
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
@@ -55,14 +53,15 @@ class LogRegIntentClassifier(IntentClassifier):
         """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
-    @log_elapsed_time(
-        logging.DEBUG, "LogRegIntentClassifier in {elapsed_time}")
+    @log_elapsed_time(logger, logging.DEBUG,
+                      "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
         """Fit the intent classifier with a valid Snips dataset
 
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
+        logger.debug("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)

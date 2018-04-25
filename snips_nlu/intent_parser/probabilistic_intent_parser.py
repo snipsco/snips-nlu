@@ -69,12 +69,10 @@ class ProbabilisticIntentParser(IntentParser):
             self.intent_classifier = build_processing_unit(
                 self.config.intent_classifier_config)
         if force_retrain or not self.intent_classifier.fitted:
-            logger.debug("Fitting intent classifier...")
             self.intent_classifier.fit(dataset)
 
         if self.slot_fillers is None:
             self.slot_fillers = dict()
-        logger.debug("Fitting CRF slot filler...")
         slot_fillers_start = datetime.now()
         for intent_name in intents:
             # We need to copy the slot filler config as it may be mutated

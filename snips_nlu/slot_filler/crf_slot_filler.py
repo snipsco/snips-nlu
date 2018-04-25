@@ -31,7 +31,7 @@ from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import (
     UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap, NotTrained, DifferedLoggingMessage)
+    ranges_overlap, NotTrained, DifferedLoggingMessage, log_elapsed_time)
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +95,8 @@ class CRFSlotFiller(SlotFiller):
         return self.crf_model is not None \
                and self.crf_model.tagger_ is not None
 
+    @log_elapsed_time(logger, logging.DEBUG,
+                      "Fitted CRFSlotFiller in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent):
         """Fit the slot filler
@@ -107,6 +109,7 @@ class CRFSlotFiller(SlotFiller):
         Returns:
             :class:`CRFSlotFiller`: The same instance, trained
         """
+        logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
@@ -135,7 +138,9 @@ class CRFSlotFiller(SlotFiller):
         self.crf_model = _get_crf_model(self.config.crf_args)
         self.crf_model.fit(X, Y)
 
-        logger.debug("%s", DifferedLoggingMessage(self.log_weights))
+        logger.debug(
+            "Most relevant features for %s:\n%s", self.intent,
+            DifferedLoggingMessage(self.log_weights))
         return self
 
     # pylint:enable=arguments-differ

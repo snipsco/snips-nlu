@@ -1,29 +1,37 @@
 from __future__ import unicode_literals
 
 from builtins import object
-from builtins import str
-
 from snips_nlu_ontology import (
     get_all_builtin_entities, BuiltinEntityParser as _BuiltinEntityParser,
     get_supported_entities)
 
-from snips_nlu.utils import LimitedSizeDict
+from snips_nlu.utils import lru_cache
 
 
 class BuiltinEntityParser(object):
-    def __init__(self, language):
+    non_space_separated_languages = {"ja", "zh"}
+
+    # pylint: disable=method-hidden
+    def __init__(self, language, cache_size=1000):
         self.language = language
+        self.cache_size = cache_size
         self.parser = _BuiltinEntityParser(language)
         self.supported_entities = get_supported_entities(language)
-        self._cache = LimitedSizeDict(size_limit=1000)
+
+        self.parse = lru_cache(cache_size)(self.parse)
+
 
     def parse(self, text, scope=None):
-        text = text.lower()  # Rustling only works with lowercase
-        cache_key = (text, str(scope))
-        if cache_key not in self._cache:
-            parser_result = self.parser.parse(text, scope)
-            self._cache[cache_key] = parser_result
-        return self._cache[cache_key]
+        """Extract builtin entities from a text
+        Args:
+            text (str): text to parse
+            scope (tuple, optional): tuple of the name of the builtin entities
+             to extract
+
+        Returns:
+            list: a list of builtin entities
+        """
+        return self.parser.parse(text.lower(), scope)
 
     def supports_entity(self, entity):
         return entity in self.supported_entities

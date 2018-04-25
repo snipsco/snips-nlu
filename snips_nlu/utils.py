@@ -1,10 +1,13 @@
 from __future__ import unicode_literals
 
 import errno
+import functools
 import numbers
 import os
+
 from builtins import object
-from collections import OrderedDict, namedtuple, Mapping
+from collections import Mapping, namedtuple
+from threading import RLock
 
 import numpy as np
 
@@ -84,34 +87,6 @@ def validate_range(rng):
                          "valid")
 
 
-class LimitedSizeDict(OrderedDict):
-    def __init__(self, *args, **kwds):
-        if "size_limit" not in kwds:
-            raise ValueError("'size_limit' must be passed as a keyword "
-                             "argument")
-        self.size_limit = kwds.pop("size_limit")
-        if len(args) > 1:
-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        if len(args) == 1 and len(args[0]) + len(kwds) > self.size_limit:
-            raise ValueError("Tried to initialize LimitedSizedDict with more "
-                             "value than permitted with 'limit_size'")
-        super(LimitedSizeDict, self).__init__(*args, **kwds)
-
-    def __setitem__(self, key, value, dict_setitem=OrderedDict.__setitem__):
-        dict_setitem(self, key, value)
-        self._check_size_limit()
-
-    def _check_size_limit(self):
-        if self.size_limit is not None:
-            while len(self) > self.size_limit:
-                self.popitem(last=False)
-
-    def __eq__(self, other):
-        if self.size_limit != other.size_limit:
-            return False
-        return super(LimitedSizeDict, self).__eq__(other)
-
-
 class UnupdatableDict(dict):
     def __setitem__(self, key, value):
         if key in self:
@@ -162,8 +137,10 @@ def regex_escape(s):
 
     References:
 
-    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/lib.rs#L1685
-    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/parser.rs#L1378
+    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/
+    lib.rs#L1685
+    - https://github.com/rust-lang/regex/blob/master/regex-syntax/src/
+    parser.rs#L1378
     """
     escaped_string = ""
     for c in s:
@@ -223,3 +200,191 @@ def ranges_overlap(lhs_range, rhs_range):
     else:
         raise TypeError("Cannot check overlap on objects of type: %s and %s"
                         % (type(lhs_range), type(rhs_range)))
+
+
+_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+
+
+@functools.wraps(functools.update_wrapper)
+def update_wrapper(wrapper,
+                   wrapped,
+                   assigned=functools.WRAPPER_ASSIGNMENTS,
+                   updated=functools.WRAPPER_UPDATES):
+    """
+    Patch two bugs in functools.update_wrapper.
+    """
+    # workaround for http://bugs.python.org/issue3445
+    assigned = tuple(attr for attr in assigned if hasattr(wrapped, attr))
+    wrapper = functools.update_wrapper(wrapper, wrapped, assigned, updated)
+    # workaround for https://bugs.python.org/issue17482
+    wrapper.__wrapped__ = wrapped
+    return wrapper
+
+
+class _HashedSeq(list):
+    # pylint: disable=single-string-used-for-slots
+    __slots__ = 'hashvalue'
+
+    # pylint: disable=super-init-not-called
+    def __init__(self, tup, hash=hash):
+        self[:] = tup
+        self.hashvalue = hash(tup)
+
+    def __hash__(self):
+        return self.hashvalue
+
+# pylint: disable=dangerous-default-value
+def _make_key(args, kwds, typed,
+              kwd_mark=(object(),),
+              fasttypes=set([int, str, frozenset, type(None)]),
+              sorted=sorted, tuple=tuple, type=type, len=len):
+    'Make a cache key from optionally typed positional and keyword arguments'
+    key = tuple(tuple(a) if isinstance(a, list) else a for a in args)
+    if kwds:
+        sorted_items = sorted(kwds.items())
+        key += kwd_mark
+        for item in sorted_items:
+            if isinstance(item[1], list):
+                item = (item[0], tuple(item[1]))
+            key += item
+    if typed:
+        key += tuple(type(v) for v in args)
+        if kwds:
+            key += tuple(type(v) for k, v in sorted_items)
+    elif len(key) == 1 and type(key[0]) in fasttypes:
+        return key[0]
+    return _HashedSeq(key)
+
+
+def lru_cache(maxsize=100, typed=False):
+    """Least-recently-used cache decorator.
+
+    If *maxsize* is set to None, the LRU features are disabled and the cache
+    can grow without bound.
+
+    If *typed* is True, arguments of different types will be cached separately.
+    For example, f(3.0) and f(3) will be treated as distinct calls with
+    distinct results.
+
+    Arguments to the cached function must be hashable.
+
+    View the cache statistics named tuple (hits, misses, maxsize, currsize)
+     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
+    Access the underlying function with f.__wrapped__.
+
+    See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
+
+    """
+
+    # Users should only access the lru_cache through its public API:
+    #       cache_info, cache_clear, and f.__wrapped__
+    # The internals of the lru_cache are encapsulated for thread safety and
+    # to allow the implementation to change (including a possible C version).
+
+    def decorating_function(user_function):
+
+        cache = dict()
+        stats = [0, 0]  # make statistics updateable non-locally
+        hits, misses = 0, 1  # names for the stats fields
+        make_key = _make_key
+        cache_get = cache.get  # bound method to lookup key or return None
+        len_ = len  # localize the global len() function
+        lock = RLock()  # because linkedlist updates aren't threadsafe
+        root = []  # root of the circular doubly linked list
+        root[:] = [root, root, None, None]  # initialize by pointing to self
+        nonlocal_root = [root]  # make updateable non-locally
+        prev_, next_, key_, result_ = 0, 1, 2, 3  # names for the link fields
+
+        if maxsize == 0:
+
+            def wrapper(*args, **kwds):
+                # no caching, just do a statistics update after a successful
+                # call
+                result = user_function(*args, **kwds)
+                stats[misses] += 1
+                return result
+
+        elif maxsize is None:
+
+            def wrapper(*args, **kwds):
+                # simple caching without ordering or size limit
+                key = make_key(args, kwds, typed)
+                # root used here as a unique not-found sentinel
+                result = cache_get(key, root)
+                if result is not root:
+                    stats[hits] += 1
+                    return result
+                result = user_function(*args, **kwds)
+                cache[key] = result
+                stats[misses] += 1
+                return result
+
+        else:
+
+            def wrapper(*args, **kwds):
+                # size limited caching that tracks accesses by recency
+                key = make_key(args, kwds, typed)
+                with lock:
+                    link = cache_get(key)
+                    if link is not None:
+                        # record recent use of the key by moving it to the
+                        #  front of the list
+                        root, = nonlocal_root
+                        link_prev, link_next, key, result = link
+                        link_prev[next_] = link_next
+                        link_next[prev_] = link_prev
+                        last = root[prev_]
+                        last[next_] = root[prev_] = link
+                        link[prev_] = last
+                        link[next_] = root
+                        stats[hits] += 1
+                        return result
+                result = user_function(*args, **kwds)
+                with lock:
+                    root, = nonlocal_root
+                    if key in cache:
+                        # getting here means that this same key was added to
+                        # the cache while the lock was released.  since the
+                        #  link update is already done, we need only return the
+                        # computed result and update the count of misses.
+                        pass
+                    elif len_(cache) >= maxsize:
+                        # use the old root to store the new key and result
+                        oldroot = root
+                        oldroot[key_] = key
+                        oldroot[result_] = result
+                        # empty the oldest link and make it the new root
+                        root = nonlocal_root[0] = oldroot[next_]
+                        oldkey = root[key_]
+                        root[key_] = root[result_] = None
+                        # now update the cache dictionary for the new links
+                        del cache[oldkey]
+                        cache[key] = oldroot
+                    else:
+                        # put result in a new link at the front of the list
+                        last = root[prev_]
+                        link = [last, root, key, result]
+                        last[next_] = root[prev_] = cache[key] = link
+                    stats[misses] += 1
+                return result
+
+        def cache_info():
+            """Report cache statistics"""
+            with lock:
+                return _CacheInfo(stats[hits], stats[misses], maxsize,
+                                  len(cache))
+
+        def cache_clear():
+            """Clear the cache and cache statistics"""
+            with lock:
+                cache.clear()
+                root = nonlocal_root[0]
+                root[:] = [root, root, None, None]
+                stats[:] = [0, 0]
+
+        wrapper.__wrapped__ = user_function
+        wrapper.cache_info = cache_info
+        wrapper.cache_clear = cache_clear
+        return update_wrapper(wrapper, user_function)
+
+    return decorating_function

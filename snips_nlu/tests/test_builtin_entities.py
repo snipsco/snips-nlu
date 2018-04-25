@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 from snips_nlu_ontology import get_all_languages
@@ -48,9 +49,21 @@ class TestBuiltInEntities(SnipsTest):
         text = "meet me at 10 p.m."
 
         # When
-        scope = ["snips/number"]
+        scope = ("snips/number",)
         parse = get_builtin_entities(text, "en", scope=scope)
 
         # Then
         self.assertEqual(len(parse), 1)
         self.assertEqual(parse[0][ENTITY_KIND], "snips/number")
+
+    def test_builtin_entity_cache(self):
+        # Given
+        language = "en"
+        cache_size = 48
+
+        # When
+        parser = BuiltinEntityParser(language, cache_size=cache_size)
+
+        # Then
+        self.assertTrue(hasattr(parser.parse, "cache_info"))
+        self.assertEqual(cache_size, parser.parse.cache_info().maxsize)

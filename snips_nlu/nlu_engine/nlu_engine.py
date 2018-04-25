@@ -128,7 +128,7 @@ class SnipsNLUEngine(ProcessingUnit):
         language = self._dataset_metadata["language_code"]
         entities = self._dataset_metadata["entities"]
 
-        result = None
+
         for parser in self.intent_parsers:
             res = parser.parse(text, intents)
             if is_empty(res):
@@ -138,12 +138,9 @@ class SnipsNLUEngine(ProcessingUnit):
                      if is_builtin_entity(s[RES_ENTITY])]
             resolved_slots = resolve_slots(text, slots, entities, language,
                                            scope)
-
-            result = parsing_result(text, intent=res[RES_INTENT],
-                                    slots=resolved_slots)
-            break
-        result = result or empty_result(text)
-        return result
+            return parsing_result(text, intent=res[RES_INTENT],
+                                  slots=resolved_slots)
+        return empty_result(text)
 
     def to_dict(self):
         """Returns a json-serializable dict"""

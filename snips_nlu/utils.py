@@ -238,7 +238,7 @@ def json_debug_string(dict_data):
 
 def log_result(logger, level, output_msg=None):
     if output_msg is None:
-        output_msg = "Computed  result in {elapsed_time}:\n{result}"
+        output_msg = "Computed result in {elapsed_time}:\n{result}"
 
     def get_wrapper(fn):
         def wrapped(*args, **kwargs):

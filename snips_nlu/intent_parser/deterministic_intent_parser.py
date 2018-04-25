@@ -126,8 +126,6 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = _replace_builtin_entities(
             text, self.language)
 
-        found_result = False
-        result = None
         for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
                 continue

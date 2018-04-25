@@ -157,13 +157,8 @@ class DeterministicIntentParser(IntentParser):
                     slots, self.language)
                 parsed_slots = sorted(parsed_slots,
                                       key=lambda s: s[RES_MATCH_RANGE][START])
-                result = parsing_result(text, parsed_intent, parsed_slots)
-                found_result = True
-                break
-            if found_result:
-                break
-        result = result or empty_result(text)
-        return result
+                return parsing_result(text, parsed_intent, parsed_slots)
+        return empty_result(text)
 
     def _is_trainable(self, intent, dataset):
         if len(intent[UTTERANCES]) >= self.config.max_queries:

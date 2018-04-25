@@ -4,12 +4,12 @@ import errno
 import json
 import numbers
 import os
-
-from builtins import object, str
 from collections import OrderedDict, namedtuple, Mapping
 from datetime import datetime
 
 import numpy as np
+from builtins import object, str
+from typing import Dict, Any
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
                                  RESOURCES_PATH, END, START)
@@ -230,6 +230,17 @@ def ranges_overlap(lhs_range, rhs_range):
 
 def elapsed_since(time):
     return datetime.now() - time
+
+
+class DifferedLoggingMessage(object):
+
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return str(self.fn(*self.args, **self.kwargs))
 
 
 def json_debug_string(dict_data):

@@ -31,7 +31,7 @@ from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import (
     UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap, NotTrained)
+    ranges_overlap, NotTrained, DifferedLoggingMessage)
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ class CRFSlotFiller(SlotFiller):
         self.crf_model = _get_crf_model(self.config.crf_args)
         self.crf_model.fit(X, Y)
 
-        logger.debug(self.log_weights())
+        logger.debug("%s", DifferedLoggingMessage(self.log_weights))
         return self
 
     # pylint:enable=arguments-differ

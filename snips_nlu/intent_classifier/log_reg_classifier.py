@@ -17,7 +17,8 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     get_regularization_factor, build_training_data)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import check_random_state, NotTrained
+from snips_nlu.utils import check_random_state, NotTrained, \
+    DifferedLoggingMessage
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class LogRegIntentClassifier(IntentClassifier):
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)
         self.classifier.fit(X, classes)
-        logger.debug(self.log_best_features())
+        logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self
 
     def get_intent(self, text, intents_filter=None):

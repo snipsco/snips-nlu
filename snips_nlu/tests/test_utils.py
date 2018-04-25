@@ -4,6 +4,7 @@ import logging
 
 from future.builtins import str, object
 from future.utils import iteritems
+from mock import MagicMock
 
 from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.utils import (
@@ -84,6 +85,9 @@ class TestUtils(SnipsTest):
         def fn(a, b, c):
             return a + b + c
 
+        mocked_fn = MagicMock()
+        mocked_fn.side_effect = fn
+
         class Greeter(object):
             def greet(self):
                 return "Yo!"
@@ -102,4 +106,5 @@ class TestUtils(SnipsTest):
             for l in levels:
 
                 logger.log(l, "Level: %s -> %s", str(l),
-                           DifferedLoggingMessage(fn, _a, _b, c=_c))
+                           DifferedLoggingMessage(mocked_fn, _a, _b, c=_c))
+        self.assertEqual(2, mocked_fn.call_count)

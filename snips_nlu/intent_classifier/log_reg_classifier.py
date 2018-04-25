@@ -18,7 +18,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state, NotTrained, \
-    DifferedLoggingMessage
+    DifferedLoggingMessage, log_elapsed_time
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,8 @@ class LogRegIntentClassifier(IntentClassifier):
         """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
+    @log_elapsed_time(
+        logging.DEBUG, "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
         """Fit the intent classifier with a valid Snips dataset
 

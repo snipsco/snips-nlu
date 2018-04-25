@@ -70,10 +70,7 @@ class ProbabilisticIntentParser(IntentParser):
                 self.config.intent_classifier_config)
         if force_retrain or not self.intent_classifier.fitted:
             logger.debug("Fitting intent classifier...")
-            intent_classifier_start = datetime.now()
             self.intent_classifier.fit(dataset)
-            logger.debug("Fitted intent classifier in %s",
-                         elapsed_since(intent_classifier_start))
 
         if self.slot_fillers is None:
             self.slot_fillers = dict()
@@ -122,14 +119,12 @@ class ProbabilisticIntentParser(IntentParser):
             intents = [intents]
 
         intent_result = self.intent_classifier.get_intent(text, intents)
-
         if intent_result is None:
-            result = empty_result(text)
-        else:
-            intent_name = intent_result[RES_INTENT_NAME]
-            slots = self.slot_fillers[intent_name].get_slots(text)
-            result = parsing_result(text, intent_result, slots)
-        return result
+            return empty_result(text)
+
+        intent_name = intent_result[RES_INTENT_NAME]
+        slots = self.slot_fillers[intent_name].get_slots(text)
+        return parsing_result(text, intent_result, slots)
 
     def to_dict(self):
         """Returns a json-serializable dict"""

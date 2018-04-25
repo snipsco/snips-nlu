@@ -19,8 +19,8 @@ from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import regex_escape, ranges_overlap, NotTrained, \
-    log_result
+from snips_nlu.utils import (
+    regex_escape, ranges_overlap, NotTrained, log_result, log_elapsed_time)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -72,8 +72,8 @@ class DeterministicIntentParser(IntentParser):
         """Whether or not the intent parser has already been trained"""
         return self.regexes_per_intent is not None
 
-    @log_result(logger, logging.INFO,
-                "Fitted deterministic parser in {elapsed_time}")
+    @log_elapsed_time(
+        logger, logging.INFO, "Fitted deterministic parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
         """Fit the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
@@ -96,10 +96,9 @@ class DeterministicIntentParser(IntentParser):
             self.regexes_per_intent[intent_name] = regexes
         return self
 
-    @log_result(logger,
-                logging.DEBUG,
-                "DeterministicIntentParser parsed in {elapsed_time}."
-                "\nResult -> {result}")
+    @log_result(
+        logger, logging.DEBUG, "DeterministicIntentParser result -> {result}")
+    @log_elapsed_time(logger, logging.DEBUG, "Parsed in {elapsed_time}.")
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text*
 

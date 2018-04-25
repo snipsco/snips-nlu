@@ -14,7 +14,8 @@ from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
-from snips_nlu.utils import NotTrained, elapsed_since, log_result
+from snips_nlu.utils import (
+    NotTrained, elapsed_since, log_result, log_elapsed_time)
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,8 @@ class ProbabilisticIntentParser(IntentParser):
                and all(slot_filler is not None and slot_filler.fitted
                        for slot_filler in itervalues(self.slot_fillers))
 
-    @log_result(logger, logging.INFO,
-                "Fitted probabilistic intent parser in {elapsed_time}")
+    @log_elapsed_time(logger, logging.INFO,
+                      "Fitted probabilistic intent parser in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, force_retrain=True):
         """Fit the slot filler
@@ -92,11 +93,10 @@ class ProbabilisticIntentParser(IntentParser):
 
     # pylint:enable=arguments-differ
 
-    @log_result(
-        logger,
-        logging.DEBUG,
-        "ProbabilisticIntentParser parsed in {elapsed_time}."
-        "\nResult -> {result}")
+    @log_result(logger, logging.DEBUG,
+                "ProbabilisticIntentParser result -> {result}")
+    @log_elapsed_time(logger, logging.DEBUG,
+                      "ProbabilisticIntentParser parsed in {elapsed_time}")
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by first classifying
         the intent and then using the correspond slot filler to extract slots

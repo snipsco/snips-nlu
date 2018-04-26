@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
-from builtins import str
+import logging
 from copy import deepcopy
 
+from builtins import str
 from future.utils import iteritems
 
 from snips_nlu.builtin_entities import is_builtin_entity
@@ -15,8 +16,11 @@ from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import get_slot_name_mappings, NotTrained
+from snips_nlu.utils import (
+    get_slot_name_mappings, NotTrained, log_result, log_elapsed_time)
 from snips_nlu.version import __model_version__, __version__
+
+logger = logging.getLogger(__name__)
 
 
 class SnipsNLUEngine(ProcessingUnit):
@@ -55,6 +59,8 @@ class SnipsNLUEngine(ProcessingUnit):
         """Whether or not the nlu engine has already been fitted"""
         return self._dataset_metadata is not None
 
+    @log_elapsed_time(
+        logger, logging.INFO, "Fitted NLU engine in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
         """Fit the NLU engine
 
@@ -66,6 +72,7 @@ class SnipsNLUEngine(ProcessingUnit):
         Returns:
             The same object, trained.
         """
+        logger.info("Fitting NLU engine...")
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
 
@@ -90,6 +97,8 @@ class SnipsNLUEngine(ProcessingUnit):
         self.intent_parsers = parsers
         return self
 
+    @log_result(logger, logging.DEBUG, "Result -> {result}")
+    @log_elapsed_time(logger, logging.DEBUG, "Parsed query in {elapsed_time}")
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by calling its intent
         parsers successively
@@ -107,7 +116,7 @@ class SnipsNLUEngine(ProcessingUnit):
             NotTrained: When the nlu engine is not fitted
             TypeError: When input type is not unicode
         """
-
+        logging.info("NLU engine parsing: '%s'...", text)
         if not isinstance(text, str):
             raise TypeError("Expected unicode but received: %s" % type(text))
 

@@ -1,19 +1,20 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+from builtins import object, range
 from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
-from future.builtins import object, range
+
 from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
-from snips_nlu.constants import ENTITIES, UTTERANCES, RES_MATCH_RANGE, START, \
-    END, ENTITY_KIND
+from snips_nlu.constants import (ENTITIES, UTTERANCES, RES_MATCH_RANGE, START,
+                                 END, ENTITY_KIND)
 from snips_nlu.constants import NGRAM
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
@@ -64,10 +65,8 @@ class Featurizer(object):
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             preprocessed_utterances)
         # pylint: enable=C0103
-        list_index_words = {
-            self.tfidf_vectorizer.vocabulary_[word]: word
-            for word in self.tfidf_vectorizer.vocabulary_
-        }
+        features_idx = {self.tfidf_vectorizer.vocabulary_[word]: word for word
+                        in self.tfidf_vectorizer.vocabulary_}
 
         stop_words = get_stop_words(self.language)
 
@@ -81,7 +80,7 @@ class Featurizer(object):
         feature_names = {}
         for utterance_index in self.best_features:
             feature_names[utterance_index] = {
-                "word": list_index_words[utterance_index],
+                "word": features_idx[utterance_index],
                 "pval": pval[utterance_index]}
 
         for feat in feature_names:

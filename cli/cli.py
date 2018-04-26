@@ -5,13 +5,13 @@ import io
 import json
 import os
 import sys
-from builtins import bytes, input
 
+from builtins import bytes, input
 from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers.data import JsonLexer
 
-from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu import (SnipsNLUEngine, load_resources)
 
 JSON_LEXER = JsonLexer()
 TERMINAL_FORMATTER = TerminalFormatter(bg="dark")
@@ -145,7 +145,7 @@ def parse_train_test_args(args):
     parser.add_argument("test_dataset_path", type=str)
     parser.add_argument("output_path", type=str)
     parser.add_argument(
-        "-esm", "--exclude-slot-metrics", action="store_true",
+        "-s", "--exclude-slot-metrics", action="store_true",
         help="Exclude slot metrics and slot errors in the output")
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")

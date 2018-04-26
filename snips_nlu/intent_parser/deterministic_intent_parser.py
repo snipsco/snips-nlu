@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import logging
 import re
 from copy import deepcopy
 
@@ -18,10 +19,13 @@ from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
 from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import regex_escape, ranges_overlap, NotTrained
+from snips_nlu.utils import (
+    regex_escape, ranges_overlap, NotTrained, log_result, log_elapsed_time)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
+
+logger = logging.getLogger(__name__)
 
 
 class DeterministicIntentParser(IntentParser):
@@ -68,8 +72,11 @@ class DeterministicIntentParser(IntentParser):
         """Whether or not the intent parser has already been trained"""
         return self.regexes_per_intent is not None
 
+    @log_elapsed_time(
+        logger, logging.INFO, "Fitted deterministic parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
         """Fit the intent parser with a valid Snips dataset"""
+        logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
@@ -89,6 +96,9 @@ class DeterministicIntentParser(IntentParser):
             self.regexes_per_intent[intent_name] = regexes
         return self
 
+    @log_result(
+        logger, logging.DEBUG, "DeterministicIntentParser result -> {result}")
+    @log_elapsed_time(logger, logging.DEBUG, "Parsed in {elapsed_time}.")
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text*
 
@@ -108,6 +118,7 @@ class DeterministicIntentParser(IntentParser):
         """
         if not self.fitted:
             raise NotTrained("DeterministicIntentParser must be fitted")
+        logger.debug("DeterministicIntentParser parsing '%s'...", text)
 
         if isinstance(intents, str):
             intents = [intents]
@@ -119,17 +130,18 @@ class DeterministicIntentParser(IntentParser):
             if intents is not None and intent not in intents:
                 continue
             for regex in regexes:
-                match = regex.match(processed_text)
-                if match is None:
+                found_result = regex.match(processed_text)
+                if found_result is None:
                     continue
                 parsed_intent = intent_classification_result(
                     intent_name=intent, probability=1.0)
                 slots = []
-                for group_name in match.groupdict():
+                for group_name in found_result.groupdict():
                     slot_name = self.group_names_to_slot_names[group_name]
                     entity = self.slot_names_to_entities[slot_name]
-                    rng = (match.start(group_name), match.end(group_name))
-                    value = match.group(group_name)
+                    rng = (found_result.start(group_name),
+                           found_result.end(group_name))
+                    value = found_result.group(group_name)
                     if rng in ranges_mapping:
                         rng = ranges_mapping[rng]
                         value = text[rng[START]:rng[END]]

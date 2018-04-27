@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import logging
 import re
-from copy import deepcopy
 
 from builtins import str
 from future.utils import itervalues, iteritems
@@ -88,8 +87,7 @@ class DeterministicIntentParser(IntentParser):
             if not self._is_trainable(intent, dataset):
                 self.regexes_per_intent[intent_name] = []
                 continue
-            utterances = [_preprocess_builtin_entities(u, self.language)
-                          for u in intent[UTTERANCES]]
+            utterances = intent[UTTERANCES]
             regexes, self.group_names_to_slot_names = _generate_regexes(
                 utterances, joined_entity_utterances,
                 self.group_names_to_slot_names, self.language)
@@ -130,33 +128,44 @@ class DeterministicIntentParser(IntentParser):
             if intents is not None and intent not in intents:
                 continue
             for regex in regexes:
-                found_result = regex.match(processed_text)
-                if found_result is None:
-                    continue
-                parsed_intent = intent_classification_result(
-                    intent_name=intent, probability=1.0)
-                slots = []
-                for group_name in found_result.groupdict():
-                    slot_name = self.group_names_to_slot_names[group_name]
-                    entity = self.slot_names_to_entities[slot_name]
-                    rng = (found_result.start(group_name),
-                           found_result.end(group_name))
-                    value = found_result.group(group_name)
-                    if rng in ranges_mapping:
-                        rng = ranges_mapping[rng]
-                        value = text[rng[START]:rng[END]]
-                    else:
-                        rng = {START: rng[0], END: rng[1]}
-                    parsed_slot = unresolved_slot(
-                        match_range=rng, value=value, entity=entity,
-                        slot_name=slot_name)
-                    slots.append(parsed_slot)
-                parsed_slots = _deduplicate_overlapping_slots(
-                    slots, self.language)
-                parsed_slots = sorted(parsed_slots,
-                                      key=lambda s: s[RES_MATCH_RANGE][START])
-                return parsing_result(text, parsed_intent, parsed_slots)
+                res = self._get_matching_result(text, regex, intent,
+                                                processed_text, ranges_mapping)
+                if res is None:
+                    res = self._get_matching_result(text, regex, intent)
+                if res is not None:
+                    return res
         return empty_result(text)
+
+    def _get_matching_result(self, text, regex, intent, processed_text=None,
+                             ranges_mapping=None):
+        if processed_text is None:
+            processed_text = text
+        found_result = regex.match(processed_text)
+        if found_result is None:
+            return None
+        parsed_intent = intent_classification_result(intent_name=intent,
+                                                     probability=1.0)
+        slots = []
+        for group_name in found_result.groupdict():
+            slot_name = self.group_names_to_slot_names[group_name]
+            entity = self.slot_names_to_entities[slot_name]
+            rng = (found_result.start(group_name),
+                   found_result.end(group_name))
+            value = found_result.group(group_name)
+            if ranges_mapping is not None and rng in ranges_mapping:
+                rng = ranges_mapping[rng]
+                value = text[rng[START]:rng[END]]
+            else:
+                rng = {START: rng[0], END: rng[1]}
+            parsed_slot = unresolved_slot(
+                match_range=rng, value=value, entity=entity,
+                slot_name=slot_name)
+            slots.append(parsed_slot)
+        parsed_slots = _deduplicate_overlapping_slots(
+            slots, self.language)
+        parsed_slots = sorted(parsed_slots,
+                              key=lambda s: s[RES_MATCH_RANGE][START])
+        return parsing_result(text, parsed_intent, parsed_slots)
 
     def _is_trainable(self, intent, dataset):
         if len(intent[UTTERANCES]) >= self.config.max_queries:
@@ -287,10 +296,13 @@ def _generate_regexes(intent_queries, joined_entity_utterances,
 def _get_joined_entity_utterances(dataset, language):
     joined_entity_utterances = dict()
     for entity_name, entity in iteritems(dataset[ENTITIES]):
+        utterances = list(entity[UTTERANCES])
+
+        # We also add a place holder value for builtin entities
         if is_builtin_entity(entity_name):
-            utterances = [_get_entity_name_placeholder(entity_name, language)]
-        else:
-            utterances = list(entity[UTTERANCES])
+            utterances.append(
+                _get_entity_name_placeholder(entity_name, language))
+
         utterances_patterns = map(regex_escape, utterances)
         utterances_patterns = (p for p in utterances_patterns if p)
         joined_entity_utterances[entity_name] = r"|".join(
@@ -321,15 +333,6 @@ def _deduplicate_overlapping_slots(slots, language):
 def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(
         tokenize_light(entity_label, language)).upper()
-
-
-def _preprocess_builtin_entities(utterance, language):
-    new_utterance = deepcopy(utterance)
-    for i, chunk in enumerate(utterance[DATA]):
-        _, processed_chunk_text = _replace_builtin_entities(chunk[TEXT],
-                                                            language)
-        new_utterance[DATA][i][TEXT] = processed_chunk_text
-    return new_utterance
 
 
 def _replace_builtin_entities(text, language):

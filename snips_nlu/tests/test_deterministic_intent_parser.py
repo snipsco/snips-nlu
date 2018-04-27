@@ -15,7 +15,7 @@ from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities, _preprocess_builtin_entities)
+    _replace_builtin_entities)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
@@ -23,101 +23,6 @@ from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
 
 class TestDeterministicIntentParser(SnipsTest):
     def setUp(self):
-        self.intent_dataset = {
-            "entities": {
-                "dummy_entity_1": {
-                    "automatically_extensible": False,
-                    "use_synonyms": True,
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy_a",
-                                "dummy 2a",
-                                "dummy a",
-                                "2 dummy a"
-                            ],
-                            "value": "dummy_a"
-                        },
-                        {
-                            "synonyms": [
-                                "dummy_b",
-                                "dummy_bb",
-                                "dummy b"
-                            ],
-                            "value": "dummy_b"
-                        },
-                        {
-                            "synonyms": [
-                                "dummy d"
-                            ],
-                            "value": "dummy d"
-                        }
-                    ]
-                },
-                "dummy_entity_2": {
-                    "automatically_extensible": False,
-                    "use_synonyms": True,
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy_c",
-                                "dummy_cc",
-                                "dummy c",
-                                "3p.m."
-                            ],
-                            "value": "dummy_c"
-                        }
-                    ]
-                },
-                "snips/datetime": {}
-            },
-            "intents": {
-                "dummy_intent_1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "This is a first "
-                                },
-                                {
-                                    "text": "dummy_1",
-                                    "slot_name": "dummy_slot_name",
-                                    "entity": "dummy_entity_1"
-                                },
-                                {
-                                    "text": " query with a second "
-                                },
-                                {
-                                    "text": "dummy_2",
-                                    "slot_name": "dummy_slot_name2",
-                                    "entity": "dummy_entity_2"
-                                },
-                                {
-                                    "text": " "
-                                },
-                                {
-                                    "text": "at 10p.m.",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                },
-                                {
-                                    "text": " or "
-                                },
-                                {
-                                    "text": "next monday",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                }
-
-                            ]
-                        }
-                    ]
-                }
-            },
-            "language": "en",
-            "snips_nlu_version": "0.1.0"
-        }
-
         self.duplicated_utterances_dataset = {
             "entities": {},
             "intents": {
@@ -257,11 +162,11 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_get_intent(self):
         # Given
-        dataset = validate_and_format_dataset(self.intent_dataset)
+        dataset = validate_and_format_dataset(self.slots_dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
-        text = "this is a first dummy_a query with a second dummy_c at " \
-               "10p.m. or at 12p.m."
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         parsing = parser.parse(text)
@@ -293,13 +198,13 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_get_intent_after_deserialization(self):
         # Given
-        dataset = validate_and_format_dataset(self.intent_dataset)
+        dataset = validate_and_format_dataset(self.slots_dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
         deserialized_parser = DeterministicIntentParser \
             .from_dict(parser.to_dict())
-        text = "this is a first dummy_a query with a second dummy_c at " \
-               "10p.m. or at 12p.m."
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         parsing = deserialized_parser.parse(text)
@@ -805,55 +710,3 @@ class TestDeterministicIntentParser(SnipsTest):
 
         self.assertDictEqual(expected_mapping, range_mapping)
         self.assertEqual(expected_processed_text, processed_text)
-
-    def test_should_preprocess_builtin_entities(self):
-        # Given
-        language = LANGUAGE_EN
-        utterance = {
-            DATA: [
-                {
-                    TEXT: "Raise temperature in room number one to "
-                },
-                {
-                    TEXT: "five degrees",
-                    SLOT_NAME: "room_temperature",
-                    ENTITY: "temperature"
-                },
-                {
-                    TEXT: " at "
-                },
-                {
-                    TEXT: "9pm",
-                    SLOT_NAME: "time",
-                    ENTITY: "snips/datetime"
-                },
-            ]
-        }
-
-        # When
-
-        processed_utterance = _preprocess_builtin_entities(utterance, language)
-
-        # Then
-        expected_utterance = {
-            DATA: [
-                {
-                    TEXT: "Raise temperature in room number %SNIPSNUMBER% to "
-                },
-                {
-                    TEXT: "%SNIPSTEMPERATURE%",
-                    SLOT_NAME: "room_temperature",
-                    ENTITY: "temperature"
-                },
-                {
-                    TEXT: " at "
-                },
-                {
-                    TEXT: "%SNIPSDATETIME%",
-                    SLOT_NAME: "time",
-                    ENTITY: "snips/datetime"
-                },
-            ]
-        }
-
-        self.assertDictEqual(expected_utterance, processed_utterance)

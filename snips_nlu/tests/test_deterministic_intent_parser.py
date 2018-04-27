@@ -15,7 +15,7 @@ from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities)
+    _replace_builtin_entities, _get_range_shift)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
@@ -155,7 +155,24 @@ class TestDeterministicIntentParser(SnipsTest):
                                     "text": " "
                                 }
                             ]
-                        }
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "tomorrow evening",
+                                    "slot_name": "startTime",
+                                    "entity": "snips/datetime"
+                                },
+                                {
+                                    "text": " there is a "
+                                },
+                                {
+                                    "text": "dummy_1",
+                                    "slot_name": "dummy_slot_name",
+                                    "entity": "dummy_entity_1"
+                                }
+                            ]
+                        },
                     ]
                 }
             },
@@ -273,6 +290,17 @@ class TestDeterministicIntentParser(SnipsTest):
                 " this is a dummy b ",
                 [
                     unresolved_slot(match_range=(11, 18), value="dummy b",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name")
+                ]
+            ),
+            (
+                " at 8am   there is a dummy a",
+                [
+                    unresolved_slot(match_range=(1, 7), value="at 8am",
+                                    entity="snips/datetime",
+                                    slot_name="startTime"),
+                    unresolved_slot(match_range=(21, 28), value="dummy a",
                                     entity="dummy_entity_1",
                                     slot_name="dummy_slot_name")
                 ]
@@ -713,3 +741,14 @@ class TestDeterministicIntentParser(SnipsTest):
 
         self.assertDictEqual(expected_mapping, range_mapping)
         self.assertEqual(expected_processed_text, processed_text)
+
+    def test_should_get_range_shift(self):
+        # Given
+        ranges_mapping = {
+            (2, 5): {START: 2, END: 4},
+            (8, 9): {START: 7, END: 11}
+        }
+
+        # When / Then
+        self.assertEqual(-1, _get_range_shift((6, 7), ranges_mapping))
+        self.assertEqual(2, _get_range_shift((12, 13), ranges_mapping))

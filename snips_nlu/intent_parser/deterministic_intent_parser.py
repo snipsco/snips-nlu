@@ -152,9 +152,13 @@ class DeterministicIntentParser(IntentParser):
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
             value = found_result.group(group_name)
-            if ranges_mapping is not None and rng in ranges_mapping:
-                rng = ranges_mapping[rng]
-                value = text[rng[START]:rng[END]]
+            if ranges_mapping is not None:
+                if rng in ranges_mapping:
+                    rng = ranges_mapping[rng]
+                    value = text[rng[START]:rng[END]]
+                else:
+                    shift = _get_range_shift(rng, ranges_mapping)
+                    rng = {START: rng[0] + shift, END: rng[1] + shift}
             else:
                 rng = {START: rng[0], END: rng[1]}
             parsed_slot = unresolved_slot(
@@ -206,6 +210,18 @@ class DeterministicIntentParser(IntentParser):
             "group_names_to_slot_names"]
         parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
         return parser
+
+
+def _get_range_shift(matched_range, ranges_mapping):
+    shift = 0
+    previous_replaced_range_end = None
+    matched_start = matched_range[0]
+    for replaced_range, orig_range in iteritems(ranges_mapping):
+        if replaced_range[1] <= matched_start:
+            if previous_replaced_range_end is None \
+                    or replaced_range[1] > previous_replaced_range_end:
+                shift = orig_range[END] - replaced_range[1]
+    return shift
 
 
 def _get_index(index):

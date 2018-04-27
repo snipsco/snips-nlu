@@ -144,12 +144,15 @@ class TestDeterministicIntentParser(SnipsTest):
                         {
                             "data": [
                                 {
-                                    "text": "This, is, a "
+                                    "text": "This    is  a  "
                                 },
                                 {
                                     "text": "dummy_1",
                                     "slot_name": "dummy_slot_name",
                                     "entity": "dummy_entity_1"
+                                },
+                                {
+                                    "text": " "
                                 }
                             ]
                         }

@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 import logging
 import re
-
 from builtins import str
+
 from future.utils import itervalues, iteritems
 
 from snips_nlu.builtin_entities import (is_builtin_entity,
@@ -253,7 +253,9 @@ def _query_to_pattern(query, joined_entity_utterances,
             pattern.append(
                 r"(?P<%s>%s)" % (max_index, joined_entity_utterances[entity]))
         else:
-            tokens = tokenize_light(chunk[TEXT], language)
+            # Don't use `tokenize` here to avoid mismatch with the character
+            # set of `get_ignored_characters_pattern`
+            tokens = (t for t in chunk[TEXT].split(" ") if t)
             pattern += [regex_escape(t) for t in tokens]
     ignored_char_pattern = get_ignored_characters_pattern(language)
     pattern = r"^%s%s%s$" % (ignored_char_pattern,

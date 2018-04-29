@@ -220,6 +220,7 @@ def _get_range_shift(matched_range, ranges_mapping):
         if replaced_range[1] <= matched_start:
             if previous_replaced_range_end is None \
                     or replaced_range[1] > previous_replaced_range_end:
+                previous_replaced_range_end = replaced_range[1]
                 shift = orig_range[END] - replaced_range[1]
     return shift
 

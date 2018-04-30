@@ -206,7 +206,7 @@ The simplest way to create an NLU engine is the following:
 In this example the engine was created with default parameters which, in
 many cases, will be sufficient.
 
-However, in some cases it may be required to tune a bit the engine and provide
+However, in some cases it may be required to tune the engine a bit and provide
 a customized configuration. Typically, different languages may require
 different sets of features. You can check the :class:`.NLUEngineConfig` to get
 more details about what can be configured.

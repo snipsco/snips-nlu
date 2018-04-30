@@ -315,7 +315,7 @@ Automatically Extensible Entities
 On top of declaring color values and color synonyms, you can also decide how
 Snips NLU reacts to unknown entity values.
 
-In the light color assistant example, one of the first thing to do would be
+In the light color assistant example, one of the first things to do would be
 to check what are the colors that are supported by the bulb, for instance:
 
 .. code-block:: json

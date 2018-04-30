@@ -224,7 +224,7 @@ grasp what the entity is about.
 Let's say you are creating an assistant whose purpose is to let you set the
 color of your connected light bulbs. What you will do is define a ``"color"``
 entity. On top of that you can provide a list of sample colors by editing the
-entity in your dataset as follow:
+entity in your dataset as follows:
 
 .. code-block:: json
 

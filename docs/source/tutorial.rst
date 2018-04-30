@@ -4,7 +4,7 @@ Tutorial
 ========
 
 In this section, we will build an NLU assistant for home automation tasks. It
-will be able to understand queries about lights and thermostat. More precisely
+will be able to understand queries about lights and thermostats. More precisely
 our assistant will contain three :ref:`intents <intent>`:
 
 - ``turnLightOn``
@@ -80,9 +80,9 @@ And now the last file, ``setTemperature.txt``:
     Can you increase the temperature to [roomTemperature:snips/temperature](22 degrees) ?
 
 As you can see here, we used a new slot, ``[room_temperature:snips/temperature]``,
-which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
+whose name is ``roomTemperature`` and whose type is ``snips/temperature``. The slot
 type used here is a :ref:`builtin entity <builtin_entity_resolution>`. It
-allows to resolve properly the temperature values.
+allows you to resolve the temperature values properly.
 
 Let's move to the ``room.txt`` entity file:
 

@@ -141,7 +141,7 @@ In Snips NLU, extracted slots are represented within the output in this way:
       }
     ]
 
-In this example, the slot value contains a ``"kind"`` attribute which value
+In this example, the slot value contains a ``"kind"`` attribute whose value
 here is ``"Custom"``. There are two classes of slot types or entity:
 
 -   **Builtin entities**
@@ -221,10 +221,10 @@ The first thing you can do is add a list of possible values for your entity.
 By providing a list of example values for your entity, you help Snips NLU
 grasp what the entity is about.
 
-Let's say you are creating an assistant which purpose is to let you set the
+Let's say you are creating an assistant whose purpose is to let you set the
 color of your connected light bulbs. What you will do is define a ``"color"``
 entity. On top of that you can provide a list of sample colors by editing the
-entity in your dataset as follow:
+entity in your dataset as follows:
 
 .. code-block:: json
 
@@ -315,7 +315,7 @@ Automatically Extensible Entities
 On top of declaring color values and color synonyms, you can also decide how
 Snips NLU reacts to unknown entity values.
 
-In the light color assistant example, one of the first thing to do would be
+In the light color assistant example, one of the first things to do would be
 to check what are the colors that are supported by the bulb, for instance:
 
 .. code-block:: json

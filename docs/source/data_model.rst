@@ -141,7 +141,7 @@ In Snips NLU, extracted slots are represented within the output in this way:
       }
     ]
 
-In this example, the slot value contains a ``"kind"`` attribute which value
+In this example, the slot value contains a ``"kind"`` attribute whose value
 here is ``"Custom"``. There are two classes of slot types or entity:
 
 -   **Builtin entities**

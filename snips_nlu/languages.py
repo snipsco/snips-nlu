@@ -5,14 +5,6 @@ import string
 
 from num2words import num2words
 
-from snips_nlu.utils import regex_escape
-
-SPACE = " "
-WHITE_SPACES = "%s\t\n\r\f\v" % SPACE  # equivalent of r"\s"
-COMMONLY_IGNORED_CHARACTERS = "%s%s" % (WHITE_SPACES, string.punctuation)
-COMMONLY_IGNORED_CHARACTERS_PATTERN = r"[%s]*" % regex_escape(
-    COMMONLY_IGNORED_CHARACTERS)
-
 _PUNCTUATION_REGEXES = dict()
 _NUM2WORDS_SUPPORT = dict()
 
@@ -38,14 +30,6 @@ def get_punctuation_regex(language):
         pattern = r"|".join(re.escape(p) for p in get_punctuation(language))
         _PUNCTUATION_REGEXES[language] = re.compile(pattern)
     return _PUNCTUATION_REGEXES[language]
-
-
-# pylint:disable=unused-argument
-def get_ignored_characters_pattern(language):
-    return COMMONLY_IGNORED_CHARACTERS_PATTERN
-
-
-# pylint:enable=unused-argument
 
 
 def supports_num2words(language):

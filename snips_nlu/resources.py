@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 import glob
 import io
 import os
+from builtins import next
 from collections import defaultdict
 
-from builtins import next
 from future.utils import iteritems
 from snips_nlu_utils import normalize
 
@@ -13,7 +13,7 @@ from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
                                  RESOURCES_PATH, LANGUAGE_EN, LANGUAGE_FR,
                                  LANGUAGE_ES, LANGUAGE_KO, LANGUAGE_DE,
                                  LANGUAGE_JA, STEMS)
-from snips_nlu.languages import get_ignored_characters_pattern
+from snips_nlu.languages import get_default_sep
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import get_resources_path
 
@@ -157,8 +157,9 @@ def _load_gazetteers(language):
             for l in f:
                 normalized = normalize(l.strip())
                 if normalized:
-                    normalized = get_ignored_characters_pattern(language).join(
-                        [t.value for t in tokenize(normalized, language)])
+                    token_values = (t.value for t in
+                                    tokenize(normalized, language))
+                    normalized = get_default_sep(language).join(token_values)
                     gazetteers[name].add(normalized)
     return gazetteers
 

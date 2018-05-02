@@ -15,7 +15,7 @@ from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities, _get_range_shift, _replace_tokenized_out_chunks)
+    _replace_builtin_entities, _get_range_shift, _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
@@ -753,12 +753,12 @@ class TestDeterministicIntentParser(SnipsTest):
         self.assertEqual(-1, _get_range_shift((6, 7), ranges_mapping))
         self.assertEqual(2, _get_range_shift((12, 13), ranges_mapping))
 
-    def test_should_replace_tokenized_out_chunks(self):
+    def test_should_replace_tokenized_out_characters(self):
         # Given
         string = ": hello, it's me !  "
 
         # When
-        cleaned_string = _replace_tokenized_out_chunks(string, "en", "_")
+        cleaned_string = _replace_tokenized_out_characters(string, "en", "_")
 
         # Then
         self.assertEqual("__hello__it_s_me_!__", cleaned_string)

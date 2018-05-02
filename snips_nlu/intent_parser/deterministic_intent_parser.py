@@ -124,9 +124,11 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = _replace_builtin_entities(
             text, self.language)
 
-        cleaned_text = _replace_tokenized_out_chunks(text, self.language)
-        cleaned_processed_text = _replace_tokenized_out_chunks(processed_text,
-                                                               self.language)
+        # We try to match both the input text and the preprocessed text to
+        # cover inconsistencies between labeled data and builtin entity parsing
+        cleaned_text = _replace_tokenized_out_characters(text, self.language)
+        cleaned_processed_text = _replace_tokenized_out_characters(
+            processed_text, self.language)
 
         for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
@@ -142,7 +144,7 @@ class DeterministicIntentParser(IntentParser):
         return empty_result(text)
 
     def _get_matching_result(self, text, processed_text, regex, intent,
-                             ranges_mapping=None):
+                             builtin_entities_ranges_mapping=None):
         found_result = regex.match(processed_text)
         if found_result is None:
             return None
@@ -154,11 +156,12 @@ class DeterministicIntentParser(IntentParser):
             entity = self.slot_names_to_entities[slot_name]
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
-            if ranges_mapping is not None:
-                if rng in ranges_mapping:
-                    rng = ranges_mapping[rng]
+            if builtin_entities_ranges_mapping is not None:
+                if rng in builtin_entities_ranges_mapping:
+                    rng = builtin_entities_ranges_mapping[rng]
                 else:
-                    shift = _get_range_shift(rng, ranges_mapping)
+                    shift = _get_range_shift(
+                        rng, builtin_entities_ranges_mapping)
                     rng = {START: rng[0] + shift, END: rng[1] + shift}
             else:
                 rng = {START: rng[0], END: rng[1]}
@@ -214,7 +217,7 @@ class DeterministicIntentParser(IntentParser):
         return parser
 
 
-def _replace_tokenized_out_chunks(string, language, replacement_char=" "):
+def _replace_tokenized_out_characters(string, language, replacement_char=" "):
     """Replace all characters that are tokenized out by `replacement_char`
 
     Examples:
@@ -222,7 +225,7 @@ def _replace_tokenized_out_chunks(string, language, replacement_char=" "):
         >>> language = "en"
         >>> tokenize_light(string, language)
         ['hello', 'it', 's', 'me']
-        >>> _replace_tokenized_out_chunks(string, language, "_")
+        >>> _replace_tokenized_out_characters(string, language, "_")
         'hello__it_s_me'
     """
     tokens = tokenize(string, language)

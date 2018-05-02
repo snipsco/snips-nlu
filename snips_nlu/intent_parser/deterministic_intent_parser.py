@@ -22,7 +22,7 @@ from snips_nlu.utils import (
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
-WHITESPACE_PATTERN = "\s*"
+WHITESPACE_PATTERN = r"\s*"
 
 logger = logging.getLogger(__name__)
 

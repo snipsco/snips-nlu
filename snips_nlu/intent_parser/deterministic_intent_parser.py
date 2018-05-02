@@ -13,7 +13,6 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START, END, ENTITY_KIND)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
-from snips_nlu.languages import get_ignored_characters_pattern
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
@@ -23,6 +22,7 @@ from snips_nlu.utils import (
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
+WHITESPACE_PATTERN = "\s*"
 
 logger = logging.getLogger(__name__)
 
@@ -124,22 +124,25 @@ class DeterministicIntentParser(IntentParser):
         ranges_mapping, processed_text = _replace_builtin_entities(
             text, self.language)
 
+        cleaned_text = _replace_tokenized_out_chunks(text, self.language)
+        cleaned_processed_text = _replace_tokenized_out_chunks(processed_text,
+                                                               self.language)
+
         for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
                 continue
             for regex in regexes:
-                res = self._get_matching_result(text, regex, intent,
-                                                processed_text, ranges_mapping)
+                res = self._get_matching_result(text, cleaned_processed_text,
+                                                regex, intent, ranges_mapping)
                 if res is None:
-                    res = self._get_matching_result(text, regex, intent)
+                    res = self._get_matching_result(text, cleaned_text, regex,
+                                                    intent)
                 if res is not None:
                     return res
         return empty_result(text)
 
-    def _get_matching_result(self, text, regex, intent, processed_text=None,
+    def _get_matching_result(self, text, processed_text, regex, intent,
                              ranges_mapping=None):
-        if processed_text is None:
-            processed_text = text
         found_result = regex.match(processed_text)
         if found_result is None:
             return None
@@ -151,16 +154,15 @@ class DeterministicIntentParser(IntentParser):
             entity = self.slot_names_to_entities[slot_name]
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
-            value = found_result.group(group_name)
             if ranges_mapping is not None:
                 if rng in ranges_mapping:
                     rng = ranges_mapping[rng]
-                    value = text[rng[START]:rng[END]]
                 else:
                     shift = _get_range_shift(rng, ranges_mapping)
                     rng = {START: rng[0] + shift, END: rng[1] + shift}
             else:
                 rng = {START: rng[0], END: rng[1]}
+            value = text[rng[START]:rng[END]]
             parsed_slot = unresolved_slot(
                 match_range=rng, value=value, entity=entity,
                 slot_name=slot_name)
@@ -210,6 +212,31 @@ class DeterministicIntentParser(IntentParser):
             "group_names_to_slot_names"]
         parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
         return parser
+
+
+def _replace_tokenized_out_chunks(string, language, replacement_char=" "):
+    """Replace all characters that are tokenized out by `replacement_char`
+
+    Examples:
+        >>> string = "hello, it's me"
+        >>> language = "en"
+        >>> tokenize_light(string, language)
+        ['hello', 'it', 's', 'me']
+        >>> _replace_tokenized_out_chunks(string, language, "_")
+        'hello__it_s_me'
+    """
+    tokens = tokenize(string, language)
+    current_idx = 0
+    cleaned_string = ""
+    for token in tokens:
+        prefix_length = token.start - current_idx
+        cleaned_string += "".join(
+            (replacement_char for _ in range(prefix_length)))
+        cleaned_string += token.value
+        current_idx = token.end
+    suffix_length = len(string) - current_idx
+    cleaned_string += "".join((replacement_char for _ in range(suffix_length)))
+    return cleaned_string
 
 
 def _get_range_shift(matched_range, ranges_mapping):
@@ -270,14 +297,12 @@ def _query_to_pattern(query, joined_entity_utterances,
             pattern.append(
                 r"(?P<%s>%s)" % (max_index, joined_entity_utterances[entity]))
         else:
-            # Don't use `tokenize` here to avoid mismatch with the character
-            # set of `get_ignored_characters_pattern`
-            tokens = (t for t in chunk[TEXT].split(" ") if t)
+            tokens = tokenize_light(chunk[TEXT], language)
             pattern += [regex_escape(t) for t in tokens]
-    ignored_char_pattern = get_ignored_characters_pattern(language)
-    pattern = r"^%s%s%s$" % (ignored_char_pattern,
-                             ignored_char_pattern.join(pattern),
-                             ignored_char_pattern)
+
+    pattern = r"^%s%s%s$" % (WHITESPACE_PATTERN,
+                             WHITESPACE_PATTERN.join(pattern),
+                             WHITESPACE_PATTERN)
     return pattern, group_names_to_slot_names
 
 
@@ -315,17 +340,22 @@ def _generate_regexes(intent_queries, joined_entity_utterances,
 def _get_joined_entity_utterances(dataset, language):
     joined_entity_utterances = dict()
     for entity_name, entity in iteritems(dataset[ENTITIES]):
-        utterances = list(entity[UTTERANCES])
+        # matches are performed in a case insensitive manner
+        utterances = set(u.lower() for u in entity[UTTERANCES])
+        patterns = []
+        for utterance in utterances:
+            tokens = tokenize_light(utterance, language)
+            pattern = WHITESPACE_PATTERN.join(regex_escape(t) for t in tokens)
+            patterns.append(pattern)
 
-        # We also add a place holder value for builtin entities
+        # We also add a placeholder value for builtin entities
         if is_builtin_entity(entity_name):
-            utterances.append(
-                _get_entity_name_placeholder(entity_name, language))
+            placeholder = _get_entity_name_placeholder(entity_name, language)
+            patterns.append(regex_escape(placeholder))
 
-        utterances_patterns = map(regex_escape, utterances)
-        utterances_patterns = (p for p in utterances_patterns if p)
+        patterns = (p for p in patterns if p)
         joined_entity_utterances[entity_name] = r"|".join(
-            sorted(utterances_patterns, key=len, reverse=True))
+            sorted(patterns, key=len, reverse=True))
     return joined_entity_utterances
 
 

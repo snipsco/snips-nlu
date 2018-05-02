@@ -15,7 +15,7 @@ from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities, _get_range_shift)
+    _replace_builtin_entities, _get_range_shift, _replace_tokenized_out_chunks)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
@@ -295,12 +295,12 @@ class TestDeterministicIntentParser(SnipsTest):
                 ]
             ),
             (
-                " at 8am   there is a dummy a",
+                " at 8am ’ there is a dummy  a",
                 [
                     unresolved_slot(match_range=(1, 7), value="at 8am",
                                     entity="snips/datetime",
                                     slot_name="startTime"),
-                    unresolved_slot(match_range=(21, 28), value="dummy a",
+                    unresolved_slot(match_range=(21, 29), value="dummy  a",
                                     entity="dummy_entity_1",
                                     slot_name="dummy_slot_name")
                 ]
@@ -752,3 +752,13 @@ class TestDeterministicIntentParser(SnipsTest):
         # When / Then
         self.assertEqual(-1, _get_range_shift((6, 7), ranges_mapping))
         self.assertEqual(2, _get_range_shift((12, 13), ranges_mapping))
+
+    def test_should_replace_tokenized_out_chunks(self):
+        # Given
+        string = ": hello, it's me !  "
+
+        # When
+        cleaned_string = _replace_tokenized_out_chunks(string, "en", "_")
+
+        # Then
+        self.assertEqual("__hello__it_s_me_!__", cleaned_string)

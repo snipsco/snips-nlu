@@ -3,7 +3,7 @@ CONFIG = {
     "intent_parsers_configs": [
         {
             "unit_name": "deterministic_intent_parser",
-            "max_queries": 50,
+            "max_queries": 100,
             "max_entities": 200
         },
         {

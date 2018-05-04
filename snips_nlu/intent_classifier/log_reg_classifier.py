@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import logging
-
 from builtins import str, zip, range
 
 import numpy as np
@@ -124,8 +123,8 @@ class LogRegIntentClassifier(IntentClassifier):
             return intent_classification_result(self.intent_list[0], 1.0)
 
         X = self.featurizer.transform([text])  # pylint: disable=C0103
-        proba_vec = self.classifier.predict_proba(X)[0]
-        intents_probas = sorted(zip(self.intent_list, proba_vec),
+        proba_vec = self._predict_proba(X, intents_filter=intents_filter)
+        intents_probas = sorted(zip(self.intent_list, proba_vec[0]),
                                 key=lambda p: -p[1])
         for intent, proba in intents_probas:
             if intent is None:
@@ -133,6 +132,31 @@ class LogRegIntentClassifier(IntentClassifier):
             if intents_filter is None or intent in intents_filter:
                 return intent_classification_result(intent, proba)
         return None
+
+    def _predict_proba(self, X, intents_filter):  # pylint: disable=C0103
+        self.classifier._check_proba()  # pylint: disable=W0212
+
+        filtered_out_indexes = None
+        if intents_filter is not None:
+            filtered_out_indexes = [
+                i for i, intent in enumerate(self.intent_list)
+                if intent not in intents_filter and intent is not None]
+
+        prob = self.classifier.decision_function(X)
+        prob *= -1
+        np.exp(prob, prob)
+        prob += 1
+        np.reciprocal(prob, prob)
+        if prob.ndim == 1:
+            return np.vstack([1 - prob, prob]).T
+        else:
+            if filtered_out_indexes:  # not None and not empty
+                prob[:, filtered_out_indexes] = 0.
+                # OvR normalization, like LibLinear's predict_probability
+                prob /= prob.sum(axis=1).reshape((prob.shape[0], -1))
+            # We do not normalize when there is no intents filter, to keep the
+            # probabilities calibrated
+            return prob
 
     def to_dict(self):
         """Returns a json-serializable dict"""

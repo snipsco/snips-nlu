@@ -1,14 +1,16 @@
 from __future__ import print_function, absolute_import
 
 import io
-import itertools
 import os
-
+from abc import ABCMeta, abstractmethod
 from builtins import object
 
-from snips_nlu_dataset.builtin_entities import BuiltinEntity
-from snips_nlu_dataset.custom_entities import CustomEntity, EntityUtterance
-from snips_nlu.builtin_entities import is_builtin_entity
+from future.utils import with_metaclass
+
+from snips_nlu.constants import UTTERANCES, SLOT_NAME, ENTITY, TEXT, DATA
+
+INTENT_FORMATTING_ERROR = AssertionError(
+    "Intent file is not properly formatted")
 
 
 class IntentDataset(object):
@@ -25,207 +27,162 @@ class IntentDataset(object):
         [slot:entity_name](text_to_tag)
 
     Attributes:
-        :class:IntentDataset.utterances: a list of :class:Utterance
-        :class:IntentDataset.json: The dataset in json format
-        :class:IntentDataset.intent_name: name of the intent
-        :class:IntentDataset.language: language of the dataset
+        intent_name (str): name of the intent
+        utterances (list of :class:`.IntentUtterance`): intent utterances
     """
 
-    def __init__(self, intent_name, language):
+    def __init__(self, intent_name):
         self.intent_name = intent_name
-        self.language = language
-        self.slots_by_name = dict()
-        self.json_utterances = []
         self.utterances = []
 
     @classmethod
-    def from_file(cls, language, file_name):
+    def from_file(cls, file_name):
         intent_name = ".".join(os.path.basename(file_name).split('.')[:-1])
         with io.open(file_name) as f:
-            lines = iter(l.strip() for l in f if l.strip() != '')
-            return cls.from_iter(intent_name, language, lines)
+            lines = iter(l.strip() for l in f if l.strip())
+            return cls.from_iter(intent_name, lines)
 
     @classmethod
-    def from_iter(cls, intent_name, language, samples_iter):
-        """Generates a dataset from an iterator of samples
-
-        :param intent_name: string
-        :param language: string
-        :param samples_iter: an iterator of string samples
-        :return: :class:Dataset
-        """
-        dataset = cls(intent_name, language)
+    def from_iter(cls, intent_name, samples_iter):
+        """Generates a dataset from an iterator of samples"""
+        dataset = cls(intent_name)
         for sample in samples_iter:
-            u = Utterance.parse(sample)
-            dataset.add(u)
+            utterance = IntentUtterance.parse(sample)
+            dataset.add(utterance)
         return dataset
 
     def add(self, utterance):
-        """Adds an utterance to the dataset
-
-        :param utterance: :class:Utterance
-        """
+        """Adds an :class:`.IntentUtterance` to the dataset"""
         self.utterances.append(utterance)
-        data = []
-        for slot in utterance.slots:
-            data.append(self.mk_slot(slot))
-        self.json_utterances.append(dict(data=data))
 
     @property
     def json(self):
-        """Dataset in json format"""
-        return dict(language=self.language,
-                    utterances=self.json_utterances,
-                    entities=self.entities)
+        """Intent dataset in json format"""
+        return {
+            UTTERANCES: [
+                {DATA: [chunk.json for chunk in utterance.chunks]}
+                for utterance in self.utterances
+            ]
+        }
 
     @property
-    def queries(self):
-        """:return: An iter of all the example queries"""
-        return (u.input for u in self.utterances)
-
-    @property
-    def entities(self):
-        """retun all entities in json format for datasets"""
-        ents = dict()
-        for s in self.slots:
-            if s.entity not in ents:
-                ents[s.entity] = self.mk_entity(s)
-            elif not is_builtin_entity(s.entity):
-                ents[s.entity].utterances.append(EntityUtterance(s.text))
-        return ents
-
-    @classmethod
-    def mk_entity(cls, slot, automatically_extensible=True, use_synonyms=True):
-        if is_builtin_entity(slot.entity):
-            return BuiltinEntity(slot.entity)
-        return CustomEntity([EntityUtterance(slot.text)],
-                            automatically_extensible, use_synonyms)
-
-    @property
-    def json_slots(self):
-        """:return: slots but in json format"""
-        return (self.intent_slot(s) for s in self.slots)
-
-    @property
-    def slots(self):
-        """:return: an iter of the unique slots in the dataset"""
-        all_slots = [
-            s for u in self.utterances
-            for s in u.slots
-            if isinstance(s, Slot)
-        ]
-        all_slots.sort(key=lambda s: s.name)
-        groups = itertools.groupby(all_slots, lambda s: s.entity)
-        return (s for r, g in groups for s in g)
-
-    @property
-    def annotated(self):
-        return (u.annotated for u in self.utterances)
-
-    @staticmethod
-    def intent_slot(slot):
-        """json format expected in intent data"""
-        return dict(
-            name=slot.name,
-            entity=slot.entity_name,
-            entity_id=slot.entity
-        )
-
-    @staticmethod
-    def mk_slot(slot):
-        if isinstance(slot, Slot):
-            return dict(
-                slot_name=slot.name,
-                entity=slot.entity,
-                text=slot.text,
-            )
-
-        return dict(
-            text=slot.text,
-        )
+    def entities_names(self):
+        """Set of entity names present in the intent dataset"""
+        return set(chunk.entity for u in self.utterances
+                   for chunk in u.chunks if isinstance(chunk, SlotChunk))
 
 
-class Utterance(object):
-    def __init__(self, input, slots):
+class IntentUtterance(object):
+    def __init__(self, input, chunks):
         self.input = input
-        self.slots = slots
+        self.chunks = chunks
 
     @property
     def annotated(self):
-        """Annotate with *
+        """Annotates with *
 
-        :return: the sentence annotated just with stars
-        >>> p = "the [role:snips/def](president) of [c:snips/def](France)"
-        >>> u = Utterance.parse(p)
-        >>> u.annotated
-        u'the *president* of *France*'
+        Returns: The sentence annotated just with stars
+
+        Examples:
+
+            >>> from snips_nlu_dataset.intent_dataset import IntentUtterance
+            >>> p = "the [role:role](president) of [country:country](France)"
+            >>> u = IntentUtterance.parse(p)
+            >>> u.annotated
+            'the *president* of *France*'
         """
         binput = bytearray(self.input, 'utf-8')
         acc = 0
         star = ord('*')
-        for slot in self.slots:
-            if isinstance(slot, Slot):
-                binput.insert(slot.range.start + acc, star)
-                binput.insert(slot.range.end + acc + 1, star)
+        for chunk in self.chunks:
+            if isinstance(chunk, SlotChunk):
+                binput.insert(chunk.range.start + acc, star)
+                binput.insert(chunk.range.end + acc + 1, star)
                 acc += 2
         return binput.decode('utf-8')
 
     @staticmethod
-    def stripped(input, slots):
+    def stripped(input, chunks):
         acc = 0
         s = ''
-        new_slots = []
-        for slot in slots:
-            start = slot.range.start
-            end = slot.range.end
+        new_chunks = []
+        for chunk in chunks:
+            start = chunk.range.start
+            end = chunk.range.end
             s += input[start:end]
-            if isinstance(slot, Slot):
-                acc += slot.tag_range.size
-                range = Range(start - acc, end - acc)
-                new_slot = Slot(slot.name, slot.entity, range, slot.text,
-                                slot.tag_range)
-                new_slots.append(new_slot)
+            if isinstance(chunk, SlotChunk):
+                acc += chunk.tag_range.size
+                rng = Range(start - acc, end - acc)
+                new_chunk = SlotChunk(chunk.name, chunk.entity, rng,
+                                      chunk.text, chunk.tag_range)
+                new_chunks.append(new_chunk)
                 acc += 1
             else:
-                range = Range(start - acc, end - acc)
-                new_slots.append(Text(slot.text, range))
-        return s, new_slots
+                rng = Range(start - acc, end - acc)
+                new_chunks.append(TextChunk(chunk.text, rng))
+        return s, new_chunks
 
     @staticmethod
     def parse(string):
-        """Parses an utterance.
+        """Parses an utterance
 
-        :param string: an utterance in the Utterance format
+        Args:
+            string (str): an utterance in the class:`.Utterance` format
 
-        >>> u = Utterance.parse("president of [country:default](France)")
-        >>> len(u.slots)
-        2
-        >>> u.slots[0].text
-        'president of '
-        >>> u.slots[0].range.start
-        0
-        >>> u.slots[0].range.end
-        13
+        Examples:
+
+            >>> from snips_nlu_dataset.intent_dataset import IntentUtterance
+            >>> u = IntentUtterance.parse("president of [country:default](France)")
+            >>> len(u.chunks)
+            2
+            >>> u.chunks[0].text
+            'president of '
+            >>> u.chunks[0].range.start
+            0
+            >>> u.chunks[0].range.end
+            13
         """
         sm = SM(string)
         capture_text(sm)
-        string, slots = Utterance.stripped(string, sm.slots)
-        return Utterance(string, slots)
+        string, chunks = IntentUtterance.stripped(string, sm.chunks)
+        return IntentUtterance(string, chunks)
 
 
-class Slot(object):
-    def __init__(self, name, entity, range, text, tag_range):
-        self.name = name
-        self.entity = entity
-        self.range = range
-        self.text = text
-        self.tag_range = tag_range
-
-
-class Text(object):
+class Chunk(with_metaclass(ABCMeta, object)):
     def __init__(self, text, range):
         self.text = text
         self.range = range
+
+    @abstractmethod
+    def json(self):
+        pass
+
+
+class SlotChunk(Chunk):
+    def __init__(self, slot_name, entity, range, text, tag_range):
+        super(SlotChunk, self).__init__(text, range)
+        self.name = slot_name
+        self.entity = entity
+        self.tag_range = tag_range
+
+    @property
+    def json(self):
+        return {
+            TEXT: self.text,
+            SLOT_NAME: self.name,
+            ENTITY: self.entity,
+        }
+
+
+class TextChunk(Chunk):
+    def __init__(self, text, range):
+        super(TextChunk, self).__init__(text, range)
+
+    @property
+    def json(self):
+        return {
+            TEXT: self.text
+        }
 
 
 class Range(object):
@@ -243,42 +200,38 @@ class SM(object):
 
     def __init__(self, input):
         self.input = input
-        self.slots = []
+        self.chunks = []
         self.current = 0
 
     def add_slot(self, slot_start, name, entity):
         """Adds a named slot
 
-        :param slot_start: int position where the slot tag started
-        :param name: string name of the slot
-        :param entity: string entity id
+        Args:
+            slot_start (int): position where the slot tag started
+            name (str): slot name
+            entity (str): entity name
         """
         tag_range = Range(slot_start - 1)
-        slot = Slot(name=name, entity=entity, range=None, text=None,
-                    tag_range=tag_range)
-        self.slots.append(slot)
+        chunk = SlotChunk(slot_name=name, entity=entity, range=None, text=None,
+                          tag_range=tag_range)
+        self.chunks.append(chunk)
 
     def add_text(self, text):
-        """Adds a simple text slot using the current position
-
-        :param text: text of the slot
-        """
+        """Adds a simple text chunk using the current position"""
         start = self.current
         end = start + len(text)
-        slot = Text(text=text, range=Range(start=start, end=end))
-        self.slots.append(slot)
+        chunk = TextChunk(text=text, range=Range(start=start, end=end))
+        self.chunks.append(chunk)
 
     def add_tagged(self, text):
-        """Adds this text to the last slot
-
-        :param text: string the text that was tagged
-        """
-        assert self.slots
-        slot = self.slots[-1]
-        slot.text = text
-        slot.tag_range.end = self.current - 1
-        slot.range = Range(start=self.current,
-                           end=self.current + len(text))
+        """Adds text to the last slot"""
+        if not self.chunks:
+            raise AssertionError("Cannot add tagged text because chunks list "
+                                 "is empty")
+        chunk = self.chunks[-1]
+        chunk.text = text
+        chunk.tag_range.end = self.current - 1
+        chunk.range = Range(start=self.current, end=self.current + len(text))
 
     def find(self, s):
         return self.input.find(s, self.current)
@@ -286,7 +239,8 @@ class SM(object):
     def move(self, pos):
         """Moves the cursor of the state to position after given
 
-        :param pos: int position to place the cursor just after
+        Args:
+            pos (int): position to place the cursor just after
         """
         self.current = pos + 1
 
@@ -306,13 +260,12 @@ class SM(object):
             start = current + key.start if key.start else current
             return self.input[slice(start, key.stop, key.step)]
         else:
-            raise Exception("Bad key")
+            raise TypeError("Bad key type: %s" % type(key))
 
 
 def capture_text(state):
     next_pos = state.find('[')
     sub = state[:] if next_pos < 0 else state[:next_pos]
-
     if sub.strip():
         state.add_text(sub)
     if next_pos >= 0:
@@ -324,31 +277,27 @@ def capture_slot(state):
     slot_start = state.current
     next_pos = state.find(':')
     if next_pos < 0:
-        raise BadFormat()
+        raise INTENT_FORMATTING_ERROR
     else:
         slot_name = state[:next_pos]
         state.move(next_pos)
         next_pos = state.find(']')
         if next_pos < 0:
-            raise BadFormat()
+            raise INTENT_FORMATTING_ERROR
         entity = state[:next_pos]
         state.move(next_pos)
         state.add_slot(slot_start, slot_name, entity)
         if state.read() != '(':
-            raise BadFormat()
+            raise INTENT_FORMATTING_ERROR
         capture_tagged(state)
 
 
 def capture_tagged(state):
     next_pos = state.find(')')
     if next_pos < 1:
-        raise BadFormat()
+        raise INTENT_FORMATTING_ERROR
     else:
         tagged_text = state[:next_pos]
         state.add_tagged(tagged_text)
         state.move(next_pos)
         capture_text(state)
-
-
-class BadFormat(Exception):
-    pass

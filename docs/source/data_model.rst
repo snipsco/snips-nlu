@@ -47,6 +47,20 @@ In Snips NLU, this is represented within the parsing output in this way:
 So you have an additional information which is the probability that the
 extracted intent correspond to the actual one.
 
+As explained in the :ref:`tutorial <none_intent>`, on top of the intents you
+have declared there is another implicit intent handled internally, called the
+**None** intent. Any input which corresponds to none of the intents you have
+declared will be classified as a None intent. In this case the parsing output
+looks like this:
+
+.. code-block:: json
+
+    {
+      "input": "foo bar",
+      "intent": null,
+      "slots": null
+    }
+
 
 .. _slot:
 

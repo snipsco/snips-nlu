@@ -1,15 +1,15 @@
-from __future__ import print_function
 from __future__ import unicode_literals
 
 import base64
 import io
+import logging
 import math
 import os
 import tempfile
-from builtins import range
 from copy import copy
 from itertools import groupby, product
 
+from builtins import range
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
@@ -31,7 +31,9 @@ from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.tokenization import Token, tokenize
 from snips_nlu.utils import (
     UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap, NotTrained)
+    ranges_overlap, NotTrained, DifferedLoggingMessage, log_elapsed_time)
+
+logger = logging.getLogger(__name__)
 
 
 class CRFSlotFiller(SlotFiller):
@@ -93,20 +95,21 @@ class CRFSlotFiller(SlotFiller):
         return self.crf_model is not None \
                and self.crf_model.tagger_ is not None
 
+    @log_elapsed_time(logger, logging.DEBUG,
+                      "Fitted CRFSlotFiller in {elapsed_time}")
     # pylint:disable=arguments-differ
-    def fit(self, dataset, intent, verbose=False):
+    def fit(self, dataset, intent):
         """Fit the slot filler
 
         Args:
             dataset (dict): A valid Snips dataset
             intent (str): The specific intent of the dataset to train
                 the slot filler on
-            verbose (bool, optional): If *True*, it will print the weights
-                of the CRF once the training is done
 
         Returns:
             :class:`CRFSlotFiller`: The same instance, trained
         """
+        logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
@@ -134,9 +137,10 @@ class CRFSlotFiller(SlotFiller):
         # pylint: enable=C0103
         self.crf_model = _get_crf_model(self.config.crf_args)
         self.crf_model.fit(X, Y)
-        if verbose:
-            self.print_weights()
 
+        logger.debug(
+            "Most relevant features for %s:\n%s", self.intent,
+            DifferedLoggingMessage(self.log_weights))
         return self
 
     # pylint:enable=arguments-differ
@@ -232,25 +236,28 @@ class CRFSlotFiller(SlotFiller):
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
-    def print_weights(self):
-        """Print both the label-to-label and label-to-features weights"""
+    def log_weights(self):
+        """Return a logs for both the label-to-label and label-to-features
+         weights"""
+        log = ""
         transition_features = self.crf_model.transition_features_
         transition_features = sorted(
             iteritems(transition_features),
             key=lambda transition_weight: math.fabs(transition_weight[1]),
             reverse=True)
-        print("\nTransition weights: \n\n")
+        log += "\nTransition weights: \n\n"
         for (state_1, state_2), weight in transition_features:
-            print("%s %s: %s" %
-                  (_encode_tag(state_1), _encode_tag(state_2), weight))
+            log += "\n%s %s: %s" % (
+                _decode_tag(state_1), _decode_tag(state_2), weight)
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
             iteritems(feature_weights),
             key=lambda feature_weight: math.fabs(feature_weight[1]),
             reverse=True)
-        print("\nFeature weights: \n\n")
+        log += "\n\nFeature weights: \n\n"
         for (feat, tag), weight in feature_weights:
-            print("%s %s: %s" % (feat, tag, weight))
+            log += "\n%s %s: %s" % (feat, _decode_tag(tag), weight)
+        return log
 
     def _augment_slots(self, text, tokens, tags, builtin_slots_names):
         scope = set(self.slot_name_mapping[slot]

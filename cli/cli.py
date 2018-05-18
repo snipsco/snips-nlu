@@ -5,13 +5,13 @@ import io
 import json
 import os
 import sys
-from builtins import bytes, input
 
+from builtins import bytes, input
 from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers.data import JsonLexer
 
-from snips_nlu import SnipsNLUEngine, NLUEngineConfig, load_resources
+from snips_nlu import (SnipsNLUEngine, load_resources)
 
 JSON_LEXER = JsonLexer()
 TERMINAL_FORMATTER = TerminalFormatter(bg="dark")
@@ -34,12 +34,11 @@ def main_train_engine():
     with io.open(dataset_path, "r", encoding="utf8") as f:
         dataset = json.load(f)
 
+    config = None
     if args.get("config_path") is not None:
         config_path = args.pop("config_path")
         with io.open(config_path, "r", encoding="utf8") as f:
             config = json.load(f)
-    else:
-        config = NLUEngineConfig()
 
     load_resources(dataset["language"])
     engine = SnipsNLUEngine(config).fit(dataset)
@@ -66,10 +65,9 @@ def main_engine_inference():
     training_path = args.pop("training_path")
     with io.open(os.path.abspath(training_path), "r", encoding="utf8") as f:
         engine_dict = json.load(f)
-    engine = SnipsNLUEngine.from_dict(engine_dict)
-    language = engine._dataset_metadata[  # pylint: disable=protected-access
-        "language_code"]
+    language = engine_dict["dataset_metadata"]["language_code"]
     load_resources(language)
+    engine = SnipsNLUEngine.from_dict(engine_dict)
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()
@@ -146,7 +144,7 @@ def parse_train_test_args(args):
     parser.add_argument("test_dataset_path", type=str)
     parser.add_argument("output_path", type=str)
     parser.add_argument(
-        "-esm", "--exclude-slot-metrics", action="store_true",
+        "-s", "--exclude-slot-metrics", action="store_true",
         help="Exclude slot metrics and slot errors in the output")
     parser.add_argument("-i", "--include-errors", action="store_true",
                         help="Include parsing errors in the output")

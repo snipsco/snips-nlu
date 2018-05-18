@@ -184,6 +184,7 @@ class TestConfig(SnipsTest):
             result = engine.parse("Please give me the weather in Paris")
 
             # Then
+            self.assertIsNotNone(result[RES_INTENT])
             intent_name = result[RES_INTENT][RES_INTENT_NAME]
             self.assertEqual("SearchWeatherForecast", intent_name)
 

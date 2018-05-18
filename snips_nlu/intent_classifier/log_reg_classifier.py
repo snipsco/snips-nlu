@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
-from builtins import str, zip
+import logging
+from builtins import str, zip, range
 
 import numpy as np
+from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.constants import LANGUAGE
@@ -13,7 +15,10 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     get_regularization_factor, build_training_data)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import check_random_state, NotTrained
+from snips_nlu.utils import check_random_state, NotTrained, \
+    DifferedLoggingMessage, log_elapsed_time
+
+logger = logging.getLogger(__name__)
 
 LOG_REG_ARGS = {
     "loss": "log",
@@ -48,12 +53,15 @@ class LogRegIntentClassifier(IntentClassifier):
         """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
+    @log_elapsed_time(logger, logging.DEBUG,
+                      "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
         """Fit the intent classifier with a valid Snips dataset
 
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
+        logger.debug("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
@@ -79,6 +87,7 @@ class LogRegIntentClassifier(IntentClassifier):
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)
         self.classifier.fit(X, classes)
+        logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self
 
     def get_intent(self, text, intents_filter=None):
@@ -114,8 +123,8 @@ class LogRegIntentClassifier(IntentClassifier):
             return intent_classification_result(self.intent_list[0], 1.0)
 
         X = self.featurizer.transform([text])  # pylint: disable=C0103
-        proba_vec = self.classifier.predict_proba(X)[0]
-        intents_probas = sorted(zip(self.intent_list, proba_vec),
+        proba_vec = self._predict_proba(X, intents_filter=intents_filter)
+        intents_probas = sorted(zip(self.intent_list, proba_vec[0]),
                                 key=lambda p: -p[1])
         for intent, proba in intents_probas:
             if intent is None:
@@ -123,6 +132,31 @@ class LogRegIntentClassifier(IntentClassifier):
             if intents_filter is None or intent in intents_filter:
                 return intent_classification_result(intent, proba)
         return None
+
+    def _predict_proba(self, X, intents_filter):  # pylint: disable=C0103
+        self.classifier._check_proba()  # pylint: disable=W0212
+
+        filtered_out_indexes = None
+        if intents_filter is not None:
+            filtered_out_indexes = [
+                i for i, intent in enumerate(self.intent_list)
+                if intent not in intents_filter and intent is not None]
+
+        prob = self.classifier.decision_function(X)
+        prob *= -1
+        np.exp(prob, prob)
+        prob += 1
+        np.reciprocal(prob, prob)
+        if prob.ndim == 1:
+            return np.vstack([1 - prob, prob]).T
+        else:
+            if filtered_out_indexes:  # not None and not empty
+                prob[:, filtered_out_indexes] = 0.
+                # OvR normalization, like LibLinear's predict_probability
+                prob /= prob.sum(axis=1).reshape((prob.shape[0], -1))
+            # We do not normalize when there is no intents filter, to keep the
+            # probabilities calibrated
+            return prob
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -171,3 +205,21 @@ class LogRegIntentClassifier(IntentClassifier):
         if featurizer is not None:
             intent_classifier.featurizer = Featurizer.from_dict(featurizer)
         return intent_classifier
+
+    def log_best_features(self, top_n=20):
+        log = "Top {} features weights by intent:\n".format(top_n)
+        voca = {
+            v: k for k, v in
+            iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
+        }
+        features = [voca[i] for i in self.featurizer.best_features]
+        for intent_ix in range(self.classifier.coef_.shape[0]):
+            intent_name = self.intent_list[intent_ix]
+            log += "\n\n\nFor intent {}\n".format(intent_name)
+            top_features_idx = np.argsort(
+                np.absolute(self.classifier.coef_[intent_ix]))[::-1][:top_n]
+            for feature_ix in top_features_idx:
+                feature_name = features[feature_ix]
+                feature_weight = self.classifier.coef_[intent_ix, feature_ix]
+                log += "\n{} -> {}".format(feature_name, feature_weight)
+        return log

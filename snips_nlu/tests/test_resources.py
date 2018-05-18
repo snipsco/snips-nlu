@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from future.builtins import str
+from builtins import str
 from mock import patch
 from snips_nlu_ontology import get_all_languages
 

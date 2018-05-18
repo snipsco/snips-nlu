@@ -4,7 +4,7 @@ Tutorial
 ========
 
 In this section, we will build an NLU assistant for home automation tasks. It
-will be able to understand queries about lights and thermostat. More precisely
+will be able to understand queries about lights and thermostats. More precisely
 our assistant will contain three :ref:`intents <intent>`:
 
 - ``turnLightOn``
@@ -80,9 +80,9 @@ And now the last file, ``setTemperature.txt``:
     Can you increase the temperature to [roomTemperature:snips/temperature](22 degrees) ?
 
 As you can see here, we used a new slot, ``[room_temperature:snips/temperature]``,
-which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
+whose name is ``roomTemperature`` and whose type is ``snips/temperature``. The slot
 type used here is a :ref:`builtin entity <builtin_entity_resolution>`. It
-allows to resolve properly the temperature values.
+allows you to resolve the temperature values properly.
 
 Let's move to the ``room.txt`` entity file:
 
@@ -118,26 +118,27 @@ Now, the ``"entities"`` part of the generated json looks like that:
     {
       "entities": {
         "room": {
-          "use_synonyms": true,
           "automatically_extensible": true,
           "data": [
             {
-              "value": "bedroom",
-              "synonyms": []
+              "synonyms": [],
+              "value": "bedroom"
             },
             {
-              "value": "living room",
-              "synonyms": ["main room"]
+              "synonyms": [
+                "main room"
+              ],
+              "value": "living room"
             },
             {
-              "value": "bathroom",
-              "synonyms": []
-            },
-            {
-              "value": "garden",
-              "synonyms": ["yard", "backyard,"]
+              "synonyms": [
+                "yard",
+                "backyard,"
+              ],
+              "value": "garden"
             }
-          ]
+          ],
+          "use_synonyms": true
         },
         "snips/temperature": {}
       }
@@ -159,32 +160,42 @@ and that we want our assistant to cover. Additionally, we add some
     {
       "entities": {
         "room": {
-          "use_synonyms": true,
           "automatically_extensible": false,
           "data": [
             {
-              "value": "bedroom",
-              "synonyms": ["sleeping room"]
+              "synonyms": [],
+              "value": "bathroom"
             },
             {
-              "value": "living room",
-              "synonyms": ["main room", "lounge"]
+              "synonyms": [
+                "sleeping room"
+              ],
+              "value": "bedroom"
             },
             {
-              "value": "bathroom",
-              "synonyms": []
+              "synonyms": [
+                "main room",
+                "lounge"
+              ],
+              "value": "living room"
             },
             {
-              "value": "garden",
-              "synonyms": ["yard", "backyard,"]
+              "synonyms": [
+                "yard",
+                "backyard,"
+              ],
+              "value": "garden"
             }
-          ]
+          ],
+          "use_synonyms": true
         },
         "snips/temperature": {}
       }
     }
 
-We don't need to edit the ``snips/temperature`` entity as it is a builtin entity.
+
+We don't need to edit the ``snips/temperature`` entity as it is a builtin
+entity.
 
 Now that we have our dataset ready, let's move to the next step which is to
 create an NLU engine.
@@ -206,7 +217,7 @@ The simplest way to create an NLU engine is the following:
 In this example the engine was created with default parameters which, in
 many cases, will be sufficient.
 
-However, in some cases it may be required to tune a bit the engine and provide
+However, in some cases it may be required to tune the engine a bit and provide
 a customized configuration. Typically, different languages may require
 different sets of features. You can check the :class:`.NLUEngineConfig` to get
 more details about what can be configured.
@@ -294,6 +305,28 @@ value):
 
 Notice that the ``lounge`` slot value points to ``living room`` as defined
 earlier in the entity synonyms of the dataset.
+
+.. _none_intent:
+
+---------------
+The None intent
+---------------
+
+On top of the intents that you have declared in your dataset, the NLU engine
+generates an implicit intent to cover utterances that does not correspond to
+any of your intents. We refer to it as the **None** intent.
+
+The NLU engine is trained to recognize when the input corresponds to the None
+intent. Here is what you should get if you try parsing ``"foo bar"`` with the
+engine we previously created:
+
+.. code-block:: json
+
+    {
+      "input": "foo bar",
+      "intent": null,
+      "slots": null
+    }
 
 Persisting
 ----------

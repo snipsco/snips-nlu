@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
 import logging
+from builtins import str
 from copy import deepcopy
 
-from builtins import str
 from future.utils import iteritems
 
 from snips_nlu.builtin_entities import is_builtin_entity
@@ -15,6 +15,7 @@ from snips_nlu.nlu_engine.utils import resolve_slots
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
+from snips_nlu.resources import load_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
 from snips_nlu.utils import (
     get_slot_name_mappings, NotTrained, log_result, log_elapsed_time)
@@ -171,10 +172,12 @@ class SnipsNLUEngine(ProcessingUnit):
             raise ValueError(
                 "Incompatible data model: persisted object=%s, python lib=%s"
                 % (model_version, __model_version__))
-
+        dataset_metadata = unit_dict["dataset_metadata"]
+        if dataset_metadata is not None:
+            load_resources(dataset_metadata["language_code"])
         nlu_engine = cls(config=unit_dict["config"])
         # pylint:disable=protected-access
-        nlu_engine._dataset_metadata = unit_dict["dataset_metadata"]
+        nlu_engine._dataset_metadata = dataset_metadata
         # pylint:enable=protected-access
         nlu_engine.intent_parsers = [
             load_processing_unit(parser_dict)

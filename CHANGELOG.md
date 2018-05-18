@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.13.4] - 2018-05-18
+### Added
+- Documentation for the `None` intent
+
+### Changed
+- Improve calibration of intent classification probabilities
+- Update snips-nlu-ontology version to 0.55.0
+
+### Fixed
+- DeterministicIntentParser: Fix bug when deduplicating regexes
+- DeterministicIntentParser: Fix issue with incorrect ranges when parsing sentences with both builtin and custom slots
+- DeterministicIntentParser: Fix issue with builtin entities placeholders causing mismatches
+- Fix issue with engine-inference CLI script not loading resources correctly 
+
 ## [0.13.3] - 2018-04-24
 ### Added
 - Add config parameter to augment data with builtin entity examples
@@ -44,6 +58,7 @@ All notable changes to this project will be documented in this file.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.13.4]: https://github.com/snipsco/snips-nlu/compare/0.13.3...0.13.4
 [0.13.3]: https://github.com/snipsco/snips-nlu/compare/0.13.2...0.13.3
 [0.13.1]: https://github.com/snipsco/snips-nlu/compare/0.13.0...0.13.1
 [0.13.0]: https://github.com/snipsco/snips-nlu/compare/0.12.1...0.13.0

@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
-from builtins import next
 from copy import deepcopy
 from itertools import cycle
 
+from builtins import next
 from future.utils import iteritems
 from snips_nlu_ontology import get_builtin_entity_examples
 
@@ -47,12 +47,17 @@ def capitalize_utterances(utterances, entities, language, ratio, random_state):
 def generate_utterance(contexts_iterator, entities_iterators):
     context = deepcopy(next(contexts_iterator))
     context_data = []
-    for chunk in context[DATA]:
+    nb_chunks = len(context[DATA])
+    for i, chunk in enumerate(context[DATA]):
         if ENTITY in chunk:
             chunk[TEXT] = deepcopy(
-                next(entities_iterators[chunk[ENTITY]]))
-        chunk[TEXT] = chunk[TEXT].strip() + " "
+                next(entities_iterators[chunk[ENTITY]])).strip()
+        else:
+            chunk[TEXT] = chunk[TEXT].strip()
         context_data.append(chunk)
+        if i != nb_chunks - 1:
+            context_data.append({"text": " "})
+
     context[DATA] = context_data
     return context
 

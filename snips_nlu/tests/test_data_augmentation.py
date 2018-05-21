@@ -1,10 +1,9 @@
 from __future__ import unicode_literals
 
+import numpy as np
 from builtins import next
 from builtins import range
 from mock import patch
-
-import numpy as np
 
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
@@ -168,18 +167,27 @@ class TestDataAugmentation(SnipsTest):
         expected_utterance = {
             "data": [
                 {
-                    "text": "this is ",
+                    "text": "this is",
                 },
                 {
-                    "text": "entity one ",
+                    "text": " ",
+                },
+                {
+                    "text": "entity one",
                     "entity": "entity1",
                     "slot_name": "slot1"
                 },
                 {
-                    "text": "right "
+                    "text": " ",
                 },
                 {
-                    "text": "entity two ",
+                    "text": "right"
+                },
+                {
+                    "text": " ",
+                },
+                {
+                    "text": "entity two",
                     "entity": "entity2",
                     "slot_name": "slot1"
                 }

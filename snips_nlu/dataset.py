@@ -19,13 +19,13 @@ from snips_nlu.utils import validate_type, validate_key, validate_keys
 
 
 def extract_queries_entities(dataset):
-    entities_values = {ent_name: [] for ent_name in dataset[ENTITIES]}
+    entities_values = {ent_name: set() for ent_name in dataset[ENTITIES]}
 
     for intent in itervalues(dataset[INTENTS]):
         for query in intent[UTTERANCES]:
             for chunk in query[DATA]:
                 if ENTITY in chunk:
-                    entities_values[chunk[ENTITY]].append(chunk[TEXT])
+                    entities_values[chunk[ENTITY]].add(chunk[TEXT].strip())
     return {k: list(v) for k, v in iteritems(entities_values)}
 
 

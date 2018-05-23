@@ -8,8 +8,8 @@ from builtins import range
 from builtins import str
 from builtins import zip
 from future.utils import iteritems
-from snips_nlu_utils import normalize
 from num2words import num2words
+from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
@@ -32,6 +32,8 @@ AND_REGEXES = {
         re.IGNORECASE)
     for language, utterances in iteritems(AND_UTTERANCES)
 }
+
+MAX_ENTITY_VARIATIONS = 10
 
 
 def build_variated_query(string, ranges_and_utterances):
@@ -60,6 +62,8 @@ def and_variations(string, language):
     matches = sorted(matches, key=lambda x: x.start())
     values = [({START: m.start(), END: m.end()}, AND_UTTERANCES[language])
               for m in matches]
+    if len(AND_UTTERANCES[language]) ** len(values) > MAX_ENTITY_VARIATIONS:
+        return set()
     combinations = itertools.product(range(len(AND_UTTERANCES[language])),
                                      repeat=len(values))
     for c in combinations:
@@ -79,6 +83,8 @@ def punctuation_variations(string, language):
     values = [({START: m.start(), END: m.end()}, (m.group(0), ""))
               for m in matches]
 
+    if 2 ** len(values) > MAX_ENTITY_VARIATIONS:
+        return set()
     combinations = itertools.product(range(2), repeat=len(matches))
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])
@@ -122,6 +128,8 @@ def numbers_variations(string, language):
               zip(number_entities, digit_values, alpha_values)
               if a is not None]
 
+    if 2 ** len(values) > MAX_ENTITY_VARIATIONS:
+        return set()
     combinations = itertools.product(range(2), repeat=len(values))
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])

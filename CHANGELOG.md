@@ -3,9 +3,9 @@ All notable changes to this project will be documented in this file.
 
 ## [0.13.5] - 2018-05-23
 ### Fixed
-- Fixed synonyms matching by using the normalized version of the tagged value
-- Fixed dataset augmentation by keep stripped values of entities
-- Fixed the string variations functions not to generate too many variations   
+- Fixed synonyms matching by using the normalized version of the tagged values
+- Fixed dataset augmentation by keeping stripped values of entities
+- Fixed the string variations functions to prevent generating too many variations   
 
 ## [0.13.4] - 2018-05-18
 ### Added

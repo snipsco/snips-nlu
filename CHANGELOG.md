@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.13.5] - 2018-05-23
+### Fixed
+- Fixed synonyms matching by using the normalized version of the tagged values
+- Fixed dataset augmentation by keeping stripped values of entities
+- Fixed the string variations functions to prevent generating too many variations   
+
 ## [0.13.4] - 2018-05-18
 ### Added
 - Documentation for the `None` intent
@@ -58,6 +64,7 @@ All notable changes to this project will be documented in this file.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.13.5]: https://github.com/snipsco/snips-nlu/compare/0.13.4...0.13.5
 [0.13.4]: https://github.com/snipsco/snips-nlu/compare/0.13.3...0.13.4
 [0.13.3]: https://github.com/snipsco/snips-nlu/compare/0.13.2...0.13.3
 [0.13.1]: https://github.com/snipsco/snips-nlu/compare/0.13.0...0.13.1

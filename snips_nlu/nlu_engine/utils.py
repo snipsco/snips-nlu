@@ -1,3 +1,5 @@
+from snips_nlu_utils import normalize
+
 from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
 from snips_nlu.constants import (
     UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
@@ -30,8 +32,9 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
                     resolved_slots.append(resolved_slot)
         else:  # custom slot
             entity = dataset_entities[entity_name]
-            if raw_value in entity[UTTERANCES]:
-                resolved_value = entity[UTTERANCES][raw_value]
+            normalized_raw_value = normalize(raw_value)
+            if normalized_raw_value in entity[UTTERANCES]:
+                resolved_value = entity[UTTERANCES][normalized_raw_value]
             elif entity[AUTOMATICALLY_EXTENSIBLE]:
                 resolved_value = raw_value
             else:

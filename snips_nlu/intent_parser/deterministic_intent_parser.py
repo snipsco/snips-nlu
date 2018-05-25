@@ -333,16 +333,16 @@ def _get_joined_entity_utterances(dataset, language):
         # matches are performed in a case insensitive manner
         utterances = set(u.lower() for u in entity[UTTERANCES])
         patterns = []
-        for utterance in utterances:
-            tokens = tokenize_light(utterance, language)
-            pattern = WHITESPACE_PATTERN.join(regex_escape(t) for t in tokens)
-            patterns.append(pattern)
-
-        # We also add a placeholder value for builtin entities
         if is_builtin_entity(entity_name):
+            # We add a placeholder value for builtin entities
             placeholder = _get_entity_name_placeholder(entity_name, language)
             patterns.append(regex_escape(placeholder))
-
+        else:
+            for utterance in utterances:
+                tokens = tokenize_light(utterance, language)
+                pattern = WHITESPACE_PATTERN.join(regex_escape(t)
+                                                  for t in tokens)
+                patterns.append(pattern)
         patterns = (p for p in patterns if p)
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(patterns, key=len, reverse=True))

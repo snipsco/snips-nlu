@@ -71,7 +71,7 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
     """
 
     # pylint: disable=super-init-not-called
-    def __init__(self, max_queries=50, max_pattern_length=1000):
+    def __init__(self, max_queries=100, max_pattern_length=1000):
         self.max_queries = max_queries
         self.max_pattern_length = max_pattern_length
 

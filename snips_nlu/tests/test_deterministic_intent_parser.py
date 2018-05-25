@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import io
 import os
-import re
 from builtins import range
 
 from mock import patch
@@ -15,7 +14,8 @@ from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities, _get_range_shift, _replace_tokenized_out_characters)
+    _replace_builtin_entities, _get_range_shift,
+    _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
@@ -479,7 +479,7 @@ class TestDeterministicIntentParser(SnipsTest):
     def test_should_be_serializable_before_fitting(self):
         # Given
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_pattern_length=43)
         parser = DeterministicIntentParser(config=config)
 
         # When
@@ -491,7 +491,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_entities": 43
+                "max_pattern_length": 43
             },
             "language_code": None,
             "group_names_to_slot_names": None,
@@ -502,24 +502,23 @@ class TestDeterministicIntentParser(SnipsTest):
         self.assertDictEqual(actual_dict, expected_dict)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           "._generate_regexes")
+           "._generate_patterns")
     def test_should_be_serializable(self, mocked_generate_regexes):
         # Given
 
         # pylint: disable=unused-argument
-        def mock_generate_regexes(utterances, joined_entity_utterances,
-                                  group_names_to_slot_names, language):
-            regexes = [re.compile(r"mocked_regex_%s" % i)
-                       for i in range(len(utterances))]
+        def mock_generate_patterns(utterances, joined_entity_utterances,
+                                   group_names_to_slot_names, language):
+            patterns = ["mocked_regex_%s" % i for i in range(len(utterances))]
             group_to_slot = {"group_0": "dummy slot name"}
-            return regexes, group_to_slot
+            return patterns, group_to_slot
 
         # pylint: enable=unused-argument
 
-        mocked_generate_regexes.side_effect = mock_generate_regexes
+        mocked_generate_regexes.side_effect = mock_generate_patterns
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=100)
+                                                 max_pattern_length=100)
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
@@ -531,7 +530,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_entities": 100
+                "max_pattern_length": 100
             },
             "language_code": "en",
             "group_names_to_slot_names": {
@@ -563,7 +562,7 @@ class TestDeterministicIntentParser(SnipsTest):
         parser_dict = {
             "config": {
                 "max_queries": 42,
-                "max_entities": 43
+                "max_pattern_length": 43
             },
             "language_code": "en",
             "group_names_to_slot_names": {
@@ -601,7 +600,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "world_slot": "world_entity"
         }
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_pattern_length=43)
         expected_parser = DeterministicIntentParser(config=config)
         expected_parser.language = LANGUAGE_EN
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
@@ -615,7 +614,7 @@ class TestDeterministicIntentParser(SnipsTest):
         parser_dict = {
             "config": {
                 "max_queries": 42,
-                "max_entities": 43
+                "max_pattern_length": 43
             },
             "language_code": None,
             "group_names_to_slot_names": None,
@@ -628,7 +627,7 @@ class TestDeterministicIntentParser(SnipsTest):
 
         # Then
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_pattern_length=43)
         expected_parser = DeterministicIntentParser(config=config)
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
@@ -694,20 +693,31 @@ class TestDeterministicIntentParser(SnipsTest):
         ]
         self.assertSequenceEqual(deduplicated_slots, expected_slots)
 
-    def test_should_not_train_intents_too_big(self):
+    def test_should_limit_nb_queries(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         config = DeterministicIntentParserConfig(max_queries=2,
-                                                 max_entities=200)
+                                                 max_pattern_length=1000)
 
         # When
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
-        not_fitted_intent = "dummy_intent_1"
-        fitted_intent = "dummy_intent_2"
-        self.assertGreater(len(parser.regexes_per_intent[fitted_intent]), 0)
-        self.assertListEqual(parser.regexes_per_intent[not_fitted_intent], [])
+        self.assertEqual(len(parser.regexes_per_intent["dummy_intent_1"]), 2)
+        self.assertEqual(len(parser.regexes_per_intent["dummy_intent_2"]), 1)
+
+    def test_should_limit_patterns_length(self):
+        # Given
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        config = DeterministicIntentParserConfig(max_queries=1000,
+                                                 max_pattern_length=300)
+
+        # When
+        parser = DeterministicIntentParser(config=config).fit(dataset)
+
+        # Then
+        self.assertEqual(3, len(parser.regexes_per_intent["dummy_intent_1"]))
+        self.assertEqual(1, len(parser.regexes_per_intent["dummy_intent_2"]))
 
     @patch('snips_nlu.intent_parser.deterministic_intent_parser'
            '.get_builtin_entities')

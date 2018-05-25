@@ -84,13 +84,14 @@ class DeterministicIntentParser(IntentParser):
             dataset, self.language)
         self.slot_names_to_entities = _get_slot_names_mapping(dataset)
         for intent_name, intent in iteritems(dataset[INTENTS]):
-            if not self._is_trainable(intent, dataset):
-                self.regexes_per_intent[intent_name] = []
-                continue
             utterances = intent[UTTERANCES]
-            regexes, self.group_names_to_slot_names = _generate_regexes(
+            patterns, self.group_names_to_slot_names = _generate_patterns(
                 utterances, joined_entity_utterances,
                 self.group_names_to_slot_names, self.language)
+            patterns = [p for p in patterns
+                        if len(p) < self.config.max_pattern_length]
+            patterns = patterns[:self.config.max_queries]
+            regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
             self.regexes_per_intent[intent_name] = regexes
         return self
 
@@ -175,19 +176,6 @@ class DeterministicIntentParser(IntentParser):
         parsed_slots = sorted(parsed_slots,
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
-
-    def _is_trainable(self, intent, dataset):
-        if len(intent[UTTERANCES]) >= self.config.max_queries:
-            return False
-
-        intent_entities = set(chunk[ENTITY] for query in intent[UTTERANCES]
-                              for chunk in query[DATA] if ENTITY in chunk)
-        total_entities = sum(len(dataset[ENTITIES][ent][UTTERANCES])
-                             for ent in intent_entities
-                             if not is_builtin_entity(ent))
-        if total_entities > self.config.max_entities:
-            return False
-        return True
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -327,8 +315,8 @@ def _get_queries_with_unique_context(intent_queries, language):
     return queries
 
 
-def _generate_regexes(intent_queries, joined_entity_utterances,
-                      group_names_to_labels, language):
+def _generate_patterns(intent_queries, joined_entity_utterances,
+                       group_names_to_labels, language):
     queries = _get_queries_with_unique_context(intent_queries, language)
     # Join all the entities utterances with a "|" to create the patterns
     patterns = set()
@@ -336,8 +324,7 @@ def _generate_regexes(intent_queries, joined_entity_utterances,
         pattern, group_names_to_labels = _query_to_pattern(
             query, joined_entity_utterances, group_names_to_labels, language)
         patterns.add(pattern)
-    regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
-    return regexes, group_names_to_labels
+    return list(patterns), group_names_to_labels
 
 
 def _get_joined_entity_utterances(dataset, language):
@@ -346,16 +333,16 @@ def _get_joined_entity_utterances(dataset, language):
         # matches are performed in a case insensitive manner
         utterances = set(u.lower() for u in entity[UTTERANCES])
         patterns = []
-        for utterance in utterances:
-            tokens = tokenize_light(utterance, language)
-            pattern = WHITESPACE_PATTERN.join(regex_escape(t) for t in tokens)
-            patterns.append(pattern)
-
-        # We also add a placeholder value for builtin entities
         if is_builtin_entity(entity_name):
+            # We add a placeholder value for builtin entities
             placeholder = _get_entity_name_placeholder(entity_name, language)
             patterns.append(regex_escape(placeholder))
-
+        else:
+            for utterance in utterances:
+                tokens = tokenize_light(utterance, language)
+                pattern = WHITESPACE_PATTERN.join(regex_escape(t)
+                                                  for t in tokens)
+                patterns.append(pattern)
         patterns = (p for p in patterns if p)
         joined_entity_utterances[entity_name] = r"|".join(
             sorted(patterns, key=len, reverse=True))

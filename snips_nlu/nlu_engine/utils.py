@@ -9,7 +9,10 @@ from snips_nlu.result import custom_slot, builtin_slot
 
 # pylint:disable=redefined-builtin
 def resolve_slots(input, slots, dataset_entities, language, scope):
-    builtin_entities = get_builtin_entities(input, language, scope)
+    # Do not use cached entities here as datetimes must be computed using
+    # current context
+    builtin_entities = get_builtin_entities(input, language, scope,
+                                            use_cache=False)
     resolved_slots = []
     for slot in slots:
         entity_name = slot[RES_ENTITY]
@@ -25,7 +28,8 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
                     break
             if not found:
                 builtin_matches = get_builtin_entities(raw_value, language,
-                                                       scope=[entity_name])
+                                                       scope=[entity_name],
+                                                       use_cache=False)
                 if builtin_matches:
                     resolved_slot = builtin_slot(slot,
                                                  builtin_matches[0][VALUE])

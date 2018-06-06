@@ -6,7 +6,6 @@ from collections import defaultdict
 
 import numpy as np
 import scipy.sparse as sp
-
 from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
@@ -236,7 +235,8 @@ def _preprocess_utterance(utterance, language,
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
-    builtin_entities = get_builtin_entities(utterance, language)
+    builtin_entities = get_builtin_entities(utterance, language,
+                                            use_cache=True)
     entities_ranges = (
         e[RES_MATCH_RANGE] for e in
         sorted(builtin_entities, key=lambda e: e[RES_MATCH_RANGE][START])

@@ -375,7 +375,7 @@ def _get_entity_name_placeholder(entity_label, language):
 
 
 def _replace_builtin_entities(text, language):
-    builtin_entities = get_builtin_entities(text, language)
+    builtin_entities = get_builtin_entities(text, language, use_cache=True)
     if not builtin_entities:
         return dict(), text
 

@@ -84,9 +84,10 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
                             std_utterances_length, random_state)
-    # Remove duplicate 'unknowword unknowword'
-    return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
-            for _ in range(noise_size)]
+    # Remove duplicate 'unknownword unknownword'
+    return [
+        text_to_utterance(UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it)))
+        for _ in range(noise_size)]
 
 
 def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
@@ -140,8 +141,6 @@ def build_training_data(dataset, language, data_augmentation_config,
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, len(intents), data_augmentation_config, language,
         random_state)
-    augmented_utterances = [get_text_from_chunks(u[DATA])
-                            for u in augmented_utterances]
 
     augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]
@@ -157,3 +156,7 @@ def build_training_data(dataset, language, data_augmentation_config,
             intent_mapping[intent_class] = intent
 
     return augmented_utterances, np.array(utterance_classes), intent_mapping
+
+
+def text_to_utterance(text):
+    return {DATA: [{TEXT: text}]}

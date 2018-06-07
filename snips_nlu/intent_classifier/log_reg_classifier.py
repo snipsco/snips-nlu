@@ -7,12 +7,12 @@ import numpy as np
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.constants import LANGUAGE
+from snips_nlu.constants import LANGUAGE, DATA, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
-    get_regularization_factor, build_training_data)
+    get_regularization_factor, build_training_data, text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import check_random_state, NotTrained, \
@@ -122,7 +122,9 @@ class LogRegIntentClassifier(IntentClassifier):
                 return None
             return intent_classification_result(self.intent_list[0], 1.0)
 
-        X = self.featurizer.transform([text])  # pylint: disable=C0103
+        # pylint: disable=C0103
+        X = self.featurizer.transform([text_to_utterance(text)])
+        # pylint: enable=C0103
         proba_vec = self._predict_proba(X, intents_filter=intents_filter)
         intents_probas = sorted(zip(self.intent_list, proba_vec[0]),
                                 key=lambda p: -p[1])

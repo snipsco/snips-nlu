@@ -143,7 +143,7 @@ class TestConfig(SnipsTest):
         config_dict = {
             "unit_name": "deterministic_intent_parser",
             "max_queries": 666,
-            "max_entities": 333
+            "max_pattern_length": 333
         }
 
         # When

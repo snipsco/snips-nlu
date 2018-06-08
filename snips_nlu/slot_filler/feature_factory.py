@@ -495,7 +495,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
             end = tokens[token_index].end
 
             builtin_entities = get_builtin_entities(
-                text, self.language, scope=[builtin_entity])
+                text, self.language, scope=[builtin_entity], use_cache=True)
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
             for ent in builtin_entities:

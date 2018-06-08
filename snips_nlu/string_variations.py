@@ -119,7 +119,7 @@ def numbers_variations(string, language):
         return set()
 
     number_entities = get_builtin_entities(
-        string, language, scope=[SNIPS_NUMBER])
+        string, language, scope=[SNIPS_NUMBER], use_cache=True)
 
     number_entities = sorted(number_entities,
                              key=lambda x: x[RES_MATCH_RANGE][START])

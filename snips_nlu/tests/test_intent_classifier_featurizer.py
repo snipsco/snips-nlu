@@ -8,10 +8,12 @@ from future.builtins import bytes
 from future.utils import iteritems
 from mock import patch, mock
 
-from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.constants import LANGUAGE_EN, DATA, TEXT, ENTITY, SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
+from snips_nlu.intent_classifier.log_reg_classifier_utils import \
+    text_to_utterance
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.tests.utils import SnipsTest
@@ -50,16 +52,17 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         }
         dataset = validate_and_format_dataset(dataset)
 
-        queries = [
+        utterances = [
             "hello world",
             "beautiful world",
             "hello here",
             "bird birdy",
             "beautiful bird"
         ]
+        utterances = [text_to_utterance(u) for u in utterances]
         classes = np.array([0, 0, 0, 1, 1])
 
-        featurizer.fit(dataset, queries, classes)
+        featurizer.fit(dataset, utterances, classes)
 
         # When
         serialized_featurizer = featurizer.to_dict()
@@ -283,7 +286,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False
-                }
+                },
+                "snips/number": {}
             },
             "language": "en",
             "snips_nlu_version": "0.0.1"
@@ -292,11 +296,27 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         dataset = validate_and_format_dataset(dataset)
 
         utterances = [
-            "hÉllo wOrld Éntity_2",
-            "beauTiful World entity 1",
-            "Bird bïrdy",
-            "beauTiful éntity 1 bIrd Éntity_2"
+            text_to_utterance("hÉllo wOrld Éntity_2"),
+            text_to_utterance("beauTiful World entity 1"),
+            text_to_utterance("Bird bïrdy"),
         ]
+
+        labeled_utterance = {
+            DATA: [
+                {
+                    TEXT: "beauTiful éntity "
+                },
+                {
+                    TEXT: "1",
+                    ENTITY: "snips/number",
+                    SLOT_NAME: "number"
+                },
+                {
+                    TEXT: " bIrd Éntity_2"
+                }
+            ]
+        }
+        utterances.append(labeled_utterance)
         labels = np.array([0, 0, 1, 1])
 
         featurizer = Featurizer(
@@ -310,13 +330,13 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         # Then
         expected_utterances = [
-            "hello world entity_ builtinentityfeaturesnipsnumber "
+            "hello world entity_2 builtinentityfeaturesnipsnumber "
             "entityfeatureentity_2",
-            "beauty world ent builtinentityfeaturesnipsnumber "
+            "beauty world ent 1 builtinentityfeaturesnipsnumber "
             "entityfeatureentity_1 entityfeatureentity_2 "
             "cluster_1 cluster_3",
             "bird bird",
-            "beauty ent bird entity_ builtinentityfeaturesnipsnumber "
+            "beauty ent bird entity_2 builtinentityfeaturesnipsnumber "
             "builtinentityfeaturesnipsnumber entityfeatureentity_1 "
             "entityfeatureentity_2 entityfeatureentity_2 cluster_1"
         ]
@@ -340,11 +360,11 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         featurizer = Featurizer(
             language, unknown_words_replacement_string=replacement_string,
             config=FeaturizerConfig())
-        queries = ["hello dude"]
+        utterances = [text_to_utterance("hello dude")]
         y = np.array([1])
 
         # When
-        featurizer.fit(dataset, queries, y)
+        featurizer.fit(dataset, utterances, y)
 
         # Then
         self.assertNotIn(replacement_string,

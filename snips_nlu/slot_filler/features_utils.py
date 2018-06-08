@@ -11,6 +11,8 @@ _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
 
 
 def get_all_ngrams(tokens):
+    if not tokens:
+        return []
     key = "<||>".join(tokens)
     if key not in _NGRAMS_CACHE:
         ngrams = compute_all_ngrams(tokens, len(tokens))

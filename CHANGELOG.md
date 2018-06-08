@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2018-06-08
+### Fixed
+- Issue due to caching of builtin entities at inference time
+
+### Changed
+- Improve builtin entities handling during intent classification
+- Improve builtin entities handling in `DeterministicIntentParser`
+- Reduce size of regex patterns in trained model file
+- Update model version to `0.15.0`
+
 ## [0.13.5] - 2018-05-23
 ### Fixed
 - Fixed synonyms matching by using the normalized version of the tagged values
@@ -64,6 +74,7 @@ All notable changes to this project will be documented in this file.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.14.0]: https://github.com/snipsco/snips-nlu/compare/0.13.5...0.14.0
 [0.13.5]: https://github.com/snipsco/snips-nlu/compare/0.13.4...0.13.5
 [0.13.4]: https://github.com/snipsco/snips-nlu/compare/0.13.3...0.13.4
 [0.13.3]: https://github.com/snipsco/snips-nlu/compare/0.13.2...0.13.3

@@ -12,9 +12,10 @@ from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
-from snips_nlu.constants import (ENTITIES, UTTERANCES, RES_MATCH_RANGE, START,
-                                 END, ENTITY_KIND)
+from snips_nlu.constants import (ENTITIES, UTTERANCES, ENTITY_KIND, DATA, TEXT,
+                                 ENTITY)
 from snips_nlu.constants import NGRAM
+from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem
@@ -42,6 +43,10 @@ class Featurizer(object):
             unknown_words_replacement_string
 
     def fit(self, dataset, utterances, classes):
+        utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
+        if not any(tokenize_light(q, self.language) for q in utterances_texts):
+            return None
+
         utterances_to_features = _get_utterances_to_features_names(
             dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
@@ -56,9 +61,6 @@ class Featurizer(object):
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
-        if all(not "".join(tokenize_light(q, self.language)) for q in
-               utterances):
-            return None
         preprocessed_utterances = self.preprocess_utterances(utterances)
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
@@ -103,14 +105,12 @@ class Featurizer(object):
         return self.fit(dataset, queries, y).transform(queries)
 
     def preprocess_utterances(self, utterances):
-        preprocessed_utterances = []
-        for u in utterances:
-            processed_utterance = _preprocess_utterance(
+        return [
+            _preprocess_utterance(
                 u, self.language, self.entity_utterances_to_feature_names,
-                self.config.word_clusters_name
-            )
-            preprocessed_utterances.append(processed_utterance)
-        return preprocessed_utterances
+                self.config.word_clusters_name)
+            for u in utterances
+        ]
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -227,7 +227,8 @@ def _get_dataset_entities_features(normalized_stemmed_tokens,
 def _preprocess_utterance(utterance, language,
                           entity_utterances_to_features_names,
                           word_clusters_name):
-    utterance_tokens = tokenize_light(utterance, language)
+    utterance_text = get_text_from_chunks(utterance[DATA])
+    utterance_tokens = tokenize_light(utterance_text, language)
     word_clusters_features = _get_word_cluster_features(
         utterance_tokens, word_clusters_name, language)
     normalized_stemmed_tokens = [_normalize_stem(t, language)
@@ -235,23 +236,19 @@ def _preprocess_utterance(utterance, language,
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
-    builtin_entities = get_builtin_entities(utterance, language,
+    builtin_entities = get_builtin_entities(utterance_text, language,
                                             use_cache=True)
-    entities_ranges = (
-        e[RES_MATCH_RANGE] for e in
-        sorted(builtin_entities, key=lambda e: e[RES_MATCH_RANGE][START])
-    )
     builtin_entities_features = [
         _builtin_entity_to_feature(ent[ENTITY_KIND], language)
         for ent in builtin_entities
     ]
 
-    # We remove builtin entities from the utterance to avoid learning specific
-    # examples such as '42'
-    filtered_utterance = _remove_ranges(utterance, entities_ranges)
-    filtered_utterance_tokens = tokenize_light(filtered_utterance, language)
-    filtered_normalized_stemmed_tokens = [_normalize_stem(t, language)
-                                          for t in filtered_utterance_tokens]
+    # We remove values of builtin slots from the utterance to avoid learning
+    # specific samples such as '42' or 'tomorrow'
+    filtered_normalized_stemmed_tokens = [
+        _normalize_stem(chunk[TEXT], language) for chunk in utterance[DATA]
+        if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])
+    ]
 
     features = get_default_sep(language).join(
         filtered_normalized_stemmed_tokens)
@@ -263,16 +260,6 @@ def _preprocess_utterance(utterance, language,
         features += " " + " ".join(sorted(word_clusters_features))
 
     return features
-
-
-def _remove_ranges(text, ranges):
-    filtered_text = ""
-    idx = 0
-    for rng in ranges:
-        filtered_text += text[idx:rng[START]]
-        idx = rng[END]
-    filtered_text += text[idx:]
-    return filtered_text
 
 
 def _get_utterances_to_features_names(dataset, language):

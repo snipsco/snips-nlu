@@ -10,14 +10,14 @@ from future.utils import itervalues
 from mock import patch
 
 from snips_nlu.constants import (
-    INTENTS, DATA, UTTERANCES, RES_INTENT_NAME, LANGUAGE_EN)
-from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
+    INTENTS, UTTERANCES, RES_INTENT_NAME, LANGUAGE_EN)
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     remove_builtin_slots, get_noise_it, generate_smart_noise,
     generate_noise_utterances, add_unknown_word_to_utterances,
-    build_training_data)
+    build_training_data, text_to_utterance)
 from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import (
@@ -213,15 +213,16 @@ class TestLogRegIntentClassifier(SnipsTest):
 
         text = " "
         noise_size = 6
-        utterance = [text] + [text] * noise_size
-        labels = [1] + [None] * noise_size
+        utterances = [text] + [text] * noise_size
+        utterances = [text_to_utterance(t) for t in utterances]
+        labels = [0] + [1] * noise_size
         intent_list = ["dummy_intent_1", None]
-        mocked_build_training.return_value = utterance, labels, intent_list
+        mocked_build_training.return_value = utterances, labels, intent_list
 
         # When / Then
         intent_classifier = LogRegIntentClassifier().fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
-        self.assertEqual(intent, None)
+        self.assertEqual(None, intent)
 
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
@@ -239,11 +240,11 @@ class TestLogRegIntentClassifier(SnipsTest):
             dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
-                               in itervalues(dataset[INTENTS]) for utterance in
-                               intent[UTTERANCES]]
+        expected_utterances = [utterance for intent
+                               in itervalues(dataset[INTENTS])
+                               for utterance in intent[UTTERANCES]]
         expected_intent_mapping = [u'dummy_intent_1', u'dummy_intent_2']
-        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
@@ -283,7 +284,7 @@ class TestLogRegIntentClassifier(SnipsTest):
             dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA])
+        expected_utterances = [utterance
                                for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
@@ -292,11 +293,12 @@ class TestLogRegIntentClassifier(SnipsTest):
                              len(noise)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0,
                                 random_state)
-        noisy_utterances = [next(noise_it) for _ in range(noise_size)]
-        expected_utterances += list(noisy_utterances)
+        noisy_utterances = [text_to_utterance(next(noise_it))
+                            for _ in range(noise_size)]
+        expected_utterances += noisy_utterances
         expected_intent_mapping = sorted(dataset["intents"])
         expected_intent_mapping.append(None)
-        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
@@ -337,19 +339,20 @@ class TestLogRegIntentClassifier(SnipsTest):
             dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA])
+        expected_utterances = [utterance
                                for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
-        noisy_utterances = [replacement_string for _ in range(noise_size)]
-        expected_utterances += list(noisy_utterances)
+        noisy_utterances = [text_to_utterance(replacement_string)
+                            for _ in range(noise_size)]
+        expected_utterances += noisy_utterances
         expected_intent_mapping = sorted(dataset["intents"])
         expected_intent_mapping.append(None)
-        self.assertListEqual(utterances, expected_utterances)
-        self.assertListEqual(intent_mapping, expected_intent_mapping)
+        self.assertListEqual(expected_utterances, utterances)
+        self.assertListEqual(expected_intent_mapping, intent_mapping)
 
     def test_should_build_training_data_with_no_data(self):
         # Given
@@ -401,7 +404,7 @@ class TestLogRegIntentClassifier(SnipsTest):
             augmented_utterances, num_intents, config, language, random_state)
 
         # Then
-        joined_noise = " ".join(noise)
+        joined_noise = text_to_utterance(" ".join(noise))
         for u in noise_utterances:
             self.assertEqual(u, joined_noise)
 

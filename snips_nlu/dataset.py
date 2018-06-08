@@ -87,7 +87,7 @@ def validate_and_format_intent(intent, entities):
 
 
 def get_text_from_chunks(chunks):
-    return ''.join(chunk[TEXT] for chunk in chunks)
+    return "".join(chunk[TEXT] for chunk in chunks)
 
 
 def has_any_capitalization(entity_utterances, language):

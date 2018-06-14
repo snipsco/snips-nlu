@@ -3,15 +3,15 @@ from __future__ import print_function, unicode_literals
 import argparse
 import io
 import json
-import os
 import sys
-
 from builtins import bytes, input
+from pathlib import Path
+
 from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers.data import JsonLexer
 
-from snips_nlu import (SnipsNLUEngine, load_resources)
+from snips_nlu import SnipsNLUEngine, load_resources
 
 JSON_LEXER = JsonLexer()
 TERMINAL_FORMATTER = TerminalFormatter(bg="dark")
@@ -62,8 +62,8 @@ def parse_inference_args(args):
 def main_engine_inference():
     args = vars(parse_inference_args(sys.argv[1:]))
 
-    training_path = args.pop("training_path")
-    with io.open(os.path.abspath(training_path), "r", encoding="utf8") as f:
+    training_path = Path(args.pop("training_path"))
+    with training_path.open("r", encoding="utf8") as f:
         engine_dict = json.load(f)
     language = engine_dict["dataset_metadata"]["language_code"]
     load_resources(language)

@@ -1,13 +1,13 @@
 from __future__ import unicode_literals
 
-import os
+from pathlib import Path
 
 # package
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
+ROOT_PATH = Path(__file__).parent.parent
 PACKAGE_NAME = "snips_nlu"
-RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
+DATA_PACKAGE_NAME = "data"
+DATA_PATH = ROOT_PATH / PACKAGE_NAME / DATA_PACKAGE_NAME
+PACKAGE_PATH = ROOT_PATH / PACKAGE_NAME
 
 # result
 RES_INPUT = "input"

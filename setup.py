@@ -19,6 +19,7 @@ nlu_metrics_version = "0.12.0"
 
 required = [
     "enum34==1.1.6",
+    "pathlib==1.0.1",
     "numpy==1.14.0",
     "scipy==1.0.0",
     "scikit-learn==0.19.1",

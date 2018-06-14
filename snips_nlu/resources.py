@@ -1,20 +1,16 @@
 from __future__ import unicode_literals
 
-import glob
-import io
-import os
+import json
 from builtins import next
-from collections import defaultdict
 
-from snips_nlu_ontology import get_all_languages
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
-                                 STEMS)
+                                 STEMS, DATA_PATH)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.tokenization import tokenize
 
-_RESOURCES = defaultdict(dict)
+_RESOURCES = dict()
 
 
 class MissingResource(LookupError):
@@ -25,22 +21,20 @@ def clear_resources():
     _RESOURCES.clear()
 
 
-def load_resources(resources_dir):
+def load_resources(name):
     """Load language specific resources
 
     Args:
-        resources_dir (str): resources directory path
+        name (str): resource name
 
     Note:
         Language resources must be loaded before fitting or parsing
     """
     clear_resources()
-    languages = os.listdir(resources_dir)
-    all_supported_languages = get_all_languages()
-    for language in languages:
-        if language not in all_supported_languages:
-            raise ValueError("Unknown language: '%s'" % language)
-        _RESOURCES[language] = _load_resources(resources_dir, language)
+    if name in set(d.name for d in DATA_PATH.iterdir()):
+        _load_resources_from_dir(DATA_PATH / name)
+    else:
+        raise MissingResource("Resource '{r}' not found".format(r=name))
 
 
 def resource_exists(language, resource_name):
@@ -99,17 +93,17 @@ def _get_resource(language, resource_name):
     return _RESOURCES[language][resource_name]
 
 
-def _load_resources(resources_dir, language):
-    language_resources_path = os.path.join(resources_dir, language)
-    word_clusters = _load_word_clusters(
-        os.path.join(language_resources_path, "word_clusters"))
-    gazetteers = _load_gazetteers(language_resources_path, language)
-    stop_words = _load_stop_words(
-        os.path.join(language_resources_path, "stop_words.txt"))
-    noise = _load_noise(os.path.join(language_resources_path, "noise.txt"))
-    stems = _load_stems(os.path.join(language_resources_path, "stemming"))
+def _load_resources_from_dir(resources_dir):
+    with (resources_dir / "metadata.json").open() as f:
+        metadata = json.load(f)
+    language = metadata["language"]
+    word_clusters = _load_word_clusters(resources_dir / "word_clusters")
+    gazetteers = _load_gazetteers(resources_dir / "gazetteers", language)
+    stop_words = _load_stop_words(resources_dir / "stop_words.txt")
+    noise = _load_noise(resources_dir / "noise.txt")
+    stems = _load_stems(resources_dir / "stemming")
 
-    return {
+    _RESOURCES[language] = {
         WORD_CLUSTERS: word_clusters,
         GAZETTEERS: gazetteers,
         STOP_WORDS: stop_words,
@@ -119,18 +113,18 @@ def _load_resources(resources_dir, language):
 
 
 def _load_stop_words(stop_words_path):
-    if not os.path.exists(stop_words_path):
+    if not stop_words_path.exists():
         return None
-    with io.open(stop_words_path, encoding='utf8') as f:
+    with stop_words_path.open(encoding='utf8') as f:
         lines = (normalize(l) for l in f)
-    stop_words = set(l for l in lines if l)
+        stop_words = set(l for l in lines if l)
     return stop_words
 
 
 def _load_noise(noise_path):
-    if not os.path.exists(noise_path):
+    if not noise_path.exists():
         return None
-    with io.open(noise_path, encoding='utf8') as f:
+    with noise_path.open(encoding='utf8') as f:
         # Here we split on a " " knowing that it's always ignored by
         # the tokenization (see tokenization unit tests)
         # It is not important to tokenize precisely as this noise is just used
@@ -140,14 +134,13 @@ def _load_noise(noise_path):
 
 
 def _load_word_clusters(word_clusters_path):
-    if not os.path.isdir(word_clusters_path):
+    if not word_clusters_path.is_dir():
         return dict()
 
     clusters = dict()
-    for filename in os.listdir(word_clusters_path):
-        word_cluster_name = os.path.splitext(filename)[0]
-        word_cluster_path = os.path.join(word_clusters_path, filename)
-        with io.open(word_cluster_path, encoding="utf8") as f:
+    for filepath in word_clusters_path.iterdir():
+        word_cluster_name = filepath.stem
+        with filepath.open(encoding="utf8") as f:
             clusters[word_cluster_name] = dict()
             for line in f:
                 split = line.rstrip().split("\t")
@@ -156,16 +149,14 @@ def _load_word_clusters(word_clusters_path):
     return clusters
 
 
-def _load_gazetteers(language_resources_path, language):
-    gazetteers_path = os.path.join(language_resources_path, "gazetteers")
-    if not os.path.isdir(gazetteers_path):
+def _load_gazetteers(gazetteers_path, language):
+    if not gazetteers_path.is_dir():
         return dict()
 
     gazetteers = dict()
-    for filename in os.listdir(gazetteers_path):
-        gazetteer_name = os.path.splitext(filename)[0]
-        gazetteer_path = os.path.join(gazetteers_path, filename)
-        with io.open(gazetteer_path, encoding="utf8") as f:
+    for filepath in gazetteers_path.iterdir():
+        gazetteer_name = filepath.stem
+        with filepath.open(encoding="utf8") as f:
             gazetteers[gazetteer_name] = set()
             for line in f:
                 normalized = normalize(line.strip())
@@ -178,13 +169,13 @@ def _load_gazetteers(language_resources_path, language):
 
 
 def _load_verbs_lexemes(stemming_path):
-    lexems_paths = glob.glob(
-        os.path.join(stemming_path, "top_*_verbs_lexemes.txt"))
-    if not lexems_paths:
+    try:
+        lexems_path = next(stemming_path.glob("top_*_verbs_lexemes.txt"))
+    except StopIteration:
         return None
 
     verb_lexemes = dict()
-    with io.open(lexems_paths[0], encoding="utf8") as f:
+    with lexems_path.open(encoding="utf8") as f:
         for line in f:
             elements = line.strip().split(';')
             verb = normalize(elements[0])
@@ -195,13 +186,13 @@ def _load_verbs_lexemes(stemming_path):
 
 
 def _load_words_inflections(stemming_path):
-    inflection_paths = glob.glob(
-        os.path.join(stemming_path, "top_*_words_inflected.txt"))
-    if not inflection_paths:
+    try:
+        inflection_path = next(stemming_path.glob("top_*_words_inflected.txt"))
+    except StopIteration:
         return None
 
     inflections = dict()
-    with io.open(inflection_paths[0], encoding="utf8") as f:
+    with inflection_path.open(encoding="utf8") as f:
         for line in f:
             elements = line.strip().split(';')
             inflections[normalize(elements[0])] = normalize(elements[1])

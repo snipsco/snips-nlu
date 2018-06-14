@@ -387,9 +387,8 @@ class TestDeterministicIntentParser(SnipsTest):
     def test_should_parse_naughty_strings(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.txt")
-        with io.open(naughty_strings_path, encoding='utf8') as f:
+        naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
+        with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
@@ -402,9 +401,8 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
-        naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.txt")
-        with io.open(naughty_strings_path, encoding='utf8') as f:
+        naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
+        with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in

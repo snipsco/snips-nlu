@@ -4,16 +4,14 @@ import errno
 import json
 import numbers
 import os
-
 from builtins import object, str
 from collections import OrderedDict, namedtuple, Mapping
 from datetime import datetime
 
 import numpy as np
 
-
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
-                                 RESOURCES_PATH, END, START)
+                                 END, START)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -134,10 +132,6 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
     return T
 
 
-def get_resources_path(language):
-    return os.path.join(RESOURCES_PATH, language)
-
-
 def mkdir_p(path):
     """Reproduces the 'mkdir -p shell' command
 
@@ -145,9 +139,9 @@ def mkdir_p(path):
     http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     try:
-        os.makedirs(path)
+        os.makedirs(str(path))
     except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
+        if exc.errno == errno.EEXIST and path.is_dir():
             pass
         else:
             raise

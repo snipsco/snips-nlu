@@ -1,7 +1,6 @@
 from __future__ import print_function, unicode_literals
 
 import argparse
-import io
 import json
 import sys
 from builtins import bytes, input
@@ -31,13 +30,13 @@ def main_train_engine():
     args = vars(parse_train_args(sys.argv[1:]))
 
     dataset_path = args.pop("dataset_path")
-    with io.open(dataset_path, "r", encoding="utf8") as f:
+    with Path(dataset_path).open("r", encoding="utf8") as f:
         dataset = json.load(f)
 
     config = None
     if args.get("config_path") is not None:
         config_path = args.pop("config_path")
-        with io.open(config_path, "r", encoding="utf8") as f:
+        with Path(config_path).open("r", encoding="utf8") as f:
             config = json.load(f)
 
     load_resources(dataset["language"])
@@ -46,7 +45,7 @@ def main_train_engine():
 
     output_path = args.pop("output_path")
     serialized_engine = bytes(json.dumps(engine.to_dict()), encoding="utf8")
-    with io.open(output_path, "w", encoding="utf8") as f:
+    with Path(output_path).open("w", encoding="utf8") as f:
         f.write(serialized_engine.decode("utf8"))
     print("Saved the trained engine to %s" % output_path)
 
@@ -123,7 +122,7 @@ def main_cross_val_metrics():
 
     include_errors = args.get("include_errors", False)
 
-    with io.open(dataset_path, "r", encoding="utf-8") as f:
+    with Path(dataset_path).open("r", encoding="utf-8") as f:
         load_resources(json.load(f)["language"])
 
     from snips_nlu_metrics import compute_cross_val_metrics
@@ -132,7 +131,7 @@ def main_cross_val_metrics():
     if not include_errors:
         metrics.pop("parsing_errors")
 
-    with io.open(output_path, mode="w") as f:
+    with Path(output_path).open(mode="w") as f:
         json_dump = json.dumps(metrics, sort_keys=True, indent=2)
         f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
 
@@ -167,7 +166,7 @@ def main_train_test_metrics():
     )
 
     include_errors = args.get("include_errors", False)
-    with io.open(train_dataset_path, "r", encoding="utf-8") as f:
+    with Path(train_dataset_path).open("r", encoding="utf-8") as f:
         load_resources(json.load(f)["language"])
 
     from snips_nlu_metrics import compute_train_test_metrics
@@ -176,6 +175,6 @@ def main_train_test_metrics():
     if not include_errors:
         metrics.pop("parsing_errors")
 
-    with io.open(output_path, mode="w") as f:
+    with Path(output_path).open(mode="w") as f:
         json_dump = json.dumps(metrics, sort_keys=True, indent=2)
         f.write(bytes(json_dump, encoding="utf8").decode("utf8"))

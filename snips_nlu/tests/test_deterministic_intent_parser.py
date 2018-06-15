@@ -1,8 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import io
-import os
 from builtins import range
 
 from mock import patch

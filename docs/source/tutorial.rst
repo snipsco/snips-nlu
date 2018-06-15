@@ -104,7 +104,7 @@ We are now ready to generate our dataset:
 
 .. code-block:: bash
 
-    generate-dataset --language en --intent-files   turnLightOn.txt turnLightOff.txt setTemperature.txt --entity-files room.txt > dataset.json
+    snips-nlu-generate-dataset --language en --intent-files   turnLightOn.txt turnLightOff.txt setTemperature.txt --entity-files room.txt > dataset.json
 
 .. note::
 

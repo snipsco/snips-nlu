@@ -1,7 +1,5 @@
 include snips_nlu/__version__
-recursive-include cli *.py
-recursive-include samples *
+recursive-include snips_nlu_samples *
 recursive-include snips_nlu_dataset *
 global-exclude __pycache__ *.py[cod]
-exclude cli/tests/*
 exclude snips_nlu_dataset/tests/*

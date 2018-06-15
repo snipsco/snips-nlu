@@ -247,14 +247,14 @@ class TestLogRegIntentClassifier(SnipsTest):
         self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_noise(
-            self, mocked_augment_utterances, mocked_get_noises):
+            self, mocked_augment_utterances, mocked_get_noise):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
-        mocked_get_noises.return_value = mocked_noises
+        mocked_get_noise.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -301,14 +301,14 @@ class TestLogRegIntentClassifier(SnipsTest):
         self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_unknown_noise(
-            self, mocked_augment_utterances, mocked_get_subtitles):
+            self, mocked_augment_utterances, mocked_get_noise):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
-        mocked_get_subtitles.return_value = mocked_noises
+        mocked_get_noise.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -372,8 +372,8 @@ class TestLogRegIntentClassifier(SnipsTest):
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
-    def test_generate_noise_utterances(self, mocked_get_noises):
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
+    def test_generate_noise_utterances(self, mocked_get_noise):
         # Given
         language = LANGUAGE_EN
         num_intents = 2
@@ -381,7 +381,7 @@ class TestLogRegIntentClassifier(SnipsTest):
         utterances_length = 5
 
         noise = [str(i) for i in range(utterances_length)]
-        mocked_get_noises.return_value = noise
+        mocked_get_noise.return_value = noise
 
         augmented_utterances = [
             {
@@ -500,7 +500,7 @@ class TestLogRegIntentClassifier(SnipsTest):
         ]
         self.assertEqual(expected_utterances, noisy_utterances)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     def test_generate_noise_utterances_should_replace_unknown_words(
             self, mocked_noise):
         # Given

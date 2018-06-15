@@ -30,7 +30,6 @@ def load_resources(name):
     Note:
         Language resources must be loaded before fitting or parsing
     """
-    clear_resources()
     if name in set(d.name for d in DATA_PATH.iterdir()):
         _load_resources_from_dir(DATA_PATH / name)
     else:
@@ -46,7 +45,8 @@ def resource_exists(language, resource_name):
         Returns:
             bool: whether the resource exists or not
     """
-    return resource_name in _RESOURCES[language]
+    return resource_name in _RESOURCES[language] \
+           and _RESOURCES[language][resource_name] is not None
 
 
 def get_stop_words(language):
@@ -97,6 +97,8 @@ def _load_resources_from_dir(resources_dir):
     with (resources_dir / "metadata.json").open() as f:
         metadata = json.load(f)
     language = metadata["language"]
+    if language in _RESOURCES:
+        return
     word_clusters = _load_word_clusters(resources_dir / "word_clusters")
     gazetteers = _load_gazetteers(resources_dir / "gazetteers", language)
     stop_words = _load_stop_words(resources_dir / "stop_words.txt")

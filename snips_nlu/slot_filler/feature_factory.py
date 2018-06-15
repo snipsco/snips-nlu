@@ -384,7 +384,7 @@ class EntityMatchFactory(CRFFeatureFactory):
 
         def preprocess(string):
             normalized = normalize(string)
-            if resource_exists(self.language, STEMS) and self.use_stemming:
+            if self.use_stemming:
                 return stem(normalized, self.language)
             return normalized
 

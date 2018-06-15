@@ -28,7 +28,7 @@ required = [
     "snips_nlu_utils==0.6.1",
     "snips_nlu_ontology==0.57.0",
     "num2words==0.5.6",
-    "pygments==2.2.0",
+    "plac==0.9.6",
 ]
 
 extras_require = {
@@ -75,15 +75,7 @@ setup(name=PACKAGE_NAME,
       include_package_data=True,
       entry_points={
           "console_scripts": [
-              "snips-nlu-train-engine=snips_nlu.cli.cli:main_train_engine",
-              "snips-nlu-engine-inference="
-              "snips_nlu.cli.cli:main_engine_inference",
-              "snips-nlu-cross-val-metrics="
-              "snips_nlu.cli.cli:main_cross_val_metrics",
-              "snips-nlu-train-test-metrics="
-              "snips_nlu.cli.cli:main_train_test_metrics",
-              "snips-nlu-generate-dataset="
-              "snips_nlu_dataset:main_generate_dataset"
+              "snips-nlu=snips_nlu.__main__:main"
           ]
       },
       zip_safe=False)

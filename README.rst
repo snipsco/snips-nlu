@@ -2,13 +2,16 @@ Snips NLU
 =========
 
 .. image:: https://travis-ci.org/snipsco/snips-nlu.svg?branch=develop
-    :target: https://travis-ci.org/snipsco/snips-nlu
+   :target: https://travis-ci.org/snipsco/snips-nlu
+
+.. image:: https://ci.appveyor.com/api/projects/status/github/snipsco/snips-nlu?branch=develop&svg=true
+   :target: https://ci.appveyor.com/project/snipsco/snips-nlu
 
 .. image:: https://img.shields.io/pypi/v/snips-nlu.svg?branch=develop
-    :target: https://pypi.python.org/pypi/snips-nlu
+   :target: https://pypi.python.org/pypi/snips-nlu
 
 .. image:: https://img.shields.io/pypi/pyversions/snips-nlu.svg?branch=develop
-    :target: https://pypi.python.org/pypi/snips-nlu
+   :target: https://pypi.python.org/pypi/snips-nlu
 
 .. image:: https://codecov.io/gh/snipsco/snips-nlu/branch/develop/graph/badge.svg
    :target: https://codecov.io/gh/snipsco/snips-nlu

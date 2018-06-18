@@ -6,14 +6,16 @@ from setuptools import setup, find_packages
 packages = [p for p in find_packages()
             if "tests" not in p and "debug" not in p]
 
-PACKAGE_NAME = "snips_nlu"
-ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-README = os.path.join(ROOT_PATH, "README.rst")
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
-VERSION = "__version__"
+root = os.path.abspath(os.path.dirname(__file__))
 
-with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
-    version = f.readline().strip()
+with io.open(os.path.join(root, "snips_nlu", "__about__.py"),
+             encoding="utf8") as f:
+    about = dict()
+    exec(f.read(), about)
+
+
+with io.open(os.path.join(root, "README.rst"), encoding="utf8") as f:
+    readme = f.read()
 
 nlu_metrics_version = "0.12.0"
 
@@ -51,16 +53,14 @@ extras_require = {
     ]
 }
 
-with io.open(README, encoding="utf8") as f:
-    readme = f.read()
-
-setup(name=PACKAGE_NAME,
-      description="Snips Natural Language Understanding library",
+setup(name=about["__title__"],
+      description=about["__summary__"],
       long_description=readme,
-      version=version,
-      author="Clement Doumouro, Adrien Ball",
-      author_email="clement.doumouro@snips.ai, adrien.ball@snips.ai",
-      license="Apache 2.0",
+      version=about["__version__"],
+      author=about["__author__"],
+      author_email=about["__email__"],
+      license=about["__license__"],
+      url=about["__uri__"],
       install_requires=required,
       extras_require=extras_require,
       classifiers=[

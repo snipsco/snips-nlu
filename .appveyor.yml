@@ -1,0 +1,37 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27"
+      TARGET: x86_64-pc-windows-msvc
+    - PYTHON: "C:\\Python34"
+      TARGET: x86_64-pc-windows-msvc
+    - PYTHON: "C:\\Python35"
+      TARGET: x86_64-pc-windows-msvc
+    - PYTHON: "C:\\Python36-x64"
+      TARGET: x86_64-pc-windows-msvc
+
+branches:
+  only:
+  - develop
+  - master
+
+cache:
+  # Cache downloaded pip packages and built wheels.
+  - '%LocalAppData%\pip\Cache\http'
+  - '%LocalAppData%\pip\Cache\wheels'
+
+install:
+  - appveyor-retry appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - rustup-init.exe -y --default-host %TARGET%
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+  - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
+  - rustc -V
+  - cargo -V
+  - "%PYTHON%\\python.exe -m pip install wheel"
+  - "%PYTHON%\\python.exe -m pip install setuptools_rust==0.8.3"
+  - "%PYTHON%\\python.exe -m pip install -e .[test] --verbose"
+
+build: false
+
+test_script:
+  - "%PYTHON%\\python.exe -m unittest discover"
+  - "%PYTHON%\\python.exe samples/sample.py"

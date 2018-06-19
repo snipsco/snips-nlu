@@ -38,7 +38,7 @@ def download(resource_name):
         package_path = get_package_path(full_resource_name)
         link(full_resource_name, resource_name, force=True,
              resources_path=package_path)
-    except:
+    except:  # pylint:disable=bare-except
         prints(
             "Creating a shortcut link for '{r}' didn't work, but you can "
             "still load the resources via its full package name: "

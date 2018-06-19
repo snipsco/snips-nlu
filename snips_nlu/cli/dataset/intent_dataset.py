@@ -1,7 +1,7 @@
 from __future__ import print_function, absolute_import
 
 from abc import ABCMeta, abstractmethod
-from builtins import object, str
+from builtins import object
 from pathlib import Path
 
 from future.utils import with_metaclass
@@ -91,7 +91,8 @@ class IntentUtterance(object):
 
         Examples:
 
-            >>> from snips_nlu.cli.dataset.intent_dataset import IntentUtterance
+            >>> from snips_nlu.cli.dataset.intent_dataset import \
+                IntentUtterance
             >>> p = "the [role:role](president) of [country:country](France)"
             >>> u = IntentUtterance.parse(p)
             >>> u.annotated
@@ -137,8 +138,10 @@ class IntentUtterance(object):
 
         Examples:
 
-            >>> from snips_nlu.cli.dataset.intent_dataset import IntentUtterance
-            >>> u = IntentUtterance.parse("president of [country:default](France)")
+            >>> from snips_nlu.cli.dataset.intent_dataset import \
+                IntentUtterance
+            >>> u = IntentUtterance.\
+                parse("president of [country:default](France)")
             >>> len(u.chunks)
             2
             >>> u.chunks[0].text
@@ -181,9 +184,6 @@ class SlotChunk(Chunk):
 
 
 class TextChunk(Chunk):
-    def __init__(self, text, range):
-        super(TextChunk, self).__init__(text, range)
-
     @property
     def json(self):
         return {

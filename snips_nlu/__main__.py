@@ -4,31 +4,19 @@ import sys
 
 import plac
 
-from snips_nlu.cli import cross_val_metrics, train_test_metrics, \
-    generate_dataset
+from snips_nlu.cli import (
+    cross_val_metrics, train_test_metrics, generate_dataset, download, link)
 from snips_nlu.cli.inference import parse
 from snips_nlu.cli.training import train
-
-
-def prints(*texts, **kwargs):
-    """Print formatted message (manual ANSI escape sequences to avoid
-    dependency)
-    *texts (unicode): Texts to print. Each argument is rendered as paragraph.
-    **kwargs: 'title' becomes coloured headline. exits=True performs sys exit.
-    """
-    exits = kwargs.get('exits', None)
-    title = kwargs.get('title', None)
-    title = '\033[93m{}\033[0m\n'.format(title) if title else ''
-    message = '\n\n'.join([text for text in texts])
-    print('\n{}{}\n'.format(title, message))
-    if exits is not None:
-        sys.exit(exits)
+from snips_nlu.cli.utils import prints
 
 
 def main():
     commands = {
         "train": train,
         "parse": parse,
+        "download": download,
+        "link": link,
         "generate-dataset": generate_dataset,
         "cross-val-metrics": cross_val_metrics,
         "train-test-metrics": train_test_metrics,

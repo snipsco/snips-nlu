@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 from builtins import next
+from pathlib import Path
 
 from snips_nlu_utils import normalize
 
@@ -9,6 +10,7 @@ from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
                                  STEMS, DATA_PATH)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.tokenization import tokenize
+from snips_nlu.utils import is_package, get_package_path
 
 _RESOURCES = dict()
 
@@ -32,6 +34,11 @@ def load_resources(name):
     """
     if name in set(d.name for d in DATA_PATH.iterdir()):
         _load_resources_from_dir(DATA_PATH / name)
+    elif is_package(name):
+        package_path = get_package_path(name)
+        _load_resources_from_dir(package_path)
+    elif Path(name).exists():
+        _load_resources_from_dir(Path(name))
     else:
         raise MissingResource("Resource '{r}' not found".format(r=name))
 
@@ -97,13 +104,19 @@ def _load_resources_from_dir(resources_dir):
     with (resources_dir / "metadata.json").open() as f:
         metadata = json.load(f)
     language = metadata["language"]
+    resource_name = metadata["name"]
+    version = metadata["version"]
     if language in _RESOURCES:
         return
-    word_clusters = _load_word_clusters(resources_dir / "word_clusters")
-    gazetteers = _load_gazetteers(resources_dir / "gazetteers", language)
-    stop_words = _load_stop_words(resources_dir / "stop_words.txt")
-    noise = _load_noise(resources_dir / "noise.txt")
-    stems = _load_stems(resources_dir / "stemming")
+    sub_dir = resources_dir / (resource_name + "-" + version)
+    if not sub_dir.is_dir():
+        raise FileNotFoundError("Missing resources directory: %s"
+                                % str(sub_dir))
+    word_clusters = _load_word_clusters(sub_dir / "word_clusters")
+    gazetteers = _load_gazetteers(sub_dir / "gazetteers", language)
+    stop_words = _load_stop_words(sub_dir / "stop_words.txt")
+    noise = _load_noise(sub_dir / "noise.txt")
+    stems = _load_stems(sub_dir / "stemming")
 
     _RESOURCES[language] = {
         WORD_CLUSTERS: word_clusters,

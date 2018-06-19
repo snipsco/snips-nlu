@@ -31,6 +31,7 @@ required = [
     "snips_nlu_ontology==0.57.0",
     "num2words==0.5.6",
     "plac==0.9.6",
+    "requests==2.18.4"
 ]
 
 extras_require = {

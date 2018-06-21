@@ -372,3 +372,21 @@ class TestCLI(SnipsTest):
         }
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(expected_dataset_dict, dataset_dict)
+
+    def test_should_fail_generating_intent_with_wrong_file_name(self):
+        # Given
+        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
+        intent_file = examples_path / "getWeather.txt"
+
+        # When / Then
+        with self.assertRaises(AssertionError):
+            IntentDataset.from_file(intent_file)
+
+    def test_should_fail_generating_entity_with_wrong_file_name(self):
+        # Given
+        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
+        entity_file = examples_path / "location.txt"
+
+        # When / Then
+        with self.assertRaises(AssertionError):
+            CustomEntity.from_file(entity_file)

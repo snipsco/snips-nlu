@@ -33,6 +33,28 @@ which means you will need to install
 `Rust <https://www.rust-lang.org/en-US/install.html>`_ before running the
 ``pip install snips-nlu`` command.
 
+Language resources
+------------------
+
+Snips NLU relies on `language resources`_ that must be downloaded before the
+library can be used. You can fetch resources for a specific language by
+running the following command:
+
+.. code-block:: sh
+
+    snips-nlu download en
+
+Once the resources have been fetched, they can be loaded in Python using:
+
+.. code-block:: python
+
+    from snips_nlu import load_resources
+
+    load_resources("en")
+
+The list of supported languages is available
+`here <https://snips-nlu.readthedocs.io/en/latest/languages.html>`_.
+
 A simple example
 ----------------
 
@@ -73,7 +95,8 @@ Sample code
 -----------
 
 Here is a sample code that you can run on your machine after having
-installed `snips-nlu` and downloaded this `sample dataset`_:
+installed `snips-nlu`, fetched the english resources and downloaded this
+`sample dataset`_:
 
 .. code-block:: python
 
@@ -112,6 +135,7 @@ Links
 -----
 * `What is Snips about ? <https://snips.ai/>`_
 * Snips NLU Open sourcing `blog post`_
+* `Snips NLU Language Resources <https://github.com/snipsco/snips-nlu-language-resources>`_
 * `Bug tracker <https://github.com/snipsco/snips-nlu/issues>`_
 * `Snips NLU Rust <https://github.com/snipsco/snips-nlu-rs>`_: Rust inference pipeline implementation and bindings (C, Swift, Kotlin, Python)
 * `Rustling <https://github.com/snipsco/rustling-ontology>`_: Snips NLU builtin entities parser
@@ -127,6 +151,7 @@ Licence
 
 This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.
 
+.. _language resources: https://github.com/snipsco/snips-nlu-language-resources
 .. _sample dataset: samples/sample_dataset.json
 .. _Discord channel: https://discordapp.com/invite/3939Kqx
 .. _blog post: https://medium.com/snips-ai/an-introduction-to-snips-nlu-the-open-source-library-behind-snips-embedded-voice-platform-b12b1a60a41a

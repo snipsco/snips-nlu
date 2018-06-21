@@ -39,6 +39,12 @@ To fetch the resources for a specific language, run the following command:
 
 .. code-block:: sh
 
+    python -m snips_nlu download <language>
+
+Or simply:
+
+.. code-block:: sh
+
     snips-nlu download <language>
 
 The list of supported languages is described :ref:`here <languages>`.

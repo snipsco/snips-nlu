@@ -18,8 +18,10 @@ from snips_nlu.utils import get_package_path
 @plac.annotations(
     resource_name=("Name of the language resources to download. Can be "
                    "either a shortcut, like 'en', or the full name of the "
-                   "resources like 'snips_nlu_en'", "positional", None, str))
-def download(resource_name):
+                   "resources like 'snips_nlu_en'", "positional", None, str),
+    pip_args=("Additional arguments to be passed to `pip install` when "
+              "installing the model"))
+def download(resource_name, *pip_args):
     """Download compatible resources for the specified language"""
     resource_name = resource_name.lower()
     shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
@@ -27,7 +29,7 @@ def download(resource_name):
     compatibility = _get_compatibility()
     version = _get_resources_version(full_resource_name, compatibility)
     dl = _download_model('{r}-{v}/{r}-{v}.tar.gz#egg={r}=={v}'
-                         .format(r=full_resource_name, v=version))
+                         .format(r=full_resource_name, v=version), pip_args)
     if dl != 0:
         sys.exit(dl)
     try:
@@ -65,8 +67,10 @@ def _get_resources_version(resource_name, compatibility):
     return compatibility[resource_name][0]
 
 
-def _download_model(filename):
+def _download_model(filename, user_pip_args=None):
     download_url = __about__.__download_url__ + '/' + filename
     pip_args = ['--no-cache-dir', '--no-deps']
+    if user_pip_args:
+        pip_args.extend(user_pip_args)
     cmd = [sys.executable, '-m', 'pip', 'install'] + pip_args + [download_url]
     return subprocess.call(cmd, env=os.environ.copy())

@@ -14,7 +14,7 @@ CONFIG = {
                     {
                         "args": {
                             "common_words_gazetteer_name": None,
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "n": 1
                         },
                         "factory_name": "ngram",
@@ -29,7 +29,7 @@ CONFIG = {
                     {
                         "args": {
                             "common_words_gazetteer_name": None,
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "n": 2
                         },
                         "factory_name": "ngram",
@@ -131,7 +131,7 @@ CONFIG = {
                     },
                     {
                         "args": {
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "tagging_scheme_code": 2
                         },
                         "factory_name": "entity_match",

@@ -72,8 +72,12 @@ author = u'Adrien Ball, Clement Doumouro'
 ROOT_PATH = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-with io.open(os.path.join(ROOT_PATH, "snips_nlu", "__version__")) as f:
-    version = f.readline().strip()
+with io.open(os.path.join(ROOT_PATH, "snips_nlu", "__about__.py"),
+             encoding="utf8") as f:
+    about = dict()
+    exec(f.read(), about)
+
+version = about["__version__"]
 
 # The full version, including alpha/beta/rc tags.
 release = version

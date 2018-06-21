@@ -9,7 +9,6 @@ from mock import patch
 from snips_nlu_ontology import get_all_languages
 
 import snips_nlu
-import snips_nlu.version
 from snips_nlu.constants import (
     LANGUAGE, RES_INTENT, RES_INTENT_NAME, RES_INPUT, RES_SLOTS,
     RES_MATCH_RANGE, RES_RAW_VALUE, RES_VALUE, RES_ENTITY, RES_SLOT_NAME,
@@ -355,7 +354,7 @@ class TestSnipsNLUEngine(SnipsTest):
                 {"unit_name": "test_intent_parser1"},
                 {"unit_name": "test_intent_parser2"}
             ],
-            "model_version": snips_nlu.version.__model_version__,
+            "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
 
@@ -470,7 +469,7 @@ class TestSnipsNLUEngine(SnipsTest):
                 {"unit_name": "test_intent_parser1"},
                 {"unit_name": "test_intent_parser2"},
             ],
-            "model_version": snips_nlu.version.__model_version__,
+            "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
         engine = SnipsNLUEngine.from_dict(engine_dict)
@@ -498,7 +497,7 @@ class TestSnipsNLUEngine(SnipsTest):
             "dataset_metadata": None,
             "config": None,
             "intent_parsers": [],
-            "model_version": snips_nlu.version.__model_version__,
+            "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
         self.assertDictEqual(expected_dict, engine_dict)
@@ -510,7 +509,7 @@ class TestSnipsNLUEngine(SnipsTest):
             "dataset_metadata": None,
             "config": None,
             "intent_parsers": [],
-            "model_version": snips_nlu.version.__model_version__,
+            "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
 

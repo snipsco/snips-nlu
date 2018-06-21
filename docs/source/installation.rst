@@ -31,6 +31,19 @@ which means you will need to install
 `Rust <https://www.rust-lang.org/en-US/install.html>`_ before running the
 ``pip install snips-nlu`` command.
 
+Language resources
+------------------
+
+Snips NLU relies on `language resources`_ which must be downloaded beforehand.
+To fetch the resources for a specific language, run the following command:
+
+.. code-block:: sh
+
+    snips-nlu download <language>
+
+The list of supported languages is described :ref:`here <languages>`.
+
+
 Extra dependencies
 ------------------
 
@@ -62,4 +75,5 @@ Documentation
     pip install 'snips-nlu[doc]'
 
 
-.. _virtual environment: https://virtualenv.pypa.io/
+.. _virtual environment: https://virtualenv.pypa.io
+.. _language resources: https://github.com/snipsco/snips-nlu-language-resources

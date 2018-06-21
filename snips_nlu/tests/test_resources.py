@@ -1,56 +1,68 @@
 from __future__ import unicode_literals
 
-from builtins import str
+import unittest
+
 from mock import patch
-from snips_nlu_ontology import get_all_languages
 
-from snips_nlu.resources import RESOURCE_INDEX, get_stop_words, get_resource, \
-    UnloadedResources, UnknownResource
-from snips_nlu.tests.utils import SnipsTest
+from snips_nlu.constants import DATA_PATH
+from snips_nlu.resources import _get_resource, MissingResource, \
+    clear_resources, load_resources, resource_exists
 
 
-class TestResources(SnipsTest):
-    def test_resources_index_should_have_all_languages(self):
+class TestResources(unittest.TestCase):
+    def test_should_load_resources_from_data_path(self):
         # Given
-        index = RESOURCE_INDEX
+        clear_resources()
 
         # When
-        languages = set(index)
+        load_resources("en")
 
         # Then
-        self.assertSetEqual(languages, get_all_languages())
+        self.assertTrue(resource_exists("en", "gazetteers"))
 
-    def test_all_languages_should_have_stop_words(self):
-        # The capitalization for the CRF assumes all languages have stop_words
+    def test_should_load_resources_from_package(self):
         # Given
-        for language in get_all_languages():
-            try:
-                # When/Then
-                get_stop_words(language)
-            except:  # pylint: disable=W0702
-                self.fail("%s has not stop words" % language)
+        clear_resources()
 
-    def test_should_raise_unloaded_resources(self):
+        # When
+        load_resources("snips_nlu_en")
+
+        # Then
+        self.assertTrue(resource_exists("en", "gazetteers"))
+
+    def test_should_load_resources_from_path(self):
+        # Given
+        clear_resources()
+        resources_path = DATA_PATH / "en"
+
+        # When
+        load_resources(str(resources_path))
+
+        # Then
+        self.assertTrue(resource_exists("en", "gazetteers"))
+
+    def test_should_fail_loading_unknown_resources(self):
+        # Given
+        unknown_resource_name = "foobar"
+
+        # When / Then
+        with self.assertRaises(MissingResource):
+            load_resources(unknown_resource_name)
+
+    def test_should_raise_missing_resource_when_language_not_found(self):
         # Given
         mocked_value = dict()
 
         # When
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
-            with self.assertRaises(UnloadedResources) as ctx:
-                get_resource("en", "")
-        self.assertEqual(
-            str(ctx.exception.args[0]),
-            "Missing resources for 'en', please load them with the "
-            "load_resources function")
+            with self.assertRaises(MissingResource):
+                _get_resource("en", "foobar")
 
-    def test_should_raise_non_existing_resources(self):
+    def test_should_raise_missing_resource_when_resource_not_found(self):
         # Given
         mocked_value = {"en": dict()}
 
         # When
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
-            with self.assertRaises(UnknownResource) as ctx:
-                get_resource("en", "my_resource")
-        self.assertEqual(
-            str(ctx.exception.args[0]),
-            "Unknown resource 'my_resource' for 'en' language")
+            with self.assertRaises(MissingResource):
+                _get_resource("en", "foobar")

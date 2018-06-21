@@ -18,7 +18,8 @@ class TestVersion(SnipsTest):
             pass
 
         # Then
-        self.assertTrue(valid, "Version number '%s' is not semantically valid")
+        self.assertTrue(valid, "Version number '%s' is not semantically valid"
+                        % version)
 
     def test_model_version_should_be_semantic(self):
         # Given
@@ -33,4 +34,5 @@ class TestVersion(SnipsTest):
             pass
 
         # Then
-        self.assertTrue(valid, "Version number '%s' is not semantically valid")
+        self.assertTrue(valid, "Version number '%s' is not semantically valid"
+                        % model_version)

@@ -15,7 +15,7 @@ from snips_nlu.constants import (
     UNKNOWNWORD, INTENTS, UTTERANCES, DATA, ENTITY, TEXT)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
-from snips_nlu.resources import get_noises
+from snips_nlu.resources import get_noise
 from snips_nlu.tokenization import tokenize_light
 
 NOISE_NAME = str(uuid4())
@@ -56,7 +56,7 @@ def generate_smart_noise(augmented_utterances, replacement_string, language):
                        for u in augmented_utterances]
     vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
     vocab = set(vocab)
-    noise = get_noises(language)
+    noise = get_noise(language)
     return [w if w in vocab else replacement_string for w in noise]
 
 
@@ -72,7 +72,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
             data_augmentation_config.unknown_words_replacement_string,
             language)
     else:
-        noise = get_noises(language)
+        noise = get_noise(language)
 
     noise_size = min(
         int(data_augmentation_config.noise_factor * avg_num_utterances),

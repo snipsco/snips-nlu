@@ -37,16 +37,17 @@ We will go for the second option here and start by creating three files
 corresponding to our three intents and one entity file corresponding to the
 ``room`` entity:
 
-- ``turnLightOn.txt``
-- ``turnLightOff.txt``
-- ``setTemperature.txt``
-- ``room.txt``
+- ``intent_turnLightOn.txt``
+- ``intent_turnLightOff.txt``
+- ``intent_setTemperature.txt``
+- ``entity_room.txt``
 
 The name of each file is important as the tool will map it to the intent or
-entity name.
+entity name. In particular, the prefixes ``intent_`` and ``entity_`` are
+required in order to distinguish intents from entity files.
 
 Let's add training examples for the first intent by inserting the following
-lines in the first file, ``turnLightOn.txt``:
+lines in the first file, ``intent_turnLightOn.txt``:
 
 .. code-block:: console
 
@@ -61,7 +62,8 @@ components: :ref:`the slot name and the entity <entity_vs_slot_name>`. In our
 case we used the same value, ``room``, to describe both. The parts with
 parenthesis, like ``(kitchen)``, correspond to the text value of the slot.
 
-Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
+Let's move on to the second intent, and insert this into
+``intent_turnLightOff.txt``:
 
 .. code-block:: console
 
@@ -70,7 +72,7 @@ Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
     switch off the light the [room:room](kitchen), will you?
     Switch the [room:room](bedroom)'s lights off please
 
-And now the last file, ``setTemperature.txt``:
+And now the last file, ``intent_setTemperature.txt``:
 
 .. code-block:: console
 
@@ -84,7 +86,7 @@ whose name is ``roomTemperature`` and whose type is ``snips/temperature``. The s
 type used here is a :ref:`builtin entity <builtin_entity_resolution>`. It
 allows you to resolve the temperature values properly.
 
-Let's move to the ``room.txt`` entity file:
+Let's move to the ``entity_room.txt`` entity file:
 
 .. code-block:: console
 
@@ -104,7 +106,7 @@ We are now ready to generate our dataset:
 
 .. code-block:: bash
 
-    generate-dataset --language en --intent-files   turnLightOn.txt turnLightOff.txt setTemperature.txt --entity-files room.txt > dataset.json
+    snips-nlu generate-dataset en intent_turnLightOn.txt intent_turnLightOff.txt intent_setTemperature.txt entity_room.txt > dataset.json
 
 .. note::
 

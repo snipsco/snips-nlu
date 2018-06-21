@@ -9,7 +9,7 @@ resources for English:
 .. code-block:: sh
 
     pip install snips-nlu
-    snips-nlu download en
+    python -m snips_nlu download en
 
 
 The Snips NLU engine, in its default configuration, needs to be trained on

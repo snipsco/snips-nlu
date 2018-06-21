@@ -42,6 +42,12 @@ running the following command:
 
 .. code-block:: sh
 
+    python -m snips_nlu download en
+
+Or simply:
+
+.. code-block:: sh
+
     snips-nlu download en
 
 Once the resources have been fetched, they can be loaded in Python using:

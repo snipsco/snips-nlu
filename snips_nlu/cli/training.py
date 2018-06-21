@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+from builtins import bytes
 from pathlib import Path
 
 import plac

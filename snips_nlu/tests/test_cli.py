@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import json
 import shutil
 import tempfile
-from builtins import str
 
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli import train, cross_val_metrics, train_test_metrics, parse

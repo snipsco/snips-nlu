@@ -6,6 +6,7 @@ from copy import deepcopy
 
 from future.utils import iteritems
 
+from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     ENTITIES, CAPITALIZE, LANGUAGE, RES_SLOTS, RES_ENTITY, RES_INTENT)
@@ -19,7 +20,6 @@ from snips_nlu.resources import load_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
 from snips_nlu.utils import (
     get_slot_name_mappings, NotTrained, log_result, log_elapsed_time)
-from snips_nlu.version import __model_version__, __version__
 
 logger = logging.getLogger(__name__)
 

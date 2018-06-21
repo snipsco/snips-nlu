@@ -2,9 +2,8 @@
 from __future__ import unicode_literals
 
 import csv
-import io
-import os
 from abc import ABCMeta, abstractmethod
+from pathlib import Path
 
 import six
 from future.utils import with_metaclass
@@ -42,11 +41,17 @@ class CustomEntity(Entity):
         self.use_synonyms = use_synonyms
 
     @classmethod
-    def from_file(cls, entity_file_name):
-        entity_name = ".".join(
-            os.path.basename(entity_file_name).split('.')[:-1])
+    def from_file(cls, filepath):
+        filepath = Path(filepath)
+        stem = filepath.stem
+        if not stem.startswith("entity_"):
+            raise AssertionError("Entity filename should start with 'entity_' "
+                                 "but found: %s" % stem)
+        entity_name = stem[7:]
+        if not entity_name:
+            raise AssertionError("Entity name must not be empty")
         utterances = []
-        with io.open(entity_file_name, "r", encoding="utf-8") as f:
+        with filepath.open(encoding="utf-8") as f:
             it = f
             if six.PY2:
                 it = list(utf_8_encoder(it))

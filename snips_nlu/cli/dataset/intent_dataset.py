@@ -1,9 +1,8 @@
 from __future__ import print_function, absolute_import
 
-import io
-import os
 from abc import ABCMeta, abstractmethod
 from builtins import object
+from pathlib import Path
 
 from future.utils import with_metaclass
 
@@ -36,9 +35,16 @@ class IntentDataset(object):
         self.utterances = []
 
     @classmethod
-    def from_file(cls, file_name):
-        intent_name = ".".join(os.path.basename(file_name).split('.')[:-1])
-        with io.open(file_name) as f:
+    def from_file(cls, filepath):
+        filepath = Path(filepath)
+        stem = filepath.stem
+        if not stem.startswith("intent_"):
+            raise AssertionError("Intent filename should start with 'intent_' "
+                                 "but found: %s" % stem)
+        intent_name = stem[7:]
+        if not intent_name:
+            raise AssertionError("Intent name must not be empty")
+        with filepath.open(encoding="utf-8") as f:
             lines = iter(l.strip() for l in f if l.strip())
             return cls.from_iter(intent_name, lines)
 
@@ -85,7 +91,8 @@ class IntentUtterance(object):
 
         Examples:
 
-            >>> from snips_nlu_dataset.intent_dataset import IntentUtterance
+            >>> from snips_nlu.cli.dataset.intent_dataset import \
+                IntentUtterance
             >>> p = "the [role:role](president) of [country:country](France)"
             >>> u = IntentUtterance.parse(p)
             >>> u.annotated
@@ -131,8 +138,10 @@ class IntentUtterance(object):
 
         Examples:
 
-            >>> from snips_nlu_dataset.intent_dataset import IntentUtterance
-            >>> u = IntentUtterance.parse("president of [country:default](France)")
+            >>> from snips_nlu.cli.dataset.intent_dataset import \
+                IntentUtterance
+            >>> u = IntentUtterance.\
+                parse("president of [country:default](France)")
             >>> len(u.chunks)
             2
             >>> u.chunks[0].text
@@ -175,9 +184,6 @@ class SlotChunk(Chunk):
 
 
 class TextChunk(Chunk):
-    def __init__(self, text, range):
-        super(TextChunk, self).__init__(text, range)
-
     @property
     def json(self):
         return {

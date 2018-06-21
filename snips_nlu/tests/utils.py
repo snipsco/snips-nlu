@@ -1,26 +1,20 @@
 from __future__ import unicode_literals
 
-import io
 import json
-import os
 import traceback as tb
 from contextlib import contextmanager
+from pathlib import Path
 from unittest import TestCase
 
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import load_resources
 
-TEST_PATH = os.path.dirname(os.path.abspath(__file__))
-SAMPLE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
-                                   "sample_dataset.json")
-BEVERAGE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
-                                     "beverage_dataset.json")
-WEATHER_DATASET_PATH = os.path.join(TEST_PATH, "resources",
-                                    "weather_dataset.json")
-
-PERFORMANCE_DATASET_PATH = os.path.join(TEST_PATH, "resources",
-                                        "performance_dataset.json")
+TEST_PATH = Path(__file__).parent
+SAMPLE_DATASET_PATH = TEST_PATH / "resources" / "sample_dataset.json"
+BEVERAGE_DATASET_PATH = TEST_PATH / "resources" / "beverage_dataset.json"
+WEATHER_DATASET_PATH = TEST_PATH / "resources" / "weather_dataset.json"
+PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
 
 
 class SnipsTest(TestCase):
@@ -48,14 +42,14 @@ def get_empty_dataset(language):
     }
 
 
-with io.open(SAMPLE_DATASET_PATH, encoding='utf8') as dataset_file:
+with SAMPLE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     SAMPLE_DATASET = json.load(dataset_file)
 
-with io.open(BEVERAGE_DATASET_PATH, encoding='utf8') as dataset_file:
+with BEVERAGE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     BEVERAGE_DATASET = json.load(dataset_file)
 
-with io.open(WEATHER_DATASET_PATH, encoding='utf8') as dataset_file:
+with WEATHER_DATASET_PATH.open(encoding='utf8') as dataset_file:
     WEATHER_DATASET = json.load(dataset_file)
 
-with io.open(PERFORMANCE_DATASET_PATH, encoding='utf8') as dataset_file:
+with PERFORMANCE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     PERFORMANCE_DATASET = json.load(dataset_file)

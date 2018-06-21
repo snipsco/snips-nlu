@@ -18,7 +18,7 @@ SKIPPED_DATE_PREFIXES = {"at", "in", "for", "on"}
 class IntegrationTestSnipsNLUEngine(SnipsTest):
     def test_pure_python_engine_performance(self):
         # Given
-        dataset_path = PERFORMANCE_DATASET_PATH
+        dataset_path = str(PERFORMANCE_DATASET_PATH)
 
         # When
         results = compute_cross_val_metrics(

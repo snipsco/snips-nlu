@@ -3,6 +3,15 @@
 Quickstart
 ==========
 
+In this section, we assume that you have installed ``snips-nlu`` and loaded
+resources for English:
+
+.. code-block:: sh
+
+    pip install snips-nlu
+    snips-nlu download en
+
+
 The Snips NLU engine, in its default configuration, needs to be trained on
 some data before it can start extracting information. Thus, the first thing to
 do is to build a dataset that can be fed into Snips NLU.

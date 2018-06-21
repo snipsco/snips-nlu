@@ -1,19 +1,20 @@
 from __future__ import unicode_literals
 
 import errno
+import importlib
 import json
 import numbers
 import os
-
 from builtins import object, str
 from collections import OrderedDict, namedtuple, Mapping
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
-
+import pkg_resources
 
 from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
-                                 RESOURCES_PATH, END, START)
+                                 END, START)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -134,10 +135,6 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
     return T
 
 
-def get_resources_path(language):
-    return os.path.join(RESOURCES_PATH, language)
-
-
 def mkdir_p(path):
     """Reproduces the 'mkdir -p shell' command
 
@@ -145,9 +142,9 @@ def mkdir_p(path):
     http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     try:
-        os.makedirs(path)
+        os.makedirs(str(path))
     except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
+        if exc.errno == errno.EEXIST and path.is_dir():
             pass
         else:
             raise
@@ -287,3 +284,35 @@ def log_result(logger, level, output_msg=None):
         return wrapped
 
     return get_wrapper
+
+
+def is_package(name):
+    """Check if name maps to a package installed via pip.
+
+    Args:
+        name (str): Name of package
+
+    Returns:
+        bool: True if an installed packaged corresponds to this name, False
+            otherwise.
+    """
+    name = name.lower().replace("-", "_")
+    packages = pkg_resources.working_set.by_key.keys()
+    for package in packages:
+        if package.lower().replace("-", "_") == name:
+            return True
+    return False
+
+
+def get_package_path(name):
+    """Get the path to an installed package.
+
+    Args:
+        name (str): Package name
+
+    Returns:
+        class:`.Path`: Path to the installed package
+    """
+    name = name.lower().replace("-", "_")
+    pkg = importlib.import_module(name)
+    return Path(pkg.__file__).parent

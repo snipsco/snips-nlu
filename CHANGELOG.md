@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2018-06-21
+### Changed
+- Language resources are now packaged separately from the Snips NLU core
+library, and can be fetched using `snips-nlu download <language>`.
+- The CLI tool now consists in a single entry point, `snips-nlu`, which exposes
+several commands.
+
+### Added
+- CLI command to parse a query
+
+
 ## [0.14.0] - 2018-06-08
 ### Fixed
 - Issue due to caching of builtin entities at inference time
@@ -74,6 +85,7 @@ All notable changes to this project will be documented in this file.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.14.0]: https://github.com/snipsco/snips-nlu/compare/0.14.0...0.15.0
 [0.14.0]: https://github.com/snipsco/snips-nlu/compare/0.13.5...0.14.0
 [0.13.5]: https://github.com/snipsco/snips-nlu/compare/0.13.4...0.13.5
 [0.13.4]: https://github.com/snipsco/snips-nlu/compare/0.13.3...0.13.4

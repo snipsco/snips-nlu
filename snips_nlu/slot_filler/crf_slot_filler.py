@@ -1,14 +1,13 @@
 from __future__ import unicode_literals
 
 import base64
-import io
 import logging
 import math
-import os
 import tempfile
 from builtins import range
 from copy import copy
 from itertools import groupby, product
+from pathlib import Path
 
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
@@ -351,7 +350,7 @@ class CRFSlotFiller(SlotFiller):
         if self.crf_model is None or self.crf_model.modelfile.name is None:
             return
         try:
-            os.remove(self.crf_model.modelfile.name)
+            Path(self.crf_model.modelfile.name).unlink()
         except OSError:
             pass
 
@@ -359,8 +358,8 @@ class CRFSlotFiller(SlotFiller):
 def _get_crf_model(crf_args):
     model_filename = crf_args.get("model_filename", None)
     if model_filename is not None:
-        directory = os.path.dirname(model_filename)
-        if not os.path.isdir(directory):
+        directory = Path(model_filename).parent
+        if not directory.is_dir():
             mkdir_p(directory)
 
     return CRF(model_filename=model_filename, **crf_args)
@@ -473,7 +472,7 @@ def _decode_tag(tag):
 
 
 def _serialize_crf_model(crf_model):
-    with io.open(crf_model.modelfile.name, mode='rb') as f:
+    with Path(crf_model.modelfile.name).open(mode='rb') as f:
         crfsuite_data = base64.b64encode(f.read()).decode('ascii')
     return crfsuite_data
 

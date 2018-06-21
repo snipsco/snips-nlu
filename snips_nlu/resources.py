@@ -40,7 +40,9 @@ def load_resources(name):
     elif Path(name).exists():
         _load_resources_from_dir(Path(name))
     else:
-        raise MissingResource("Resource '{r}' not found".format(r=name))
+        raise MissingResource("Language resource '{r}' not found. This may be "
+                              "solved by running 'snips-nlu download {r}'"
+                              .format(r=name))
 
 
 def resource_exists(language, resource_name):

@@ -32,15 +32,14 @@ def link(origin, link_name, force=False, resources_path=None):
         resources_path = Path(origin) if resources_path is None \
             else Path(resources_path)
     if not resources_path.exists():
-        raise FileNotFoundError("%s not found" % str(resources_path))
+        raise OSError("%s not found" % str(resources_path))
     link_path = DATA_PATH / link_name
     if link_path.is_symlink() and not force:
-        raise FileExistsError("Symlink already exists: %s" % str(link_path))
+        raise OSError("Symlink already exists: %s" % str(link_path))
     elif link_path.is_symlink():
         link_path.unlink()
     elif link_path.exists():
-        raise FileExistsError("Symlink cannot be overwritten: %s"
-                              % str(link_path))
+        raise OSError("Symlink cannot be overwritten: %s" % str(link_path))
     create_symlink(link_path, resources_path)
     prints("%s --> %s" % (str(resources_path), str(link_path)),
            "You can now load the resources via snips_nlu.load_resources('%s')"

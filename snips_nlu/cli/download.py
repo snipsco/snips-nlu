@@ -45,7 +45,7 @@ def download(resource_name):
             "snips_nlu.load_resources('{n}')".format(r=resource_name,
                                                      n=full_resource_name),
             title="Language resources were successfully downloaded, however "
-                  "linking failed.", )
+                  "linking failed.")
 
 
 def _get_compatibility():

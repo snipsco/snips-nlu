@@ -158,6 +158,6 @@ Licence
 This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.
 
 .. _language resources: https://github.com/snipsco/snips-nlu-language-resources
-.. _sample dataset: samples/sample_dataset.json
+.. _sample dataset: snips_nlu_samples/sample_dataset.json
 .. _Discord channel: https://discordapp.com/invite/3939Kqx
 .. _blog post: https://medium.com/snips-ai/an-introduction-to-snips-nlu-the-open-source-library-behind-snips-embedded-voice-platform-b12b1a60a41a

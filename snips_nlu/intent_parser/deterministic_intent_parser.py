@@ -241,6 +241,7 @@ def _replace_tokenized_out_characters(string, language, replacement_char=" "):
     """Replace all characters that are tokenized out by `replacement_char`
 
     Examples:
+
         >>> string = "hello, it's me"
         >>> language = "en"
         >>> tokenize_light(string, language)

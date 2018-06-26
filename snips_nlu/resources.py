@@ -7,7 +7,7 @@ from pathlib import Path
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
-                                 STEMS, DATA_PATH)
+                                 STEMS, DATA_PATH, RESOURCES_DIR)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import is_package, get_package_path
@@ -33,16 +33,44 @@ def load_resources(name):
         Language resources must be loaded before fitting or parsing
     """
     if name in set(d.name for d in DATA_PATH.iterdir()):
-        _load_resources_from_dir(DATA_PATH / name)
+        load_resources_from_dir(DATA_PATH / name)
     elif is_package(name):
         package_path = get_package_path(name)
-        _load_resources_from_dir(package_path)
+        load_resources_from_dir(package_path)
     elif Path(name).exists():
-        _load_resources_from_dir(Path(name))
+        load_resources_from_dir(Path(name))
     else:
         raise MissingResource("Language resource '{r}' not found. This may be "
                               "solved by running 'snips-nlu download {r}'"
                               .format(r=name))
+
+
+def load_resources_from_dir(resources_dir):
+    with (resources_dir / "metadata.json").open() as f:
+        metadata = json.load(f)
+    language = metadata["language"]
+    resource_name = metadata["name"]
+    version = metadata["version"]
+    if language in _RESOURCES:
+        return
+    sub_dir = resources_dir / (resource_name + "-" + version)
+    if not sub_dir.is_dir():
+        raise FileNotFoundError("Missing resources directory: %s"
+                                % str(sub_dir))
+    word_clusters = _load_word_clusters(sub_dir / "word_clusters")
+    gazetteers = _load_gazetteers(sub_dir / "gazetteers", language)
+    stop_words = _load_stop_words(sub_dir / "stop_words.txt")
+    noise = _load_noise(sub_dir / "noise.txt")
+    stems = _load_stems(sub_dir / "stemming")
+
+    _RESOURCES[language] = {
+        WORD_CLUSTERS: word_clusters,
+        GAZETTEERS: gazetteers,
+        STOP_WORDS: stop_words,
+        NOISE: noise,
+        STEMS: stems,
+        RESOURCES_DIR: str(resources_dir),
+    }
 
 
 def resource_exists(language, resource_name):
@@ -90,6 +118,10 @@ def get_stems(language):
     return _get_resource(language, STEMS)
 
 
+def get_resources_dir(language):
+    return _get_resource(language, RESOURCES_DIR)
+
+
 def _get_resource(language, resource_name):
     if language not in _RESOURCES:
         raise MissingResource(
@@ -100,33 +132,6 @@ def _get_resource(language, resource_name):
         raise MissingResource("Resource '{}' not found for language '{}'"
                               .format(resource_name, language))
     return _RESOURCES[language][resource_name]
-
-
-def _load_resources_from_dir(resources_dir):
-    with (resources_dir / "metadata.json").open() as f:
-        metadata = json.load(f)
-    language = metadata["language"]
-    resource_name = metadata["name"]
-    version = metadata["version"]
-    if language in _RESOURCES:
-        return
-    sub_dir = resources_dir / (resource_name + "-" + version)
-    if not sub_dir.is_dir():
-        raise FileNotFoundError("Missing resources directory: %s"
-                                % str(sub_dir))
-    word_clusters = _load_word_clusters(sub_dir / "word_clusters")
-    gazetteers = _load_gazetteers(sub_dir / "gazetteers", language)
-    stop_words = _load_stop_words(sub_dir / "stop_words.txt")
-    noise = _load_noise(sub_dir / "noise.txt")
-    stems = _load_stems(sub_dir / "stemming")
-
-    _RESOURCES[language] = {
-        WORD_CLUSTERS: word_clusters,
-        GAZETTEERS: gazetteers,
-        STOP_WORDS: stop_words,
-        NOISE: noise,
-        STEMS: stems
-    }
 
 
 def _load_stop_words(stop_words_path):

@@ -34,11 +34,7 @@ def debug_training(dataset_path, config_path=None):
 
 
 def debug_inference(engine_path):
-    with Path(engine_path).open("r", encoding="utf8") as f:
-        engine_dict = json.load(f)
-
-    load_resources(engine_dict["dataset_metadata"]["language_code"])
-    engine = SnipsNLUEngine.from_dict(engine_dict)
+    engine = SnipsNLUEngine.from_path(engine_path)
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()

@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-from builtins import bytes
 from pathlib import Path
 
 import plac
@@ -25,10 +24,10 @@ def train(dataset_path, output_path, config_path):
             config = json.load(f)
 
     load_resources(dataset["language"])
-    engine = SnipsNLUEngine(config).fit(dataset)
     print("Create and train the engine...")
+    engine = SnipsNLUEngine(config).fit(dataset)
 
-    serialized_engine = bytes(json.dumps(engine.to_dict()), encoding="utf8")
-    with Path(output_path).open("w", encoding="utf8") as f:
-        f.write(serialized_engine.decode("utf8"))
+    print("Persisting the engine...")
+    engine.persist(output_path)
+
     print("Saved the trained engine to %s" % output_path)

@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 
+import json
 import logging
-from builtins import str, zip, range
+from builtins import bytes, range, str, zip
+from pathlib import Path
 
 import numpy as np
 from future.utils import iteritems
@@ -160,28 +162,33 @@ class LogRegIntentClassifier(IntentClassifier):
             # probabilities calibrated
             return prob
 
-    def to_dict(self):
-        """Returns a json-serializable dict"""
-        featurizer_dict = None
-        if self.featurizer is not None:
-            featurizer_dict = self.featurizer.to_dict()
-        coeffs = None
-        intercept = None
-        t_ = None
-        if self.classifier is not None:
-            coeffs = self.classifier.coef_.tolist()
-            intercept = self.classifier.intercept_.tolist()
-            t_ = self.classifier.t_
+    def persist(self, path):
+        """Persist the object at the given path"""
+        path = Path(path)
+        if path.exists():
+            raise OSError("Persisting directory %s already exists" % str(path))
+        path.mkdir()
+        classifier_json = bytes(json.dumps(self.to_dict()), encoding="utf8")
+        with (path / "intent_classifier.json").open(mode="w") as f:
+            f.write(classifier_json.decode("utf8"))
+        self.persist_metadata(path)
 
-        return {
-            "unit_name": self.unit_name,
-            "config": self.config.to_dict(),
-            "coeffs": coeffs,
-            "intercept": intercept,
-            "t_": t_,
-            "intent_list": self.intent_list,
-            "featurizer": featurizer_dict,
-        }
+    @classmethod
+    def from_path(cls, path):
+        """Load a :class:`LogRegIntentClassifier` instance from a path
+
+        The data at the given path must have been generated using
+        :func:`~LogRegIntentClassifier.persist`
+        """
+        path = Path(path)
+        model_path = path / "intent_classifier.json"
+        if not model_path.exists():
+            raise OSError("Missing intent classifier model file: %s"
+                          % model_path.name)
+
+        with model_path.open() as f:
+            model_dict = json.load(f)
+        return cls.from_dict(model_dict)
 
     @classmethod
     def from_dict(cls, unit_dict):
@@ -207,6 +214,29 @@ class LogRegIntentClassifier(IntentClassifier):
         if featurizer is not None:
             intent_classifier.featurizer = Featurizer.from_dict(featurizer)
         return intent_classifier
+
+    def to_dict(self):
+        """Returns a json-serializable dict"""
+        featurizer_dict = None
+        if self.featurizer is not None:
+            featurizer_dict = self.featurizer.to_dict()
+        coeffs = None
+        intercept = None
+        t_ = None
+        if self.classifier is not None:
+            coeffs = self.classifier.coef_.tolist()
+            intercept = self.classifier.intercept_.tolist()
+            t_ = self.classifier.t_
+
+        return {
+            "unit_name": self.unit_name,
+            "config": self.config.to_dict(),
+            "coeffs": coeffs,
+            "intercept": intercept,
+            "t_": t_,
+            "intent_list": self.intent_list,
+            "featurizer": featurizer_dict,
+        }
 
     def log_best_features(self, top_n=20):
         log = "Top {} features weights by intent:\n".format(top_n)

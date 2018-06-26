@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
+import json
 import logging
+from builtins import bytes, str
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
 
-from builtins import str
 from future.utils import itervalues, iteritems
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
@@ -124,40 +126,64 @@ class ProbabilisticIntentParser(IntentParser):
         slots = self.slot_fillers[intent_name].get_slots(text)
         return parsing_result(text, intent_result, slots)
 
-    def to_dict(self):
-        """Returns a json-serializable dict"""
-        intent_classifier_dict = None
+    def persist(self, path):
+        """Persist the object at the given path"""
+        path = Path(path)
+        if path.exists():
+            raise OSError("Persisting directory %s already exists" % str(path))
+        path.mkdir()
+        slot_fillers = []
+        for intent, slot_filler in iteritems(self.slot_fillers):
+            slot_filler_name = "slot_filler_%s" % intent
+            slot_filler.persist(path / slot_filler_name)
+            slot_fillers.append({
+                "intent": intent,
+                "slot_filler_name": slot_filler_name
+            })
 
         if self.intent_classifier is not None:
-            intent_classifier_dict = self.intent_classifier.to_dict()
+            self.intent_classifier.persist(path / "intent_classifier")
 
-        slot_fillers = {
-            intent: slot_filler.to_dict()
-            for intent, slot_filler in iteritems(self.slot_fillers)}
-
-        return {
+        model = {
             "unit_name": self.unit_name,
-            "intent_classifier": intent_classifier_dict,
             "config": self.config.to_dict(),
-            "slot_fillers": slot_fillers,
+            "slot_fillers": slot_fillers
         }
+        model_json = bytes(json.dumps(model), encoding="utf8")
+        model_path = path / "intent_parser.json"
+        with model_path.open(mode="w") as f:
+            f.write(model_json.decode("utf8"))
+        self.persist_metadata(path)
 
     @classmethod
-    def from_dict(cls, unit_dict):
-        """Creates a :class:`ProbabilisticIntentParser` instance from a dict
+    def from_path(cls, path):
+        """Load a :class:`ProbabilisticIntentParser` instance from a path
 
-        The dict must have been generated with
-        :func:`~ProbabilisticIntentParser.to_dict`
+        The data at the given path must have been generated using
+        :func:`~ProbabilisticIntentParser.persist`
         """
-        slot_fillers = {
-            intent: load_processing_unit(slot_filler_dict) for
-            intent, slot_filler_dict in
-            iteritems(unit_dict["slot_fillers"])}
-        classifier = None
-        if unit_dict["intent_classifier"] is not None:
-            classifier = load_processing_unit(unit_dict["intent_classifier"])
+        path = Path(path)
+        model_path = path / "intent_parser.json"
+        if not model_path.exists():
+            raise OSError("Missing probabilistic intent parser model file: "
+                          "%s" % model_path.name)
 
-        parser = cls(config=cls.config_type.from_dict(unit_dict["config"]))
+        with model_path.open() as f:
+            model = json.load(f)
+
+        parser = cls(config=cls.config_type.from_dict(model["config"]))
+        classifier = None
+        intent_classifier_path = path / "intent_classifier"
+        if intent_classifier_path.exists():
+            classifier = load_processing_unit(intent_classifier_path)
+
+        slot_fillers = dict()
+        for slot_filler_conf in model["slot_fillers"]:
+            intent = slot_filler_conf["intent"]
+            slot_filler_path = path / slot_filler_conf["slot_filler_name"]
+            slot_filler = load_processing_unit(slot_filler_path)
+            slot_fillers[intent] = slot_filler
+
         parser.intent_classifier = classifier
         parser.slot_fillers = slot_fillers
         return parser

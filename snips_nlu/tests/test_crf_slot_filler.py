@@ -1,8 +1,10 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from future.builtins import range
-from mock import patch, MagicMock
+from builtins import range
+from pathlib import Path
+
+from mock import MagicMock
 
 from snips_nlu.constants import (
     RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
@@ -18,11 +20,11 @@ from snips_nlu.slot_filler.crf_utils import (
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, ShapeNgramFactory, NgramFactory)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET, SnipsTest)
+    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET, FixtureTest)
 from snips_nlu.tokenization import tokenize, Token
 
 
-class TestCRFSlotFiller(SnipsTest):
+class TestCRFSlotFiller(FixtureTest):
     def test_should_get_slots(self):
         # Given
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
@@ -160,8 +162,8 @@ class TestCRFSlotFiller(SnipsTest):
         intent = "MakeTea"
         slot_filler = CRFSlotFiller(config)
         slot_filler.fit(dataset, intent)
-        deserialized_slot_filler = CRFSlotFiller.from_dict(
-            slot_filler.to_dict())
+        slot_filler.persist(self.tmp_file_path)
+        deserialized_slot_filler = CRFSlotFiller.from_path(self.tmp_file_path)
 
         # When
         slots = deserialized_slot_filler.get_slots("make me two cups of tea")
@@ -195,25 +197,25 @@ class TestCRFSlotFiller(SnipsTest):
         slot_filler = CRFSlotFiller(config)
 
         # When
-        actual_slot_filler_dict = slot_filler.to_dict()
+        slot_filler.persist(self.tmp_file_path)
 
         # Then
+        metadata_path = self.tmp_file_path / "metadata.json"
+        self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
+
         expected_slot_filler_dict = {
             "unit_name": "crf_slot_filler",
-            "crf_model_data": None,
+            "crf_model_file": None,
             "language_code": None,
             "config": config.to_dict(),
             "intent": None,
             "slot_name_mapping": None,
         }
-        self.assertDictEqual(actual_slot_filler_dict,
-                             expected_slot_filler_dict)
+        slot_filler_path = self.tmp_file_path / "slot_filler.json"
+        self.assertJsonContent(slot_filler_path, expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
-    def test_should_be_deserializable_before_fit(self,
-                                                 mock_deserialize_crf_model):
+    def test_should_be_deserializable_before_fit(self):
         # Given
-        mock_deserialize_crf_model.return_value = None
         features_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
@@ -230,15 +232,20 @@ class TestCRFSlotFiller(SnipsTest):
             feature_factory_configs=features_factories)
         slot_filler_dict = {
             "unit_name": "crf_slot_filler",
-            "crf_model_data": None,
+            "crf_model_file": None,
             "language_code": None,
             "intent": None,
             "slot_name_mapping": None,
             "config": slot_filler_config.to_dict()
         }
+        metadata = {"unit_name": "crf_slot_filler"}
+        self.tmp_file_path.mkdir()
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.writeJsonContent(self.tmp_file_path / "slot_filler.json",
+                              slot_filler_dict)
 
         # When
-        slot_filler = CRFSlotFiller.from_dict(slot_filler_dict)
+        slot_filler = CRFSlotFiller.from_path(self.tmp_file_path)
 
         # Then
         expected_features_factories = [
@@ -268,10 +275,8 @@ class TestCRFSlotFiller(SnipsTest):
         self.assertDictEqual(expected_config.to_dict(),
                              slot_filler.config.to_dict())
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler._serialize_crf_model')
-    def test_should_be_serializable(self, mock_serialize_crf_model):
+    def test_should_be_serializable(self):
         # Given
-        mock_serialize_crf_model.return_value = "mocked_crf_model_data"
         features_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
@@ -294,9 +299,15 @@ class TestCRFSlotFiller(SnipsTest):
         slot_filler.fit(dataset, intent=intent)
 
         # When
-        actual_slot_filler_dict = slot_filler.to_dict()
+        slot_filler.persist(self.tmp_file_path)
 
         # Then
+        metadata_path = self.tmp_file_path / "metadata.json"
+        self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
+
+        expected_crf_file = Path(slot_filler.crf_model.modelfile.name).name
+        self.assertTrue((self.tmp_file_path / expected_crf_file).exists())
+
         expected_feature_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
@@ -314,7 +325,7 @@ class TestCRFSlotFiller(SnipsTest):
             feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
             "unit_name": "crf_slot_filler",
-            "crf_model_data": "mocked_crf_model_data",
+            "crf_model_file": expected_crf_file,
             "language_code": "en",
             "config": expected_config.to_dict(),
             "intent": intent,
@@ -324,14 +335,12 @@ class TestCRFSlotFiller(SnipsTest):
                 "dummy_slot_name3": "dummy_entity_2",
             }
         }
-        self.assertDictEqual(actual_slot_filler_dict,
-                             expected_slot_filler_dict)
+        slot_filler_path = self.tmp_file_path / "slot_filler.json"
+        self.assertJsonContent(slot_filler_path, expected_slot_filler_dict)
 
-    @patch('snips_nlu.slot_filler.crf_slot_filler._deserialize_crf_model')
-    def test_should_be_deserializable(self, mock_deserialize_crf_model):
+    def test_should_be_deserializable(self):
         # Given
         language = LANGUAGE_EN
-        mock_deserialize_crf_model.return_value = None
         feature_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
@@ -348,7 +357,7 @@ class TestCRFSlotFiller(SnipsTest):
             feature_factory_configs=feature_factories)
         slot_filler_dict = {
             "unit_name": "crf_slot_filler",
-            "crf_model_data": "mocked_crf_model_data",
+            "crf_model_file": "foobar.crfsuite",
             "language_code": "en",
             "intent": "dummy_intent_1",
             "slot_name_mapping": {
@@ -358,12 +367,18 @@ class TestCRFSlotFiller(SnipsTest):
             },
             "config": slot_filler_config.to_dict()
         }
+        metadata = {"unit_name": "crf_slot_filler"}
+        self.tmp_file_path.mkdir()
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.writeJsonContent(self.tmp_file_path / "slot_filler.json",
+                              slot_filler_dict)
+        self.writeFileContent(self.tmp_file_path / "foobar.crfsuite",
+                              "foo bar")
+
         # When
-        slot_filler = CRFSlotFiller.from_dict(slot_filler_dict)
+        slot_filler = CRFSlotFiller.from_path(self.tmp_file_path)
 
         # Then
-        mock_deserialize_crf_model.assert_called_once_with(
-            "mocked_crf_model_data")
         expected_language = LANGUAGE_EN
         expected_feature_factories = [
             {
@@ -392,6 +407,8 @@ class TestCRFSlotFiller(SnipsTest):
                          expected_slot_name_mapping)
         self.assertDictEqual(expected_config.to_dict(),
                              slot_filler.config.to_dict())
+        crf_path = Path(slot_filler.crf_model.modelfile.name)
+        self.assertFileContent(crf_path, "foo bar")
 
     def test_should_compute_features(self):
         # Given

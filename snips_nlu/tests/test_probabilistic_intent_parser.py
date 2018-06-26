@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import json
+from pathlib import Path
+
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
@@ -9,12 +12,17 @@ from snips_nlu.intent_parser import ProbabilisticIntentParser
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, LogRegIntentClassifierConfig,
     ProbabilisticIntentParserConfig, ProcessingUnitConfig)
-from snips_nlu.pipeline.units_registry import register_processing_unit
+from snips_nlu.pipeline.units_registry import register_processing_unit, \
+    reset_processing_units
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
-from snips_nlu.tests.utils import BEVERAGE_DATASET, SnipsTest
+from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
 
 
-class TestProbabilisticIntentParser(SnipsTest):
+class TestProbabilisticIntentParser(FixtureTest):
+    def setUp(self):
+        super(TestProbabilisticIntentParser, self).setUp()
+        reset_processing_units()
+
     def test_should_retrain_intent_classifier_when_force_retrain(self):
         # Given
         parser = ProbabilisticIntentParser()
@@ -72,7 +80,7 @@ class TestProbabilisticIntentParser(SnipsTest):
         parser = ProbabilisticIntentParser()
 
         # When
-        actual_parser_dict = parser.to_dict()
+        parser.persist(self.tmp_file_path)
 
         # Then
         expected_parser_dict = {
@@ -83,10 +91,12 @@ class TestProbabilisticIntentParser(SnipsTest):
                 "intent_classifier_config":
                     LogRegIntentClassifierConfig().to_dict()
             },
-            "intent_classifier": None,
-            "slot_fillers": dict(),
+            "slot_fillers": []
         }
-        self.assertDictEqual(actual_parser_dict, expected_parser_dict)
+        metadata = {"unit_name": "probabilistic_intent_parser"}
+        self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
+                               expected_parser_dict)
 
     def test_should_be_deserializable_before_fitting(self):
         # When
@@ -97,9 +107,14 @@ class TestProbabilisticIntentParser(SnipsTest):
             "intent_classifier": None,
             "slot_fillers": dict(),
         }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "probabilistic_intent_parser"}
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
 
         # When
-        parser = ProbabilisticIntentParser.from_dict(parser_dict)
+        parser = ProbabilisticIntentParser.from_path(self.tmp_file_path)
 
         # Then
         self.assertEqual(parser.config.to_dict(), config)
@@ -108,66 +123,6 @@ class TestProbabilisticIntentParser(SnipsTest):
 
     def test_should_be_serializable(self):
         # Given
-        class TestIntentClassifierConfig(ProcessingUnitConfig):
-            unit_name = "test_intent_classifier"
-
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return TestIntentClassifierConfig()
-
-        class TestIntentClassifier(IntentClassifier):
-            unit_name = "test_intent_classifier"
-            config_type = TestIntentClassifierConfig
-
-            def get_intent(self, text, intents_filter):
-                return None
-
-            def fit(self, dataset):
-                return self
-
-            def to_dict(self):
-                return {
-                    "unit_name": self.unit_name,
-                }
-
-            @classmethod
-            def from_dict(cls, unit_dict):
-                config = cls.config_type()
-                return TestIntentClassifier(config)
-
-        class TestSlotFillerConfig(ProcessingUnitConfig):
-            unit_name = "test_slot_filler"
-
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return TestSlotFillerConfig()
-
-        class TestSlotFiller(SlotFiller):
-            unit_name = "test_slot_filler"
-            config_type = TestSlotFillerConfig
-
-            def get_slots(self, text):
-                return []
-
-            def fit(self, dataset, intent):
-                return self
-
-            def to_dict(self):
-                return {
-                    "unit_name": self.unit_name,
-                }
-
-            @classmethod
-            def from_dict(cls, unit_dict):
-                config = cls.config_type()
-                return TestSlotFiller(config)
-
         register_processing_unit(TestIntentClassifier)
         register_processing_unit(TestSlotFiller)
 
@@ -179,7 +134,7 @@ class TestProbabilisticIntentParser(SnipsTest):
         parser.fit(validate_and_format_dataset(BEVERAGE_DATASET))
 
         # When
-        actual_parser_dict = parser.to_dict()
+        parser.persist(self.tmp_file_path)
 
         # Then
         expected_parser_config = {
@@ -190,76 +145,36 @@ class TestProbabilisticIntentParser(SnipsTest):
         expected_parser_dict = {
             "unit_name": "probabilistic_intent_parser",
             "config": expected_parser_config,
-            "intent_classifier": {"unit_name": "test_intent_classifier"},
-            "slot_fillers": {
-                "MakeCoffee": {"unit_name": "test_slot_filler"},
-                "MakeTea": {"unit_name": "test_slot_filler"},
-            },
+            "slot_fillers": [
+                {
+                    "intent": "MakeCoffee",
+                    "slot_filler_name": "slot_filler_MakeCoffee"
+                },
+                {
+                    "intent": "MakeTea",
+                    "slot_filler_name": "slot_filler_MakeTea"
+                }
+            ]
         }
-        self.assertDictEqual(actual_parser_dict, expected_parser_dict)
+        metadata = {"unit_name": "probabilistic_intent_parser"}
+        metadata_slot_filler = {"unit_name": "test_slot_filler"}
+        metadata_intent_classifier = {"unit_name": "test_intent_classifier"}
+
+        self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
+                               expected_parser_dict)
+        self.assertJsonContent(
+            self.tmp_file_path / "intent_classifier" / "metadata.json",
+            metadata_intent_classifier)
+        self.assertJsonContent(
+            self.tmp_file_path / "slot_filler_MakeCoffee" / "metadata.json",
+            metadata_slot_filler)
+        self.assertJsonContent(
+            self.tmp_file_path / "slot_filler_MakeTea" / "metadata.json",
+            metadata_slot_filler)
 
     def test_should_be_deserializable(self):
         # When
-        class TestIntentClassifierConfig(ProcessingUnitConfig):
-            unit_name = "test_intent_classifier"
-
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return TestIntentClassifierConfig()
-
-        class TestIntentClassifier(IntentClassifier):
-            unit_name = "test_intent_classifier"
-            config_type = TestIntentClassifierConfig
-
-            def get_intent(self, text, intents_filter):
-                return None
-
-            def fit(self, dataset):
-                return self
-
-            def to_dict(self):
-                return {
-                    "unit_name": self.unit_name,
-                }
-
-            @classmethod
-            def from_dict(cls, unit_dict):
-                conf = cls.config_type()
-                return TestIntentClassifier(conf)
-
-        class TestSlotFillerConfig(ProcessingUnitConfig):
-            unit_name = "test_slot_filler"
-
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return TestSlotFillerConfig()
-
-        class TestSlotFiller(SlotFiller):
-            unit_name = "test_slot_filler"
-            config_type = TestSlotFillerConfig
-
-            def get_slots(self, text):
-                return []
-
-            def fit(self, dataset, intent):
-                return self
-
-            def to_dict(self):
-                return {
-                    "unit_name": self.unit_name,
-                }
-
-            @classmethod
-            def from_dict(cls, unit_dict):
-                conf = cls.config_type()
-                return TestSlotFiller(conf)
-
         register_processing_unit(TestIntentClassifier)
         register_processing_unit(TestSlotFiller)
 
@@ -269,16 +184,36 @@ class TestProbabilisticIntentParser(SnipsTest):
         )
         parser_dict = {
             "unit_name": "probabilistic_intent_parser",
-            "intent_classifier": {"unit_name": "test_intent_classifier"},
-            "slot_fillers": {
-                "MakeCoffee": {"unit_name": "test_slot_filler"},
-                "MakeTea": {"unit_name": "test_slot_filler"}
-            },
+            "slot_fillers": [
+                {
+                    "intent": "MakeCoffee",
+                    "slot_filler_name": "slot_filler_MakeCoffee"
+                },
+                {
+                    "intent": "MakeTea",
+                    "slot_filler_name": "slot_filler_MakeTea"
+                }
+            ],
             "config": config.to_dict(),
         }
+        self.tmp_file_path.mkdir()
+        (self.tmp_file_path / "intent_classifier").mkdir()
+        (self.tmp_file_path / "slot_filler_MakeCoffee").mkdir()
+        (self.tmp_file_path / "slot_filler_MakeTea").mkdir()
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
+        self.writeJsonContent(
+            self.tmp_file_path / "intent_classifier" / "metadata.json",
+            {"unit_name": "test_intent_classifier"})
+        self.writeJsonContent(
+            self.tmp_file_path / "slot_filler_MakeCoffee" / "metadata.json",
+            {"unit_name": "test_slot_filler"})
+        self.writeJsonContent(
+            self.tmp_file_path / "slot_filler_MakeTea" / "metadata.json",
+            {"unit_name": "test_slot_filler"})
 
         # When
-        parser = ProbabilisticIntentParser.from_dict(parser_dict)
+        parser = ProbabilisticIntentParser.from_path(self.tmp_file_path)
 
         # Then
         self.assertDictEqual(parser.config.to_dict(), config.to_dict())
@@ -299,14 +234,14 @@ class TestProbabilisticIntentParser(SnipsTest):
             slot_filler_config=CRFSlotFillerConfig(random_seed=seed2)
         )
         parser = ProbabilisticIntentParser(config)
-        parser_dict = parser.to_dict()
+        parser.persist(self.tmp_file_path)
 
         # When
-        fitted_parser_1 = ProbabilisticIntentParser.from_dict(
-            parser_dict).fit(validated_dataset)
+        fitted_parser_1 = ProbabilisticIntentParser.from_path(
+            self.tmp_file_path).fit(validated_dataset)
 
-        fitted_parser_2 = ProbabilisticIntentParser.from_dict(
-            parser_dict).fit(validated_dataset)
+        fitted_parser_2 = ProbabilisticIntentParser.from_path(
+            self.tmp_file_path).fit(validated_dataset)
 
         # Then
         feature_weights_1 = fitted_parser_1.slot_fillers[
@@ -314,3 +249,69 @@ class TestProbabilisticIntentParser(SnipsTest):
         feature_weights_2 = fitted_parser_2.slot_fillers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
+
+
+class TestIntentClassifierConfig(ProcessingUnitConfig):
+    unit_name = "test_intent_classifier"
+
+    def to_dict(self):
+        return {"unit_name": self.unit_name}
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return TestIntentClassifierConfig()
+
+
+class TestIntentClassifier(IntentClassifier):
+    unit_name = "test_intent_classifier"
+    config_type = TestIntentClassifierConfig
+
+    def get_intent(self, text, intents_filter):
+        return None
+
+    def fit(self, dataset):
+        return self
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(json.dumps({"unit_name": self.unit_name}))
+
+    @classmethod
+    def from_path(cls, path):
+        config = cls.config_type()
+        return TestIntentClassifier(config)
+
+
+class TestSlotFillerConfig(ProcessingUnitConfig):
+    unit_name = "test_slot_filler"
+
+    def to_dict(self):
+        return {"unit_name": self.unit_name}
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return TestSlotFillerConfig()
+
+
+class TestSlotFiller(SlotFiller):
+    unit_name = "test_slot_filler"
+    config_type = TestSlotFillerConfig
+
+    def get_slots(self, text):
+        return []
+
+    def fit(self, dataset, intent):
+        return self
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(json.dumps({"unit_name": self.unit_name}))
+
+    @classmethod
+    def from_path(cls, path):
+        config = cls.config_type()
+        return TestSlotFiller(config)

@@ -1,9 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from builtins import next
-from builtins import range
-from builtins import str
+from builtins import next, range, str
 
 import numpy as np
 from future.utils import itervalues
@@ -21,7 +19,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
 from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET, SnipsTest)
+    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET, FixtureTest)
 
 
 # pylint: disable=W0613
@@ -35,7 +33,7 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 # pylint: enable=W0613
 
 
-class TestLogRegIntentClassifier(SnipsTest):
+class TestLogRegIntentClassifier(FixtureTest):
     def test_intent_classifier_should_get_intent(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
@@ -98,7 +96,7 @@ class TestLogRegIntentClassifier(SnipsTest):
         intercept = intent_classifier.classifier.intercept_.tolist()
 
         # When
-        classifier_dict = intent_classifier.to_dict()
+        intent_classifier.persist(self.tmp_file_path)
 
         # Then
         intent_list = sorted(SAMPLE_DATASET[INTENTS])
@@ -112,7 +110,10 @@ class TestLogRegIntentClassifier(SnipsTest):
             "intent_list": intent_list,
             "featurizer": mocked_dict
         }
-        self.assertEqual(expected_dict, classifier_dict)
+        metadata = {"unit_name": "log_reg_intent_classifier"}
+        self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.assertJsonContent(self.tmp_file_path / "intent_classifier.json",
+                               expected_dict)
 
     @patch('snips_nlu.intent_classifier.featurizer.Featurizer.from_dict')
     def test_should_be_deserializable(self, mock_from_dict):
@@ -146,9 +147,14 @@ class TestLogRegIntentClassifier(SnipsTest):
             "config": config,
             "featurizer": mocked_featurizer.to_dict(),
         }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "log_reg_intent_classifier"}
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.writeJsonContent(self.tmp_file_path / "intent_classifier.json",
+                              classifier_dict)
 
         # When
-        classifier = LogRegIntentClassifier.from_dict(classifier_dict)
+        classifier = LogRegIntentClassifier.from_path(self.tmp_file_path)
 
         # Then
         self.assertEqual(classifier.intent_list, intent_list)
@@ -162,10 +168,11 @@ class TestLogRegIntentClassifier(SnipsTest):
         # Given
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         classifier = LogRegIntentClassifier().fit(dataset)
-        classifier_dict = classifier.to_dict()
+        classifier.persist(self.tmp_file_path)
 
         # When
-        loaded_classifier = LogRegIntentClassifier.from_dict(classifier_dict)
+        loaded_classifier = LogRegIntentClassifier.from_path(
+            self.tmp_file_path)
         result = loaded_classifier.get_intent("Make me two cups of tea")
 
         # Then

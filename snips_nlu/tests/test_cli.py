@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import json
 import shutil
 import tempfile
 
@@ -46,9 +45,7 @@ class TestCLI(SnipsTest):
             self.fail("No trained engine generated")
         msg = "Failed to create an engine from engine dict."
         with self.fail_if_exception(msg):
-            with self.tmp_file_path.open(mode="r", encoding="utf8") as f:
-                trained_engine_dict = json.load(f)
-            SnipsNLUEngine.from_dict(trained_engine_dict)
+            SnipsNLUEngine.from_path(self.tmp_file_path)
 
     def test_parse(self):
         # Given / When

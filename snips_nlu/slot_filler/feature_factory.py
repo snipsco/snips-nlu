@@ -168,6 +168,9 @@ class LengthFactory(SingleFeatureFactory):
         return str(len(tokens[token_index].value))
 
 
+gazetteer_stem_cache = {}
+
+
 class NgramFactory(SingleFeatureFactory):
     """Feature: the n-gram consisting of the considered token and potentially
     the following ones
@@ -211,7 +214,10 @@ class NgramFactory(SingleFeatureFactory):
                 gazetteer = get_gazetteer(self.language,
                                           self.common_words_gazetteer_name)
                 if self.use_stemming:
-                    gazetteer = set(stem(w, self.language) for w in gazetteer)
+                    key = (self.language, self.common_words_gazetteer_name, self.use_stemming)
+                    if key not in gazetteer_stem_cache:
+                        gazetteer_stem_cache[key] = set(stem(w, self.language) for w in gazetteer)
+                    gazetteer = gazetteer_stem_cache[key]
                 self.gazetteer = gazetteer
 
     @property

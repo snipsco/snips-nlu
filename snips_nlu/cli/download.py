@@ -8,7 +8,7 @@ import plac
 
 from snips_nlu import __about__
 from snips_nlu.cli.link import link
-from snips_nlu.cli.utils import get_json, prints
+from snips_nlu.cli.utils import get_json, pretty_print, PrettyPrintLevel
 from snips_nlu.utils import get_package_path
 
 
@@ -41,13 +41,14 @@ def download(resource_name, *pip_args):
         link(full_resource_name, resource_name, force=True,
              resources_path=package_path)
     except:  # pylint:disable=bare-except
-        prints(
-            "Creating a shortcut link for '{r}' didn't work, but you can "
+        pretty_print(
+            "Creating a shortcut link for '{r}' didn't work.\nYou can "
             "still load the resources via its full package name: "
             "snips_nlu.load_resources('{n}')".format(r=resource_name,
                                                      n=full_resource_name),
             title="Language resources were successfully downloaded, however "
-                  "linking failed.")
+                  "linking failed.",
+            level=PrettyPrintLevel.WARNING)
 
 
 def _get_compatibility():
@@ -55,15 +56,17 @@ def _get_compatibility():
     table = get_json(__about__.__compatibility__, "Compatibility table")
     compatibility = table["snips-nlu"]
     if version not in compatibility:
-        prints("No compatible resources found for version %s" % version,
-               title="Resources compatibility error", exits=1)
+        pretty_print("No compatible resources found for version %s" % version,
+                     title="Resources compatibility error", exits=1,
+                     level=PrettyPrintLevel.ERROR)
     return compatibility[version]
 
 
 def _get_resources_version(resource_name, compatibility):
     if resource_name not in compatibility:
-        prints("No resources found for '%s'" % resource_name,
-               title="Resources compatibility error", exits=1)
+        pretty_print("No resources found for '%s'" % resource_name,
+                     title="Resources compatibility error", exits=1,
+                     level=PrettyPrintLevel.ERROR)
     return compatibility[resource_name][0]
 
 

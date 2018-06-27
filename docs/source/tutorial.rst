@@ -353,6 +353,6 @@ And load it:
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
-.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
+.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json
 .. _default configurations: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs
 .. _english one: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs/config_en.py

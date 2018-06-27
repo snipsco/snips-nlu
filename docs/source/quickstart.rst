@@ -110,4 +110,4 @@ You should get something that looks like this:
 Congrats, you parsed your first intent!
 
 
-.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
+.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json

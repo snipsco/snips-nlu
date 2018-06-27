@@ -27,7 +27,8 @@ def load_resources(name):
     """Load language specific resources
 
     Args:
-        name (str): resource name
+        name (str): Resource name as in ``snips-nlu download <name>``. Can also
+            be the name of a python package or a directory path.
 
     Note:
         Language resources must be loaded before fitting or parsing
@@ -41,7 +42,8 @@ def load_resources(name):
         load_resources_from_dir(Path(name))
     else:
         raise MissingResource("Language resource '{r}' not found. This may be "
-                              "solved by running 'snips-nlu download {r}'"
+                              "solved by running "
+                              "'python -m snips_nlu download {r}'"
                               .format(r=name))
 
 

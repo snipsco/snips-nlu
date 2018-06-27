@@ -333,29 +333,22 @@ engine we previously created:
 Persisting
 ----------
 
-As a final step, we will persist the engine in a json. That may be useful in
-various contexts, for instance if you want to train on a machine and parse on
-another one.
+As a final step, we will persist the engine into a directory. That may be
+useful in various contexts, for instance if you want to train on a machine and
+parse on another one.
 
 You can persist the engine with the following API:
 
 .. code-block:: python
 
-    engine_json = json.dumps(engine.to_dict())
-    with io.open("trained_engine.json", mode="w") as f:
-        # f.write(engine_json.decode("utf8"))  # Python 2
-        f.write(engine_json)  # Python 3
+    engine.persist("path/to/directory")
 
 
 And load it:
 
 .. code-block:: python
 
-
-    with io.open("trained_engine.json") as f:
-        engine_dict = json.load(f)
-
-    loaded_engine = SnipsNLUEngine.from_dict(engine_dict)
+    loaded_engine = SnipsNLUEngine.from_path("path/to/directory")
 
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 

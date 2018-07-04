@@ -298,18 +298,6 @@ def _generate_new_index(slots_name_to_labels):
     return index
 
 
-def _get_slot_names_mapping(dataset):
-    slot_names_to_entities = dict()
-    for intent in itervalues(dataset[INTENTS]):
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    slot_name = chunk[SLOT_NAME]
-                    entity = chunk[ENTITY]
-                    slot_names_to_entities[slot_name] = entity
-    return slot_names_to_entities
-
-
 def _query_to_pattern(query, joined_entity_utterances,
                       group_names_to_slot_names, language):
     pattern = []

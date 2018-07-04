@@ -6,7 +6,7 @@ import re
 from builtins import str
 from pathlib import Path
 
-from future.utils import iteritems, itervalues
+from future.utils import iteritems
 
 from snips_nlu.builtin_entities import (get_builtin_entities,
                                         is_builtin_entity)

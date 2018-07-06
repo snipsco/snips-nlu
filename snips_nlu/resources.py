@@ -37,9 +37,13 @@ def load_resources(name):
         load_resources_from_dir(DATA_PATH / name)
     elif is_package(name):
         package_path = get_package_path(name)
-        load_resources_from_dir(package_path)
+        resources_sub_dir = get_resources_sub_directory(package_path)
+        load_resources_from_dir(resources_sub_dir)
     elif Path(name).exists():
-        load_resources_from_dir(Path(name))
+        path = Path(name)
+        if (path / "__init__.py").exists():
+            path = get_resources_sub_directory(path)
+        load_resources_from_dir(path)
     else:
         raise MissingResource("Language resource '{r}' not found. This may be "
                               "solved by running "
@@ -51,19 +55,14 @@ def load_resources_from_dir(resources_dir):
     with (resources_dir / "metadata.json").open() as f:
         metadata = json.load(f)
     language = metadata["language"]
-    resource_name = metadata["name"]
-    version = metadata["version"]
     if language in _RESOURCES:
         return
-    sub_dir = resources_dir / (resource_name + "-" + version)
-    if not sub_dir.is_dir():
-        raise FileNotFoundError("Missing resources directory: %s"
-                                % str(sub_dir))
-    word_clusters = _load_word_clusters(sub_dir / "word_clusters")
-    gazetteers = _load_gazetteers(sub_dir / "gazetteers", language)
-    stop_words = _load_stop_words(sub_dir / "stop_words.txt")
-    noise = _load_noise(sub_dir / "noise.txt")
-    stems = _load_stems(sub_dir / "stemming")
+
+    word_clusters = _load_word_clusters(resources_dir / "word_clusters")
+    gazetteers = _load_gazetteers(resources_dir / "gazetteers", language)
+    stop_words = _load_stop_words(resources_dir / "stop_words.txt")
+    noise = _load_noise(resources_dir / "noise.txt")
+    stems = _load_stems(resources_dir / "stemming")
 
     _RESOURCES[language] = {
         WORD_CLUSTERS: word_clusters,
@@ -73,6 +72,16 @@ def load_resources_from_dir(resources_dir):
         STEMS: stems,
         RESOURCES_DIR: str(resources_dir),
     }
+
+
+def get_resources_sub_directory(resources_dir):
+    resources_dir = Path(resources_dir)
+    with (resources_dir / "metadata.json").open() as f:
+        metadata = json.load(f)
+    resource_name = metadata["name"]
+    version = metadata["version"]
+    sub_dir_name = "{r}-{v}".format(r=resource_name, v=version)
+    return resources_dir / sub_dir_name
 
 
 def resource_exists(language, resource_name):

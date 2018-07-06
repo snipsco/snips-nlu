@@ -240,7 +240,6 @@ class SnipsNLUEngine(ProcessingUnit):
         for language, directory in iteritems(resources_dirs):
             language_resources_path = resources_path / language
             shutil.copytree(directory, str(language_resources_path))
-            (language_resources_path / "__init__.py").unlink()
 
 
 def _get_dataset_metadata(dataset):

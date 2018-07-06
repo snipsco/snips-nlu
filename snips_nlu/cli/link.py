@@ -7,6 +7,7 @@ import plac
 from snips_nlu.cli.compatibility import create_symlink
 from snips_nlu.cli.utils import pretty_print, PrettyPrintLevel
 from snips_nlu.constants import DATA_PATH
+from snips_nlu.resources import get_resources_sub_directory
 from snips_nlu.utils import is_package, get_package_path
 
 
@@ -40,8 +41,9 @@ def link(origin, link_name, force=False, resources_path=None):
         link_path.unlink()
     elif link_path.exists():
         raise OSError("Symlink cannot be overwritten: %s" % str(link_path))
-    create_symlink(link_path, resources_path)
-    pretty_print("%s --> %s" % (str(resources_path), str(link_path)),
+    resources_sub_dir = get_resources_sub_directory(resources_path)
+    create_symlink(link_path, resources_sub_dir)
+    pretty_print("%s --> %s" % (str(resources_sub_dir), str(link_path)),
                  "You can now load the resources via "
                  "snips_nlu.load_resources('%s')" % link_name,
                  title="Linking successful", level=PrettyPrintLevel.SUCCESS)

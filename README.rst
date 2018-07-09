@@ -2,13 +2,16 @@ Snips NLU
 =========
 
 .. image:: https://travis-ci.org/snipsco/snips-nlu.svg?branch=develop
-    :target: https://travis-ci.org/snipsco/snips-nlu
+   :target: https://travis-ci.org/snipsco/snips-nlu
+
+.. image:: https://ci.appveyor.com/api/projects/status/github/snipsco/snips-nlu?branch=develop&svg=true
+   :target: https://ci.appveyor.com/project/snipsco/snips-nlu
 
 .. image:: https://img.shields.io/pypi/v/snips-nlu.svg?branch=develop
-    :target: https://pypi.python.org/pypi/snips-nlu
+   :target: https://pypi.python.org/pypi/snips-nlu
 
 .. image:: https://img.shields.io/pypi/pyversions/snips-nlu.svg?branch=develop
-    :target: https://pypi.python.org/pypi/snips-nlu
+   :target: https://pypi.python.org/pypi/snips-nlu
 
 .. image:: https://codecov.io/gh/snipsco/snips-nlu/branch/develop/graph/badge.svg
    :target: https://codecov.io/gh/snipsco/snips-nlu
@@ -26,12 +29,12 @@ Installation
     pip install snips-nlu
 
 We currently have pre-built binaries (wheels) for ``snips-nlu`` and its
-dependencies for MacOS and Linux x86_64. If you use a different
-architecture/os you will need to build these dependencies from sources
-which means you will need to install
-`setuptools_rust <https://github.com/PyO3/setuptools-rust>`_ and
-`Rust <https://www.rust-lang.org/en-US/install.html>`_ before running the
-``pip install snips-nlu`` command.
+dependencies for MacOS, Linux x86_64 and Windows 64-bit.
+
+For any other architecture/os `snips-nlu` can be installed from the source
+distribution. To do so, `Rust <https://www.rust-lang.org/en-US/install.html>`_
+and `setuptools_rust <https://github.com/PyO3/setuptools-rust>`_ must be
+installed before running the ``pip install snips-nlu`` command.
 
 Language resources
 ------------------
@@ -158,6 +161,6 @@ Licence
 This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.
 
 .. _language resources: https://github.com/snipsco/snips-nlu-language-resources
-.. _sample dataset: samples/sample_dataset.json
+.. _sample dataset: snips_nlu_samples/sample_dataset.json
 .. _Discord channel: https://discordapp.com/invite/3939Kqx
 .. _blog post: https://medium.com/snips-ai/an-introduction-to-snips-nlu-the-open-source-library-behind-snips-embedded-voice-platform-b12b1a60a41a

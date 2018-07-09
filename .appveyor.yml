@@ -1,0 +1,34 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27-x64"
+      TARGET: x86_64-pc-windows-msvc
+    - PYTHON: "C:\\Python36-x64"
+      TARGET: x86_64-pc-windows-msvc
+
+branches:
+  only:
+  - develop
+  - master
+
+cache:
+  # Cache downloaded pip packages and built wheels.
+  - '%LocalAppData%\pip\Cache\http'
+  - '%LocalAppData%\pip\Cache\wheels'
+
+install:
+  - git submodule update --init --recursive
+  - "%PYTHON%\\python.exe -m pip install wheel"
+  - "%PYTHON%\\python.exe -m pip install -e .[test] --verbose"
+
+build: false
+
+test_script:
+  - "%PYTHON%\\python.exe -m snips_nlu download de"
+  - "%PYTHON%\\python.exe -m snips_nlu download en"
+  - "%PYTHON%\\python.exe -m snips_nlu download es"
+  - "%PYTHON%\\python.exe -m snips_nlu download fr"
+  - "%PYTHON%\\python.exe -m snips_nlu download ja"
+  - "%PYTHON%\\python.exe -m snips_nlu download ko"
+  - "%PYTHON%\\python.exe -m snips_nlu download zh"
+  - "%PYTHON%\\python.exe -m unittest discover"
+  - "%PYTHON%\\python.exe snips_nlu_samples/sample.py"

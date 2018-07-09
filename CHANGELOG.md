@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.15.1] - 2018-07-09
+### Changed
+- Bump `snips-nlu-ontology` to `0.57.1`
+
+### Fixed
+- Crash when parsing implicit years before 1970
+
 ## [0.15.0] - 2018-06-21
 ### Changed
 - Language resources are now packaged separately from the Snips NLU core
@@ -85,7 +92,8 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[0.14.0]: https://github.com/snipsco/snips-nlu/compare/0.14.0...0.15.0
+[0.15.1]: https://github.com/snipsco/snips-nlu/compare/0.15.0...0.15.1
+[0.15.0]: https://github.com/snipsco/snips-nlu/compare/0.14.0...0.15.0
 [0.14.0]: https://github.com/snipsco/snips-nlu/compare/0.13.5...0.14.0
 [0.13.5]: https://github.com/snipsco/snips-nlu/compare/0.13.4...0.13.5
 [0.13.4]: https://github.com/snipsco/snips-nlu/compare/0.13.3...0.13.4

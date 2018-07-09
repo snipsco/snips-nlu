@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 import plac
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu import __about__
 from snips_nlu.cli.link import link
@@ -52,6 +53,15 @@ def download(resource_name, *pip_args):
             title="Language resources were successfully downloaded, however "
                   "linking failed.",
             level=PrettyPrintLevel.WARNING)
+
+
+@plac.annotations(
+    pip_args=("Additional arguments to be passed to `pip install` when "
+              "installing the resources"))
+def download_all_languages(*pip_args):
+    """Download compatible resources for all supported languages"""
+    for language in get_all_languages():
+        download(language, *pip_args)
 
 
 def _get_compatibility():

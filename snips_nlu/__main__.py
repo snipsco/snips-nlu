@@ -5,7 +5,8 @@ import sys
 import plac
 
 from snips_nlu.cli import (
-    cross_val_metrics, train_test_metrics, generate_dataset, download, link)
+    cross_val_metrics, train_test_metrics, generate_dataset, download, link,
+    download_all_languages)
 from snips_nlu.cli.inference import parse
 from snips_nlu.cli.training import train
 from snips_nlu.cli.utils import pretty_print, PrettyPrintLevel
@@ -16,6 +17,7 @@ def main():
         "train": train,
         "parse": parse,
         "download": download,
+        "download-all-languages": download_all_languages,
         "link": link,
         "generate-dataset": generate_dataset,
         "cross-val-metrics": cross_val_metrics,

@@ -31,4 +31,4 @@ test_script:
   - "%PYTHON%\\python.exe -m snips_nlu download ko"
   - "%PYTHON%\\python.exe -m snips_nlu download zh"
   - "%PYTHON%\\python.exe -m unittest discover"
-  - "%PYTHON%\\python.exe samples/sample.py"
+  - "%PYTHON%\\python.exe snips_nlu_samples/sample.py"

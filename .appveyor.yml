@@ -17,18 +17,18 @@ cache:
 
 install:
   - git submodule update --init --recursive
-  - appveyor-retry appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
-  - rustup-init.exe -y --default-host %TARGET%
-  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
-  - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
-  - rustc -V
-  - cargo -V
   - "%PYTHON%\\python.exe -m pip install wheel"
-  - "%PYTHON%\\python.exe -m pip install setuptools_rust==0.8.3"
   - "%PYTHON%\\python.exe -m pip install -e .[test] --verbose"
 
 build: false
 
 test_script:
+  - "%PYTHON%\\python.exe -m snips_nlu download de"
+  - "%PYTHON%\\python.exe -m snips_nlu download en"
+  - "%PYTHON%\\python.exe -m snips_nlu download es"
+  - "%PYTHON%\\python.exe -m snips_nlu download fr"
+  - "%PYTHON%\\python.exe -m snips_nlu download ja"
+  - "%PYTHON%\\python.exe -m snips_nlu download ko"
+  - "%PYTHON%\\python.exe -m snips_nlu download zh"
   - "%PYTHON%\\python.exe -m unittest discover"
   - "%PYTHON%\\python.exe samples/sample.py"

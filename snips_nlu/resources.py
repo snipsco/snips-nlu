@@ -4,12 +4,8 @@ import json
 from builtins import next
 from pathlib import Path
 
-from snips_nlu_utils import normalize
-
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
                                  STEMS, DATA_PATH, RESOURCES_DIR)
-from snips_nlu.languages import get_default_sep
-from snips_nlu.tokenization import tokenize
 from snips_nlu.utils import is_package, get_package_path
 
 _RESOURCES = dict()
@@ -58,11 +54,15 @@ def load_resources_from_dir(resources_dir):
     if language in _RESOURCES:
         return
 
-    word_clusters = _load_word_clusters(resources_dir / "word_clusters")
-    gazetteers = _load_gazetteers(resources_dir / "gazetteers", language)
-    stop_words = _load_stop_words(resources_dir / "stop_words.txt")
-    noise = _load_noise(resources_dir / "noise.txt")
-    stems = _load_stems(resources_dir / "stemming")
+    gazetteer_names = metadata["gazetteers"]
+    gazetteers = _load_gazetteers(resources_dir / "gazetteers",
+                                  gazetteer_names)
+    stems = _load_stems(resources_dir / "stemming", metadata["stems"])
+    clusters_names = metadata["word_clusters"]
+    word_clusters = _load_word_clusters(resources_dir / "word_clusters",
+                                        clusters_names)
+    stop_words = _load_stop_words(resources_dir, metadata["stop_words"])
+    noise = _load_noise(resources_dir, metadata["noise"])
 
     _RESOURCES[language] = {
         WORD_CLUSTERS: word_clusters,
@@ -145,18 +145,19 @@ def _get_resource(language, resource_name):
     return _RESOURCES[language][resource_name]
 
 
-def _load_stop_words(stop_words_path):
-    if not stop_words_path.exists():
+def _load_stop_words(resources_dir, stop_words_filename):
+    if not stop_words_filename:
         return None
+    stop_words_path = (resources_dir / stop_words_filename).with_suffix(".txt")
     with stop_words_path.open(encoding='utf8') as f:
-        lines = (normalize(l) for l in f)
-        stop_words = set(l for l in lines if l)
+        stop_words = set(l.strip() for l in f)
     return stop_words
 
 
-def _load_noise(noise_path):
-    if not noise_path.exists():
+def _load_noise(resources_dir, noise_filename):
+    if not noise_filename:
         return None
+    noise_path = (resources_dir / noise_filename).with_suffix(".txt")
     with noise_path.open(encoding='utf8') as f:
         # Here we split on a " " knowing that it's always ignored by
         # the tokenization (see tokenization unit tests)
@@ -166,80 +167,42 @@ def _load_noise(noise_path):
     return noise
 
 
-def _load_word_clusters(word_clusters_path):
-    if not word_clusters_path.is_dir():
+def _load_word_clusters(word_clusters_dir, clusters_names):
+    if not clusters_names:
         return dict()
 
     clusters = dict()
-    for filepath in word_clusters_path.iterdir():
-        word_cluster_name = filepath.stem
-        with filepath.open(encoding="utf8") as f:
-            clusters[word_cluster_name] = dict()
+    for clusters_name in clusters_names:
+        clusters_path = (word_clusters_dir / clusters_name).with_suffix(".txt")
+        clusters[clusters_name] = dict()
+        with clusters_path.open(encoding="utf8") as f:
             for line in f:
                 split = line.rstrip().split("\t")
-                if len(split) == 2:
-                    clusters[word_cluster_name][split[0]] = split[1]
+                clusters[clusters_name][split[0]] = split[1]
     return clusters
 
 
-def _load_gazetteers(gazetteers_path, language):
-    if not gazetteers_path.is_dir():
+def _load_gazetteers(gazetteers_dir, gazetteer_names):
+    if not gazetteer_names:
         return dict()
 
     gazetteers = dict()
-    for filepath in gazetteers_path.iterdir():
-        gazetteer_name = filepath.stem
-        with filepath.open(encoding="utf8") as f:
-            gazetteers[gazetteer_name] = set()
-            for line in f:
-                normalized = normalize(line.strip())
-                if normalized:
-                    token_values = (t.value
-                                    for t in tokenize(normalized, language))
-                    normalized = get_default_sep(language).join(token_values)
-                    gazetteers[gazetteer_name].add(normalized)
+    for gazetteer_name in gazetteer_names:
+        gazetteer_path = (gazetteers_dir / gazetteer_name).with_suffix(".txt")
+        with gazetteer_path.open(encoding="utf8") as f:
+            gazetteers[gazetteer_name] = set(v.strip() for v in f)
     return gazetteers
 
 
-def _load_verbs_lexemes(stemming_path):
-    try:
-        lexems_path = next(stemming_path.glob("top_*_verbs_lexemes.txt"))
-    except StopIteration:
+def _load_stems(stems_dir, filename):
+    if not filename:
         return None
-
-    verb_lexemes = dict()
-    with lexems_path.open(encoding="utf8") as f:
+    stems_path = (stems_dir / filename).with_suffix(".txt")
+    stems = dict()
+    with stems_path.open(encoding="utf8") as f:
         for line in f:
-            elements = line.strip().split(';')
-            verb = normalize(elements[0])
-            lexemes = elements[1].split(',')
-            verb_lexemes.update(
-                {normalize(lexeme): verb for lexeme in lexemes})
-    return verb_lexemes
-
-
-def _load_words_inflections(stemming_path):
-    try:
-        inflection_path = next(stemming_path.glob("top_*_words_inflected.txt"))
-    except StopIteration:
-        return None
-
-    inflections = dict()
-    with inflection_path.open(encoding="utf8") as f:
-        for line in f:
-            elements = line.strip().split(';')
-            inflections[normalize(elements[0])] = normalize(elements[1])
-    return inflections
-
-
-def _load_stems(stemming_path):
-    inflexions = _load_words_inflections(stemming_path)
-    lexemes = _load_verbs_lexemes(stemming_path)
-    stems = None
-    if inflexions is not None:
-        stems = inflexions
-    if lexemes is not None:
-        if stems is None:
-            stems = dict()
-        stems.update(lexemes)
+            elements = line.strip().split(',')
+            stem = elements[0]
+            for value in elements[1:]:
+                stems[value] = stem
     return stems

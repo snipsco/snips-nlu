@@ -13,7 +13,8 @@ CONFIG = {
                 "feature_factory_configs": [
                     {
                         "args": {
-                            "common_words_gazetteer_name": "top_10000_words",
+                            "common_words_gazetteer_name":
+                                "top_200000_words_stemmed",
                             "use_stemming": True,
                             "n": 1
                         },
@@ -28,7 +29,8 @@ CONFIG = {
                     },
                     {
                         "args": {
-                            "common_words_gazetteer_name": "top_10000_words",
+                            "common_words_gazetteer_name":
+                                "top_200000_words_stemmed",
                             "use_stemming": True,
                             "n": 2
                         },

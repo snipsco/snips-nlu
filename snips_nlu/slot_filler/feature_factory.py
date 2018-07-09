@@ -208,11 +208,8 @@ class NgramFactory(SingleFeatureFactory):
             self._language = value
             self.args["language_code"] = self.language
             if self.common_words_gazetteer_name is not None:
-                gazetteer = get_gazetteer(self.language,
-                                          self.common_words_gazetteer_name)
-                if self.use_stemming:
-                    gazetteer = set(stem(w, self.language) for w in gazetteer)
-                self.gazetteer = gazetteer
+                self.gazetteer = get_gazetteer(
+                    self.language, self.common_words_gazetteer_name)
 
     @property
     def feature_name(self):

@@ -419,8 +419,7 @@ class EntityMatchFactory(CRFFeatureFactory):
     def _transform(self, token):
         if self.use_stemming:
             return token.get_stem(self.language)
-        else:
-            return token.get_normalized_value()
+        return token.get_normalized_value()
 
     def build_features(self):
         features = []
@@ -457,8 +456,7 @@ class EntityMatchFactory(CRFFeatureFactory):
     def get_required_resources(self):
         if self.use_stemming:
             return {STEMS: True}
-        else:
-            return None
+        return None
 
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):

@@ -46,6 +46,8 @@ def _color_from_level(level):
         return "91"
     if level == PrettyPrintLevel.SUCCESS:
         return "92"
+    else:
+        raise ValueError("Unknown PrettyPrintLevel: %s" % level)
 
 
 def get_json(url, desc):

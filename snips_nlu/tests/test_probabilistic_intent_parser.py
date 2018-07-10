@@ -261,6 +261,9 @@ class TestIntentClassifierConfig(ProcessingUnitConfig):
     def from_dict(cls, obj_dict):
         return TestIntentClassifierConfig()
 
+    def get_required_resources(self):
+        return None
+
 
 class TestIntentClassifier(IntentClassifier):
     unit_name = "test_intent_classifier"
@@ -293,6 +296,9 @@ class TestSlotFillerConfig(ProcessingUnitConfig):
     @classmethod
     def from_dict(cls, obj_dict):
         return TestSlotFillerConfig()
+
+    def get_required_resources(self):
+        return None
 
 
 class TestSlotFiller(SlotFiller):

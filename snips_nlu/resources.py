@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import shutil
 from builtins import next
 from pathlib import Path
 
@@ -118,6 +119,93 @@ def get_stems(language):
 
 def get_resources_dir(language):
     return _get_resource(language, RESOURCES_DIR)
+
+
+def merge_required_resources(lhs, rhs):
+    if not lhs:
+        return rhs
+    if not rhs:
+        return lhs
+    merged_resources = dict()
+    if lhs.get(NOISE, False) or rhs.get(NOISE, False):
+        merged_resources[NOISE] = True
+    if lhs.get(STOP_WORDS, False) or rhs.get(STOP_WORDS, False):
+        merged_resources[STOP_WORDS] = True
+    if lhs.get(STEMS, False) or rhs.get(STEMS, False):
+        merged_resources[STEMS] = True
+    gazetteers = lhs.get(GAZETTEERS, set()).union(rhs.get(GAZETTEERS, set()))
+    if gazetteers:
+        merged_resources[GAZETTEERS] = gazetteers
+    word_clusters = lhs.get(WORD_CLUSTERS, set()).union(
+        rhs.get(WORD_CLUSTERS, set()))
+    if word_clusters:
+        merged_resources[WORD_CLUSTERS] = word_clusters
+    return merged_resources
+
+
+def persist_resources(resources_dest_path, required_resources, language):
+    if not required_resources:
+        return
+
+    resources_dest_path.mkdir()
+
+    resources_src_path = Path(get_resources_dir(language))
+    with (resources_src_path / "metadata.json").open(encoding="utf8") as f:
+        metadata = json.load(f)
+
+    # Update metadata and keep only required resources
+    if not required_resources.get(NOISE, False):
+        metadata[NOISE] = None
+    if not required_resources.get(STOP_WORDS, False):
+        metadata[STOP_WORDS] = None
+    if not required_resources.get(STEMS, False):
+        metadata[STEMS] = None
+
+    metadata[GAZETTEERS] = list(required_resources.get(GAZETTEERS, []))
+    metadata[WORD_CLUSTERS] = list(required_resources.get(WORD_CLUSTERS, []))
+    metadata_dest_path = resources_dest_path / "metadata.json"
+    metadata_json = bytes(json.dumps(metadata, indent=4), encoding="utf8")
+    with metadata_dest_path.open(encoding="utf8", mode="w") as f:
+        f.write(metadata_json.decode("utf8"))
+
+    if metadata[NOISE] is not None:
+        noise_src = (resources_src_path / metadata[NOISE]).with_suffix(".txt")
+        noise_dest = (resources_dest_path / noise_src.name)
+        shutil.copy(str(noise_src), str(noise_dest))
+
+    if metadata[STOP_WORDS] is not None:
+        stop_words_src = (resources_src_path / metadata[STOP_WORDS]) \
+            .with_suffix(".txt")
+        stop_words_dest = (resources_dest_path / stop_words_src.name)
+        shutil.copy(str(stop_words_src), str(stop_words_dest))
+
+    if metadata[STEMS] is not None:
+        stems_src = (resources_src_path / "stemming" / metadata["stems"]) \
+            .with_suffix(".txt")
+        stemming_dir = resources_dest_path / "stemming"
+        stemming_dir.mkdir()
+        stems_dest = stemming_dir / stems_src.name
+        shutil.copy(str(stems_src), str(stems_dest))
+
+    if metadata[GAZETTEERS]:
+        gazetteer_src_dir = resources_src_path / "gazetteers"
+        gazetteer_dest_dir = resources_dest_path / "gazetteers"
+        gazetteer_dest_dir.mkdir()
+        for gazetteer in metadata["gazetteers"]:
+            gazetteer_src = (gazetteer_src_dir / gazetteer) \
+                .with_suffix(".txt")
+            gazetteer_dest = gazetteer_dest_dir / gazetteer_src.name
+            shutil.copy(str(gazetteer_src), str(gazetteer_dest))
+
+    if metadata[WORD_CLUSTERS]:
+        clusters_src_dir = resources_src_path / "word_clusters"
+        clusters_dest_dir = resources_dest_path / "word_clusters"
+        clusters_dest_dir.mkdir()
+        for word_clusters in metadata["word_clusters"]:
+            clusters_src = (clusters_src_dir / word_clusters) \
+                .with_suffix(".txt")
+            clusters_dest = clusters_dest_dir / clusters_src.name
+            shutil.copy(str(clusters_src), str(clusters_dest))
 
 
 def _get_resource(language, resource_name):

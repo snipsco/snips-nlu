@@ -2,8 +2,10 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
+from snips_nlu.constants import STOP_WORDS
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.pipeline.configs import default_features_factories
+from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
@@ -87,6 +89,17 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         from snips_nlu.slot_filler import CRFSlotFiller
         return CRFSlotFiller.unit_name
 
+    def get_required_resources(self):
+        # Import here to avoid circular imports
+        from snips_nlu.slot_filler.feature_factory import get_feature_factory
+
+        resources = self.data_augmentation_config.get_required_resources()
+        for config in self.feature_factory_configs:
+            factory = get_feature_factory(config)
+            resources = merge_required_resources(
+                resources, factory.get_required_resources())
+        return resources
+
     def to_dict(self):
         return {
             "unit_name": self.unit_name,
@@ -129,6 +142,11 @@ class SlotFillerDataAugmentationConfig(Config):
         self.min_utterances = min_utterances
         self.capitalization_ratio = capitalization_ratio
         self.add_builtin_entities_examples = add_builtin_entities_examples
+
+    def get_required_resources(self):
+        return {
+            STOP_WORDS: True
+        }
 
     def to_dict(self):
         return {

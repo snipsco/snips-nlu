@@ -2,30 +2,27 @@ from __future__ import unicode_literals
 
 import json
 import logging
-import shutil
 from builtins import bytes, str
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
-from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (
-    ENTITIES, CAPITALIZE, LANGUAGE, RES_SLOTS, RES_ENTITY, RES_INTENT)
+from snips_nlu.constants import (CAPITALIZE, ENTITIES, LANGUAGE,
+                                 RES_ENTITY, RES_INTENT, RES_SLOTS)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
-from snips_nlu.resources import get_resources_dir, \
-    MissingResource, load_resources_from_dir
+from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import (
-    get_slot_name_mappings, NotTrained, log_result, log_elapsed_time)
+from snips_nlu.utils import (NotTrained, get_slot_name_mappings,
+                             log_elapsed_time, log_result)
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +170,7 @@ class SnipsNLUEngine(ProcessingUnit):
         if self.config is not None:
             config = self.config.to_dict()
 
-        metadata = {
+        model = {
             "unit_name": self.unit_name,
             "dataset_metadata": self._dataset_metadata,
             "intent_parsers": intent_parsers,
@@ -181,12 +178,19 @@ class SnipsNLUEngine(ProcessingUnit):
             "model_version": __model_version__,
             "training_package_version": __version__
         }
-        metadata_json = bytes(json.dumps(metadata), encoding="utf8")
-        metadata_path = directory_path / "nlu_engine.json"
-        with metadata_path.open(mode="w") as f:
-            f.write(metadata_json.decode("utf8"))
+        model_json = bytes(json.dumps(model), encoding="utf8")
+        model_path = directory_path / "nlu_engine.json"
+        with model_path.open(mode="w") as f:
+            f.write(model_json.decode("utf8"))
 
-        self._persist_resources(directory_path / "resources")
+        if self.fitted:
+            required_resources = self.config.get_required_resources()
+            if required_resources:
+                language = self._dataset_metadata["language_code"]
+                resources_path = directory_path / "resources"
+                resources_path.mkdir()
+                persist_resources(resources_path / language,
+                                  required_resources, language)
 
     @classmethod
     def from_path(cls, path):
@@ -209,8 +213,10 @@ class SnipsNLUEngine(ProcessingUnit):
                 "Incompatible data model: persisted object=%s, python lib=%s"
                 % (model_version, __model_version__))
 
-        for resources_dir in (directory_path / "resources").iterdir():
-            load_resources_from_dir(resources_dir)
+        resources_dir = (directory_path / "resources")
+        if resources_dir.is_dir():
+            for subdir in resources_dir.iterdir():
+                load_resources_from_dir(subdir)
 
         nlu_engine = cls(config=model["config"])
         # pylint:disable=protected-access
@@ -223,23 +229,6 @@ class SnipsNLUEngine(ProcessingUnit):
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
-
-    def _persist_resources(self, resources_path):
-        if self._dataset_metadata is not None:
-            language = self._dataset_metadata["language_code"]
-            resources_dirs = {language: get_resources_dir(language)}
-        else:
-            resources_dirs = dict()
-            for language in get_all_languages():
-                try:
-                    resources_dirs[language] = get_resources_dir(language)
-                except MissingResource:
-                    pass
-
-        resources_path.mkdir()
-        for language, directory in iteritems(resources_dirs):
-            language_resources_path = resources_path / language
-            shutil.copytree(directory, str(language_resources_path))
 
 
 def _get_dataset_metadata(dataset):

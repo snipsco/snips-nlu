@@ -53,6 +53,9 @@ class TestSnipsNLUEngine(FixtureTest):
             def from_dict(cls, obj_dict):
                 return FirstIntentParserConfig()
 
+            def get_required_resources(self):
+                return None
+
         class FirstIntentParser(IntentParser):
             unit_name = "first_intent_parser"
             config_type = FirstIntentParserConfig
@@ -88,6 +91,9 @@ class TestSnipsNLUEngine(FixtureTest):
             @classmethod
             def from_dict(cls, obj_dict):
                 return SecondIntentParserConfig()
+
+            def get_required_resources(self):
+                return None
 
         class SecondIntentParser(IntentParser):
             unit_name = "second_intent_parser"
@@ -161,6 +167,9 @@ class TestSnipsNLUEngine(FixtureTest):
             @classmethod
             def from_dict(cls, obj_dict):
                 return TestIntentParserConfig()
+
+            def get_required_resources(self):
+                return None
 
         class TestIntentParser(IntentParser):
             unit_name = "test_intent_parser"
@@ -450,18 +459,8 @@ class TestSnipsNLUEngine(FixtureTest):
 
     def test_should_be_deserializable_when_empty(self):
         # Given
-        engine_dict = {
-            "unit_name": "nlu_engine",
-            "dataset_metadata": None,
-            "config": None,
-            "intent_parsers": [],
-            "model_version": snips_nlu.__model_version__,
-            "training_package_version": snips_nlu.__version__
-        }
-        self.tmp_file_path.mkdir()
-        (self.tmp_file_path / "resources").mkdir()
-        self.writeJsonContent(self.tmp_file_path / "nlu_engine.json",
-                              engine_dict)
+        engine = SnipsNLUEngine()
+        engine.persist(self.tmp_file_path)
 
         # When
         engine = SnipsNLUEngine.from_path(self.tmp_file_path)
@@ -734,6 +733,9 @@ class TestIntentParser1Config(ProcessingUnitConfig):
     def from_dict(cls, obj_dict):
         return TestIntentParser1Config()
 
+    def get_required_resources(self):
+        return None
+
 
 class TestIntentParser1(IntentParser):
     unit_name = "test_intent_parser1"
@@ -771,6 +773,9 @@ class TestIntentParser2Config(ProcessingUnitConfig):
     @classmethod
     def from_dict(cls, obj_dict):
         return TestIntentParser2Config()
+
+    def get_required_resources(self):
+        return None
 
 
 class TestIntentParser2(IntentParser):

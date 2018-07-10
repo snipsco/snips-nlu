@@ -2,7 +2,9 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
+from snips_nlu.constants import NOISE, STOP_WORDS, WORD_CLUSTERS
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
+from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
@@ -72,6 +74,12 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
         from snips_nlu.intent_classifier import LogRegIntentClassifier
         return LogRegIntentClassifier.unit_name
 
+    def get_required_resources(self):
+        resources = self.data_augmentation_config.get_required_resources()
+        resources = merge_required_resources(
+            resources, self.featurizer_config.get_required_resources())
+        return resources
+
     def to_dict(self):
         return {
             "unit_name": self.unit_name,
@@ -119,6 +127,12 @@ class IntentClassifierDataAugmentationConfig(Config):
             raise ValueError("unknown_word_prob is positive (%s) but the "
                              "replacement string is None" % unknown_word_prob)
 
+    def get_required_resources(self):
+        return {
+            NOISE: True,
+            STOP_WORDS: True
+        }
+
     def to_dict(self):
         return {
             "min_utterances": self.min_utterances,
@@ -150,6 +164,13 @@ class FeaturizerConfig(Config):
         self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
         self.word_clusters_name = word_clusters_name
+
+    def get_required_resources(self):
+        if self.word_clusters_name is None:
+            return None
+        return {
+            WORD_CLUSTERS: {self.word_clusters_name}
+        }
 
     def to_dict(self):
         return {

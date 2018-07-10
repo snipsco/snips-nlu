@@ -9,7 +9,8 @@ from snips_nlu_utils import get_shape, normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
-    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END)
+    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END,
+    GAZETTEERS, STEMS, WORD_CLUSTERS)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
@@ -63,6 +64,9 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
     def build_features(self):
         """Build a list of :class:`.Feature`"""
         pass
+
+    def get_required_resources(self):
+        return None
 
 
 class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
@@ -240,6 +244,14 @@ class NgramFactory(SingleFeatureFactory):
             return get_default_sep(self.language).join(words)
         return None
 
+    def get_required_resources(self):
+        resources = dict()
+        if self.common_words_gazetteer_name is not None:
+            resources[GAZETTEERS] = {self.common_words_gazetteer_name}
+        if self.use_stemming:
+            resources[STEMS] = True
+        return resources
+
 
 class ShapeNgramFactory(SingleFeatureFactory):
     """Feature: the shape of the n-gram consisting of the considered token and
@@ -342,6 +354,12 @@ class WordClusterFactory(SingleFeatureFactory):
         cluster = get_word_clusters(self.language)[self.cluster_name]
         return cluster.get(value, None)
 
+    def get_required_resources(self):
+        resources = {WORD_CLUSTERS: {self.cluster_name}}
+        if self.use_stemming:
+            resources[STEMS] = True
+        return resources
+
 
 class EntityMatchFactory(CRFFeatureFactory):
     """Features: does the considered token belongs to the values of one of the
@@ -435,6 +453,12 @@ class EntityMatchFactory(CRFFeatureFactory):
             return None
 
         return collection_match
+
+    def get_required_resources(self):
+        if self.use_stemming:
+            return {STEMS: True}
+        else:
+            return None
 
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):

@@ -84,19 +84,6 @@ def get_resources_sub_directory(resources_dir):
     return resources_dir / sub_dir_name
 
 
-def resource_exists(language, resource_name):
-    """Tell if the resource specified by the resource_name exist
-
-        Args:
-            language (str): language
-            resource_name (str): the resource name
-        Returns:
-            bool: whether the resource exists or not
-    """
-    return resource_name in _RESOURCES[language] \
-           and _RESOURCES[language][resource_name] is not None
-
-
 def get_stop_words(language):
     return _get_resource(language, STOP_WORDS)
 

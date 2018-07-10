@@ -17,12 +17,10 @@ from sklearn_crfsuite import CRF
 from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
 from snips_nlu.constants import (
     RES_MATCH_RANGE, LANGUAGE, DATA, RES_ENTITY, START, END, RES_VALUE,
-    ENTITY_KIND, STEMS)
+    ENTITY_KIND)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
-from snips_nlu.preprocessing import stem
-from snips_nlu.resources import resource_exists
 from snips_nlu.slot_filler.crf_utils import (
     TOKENS, TAGS, OUTSIDE, tags_to_slots, tag_name_to_slot_name,
     tags_to_preslots, positive_tagging, utterance_to_sample)
@@ -184,14 +182,6 @@ class CRFSlotFiller(SlotFiller):
         training.
         """
 
-        if resource_exists(self.language, STEMS):
-            tokens = [
-                Token(t.value, t.start, t.end,
-                      stem=stem(t.normalized_value, self.language))
-                for t in tokens]
-        else:
-            tokens = [Token(t.value, t.start, t.end, stem=t.normalized_value)
-                      for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         random_state = check_random_state(self.config.random_seed)

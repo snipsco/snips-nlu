@@ -132,7 +132,7 @@ class PrefixFactory(SingleFeatureFactory):
         return self.args["prefix_size"]
 
     def compute_feature(self, tokens, token_index):
-        return get_word_chunk(tokens[token_index].normalized_value,
+        return get_word_chunk(tokens[token_index].get_normalized_value(),
                               self.prefix_size, 0)
 
 
@@ -154,7 +154,7 @@ class SuffixFactory(SingleFeatureFactory):
         return self.args["suffix_size"]
 
     def compute_feature(self, tokens, token_index):
-        return get_word_chunk(tokens[token_index].normalized_value,
+        return get_word_chunk(tokens[token_index].get_normalized_value(),
                               self.suffix_size, len(tokens[token_index].value),
                               reverse=True)
 
@@ -224,16 +224,19 @@ class NgramFactory(SingleFeatureFactory):
         if 0 <= token_index < max_len and end <= max_len:
             if self.gazetteer is None:
                 if self.use_stemming:
-                    return get_default_sep(self.language).join(
-                        t.stem for t in tokens[token_index:end])
-                return get_default_sep(self.language).join(
-                    t.normalized_value for t in tokens[token_index:end])
+                    stems = (t.get_stem(self.language)
+                             for t in tokens[token_index:end])
+                    return get_default_sep(self.language).join(stems)
+                normalized_values = (t.get_normalized_value()
+                                     for t in tokens[token_index:end])
+                return get_default_sep(self.language).join(normalized_values)
             words = []
             for t in tokens[token_index:end]:
-                normalized = t.stem if self.use_stemming else \
-                    t.normalized_value
-                words.append(normalized if normalized in self.gazetteer
-                             else "rare_word")
+                if self.use_stemming:
+                    value = t.get_stem(self.language)
+                else:
+                    value = t.get_normalized_value()
+                words.append(value if value in self.gazetteer else "rare_word")
             return get_default_sep(self.language).join(words)
         return None
 
@@ -332,10 +335,12 @@ class WordClusterFactory(SingleFeatureFactory):
         self.language = dataset[LANGUAGE]
 
     def compute_feature(self, tokens, token_index):
-        normalized_value = tokens[token_index].stem if self.use_stemming \
-            else tokens[token_index].normalized_value
+        if self.use_stemming:
+            value = tokens[token_index].get_stem(self.language)
+        else:
+            value = tokens[token_index].get_normalized_value()
         cluster = get_word_clusters(self.language)[self.cluster_name]
-        return cluster.get(normalized_value, None)
+        return cluster.get(value, None)
 
 
 class EntityMatchFactory(CRFFeatureFactory):
@@ -394,7 +399,10 @@ class EntityMatchFactory(CRFFeatureFactory):
         return self
 
     def _transform(self, token):
-        return token.stem if self.use_stemming else token.normalized_value
+        if self.use_stemming:
+            return token.get_stem(self.language)
+        else:
+            return token.get_normalized_value()
 
     def build_features(self):
         features = []

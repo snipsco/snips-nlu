@@ -453,9 +453,9 @@ class TestCRFSlotFiller(FixtureTest):
             {START: 9, END: 15}
         ]
         tokens = [
-            Token(value="abc", start=0, end=3, stem="abc"),
-            Token(value="def", start=4, end=7, stem="def"),
-            Token(value="ghi", start=10, end=13, stem="ghi")
+            Token(value="abc", start=0, end=3),
+            Token(value="def", start=4, end=7),
+            Token(value="ghi", start=10, end=13)
         ]
 
         # When

@@ -221,7 +221,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)
 
-    @patch("snips_nlu.intent_classifier.featurizer.get_word_clusters")
+    @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
     @patch("snips_nlu.intent_classifier.featurizer.stem")
     def test_preprocess_utterances(self, mocked_stem, mocked_word_cluster):
         # Given
@@ -243,11 +243,9 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 [_stem(t) for t in tokenize_light(text, language)])
 
         mocked_word_cluster.return_value = {
-            "brown_clusters": {
-                "beautiful": "cluster_1",
-                "birdy": "cluster_2",
-                "entity": "cluster_3"
-            }
+            "beautiful": "cluster_1",
+            "birdy": "cluster_2",
+            "entity": "cluster_3"
         }
 
         mocked_stem.side_effect = stem_function

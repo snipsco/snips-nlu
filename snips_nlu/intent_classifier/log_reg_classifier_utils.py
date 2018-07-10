@@ -16,7 +16,7 @@ from snips_nlu.constants import (
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.resources import get_noise
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 
 NOISE_NAME = str(uuid4())
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")

@@ -5,7 +5,7 @@ from enum import Enum, unique
 
 from snips_nlu.constants import TEXT, SLOT_NAME, START, END
 from snips_nlu.result import unresolved_slot
-from snips_nlu.tokenization import tokenize, Token
+from snips_nlu.preprocessing import tokenize, Token
 
 BEGINNING_PREFIX = "B-"
 INSIDE_PREFIX = "I-"

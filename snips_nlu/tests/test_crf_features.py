@@ -16,7 +16,7 @@ from snips_nlu.slot_filler.feature_factory import (
     ShapeNgramFactory, WordClusterFactory, EntityMatchFactory,
     BuiltinEntityMatchFactory)
 from snips_nlu.tests.utils import SAMPLE_DATASET, SnipsTest
-from snips_nlu.tokenization import tokenize
+from snips_nlu.preprocessing import tokenize
 
 
 class TestCRFFeatures(SnipsTest):

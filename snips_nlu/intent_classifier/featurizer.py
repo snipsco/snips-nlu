@@ -22,7 +22,7 @@ from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_stop_words, get_word_clusters, \
     MissingResource
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 
 
 class Featurizer(object):

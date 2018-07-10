@@ -7,7 +7,7 @@ from snips_nlu_metrics import compute_cross_val_metrics
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH, SnipsTest
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 
 INTENT_CLASSIFICATION_THRESHOLD = 0.9
 SLOT_FILLING_THRESHOLD = 0.85

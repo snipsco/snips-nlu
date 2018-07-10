@@ -14,7 +14,7 @@ from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
                                  LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
                                  CAPITALIZE, VALIDATED)
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.utils import validate_type, validate_key, validate_keys
 
 

@@ -17,7 +17,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 
 
 class TestIntentClassifierFeaturizer(SnipsTest):

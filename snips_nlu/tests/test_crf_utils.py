@@ -11,7 +11,7 @@ from snips_nlu.slot_filler.crf_utils import (
     positive_tagging, end_of_bio_slot, start_of_bio_slot, start_of_bilou_slot,
     end_of_bilou_slot, tags_to_slots)
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.tokenization import tokenize, Token
+from snips_nlu.preprocessing import tokenize, Token
 
 
 class TestCRFUtils(SnipsTest):

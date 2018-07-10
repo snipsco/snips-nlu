@@ -29,7 +29,7 @@ from snips_nlu.slot_filler.crf_utils import (
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.tokenization import Token, tokenize
+from snips_nlu.preprocessing import tokenize
 from snips_nlu.utils import (
     UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
     ranges_overlap, NotTrained, DifferedLoggingMessage, log_elapsed_time)

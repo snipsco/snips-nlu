@@ -18,7 +18,7 @@ from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (unresolved_slot, parsing_result,
                               intent_classification_result, empty_result)
-from snips_nlu.tokenization import tokenize, tokenize_light
+from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.utils import (
     regex_escape, ranges_overlap, NotTrained, log_result, log_elapsed_time)
 

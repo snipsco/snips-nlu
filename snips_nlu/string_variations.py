@@ -17,7 +17,7 @@ from snips_nlu.constants import (
     LANGUAGE_FR, LANGUAGE_DE, ENTITY, START, END)
 from snips_nlu.languages import get_punctuation_regex, supports_num2words, \
     get_default_sep
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 
 AND_UTTERANCES = {
     LANGUAGE_EN: ["and", "&"],

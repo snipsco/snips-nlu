@@ -21,7 +21,7 @@ from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, ShapeNgramFactory, NgramFactory)
 from snips_nlu.tests.utils import (
     SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET, FixtureTest)
-from snips_nlu.tokenization import tokenize, Token
+from snips_nlu.preprocessing import tokenize, Token
 
 
 class TestCRFSlotFiller(FixtureTest):

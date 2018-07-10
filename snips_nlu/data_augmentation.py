@@ -12,7 +12,7 @@ from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
                                  ENTITIES, CAPITALIZE)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.resources import get_stop_words
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
 
 
 def capitalize(text, language):

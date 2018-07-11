@@ -245,7 +245,7 @@ class TestSnipsNLUEngine(FixtureTest):
         # Then
         self.assertEqual(empty_result("hello world"), result)
 
-    def test_should_be_serializable(self):
+    def test_should_be_serializable_into_zip(self):
         # Given
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
@@ -370,7 +370,7 @@ class TestSnipsNLUEngine(FixtureTest):
             self.tmp_file_path / "test_intent_parser1_2" / "metadata.json",
             {"unit_name": "test_intent_parser1"})
 
-    def test_should_be_deserializable(self):
+    def test_should_be_deserializable_from_dir(self):
         # Given
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
@@ -438,7 +438,7 @@ class TestSnipsNLUEngine(FixtureTest):
         # pylint:enable=protected-access
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
 
-    def test_should_be_serializable_when_empty(self):
+    def test_should_be_serializable_into_dir_when_empty(self):
         # Given
         nlu_engine = SnipsNLUEngine()
 
@@ -457,7 +457,7 @@ class TestSnipsNLUEngine(FixtureTest):
         self.assertJsonContent(self.tmp_file_path / "nlu_engine.json",
                                expected_dict)
 
-    def test_should_be_deserializable_when_empty(self):
+    def test_should_be_deserializable_from_dir_when_empty(self):
         # Given
         engine = SnipsNLUEngine()
         engine.persist(self.tmp_file_path)
@@ -468,7 +468,7 @@ class TestSnipsNLUEngine(FixtureTest):
         # Then
         self.assertFalse(engine.fitted)
 
-    def test_should_parse_after_deserialization(self):
+    def test_should_parse_after_deserialization_from_dir(self):
         # Given
         dataset = BEVERAGE_DATASET
         engine = SnipsNLUEngine().fit(dataset)
@@ -481,16 +481,30 @@ class TestSnipsNLUEngine(FixtureTest):
 
         # Then
         expected_slots = [
-            resolved_slot({START: 8, END: 9}, '3',
-                          {'kind': 'Number', 'value': 3.0},
-                          'snips/number', 'number_of_cups'),
+            resolved_slot({START: 8, END: 9}, "3",
+                          {"kind": "Number", "value": 3.0},
+                          "snips/number", "number_of_cups"),
             custom_slot(
-                unresolved_slot({START: 18, END: 21}, 'hot', 'Temperature',
-                                'beverage_temperature'))
+                unresolved_slot({START: 18, END: 21}, "hot", "Temperature",
+                                "beverage_temperature"))
         ]
         self.assertEqual(result[RES_INPUT], input_)
-        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], 'MakeTea')
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeTea")
         self.assertListEqual(result[RES_SLOTS], expected_slots)
+
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        engine = SnipsNLUEngine().fit(dataset)
+
+        # When
+        engine_bytes = engine.to_byte_array()
+        loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+        result = loaded_engine.parse("Make me two cups of coffee")
+
+        # Then
+        self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeCoffee")
+
 
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"

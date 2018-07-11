@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import logging
+import shutil
 from builtins import bytes, str
 from collections import defaultdict
 from copy import deepcopy
@@ -22,7 +23,8 @@ from snips_nlu.pipeline.processing_unit import (
 from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
 from snips_nlu.utils import (NotTrained, get_slot_name_mappings,
-                             log_elapsed_time, log_result)
+                             log_elapsed_time, log_result, temp_dir,
+                             unzip_archive)
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +149,12 @@ class SnipsNLUEngine(ProcessingUnit):
         return empty_result(text)
 
     def persist(self, path):
-        """Persist the NLU engine at the given directory path"""
+        """Persist the NLU engine at the given directory path
+
+        Args:
+            path (str): the location at which the nlu engine must be persisted.
+                This path must not exist when calling this function.
+        """
         directory_path = Path(path)
         if directory_path.exists():
             raise OSError("Persisting directory %s already exists"
@@ -198,6 +205,9 @@ class SnipsNLUEngine(ProcessingUnit):
 
         The data at the given path must have been generated using
         :func:`~SnipsNLUEngine.persist`
+
+        Args:
+            path (str): The path where the nlu engine is stored.
         """
         directory_path = Path(path)
         model_path = directory_path / "nlu_engine.json"
@@ -229,6 +239,44 @@ class SnipsNLUEngine(ProcessingUnit):
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
+
+    def to_byte_array(self):
+        """Serialize the :class:`SnipsNLUEngine` instance into a bytearray
+
+        This method persists the engine in a temporary directory, zip the
+        directory and return the zipped file as binary data.
+
+        Returns:
+            bytearray: the engine as bytearray data
+        """
+
+        with temp_dir() as tmp_dir:
+            engine_dir = tmp_dir / "trained_engine"
+            self.persist(engine_dir)
+            archive_base_name = tmp_dir / "trained_engine"
+            archive_name = archive_base_name.with_suffix(".zip")
+            shutil.make_archive(base_name=str(archive_base_name),
+                                format="zip", root_dir=str(tmp_dir),
+                                base_dir="trained_engine")
+            with archive_name.open(mode="rb") as f:
+                engine_bytes = f.read()
+        return engine_bytes
+
+    @classmethod
+    def from_byte_array(cls, engine_bytes):
+        """Load a :class:`SnipsNLUEngine` instance from a bytearray
+
+        Args:
+            engine_bytes (bytearray): A bytearray representing a zipped nlu
+                engine.
+        """
+        with temp_dir() as tmp_dir:
+            archive_path = tmp_dir / "trained_engine.zip"
+            with archive_path.open(mode="wb") as f:
+                f.write(engine_bytes)
+            unzip_archive(archive_path, str(tmp_dir))
+            engine = cls.from_path(tmp_dir / "trained_engine")
+        return engine
 
 
 def _get_dataset_metadata(dataset):

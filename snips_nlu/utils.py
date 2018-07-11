@@ -5,16 +5,20 @@ import importlib
 import json
 import numbers
 import os
+import shutil
 from builtins import object, str
-from collections import OrderedDict, namedtuple, Mapping
+from collections import Mapping, OrderedDict, namedtuple
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from tempfile import mkdtemp
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import numpy as np
 import pkg_resources
 
-from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
-                                 END, START)
+from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
+                                 UTTERANCES)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -148,6 +152,20 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+
+@contextmanager
+def temp_dir(suffix=None, prefix=None, directory=None):
+    tmp_dir = mkdtemp(suffix, prefix, directory)
+    try:
+        yield Path(tmp_dir)
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def unzip_archive(archive_path, destination_dir):
+    with ZipFile(str(archive_path), "r", ZIP_DEFLATED) as zipf:
+        zipf.extractall(str(destination_dir))
 
 
 # pylint:disable=line-too-long

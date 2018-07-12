@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import shutil
-from builtins import next
+from builtins import bytes, next
 from pathlib import Path
 
 from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,

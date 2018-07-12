@@ -2,30 +2,29 @@
 from __future__ import unicode_literals
 
 import json
-from builtins import str
 from copy import deepcopy
 from pathlib import Path
 
+from builtins import bytes, str
 from mock import patch
 from snips_nlu_ontology import get_all_languages
 
 import snips_nlu
-from snips_nlu.constants import (
-    LANGUAGE, RES_INTENT, RES_INTENT_NAME, RES_INPUT, RES_SLOTS,
-    RES_MATCH_RANGE, RES_RAW_VALUE, RES_VALUE, RES_ENTITY, RES_SLOT_NAME,
-    LANGUAGE_EN, END, START)
+from snips_nlu.constants import (END, LANGUAGE, LANGUAGE_EN, RES_ENTITY,
+                                 RES_INPUT, RES_INTENT, RES_INTENT_NAME,
+                                 RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS,
+                                 RES_SLOT_NAME, RES_VALUE, START)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs import ProcessingUnitConfig, NLUEngineConfig
+from snips_nlu.pipeline.configs import NLUEngineConfig, ProcessingUnitConfig
 from snips_nlu.pipeline.units_registry import (register_processing_unit,
                                                reset_processing_units)
-from snips_nlu.result import (
-    parsing_result, unresolved_slot, intent_classification_result,
-    empty_result,
-    custom_slot, resolved_slot)
-from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET, FixtureTest)
+from snips_nlu.result import (custom_slot, empty_result,
+                              intent_classification_result, parsing_result,
+                              resolved_slot, unresolved_slot)
+from snips_nlu.tests.utils import (BEVERAGE_DATASET, FixtureTest,
+                                   SAMPLE_DATASET, get_empty_dataset)
 
 
 class TestSnipsNLUEngine(FixtureTest):
@@ -75,7 +74,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 path = Path(path)
                 path.mkdir()
                 with (path / "metadata.json").open(mode="w") as f:
-                    f.write(json.dumps({"unit_name": self.unit_name}))
+                    f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                                  encoding="utf8").decode("utf8"))
 
             @classmethod
             def from_path(cls, path):
@@ -116,7 +116,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 path = Path(path)
                 path.mkdir()
                 with (path / "metadata.json").open(mode="w") as f:
-                    f.write(json.dumps({"unit_name": self.unit_name}))
+                    f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                                  encoding="utf8").decode("utf8"))
 
             @classmethod
             def from_path(cls, path):
@@ -208,7 +209,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 path = Path(path)
                 path.mkdir()
                 with (path / "metadata.json").open(mode="w") as f:
-                    f.write(json.dumps({"unit_name": self.unit_name}))
+                    f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                                  encoding="utf8").decode("utf8"))
 
             @classmethod
             def from_path(cls, path):
@@ -505,7 +507,6 @@ class TestSnipsNLUEngine(FixtureTest):
         # Then
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeCoffee")
 
-
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.parse")
@@ -770,7 +771,8 @@ class TestIntentParser1(IntentParser):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(json.dumps({"unit_name": self.unit_name}))
+            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                          encoding="utf8").decode("utf8"))
 
     @classmethod
     def from_path(cls, path):
@@ -811,7 +813,8 @@ class TestIntentParser2(IntentParser):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(json.dumps({"unit_name": self.unit_name}))
+            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                          encoding="utf8").decode("utf8"))
 
     @classmethod
     def from_path(cls, path):

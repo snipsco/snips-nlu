@@ -155,8 +155,8 @@ def mkdir_p(path):
 
 
 @contextmanager
-def temp_dir(suffix=None, prefix=None, directory=None):
-    tmp_dir = mkdtemp(suffix, prefix, directory)
+def temp_dir():
+    tmp_dir = mkdtemp()
     try:
         yield Path(tmp_dir)
     finally:

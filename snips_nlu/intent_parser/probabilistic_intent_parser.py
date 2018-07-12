@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
-from future.utils import itervalues, iteritems
+from future.utils import iteritems, itervalues
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
@@ -16,8 +16,8 @@ from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
-from snips_nlu.utils import (
-    NotTrained, elapsed_since, log_result, log_elapsed_time)
+from snips_nlu.utils import (NotTrained, elapsed_since, log_elapsed_time,
+                             log_result)
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +140,9 @@ class ProbabilisticIntentParser(IntentParser):
                 "intent": intent,
                 "slot_filler_name": slot_filler_name
             })
+
+        # Only needed to improve testability
+        slot_fillers = sorted(slot_fillers, key=lambda sf: sf["intent"])
 
         if self.intent_classifier is not None:
             self.intent_classifier.persist(path / "intent_classifier")

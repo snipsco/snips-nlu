@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
 
+from builtins import bytes
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import load_resources

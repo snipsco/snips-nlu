@@ -3,11 +3,12 @@ from __future__ import unicode_literals
 import json
 from pathlib import Path
 
+from builtins import bytes
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier import IntentClassifier
-from snips_nlu.intent_classifier import LogRegIntentClassifier
+from snips_nlu.intent_classifier import IntentClassifier, \
+    LogRegIntentClassifier
 from snips_nlu.intent_parser import ProbabilisticIntentParser
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, LogRegIntentClassifierConfig,
@@ -279,7 +280,8 @@ class TestIntentClassifier(IntentClassifier):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(json.dumps({"unit_name": self.unit_name}))
+            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                          encoding="utf8").decode("utf8"))
 
     @classmethod
     def from_path(cls, path):
@@ -315,7 +317,8 @@ class TestSlotFiller(SlotFiller):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(json.dumps({"unit_name": self.unit_name}))
+            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
+                          encoding="utf8").decode("utf8"))
 
     @classmethod
     def from_path(cls, path):

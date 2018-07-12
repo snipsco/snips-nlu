@@ -10,7 +10,7 @@ from snips_nlu_ontology import get_all_languages
 
 from snips_nlu import __about__
 from snips_nlu.cli.link import link
-from snips_nlu.cli.utils import get_json, pretty_print, PrettyPrintLevel
+from snips_nlu.cli.utils import PrettyPrintLevel, get_json, pretty_print
 from snips_nlu.constants import DATA_PATH
 from snips_nlu.utils import get_package_path
 
@@ -22,37 +22,46 @@ from snips_nlu.utils import get_package_path
     resource_name=("Name of the language resources to download. Can be "
                    "either a shortcut, like 'en', or the full name of the "
                    "resources like 'snips_nlu_en'", "positional", None, str),
+    direct=("force direct download. Needs resource name with version and "
+            "won't perform compatibility check", "flag", "d", bool),
     pip_args=("Additional arguments to be passed to `pip install` when "
               "installing the resource"))
-def download(resource_name, *pip_args):
+def download(resource_name, direct=False,
+             *pip_args):  # pylint:disable=keyword-arg-before-vararg
     """Download compatible resources for the specified language"""
-    resource_name = resource_name.lower()
-    shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
-    full_resource_name = shortcuts.get(resource_name, resource_name)
-    compatibility = _get_compatibility()
-    version = _get_resources_version(full_resource_name, compatibility)
-    dl = _download_resources('{r}-{v}/{r}-{v}.tar.gz#egg={r}=={v}'
-                             .format(r=full_resource_name, v=version),
-                             pip_args)
-    if dl != 0:
-        sys.exit(dl)
-    try:
-        # Get package path here because link uses
-        # pip.get_installed_distributions() to check if the resource is a
-        # package, which fails if the resource was just installed via
-        # subprocess
-        package_path = get_package_path(full_resource_name)
-        link(full_resource_name, resource_name, force=True,
-             resources_path=package_path)
-    except:  # pylint:disable=bare-except
-        pretty_print(
-            "Creating a shortcut link for '{r}' didn't work.\nYou can "
-            "still load the resources via its full package name: "
-            "snips_nlu.load_resources('{n}')".format(r=resource_name,
-                                                     n=full_resource_name),
-            title="Language resources were successfully downloaded, however "
-                  "linking failed.",
-            level=PrettyPrintLevel.WARNING)
+    if direct:
+        dl = _download_resources(
+            '{r}/{r}.tar.gz#egg={r}'.format(r=resource_name), pip_args)
+        if dl != 0:
+            sys.exit(dl)
+    else:
+        resource_name = resource_name.lower()
+        shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
+        full_resource_name = shortcuts.get(resource_name, resource_name)
+        compatibility = _get_compatibility()
+        version = _get_resources_version(full_resource_name, compatibility)
+        dl = _download_resources('{r}-{v}/{r}-{v}.tar.gz#egg={r}=={v}'
+                                 .format(r=full_resource_name, v=version),
+                                 pip_args)
+        if dl != 0:
+            sys.exit(dl)
+        try:
+            # Get package path here because link uses
+            # pip.get_installed_distributions() to check if the resource is a
+            # package, which fails if the resource was just installed via
+            # subprocess
+            package_path = get_package_path(full_resource_name)
+            link(full_resource_name, resource_name, force=True,
+                 resources_path=package_path)
+        except:  # pylint:disable=bare-except
+            pretty_print(
+                "Creating a shortcut link for '{r}' didn't work.\nYou can "
+                "still load the resources via its full package name: "
+                "snips_nlu.load_resources('{n}')".format(r=resource_name,
+                                                         n=full_resource_name),
+                title="Language resources were successfully downloaded, "
+                      "however linking failed.",
+                level=PrettyPrintLevel.WARNING)
 
 
 @plac.annotations(

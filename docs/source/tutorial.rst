@@ -353,6 +353,14 @@ And load it:
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
+Alternatively, you can persist/load the engine as a ``bytearray``:
+
+.. code-block:: python
+
+    engine_bytes = engine.to_byte_array()
+    loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+
+
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json
 .. _default configurations: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs
 .. _english one: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs/config_en.py

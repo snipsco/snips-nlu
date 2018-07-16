@@ -6,7 +6,7 @@ import re
 from builtins import str
 from pathlib import Path
 
-from future.utils import iteritems, itervalues
+from future.utils import iteritems
 
 from snips_nlu.builtin_entities import (get_builtin_entities,
                                         is_builtin_entity)
@@ -20,9 +20,9 @@ from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
     unresolved_slot)
-from snips_nlu.utils import (NotTrained, check_persisted_path, json_string,
-                             log_elapsed_time, log_result, ranges_overlap,
-                             regex_escape)
+from snips_nlu.utils import (
+    NotTrained, check_persisted_path, get_slot_name_mappings, json_string,
+    log_elapsed_time, log_result, ranges_overlap, regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -86,7 +86,7 @@ class DeterministicIntentParser(IntentParser):
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = _get_joined_entity_utterances(
             dataset, self.language)
-        self.slot_names_to_entities = _get_slot_names_mapping(dataset)
+        self.slot_names_to_entities = get_slot_name_mappings(dataset)
         for intent_name, intent in iteritems(dataset[INTENTS]):
             utterances = intent[UTTERANCES]
             patterns, self.group_names_to_slot_names = _generate_patterns(
@@ -158,7 +158,7 @@ class DeterministicIntentParser(IntentParser):
         slots = []
         for group_name in found_result.groupdict():
             slot_name = self.group_names_to_slot_names[group_name]
-            entity = self.slot_names_to_entities[slot_name]
+            entity = self.slot_names_to_entities[intent][slot_name]
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
             if builtin_entities_ranges_mapping is not None:
@@ -296,18 +296,6 @@ def _generate_new_index(slots_name_to_labels):
         max_index = _get_index(max_index) + 1
         index = _make_index(max_index)
     return index
-
-
-def _get_slot_names_mapping(dataset):
-    slot_names_to_entities = dict()
-    for intent in itervalues(dataset[INTENTS]):
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    slot_name = chunk[SLOT_NAME]
-                    entity = chunk[ENTITY]
-                    slot_names_to_entities[slot_name] = entity
-    return slot_names_to_entities
 
 
 def _query_to_pattern(query, joined_entity_utterances,

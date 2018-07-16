@@ -16,10 +16,10 @@ def stem(string, language):
 
 
 def stem_token(token, language):
-    if token.stem:
-        return token.stem
-    token.stem = stem(normalize(token.value), language)
-    return token.stem
+    if token.stemmed_value:
+        return token.stemmed_value
+    token.stemmed_value = stem(normalize(token.value), language)
+    return token.stemmed_value
 
 
 def normalize_token(token):
@@ -41,15 +41,16 @@ class Token(object):
         start (int): Start position of the token within the sentence
         end (int): End position of the token within the sentence
         normalized_value (str): Normalized value of the tokenized string
-        stem (str): Stemmed value of the tokenized string
+        stemmed_value (str): Stemmed value of the tokenized string
     """
 
-    def __init__(self, value, start, end, normalized_value=None, stem=None):
+    def __init__(self, value, start, end, normalized_value=None,
+                 stemmed_value=None):
         self.value = value
         self.start = start
         self.end = end
         self.normalized_value = normalized_value
-        self.stem = stem
+        self.stemmed_value = stemmed_value
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

@@ -5,8 +5,9 @@ import unittest
 from mock import patch
 
 from snips_nlu.constants import DATA_PATH
-from snips_nlu.resources import _get_resource, MissingResource, \
-    clear_resources, load_resources, _RESOURCES
+from snips_nlu.resources import (
+    MissingResource, _RESOURCES, _get_resource, clear_resources,
+    load_resources)
 
 
 class TestResources(unittest.TestCase):

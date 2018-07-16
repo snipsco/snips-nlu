@@ -1,10 +1,9 @@
 from __future__ import unicode_literals
 
-from builtins import object
-from builtins import str
+from builtins import object, str
 
 from snips_nlu_ontology import (
-    get_all_builtin_entities, BuiltinEntityParser as _BuiltinEntityParser,
+    BuiltinEntityParser as _BuiltinEntityParser, get_all_builtin_entities,
     get_supported_entities)
 
 from snips_nlu.utils import LimitedSizeDict

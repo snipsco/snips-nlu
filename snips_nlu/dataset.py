@@ -1,21 +1,20 @@
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 import json
 from builtins import str
 from copy import deepcopy
 
-from future.utils import itervalues, iteritems
+from future.utils import iteritems, itervalues
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
-                                 ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
-                                 LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 CAPITALIZE, VALIDATED)
-from snips_nlu.string_variations import get_string_variations
+from snips_nlu.constants import (
+    AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
+    LANGUAGE, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS, UTTERANCES, VALIDATED,
+    VALUE)
 from snips_nlu.preprocessing import tokenize_light
-from snips_nlu.utils import validate_type, validate_key, validate_keys
+from snips_nlu.string_variations import get_string_variations
+from snips_nlu.utils import validate_key, validate_keys, validate_type
 
 
 def extract_queries_entities(dataset):

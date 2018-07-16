@@ -1,12 +1,12 @@
 import json
 from abc import ABCMeta, abstractmethod
-from builtins import bytes, object
+from builtins import object
 from pathlib import Path
 
 from future.utils import with_metaclass
 
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.utils import classproperty
+from snips_nlu.utils import classproperty, json_string
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):

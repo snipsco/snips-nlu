@@ -3,9 +3,8 @@ from __future__ import unicode_literals
 
 from builtins import object
 
-from snips_nlu_utils import (tokenize as _tokenize,
-                             tokenize_light as _tokenize_light,
-                             normalize)
+from snips_nlu_utils import (
+    normalize, tokenize as _tokenize, tokenize_light as _tokenize_light)
 
 from snips_nlu.resources import get_stems
 

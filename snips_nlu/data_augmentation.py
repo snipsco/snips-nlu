@@ -8,11 +8,11 @@ from future.utils import iteritems
 from snips_nlu_ontology import get_builtin_entity_examples
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (UTTERANCES, DATA, ENTITY, TEXT, INTENTS,
-                                 ENTITIES, CAPITALIZE)
+from snips_nlu.constants import (
+    CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS, TEXT, UTTERANCES)
 from snips_nlu.languages import get_default_sep
-from snips_nlu.resources import get_stop_words
 from snips_nlu.preprocessing import tokenize_light
+from snips_nlu.resources import get_stop_words
 
 
 def capitalize(text, language):

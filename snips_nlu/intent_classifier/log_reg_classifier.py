@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import logging
-from builtins import bytes, range, str, zip
+from builtins import range, str, zip
 from pathlib import Path
 
 import numpy as np
@@ -14,11 +14,11 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
-    get_regularization_factor, build_training_data, text_to_utterance)
+    build_training_data, get_regularization_factor, text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import check_random_state, NotTrained, \
-    DifferedLoggingMessage, log_elapsed_time
+from snips_nlu.utils import DifferedLoggingMessage, NotTrained, \
+    check_random_state, json_string, log_elapsed_time
 
 logger = logging.getLogger(__name__)
 

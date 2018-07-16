@@ -3,22 +3,24 @@ from __future__ import unicode_literals
 from abc import ABCMeta, abstractmethod
 from builtins import map, object, str
 
-from future.utils import with_metaclass, iteritems
+from future.utils import iteritems, with_metaclass
 from snips_nlu_ontology.builtin_entities import get_supported_entities
 from snips_nlu_utils import get_shape, normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import (
-    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END,
-    GAZETTEERS, STEMS, WORD_CLUSTERS)
+from snips_nlu.constants import (END, GAZETTEERS, LANGUAGE, NGRAM,
+                                 RES_MATCH_RANGE, START, STEMS, TOKEN_INDEXES,
+                                 UTTERANCES, WORD_CLUSTERS)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import stem
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
-from snips_nlu.slot_filler.features_utils import (
-    get_word_chunk, get_all_ngrams, initial_string_from_tokens,
-    entity_filter, get_intent_custom_entities)
+from snips_nlu.slot_filler.features_utils import (entity_filter,
+                                                  get_all_ngrams,
+                                                  get_intent_custom_entities,
+                                                  get_word_chunk,
+                                                  initial_string_from_tokens)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, object)):

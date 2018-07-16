@@ -2,12 +2,13 @@ from __future__ import unicode_literals
 
 import json
 import shutil
-from builtins import bytes, next
+from builtins import next
 from pathlib import Path
 
-from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
-                                 STEMS, DATA_PATH, RESOURCES_DIR)
-from snips_nlu.utils import is_package, get_package_path
+from snips_nlu.constants import (
+    DATA_PATH, GAZETTEERS, NOISE, RESOURCES_DIR, STEMS, STOP_WORDS,
+    WORD_CLUSTERS)
+from snips_nlu.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
 

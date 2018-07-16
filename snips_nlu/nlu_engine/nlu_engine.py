@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import json
 import logging
 import shutil
-from builtins import bytes, str
+from builtins import str
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
@@ -12,8 +12,8 @@ from future.utils import iteritems
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (CAPITALIZE, ENTITIES, LANGUAGE,
-                                 RES_ENTITY, RES_INTENT, RES_SLOTS)
+from snips_nlu.constants import (
+    CAPITALIZE, ENTITIES, LANGUAGE, RES_ENTITY, RES_INTENT, RES_SLOTS)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
@@ -22,9 +22,9 @@ from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import (NotTrained, get_slot_name_mappings,
-                             log_elapsed_time, log_result, temp_dir,
-                             unzip_archive)
+from snips_nlu.utils import (
+    NotTrained, get_slot_name_mappings, json_string, log_elapsed_time,
+    log_result, temp_dir, unzip_archive)
 
 logger = logging.getLogger(__name__)
 

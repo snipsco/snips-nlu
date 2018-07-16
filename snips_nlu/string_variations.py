@@ -3,20 +3,18 @@ from __future__ import unicode_literals
 
 import itertools
 import re
+from builtins import range, str, zip
 
-from builtins import range
-from builtins import str
-from builtins import zip
 from future.utils import iteritems
 from num2words import num2words
 from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
-    VALUE, RES_MATCH_RANGE, SNIPS_NUMBER, LANGUAGE_EN, LANGUAGE_ES,
-    LANGUAGE_FR, LANGUAGE_DE, ENTITY, START, END)
-from snips_nlu.languages import get_punctuation_regex, supports_num2words, \
-    get_default_sep
+    END, ENTITY, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR,
+    RES_MATCH_RANGE, SNIPS_NUMBER, START, VALUE)
+from snips_nlu.languages import (
+    get_default_sep, get_punctuation_regex, supports_num2words)
 from snips_nlu.preprocessing import tokenize_light
 
 AND_UTTERANCES = {

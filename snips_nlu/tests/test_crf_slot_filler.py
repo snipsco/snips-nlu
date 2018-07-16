@@ -7,21 +7,22 @@ from pathlib import Path
 from mock import MagicMock
 
 from snips_nlu.constants import (
-    RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT, SLOT_NAME, LANGUAGE_EN,
-    SNIPS_DATETIME, END, START, ENTITY_KIND)
+    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_MATCH_RANGE, SLOT_NAME,
+    SNIPS_DATETIME, START, TEXT, VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
+from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, _spans_to_tokens_indexes, _filter_overlapping_builtins,
-    _disambiguate_builtin_entities, _get_slots_permutations)
+    CRFSlotFiller, _disambiguate_builtin_entities,
+    _filter_overlapping_builtins, _get_slots_permutations,
+    _spans_to_tokens_indexes)
 from snips_nlu.slot_filler.crf_utils import (
-    TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX)
+    BEGINNING_PREFIX, INSIDE_PREFIX, TaggingScheme)
 from snips_nlu.slot_filler.feature_factory import (
-    IsDigitFactory, ShapeNgramFactory, NgramFactory)
+    IsDigitFactory, NgramFactory, ShapeNgramFactory)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, BEVERAGE_DATASET, TEST_PATH, WEATHER_DATASET, FixtureTest)
-from snips_nlu.preprocessing import tokenize, Token
+    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH, WEATHER_DATASET)
 
 
 class TestCRFSlotFiller(FixtureTest):

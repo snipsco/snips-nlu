@@ -11,10 +11,10 @@ from snips_nlu.constants import LANGUAGE, RES_INTENT, RES_INTENT_NAME
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.pipeline.configs import (
-    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig,
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
-    FeaturizerConfig, NLUEngineConfig, ProbabilisticIntentParserConfig,
-    DeterministicIntentParserConfig)
+    CRFSlotFillerConfig, DeterministicIntentParserConfig, FeaturizerConfig,
+    IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig,
+    NLUEngineConfig, ProbabilisticIntentParserConfig,
+    SlotFillerDataAugmentationConfig)
 from snips_nlu.tests.utils import SnipsTest, WEATHER_DATASET
 
 

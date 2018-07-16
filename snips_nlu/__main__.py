@@ -5,11 +5,11 @@ import sys
 import plac
 
 from snips_nlu.cli import (
-    cross_val_metrics, train_test_metrics, generate_dataset, download, link,
-    download_all_languages)
+    cross_val_metrics, download, download_all_languages, generate_dataset,
+    link, train_test_metrics)
 from snips_nlu.cli.inference import parse
 from snips_nlu.cli.training import train
-from snips_nlu.cli.utils import pretty_print, PrettyPrintLevel
+from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
 
 
 def main():

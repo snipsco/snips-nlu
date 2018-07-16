@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.preprocessing import tokenize, Token
 
 
 class TestPreprocessing(SnipsTest):

@@ -2,9 +2,9 @@ from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
 from snips_nlu.constants import (
-    UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
-    RES_MATCH_RANGE, RES_VALUE, RES_ENTITY, VALUE, ENTITY_KIND)
-from snips_nlu.result import custom_slot, builtin_slot
+    AUTOMATICALLY_EXTENSIBLE, DATA, ENTITY, ENTITY_KIND, INTENTS, RES_ENTITY,
+    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, UTTERANCES, VALUE)
+from snips_nlu.result import builtin_slot, custom_slot
 
 
 # pylint:disable=redefined-builtin

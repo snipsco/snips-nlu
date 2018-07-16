@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 from copy import deepcopy
 
 from snips_nlu.constants import STOP_WORDS
-from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
-from snips_nlu.pipeline.configs import default_features_factories
+from snips_nlu.pipeline.configs import (
+    Config, ProcessingUnitConfig, default_features_factories)
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 

@@ -5,13 +5,13 @@ import shutil
 import tempfile
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.cli import train, cross_val_metrics, train_test_metrics, parse
+from snips_nlu.cli import cross_val_metrics, parse, train, train_test_metrics
 from snips_nlu.cli.dataset import AssistantDataset
 from snips_nlu.cli.dataset.entities import CustomEntity
 from snips_nlu.cli.dataset.intent_dataset import IntentDataset
 from snips_nlu.constants import PACKAGE_PATH
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.tests.utils import TEST_PATH, BEVERAGE_DATASET_PATH, SnipsTest
+from snips_nlu.tests.utils import BEVERAGE_DATASET_PATH, SnipsTest, TEST_PATH
 
 
 def mk_sys_argv(args):

@@ -8,18 +8,18 @@ from future.utils import itervalues
 from mock import patch
 
 from snips_nlu.constants import (
-    INTENTS, UTTERANCES, RES_INTENT_NAME, LANGUAGE_EN)
+    INTENTS, LANGUAGE_EN, RES_INTENT_NAME, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
-    remove_builtin_slots, get_noise_it, generate_smart_noise,
-    generate_noise_utterances, add_unknown_word_to_utterances,
-    build_training_data, text_to_utterance)
+    add_unknown_word_to_utterances, build_training_data,
+    generate_noise_utterances, generate_smart_noise, get_noise_it,
+    remove_builtin_slots, text_to_utterance)
 from snips_nlu.pipeline.configs import (
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
+    IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig)
 from snips_nlu.tests.utils import (
-    SAMPLE_DATASET, get_empty_dataset, BEVERAGE_DATASET, FixtureTest)
+    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
 
 
 # pylint: disable=W0613

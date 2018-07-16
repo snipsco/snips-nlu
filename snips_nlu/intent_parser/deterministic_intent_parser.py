@@ -3,24 +3,26 @@ from __future__ import unicode_literals
 import json
 import logging
 import re
-from builtins import bytes, str
+from builtins import str
 from pathlib import Path
 
-from future.utils import itervalues, iteritems
+from future.utils import iteritems, itervalues
 
-from snips_nlu.builtin_entities import (is_builtin_entity,
-                                        get_builtin_entities)
+from snips_nlu.builtin_entities import (get_builtin_entities,
+                                        is_builtin_entity)
 from snips_nlu.constants import (
-    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START, END, ENTITY_KIND)
+    DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
+    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
-from snips_nlu.result import (unresolved_slot, parsing_result,
-                              intent_classification_result, empty_result)
 from snips_nlu.preprocessing import tokenize, tokenize_light
+from snips_nlu.result import (
+    empty_result, intent_classification_result, parsing_result,
+    unresolved_slot)
 from snips_nlu.utils import (
-    regex_escape, ranges_overlap, NotTrained, log_result, log_elapsed_time)
+    NotTrained, json_string, log_elapsed_time, log_result, ranges_overlap,
+    regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"

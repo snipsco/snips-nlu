@@ -5,18 +5,18 @@ from builtins import range
 
 from mock import patch
 
-from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
-                                 SLOT_NAME, RES_INTENT_NAME, RES_SLOTS,
-                                 RES_INTENT, LANGUAGE_EN, SNIPS_ORDINAL,
-                                 SNIPS_DATETIME, START, END, ENTITY_KIND)
+from snips_nlu.constants import (
+    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
+    RES_MATCH_RANGE, RES_SLOTS, SLOT_NAME, SNIPS_DATETIME, SNIPS_ORDINAL,
+    START, TEXT, VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities, _get_range_shift,
+    _get_range_shift, _replace_builtin_entities,
     _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, FixtureTest
+from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH
 
 
 class TestDeterministicIntentParser(FixtureTest):

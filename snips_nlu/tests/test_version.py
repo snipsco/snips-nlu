@@ -1,6 +1,6 @@
 from semantic_version import Version
 
-from snips_nlu import __version__, __model_version__
+from snips_nlu import __model_version__, __version__
 from snips_nlu.tests.utils import SnipsTest
 
 

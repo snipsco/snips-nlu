@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 from snips_nlu.constants import (
-    RES_INTENT_NAME, RES_PROBABILITY, RES_INTENT, RES_SLOTS, RES_MATCH_RANGE,
-    RES_RAW_VALUE, RES_INPUT, RES_SLOT_NAME, RES_ENTITY, RES_VALUE)
+    RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
+    RES_PROBABILITY, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
 
 
 def intent_classification_result(intent_name, probability):

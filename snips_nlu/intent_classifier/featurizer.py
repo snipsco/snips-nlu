@@ -1,5 +1,4 @@
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 from builtins import object, range
 from collections import defaultdict
@@ -11,18 +10,16 @@ from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
-from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
-from snips_nlu.constants import (ENTITIES, UTTERANCES, ENTITY_KIND, DATA, TEXT,
-                                 ENTITY)
-from snips_nlu.constants import NGRAM
+from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
+from snips_nlu.constants import (
+    DATA, ENTITIES, ENTITY, ENTITY_KIND, NGRAM, TEXT, UTTERANCES)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
-from snips_nlu.preprocessing import stem
-from snips_nlu.resources import get_stop_words, MissingResource, \
-    get_word_cluster
+from snips_nlu.preprocessing import stem, tokenize_light
+from snips_nlu.resources import (
+    MissingResource, get_stop_words, get_word_cluster)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
-from snips_nlu.preprocessing import tokenize_light
 
 
 class Featurizer(object):

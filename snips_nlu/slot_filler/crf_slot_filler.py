@@ -6,7 +6,7 @@ import logging
 import math
 import shutil
 import tempfile
-from builtins import bytes, range
+from builtins import range
 from copy import copy
 from itertools import groupby, product
 from pathlib import Path
@@ -14,23 +14,25 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
-from snips_nlu.constants import (
-    RES_MATCH_RANGE, LANGUAGE, DATA, RES_ENTITY, START, END, RES_VALUE,
-    ENTITY_KIND)
+from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
+from snips_nlu.constants import (DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
+                                 RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
-from snips_nlu.slot_filler.crf_utils import (
-    TOKENS, TAGS, OUTSIDE, tags_to_slots, tag_name_to_slot_name,
-    tags_to_preslots, positive_tagging, utterance_to_sample)
+from snips_nlu.preprocessing import tokenize
+from snips_nlu.slot_filler.crf_utils import (OUTSIDE, TAGS, TOKENS,
+                                             positive_tagging,
+                                             tag_name_to_slot_name,
+                                             tags_to_preslots, tags_to_slots,
+                                             utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.preprocessing import tokenize
-from snips_nlu.utils import (
-    UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap, NotTrained, DifferedLoggingMessage, log_elapsed_time)
+from snips_nlu.utils import (DifferedLoggingMessage, NotTrained,
+                             UnupdatableDict, check_random_state,
+                             get_slot_name_mapping, json_string,
+                             log_elapsed_time, mkdir_p, ranges_overlap)
 
 logger = logging.getLogger(__name__)
 

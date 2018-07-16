@@ -1,17 +1,18 @@
 from __future__ import unicode_literals
 
 from builtins import range
+
 from mock import patch
 
 from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_utils import (
-    OUTSIDE, BEGINNING_PREFIX, LAST_PREFIX, UNIT_PREFIX, INSIDE_PREFIX,
-    utterance_to_sample, TaggingScheme, negative_tagging,
-    positive_tagging, end_of_bio_slot, start_of_bio_slot, start_of_bilou_slot,
-    end_of_bilou_slot, tags_to_slots)
+    BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, OUTSIDE, TaggingScheme,
+    UNIT_PREFIX, end_of_bilou_slot, end_of_bio_slot, negative_tagging,
+    positive_tagging, start_of_bilou_slot, start_of_bio_slot, tags_to_slots,
+    utterance_to_sample)
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.preprocessing import tokenize, Token
 
 
 class TestCRFUtils(SnipsTest):

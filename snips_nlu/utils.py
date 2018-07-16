@@ -6,7 +6,7 @@ import json
 import numbers
 import os
 import shutil
-from builtins import object, str
+from builtins import bytes, object, str
 from collections import Mapping, OrderedDict, namedtuple
 from contextlib import contextmanager
 from datetime import datetime

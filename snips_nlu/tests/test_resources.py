@@ -5,8 +5,9 @@ import unittest
 from mock import patch
 
 from snips_nlu.constants import DATA_PATH
-from snips_nlu.resources import _get_resource, MissingResource, \
-    clear_resources, load_resources, resource_exists
+from snips_nlu.resources import (
+    MissingResource, _RESOURCES, _get_resource, clear_resources,
+    load_resources)
 
 
 class TestResources(unittest.TestCase):
@@ -66,3 +67,8 @@ class TestResources(unittest.TestCase):
         with patch("snips_nlu.resources._RESOURCES", mocked_value):
             with self.assertRaises(MissingResource):
                 _get_resource("en", "foobar")
+
+
+def resource_exists(language, resource_name):
+    return resource_name in _RESOURCES[language] \
+           and _RESOURCES[language][resource_name] is not None

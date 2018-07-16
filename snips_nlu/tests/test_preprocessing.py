@@ -4,11 +4,11 @@ from __future__ import unicode_literals
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.tokenization import tokenize, Token
 
 
-class TestTokenization(SnipsTest):
+class TestPreprocessing(SnipsTest):
     def test_should_tokenize_empty_string(self):
         # Given
         language = LANGUAGE_EN
@@ -41,9 +41,9 @@ class TestTokenization(SnipsTest):
 
         # Then
         expected_tokens = [
-            Token(value='Hello', start=0, end=5, stem=None),
-            Token(value='Beautiful', start=6, end=15, stem=None),
-            Token(value='World', start=16, end=21, stem=None)
+            Token(value='Hello', start=0, end=5),
+            Token(value='Beautiful', start=6, end=15),
+            Token(value='World', start=16, end=21)
         ]
         self.assertListEqual(tokens, expected_tokens)
 
@@ -57,9 +57,9 @@ class TestTokenization(SnipsTest):
 
         # Then
         expected_tokens = [
-            Token(value='$$', start=0, end=2, stem=None),
-            Token(value='%', start=3, end=4, stem=None),
-            Token(value='!!', start=5, end=7, stem=None)
+            Token(value='$$', start=0, end=2),
+            Token(value='%', start=3, end=4),
+            Token(value='!!', start=5, end=7)
         ]
         self.assertListEqual(tokens, expected_tokens)
 

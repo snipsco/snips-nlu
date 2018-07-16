@@ -1,24 +1,28 @@
 from __future__ import unicode_literals
 
+import json
 import logging
 import re
 from builtins import str
+from pathlib import Path
 
-from future.utils import itervalues, iteritems
+from future.utils import iteritems, itervalues
 
-from snips_nlu.builtin_entities import (is_builtin_entity,
-                                        get_builtin_entities)
+from snips_nlu.builtin_entities import (get_builtin_entities,
+                                        is_builtin_entity)
 from snips_nlu.constants import (
-    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START, END, ENTITY_KIND)
+    DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
+    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
-from snips_nlu.result import (unresolved_slot, parsing_result,
-                              intent_classification_result, empty_result)
-from snips_nlu.tokenization import tokenize, tokenize_light
-from snips_nlu.utils import (
-    regex_escape, ranges_overlap, NotTrained, log_result, log_elapsed_time)
+from snips_nlu.preprocessing import tokenize, tokenize_light
+from snips_nlu.result import (
+    empty_result, intent_classification_result, parsing_result,
+    unresolved_slot)
+from snips_nlu.utils import (NotTrained, check_persisted_path, json_string,
+                             log_elapsed_time, log_result, ranges_overlap,
+                             regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -177,6 +181,35 @@ class DeterministicIntentParser(IntentParser):
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
 
+    @check_persisted_path
+    def persist(self, path):
+        """Persist the object at the given path"""
+        path = Path(path)
+        path.mkdir()
+        parser_json = json_string(self.to_dict())
+        parser_path = path / "intent_parser.json"
+
+        with parser_path.open(mode="w") as f:
+            f.write(parser_json)
+        self.persist_metadata(path)
+
+    @classmethod
+    def from_path(cls, path):
+        """Load a :class:`DeterministicIntentParser` instance from a path
+
+        The data at the given path must have been generated using
+        :func:`~DeterministicIntentParser.persist`
+        """
+        path = Path(path)
+        metadata_path = path / "intent_parser.json"
+        if not metadata_path.exists():
+            raise OSError("Missing deterministic intent parser metadata file: "
+                          "%s" % metadata_path.name)
+
+        with metadata_path.open() as f:
+            metadata = json.load(f)
+        return cls.from_dict(metadata)
+
     def to_dict(self):
         """Returns a json-serializable dict"""
         return {
@@ -209,6 +242,7 @@ def _replace_tokenized_out_characters(string, language, replacement_char=" "):
     """Replace all characters that are tokenized out by `replacement_char`
 
     Examples:
+
         >>> string = "hello, it's me"
         >>> language = "en"
         >>> tokenize_light(string, language)

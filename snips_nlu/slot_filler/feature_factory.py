@@ -3,21 +3,24 @@ from __future__ import unicode_literals
 from abc import ABCMeta, abstractmethod
 from builtins import map, object, str
 
-from future.utils import with_metaclass, iteritems
+from future.utils import iteritems, with_metaclass
 from snips_nlu_ontology.builtin_entities import get_supported_entities
 from snips_nlu_utils import get_shape, normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import (
-    LANGUAGE, UTTERANCES, TOKEN_INDEXES, NGRAM, RES_MATCH_RANGE, START, END)
+from snips_nlu.constants import (END, GAZETTEERS, LANGUAGE, NGRAM,
+                                 RES_MATCH_RANGE, START, STEMS, TOKEN_INDEXES,
+                                 UTTERANCES, WORD_CLUSTERS)
 from snips_nlu.languages import get_default_sep
-from snips_nlu.preprocessing import stem
+from snips_nlu.preprocessing import stem, stem_token, normalize_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
-from snips_nlu.slot_filler.features_utils import (
-    get_word_chunk, get_all_ngrams, initial_string_from_tokens,
-    entity_filter, get_intent_custom_entities)
+from snips_nlu.slot_filler.features_utils import (entity_filter,
+                                                  get_all_ngrams,
+                                                  get_intent_custom_entities,
+                                                  get_word_chunk,
+                                                  initial_string_from_tokens)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
@@ -63,6 +66,9 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
     def build_features(self):
         """Build a list of :class:`.Feature`"""
         pass
+
+    def get_required_resources(self):
+        return None
 
 
 class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
@@ -132,7 +138,7 @@ class PrefixFactory(SingleFeatureFactory):
         return self.args["prefix_size"]
 
     def compute_feature(self, tokens, token_index):
-        return get_word_chunk(tokens[token_index].normalized_value,
+        return get_word_chunk(normalize_token(tokens[token_index]),
                               self.prefix_size, 0)
 
 
@@ -154,7 +160,7 @@ class SuffixFactory(SingleFeatureFactory):
         return self.args["suffix_size"]
 
     def compute_feature(self, tokens, token_index):
-        return get_word_chunk(tokens[token_index].normalized_value,
+        return get_word_chunk(normalize_token(tokens[token_index]),
                               self.suffix_size, len(tokens[token_index].value),
                               reverse=True)
 
@@ -208,11 +214,8 @@ class NgramFactory(SingleFeatureFactory):
             self._language = value
             self.args["language_code"] = self.language
             if self.common_words_gazetteer_name is not None:
-                gazetteer = get_gazetteer(self.language,
-                                          self.common_words_gazetteer_name)
-                if self.use_stemming:
-                    gazetteer = set(stem(w, self.language) for w in gazetteer)
-                self.gazetteer = gazetteer
+                self.gazetteer = get_gazetteer(
+                    self.language, self.common_words_gazetteer_name)
 
     @property
     def feature_name(self):
@@ -227,18 +230,29 @@ class NgramFactory(SingleFeatureFactory):
         if 0 <= token_index < max_len and end <= max_len:
             if self.gazetteer is None:
                 if self.use_stemming:
-                    return get_default_sep(self.language).join(
-                        t.stem for t in tokens[token_index:end])
-                return get_default_sep(self.language).join(
-                    t.normalized_value for t in tokens[token_index:end])
+                    stems = (stem_token(t, self.language)
+                             for t in tokens[token_index:end])
+                    return get_default_sep(self.language).join(stems)
+                normalized_values = (normalize_token(t)
+                                     for t in tokens[token_index:end])
+                return get_default_sep(self.language).join(normalized_values)
             words = []
             for t in tokens[token_index:end]:
-                normalized = t.stem if self.use_stemming else \
-                    t.normalized_value
-                words.append(normalized if normalized in self.gazetteer
-                             else "rare_word")
+                if self.use_stemming:
+                    value = stem_token(t, self.language)
+                else:
+                    value = normalize_token(t)
+                words.append(value if value in self.gazetteer else "rare_word")
             return get_default_sep(self.language).join(words)
         return None
+
+    def get_required_resources(self):
+        resources = dict()
+        if self.common_words_gazetteer_name is not None:
+            resources[GAZETTEERS] = {self.common_words_gazetteer_name}
+        if self.use_stemming:
+            resources[STEMS] = True
+        return resources
 
 
 class ShapeNgramFactory(SingleFeatureFactory):
@@ -335,10 +349,18 @@ class WordClusterFactory(SingleFeatureFactory):
         self.language = dataset[LANGUAGE]
 
     def compute_feature(self, tokens, token_index):
-        normalized_value = tokens[token_index].stem if self.use_stemming \
-            else tokens[token_index].normalized_value
+        if self.use_stemming:
+            value = stem_token(tokens[token_index], self.language)
+        else:
+            value = normalize_token(tokens[token_index])
         cluster = get_word_clusters(self.language)[self.cluster_name]
-        return cluster.get(normalized_value, None)
+        return cluster.get(value, None)
+
+    def get_required_resources(self):
+        resources = {WORD_CLUSTERS: {self.cluster_name}}
+        if self.use_stemming:
+            resources[STEMS] = True
+        return resources
 
 
 class EntityMatchFactory(CRFFeatureFactory):
@@ -397,7 +419,9 @@ class EntityMatchFactory(CRFFeatureFactory):
         return self
 
     def _transform(self, token):
-        return token.stem if self.use_stemming else token.normalized_value
+        if self.use_stemming:
+            return stem_token(token, self.language)
+        return normalize_token(token)
 
     def build_features(self):
         features = []
@@ -430,6 +454,11 @@ class EntityMatchFactory(CRFFeatureFactory):
             return None
 
         return collection_match
+
+    def get_required_resources(self):
+        if self.use_stemming:
+            return {STEMS: True}
+        return None
 
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):

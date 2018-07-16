@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 from snips_nlu_utils import compute_all_ngrams
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (
-    RES_MATCH_RANGE, INTENTS, UTTERANCES, DATA, ENTITY, ENTITIES, END, START)
+from snips_nlu.constants import (DATA, END, ENTITIES, ENTITY, INTENTS,
+                                 RES_MATCH_RANGE, START, UTTERANCES)
 from snips_nlu.utils import LimitedSizeDict
 
 _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)

@@ -1,25 +1,31 @@
 from __future__ import unicode_literals
 
+import json
 import logging
+import shutil
 from builtins import str
+from collections import defaultdict
 from copy import deepcopy
+from pathlib import Path
 
 from future.utils import iteritems
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
-    ENTITIES, CAPITALIZE, LANGUAGE, RES_SLOTS, RES_ENTITY, RES_INTENT)
+    CAPITALIZE, ENTITIES, LANGUAGE, RES_ENTITY, RES_INTENT, RES_SLOTS)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
-from snips_nlu.resources import load_resources
+from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import (
-    get_slot_name_mappings, NotTrained, log_result, log_elapsed_time)
+from snips_nlu.utils import (NotTrained, check_persisted_path,
+                             get_slot_name_mappings, json_string,
+                             log_elapsed_time, log_result, temp_dir,
+                             unzip_archive)
 
 logger = logging.getLogger(__name__)
 
@@ -143,13 +149,34 @@ class SnipsNLUEngine(ProcessingUnit):
                                   slots=resolved_slots)
         return empty_result(text)
 
-    def to_dict(self):
-        """Returns a json-serializable dict"""
-        intent_parsers = [parser.to_dict() for parser in self.intent_parsers]
+    @check_persisted_path
+    def persist(self, path):
+        """Persist the NLU engine at the given directory path
+
+        Args:
+            path (str): the location at which the nlu engine must be persisted.
+                This path must not exist when calling this function.
+        """
+        directory_path = Path(path)
+        directory_path.mkdir()
+
+        parsers_count = defaultdict(int)
+        intent_parsers = []
+        for parser in self.intent_parsers:
+            parser_name = parser.unit_name
+            parsers_count[parser_name] += 1
+            count = parsers_count[parser_name]
+            if count > 1:
+                parser_name = "{n}_{c}".format(n=parser_name, c=count)
+            parser_path = directory_path / parser_name
+            parser.persist(parser_path)
+            intent_parsers.append(parser_name)
+
         config = None
         if self.config is not None:
             config = self.config.to_dict()
-        return {
+
+        model = {
             "unit_name": self.unit_name,
             "dataset_metadata": self._dataset_metadata,
             "intent_parsers": intent_parsers,
@@ -157,33 +184,98 @@ class SnipsNLUEngine(ProcessingUnit):
             "model_version": __model_version__,
             "training_package_version": __version__
         }
+        model_json = json_string(model)
+        model_path = directory_path / "nlu_engine.json"
+        with model_path.open(mode="w") as f:
+            f.write(model_json)
+
+        if self.fitted:
+            required_resources = self.config.get_required_resources()
+            if required_resources:
+                language = self._dataset_metadata["language_code"]
+                resources_path = directory_path / "resources"
+                resources_path.mkdir()
+                persist_resources(resources_path / language,
+                                  required_resources, language)
 
     @classmethod
-    def from_dict(cls, unit_dict):
-        """Creates a :class:`SnipsNLUEngine` instance from a dict
+    def from_path(cls, path):
+        """Load a :class:`SnipsNLUEngine` instance from a directory path
 
-        The dict must have been generated with :func:`~SnipsNLUEngine.to_dict`
+        The data at the given path must have been generated using
+        :func:`~SnipsNLUEngine.persist`
 
-        Raises:
-            ValueError: When there is a mismatch with the model version
+        Args:
+            path (str): The path where the nlu engine is stored.
         """
-        model_version = unit_dict.get("model_version")
+        directory_path = Path(path)
+        model_path = directory_path / "nlu_engine.json"
+        if not model_path.exists():
+            raise OSError("Missing nlu engine model file: %s"
+                          % model_path.name)
+
+        with model_path.open() as f:
+            model = json.load(f)
+        model_version = model.get("model_version")
         if model_version is None or model_version != __model_version__:
             raise ValueError(
                 "Incompatible data model: persisted object=%s, python lib=%s"
                 % (model_version, __model_version__))
-        dataset_metadata = unit_dict["dataset_metadata"]
-        if dataset_metadata is not None:
-            load_resources(dataset_metadata["language_code"])
-        nlu_engine = cls(config=unit_dict["config"])
-        # pylint:disable=protected-access
-        nlu_engine._dataset_metadata = dataset_metadata
-        # pylint:enable=protected-access
-        nlu_engine.intent_parsers = [
-            load_processing_unit(parser_dict)
-            for parser_dict in unit_dict["intent_parsers"]]
 
+        resources_dir = (directory_path / "resources")
+        if resources_dir.is_dir():
+            for subdir in resources_dir.iterdir():
+                load_resources_from_dir(subdir)
+
+        nlu_engine = cls(config=model["config"])
+        # pylint:disable=protected-access
+        nlu_engine._dataset_metadata = model["dataset_metadata"]
+        # pylint:enable=protected-access
+        intent_parsers = []
+        for intent_parser_name in model["intent_parsers"]:
+            intent_parser_path = directory_path / intent_parser_name
+            intent_parser = load_processing_unit(intent_parser_path)
+            intent_parsers.append(intent_parser)
+        nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
+
+    def to_byte_array(self):
+        """Serialize the :class:`SnipsNLUEngine` instance into a bytearray
+
+        This method persists the engine in a temporary directory, zip the
+        directory and return the zipped file as binary data.
+
+        Returns:
+            bytearray: the engine as bytearray data
+        """
+
+        with temp_dir() as tmp_dir:
+            engine_dir = tmp_dir / "trained_engine"
+            self.persist(engine_dir)
+            archive_base_name = tmp_dir / "trained_engine"
+            archive_name = archive_base_name.with_suffix(".zip")
+            shutil.make_archive(base_name=str(archive_base_name),
+                                format="zip", root_dir=str(tmp_dir),
+                                base_dir="trained_engine")
+            with archive_name.open(mode="rb") as f:
+                engine_bytes = f.read()
+        return engine_bytes
+
+    @classmethod
+    def from_byte_array(cls, engine_bytes):
+        """Load a :class:`SnipsNLUEngine` instance from a bytearray
+
+        Args:
+            engine_bytes (bytearray): A bytearray representing a zipped nlu
+                engine.
+        """
+        with temp_dir() as tmp_dir:
+            archive_path = tmp_dir / "trained_engine.zip"
+            with archive_path.open(mode="wb") as f:
+                f.write(engine_bytes)
+            unzip_archive(archive_path, str(tmp_dir))
+            engine = cls.from_path(tmp_dir / "trained_engine")
+        return engine
 
 
 def _get_dataset_metadata(dataset):

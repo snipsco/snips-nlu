@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 from snips_nlu_ontology import get_all_languages
 
-from snips_nlu.builtin_entities import (
-    get_builtin_entities, BuiltinEntityParser)
+from snips_nlu.builtin_entities import (BuiltinEntityParser,
+                                        get_builtin_entities)
 from snips_nlu.constants import ENTITY_KIND
 from snips_nlu.tests.utils import SnipsTest
 

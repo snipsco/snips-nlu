@@ -2,11 +2,11 @@
 from __future__ import unicode_literals
 
 from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import RES_MATCH_RANGE, LANGUAGE_EN, LANGUAGE_FR, \
-    START
+from snips_nlu.constants import (
+    LANGUAGE_EN, LANGUAGE_FR, RES_MATCH_RANGE, START)
 from snips_nlu.string_variations import (
-    and_variations, alphabetic_value, punctuation_variations,
-    get_string_variations, numbers_variations)
+    alphabetic_value, and_variations, get_string_variations,
+    numbers_variations, punctuation_variations)
 from snips_nlu.tests.utils import SnipsTest
 
 

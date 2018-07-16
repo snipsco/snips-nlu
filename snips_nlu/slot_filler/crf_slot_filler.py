@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
 import base64
+import json
 import logging
 import math
+import shutil
 import tempfile
 from builtins import range
 from copy import copy
@@ -12,25 +14,26 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import is_builtin_entity, get_builtin_entities
-from snips_nlu.constants import (
-    RES_MATCH_RANGE, LANGUAGE, DATA, RES_ENTITY, START, END, RES_VALUE,
-    ENTITY_KIND, STEMS)
+from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
+from snips_nlu.constants import (DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
+                                 RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
-from snips_nlu.preprocessing import stem
-from snips_nlu.resources import resource_exists
-from snips_nlu.slot_filler.crf_utils import (
-    TOKENS, TAGS, OUTSIDE, tags_to_slots, tag_name_to_slot_name,
-    tags_to_preslots, positive_tagging, utterance_to_sample)
+from snips_nlu.preprocessing import tokenize
+from snips_nlu.slot_filler.crf_utils import (OUTSIDE, TAGS, TOKENS,
+                                             positive_tagging,
+                                             tag_name_to_slot_name,
+                                             tags_to_preslots, tags_to_slots,
+                                             utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.tokenization import Token, tokenize
-from snips_nlu.utils import (
-    UnupdatableDict, mkdir_p, check_random_state, get_slot_name_mapping,
-    ranges_overlap, NotTrained, DifferedLoggingMessage, log_elapsed_time)
+from snips_nlu.utils import (DifferedLoggingMessage, NotTrained,
+                             UnupdatableDict, check_random_state,
+                             get_slot_name_mapping, json_string,
+                             log_elapsed_time, mkdir_p, ranges_overlap,
+                             check_persisted_path)
 
 logger = logging.getLogger(__name__)
 
@@ -182,14 +185,6 @@ class CRFSlotFiller(SlotFiller):
         training.
         """
 
-        if resource_exists(self.language, STEMS):
-            tokens = [
-                Token(t.value, t.start, t.end,
-                      stem=stem(t.normalized_value, self.language))
-                for t in tokens]
-        else:
-            tokens = [Token(t.value, t.start, t.end, stem=t.normalized_value)
-                      for t in tokens]
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
         random_state = check_random_state(self.config.random_seed)
@@ -312,38 +307,57 @@ class CRFSlotFiller(SlotFiller):
 
         return _reconciliate_builtin_slots(text, slots, builtin_entities)
 
-    def to_dict(self):
-        """Returns a json-serializable dict"""
-        crf_model_data = None
+    @check_persisted_path
+    def persist(self, path):
+        """Persist the object at the given path"""
+        path = Path(path)
+        path.mkdir()
 
+        crf_model_file = None
         if self.crf_model is not None:
-            crf_model_data = _serialize_crf_model(self.crf_model)
+            destination = path / Path(self.crf_model.modelfile.name).name
+            shutil.copy(self.crf_model.modelfile.name, str(destination))
+            crf_model_file = str(destination.name)
 
-        return {
+        model = {
             "unit_name": self.unit_name,
             "language_code": self.language,
             "intent": self.intent,
+            "crf_model_file": crf_model_file,
             "slot_name_mapping": self.slot_name_mapping,
-            "crf_model_data": crf_model_data,
             "config": self.config.to_dict(),
         }
+        model_json = json_string(model)
+        model_path = path / "slot_filler.json"
+        with model_path.open(mode="w") as f:
+            f.write(model_json)
+        self.persist_metadata(path)
 
     @classmethod
-    def from_dict(cls, unit_dict):
-        """Creates a :class:`CRFSlotFiller` instance from a dict
+    def from_path(cls, path):
+        """Load a :class:`CRFSlotFiller` instance from a path
 
-        The dict must have been generated with :func:`~CRFSlotFiller.to_dict`
+        The data at the given path must have been generated using
+        :func:`~CRFSlotFiller.persist`
         """
-        slot_filler_config = cls.config_type.from_dict(unit_dict["config"])
-        slot_filler = cls(config=slot_filler_config)
+        path = Path(path)
+        model_path = path / "slot_filler.json"
+        if not model_path.exists():
+            raise OSError("Missing slot filler model file: %s"
+                          % model_path.name)
 
-        crf_model_data = unit_dict["crf_model_data"]
-        if crf_model_data is not None:
-            crf = _deserialize_crf_model(crf_model_data)
+        with model_path.open() as f:
+            model = json.load(f)
+
+        slot_filler_config = cls.config_type.from_dict(model["config"])
+        slot_filler = cls(config=slot_filler_config)
+        slot_filler.language = model["language_code"]
+        slot_filler.intent = model["intent"]
+        slot_filler.slot_name_mapping = model["slot_name_mapping"]
+        crf_model_file = model["crf_model_file"]
+        if crf_model_file is not None:
+            crf = _crf_model_from_path(path / crf_model_file)
             slot_filler.crf_model = crf
-        slot_filler.language = unit_dict["language_code"]
-        slot_filler.intent = unit_dict["intent"]
-        slot_filler.slot_name_mapping = unit_dict["slot_name_mapping"]
         return slot_filler
 
     def __del__(self):
@@ -471,17 +485,12 @@ def _decode_tag(tag):
     return base64.b64decode(tag).decode("utf8")
 
 
-def _serialize_crf_model(crf_model):
-    with Path(crf_model.modelfile.name).open(mode='rb') as f:
-        crfsuite_data = base64.b64encode(f.read()).decode('ascii')
-    return crfsuite_data
-
-
-def _deserialize_crf_model(crf_model_data):
-    b64_data = base64.b64decode(crf_model_data)
+def _crf_model_from_path(crf_model_path):
+    with crf_model_path.open(mode="rb") as f:
+        crf_model_data = f.read()
     with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",
                                      delete=False) as f:
-        f.write(b64_data)
+        f.write(crf_model_data)
         f.flush()
         crf = CRF(model_filename=f.name)
     return crf

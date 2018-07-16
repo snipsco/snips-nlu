@@ -2,11 +2,11 @@ from __future__ import unicode_literals
 
 import json
 
-from snips_nlu.constants import (RES_INTENT, RES_SLOTS, RES_INTENT_NAME,
-                                 RES_PROBABILITY, RES_MATCH_RANGE, RES_INPUT,
-                                 RES_ENTITY, RES_SLOT_NAME, RES_VALUE)
-from snips_nlu.result import (parsing_result, intent_classification_result,
-                              unresolved_slot)
+from snips_nlu.constants import (
+    RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
+    RES_PROBABILITY, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
+from snips_nlu.result import (
+    intent_classification_result, parsing_result, unresolved_slot)
 from snips_nlu.tests.utils import SnipsTest
 
 

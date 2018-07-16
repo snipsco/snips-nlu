@@ -1,9 +1,8 @@
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 import itertools
 import re
-from builtins import next, range, zip, str
+from builtins import next, range, str, zip
 from copy import deepcopy
 from uuid import uuid4
 
@@ -12,11 +11,11 @@ from future.utils import iteritems, itervalues
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
-    UNKNOWNWORD, INTENTS, UTTERANCES, DATA, ENTITY, TEXT)
+    DATA, ENTITY, INTENTS, TEXT, UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
+from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.resources import get_noise
-from snips_nlu.tokenization import tokenize_light
 
 NOISE_NAME = str(uuid4())
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")

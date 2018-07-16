@@ -310,12 +310,10 @@ def log_result(logger, level, output_msg=None):
 
 
 def check_persisted_path(func):
-    def func_wrapper(self, *args, **kwargs):
-        path = Path(args[0])
-        if path.exists():
-            raise OSError("Persisting directory %s already exists" %
-                          str(path))
-        return func(self, *args, **kwargs)
+    def func_wrapper(self, path, *args, **kwargs):
+        if Path(path).exists():
+            raise OSError("Persisting directory %s already exists" % path)
+        return func(self, path, *args, **kwargs)
 
     return func_wrapper
 

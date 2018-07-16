@@ -32,7 +32,8 @@ from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.utils import (DifferedLoggingMessage, NotTrained,
                              UnupdatableDict, check_random_state,
                              get_slot_name_mapping, json_string,
-                             log_elapsed_time, mkdir_p, ranges_overlap)
+                             log_elapsed_time, mkdir_p, ranges_overlap,
+                             check_persisted_path)
 
 logger = logging.getLogger(__name__)
 
@@ -306,11 +307,10 @@ class CRFSlotFiller(SlotFiller):
 
         return _reconciliate_builtin_slots(text, slots, builtin_entities)
 
+    @check_persisted_path
     def persist(self, path):
         """Persist the object at the given path"""
         path = Path(path)
-        if path.exists():
-            raise OSError("Persisting directory %s already exists" % str(path))
         path.mkdir()
 
         crf_model_file = None

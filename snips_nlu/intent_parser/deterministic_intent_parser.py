@@ -20,9 +20,9 @@ from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
     unresolved_slot)
-from snips_nlu.utils import (
-    NotTrained, json_string, log_elapsed_time, log_result, ranges_overlap,
-    regex_escape)
+from snips_nlu.utils import (NotTrained, check_persisted_path, json_string,
+                             log_elapsed_time, log_result, ranges_overlap,
+                             regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -181,11 +181,10 @@ class DeterministicIntentParser(IntentParser):
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
 
+    @check_persisted_path
     def persist(self, path):
         """Persist the object at the given path"""
         path = Path(path)
-        if path.exists():
-            raise OSError("Persisting directory %s already exists" % str(path))
         path.mkdir()
         parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"

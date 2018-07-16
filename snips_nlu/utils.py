@@ -309,6 +309,17 @@ def log_result(logger, level, output_msg=None):
     return get_wrapper
 
 
+def check_persisted_path(func):
+    def func_wrapper(self, *args, **kwargs):
+        path = Path(args[0])
+        if path.exists():
+            raise OSError("Persisting directory %s already exists" %
+                          str(path))
+        return func(self, *args, **kwargs)
+
+    return func_wrapper
+
+
 def is_package(name):
     """Check if name maps to a package installed via pip.
 

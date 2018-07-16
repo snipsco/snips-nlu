@@ -22,9 +22,10 @@ from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import (
-    NotTrained, get_slot_name_mappings, json_string, log_elapsed_time,
-    log_result, temp_dir, unzip_archive)
+from snips_nlu.utils import (NotTrained, check_persisted_path,
+                             get_slot_name_mappings, json_string,
+                             log_elapsed_time, log_result, temp_dir,
+                             unzip_archive)
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,7 @@ class SnipsNLUEngine(ProcessingUnit):
                                   slots=resolved_slots)
         return empty_result(text)
 
+    @check_persisted_path
     def persist(self, path):
         """Persist the NLU engine at the given directory path
 
@@ -156,9 +158,6 @@ class SnipsNLUEngine(ProcessingUnit):
                 This path must not exist when calling this function.
         """
         directory_path = Path(path)
-        if directory_path.exists():
-            raise OSError("Persisting directory %s already exists"
-                          % str(directory_path))
         directory_path.mkdir()
 
         parsers_count = defaultdict(int)

@@ -16,8 +16,8 @@ from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
-from snips_nlu.utils import (
-    NotTrained, elapsed_since, json_string, log_elapsed_time, log_result)
+from snips_nlu.utils import (NotTrained, check_persisted_path, elapsed_since,
+                             json_string, log_elapsed_time, log_result)
 
 logger = logging.getLogger(__name__)
 
@@ -126,11 +126,10 @@ class ProbabilisticIntentParser(IntentParser):
         slots = self.slot_fillers[intent_name].get_slots(text)
         return parsing_result(text, intent_result, slots)
 
+    @check_persisted_path
     def persist(self, path):
         """Persist the object at the given path"""
         path = Path(path)
-        if path.exists():
-            raise OSError("Persisting directory %s already exists" % str(path))
         path.mkdir()
         slot_fillers = []
         for intent, slot_filler in iteritems(self.slot_fillers):

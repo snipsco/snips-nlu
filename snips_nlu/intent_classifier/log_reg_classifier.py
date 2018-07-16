@@ -18,7 +18,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import DifferedLoggingMessage, NotTrained, \
-    check_random_state, json_string, log_elapsed_time
+    check_random_state, json_string, log_elapsed_time, check_persisted_path
 
 logger = logging.getLogger(__name__)
 
@@ -162,11 +162,10 @@ class LogRegIntentClassifier(IntentClassifier):
             # probabilities calibrated
             return prob
 
+    @check_persisted_path
     def persist(self, path):
         """Persist the object at the given path"""
         path = Path(path)
-        if path.exists():
-            raise OSError("Persisting directory %s already exists" % str(path))
         path.mkdir()
         classifier_json = json_string(self.to_dict())
         with (path / "intent_classifier.json").open(mode="w") as f:

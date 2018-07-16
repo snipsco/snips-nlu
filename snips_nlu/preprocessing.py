@@ -15,6 +15,20 @@ def stem(string, language):
     return " ".join(stemmed_tokens)
 
 
+def stem_token(token, language):
+    if token.stem:
+        return token.stem
+    token.stem = stem(normalize(token.value), language)
+    return token.stem
+
+
+def normalize_token(token):
+    if token.normalized_value:
+        return token.normalized_value
+    token.normalized_value = normalize(token.value)
+    return token.normalized_value
+
+
 def _stem(string, language):
     return get_stems(language).get(string, string)
 
@@ -24,28 +38,18 @@ class Token(object):
 
     Attributes:
         value (str): Tokenized string
-        normalized (str): Normalized value of the tokenized string
         start (int): Start position of the token within the sentence
         end (int): End position of the token within the sentence
+        normalized_value (str): Normalized value of the tokenized string
+        stem (str): Stemmed value of the tokenized string
     """
 
-    def __init__(self, value, start, end):
+    def __init__(self, value, start, end, normalized_value=None, stem=None):
         self.value = value
         self.start = start
         self.end = end
-        self._normalized_value = None
-        self._stem = None
-
-    def get_normalized_value(self):
-        if self._normalized_value is not None:
-            return self._normalized_value
-        self._normalized_value = normalize(self.value)
-        return self._normalized_value
-
-    def get_stem(self, language):
-        if self._stem is None:
-            self._stem = stem(normalize(self.value), language)
-        return self._stem
+        self.normalized_value = normalized_value
+        self.stem = stem
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

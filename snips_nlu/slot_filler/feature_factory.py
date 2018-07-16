@@ -12,7 +12,7 @@ from snips_nlu.constants import (END, GAZETTEERS, LANGUAGE, NGRAM,
                                  RES_MATCH_RANGE, START, STEMS, TOKEN_INDEXES,
                                  UTTERANCES, WORD_CLUSTERS)
 from snips_nlu.languages import get_default_sep
-from snips_nlu.preprocessing import stem
+from snips_nlu.preprocessing import stem, stem_token, normalize_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
@@ -138,7 +138,7 @@ class PrefixFactory(SingleFeatureFactory):
         return self.args["prefix_size"]
 
     def compute_feature(self, tokens, token_index):
-        return get_word_chunk(tokens[token_index].get_normalized_value(),
+        return get_word_chunk(normalize_token(tokens[token_index]),
                               self.prefix_size, 0)
 
 
@@ -160,7 +160,7 @@ class SuffixFactory(SingleFeatureFactory):
         return self.args["suffix_size"]
 
     def compute_feature(self, tokens, token_index):
-        return get_word_chunk(tokens[token_index].get_normalized_value(),
+        return get_word_chunk(normalize_token(tokens[token_index]),
                               self.suffix_size, len(tokens[token_index].value),
                               reverse=True)
 
@@ -230,18 +230,18 @@ class NgramFactory(SingleFeatureFactory):
         if 0 <= token_index < max_len and end <= max_len:
             if self.gazetteer is None:
                 if self.use_stemming:
-                    stems = (t.get_stem(self.language)
+                    stems = (stem_token(t, self.language)
                              for t in tokens[token_index:end])
                     return get_default_sep(self.language).join(stems)
-                normalized_values = (t.get_normalized_value()
+                normalized_values = (normalize_token(t)
                                      for t in tokens[token_index:end])
                 return get_default_sep(self.language).join(normalized_values)
             words = []
             for t in tokens[token_index:end]:
                 if self.use_stemming:
-                    value = t.get_stem(self.language)
+                    value = stem_token(t, self.language)
                 else:
-                    value = t.get_normalized_value()
+                    value = normalize_token(t)
                 words.append(value if value in self.gazetteer else "rare_word")
             return get_default_sep(self.language).join(words)
         return None
@@ -350,9 +350,9 @@ class WordClusterFactory(SingleFeatureFactory):
 
     def compute_feature(self, tokens, token_index):
         if self.use_stemming:
-            value = tokens[token_index].get_stem(self.language)
+            value = stem_token(tokens[token_index], self.language)
         else:
-            value = tokens[token_index].get_normalized_value()
+            value = normalize_token(tokens[token_index])
         cluster = get_word_clusters(self.language)[self.cluster_name]
         return cluster.get(value, None)
 
@@ -420,8 +420,8 @@ class EntityMatchFactory(CRFFeatureFactory):
 
     def _transform(self, token):
         if self.use_stemming:
-            return token.get_stem(self.language)
-        return token.get_normalized_value()
+            return stem_token(token, self.language)
+        return normalize_token(token)
 
     def build_features(self):
         features = []

@@ -168,9 +168,9 @@ class LogRegIntentClassifier(IntentClassifier):
         if path.exists():
             raise OSError("Persisting directory %s already exists" % str(path))
         path.mkdir()
-        classifier_json = bytes(json.dumps(self.to_dict()), encoding="utf8")
+        classifier_json = json_string(self.to_dict())
         with (path / "intent_classifier.json").open(mode="w") as f:
-            f.write(classifier_json.decode("utf8"))
+            f.write(classifier_json)
         self.persist_metadata(path)
 
     @classmethod

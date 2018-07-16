@@ -165,9 +165,9 @@ def persist_resources(resources_dest_path, required_resources, language):
     metadata[GAZETTEERS] = list(required_resources.get(GAZETTEERS, []))
     metadata[WORD_CLUSTERS] = list(required_resources.get(WORD_CLUSTERS, []))
     metadata_dest_path = resources_dest_path / "metadata.json"
-    metadata_json = bytes(json.dumps(metadata, indent=4), encoding="utf8")
+    metadata_json = json_string(metadata)
     with metadata_dest_path.open(encoding="utf8", mode="w") as f:
-        f.write(metadata_json.decode("utf8"))
+        f.write(metadata_json)
 
     if metadata[NOISE] is not None:
         noise_src = (resources_src_path / metadata[NOISE]).with_suffix(".txt")

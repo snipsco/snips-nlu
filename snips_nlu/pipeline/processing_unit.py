@@ -30,9 +30,9 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
     def persist_metadata(self, path, **kwargs):
         metadata = {"unit_name": self.unit_name}
         metadata.update(kwargs)
-        metadata_json = bytes(json.dumps(metadata), encoding="utf8")
+        metadata_json = json_string(metadata)
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(metadata_json.decode("utf8"))
+            f.write(metadata_json)
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument

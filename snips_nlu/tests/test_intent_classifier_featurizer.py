@@ -18,6 +18,7 @@ from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.preprocessing import tokenize_light
+from snips_nlu.utils import json_string
 
 
 class TestIntentClassifierFeaturizer(SnipsTest):
@@ -70,8 +71,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         # Then
         msg = "Featurizer dict should be json serializable to utf8."
         with self.fail_if_exception(msg):
-            dumped = bytes(json.dumps(serialized_featurizer),
-                           encoding="utf8").decode("utf8")
+            dumped = json_string(serialized_featurizer)
 
         msg = "SnipsNLUEngine should be deserializable from dict with unicode" \
               " values"

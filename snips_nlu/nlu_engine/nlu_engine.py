@@ -185,10 +185,10 @@ class SnipsNLUEngine(ProcessingUnit):
             "model_version": __model_version__,
             "training_package_version": __version__
         }
-        model_json = bytes(json.dumps(model), encoding="utf8")
+        model_json = json_string(model)
         model_path = directory_path / "nlu_engine.json"
         with model_path.open(mode="w") as f:
-            f.write(model_json.decode("utf8"))
+            f.write(model_json)
 
         if self.fitted:
             required_resources = self.config.get_required_resources()

@@ -4,14 +4,15 @@ import json
 import shutil
 import tempfile
 import traceback as tb
+from builtins import bytes
 from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
 
-from builtins import bytes
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import load_resources
+from snips_nlu.utils import json_string
 
 TEST_PATH = Path(__file__).parent
 SAMPLE_DATASET_PATH = TEST_PATH / "resources" / "sample_dataset.json"
@@ -51,9 +52,9 @@ class SnipsTest(TestCase):
 
     @staticmethod
     def writeJsonContent(path, json_dict):
-        json_content = bytes(json.dumps(json_dict), encoding="utf8")
+        json_content = json_string(json_dict)
         with path.open(mode="w") as f:
-            f.write(json_content.decode("utf8"))
+            f.write(json_content)
 
     @staticmethod
     def writeFileContent(path, content):

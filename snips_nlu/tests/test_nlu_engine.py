@@ -74,8 +74,7 @@ class TestSnipsNLUEngine(FixtureTest):
                 path = Path(path)
                 path.mkdir()
                 with (path / "metadata.json").open(mode="w") as f:
-                    f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                                  encoding="utf8").decode("utf8"))
+                    f.write(json_string({"unit_name": self.unit_name}))
 
             @classmethod
             def from_path(cls, path):
@@ -116,8 +115,7 @@ class TestSnipsNLUEngine(FixtureTest):
                 path = Path(path)
                 path.mkdir()
                 with (path / "metadata.json").open(mode="w") as f:
-                    f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                                  encoding="utf8").decode("utf8"))
+                    f.write(json_string({"unit_name": self.unit_name}))
 
             @classmethod
             def from_path(cls, path):
@@ -209,8 +207,7 @@ class TestSnipsNLUEngine(FixtureTest):
                 path = Path(path)
                 path.mkdir()
                 with (path / "metadata.json").open(mode="w") as f:
-                    f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                                  encoding="utf8").decode("utf8"))
+                    f.write(json_string({"unit_name": self.unit_name}))
 
             @classmethod
             def from_path(cls, path):
@@ -771,8 +768,7 @@ class TestIntentParser1(IntentParser):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                          encoding="utf8").decode("utf8"))
+            f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
     def from_path(cls, path):
@@ -813,8 +809,7 @@ class TestIntentParser2(IntentParser):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                          encoding="utf8").decode("utf8"))
+            f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
     def from_path(cls, path):

@@ -187,11 +187,11 @@ class DeterministicIntentParser(IntentParser):
         if path.exists():
             raise OSError("Persisting directory %s already exists" % str(path))
         path.mkdir()
-        parser_json = bytes(json.dumps(self.to_dict()), encoding="utf8")
+        parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"
 
         with parser_path.open(mode="w") as f:
-            f.write(parser_json.decode("utf8"))
+            f.write(parser_json)
         self.persist_metadata(path)
 
     @classmethod

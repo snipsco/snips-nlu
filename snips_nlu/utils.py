@@ -263,6 +263,11 @@ def json_debug_string(dict_data):
     return json.dumps(dict_data, ensure_ascii=False, indent=2, sort_keys=True)
 
 
+def json_string(json_object, indent=2, sort_keys=True):
+    json_dump = json.dumps(json_object, indent=indent, sort_keys=sort_keys)
+    return bytes(json_dump, encoding="utf8").decode("utf8")
+
+
 def log_elapsed_time(logger, level, output_msg=None):
     if output_msg is None:
         output_msg = "Elapsed time ->:\n{elapsed_time}"

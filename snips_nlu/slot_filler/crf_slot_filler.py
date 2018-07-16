@@ -327,10 +327,10 @@ class CRFSlotFiller(SlotFiller):
             "slot_name_mapping": self.slot_name_mapping,
             "config": self.config.to_dict(),
         }
-        model_json = bytes(json.dumps(model), encoding="utf8")
+        model_json = json_string(model)
         model_path = path / "slot_filler.json"
         with model_path.open(mode="w") as f:
-            f.write(model_json.decode("utf8"))
+            f.write(model_json)
         self.persist_metadata(path)
 
     @classmethod

@@ -1,9 +1,7 @@
 from __future__ import unicode_literals
 
-import json
 from pathlib import Path
 
-from builtins import bytes
 from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
@@ -17,6 +15,7 @@ from snips_nlu.pipeline.units_registry import register_processing_unit, \
     reset_processing_units
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
+from snips_nlu.utils import json_string
 
 
 class TestProbabilisticIntentParser(FixtureTest):
@@ -280,8 +279,7 @@ class TestIntentClassifier(IntentClassifier):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                          encoding="utf8").decode("utf8"))
+            f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
     def from_path(cls, path):
@@ -317,8 +315,7 @@ class TestSlotFiller(SlotFiller):
         path = Path(path)
         path.mkdir()
         with (path / "metadata.json").open(mode="w") as f:
-            f.write(bytes(json.dumps({"unit_name": self.unit_name}),
-                          encoding="utf8").decode("utf8"))
+            f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
     def from_path(cls, path):

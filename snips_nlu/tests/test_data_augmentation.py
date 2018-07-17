@@ -1,15 +1,14 @@
 from __future__ import unicode_literals
 
-from builtins import next
-from builtins import range
-from mock import patch
+from builtins import next, range
 
 import numpy as np
+from mock import patch
 
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.data_augmentation import (
-    get_contexts_iterator, get_entities_iterators,
-    generate_utterance, capitalize_utterances, capitalize)
+    capitalize, capitalize_utterances, generate_utterance,
+    get_contexts_iterator, get_entities_iterators)
 from snips_nlu.tests.utils import SnipsTest
 
 

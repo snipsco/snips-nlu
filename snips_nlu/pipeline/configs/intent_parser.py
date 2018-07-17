@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.pipeline.processing_unit import get_processing_unit_config
+from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
@@ -36,6 +37,12 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
     def unit_name(cls):  # pylint:disable=no-self-argument
         from snips_nlu.intent_parser import ProbabilisticIntentParser
         return ProbabilisticIntentParser.unit_name
+
+    def get_required_resources(self):
+        resources = self.intent_classifier_config.get_required_resources()
+        resources = merge_required_resources(
+            resources, self.slot_filler_config.get_required_resources())
+        return resources
 
     def to_dict(self):
         return {
@@ -82,6 +89,9 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         from snips_nlu.intent_parser.deterministic_intent_parser import \
             DeterministicIntentParser
         return DeterministicIntentParser.unit_name
+
+    def get_required_resources(self):
+        return None
 
     def to_dict(self):
         return {

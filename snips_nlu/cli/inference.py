@@ -1,11 +1,11 @@
 from __future__ import unicode_literals
 
 import json
-from pathlib import Path
+from builtins import input
 
 import plac
 
-from snips_nlu import load_resources, SnipsNLUEngine
+from snips_nlu import SnipsNLUEngine
 
 
 @plac.annotations(
@@ -14,12 +14,7 @@ from snips_nlu import load_resources, SnipsNLUEngine
            "behavior.", "option", "q", str))
 def parse(training_path, query):
     """Load a trained NLU engine and play with its parsing API interactively"""
-    training_path = Path(training_path)
-    with training_path.open("r", encoding="utf8") as f:
-        engine_dict = json.load(f)
-    language = engine_dict["dataset_metadata"]["language_code"]
-    load_resources(language)
-    engine = SnipsNLUEngine.from_dict(engine_dict)
+    engine = SnipsNLUEngine.from_path(training_path)
 
     if query:
         print_parsing_result(engine, query)

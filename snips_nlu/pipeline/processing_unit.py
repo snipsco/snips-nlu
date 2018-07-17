@@ -1,10 +1,12 @@
+import json
 from abc import ABCMeta, abstractmethod
 from builtins import object
+from pathlib import Path
 
 from future.utils import with_metaclass
 
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.utils import classproperty
+from snips_nlu.utils import classproperty, json_string
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):
@@ -25,6 +27,13 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         else:
             raise ValueError("Unexpected config type: %s" % type(config))
 
+    def persist_metadata(self, path, **kwargs):
+        metadata = {"unit_name": self.unit_name}
+        metadata.update(kwargs)
+        metadata_json = json_string(metadata)
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(metadata_json)
+
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
         raise NotImplementedError
@@ -34,11 +43,11 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         raise NotImplementedError
 
     @abstractmethod
-    def to_dict(self):
-        raise NotImplementedError
+    def persist(self, path):
+        pass
 
     @classmethod
-    def from_dict(cls, unit_dict):
+    def from_path(cls, path):
         raise NotImplementedError
 
 
@@ -77,7 +86,11 @@ def build_processing_unit(unit_config):
     return unit(unit_config)
 
 
-def load_processing_unit(unit_dict):
-    """Load a :class:`ProcessingUnit` from a persisted processing unit dict"""
-    unit = _get_unit_type(unit_dict["unit_name"])
-    return unit.from_dict(unit_dict)
+def load_processing_unit(unit_path):
+    """Load a :class:`ProcessingUnit` from a persisted processing unit
+    directory"""
+    unit_path = Path(unit_path)
+    with (unit_path / "metadata.json").open() as f:
+        metadata = json.load(f)
+    unit = _get_unit_type(metadata["unit_name"])
+    return unit.from_path(unit_path)

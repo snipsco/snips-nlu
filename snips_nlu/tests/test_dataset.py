@@ -6,7 +6,7 @@ from builtins import str
 from mock import mock
 
 from snips_nlu.constants import (
-    ENTITIES, AUTOMATICALLY_EXTENSIBLE, UTTERANCES, CAPITALIZE, SNIPS_DATETIME)
+    AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, ENTITIES, SNIPS_DATETIME, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SnipsTest
 

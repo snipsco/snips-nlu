@@ -1,24 +1,28 @@
 from __future__ import unicode_literals
 
+import json
 import logging
 import re
 from builtins import str
+from pathlib import Path
 
-from future.utils import itervalues, iteritems
+from future.utils import iteritems
 
-from snips_nlu.builtin_entities import (is_builtin_entity,
-                                        get_builtin_entities)
+from snips_nlu.builtin_entities import (get_builtin_entities,
+                                        is_builtin_entity)
 from snips_nlu.constants import (
-    TEXT, DATA, INTENTS, ENTITIES, SLOT_NAME, UTTERANCES, ENTITY,
-    RES_MATCH_RANGE, LANGUAGE, RES_VALUE, START, END, ENTITY_KIND)
+    DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
+    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
-from snips_nlu.result import (unresolved_slot, parsing_result,
-                              intent_classification_result, empty_result)
-from snips_nlu.tokenization import tokenize, tokenize_light
+from snips_nlu.preprocessing import tokenize, tokenize_light
+from snips_nlu.result import (
+    empty_result, intent_classification_result, parsing_result,
+    unresolved_slot)
 from snips_nlu.utils import (
-    regex_escape, ranges_overlap, NotTrained, log_result, log_elapsed_time)
+    NotTrained, check_persisted_path, get_slot_name_mappings, json_string,
+    log_elapsed_time, log_result, ranges_overlap, regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -82,7 +86,7 @@ class DeterministicIntentParser(IntentParser):
         self.group_names_to_slot_names = dict()
         joined_entity_utterances = _get_joined_entity_utterances(
             dataset, self.language)
-        self.slot_names_to_entities = _get_slot_names_mapping(dataset)
+        self.slot_names_to_entities = get_slot_name_mappings(dataset)
         for intent_name, intent in iteritems(dataset[INTENTS]):
             utterances = intent[UTTERANCES]
             patterns, self.group_names_to_slot_names = _generate_patterns(
@@ -154,7 +158,7 @@ class DeterministicIntentParser(IntentParser):
         slots = []
         for group_name in found_result.groupdict():
             slot_name = self.group_names_to_slot_names[group_name]
-            entity = self.slot_names_to_entities[slot_name]
+            entity = self.slot_names_to_entities[intent][slot_name]
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
             if builtin_entities_ranges_mapping is not None:
@@ -176,6 +180,35 @@ class DeterministicIntentParser(IntentParser):
         parsed_slots = sorted(parsed_slots,
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
+
+    @check_persisted_path
+    def persist(self, path):
+        """Persist the object at the given path"""
+        path = Path(path)
+        path.mkdir()
+        parser_json = json_string(self.to_dict())
+        parser_path = path / "intent_parser.json"
+
+        with parser_path.open(mode="w") as f:
+            f.write(parser_json)
+        self.persist_metadata(path)
+
+    @classmethod
+    def from_path(cls, path):
+        """Load a :class:`DeterministicIntentParser` instance from a path
+
+        The data at the given path must have been generated using
+        :func:`~DeterministicIntentParser.persist`
+        """
+        path = Path(path)
+        metadata_path = path / "intent_parser.json"
+        if not metadata_path.exists():
+            raise OSError("Missing deterministic intent parser metadata file: "
+                          "%s" % metadata_path.name)
+
+        with metadata_path.open() as f:
+            metadata = json.load(f)
+        return cls.from_dict(metadata)
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -209,6 +242,7 @@ def _replace_tokenized_out_characters(string, language, replacement_char=" "):
     """Replace all characters that are tokenized out by `replacement_char`
 
     Examples:
+
         >>> string = "hello, it's me"
         >>> language = "en"
         >>> tokenize_light(string, language)
@@ -262,18 +296,6 @@ def _generate_new_index(slots_name_to_labels):
         max_index = _get_index(max_index) + 1
         index = _make_index(max_index)
     return index
-
-
-def _get_slot_names_mapping(dataset):
-    slot_names_to_entities = dict()
-    for intent in itervalues(dataset[INTENTS]):
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if SLOT_NAME in chunk:
-                    slot_name = chunk[SLOT_NAME]
-                    entity = chunk[ENTITY]
-                    slot_names_to_entities[slot_name] = entity
-    return slot_names_to_entities
 
 
 def _query_to_pattern(query, joined_entity_utterances,

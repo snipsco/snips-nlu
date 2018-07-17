@@ -3,20 +3,20 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from mock import patch, MagicMock
+from mock import MagicMock, patch
 
-from snips_nlu.constants import SNIPS_NUMBER, SNIPS_DATETIME, LANGUAGE_EN
+from snips_nlu.constants import LANGUAGE_EN, SNIPS_DATETIME, SNIPS_NUMBER
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (
-    TaggingScheme, BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, UNIT_PREFIX)
-from snips_nlu.slot_filler.feature import TOKEN_NAME, Feature
+    BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, TaggingScheme, UNIT_PREFIX)
+from snips_nlu.slot_filler.feature import Feature, TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import (
-    IsDigitFactory, get_feature_factory, SingleFeatureFactory, IsFirstFactory,
-    IsLastFactory, PrefixFactory, SuffixFactory, LengthFactory, NgramFactory,
-    ShapeNgramFactory, WordClusterFactory, EntityMatchFactory,
-    BuiltinEntityMatchFactory)
+    BuiltinEntityMatchFactory, EntityMatchFactory, IsDigitFactory,
+    IsFirstFactory, IsLastFactory, LengthFactory, NgramFactory, PrefixFactory,
+    ShapeNgramFactory, SingleFeatureFactory, SuffixFactory, WordClusterFactory,
+    get_feature_factory)
 from snips_nlu.tests.utils import SAMPLE_DATASET, SnipsTest
-from snips_nlu.tokenization import tokenize
 
 
 class TestCRFFeatures(SnipsTest):

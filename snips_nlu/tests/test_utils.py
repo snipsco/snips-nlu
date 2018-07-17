@@ -2,13 +2,13 @@ from __future__ import unicode_literals
 
 import logging
 
-from future.builtins import str, object
+from future.builtins import object, str
 from future.utils import iteritems
 from mock import MagicMock
 
 from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.utils import (
-    LimitedSizeDict, ranges_overlap, DifferedLoggingMessage)
+    DifferedLoggingMessage, LimitedSizeDict, ranges_overlap)
 
 
 class TestLimitedSizeDict(SnipsTest):
@@ -98,13 +98,11 @@ class TestUtils(SnipsTest):
         _a, _b, _c = 1, 2, 3
 
         with self.fail_if_exception("Failed to log"):
-
             # When/Then
             my_obj = Greeter()
             logger.log(logging.INFO,
                        "Greeting: %s", DifferedLoggingMessage(my_obj.greet))
             for l in levels:
-
                 logger.log(l, "Level: %s -> %s", str(l),
                            DifferedLoggingMessage(mocked_fn, _a, _b, c=_c))
         self.assertEqual(2, mocked_fn.call_count)

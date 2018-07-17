@@ -5,16 +5,20 @@ import importlib
 import json
 import numbers
 import os
-from builtins import object, str
-from collections import OrderedDict, namedtuple, Mapping
+import shutil
+from builtins import bytes, object, str
+from collections import Mapping, OrderedDict, namedtuple
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from tempfile import mkdtemp
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import numpy as np
 import pkg_resources
 
-from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
-                                 END, START)
+from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
+                                 UTTERANCES)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -150,6 +154,20 @@ def mkdir_p(path):
             raise
 
 
+@contextmanager
+def temp_dir():
+    tmp_dir = mkdtemp()
+    try:
+        yield Path(tmp_dir)
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def unzip_archive(archive_path, destination_dir):
+    with ZipFile(str(archive_path), "r", ZIP_DEFLATED) as zipf:
+        zipf.extractall(str(destination_dir))
+
+
 # pylint:disable=line-too-long
 def regex_escape(s):
     """Escapes all regular expression meta characters in *s*
@@ -245,6 +263,11 @@ def json_debug_string(dict_data):
     return json.dumps(dict_data, ensure_ascii=False, indent=2, sort_keys=True)
 
 
+def json_string(json_object, indent=2, sort_keys=True):
+    json_dump = json.dumps(json_object, indent=indent, sort_keys=sort_keys)
+    return bytes(json_dump, encoding="utf8").decode("utf8")
+
+
 def log_elapsed_time(logger, level, output_msg=None):
     if output_msg is None:
         output_msg = "Elapsed time ->:\n{elapsed_time}"
@@ -284,6 +307,15 @@ def log_result(logger, level, output_msg=None):
         return wrapped
 
     return get_wrapper
+
+
+def check_persisted_path(func):
+    def func_wrapper(self, path, *args, **kwargs):
+        if Path(path).exists():
+            raise OSError("Persisting directory %s already exists" % path)
+        return func(self, path, *args, **kwargs)
+
+    return func_wrapper
 
 
 def is_package(name):

@@ -8,6 +8,7 @@
 /venv
 /venv2
 /venv3
+/venv35
 /venv36
 /.tox
 .coverage

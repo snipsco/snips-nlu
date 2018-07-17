@@ -1,16 +1,14 @@
 from __future__ import unicode_literals
 
 import json
+import shutil
 from builtins import next
 from pathlib import Path
 
-from snips_nlu_utils import normalize
-
-from snips_nlu.constants import (STOP_WORDS, WORD_CLUSTERS, GAZETTEERS, NOISE,
-                                 STEMS, DATA_PATH)
-from snips_nlu.languages import get_default_sep
-from snips_nlu.tokenization import tokenize
-from snips_nlu.utils import is_package, get_package_path
+from snips_nlu.constants import (
+    DATA_PATH, GAZETTEERS, NOISE, RESOURCES_DIR, STEMS, STOP_WORDS,
+    WORD_CLUSTERS)
+from snips_nlu.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
 
@@ -27,35 +25,65 @@ def load_resources(name):
     """Load language specific resources
 
     Args:
-        name (str): resource name
+        name (str): Resource name as in ``snips-nlu download <name>``. Can also
+            be the name of a python package or a directory path.
 
     Note:
         Language resources must be loaded before fitting or parsing
     """
     if name in set(d.name for d in DATA_PATH.iterdir()):
-        _load_resources_from_dir(DATA_PATH / name)
+        load_resources_from_dir(DATA_PATH / name)
     elif is_package(name):
         package_path = get_package_path(name)
-        _load_resources_from_dir(package_path)
+        resources_sub_dir = get_resources_sub_directory(package_path)
+        load_resources_from_dir(resources_sub_dir)
     elif Path(name).exists():
-        _load_resources_from_dir(Path(name))
+        path = Path(name)
+        if (path / "__init__.py").exists():
+            path = get_resources_sub_directory(path)
+        load_resources_from_dir(path)
     else:
         raise MissingResource("Language resource '{r}' not found. This may be "
-                              "solved by running 'snips-nlu download {r}'"
+                              "solved by running "
+                              "'python -m snips_nlu download {r}'"
                               .format(r=name))
 
 
-def resource_exists(language, resource_name):
-    """Tell if the resource specified by the resource_name exist
+def load_resources_from_dir(resources_dir):
+    with (resources_dir / "metadata.json").open() as f:
+        metadata = json.load(f)
+    language = metadata["language"]
+    if language in _RESOURCES:
+        return
 
-        Args:
-            language (str): language
-            resource_name (str): the resource name
-        Returns:
-            bool: whether the resource exists or not
-    """
-    return resource_name in _RESOURCES[language] \
-           and _RESOURCES[language][resource_name] is not None
+    gazetteer_names = metadata["gazetteers"]
+    gazetteers = _load_gazetteers(resources_dir / "gazetteers",
+                                  gazetteer_names)
+    stems = _load_stems(resources_dir / "stemming", metadata["stems"])
+    clusters_names = metadata["word_clusters"]
+    word_clusters = _load_word_clusters(resources_dir / "word_clusters",
+                                        clusters_names)
+    stop_words = _load_stop_words(resources_dir, metadata["stop_words"])
+    noise = _load_noise(resources_dir, metadata["noise"])
+
+    _RESOURCES[language] = {
+        WORD_CLUSTERS: word_clusters,
+        GAZETTEERS: gazetteers,
+        STOP_WORDS: stop_words,
+        NOISE: noise,
+        STEMS: stems,
+        RESOURCES_DIR: str(resources_dir),
+    }
+
+
+def get_resources_sub_directory(resources_dir):
+    resources_dir = Path(resources_dir)
+    with (resources_dir / "metadata.json").open() as f:
+        metadata = json.load(f)
+    resource_name = metadata["name"]
+    version = metadata["version"]
+    sub_dir_name = "{r}-{v}".format(r=resource_name, v=version)
+    return resources_dir / sub_dir_name
 
 
 def get_stop_words(language):
@@ -90,6 +118,97 @@ def get_stems(language):
     return _get_resource(language, STEMS)
 
 
+def get_resources_dir(language):
+    return _get_resource(language, RESOURCES_DIR)
+
+
+def merge_required_resources(lhs, rhs):
+    if not lhs:
+        return rhs
+    if not rhs:
+        return lhs
+    merged_resources = dict()
+    if lhs.get(NOISE, False) or rhs.get(NOISE, False):
+        merged_resources[NOISE] = True
+    if lhs.get(STOP_WORDS, False) or rhs.get(STOP_WORDS, False):
+        merged_resources[STOP_WORDS] = True
+    if lhs.get(STEMS, False) or rhs.get(STEMS, False):
+        merged_resources[STEMS] = True
+    gazetteers = lhs.get(GAZETTEERS, set()).union(rhs.get(GAZETTEERS, set()))
+    if gazetteers:
+        merged_resources[GAZETTEERS] = gazetteers
+    word_clusters = lhs.get(WORD_CLUSTERS, set()).union(
+        rhs.get(WORD_CLUSTERS, set()))
+    if word_clusters:
+        merged_resources[WORD_CLUSTERS] = word_clusters
+    return merged_resources
+
+
+def persist_resources(resources_dest_path, required_resources, language):
+    if not required_resources:
+        return
+
+    resources_dest_path.mkdir()
+
+    resources_src_path = Path(get_resources_dir(language))
+    with (resources_src_path / "metadata.json").open(encoding="utf8") as f:
+        metadata = json.load(f)
+
+    # Update metadata and keep only required resources
+    if not required_resources.get(NOISE, False):
+        metadata[NOISE] = None
+    if not required_resources.get(STOP_WORDS, False):
+        metadata[STOP_WORDS] = None
+    if not required_resources.get(STEMS, False):
+        metadata[STEMS] = None
+
+    metadata[GAZETTEERS] = list(required_resources.get(GAZETTEERS, []))
+    metadata[WORD_CLUSTERS] = list(required_resources.get(WORD_CLUSTERS, []))
+    metadata_dest_path = resources_dest_path / "metadata.json"
+    metadata_json = json_string(metadata)
+    with metadata_dest_path.open(encoding="utf8", mode="w") as f:
+        f.write(metadata_json)
+
+    if metadata[NOISE] is not None:
+        noise_src = (resources_src_path / metadata[NOISE]).with_suffix(".txt")
+        noise_dest = (resources_dest_path / noise_src.name)
+        shutil.copy(str(noise_src), str(noise_dest))
+
+    if metadata[STOP_WORDS] is not None:
+        stop_words_src = (resources_src_path / metadata[STOP_WORDS]) \
+            .with_suffix(".txt")
+        stop_words_dest = (resources_dest_path / stop_words_src.name)
+        shutil.copy(str(stop_words_src), str(stop_words_dest))
+
+    if metadata[STEMS] is not None:
+        stems_src = (resources_src_path / "stemming" / metadata["stems"]) \
+            .with_suffix(".txt")
+        stemming_dir = resources_dest_path / "stemming"
+        stemming_dir.mkdir()
+        stems_dest = stemming_dir / stems_src.name
+        shutil.copy(str(stems_src), str(stems_dest))
+
+    if metadata[GAZETTEERS]:
+        gazetteer_src_dir = resources_src_path / "gazetteers"
+        gazetteer_dest_dir = resources_dest_path / "gazetteers"
+        gazetteer_dest_dir.mkdir()
+        for gazetteer in metadata["gazetteers"]:
+            gazetteer_src = (gazetteer_src_dir / gazetteer) \
+                .with_suffix(".txt")
+            gazetteer_dest = gazetteer_dest_dir / gazetteer_src.name
+            shutil.copy(str(gazetteer_src), str(gazetteer_dest))
+
+    if metadata[WORD_CLUSTERS]:
+        clusters_src_dir = resources_src_path / "word_clusters"
+        clusters_dest_dir = resources_dest_path / "word_clusters"
+        clusters_dest_dir.mkdir()
+        for word_clusters in metadata["word_clusters"]:
+            clusters_src = (clusters_src_dir / word_clusters) \
+                .with_suffix(".txt")
+            clusters_dest = clusters_dest_dir / clusters_src.name
+            shutil.copy(str(clusters_src), str(clusters_dest))
+
+
 def _get_resource(language, resource_name):
     if language not in _RESOURCES:
         raise MissingResource(
@@ -102,45 +221,19 @@ def _get_resource(language, resource_name):
     return _RESOURCES[language][resource_name]
 
 
-def _load_resources_from_dir(resources_dir):
-    with (resources_dir / "metadata.json").open() as f:
-        metadata = json.load(f)
-    language = metadata["language"]
-    resource_name = metadata["name"]
-    version = metadata["version"]
-    if language in _RESOURCES:
-        return
-    sub_dir = resources_dir / (resource_name + "-" + version)
-    if not sub_dir.is_dir():
-        raise FileNotFoundError("Missing resources directory: %s"
-                                % str(sub_dir))
-    word_clusters = _load_word_clusters(sub_dir / "word_clusters")
-    gazetteers = _load_gazetteers(sub_dir / "gazetteers", language)
-    stop_words = _load_stop_words(sub_dir / "stop_words.txt")
-    noise = _load_noise(sub_dir / "noise.txt")
-    stems = _load_stems(sub_dir / "stemming")
-
-    _RESOURCES[language] = {
-        WORD_CLUSTERS: word_clusters,
-        GAZETTEERS: gazetteers,
-        STOP_WORDS: stop_words,
-        NOISE: noise,
-        STEMS: stems
-    }
-
-
-def _load_stop_words(stop_words_path):
-    if not stop_words_path.exists():
+def _load_stop_words(resources_dir, stop_words_filename):
+    if not stop_words_filename:
         return None
+    stop_words_path = (resources_dir / stop_words_filename).with_suffix(".txt")
     with stop_words_path.open(encoding='utf8') as f:
-        lines = (normalize(l) for l in f)
-        stop_words = set(l for l in lines if l)
+        stop_words = set(l.strip() for l in f)
     return stop_words
 
 
-def _load_noise(noise_path):
-    if not noise_path.exists():
+def _load_noise(resources_dir, noise_filename):
+    if not noise_filename:
         return None
+    noise_path = (resources_dir / noise_filename).with_suffix(".txt")
     with noise_path.open(encoding='utf8') as f:
         # Here we split on a " " knowing that it's always ignored by
         # the tokenization (see tokenization unit tests)
@@ -150,80 +243,42 @@ def _load_noise(noise_path):
     return noise
 
 
-def _load_word_clusters(word_clusters_path):
-    if not word_clusters_path.is_dir():
+def _load_word_clusters(word_clusters_dir, clusters_names):
+    if not clusters_names:
         return dict()
 
     clusters = dict()
-    for filepath in word_clusters_path.iterdir():
-        word_cluster_name = filepath.stem
-        with filepath.open(encoding="utf8") as f:
-            clusters[word_cluster_name] = dict()
+    for clusters_name in clusters_names:
+        clusters_path = (word_clusters_dir / clusters_name).with_suffix(".txt")
+        clusters[clusters_name] = dict()
+        with clusters_path.open(encoding="utf8") as f:
             for line in f:
                 split = line.rstrip().split("\t")
-                if len(split) == 2:
-                    clusters[word_cluster_name][split[0]] = split[1]
+                clusters[clusters_name][split[0]] = split[1]
     return clusters
 
 
-def _load_gazetteers(gazetteers_path, language):
-    if not gazetteers_path.is_dir():
+def _load_gazetteers(gazetteers_dir, gazetteer_names):
+    if not gazetteer_names:
         return dict()
 
     gazetteers = dict()
-    for filepath in gazetteers_path.iterdir():
-        gazetteer_name = filepath.stem
-        with filepath.open(encoding="utf8") as f:
-            gazetteers[gazetteer_name] = set()
-            for line in f:
-                normalized = normalize(line.strip())
-                if normalized:
-                    token_values = (t.value
-                                    for t in tokenize(normalized, language))
-                    normalized = get_default_sep(language).join(token_values)
-                    gazetteers[gazetteer_name].add(normalized)
+    for gazetteer_name in gazetteer_names:
+        gazetteer_path = (gazetteers_dir / gazetteer_name).with_suffix(".txt")
+        with gazetteer_path.open(encoding="utf8") as f:
+            gazetteers[gazetteer_name] = set(v.strip() for v in f)
     return gazetteers
 
 
-def _load_verbs_lexemes(stemming_path):
-    try:
-        lexems_path = next(stemming_path.glob("top_*_verbs_lexemes.txt"))
-    except StopIteration:
+def _load_stems(stems_dir, filename):
+    if not filename:
         return None
-
-    verb_lexemes = dict()
-    with lexems_path.open(encoding="utf8") as f:
+    stems_path = (stems_dir / filename).with_suffix(".txt")
+    stems = dict()
+    with stems_path.open(encoding="utf8") as f:
         for line in f:
-            elements = line.strip().split(';')
-            verb = normalize(elements[0])
-            lexemes = elements[1].split(',')
-            verb_lexemes.update(
-                {normalize(lexeme): verb for lexeme in lexemes})
-    return verb_lexemes
-
-
-def _load_words_inflections(stemming_path):
-    try:
-        inflection_path = next(stemming_path.glob("top_*_words_inflected.txt"))
-    except StopIteration:
-        return None
-
-    inflections = dict()
-    with inflection_path.open(encoding="utf8") as f:
-        for line in f:
-            elements = line.strip().split(';')
-            inflections[normalize(elements[0])] = normalize(elements[1])
-    return inflections
-
-
-def _load_stems(stemming_path):
-    inflexions = _load_words_inflections(stemming_path)
-    lexemes = _load_verbs_lexemes(stemming_path)
-    stems = None
-    if inflexions is not None:
-        stems = inflexions
-    if lexemes is not None:
-        if stems is None:
-            stems = dict()
-        stems.update(lexemes)
+            elements = line.strip().split(',')
+            stem = elements[0]
+            for value in elements[1:]:
+                stems[value] = stem
     return stems

@@ -1,18 +1,17 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import json
 import shutil
 import tempfile
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.cli import train, cross_val_metrics, train_test_metrics, parse
+from snips_nlu.cli import cross_val_metrics, parse, train, train_test_metrics
 from snips_nlu.cli.dataset import AssistantDataset
 from snips_nlu.cli.dataset.entities import CustomEntity
 from snips_nlu.cli.dataset.intent_dataset import IntentDataset
 from snips_nlu.constants import PACKAGE_PATH
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.tests.utils import TEST_PATH, BEVERAGE_DATASET_PATH, SnipsTest
+from snips_nlu.tests.utils import BEVERAGE_DATASET_PATH, SnipsTest, TEST_PATH
 
 
 def mk_sys_argv(args):
@@ -46,9 +45,7 @@ class TestCLI(SnipsTest):
             self.fail("No trained engine generated")
         msg = "Failed to create an engine from engine dict."
         with self.fail_if_exception(msg):
-            with self.tmp_file_path.open(mode="r", encoding="utf8") as f:
-                trained_engine_dict = json.load(f)
-            SnipsNLUEngine.from_dict(trained_engine_dict)
+            SnipsNLUEngine.from_path(self.tmp_file_path)
 
     def test_parse(self):
         # Given / When

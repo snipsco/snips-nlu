@@ -29,7 +29,7 @@ Installation
     pip install snips-nlu
 
 We currently have pre-built binaries (wheels) for ``snips-nlu`` and its
-dependencies for MacOS (10.11 and later), Linux x86_64 and Windows 64-bit.
+dependencies for MacOS (10.11 and later), Linux x86_64 and Windows.
 
 For any other architecture/os `snips-nlu` can be installed from the source
 distribution. To do so, `Rust <https://www.rust-lang.org/en-US/install.html>`_

@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.16.0] - 2018-07-17
+### Changed
+- The `SnipsNLUEngine` object is now persisted to (and loaded from) a 
+directory, instead of a single json file.
+- The language resources are now persisted along with the `SnipsNLUEngine`, 
+removing the need to download and load the resources when loading a trained engine.
+- The format of language resources has been optimized.
+
+### Added
+- Stemmed gazetteers, computed beforehand. It removes the need to stem 
+gazetteers on the fly.
+- API to persist (and load) a `SnipsNLUEngine` object as a `bytearray`
+
+### Fixed
+- Issue in the `DeterministicIntentParser` when the same slot name was used in 
+multiple intents while referring to different entities
+
 ## [0.15.1] - 2018-07-09
 ### Changed
 - Bump `snips-nlu-ontology` to `0.57.1`
@@ -92,6 +109,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.16.0]: https://github.com/snipsco/snips-nlu/compare/0.15.1...0.16.0
 [0.15.1]: https://github.com/snipsco/snips-nlu/compare/0.15.0...0.15.1
 [0.15.0]: https://github.com/snipsco/snips-nlu/compare/0.14.0...0.15.0
 [0.14.0]: https://github.com/snipsco/snips-nlu/compare/0.13.5...0.14.0

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from mock import patch
 
+from snips_nlu.constants import RES_INTENT, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier import IntentClassifier, \
     LogRegIntentClassifier
@@ -220,6 +221,20 @@ class TestProbabilisticIntentParser(FixtureTest):
         self.assertIsNotNone(parser.intent_classifier)
         self.assertListEqual(sorted(parser.slot_fillers),
                              ["MakeCoffee", "MakeTea"])
+
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        intent_parser = ProbabilisticIntentParser().fit(dataset)
+
+        # When
+        intent_parser_bytes = intent_parser.to_byte_array()
+        loaded_intent_parser = ProbabilisticIntentParser.from_byte_array(
+            intent_parser_bytes)
+        result = loaded_intent_parser.parse("make me two cups of tea")
+
+        # Then
+        self.assertEqual("MakeTea", result[RES_INTENT][RES_INTENT_NAME])
 
     def test_fitting_should_be_reproducible_after_serialization(self):
         # Given

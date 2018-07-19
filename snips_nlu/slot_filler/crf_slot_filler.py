@@ -33,7 +33,7 @@ from snips_nlu.utils import (DifferedLoggingMessage, NotTrained,
                              UnupdatableDict, check_random_state,
                              get_slot_name_mapping, json_string,
                              log_elapsed_time, mkdir_p, ranges_overlap,
-                             check_persisted_path)
+                             check_persisted_path, temp_dir, unzip_archive)
 
 logger = logging.getLogger(__name__)
 

@@ -71,7 +71,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
                                 format="zip", root_dir=str(tmp_dir),
                                 base_dir=cleaned_unit_name)
             with archive_name.open(mode="rb") as f:
-                processing_unit_bytes = f.read()
+                processing_unit_bytes = bytearray(f.read())
         return processing_unit_bytes
 
     @classmethod

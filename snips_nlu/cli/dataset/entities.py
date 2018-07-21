@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import csv
+import re
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
@@ -56,16 +57,25 @@ class CustomEntity(Entity):
             if six.PY2:
                 it = list(utf_8_encoder(it))
             reader = csv.reader(list(it))
+            autoextent = True
             for row in reader:
                 if six.PY2:
                     row = [cell.decode("utf-8") for cell in row]
                 value = row[0]
+                m = re.match(
+                    r'^#\sautomatically_extensible=(true|false)\s*$',
+                    row[0], re.IGNORECASE)
+                if m:
+                    autoextent = not m.group(1).lower() == 'false'
+                    continue
+                if value.startswith('#'):
+                    continue
                 if len(row) > 1:
                     synonyms = row[1:]
                 else:
                     synonyms = []
                 utterances.append(EntityUtterance(value, synonyms))
-        return cls(entity_name, utterances, automatically_extensible=True,
+        return cls(entity_name, utterances, autoextent,
                    use_synonyms=True)
 
     @property

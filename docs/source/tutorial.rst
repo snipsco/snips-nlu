@@ -102,6 +102,15 @@ double quotes ``"``. If the value contains double quotes, it must be doubled
 to be escaped like this:  ``"A value with a "","" in it"`` which corresponds
 to the actual value ``A value with a "," in it``.
 
+.. Note::
+
+    By default entities are generated as *automatically extensible* ie the recognition will accept additional values than the ones listed in the entity file.
+    This behavior can be changed by adding at the beginning of the entity file the following:
+
+    .. code-block:: bash
+
+       # automatically_extensible=false
+
 We are now ready to generate our dataset:
 
 .. code-block:: bash

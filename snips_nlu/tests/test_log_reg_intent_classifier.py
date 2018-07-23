@@ -179,6 +179,21 @@ class TestLogRegIntentClassifier(FixtureTest):
         expected_intent = "MakeTea"
         self.assertEqual(expected_intent, result[RES_INTENT_NAME])
 
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        intent_classifier = LogRegIntentClassifier().fit(dataset)
+
+        # When
+        intent_classifier_bytes = intent_classifier.to_byte_array()
+        loaded_classifier = LogRegIntentClassifier.from_byte_array(
+            intent_classifier_bytes)
+        result = loaded_classifier.get_intent("make me two cups of tea")
+
+        # Then
+        expected_intent = "MakeTea"
+        self.assertEqual(expected_intent, result[RES_INTENT_NAME])
+
     @patch("snips_nlu.intent_classifier.log_reg_classifier"
            ".build_training_data")
     def test_empty_vocabulary_should_fit_and_return_none_intent(

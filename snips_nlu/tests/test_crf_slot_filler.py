@@ -411,6 +411,24 @@ class TestCRFSlotFiller(FixtureTest):
         crf_path = Path(slot_filler.crf_model.modelfile.name)
         self.assertFileContent(crf_path, "foo bar")
 
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        slot_filler = CRFSlotFiller().fit(dataset, "MakeTea")
+
+        # When
+        slot_filler_bytes = slot_filler.to_byte_array()
+        loaded_slot_filler = CRFSlotFiller.from_byte_array(slot_filler_bytes)
+        slots = loaded_slot_filler.get_slots("make me two cups of tea")
+
+        # Then
+        expected_slots = [
+            unresolved_slot(match_range={START: 8, END: 11},
+                            value='two',
+                            entity='snips/number',
+                            slot_name='number_of_cups')]
+        self.assertListEqual(expected_slots, slots)
+
     def test_should_compute_features(self):
         # Given
         features_factories = [

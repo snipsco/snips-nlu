@@ -15,7 +15,8 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
     _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH
+from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH, \
+    BEVERAGE_DATASET
 
 
 class TestDeterministicIntentParser(FixtureTest):
@@ -383,6 +384,20 @@ class TestDeterministicIntentParser(FixtureTest):
 
             # Then
             self.assertListEqual(expected_slots, parsing[RES_SLOTS])
+
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        intent_parser = DeterministicIntentParser().fit(dataset)
+
+        # When
+        intent_parser_bytes = intent_parser.to_byte_array()
+        loaded_intent_parser = DeterministicIntentParser.from_byte_array(
+            intent_parser_bytes)
+        result = loaded_intent_parser.parse("make me two cups of coffee")
+
+        # Then
+        self.assertEqual("MakeCoffee", result[RES_INTENT][RES_INTENT_NAME])
 
     def test_should_parse_naughty_strings(self):
         # Given

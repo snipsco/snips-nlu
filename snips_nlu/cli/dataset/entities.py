@@ -13,6 +13,7 @@ from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     VALUE, SYNONYMS, AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, DATA)
 
+AUTO_EXTENSIBLE_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
 
 class Entity(with_metaclass(ABCMeta, object)):
     def __init__(self, name):
@@ -62,12 +63,11 @@ class CustomEntity(Entity):
                 if six.PY2:
                     row = [cell.decode("utf-8") for cell in row]
                 value = row[0]
-                m = re.match(
-                    r'^#\sautomatically_extensible=(true|false)\s*$',
-                    row[0], re.IGNORECASE)
-                if m:
-                    autoextent = not m.group(1).lower() == 'false'
-                    continue
+                if reader.line_num == 1:
+                    m = AUTO_EXTENSIBLE_REGEX.match(row[0])
+                    if m:
+                        autoextent = not m.group(1).lower() == 'false'
+                        continue
                 if value.startswith('#'):
                     continue
                 if len(row) > 1:
@@ -75,8 +75,8 @@ class CustomEntity(Entity):
                 else:
                     synonyms = []
                 utterances.append(EntityUtterance(value, synonyms))
-        return cls(entity_name, utterances, autoextent,
-                   use_synonyms=True)
+        return cls(entity_name, utterances,
+                   automatically_extensible=autoextent, use_synonyms=True)
 
     @property
     def json(self):

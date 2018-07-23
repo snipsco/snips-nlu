@@ -104,7 +104,7 @@ to the actual value ``A value with a "," in it``.
 
 .. Note::
 
-    By default entities are generated as *automatically extensible* ie the recognition will accept additional values than the ones listed in the entity file.
+    By default entities are generated as :ref:`automatically extensible <auto_extensible>`, i.e. the recognition will accept additional values than the ones listed in the entity file.
     This behavior can be changed by adding at the beginning of the entity file the following:
 
     .. code-block:: bash

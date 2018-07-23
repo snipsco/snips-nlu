@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import csv
+import re
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     VALUE, SYNONYMS, AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, DATA)
 
+AUTO_EXT_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
 
 class Entity(with_metaclass(ABCMeta, object)):
     def __init__(self, name):
@@ -56,17 +58,23 @@ class CustomEntity(Entity):
             if six.PY2:
                 it = list(utf_8_encoder(it))
             reader = csv.reader(list(it))
+            autoextent = True
             for row in reader:
                 if six.PY2:
                     row = [cell.decode("utf-8") for cell in row]
                 value = row[0]
+                if reader.line_num == 1:
+                    m = AUTO_EXT_REGEX.match(row[0])
+                    if m:
+                        autoextent = not m.group(1).lower() == 'false'
+                        continue
                 if len(row) > 1:
                     synonyms = row[1:]
                 else:
                     synonyms = []
                 utterances.append(EntityUtterance(value, synonyms))
-        return cls(entity_name, utterances, automatically_extensible=True,
-                   use_synonyms=True)
+        return cls(entity_name, utterances,
+                   automatically_extensible=autoextent, use_synonyms=True)
 
     @property
     def json(self):

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.16.1] - 2018-07-23
+### Added
+- Every processing unit can be persisted into (and loaded from) a `bytearray`
+
 ## [0.16.0] - 2018-07-17
 ### Changed
 - The `SnipsNLUEngine` object is now persisted to (and loaded from) a 
@@ -109,6 +113,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.16.1]: https://github.com/snipsco/snips-nlu/compare/0.16.0...0.16.1
 [0.16.0]: https://github.com/snipsco/snips-nlu/compare/0.15.1...0.16.0
 [0.15.1]: https://github.com/snipsco/snips-nlu/compare/0.15.0...0.15.1
 [0.15.0]: https://github.com/snipsco/snips-nlu/compare/0.14.0...0.15.0

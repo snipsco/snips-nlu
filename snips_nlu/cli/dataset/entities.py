@@ -68,8 +68,6 @@ class CustomEntity(Entity):
                     if m:
                         autoextent = not m.group(1).lower() == 'false'
                         continue
-                if value.startswith('#'):
-                    continue
                 if len(row) > 1:
                     synonyms = row[1:]
                 else:

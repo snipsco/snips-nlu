@@ -1,4 +1,5 @@
 import json
+import shutil
 from abc import ABCMeta, abstractmethod
 from builtins import object
 from pathlib import Path
@@ -6,7 +7,7 @@ from pathlib import Path
 from future.utils import with_metaclass
 
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.utils import classproperty, json_string
+from snips_nlu.utils import classproperty, json_string, temp_dir, unzip_archive
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):
@@ -49,6 +50,55 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
     @classmethod
     def from_path(cls, path):
         raise NotImplementedError
+
+    def to_byte_array(self):
+        """Serialize the :class:`ProcessingUnit` instance into a bytearray
+
+        This method persists the processing unit in a temporary directory, zip
+        the directory and return the zipped file as binary data.
+
+        Returns:
+            bytearray: the processing unit as bytearray data
+        """
+
+        cleaned_unit_name = _sanitize_unit_name(self.unit_name)
+        with temp_dir() as tmp_dir:
+            processing_unit_dir = tmp_dir / cleaned_unit_name
+            self.persist(processing_unit_dir)
+            archive_base_name = tmp_dir / cleaned_unit_name
+            archive_name = archive_base_name.with_suffix(".zip")
+            shutil.make_archive(base_name=str(archive_base_name),
+                                format="zip", root_dir=str(tmp_dir),
+                                base_dir=cleaned_unit_name)
+            with archive_name.open(mode="rb") as f:
+                processing_unit_bytes = bytearray(f.read())
+        return processing_unit_bytes
+
+    @classmethod
+    def from_byte_array(cls, unit_bytes):
+        """Load a :class:`ProcessingUnit` instance from a bytearray
+
+        Args:
+            unit_bytes (bytearray): A bytearray representing a zipped
+                processing unit.
+        """
+        cleaned_unit_name = _sanitize_unit_name(cls.unit_name)
+        with temp_dir() as tmp_dir:
+            archive_path = (tmp_dir / cleaned_unit_name).with_suffix(".zip")
+            with archive_path.open(mode="wb") as f:
+                f.write(unit_bytes)
+            unzip_archive(archive_path, str(tmp_dir))
+            processing_unit = cls.from_path(tmp_dir / cleaned_unit_name)
+        return processing_unit
+
+
+def _sanitize_unit_name(unit_name):
+    return unit_name\
+        .lower()\
+        .strip()\
+        .replace(" ", "")\
+        .replace("/", "")\
+        .replace("\\", "")
 
 
 def _get_unit_type(unit_name):

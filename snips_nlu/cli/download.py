@@ -106,7 +106,7 @@ def _get_installed_languages():
     for directory in DATA_PATH.iterdir():
         if not directory.is_dir():
             continue
-        with (directory / "metadata.json").open() as f:
+        with (directory / "metadata.json").open(encoding="utf8") as f:
             metadata = json.load(f)
         languages.add(metadata["language"])
     return languages

@@ -140,7 +140,7 @@ def load_processing_unit(unit_path):
     """Load a :class:`ProcessingUnit` from a persisted processing unit
     directory"""
     unit_path = Path(unit_path)
-    with (unit_path / "metadata.json").open() as f:
+    with (unit_path / "metadata.json").open(encoding="utf8") as f:
         metadata = json.load(f)
     unit = _get_unit_type(metadata["unit_name"])
     return unit.from_path(unit_path)

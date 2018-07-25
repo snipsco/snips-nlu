@@ -206,7 +206,7 @@ class DeterministicIntentParser(IntentParser):
             raise OSError("Missing deterministic intent parser metadata file: "
                           "%s" % metadata_path.name)
 
-        with metadata_path.open() as f:
+        with metadata_path.open(encoding="utf8") as f:
             metadata = json.load(f)
         return cls.from_dict(metadata)
 

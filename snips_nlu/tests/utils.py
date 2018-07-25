@@ -39,14 +39,14 @@ class SnipsTest(TestCase):
     def assertJsonContent(self, json_path, expected_dict):
         if not json_path.exists():
             self.fail("Json file not found: %s" % str(json_path))
-        with json_path.open() as f:
+        with json_path.open(encoding="utf8") as f:
             data = json.load(f)
         self.assertDictEqual(expected_dict, data)
 
     def assertFileContent(self, path, expected_content):
         if not path.exists():
             self.fail("File not found: %s" % str(path))
-        with path.open() as f:
+        with path.open(encoding="utf8") as f:
             data = f.read()
         self.assertEqual(expected_content, data)
 

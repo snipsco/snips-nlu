@@ -212,7 +212,7 @@ class SnipsNLUEngine(ProcessingUnit):
             raise OSError("Missing nlu engine model file: %s"
                           % model_path.name)
 
-        with model_path.open() as f:
+        with model_path.open(encoding="utf8") as f:
             model = json.load(f)
         model_version = model.get("model_version")
         if model_version is None or model_version != __model_version__:

@@ -50,7 +50,7 @@ def load_resources(name):
 
 
 def load_resources_from_dir(resources_dir):
-    with (resources_dir / "metadata.json").open() as f:
+    with (resources_dir / "metadata.json").open(encoding="utf8") as f:
         metadata = json.load(f)
     language = metadata["language"]
     if language in _RESOURCES:
@@ -78,7 +78,7 @@ def load_resources_from_dir(resources_dir):
 
 def get_resources_sub_directory(resources_dir):
     resources_dir = Path(resources_dir)
-    with (resources_dir / "metadata.json").open() as f:
+    with (resources_dir / "metadata.json").open(encoding="utf8") as f:
         metadata = json.load(f)
     resource_name = metadata["name"]
     version = metadata["version"]

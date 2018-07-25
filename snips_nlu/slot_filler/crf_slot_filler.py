@@ -346,7 +346,7 @@ class CRFSlotFiller(SlotFiller):
             raise OSError("Missing slot filler model file: %s"
                           % model_path.name)
 
-        with model_path.open() as f:
+        with model_path.open(encoding="utf8") as f:
             model = json.load(f)
 
         slot_filler_config = cls.config_type.from_dict(model["config"])

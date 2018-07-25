@@ -170,7 +170,7 @@ class ProbabilisticIntentParser(IntentParser):
             raise OSError("Missing probabilistic intent parser model file: "
                           "%s" % model_path.name)
 
-        with model_path.open() as f:
+        with model_path.open(encoding="utf8") as f:
             model = json.load(f)
 
         parser = cls(config=cls.config_type.from_dict(model["config"]))

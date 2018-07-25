@@ -185,7 +185,7 @@ class LogRegIntentClassifier(IntentClassifier):
             raise OSError("Missing intent classifier model file: %s"
                           % model_path.name)
 
-        with model_path.open() as f:
+        with model_path.open(encoding="utf8") as f:
             model_dict = json.load(f)
         return cls.from_dict(model_dict)
 

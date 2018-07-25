@@ -70,7 +70,7 @@ def download(resource_name, direct=False,
 def download_all_languages(*pip_args):
     """Download compatible resources for all supported languages"""
     for language in get_all_languages():
-        download(language, *pip_args)
+        download(language, False, *pip_args)
 
 
 def _get_compatibility():

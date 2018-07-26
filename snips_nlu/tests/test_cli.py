@@ -23,6 +23,7 @@ class TestCLI(SnipsTest):
 
     # pylint: disable=protected-access
     def setUp(self):
+        super(TestCLI, self).setUp()
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 

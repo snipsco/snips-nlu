@@ -190,7 +190,7 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
         ent: get_string_variations(ent, language) for ent in queries_entities
     }
     for original_ent, variations in iteritems(queries_entities_variations):
-        if not original_ent or original_ent in formatted_entity:
+        if not original_ent or original_ent in validated_utterances:
             continue
         validated_utterances[original_ent] = original_ent
         for variation in variations:

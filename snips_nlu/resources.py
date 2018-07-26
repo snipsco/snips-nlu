@@ -56,15 +56,23 @@ def load_resources_from_dir(resources_dir):
     if language in _RESOURCES:
         return
 
-    gazetteer_names = metadata["gazetteers"]
+    try:
+        gazetteer_names = metadata["gazetteers"]
+        clusters_names = metadata["word_clusters"]
+        stop_words_filename = metadata["stop_words"]
+        stems_filename = metadata["stems"]
+        noise_filename = metadata["noise"]
+    except KeyError:
+        print_compatibility_error(language)
+        raise
+
     gazetteers = _load_gazetteers(resources_dir / "gazetteers",
                                   gazetteer_names)
-    stems = _load_stems(resources_dir / "stemming", metadata["stems"])
-    clusters_names = metadata["word_clusters"]
+    stems = _load_stems(resources_dir / "stemming", stems_filename)
     word_clusters = _load_word_clusters(resources_dir / "word_clusters",
                                         clusters_names)
-    stop_words = _load_stop_words(resources_dir, metadata["stop_words"])
-    noise = _load_noise(resources_dir, metadata["noise"])
+    stop_words = _load_stop_words(resources_dir, stop_words_filename)
+    noise = _load_noise(resources_dir, noise_filename)
 
     _RESOURCES[language] = {
         WORD_CLUSTERS: word_clusters,
@@ -74,6 +82,17 @@ def load_resources_from_dir(resources_dir):
         STEMS: stems,
         RESOURCES_DIR: str(resources_dir),
     }
+
+
+def print_compatibility_error(language):
+    from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
+    pretty_print(
+        "Language resources for '{lang}' could not be loaded.\nYou may "
+        "have to download resources again using "
+        "'python -m snips_nlu download {lang}'".format(lang=language),
+        "This can happen when you update the snips-nlu library.",
+        title="Something went wrong while loading resources",
+        level=PrettyPrintLevel.ERROR)
 
 
 def get_resources_sub_directory(resources_dir):

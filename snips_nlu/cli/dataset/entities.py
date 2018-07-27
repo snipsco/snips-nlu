@@ -10,10 +10,11 @@ import six
 from future.utils import with_metaclass
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (
-    VALUE, SYNONYMS, AUTOMATICALLY_EXTENSIBLE, USE_SYNONYMS, DATA)
+from snips_nlu.constants import (AUTOMATICALLY_EXTENSIBLE, DATA, SYNONYMS,
+                                 USE_SYNONYMS, VALUE)
 
 AUTO_EXT_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
+
 
 class Entity(with_metaclass(ABCMeta, object)):
     def __init__(self, name):

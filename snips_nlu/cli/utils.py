@@ -1,9 +1,14 @@
 from __future__ import print_function, unicode_literals
 
+import os
+import subprocess
 import sys
-from enum import unique, Enum
+from enum import Enum, unique
 
 import requests
+from future.utils import itervalues
+
+from snips_nlu import __about__
 
 
 @unique
@@ -56,3 +61,40 @@ def get_json(url, desc):
         raise OSError("%s: Received status code %s when fetching the resource"
                       % (desc, r.status_code))
     return r.json()
+
+
+def get_compatibility():
+    version = __about__.__version__
+    table = get_json(__about__.__compatibility__, "Compatibility table")
+    compatibility = table["snips-nlu"]
+    if version not in compatibility:
+        pretty_print("No compatible resources found for version %s" % version,
+                     title="Resources compatibility error", exits=1,
+                     level=PrettyPrintLevel.ERROR)
+    return compatibility[version]
+
+
+def get_resources_version(resource_fullname, resource_alias, compatibility):
+    if resource_fullname not in compatibility:
+        pretty_print("No compatible resources found for '%s'" % resource_alias,
+                     title="Resources compatibility error", exits=1,
+                     level=PrettyPrintLevel.ERROR)
+    return compatibility[resource_fullname][0]
+
+
+def install_remote_package(download_url, user_pip_args=None):
+    pip_args = ['--no-cache-dir', '--no-deps']
+    if user_pip_args:
+        pip_args.extend(user_pip_args)
+    cmd = [sys.executable, '-m', 'pip', 'install'] + pip_args + [download_url]
+    return subprocess.call(cmd, env=os.environ.copy())
+
+
+def check_resources_alias(resource_name, shortcuts):
+    available_aliases = set(shortcuts).union(itervalues(shortcuts))
+    if resource_name.lower() not in available_aliases:
+        aliases = ", ".join(sorted(available_aliases))
+        pretty_print(
+            "No resources found for {r}, available resource aliases are "
+            "(case insensitive): {a}".format(r=resource_name, a=aliases),
+            title="Unknown language resources", exits=1)

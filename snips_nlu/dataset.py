@@ -174,10 +174,10 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
         [v for vars in itervalues(variations) for v in vars])
     non_colliding_variations = {
         value: [
-            v for v in vars if
+            v for v in variations if
             v not in all_original_values and variation_counter[v] == 1
         ]
-        for value, vars in iteritems(variations)
+        for value, variations in iteritems(variations)
     }
 
     for entry in entity[DATA]:

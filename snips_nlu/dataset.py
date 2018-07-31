@@ -1,9 +1,10 @@
 from __future__ import division, unicode_literals
 
 import json
-from builtins import str
+from collections import Counter
 from copy import deepcopy
 
+from builtins import str
 from future.utils import iteritems, itervalues
 from snips_nlu_ontology import get_all_languages
 
@@ -97,14 +98,21 @@ def has_any_capitalization(entity_utterances, language):
     return False
 
 
-def add_variation_if_needed(utterances, variation, utterance, language):
-    if not variation:
-        return utterances
-    all_variations = get_string_variations(variation, language)
-    for v in all_variations:
-        if v not in utterances:
-            utterances[v] = utterance
+def add_entity_variations(utterances, entity_variations, entity_value):
+    utterances[entity_value] = entity_value
+    for variation in entity_variations[entity_value]:
+        if variation:
+            utterances[variation] = entity_value
     return utterances
+
+
+def _extract_entity_values(entity):
+    values = set()
+    for ent in entity[DATA]:
+        values.add(ent[VALUE])
+        if entity[USE_SYNONYMS]:
+            values.update(set(ent[SYNONYMS]))
+    return values
 
 
 def validate_and_format_custom_entity(entity, queries_entities, language):
@@ -139,33 +147,59 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
     formatted_entity[CAPITALIZE] = has_any_capitalization(queries_entities,
                                                           language)
 
-    # Normalize
-    validated_data = dict()
+    validated_utterances = dict()
+    # Map original values an synonyms
+    for data in entity[DATA]:
+        ent_value = data[VALUE]
+        if not ent_value:
+            continue
+        validated_utterances[ent_value] = ent_value
+        if use_synonyms:
+            for s in data[SYNONYMS]:
+                if s and s not in validated_utterances:
+                    validated_utterances[s] = ent_value
+
+    # Add variations if not colliding
+    all_original_values = _extract_entity_values(entity)
+    variations = dict()
+    for data in entity[DATA]:
+        ent_value = data[VALUE]
+        values_to_variate = {ent_value}
+        if use_synonyms:
+            values_to_variate.update(set(data[SYNONYMS]))
+        variations[ent_value] = set(
+            v for value in values_to_variate
+            for v in get_string_variations(value, language))
+    variation_counter = Counter(
+        [v for vars in itervalues(variations) for v in vars])
+    non_colliding_variations = {
+        value: [
+            v for v in variations if
+            v not in all_original_values and variation_counter[v] == 1
+        ]
+        for value, variations in iteritems(variations)
+    }
+
     for entry in entity[DATA]:
         entry_value = entry[VALUE]
-        validated_data = add_variation_if_needed(
-            validated_data, entry_value, entry_value, language)
+        validated_utterances = add_entity_variations(
+            validated_utterances, non_colliding_variations, entry_value)
 
-        if use_synonyms:
-            for s in entry[SYNONYMS]:
-                validated_data = add_variation_if_needed(
-                    validated_data, s, entry_value, language)
-
-    formatted_entity[UTTERANCES] = validated_data
-    # Merge queries_entities
-    for value in queries_entities:
-        formatted_entity = add_entity_value_if_missing(
-            value, formatted_entity, language)
-
+    # Merge queries entities
+    queries_entities_variations = {
+        ent: get_string_variations(ent, language) for ent in queries_entities
+    }
+    for original_ent, variations in iteritems(queries_entities_variations):
+        if not original_ent or original_ent in validated_utterances:
+            continue
+        validated_utterances[original_ent] = original_ent
+        for variation in variations:
+            if variation and variation not in validated_utterances:
+                validated_utterances[variation] = original_ent
+    formatted_entity[UTTERANCES] = validated_utterances
     return formatted_entity
 
 
 def validate_and_format_builtin_entity(entity, queries_entities):
     validate_type(entity, dict)
     return {UTTERANCES: set(queries_entities)}
-
-
-def add_entity_value_if_missing(value, entity, language):
-    entity[UTTERANCES] = add_variation_if_needed(entity[UTTERANCES], value,
-                                                 value, language)
-    return entity

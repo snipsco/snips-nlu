@@ -23,8 +23,7 @@ PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
 
 class SnipsTest(TestCase):
 
-    def __init__(self, methodName='runTest'):
-        super(SnipsTest, self).__init__(methodName)
+    def setUp(self):
         for l in get_all_languages():
             load_resources(l)
 
@@ -68,6 +67,7 @@ class FixtureTest(SnipsTest):
 
     # pylint: disable=protected-access
     def setUp(self):
+        super(FixtureTest, self).setUp()
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 

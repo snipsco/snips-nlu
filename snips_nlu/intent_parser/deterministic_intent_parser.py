@@ -10,10 +10,9 @@ from future.utils import iteritems
 
 from snips_nlu.builtin_entities import (get_builtin_entity_parser,
                                         is_builtin_entity)
-from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, DATA, END, ENTITIES,
-                                 ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
-                                 RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START,
-                                 TEXT, UTTERANCES)
+from snips_nlu.constants import (
+    BUILTIN_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS,
+    LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
@@ -22,8 +21,9 @@ from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
     unresolved_slot)
 from snips_nlu.utils import (
-    check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
-    log_elapsed_time, log_result, ranges_overlap, regex_escape)
+    check_persisted_path, deduplicate_overlapping_items, fitted_required,
+    get_slot_name_mappings, json_string, log_elapsed_time, log_result,
+    ranges_overlap, regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -128,8 +128,10 @@ class DeterministicIntentParser(IntentParser):
         if isinstance(intents, str):
             intents = [intents]
 
+        builtin_entities = self.builtin_entity_parser.parse(
+            text, use_cache=True)
         ranges_mapping, processed_text = _replace_builtin_entities(
-            text, self.language, self.builtin_entity_parser)
+            text, self.language, builtin_entities)
 
         # We try to match both the input text and the preprocessed text to
         # cover inconsistencies between labeled data and builtin entity parsing
@@ -373,42 +375,18 @@ def _get_joined_entity_utterances(dataset, language):
     return joined_entity_utterances
 
 
-def _deduplicate_overlapping_slots(slots, language):
-    deduplicated_slots = []
-    for slot in slots:
-        is_overlapping = False
-        for slot_index, dedup_slot in enumerate(deduplicated_slots):
-            if ranges_overlap(slot[RES_MATCH_RANGE],
-                              dedup_slot[RES_MATCH_RANGE]):
-                is_overlapping = True
-                tokens = tokenize(slot[RES_VALUE], language)
-                dedup_tokens = tokenize(dedup_slot[RES_VALUE], language)
-                if len(tokens) > len(dedup_tokens):
-                    deduplicated_slots[slot_index] = slot
-                elif len(tokens) == len(dedup_tokens) \
-                        and len(slot[RES_VALUE]) > len(dedup_slot[RES_VALUE]):
-                    deduplicated_slots[slot_index] = slot
-        if not is_overlapping:
-            deduplicated_slots.append(slot)
-    return deduplicated_slots
-
-
-def _get_entity_name_placeholder(entity_label, language):
-    return "%%%s%%" % "".join(
-        tokenize_light(entity_label, language)).upper()
-
-
-def _replace_builtin_entities(text, language, builtin_entity_parser):
-    builtin_entities = builtin_entity_parser.parse(text, use_cache=True)
+def _replace_builtin_entities(text, language, builtin_entities):
     if not builtin_entities:
         return dict(), text
+
+    builtin_entities = _deduplicate_overlapping_entities(builtin_entities)
+    builtin_entities = sorted(builtin_entities,
+                              key=lambda e: e[RES_MATCH_RANGE][START])
 
     range_mapping = dict()
     processed_text = ""
     offset = 0
     current_ix = 0
-    builtin_entities = sorted(builtin_entities,
-                              key=lambda e: e[RES_MATCH_RANGE][START])
     for ent in builtin_entities:
         ent_start = ent[RES_MATCH_RANGE][START]
         ent_end = ent[RES_MATCH_RANGE][END]
@@ -430,3 +408,41 @@ def _replace_builtin_entities(text, language, builtin_entity_parser):
 
     processed_text += text[current_ix:]
     return range_mapping, processed_text
+
+
+def _deduplicate_overlapping_slots(slots, language):
+    def overlap(lhs_slot, rhs_slot):
+        return ranges_overlap(lhs_slot[RES_MATCH_RANGE],
+                              rhs_slot[RES_MATCH_RANGE])
+
+    def resolve(lhs_slot, rhs_slot):
+        lhs_tokens = tokenize(lhs_slot[RES_VALUE], language)
+        rhs_tokens = tokenize(rhs_slot[RES_VALUE], language)
+        if len(lhs_tokens) > len(rhs_tokens):
+            return lhs_slot
+        elif len(lhs_tokens) == len(rhs_tokens) \
+                and len(lhs_slot[RES_VALUE]) > len(rhs_slot[RES_VALUE]):
+            return lhs_slot
+        else:
+            return rhs_slot
+
+    return deduplicate_overlapping_items(slots, overlap, resolve)
+
+
+def _deduplicate_overlapping_entities(entities):
+    def overlap(lhs_entity, rhs_entity):
+        return ranges_overlap(lhs_entity[RES_MATCH_RANGE],
+                              rhs_entity[RES_MATCH_RANGE])
+
+    def resolve(lhs_entity, rhs_entity):
+        if len(lhs_entity[RES_VALUE]) > len(rhs_entity[RES_VALUE]):
+            return lhs_entity
+        else:
+            return rhs_entity
+
+    return deduplicate_overlapping_items(entities, overlap, resolve)
+
+
+def _get_entity_name_placeholder(entity_label, language):
+    return "%%%s%%" % "".join(
+        tokenize_light(entity_label, language)).upper()

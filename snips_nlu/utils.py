@@ -361,3 +361,16 @@ def get_package_path(name):
     name = name.lower().replace("-", "_")
     pkg = importlib.import_module(name)
     return Path(pkg.__file__).parent
+
+
+def deduplicate_overlapping_items(items, overlap_fn, resolve_fn):
+    deduplicated_item = []
+    for item in items:
+        is_overlapping = False
+        for item_index, dedup_item in enumerate(deduplicated_item):
+            if overlap_fn(item, dedup_item):
+                is_overlapping = True
+                deduplicated_item[item_index] = resolve_fn(item, dedup_item)
+        if not is_overlapping:
+            deduplicated_item.append(item)
+    return deduplicated_item

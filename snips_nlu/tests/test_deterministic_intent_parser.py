@@ -767,9 +767,35 @@ class TestDeterministicIntentParser(FixtureTest):
         text = "Be the first to be there at 9pm"
 
         # When
+        builtin_entities = [
+            {
+                "entity_kind": "snips/ordinal",
+                "value": "the first",
+                "range": {
+                    "start": 3,
+                    "end": 12
+                }
+            },
+            {
+                "entity_kind": "snips/musicAlbum",
+                "value": "first",
+                "range": {
+                    "start": 7,
+                    "end": 12
+                }
+            },
+            {
+                "entity_kind": "snips/datetime",
+                "value": "at 9pm",
+                "range": {
+                    "start": 25,
+                    "end": 31
+                }
+            }
+        ]
         range_mapping, processed_text = _replace_builtin_entities(
             text=text, language=LANGUAGE_EN,
-            builtin_entity_parser=BuiltinEntityParser("en", None))
+            builtin_entities=builtin_entities)
 
         # Then
         expected_mapping = {

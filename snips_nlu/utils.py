@@ -1,15 +1,24 @@
 from __future__ import unicode_literals
 
 import errno
+import importlib
+import json
 import numbers
 import os
-from builtins import object
-from collections import OrderedDict, namedtuple, Mapping
+import shutil
+from builtins import bytes, object, str
+from collections import Mapping, OrderedDict, namedtuple
+from contextlib import contextmanager
+from datetime import datetime
+from pathlib import Path
+from tempfile import mkdtemp
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import numpy as np
+import pkg_resources
 
-from snips_nlu.constants import (INTENTS, UTTERANCES, DATA, SLOT_NAME, ENTITY,
-                                 RESOURCES_PATH, END, START)
+from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
+                                 UTTERANCES)
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -130,10 +139,6 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
     return T
 
 
-def get_resources_path(language):
-    return os.path.join(RESOURCES_PATH, language)
-
-
 def mkdir_p(path):
     """Reproduces the 'mkdir -p shell' command
 
@@ -141,12 +146,26 @@ def mkdir_p(path):
     http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     try:
-        os.makedirs(path)
+        os.makedirs(str(path))
     except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
+        if exc.errno == errno.EEXIST and path.is_dir():
             pass
         else:
             raise
+
+
+@contextmanager
+def temp_dir():
+    tmp_dir = mkdtemp()
+    try:
+        yield Path(tmp_dir)
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def unzip_archive(archive_path, destination_dir):
+    with ZipFile(str(archive_path), "r", ZIP_DEFLATED) as zipf:
+        zipf.extractall(str(destination_dir))
 
 
 # pylint:disable=line-too-long
@@ -223,3 +242,109 @@ def ranges_overlap(lhs_range, rhs_range):
     else:
         raise TypeError("Cannot check overlap on objects of type: %s and %s"
                         % (type(lhs_range), type(rhs_range)))
+
+
+def elapsed_since(time):
+    return datetime.now() - time
+
+
+class DifferedLoggingMessage(object):
+
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return str(self.fn(*self.args, **self.kwargs))
+
+
+def json_debug_string(dict_data):
+    return json.dumps(dict_data, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def json_string(json_object, indent=2, sort_keys=True):
+    json_dump = json.dumps(json_object, indent=indent, sort_keys=sort_keys)
+    return bytes(json_dump, encoding="utf8").decode("utf8")
+
+
+def log_elapsed_time(logger, level, output_msg=None):
+    if output_msg is None:
+        output_msg = "Elapsed time ->:\n{elapsed_time}"
+
+    def get_wrapper(fn):
+        def wrapped(*args, **kwargs):
+            start = datetime.now()
+            msg_fmt = dict()
+            res = fn(*args, **kwargs)
+            if "elapsed_time" in output_msg:
+                msg_fmt["elapsed_time"] = datetime.now() - start
+            logger.log(level, output_msg.format(**msg_fmt))
+            return res
+
+        return wrapped
+
+    return get_wrapper
+
+
+def log_result(logger, level, output_msg=None):
+    if output_msg is None:
+        output_msg = "Result ->:\n{result}"
+
+    def get_wrapper(fn):
+        def wrapped(*args, **kwargs):
+            msg_fmt = dict()
+            res = fn(*args, **kwargs)
+            if "result" in output_msg:
+                try:
+                    res_debug_string = json_debug_string(res)
+                except TypeError:
+                    res_debug_string = str(res)
+                msg_fmt["result"] = res_debug_string
+            logger.log(level, output_msg.format(**msg_fmt))
+            return res
+
+        return wrapped
+
+    return get_wrapper
+
+
+def check_persisted_path(func):
+    def func_wrapper(self, path, *args, **kwargs):
+        if Path(path).exists():
+            raise OSError("Persisting directory %s already exists" % path)
+        return func(self, path, *args, **kwargs)
+
+    return func_wrapper
+
+
+def is_package(name):
+    """Check if name maps to a package installed via pip.
+
+    Args:
+        name (str): Name of package
+
+    Returns:
+        bool: True if an installed packaged corresponds to this name, False
+            otherwise.
+    """
+    name = name.lower().replace("-", "_")
+    packages = pkg_resources.working_set.by_key.keys()
+    for package in packages:
+        if package.lower().replace("-", "_") == name:
+            return True
+    return False
+
+
+def get_package_path(name):
+    """Get the path to an installed package.
+
+    Args:
+        name (str): Package name
+
+    Returns:
+        class:`.Path`: Path to the installed package
+    """
+    name = name.lower().replace("-", "_")
+    pkg = importlib.import_module(name)
+    return Path(pkg.__file__).parent

@@ -1,13 +1,21 @@
 # coding=utf-8
-import unittest
+from __future__ import unicode_literals
 
+import unittest
+from copy import deepcopy
+
+from snips_nlu_ontology import get_all_languages
+
+from snips_nlu import SnipsNLUEngine
+from snips_nlu.constants import LANGUAGE, RES_INTENT, RES_INTENT_NAME
+from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.pipeline.configs import (
-    CRFSlotFillerConfig, SlotFillerDataAugmentationConfig,
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
-    FeaturizerConfig, NLUEngineConfig, ProbabilisticIntentParserConfig,
-    DeterministicIntentParserConfig)
-from snips_nlu.tests.utils import SnipsTest
+    CRFSlotFillerConfig, DeterministicIntentParserConfig, FeaturizerConfig,
+    IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig,
+    NLUEngineConfig, ProbabilisticIntentParserConfig,
+    SlotFillerDataAugmentationConfig)
+from snips_nlu.tests.utils import SnipsTest, WEATHER_DATASET
 
 
 class TestConfig(SnipsTest):
@@ -16,6 +24,7 @@ class TestConfig(SnipsTest):
         config_dict = {
             "min_utterances": 3,
             "noise_factor": 2,
+            "add_builtin_entities_examples": False,
             "unknown_word_prob": 0.1,
             "unknown_words_replacement_string": "foobar",
         }
@@ -31,7 +40,8 @@ class TestConfig(SnipsTest):
         # Given
         config_dict = {
             "min_utterances": 42,
-            "capitalization_ratio": 0.66
+            "capitalization_ratio": 0.66,
+            "add_builtin_entities_examples": False
         }
 
         # When
@@ -45,6 +55,8 @@ class TestConfig(SnipsTest):
         # Given
         config_dict = {
             "sublinear_tf": True,
+            "pvalue_threshold": 0.4,
+            "word_clusters_name": None
         }
 
         # When
@@ -98,7 +110,6 @@ class TestConfig(SnipsTest):
                 "c2": .3,
                 "algorithm": "lbfgs"
             },
-            "exhaustive_permutations_threshold": 42,
             "data_augmentation_config":
                 SlotFillerDataAugmentationConfig().to_dict(),
             "random_seed": 43
@@ -132,7 +143,7 @@ class TestConfig(SnipsTest):
         config_dict = {
             "unit_name": "deterministic_intent_parser",
             "max_queries": 666,
-            "max_entities": 333
+            "max_pattern_length": 333
         }
 
         # When
@@ -158,6 +169,24 @@ class TestConfig(SnipsTest):
 
         # Then
         self.assertDictEqual(config_dict, serialized_config)
+
+    def test_default_configs_should_work(self):
+        # Given
+        dataset = deepcopy(WEATHER_DATASET)
+
+        for language in get_all_languages():
+            # When
+            config = DEFAULT_CONFIGS.get(language)
+            self.assertIsNotNone(config, "Missing default config for '%s'"
+                                 % language)
+            dataset[LANGUAGE] = language
+            engine = SnipsNLUEngine(config).fit(dataset)
+            result = engine.parse("Please give me the weather in Paris")
+
+            # Then
+            self.assertIsNotNone(result[RES_INTENT])
+            intent_name = result[RES_INTENT][RES_INTENT_NAME]
+            self.assertEqual("SearchWeatherForecast", intent_name)
 
 
 if __name__ == '__main__':

@@ -2,24 +2,26 @@
 from __future__ import unicode_literals, print_function
 
 import argparse
-import io
 import json
-import os
 from builtins import input, bytes
+from pathlib import Path
 
-from snips_nlu import SnipsNLUEngine
+from snips_nlu import SnipsNLUEngine, load_resources
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
 
 def debug_training(dataset_path, config_path=None):
+    with Path(dataset_path).open("r", encoding="utf8") as f:
+        dataset = json.load(f)
+
+    load_resources(dataset["language"])
+
     if config_path is None:
         config = NLUEngineConfig()
     else:
-        with io.open(config_path, "r", encoding="utf8") as f:
+        with Path(config_path).open("r", encoding="utf8") as f:
             config = NLUEngineConfig.from_dict(json.load(f))
 
-    with io.open(os.path.abspath(dataset_path), "r", encoding="utf8") as f:
-        dataset = json.load(f)
     engine = SnipsNLUEngine(config).fit(dataset)
 
     while True:
@@ -32,9 +34,7 @@ def debug_training(dataset_path, config_path=None):
 
 
 def debug_inference(engine_path):
-    with io.open(os.path.abspath(engine_path), "r", encoding="utf8") as f:
-        engine_dict = json.load(f)
-    engine = SnipsNLUEngine.from_dict(engine_dict)
+    engine = SnipsNLUEngine.from_path(engine_path)
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()
@@ -47,13 +47,12 @@ def debug_inference(engine_path):
 
 def main_debug():
     parser = argparse.ArgumentParser(description="Debug snippets")
-    parser.add_argument("mode", type=bytes,
-                        choices=["training", "inference"],
+    parser.add_argument("mode", choices=["training", "inference"],
                         help="'training' to debug training and 'inference to "
                              "debug inference'")
-    parser.add_argument("path", type=bytes,
+    parser.add_argument("path",
                         help="Path to the dataset or trained assistant")
-    parser.add_argument("--config-path", type=bytes,
+    parser.add_argument("--config-path",
                         help="Path to the assistant configuration")
     args = vars(parser.parse_args())
     mode = args.pop("mode")

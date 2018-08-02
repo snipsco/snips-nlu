@@ -6,60 +6,56 @@ from setuptools import setup, find_packages
 packages = [p for p in find_packages()
             if "tests" not in p and "debug" not in p]
 
-PACKAGE_NAME = "snips_nlu"
-ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-README = os.path.join(ROOT_PATH, "README.rst")
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
-VERSION = "__version__"
+root = os.path.abspath(os.path.dirname(__file__))
 
-with io.open(os.path.join(PACKAGE_PATH, VERSION)) as f:
-    version = f.readline().strip()
+with io.open(os.path.join(root, "snips_nlu", "__about__.py"),
+             encoding="utf8") as f:
+    about = dict()
+    exec(f.read(), about)
 
-nlu_metrics_version = "0.11.1"
+with io.open(os.path.join(root, "README.rst"), encoding="utf8") as f:
+    readme = f.read()
 
 required = [
-    "enum34==1.1.6",
+    "enum34>=1.1,<2.0",
     "numpy==1.14.0",
-    "scipy==1.0.0",
-    "scikit-learn==0.19.1",
-    "sklearn-crfsuite==0.3.6",
-    "semantic_version==2.6.0",
-    "snips_nlu_utils==0.6.0",
-    "snips_nlu_ontology==0.53.2",
-    "num2words==0.5.6"
+    "scipy>=1.0,<2.0",
+    "scikit-learn>=0.19,<0.20",
+    "sklearn-crfsuite>=0.3.6,<0.4",
+    "semantic_version>=2.6,<3.0",
+    "snips_nlu_utils>=0.6.1,<0.7",
+    "snips_nlu_ontology==0.57.2",
+    "num2words>=0.5.6,<0.6",
+    "plac>=0.9.6,<1.0",
+    "requests>=2.0,<3.0",
+    "pathlib==1.0.1; python_version < '3.4'",
 ]
 
 extras_require = {
     "doc": [
-        "sphinx==1.7.1",
-        "sphinxcontrib-napoleon==0.6.1",
-        "sphinx-rtd-theme==0.2.4"
+        "sphinx>=1.7,<2.0",
+        "sphinxcontrib-napoleon>=0.6.1,<0.7",
+        "sphinx-rtd-theme>=0.2.4,<0.3"
     ],
     "metrics": [
-        "snips_nlu_metrics==%s" % nlu_metrics_version,
+        "snips_nlu_metrics>=0.13,<0.14",
     ],
     "test": [
-        "mock==2.0.0",
-        "snips_nlu_metrics==%s" % nlu_metrics_version,
-        "pylint==1.8.2",
-        "coverage==4.4.2"
-    ],
-    # "integration_test": [
-    #     "snips_nlu_metrics==%s" % nlu_metrics_version,
-    #     "snips_nlu_rust==0.53.0",
-    # ]
+        "mock>=2.0,<3.0",
+        "snips_nlu_metrics>=0.13,<0.14",
+        "pylint>=1.8,<2.0",
+        "coverage>=4.4.2,<5.0"
+    ]
 }
 
-with io.open(README, encoding="utf8") as f:
-    readme = f.read()
-
-setup(name=PACKAGE_NAME,
-      description="Snips Natural Language Understanding library",
+setup(name=about["__title__"],
+      description=about["__summary__"],
       long_description=readme,
-      version=version,
-      author="Clement Doumouro, Adrien Ball",
-      author_email="clement.doumouro@snips.ai, adrien.ball@snips.ai",
-      license="Apache 2.0",
+      version=about["__version__"],
+      author=about["__author__"],
+      author_email=about["__email__"],
+      license=about["__license__"],
+      url=about["__uri__"],
       install_requires=required,
       extras_require=extras_require,
       classifiers=[
@@ -74,11 +70,7 @@ setup(name=PACKAGE_NAME,
       include_package_data=True,
       entry_points={
           "console_scripts": [
-              "train-engine=cli.cli:main_train_engine",
-              "engine-inference=cli.cli:main_engine_inference",
-              "cross-val-metrics=cli.cli:main_cross_val_metrics",
-              "train-test-metrics=cli.cli:main_train_test_metrics",
-              "generate-dataset=snips_nlu_dataset:main_generate_dataset"
+              "snips-nlu=snips_nlu.__main__:main"
           ]
       },
       zip_safe=False)

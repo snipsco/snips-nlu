@@ -1,31 +1,31 @@
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 import json
-from builtins import str
+from collections import Counter
 from copy import deepcopy
 
-from future.utils import itervalues, iteritems
+from builtins import str
+from future.utils import iteritems, itervalues
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (TEXT, USE_SYNONYMS, SYNONYMS, DATA, INTENTS,
-                                 ENTITIES, ENTITY, SLOT_NAME, UTTERANCES,
-                                 LANGUAGE, VALUE, AUTOMATICALLY_EXTENSIBLE,
-                                 CAPITALIZE, VALIDATED)
+from snips_nlu.constants import (
+    AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
+    LANGUAGE, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS, UTTERANCES, VALIDATED,
+    VALUE)
+from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.tokenization import tokenize_light
-from snips_nlu.utils import validate_type, validate_key, validate_keys
+from snips_nlu.utils import validate_key, validate_keys, validate_type
 
 
 def extract_queries_entities(dataset):
-    entities_values = {ent_name: [] for ent_name in dataset[ENTITIES]}
+    entities_values = {ent_name: set() for ent_name in dataset[ENTITIES]}
 
     for intent in itervalues(dataset[INTENTS]):
         for query in intent[UTTERANCES]:
             for chunk in query[DATA]:
-                if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]):
-                    entities_values[chunk[ENTITY]].append(chunk[TEXT])
+                if ENTITY in chunk:
+                    entities_values[chunk[ENTITY]].add(chunk[TEXT].strip())
     return {k: list(v) for k, v in iteritems(entities_values)}
 
 
@@ -53,12 +53,13 @@ def validate_and_format_dataset(dataset):
     queries_entities_values = extract_queries_entities(dataset)
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
+        queries_entities = queries_entities_values[entity_name]
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
-                validate_and_format_builtin_entity(entity)
+                validate_and_format_builtin_entity(entity, queries_entities)
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
-                entity, queries_entities_values[entity_name], language)
+                entity, queries_entities, language)
     dataset[VALIDATED] = True
     return dataset
 
@@ -86,7 +87,7 @@ def validate_and_format_intent(intent, entities):
 
 
 def get_text_from_chunks(chunks):
-    return ''.join(chunk[TEXT] for chunk in chunks)
+    return "".join(chunk[TEXT] for chunk in chunks)
 
 
 def has_any_capitalization(entity_utterances, language):
@@ -97,14 +98,21 @@ def has_any_capitalization(entity_utterances, language):
     return False
 
 
-def add_variation_if_needed(utterances, variation, utterance, language):
-    if not variation:
-        return utterances
-    all_variations = get_string_variations(variation, language)
-    for v in all_variations:
-        if v not in utterances:
-            utterances[v] = utterance
+def add_entity_variations(utterances, entity_variations, entity_value):
+    utterances[entity_value] = entity_value
+    for variation in entity_variations[entity_value]:
+        if variation:
+            utterances[variation] = entity_value
     return utterances
+
+
+def _extract_entity_values(entity):
+    values = set()
+    for ent in entity[DATA]:
+        values.add(ent[VALUE])
+        if entity[USE_SYNONYMS]:
+            values.update(set(ent[SYNONYMS]))
+    return values
 
 
 def validate_and_format_custom_entity(entity, queries_entities, language):
@@ -139,33 +147,59 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
     formatted_entity[CAPITALIZE] = has_any_capitalization(queries_entities,
                                                           language)
 
-    # Normalize
-    validated_data = dict()
+    validated_utterances = dict()
+    # Map original values an synonyms
+    for data in entity[DATA]:
+        ent_value = data[VALUE]
+        if not ent_value:
+            continue
+        validated_utterances[ent_value] = ent_value
+        if use_synonyms:
+            for s in data[SYNONYMS]:
+                if s and s not in validated_utterances:
+                    validated_utterances[s] = ent_value
+
+    # Add variations if not colliding
+    all_original_values = _extract_entity_values(entity)
+    variations = dict()
+    for data in entity[DATA]:
+        ent_value = data[VALUE]
+        values_to_variate = {ent_value}
+        if use_synonyms:
+            values_to_variate.update(set(data[SYNONYMS]))
+        variations[ent_value] = set(
+            v for value in values_to_variate
+            for v in get_string_variations(value, language))
+    variation_counter = Counter(
+        [v for vars in itervalues(variations) for v in vars])
+    non_colliding_variations = {
+        value: [
+            v for v in variations if
+            v not in all_original_values and variation_counter[v] == 1
+        ]
+        for value, variations in iteritems(variations)
+    }
+
     for entry in entity[DATA]:
         entry_value = entry[VALUE]
-        validated_data = add_variation_if_needed(
-            validated_data, entry_value, entry_value, language)
+        validated_utterances = add_entity_variations(
+            validated_utterances, non_colliding_variations, entry_value)
 
-        if use_synonyms:
-            for s in entry[SYNONYMS]:
-                validated_data = add_variation_if_needed(
-                    validated_data, s, entry_value, language)
-
-    formatted_entity[UTTERANCES] = validated_data
-    # Merge queries_entities
-    for value in queries_entities:
-        formatted_entity = add_entity_value_if_missing(
-            value, formatted_entity, language)
-
+    # Merge queries entities
+    queries_entities_variations = {
+        ent: get_string_variations(ent, language) for ent in queries_entities
+    }
+    for original_ent, variations in iteritems(queries_entities_variations):
+        if not original_ent or original_ent in validated_utterances:
+            continue
+        validated_utterances[original_ent] = original_ent
+        for variation in variations:
+            if variation and variation not in validated_utterances:
+                validated_utterances[variation] = original_ent
+    formatted_entity[UTTERANCES] = validated_utterances
     return formatted_entity
 
 
-def validate_and_format_builtin_entity(entity):
+def validate_and_format_builtin_entity(entity, queries_entities):
     validate_type(entity, dict)
-    return entity
-
-
-def add_entity_value_if_missing(value, entity, language):
-    entity[UTTERANCES] = add_variation_if_needed(entity[UTTERANCES], value,
-                                                 value, language)
-    return entity
+    return {UTTERANCES: set(queries_entities)}

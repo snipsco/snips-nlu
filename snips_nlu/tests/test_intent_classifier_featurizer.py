@@ -2,34 +2,38 @@
 from __future__ import unicode_literals
 
 import json
-from builtins import bytes
 
+import numpy as np
+from future.builtins import bytes
 from future.utils import iteritems
 from mock import patch, mock
 
-from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.constants import LANGUAGE_EN, DATA, TEXT, ENTITY, SLOT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
+from snips_nlu.intent_classifier.log_reg_classifier_utils import \
+    text_to_utterance
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
+from snips_nlu.utils import json_string
 
 
 class TestIntentClassifierFeaturizer(SnipsTest):
-    @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_should_be_serializable(self):
         # Given
         language = LANGUAGE_EN
         tfidf_vectorizer = _get_tfidf_vectorizer(language)
 
         pvalue_threshold = 0.42
-        featurizer = Featurizer(language,
-                                None,
-                                tfidf_vectorizer=tfidf_vectorizer,
-                                pvalue_threshold=pvalue_threshold)
+        featurizer = Featurizer(
+            language,
+            config=FeaturizerConfig(pvalue_threshold=pvalue_threshold,
+                                    word_clusters_name="brown_clusters"),
+            unknown_words_replacement_string=None,
+            tfidf_vectorizer=tfidf_vectorizer)
         dataset = {
             "entities": {
                 "entity2": {
@@ -49,16 +53,17 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         }
         dataset = validate_and_format_dataset(dataset)
 
-        queries = [
+        utterances = [
             "hello world",
             "beautiful world",
             "hello here",
             "bird birdy",
             "beautiful bird"
         ]
-        classes = [0, 0, 0, 1, 1]
+        utterances = [text_to_utterance(u) for u in utterances]
+        classes = np.array([0, 0, 0, 1, 1])
 
-        featurizer.fit(dataset, queries, classes)
+        featurizer.fit(dataset, utterances, classes)
 
         # When
         serialized_featurizer = featurizer.to_dict()
@@ -66,8 +71,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         # Then
         msg = "Featurizer dict should be json serializable to utf8."
         with self.fail_if_exception(msg):
-            dumped = bytes(json.dumps(serialized_featurizer),
-                           encoding="utf8").decode("utf8")
+            dumped = json_string(serialized_featurizer)
 
         msg = "SnipsNLUEngine should be deserializable from dict with unicode" \
               " values"
@@ -85,19 +89,20 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         }
 
         expected_serialized = {
-            "config": {'sublinear_tf': False},
+            "config": {
+                'sublinear_tf': False,
+                'pvalue_threshold': pvalue_threshold,
+                'word_clusters_name': "brown_clusters"
+            },
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
-            "pvalue_threshold": pvalue_threshold,
             "entity_utterances_to_feature_names":
                 entity_utterances_to_feature_names,
             "unknown_words_replacement_string": None
         }
         self.assertDictEqual(expected_serialized, serialized_featurizer)
 
-    @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
     def test_should_be_deserializable(self):
         # Given
         language = LANGUAGE_EN
@@ -105,17 +110,21 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         vocabulary = {"hello": 0, "beautiful": 1, "world": 2}
 
         best_features = [0, 1]
-        pvalue_threshold = 0.4
+        config = {
+            "pvalue_threshold": 0.4,
+            "sublinear_tf": False,
+            "word_clusters_name": "brown_clusters"
+        }
+
         entity_utterances_to_feature_names = {
             "entity_1": ["entityfeatureentity_1"]
         }
 
         featurizer_dict = {
-            "config": FeaturizerConfig().to_dict(),
+            "config": config,
             "language_code": language,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
-            "pvalue_threshold": pvalue_threshold,
             "entity_utterances_to_feature_names":
                 entity_utterances_to_feature_names,
             "unknown_words_replacement_string": None
@@ -134,7 +143,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         self.assertDictEqual(featurizer.tfidf_vectorizer.vocabulary_,
                              vocabulary)
         self.assertListEqual(featurizer.best_features, best_features)
-        self.assertEqual(featurizer.pvalue_threshold, pvalue_threshold)
+        self.assertEqual(config, featurizer.config.to_dict())
 
         self.assertDictEqual(
             featurizer.entity_utterances_to_feature_names,
@@ -212,11 +221,9 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         self.assertDictEqual(
             utterance_to_feature_names, expected_utterance_to_entity_names)
 
-    @patch("snips_nlu.intent_classifier.featurizer.get_word_clusters")
+    @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
     @patch("snips_nlu.intent_classifier.featurizer.stem")
-    @patch("snips_nlu.intent_classifier.featurizer."
-           "CLUSTER_USED_PER_LANGUAGES", {LANGUAGE_EN: "brown_clusters"})
-    def test_preprocess_queries(self, mocked_stem, mocked_word_cluster):
+    def test_preprocess_utterances(self, mocked_stem, mocked_word_cluster):
         # Given
         language = LANGUAGE_EN
 
@@ -236,11 +243,9 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 [_stem(t) for t in tokenize_light(text, language)])
 
         mocked_word_cluster.return_value = {
-            "brown_clusters": {
-                "beautiful": "cluster_1",
-                "birdy": "cluster_2",
-                "entity": "cluster_3"
-            }
+            "beautiful": "cluster_1",
+            "birdy": "cluster_2",
+            "entity": "cluster_3"
         }
 
         mocked_stem.side_effect = stem_function
@@ -279,7 +284,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False
-                }
+                },
+                "snips/number": {}
             },
             "language": "en",
             "snips_nlu_version": "0.0.1"
@@ -287,31 +293,53 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         dataset = validate_and_format_dataset(dataset)
 
-        queries = [
-            "hÉllo wOrld Éntity_2",
-            "beauTiful World entity 1",
-            "Bird bïrdy",
-            "beauTiful éntity 1 bIrd Éntity_2"
+        utterances = [
+            text_to_utterance("hÉllo wOrld Éntity_2"),
+            text_to_utterance("beauTiful World entity 1"),
+            text_to_utterance("Bird bïrdy"),
         ]
-        labels = [0, 0, 1, 1]
 
-        featurizer = Featurizer(language, None).fit(
-            dataset, queries, labels)
+        labeled_utterance = {
+            DATA: [
+                {
+                    TEXT: "beauTiful éntity "
+                },
+                {
+                    TEXT: "1",
+                    ENTITY: "snips/number",
+                    SLOT_NAME: "number"
+                },
+                {
+                    TEXT: " bIrd Éntity_2"
+                }
+            ]
+        }
+        utterances.append(labeled_utterance)
+        labels = np.array([0, 0, 1, 1])
+
+        featurizer = Featurizer(
+            language,
+            None,
+            config=FeaturizerConfig(word_clusters_name="brown_clusters")
+        ).fit(dataset, utterances, labels)
 
         # When
-        queries = featurizer.preprocess_queries(queries)
+        utterances = featurizer.preprocess_utterances(utterances)
 
         # Then
-        expected_queries = [
-            "hello world entity_2 entityfeatureentity_2",
-            "beauty world ent 1 entityfeatureentity_1 entityfeatureentity_2 "
+        expected_utterances = [
+            "hello world entity_2 builtinentityfeaturesnipsnumber "
+            "entityfeatureentity_2",
+            "beauty world ent 1 builtinentityfeaturesnipsnumber "
+            "entityfeatureentity_1 entityfeatureentity_2 "
             "cluster_1 cluster_3",
             "bird bird",
-            "beauty ent 1 bird entity_2 entityfeatureentity_1 "
+            "beauty ent bird entity_2 builtinentityfeaturesnipsnumber "
+            "builtinentityfeaturesnipsnumber entityfeatureentity_1 "
             "entityfeatureentity_2 entityfeatureentity_2 cluster_1"
         ]
 
-        self.assertListEqual(queries, expected_queries)
+        self.assertListEqual(utterances, expected_utterances)
 
     def test_featurizer_should_exclude_replacement_string(self):
         # Given
@@ -330,11 +358,11 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         featurizer = Featurizer(
             language, unknown_words_replacement_string=replacement_string,
             config=FeaturizerConfig())
-        queries = ["hello dude"]
-        y = [1]
+        utterances = [text_to_utterance("hello dude")]
+        y = np.array([1])
 
         # When
-        featurizer.fit(dataset, queries, y)
+        featurizer.fit(dataset, utterances, y)
 
         # Then
         self.assertNotIn(replacement_string,
@@ -344,6 +372,5 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         # Given
         language = LANGUAGE_EN
         featurizer = Featurizer(language, None)
-        # When
+        # When/Then
         featurizer.to_dict()
-        # Then

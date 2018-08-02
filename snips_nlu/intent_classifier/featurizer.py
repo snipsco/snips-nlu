@@ -1,53 +1,49 @@
-from __future__ import division
-from __future__ import unicode_literals
-
-from collections import defaultdict
-
-
+from __future__ import division, unicode_literals
 
 from builtins import object, range
-from future.utils import iteritems
+from collections import defaultdict
+
 import numpy as np
 import scipy.sparse as sp
+from future.utils import iteritems
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
-from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import ENTITIES, UTTERANCES
-from snips_nlu.constants import NGRAM
+from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
+from snips_nlu.constants import (
+    DATA, ENTITIES, ENTITY, ENTITY_KIND, NGRAM, TEXT, UTTERANCES)
+from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
-from snips_nlu.preprocessing import stem
-from snips_nlu.resources import (get_stop_words, get_word_clusters,
-                                 UnknownResource)
+from snips_nlu.preprocessing import stem, tokenize_light
+from snips_nlu.resources import (
+    MissingResource, get_stop_words, get_word_cluster)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
-from snips_nlu.tokenization import tokenize_light
-
-CLUSTER_USED_PER_LANGUAGES = {}
 
 
 class Featurizer(object):
     def __init__(self, language, unknown_words_replacement_string,
-                 config=FeaturizerConfig(),
-                 tfidf_vectorizer=None, best_features=None,
-                 entity_utterances_to_feature_names=None,
-                 pvalue_threshold=0.4):
+                 config=FeaturizerConfig(), tfidf_vectorizer=None,
+                 best_features=None, entity_utterances_to_feature_names=None):
         self.config = config
         self.language = language
         if tfidf_vectorizer is None:
             tfidf_vectorizer = _get_tfidf_vectorizer(
-                self.language, self.config.to_dict())
+                self.language, sublinear_tf=self.config.sublinear_tf)
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
-        self.pvalue_threshold = pvalue_threshold
         self.entity_utterances_to_feature_names = \
             entity_utterances_to_feature_names
 
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
 
-    def fit(self, dataset, queries, y):
+    def fit(self, dataset, utterances, classes):
+        utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
+        if not any(tokenize_light(q, self.language) for q in utterances_texts):
+            return None
+
         utterances_to_features = _get_utterances_to_features_names(
             dataset, self.language)
         normalized_utterances_to_features = defaultdict(set)
@@ -62,40 +58,42 @@ class Featurizer(object):
         self.entity_utterances_to_feature_names = dict(
             normalized_utterances_to_features)
 
-        if all(not "".join(tokenize_light(q, self.language)) for q in queries):
-            return None
-        preprocessed_queries = self.preprocess_queries(queries)
+        preprocessed_utterances = self.preprocess_utterances(utterances)
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
-            preprocessed_queries)
+            preprocessed_utterances)
         # pylint: enable=C0103
-        list_index_words = {self.tfidf_vectorizer.vocabulary_[x]: x for x in
-                            self.tfidf_vectorizer.vocabulary_}
+        features_idx = {self.tfidf_vectorizer.vocabulary_[word]: word for word
+                        in self.tfidf_vectorizer.vocabulary_}
 
         stop_words = get_stop_words(self.language)
 
-        _, pval = chi2(X_train_tfidf, y)
+        _, pval = chi2(X_train_tfidf, classes)
         self.best_features = [i for i, v in enumerate(pval) if
-                              v < self.pvalue_threshold]
+                              v < self.config.pvalue_threshold]
         if not self.best_features:
             self.best_features = [idx for idx, val in enumerate(pval) if
                                   val == pval.min()]
 
         feature_names = {}
-        for i in self.best_features:
-            feature_names[i] = {'word': list_index_words[i], 'pval': pval[i]}
+        for utterance_index in self.best_features:
+            feature_names[utterance_index] = {
+                "word": features_idx[utterance_index],
+                "pval": pval[utterance_index]}
 
         for feat in feature_names:
-            if feature_names[feat]['word'] in stop_words:
-                if feature_names[feat]['pval'] > self.pvalue_threshold / 2.0:
+            if feature_names[feat]["word"] in stop_words:
+                if feature_names[feat]["pval"] > \
+                        self.config.pvalue_threshold / 2.0:
                     self.best_features.remove(feat)
 
         return self
 
-    def transform(self, queries):
-        preprocessed_queries = self.preprocess_queries(queries)
+    def transform(self, utterances):
+        preprocessed_utterances = self.preprocess_utterances(utterances)
         # pylint: disable=C0103
-        X_train_tfidf = self.tfidf_vectorizer.transform(preprocessed_queries)
+        X_train_tfidf = self.tfidf_vectorizer.transform(
+            preprocessed_utterances)
         X = X_train_tfidf[:, self.best_features]
         # pylint: enable=C0103
         return X
@@ -103,13 +101,13 @@ class Featurizer(object):
     def fit_transform(self, dataset, queries, y):
         return self.fit(dataset, queries, y).transform(queries)
 
-    def preprocess_queries(self, queries):
-        preprocessed_queries = []
-        for q in queries:
-            processed_query = _preprocess_query(
-                q, self.language, self.entity_utterances_to_feature_names)
-            preprocessed_queries.append(processed_query)
-        return preprocessed_queries
+    def preprocess_utterances(self, utterances):
+        return [
+            _preprocess_utterance(
+                u, self.language, self.entity_utterances_to_feature_names,
+                self.config.word_clusters_name)
+            for u in utterances
+        ]
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -137,7 +135,6 @@ class Featurizer(object):
             'language_code': self.language,
             'tfidf_vectorizer': tfidf_vectorizer,
             'best_features': self.best_features,
-            'pvalue_threshold': self.pvalue_threshold,
             'entity_utterances_to_feature_names':
                 entity_utterances_to_entity_names,
             'config': self.config.to_dict(),
@@ -154,7 +151,7 @@ class Featurizer(object):
         language = obj_dict['language_code']
         config = FeaturizerConfig.from_dict(obj_dict["config"])
         tfidf_vectorizer = _deserialize_tfidf_vectorizer(
-            obj_dict["tfidf_vectorizer"], language, config)
+            obj_dict["tfidf_vectorizer"], language, config.sublinear_tf)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
             iteritems(obj_dict['entity_utterances_to_feature_names'])
@@ -162,7 +159,6 @@ class Featurizer(object):
         self = cls(
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
-            pvalue_threshold=obj_dict['pvalue_threshold'],
             entity_utterances_to_feature_names=
             entity_utterances_to_entity_names,
             best_features=obj_dict['best_features'],
@@ -173,15 +169,13 @@ class Featurizer(object):
         return self
 
 
-def _get_tfidf_vectorizer(language, extra_args=None):
-    if extra_args is None:
-        extra_args = dict()
+def _get_tfidf_vectorizer(language, sublinear_tf=False):
     return TfidfVectorizer(tokenizer=lambda x: tokenize_light(x, language),
-                           **extra_args)
+                           sublinear_tf=sublinear_tf)
 
 
 def _get_tokens_clusters(tokens, language, cluster_name):
-    clusters = get_word_clusters(language)[cluster_name]
+    clusters = get_word_cluster(language, cluster_name)
     return [clusters[t] for t in tokens if t in clusters]
 
 
@@ -190,23 +184,27 @@ def _entity_name_to_feature(entity_name, language):
         entity_name, language=language))
 
 
+def _builtin_entity_to_feature(builtin_entity_label, language):
+    return "builtinentityfeature%s" % "".join(tokenize_light(
+        builtin_entity_label, language=language))
+
+
 def _normalize_stem(text, language):
     normalized_stemmed = normalize(text)
     try:
         normalized_stemmed = stem(normalized_stemmed, language)
-    except UnknownResource:
+    except MissingResource:
         pass
     return normalized_stemmed
 
 
-def _get_word_cluster_features(query_tokens, language):
-    cluster_name = CLUSTER_USED_PER_LANGUAGES.get(language, False)
-    if not cluster_name:
+def _get_word_cluster_features(query_tokens, clusters_name, language):
+    if not clusters_name:
         return []
     ngrams = get_all_ngrams(query_tokens)
     cluster_features = []
     for ngram in ngrams:
-        cluster = get_word_clusters(language)[cluster_name].get(
+        cluster = get_word_cluster(language, clusters_name).get(
             ngram[NGRAM].lower(), None)
         if cluster is not None:
             cluster_features.append(cluster)
@@ -223,19 +221,41 @@ def _get_dataset_entities_features(normalized_stemmed_tokens,
     return entity_features
 
 
-def _preprocess_query(query, language, entity_utterances_to_features_names):
-    query_tokens = tokenize_light(query, language)
-    word_clusters_features = _get_word_cluster_features(query_tokens, language)
+def _preprocess_utterance(utterance, language,
+                          entity_utterances_to_features_names,
+                          word_clusters_name):
+    utterance_text = get_text_from_chunks(utterance[DATA])
+    utterance_tokens = tokenize_light(utterance_text, language)
+    word_clusters_features = _get_word_cluster_features(
+        utterance_tokens, word_clusters_name, language)
     normalized_stemmed_tokens = [_normalize_stem(t, language)
-                                 for t in query_tokens]
+                                 for t in utterance_tokens]
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
-    features = get_default_sep(language).join(normalized_stemmed_tokens)
+    builtin_entities = get_builtin_entities(utterance_text, language,
+                                            use_cache=True)
+    builtin_entities_features = [
+        _builtin_entity_to_feature(ent[ENTITY_KIND], language)
+        for ent in builtin_entities
+    ]
+
+    # We remove values of builtin slots from the utterance to avoid learning
+    # specific samples such as '42' or 'tomorrow'
+    filtered_normalized_stemmed_tokens = [
+        _normalize_stem(chunk[TEXT], language) for chunk in utterance[DATA]
+        if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])
+    ]
+
+    features = get_default_sep(language).join(
+        filtered_normalized_stemmed_tokens)
+    if builtin_entities_features:
+        features += " " + " ".join(sorted(builtin_entities_features))
     if entities_features:
         features += " " + " ".join(sorted(entities_features))
     if word_clusters_features:
         features += " " + " ".join(sorted(word_clusters_features))
+
     return features
 
 
@@ -250,10 +270,8 @@ def _get_utterances_to_features_names(dataset, language):
     return dict(utterances_to_features)
 
 
-def _deserialize_tfidf_vectorizer(vectorizer_dict, language,
-                                  featurizer_config):
-    tfidf_vectorizer = _get_tfidf_vectorizer(language,
-                                             featurizer_config.to_dict())
+def _deserialize_tfidf_vectorizer(vectorizer_dict, language, sublinear_tf):
+    tfidf_vectorizer = _get_tfidf_vectorizer(language, sublinear_tf)
     tfidf_transformer = TfidfTransformer()
     vocab = vectorizer_dict["vocab"]
     if vocab is not None:  # If the vectorizer has been fitted

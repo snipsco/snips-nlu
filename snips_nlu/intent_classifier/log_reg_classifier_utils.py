@@ -1,9 +1,8 @@
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 import itertools
 import re
-from builtins import next, range, zip, str
+from builtins import next, range, str, zip
 from copy import deepcopy
 from uuid import uuid4
 
@@ -12,11 +11,11 @@ from future.utils import iteritems, itervalues
 
 from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
-    UNKNOWNWORD, INTENTS, UTTERANCES, DATA, ENTITY, TEXT)
+    DATA, ENTITY, INTENTS, TEXT, UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
-from snips_nlu.resources import get_noises
-from snips_nlu.tokenization import tokenize_light
+from snips_nlu.preprocessing import tokenize_light
+from snips_nlu.resources import get_noise
 
 NOISE_NAME = str(uuid4())
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
@@ -56,7 +55,7 @@ def generate_smart_noise(augmented_utterances, replacement_string, language):
                        for u in augmented_utterances]
     vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
     vocab = set(vocab)
-    noise = get_noises(language)
+    noise = get_noise(language)
     return [w if w in vocab else replacement_string for w in noise]
 
 
@@ -72,7 +71,7 @@ def generate_noise_utterances(augmented_utterances, num_intents,
             data_augmentation_config.unknown_words_replacement_string,
             language)
     else:
-        noise = get_noises(language)
+        noise = get_noise(language)
 
     noise_size = min(
         int(data_augmentation_config.noise_factor * avg_num_utterances),
@@ -84,9 +83,10 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     std_utterances_length = np.std(utterances_lengths)
     noise_it = get_noise_it(noise, mean_utterances_length,
                             std_utterances_length, random_state)
-    # Remove duplicate 'unknowword unknowword'
-    return [UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it))
-            for _ in range(noise_size)]
+    # Remove duplicate 'unknownword unknownword'
+    return [
+        text_to_utterance(UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it)))
+        for _ in range(noise_size)]
 
 
 def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
@@ -122,7 +122,10 @@ def build_training_data(dataset, language, data_augmentation_config,
         utterances = augment_utterances(
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,
-            capitalization_ratio=0.0, random_state=random_state)
+            capitalization_ratio=0.0,
+            add_builtin_entities_examples=
+            data_augmentation_config.add_builtin_entities_examples,
+            random_state=random_state)
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               range(len(utterances))]
@@ -137,8 +140,6 @@ def build_training_data(dataset, language, data_augmentation_config,
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, len(intents), data_augmentation_config, language,
         random_state)
-    augmented_utterances = [get_text_from_chunks(u[DATA])
-                            for u in augmented_utterances]
 
     augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]
@@ -154,3 +155,7 @@ def build_training_data(dataset, language, data_augmentation_config,
             intent_mapping[intent_class] = intent
 
     return augmented_utterances, np.array(utterance_classes), intent_mapping
+
+
+def text_to_utterance(text):
+    return {DATA: [{TEXT: text}]}

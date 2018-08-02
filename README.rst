@@ -2,28 +2,70 @@ Snips NLU
 =========
 
 .. image:: https://travis-ci.org/snipsco/snips-nlu.svg?branch=develop
-    :target: https://travis-ci.org/snipsco/snips-nlu
+   :target: https://travis-ci.org/snipsco/snips-nlu
+
+.. image:: https://ci.appveyor.com/api/projects/status/github/snipsco/snips-nlu?branch=develop&svg=true
+   :target: https://ci.appveyor.com/project/snipsco/snips-nlu
 
 .. image:: https://img.shields.io/pypi/v/snips-nlu.svg?branch=develop
-    :target: https://pypi.python.org/pypi/snips-nlu
+   :target: https://pypi.python.org/pypi/snips-nlu
 
 .. image:: https://img.shields.io/pypi/pyversions/snips-nlu.svg?branch=develop
-    :target: https://pypi.python.org/pypi/snips-nlu
+   :target: https://pypi.python.org/pypi/snips-nlu
 
 .. image:: https://codecov.io/gh/snipsco/snips-nlu/branch/develop/graph/badge.svg
    :target: https://codecov.io/gh/snipsco/snips-nlu
 
+.. image:: https://img.shields.io/twitter/url/http/shields.io.svg?style=social
+   :target: https://twitter.com/intent/tweet?text=Extract%20meaning%20from%20text%20with%20Snips%20NLU,%20an%20open%20source%20library%20written%20in%20python%20and%20rust&url=https://github.com/snipsco/snips-nlu&via=snips&hashtags=nlu,nlp,machinelearning,python,rustlang
+
 
 `Snips NLU <https://snips-nlu.readthedocs.io>`_ (Natural Language Understanding) is a Python library that allows to parse sentences written in natural language and extracts structured information.
 
+Check out our `blog post`_ to get more details about why we built Snips NLU and how it works under the hood.
 
-Installing
-----------
+Installation
+------------
 
 .. code-block:: python
 
     pip install snips-nlu
 
+We currently have pre-built binaries (wheels) for ``snips-nlu`` and its
+dependencies for MacOS (10.11 and later), Linux x86_64 and Windows.
+
+For any other architecture/os `snips-nlu` can be installed from the source
+distribution. To do so, `Rust <https://www.rust-lang.org/en-US/install.html>`_
+and `setuptools_rust <https://github.com/PyO3/setuptools-rust>`_ must be
+installed before running the ``pip install snips-nlu`` command.
+
+Language resources
+------------------
+
+Snips NLU relies on `language resources`_ that must be downloaded before the
+library can be used. You can fetch resources for a specific language by
+running the following command:
+
+.. code-block:: sh
+
+    python -m snips_nlu download en
+
+Or simply:
+
+.. code-block:: sh
+
+    snips-nlu download en
+
+Once the resources have been fetched, they can be loaded in Python using:
+
+.. code-block:: python
+
+    from snips_nlu import load_resources
+
+    load_resources("en")
+
+The list of supported languages is available
+`here <https://snips-nlu.readthedocs.io/en/latest/languages.html>`_.
 
 A simple example
 ----------------
@@ -61,15 +103,67 @@ Properly trained, the Snips NLU engine will be able to extract structured data s
     }
 
 
+Sample code
+-----------
+
+Here is a sample code that you can run on your machine after having
+installed `snips-nlu`, fetched the english resources and downloaded this
+`sample dataset`_:
+
+.. code-block:: python
+
+    from __future__ import unicode_literals, print_function
+
+    import io
+    import json
+
+    from snips_nlu import SnipsNLUEngine, load_resources
+    from snips_nlu.default_configs import CONFIG_EN
+
+    with io.open("sample_dataset.json") as f:
+        sample_dataset = json.load(f)
+
+    load_resources("en")
+    nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
+    nlu_engine.fit(sample_dataset)
+
+    text = "What will be the weather in San Francisco next week?"
+    parsing = nlu_engine.parse(text)
+    print(json.dumps(parsing, indent=2))
+
+What it does is training an NLU engine on a sample weather dataset and parsing
+a weather query.
+
 Documentation
 -------------
 
 To find out how to use Snips NLU please refer to our `documentation <https://snips-nlu.readthedocs.io>`_, it will provide you with a step-by-step guide on how to use and setup our library.
 
+FAQ
+---
+Please join our `Discord channel`_ to ask your questions and get feedback from the community.
 
 Links
 -----
-* `Snips NLU <https://github.com/snipsco/snips-nlu>`_
-* `Snips <https://snips.ai/>`_
-* `Rustling <https://github.com/snipsco/rustling-ontology>`_ (Snips NLU builtin entities parser)
+* `What is Snips about ? <https://snips.ai/>`_
+* Snips NLU Open sourcing `blog post`_
+* `Snips NLU Language Resources <https://github.com/snipsco/snips-nlu-language-resources>`_
 * `Bug tracker <https://github.com/snipsco/snips-nlu/issues>`_
+* `Snips NLU Rust <https://github.com/snipsco/snips-nlu-rs>`_: Rust inference pipeline implementation and bindings (C, Swift, Kotlin, Python)
+* `Rustling <https://github.com/snipsco/rustling-ontology>`_: Snips NLU builtin entities parser
+
+
+How do I contribute ?
+---------------------
+
+Please see the `Contribution Guidelines <CONTRIBUTING.rst>`_.
+
+Licence
+-------
+
+This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.
+
+.. _language resources: https://github.com/snipsco/snips-nlu-language-resources
+.. _sample dataset: snips_nlu_samples/sample_dataset.json
+.. _Discord channel: https://discordapp.com/invite/3939Kqx
+.. _blog post: https://medium.com/snips-ai/an-introduction-to-snips-nlu-the-open-source-library-behind-snips-embedded-voice-platform-b12b1a60a41a

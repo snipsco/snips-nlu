@@ -1,13 +1,13 @@
 from __future__ import unicode_literals
 
-import os
+from pathlib import Path
 
 # package
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESOURCE_PACKAGE_NAME = "snips-nlu-resources"
+ROOT_PATH = Path(__file__).parent.parent
 PACKAGE_NAME = "snips_nlu"
-RESOURCES_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME, RESOURCE_PACKAGE_NAME)
-PACKAGE_PATH = os.path.join(ROOT_PATH, PACKAGE_NAME)
+DATA_PACKAGE_NAME = "data"
+DATA_PATH = ROOT_PATH / PACKAGE_NAME / DATA_PACKAGE_NAME
+PACKAGE_PATH = ROOT_PATH / PACKAGE_NAME
 
 # result
 RES_INPUT = "input"
@@ -35,24 +35,21 @@ TEXT = "text"
 UTTERANCES = "utterances"
 LANGUAGE = "language"
 VALUE = "value"
-BUILTIN_PARSER = "builtin_parser"
-BUILTIN_PATH = "builtin_path"
-BUILTIN_BINARY = "builtin_binary"
-LABEL = "label"
-RUSTLING_DIM_KIND = "rustling_dim_kind"
 NGRAM = "ngram"
 TOKEN_INDEXES = "token_indexes"
-GAZETTEERS = "gazetteers"
-STOP_WORDS = "stop_words"
-STEMS = "stems"
-WORD_CLUSTERS = "word_clusters"
-SUPPORTED_LANGUAGES = "supported_languages"
 CAPITALIZE = "capitalize"
-NOISE = "noise"
 UNKNOWNWORD = "unknownword"
 VALIDATED = "validated"
 START = "start"
 END = "end"
+
+# resources
+STOP_WORDS = "stop_words"
+NOISE = "noise"
+GAZETTEERS = "gazetteers"
+STEMS = "stems"
+WORD_CLUSTERS = "word_clusters"
+RESOURCES_DIR = "resources_dir"
 
 # builtin entities
 SNIPS_AMOUNT_OF_MONEY = "snips/amountOfMoney"

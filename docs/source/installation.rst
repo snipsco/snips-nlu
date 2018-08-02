@@ -22,6 +22,34 @@ Snips NLU can be installed via pip with the following command:
 
     pip install snips-nlu
 
+
+We currently have pre-built binaries (wheels) for ``snips-nlu`` and its
+dependencies for MacOS (10.11 and later), Linux x86_64 and Windows 64-bit. If
+you use a different architecture/os you will need to build these dependencies
+from sources which means you will need to install
+`setuptools_rust <https://github.com/PyO3/setuptools-rust>`_ and
+`Rust <https://www.rust-lang.org/en-US/install.html>`_ before running the
+``pip install snips-nlu`` command.
+
+Language resources
+------------------
+
+Snips NLU relies on `language resources`_ which must be downloaded beforehand.
+To fetch the resources for a specific language, run the following command:
+
+.. code-block:: sh
+
+    python -m snips_nlu download <language>
+
+Or simply:
+
+.. code-block:: sh
+
+    snips-nlu download <language>
+
+The list of supported languages is described :ref:`here <languages>`.
+
+
 Extra dependencies
 ------------------
 
@@ -53,4 +81,5 @@ Documentation
     pip install 'snips-nlu[doc]'
 
 
-.. _virtual environment: https://virtualenv.pypa.io/
+.. _virtual environment: https://virtualenv.pypa.io
+.. _language resources: https://github.com/snipsco/snips-nlu-language-resources

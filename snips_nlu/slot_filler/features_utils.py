@@ -3,32 +3,21 @@ from __future__ import unicode_literals
 from snips_nlu_utils import compute_all_ngrams
 
 from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (
-    RES_MATCH_RANGE, INTENTS, UTTERANCES, DATA, ENTITY, ENTITIES, END, START)
+from snips_nlu.constants import (DATA, END, ENTITIES, ENTITY, INTENTS,
+                                 RES_MATCH_RANGE, START, UTTERANCES)
 from snips_nlu.utils import LimitedSizeDict
 
 _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
 
 
 def get_all_ngrams(tokens):
+    if not tokens:
+        return []
     key = "<||>".join(tokens)
     if key not in _NGRAMS_CACHE:
         ngrams = compute_all_ngrams(tokens, len(tokens))
         _NGRAMS_CACHE[key] = ngrams
     return _NGRAMS_CACHE[key]
-
-
-def get_shape(string):
-    if string.islower():
-        shape = "xxx"
-    elif string.isupper():
-        shape = "XXX"
-    # Hack for Rust parallelism (we could use istitle but it does not exists)
-    elif len(string) > 1 and string[0].isupper() and string[1:].islower():
-        shape = "Xxx"
-    else:
-        shape = "xX"
-    return shape
 
 
 def get_word_chunk(word, chunk_size, chunk_start, reverse=False):

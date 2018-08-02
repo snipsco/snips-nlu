@@ -1,3 +1,0 @@
-[submodule "snips_nlu/snips-nlu-resources"]
-	path = snips_nlu/snips-nlu-resources
-	url = https://github.com/snipsco/snips-nlu-resources.git

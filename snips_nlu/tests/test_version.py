@@ -1,6 +1,6 @@
 from semantic_version import Version
 
-from snips_nlu import __version__, __model_version__
+from snips_nlu import __model_version__, __version__
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -18,7 +18,8 @@ class TestVersion(SnipsTest):
             pass
 
         # Then
-        self.assertTrue(valid, "Version number '%s' is not semantically valid")
+        self.assertTrue(valid, "Version number '%s' is not semantically valid"
+                        % version)
 
     def test_model_version_should_be_semantic(self):
         # Given
@@ -33,4 +34,5 @@ class TestVersion(SnipsTest):
             pass
 
         # Then
-        self.assertTrue(valid, "Version number '%s' is not semantically valid")
+        self.assertTrue(valid, "Version number '%s' is not semantically valid"
+                        % model_version)

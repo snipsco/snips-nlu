@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 from builtins import range
 from enum import Enum, unique
 
-from snips_nlu.constants import TEXT, SLOT_NAME, START, END
+from snips_nlu.constants import END, SLOT_NAME, START, TEXT
+from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
-from snips_nlu.tokenization import tokenize, Token
 
 BEGINNING_PREFIX = "B-"
 INSIDE_PREFIX = "I-"

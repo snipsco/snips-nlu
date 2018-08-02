@@ -1,13 +1,18 @@
+from snips_nlu_utils import normalize
+
 from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
 from snips_nlu.constants import (
-    UTTERANCES, AUTOMATICALLY_EXTENSIBLE, INTENTS, DATA, SLOT_NAME, ENTITY,
-    RES_MATCH_RANGE, RES_VALUE, RES_ENTITY, VALUE, ENTITY_KIND)
-from snips_nlu.result import custom_slot, builtin_slot
+    AUTOMATICALLY_EXTENSIBLE, DATA, ENTITY, ENTITY_KIND, INTENTS, RES_ENTITY,
+    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, UTTERANCES, VALUE)
+from snips_nlu.result import builtin_slot, custom_slot
 
 
 # pylint:disable=redefined-builtin
 def resolve_slots(input, slots, dataset_entities, language, scope):
-    builtin_entities = get_builtin_entities(input, language, scope)
+    # Do not use cached entities here as datetimes must be computed using
+    # current context
+    builtin_entities = get_builtin_entities(input, language, scope,
+                                            use_cache=False)
     resolved_slots = []
     for slot in slots:
         entity_name = slot[RES_ENTITY]
@@ -23,15 +28,17 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
                     break
             if not found:
                 builtin_matches = get_builtin_entities(raw_value, language,
-                                                       scope=[entity_name])
+                                                       scope=[entity_name],
+                                                       use_cache=False)
                 if builtin_matches:
                     resolved_slot = builtin_slot(slot,
                                                  builtin_matches[0][VALUE])
                     resolved_slots.append(resolved_slot)
         else:  # custom slot
             entity = dataset_entities[entity_name]
-            if raw_value in entity[UTTERANCES]:
-                resolved_value = entity[UTTERANCES][raw_value]
+            normalized_raw_value = normalize(raw_value)
+            if normalized_raw_value in entity[UTTERANCES]:
+                resolved_value = entity[UTTERANCES][normalized_raw_value]
             elif entity[AUTOMATICALLY_EXTENSIBLE]:
                 resolved_value = raw_value
             else:

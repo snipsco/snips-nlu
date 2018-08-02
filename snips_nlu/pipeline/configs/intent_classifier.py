@@ -1,6 +1,10 @@
+from __future__ import unicode_literals
+
 from copy import deepcopy
 
+from snips_nlu.constants import NOISE, STOP_WORDS, WORD_CLUSTERS
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
+from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
@@ -70,6 +74,12 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
         from snips_nlu.intent_classifier import LogRegIntentClassifier
         return LogRegIntentClassifier.unit_name
 
+    def get_required_resources(self):
+        resources = self.data_augmentation_config.get_required_resources()
+        resources = merge_required_resources(
+            resources, self.featurizer_config.get_required_resources())
+        return resources
+
     def to_dict(self):
         return {
             "unit_name": self.unit_name,
@@ -99,20 +109,36 @@ class IntentClassifierDataAugmentationConfig(Config):
         noise_factor (int, optional): Defines the size of the noise to
             generate to train the implicit *None* intent, as a multiplier of
             the average size of the other intents. Default is 5.
+        add_builtin_entities_examples (bool, optional): If True, some builtin
+            entity examples will be automatically added to the training data.
+            Default is True.
     """
 
-    def __init__(self, min_utterances=20, noise_factor=5, unknown_word_prob=0,
+    def __init__(self, min_utterances=20, noise_factor=5,
+                 add_builtin_entities_examples=True, unknown_word_prob=0,
                  unknown_words_replacement_string=None):
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
+        self.add_builtin_entities_examples = add_builtin_entities_examples
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
+        if unknown_word_prob > 0 and unknown_words_replacement_string is None:
+            raise ValueError("unknown_word_prob is positive (%s) but the "
+                             "replacement string is None" % unknown_word_prob)
+
+    def get_required_resources(self):
+        return {
+            NOISE: True,
+            STOP_WORDS: True
+        }
 
     def to_dict(self):
         return {
             "min_utterances": self.min_utterances,
             "noise_factor": self.noise_factor,
+            "add_builtin_entities_examples":
+                self.add_builtin_entities_examples,
             "unknown_word_prob": self.unknown_word_prob,
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string,
@@ -127,16 +153,30 @@ class FeaturizerConfig(Config):
     """Configuration of a :class:`.Featurizer` object
 
     Args:
-         sublinear_tf (bool, optional): Whether or not to use sublinear
+        sublinear_tf (bool, optional): Whether or not to use sublinear
             (vs linear) term frequencies, default is *False*.
+        pvalue_threshold (float, optional): max pvalue for a feature to be
+        kept in the feature selection
     """
 
-    def __init__(self, sublinear_tf=False):
+    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
+                 word_clusters_name=None):
         self.sublinear_tf = sublinear_tf
+        self.pvalue_threshold = pvalue_threshold
+        self.word_clusters_name = word_clusters_name
+
+    def get_required_resources(self):
+        if self.word_clusters_name is None:
+            return None
+        return {
+            WORD_CLUSTERS: {self.word_clusters_name}
+        }
 
     def to_dict(self):
         return {
-            "sublinear_tf": self.sublinear_tf
+            "sublinear_tf": self.sublinear_tf,
+            "pvalue_threshold": self.pvalue_threshold,
+            "word_clusters_name": self.word_clusters_name
         }
 
     @classmethod

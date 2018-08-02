@@ -3,8 +3,8 @@
 Tutorial
 ========
 
-In this section, we will build an NLU assistant for home automation tasks that
-will be able to understand queries about lights and thermostat. More precisely
+In this section, we will build an NLU assistant for home automation tasks. It
+will be able to understand queries about lights and thermostats. More precisely
 our assistant will contain three :ref:`intents <intent>`:
 
 - ``turnLightOn``
@@ -30,21 +30,25 @@ We created a `sample dataset`_ that you can check to better understand the
 format.
 
 You have three options to create your dataset. You can build it manually by
-respecting the format used in the sample, `chatito`_ a DSL tool for dataset generation or
-alternatively you can use the dataset creation CLI that is contained in the lib.
+respecting the format used in the sample, you can also use the dataset creation 
+CLI included in the lib, or alternatively you can use `chatito`_ a DSL 
+tool for dataset generation.
 
 We will go for the second option here and start by creating three files
-corresponding to our three intents and one entity file corresponding to the ``room`` entity:
+corresponding to our three intents and one entity file corresponding to the
+``room`` entity:
 
-- ``turnLightOn.txt``
-- ``turnLightOff.txt``
-- ``setTemperature.txt``
-- ``room.txt``
+- ``intent_turnLightOn.txt``
+- ``intent_turnLightOff.txt``
+- ``intent_setTemperature.txt``
+- ``entity_room.txt``
 
-The name of each file is important as the tool will map it to the intent or entity name.
+The name of each file is important as the tool will map it to the intent or
+entity name. In particular, the prefixes ``intent_`` and ``entity_`` are
+required in order to distinguish intents from entity files.
 
 Let's add training examples for the first intent by inserting the following
-lines in the first file, ``turnLightOn.txt``:
+lines in the first file, ``intent_turnLightOn.txt``:
 
 .. code-block:: console
 
@@ -59,7 +63,8 @@ components: :ref:`the slot name and the entity <entity_vs_slot_name>`. In our
 case we used the same value, ``room``, to describe both. The parts with
 parenthesis, like ``(kitchen)``, correspond to the text value of the slot.
 
-Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
+Let's move on to the second intent, and insert this into
+``intent_turnLightOff.txt``:
 
 .. code-block:: console
 
@@ -68,7 +73,7 @@ Let's move on to the second intent, and insert this into ``turnLightOff.txt``:
     switch off the light the [room:room](kitchen), will you?
     Switch the [room:room](bedroom)'s lights off please
 
-And now the last file, ``setTemperature.txt``:
+And now the last file, ``intent_setTemperature.txt``:
 
 .. code-block:: console
 
@@ -78,11 +83,11 @@ And now the last file, ``setTemperature.txt``:
     Can you increase the temperature to [roomTemperature:snips/temperature](22 degrees) ?
 
 As you can see here, we used a new slot, ``[room_temperature:snips/temperature]``,
-which name is ``roomTemperature`` and type is ``snips/temperature``. The slot
-type that we used here is a :ref:`builtin entity <builtin_entity_resolution>`
-that would help us resolve properly the temperature values.
+whose name is ``roomTemperature`` and whose type is ``snips/temperature``. The slot
+type used here is a :ref:`builtin entity <builtin_entity_resolution>`. It
+allows you to resolve the temperature values properly.
 
-Let's move to the ``room.txt`` entity file:
+Let's move to the ``entity_room.txt`` entity file:
 
 .. code-block:: console
 
@@ -90,49 +95,62 @@ Let's move to the ``room.txt`` entity file:
     living room,main room
     garden,yard,"backyard,"
 
-The entity file is a comma (``,``) separated file. Each line correspond to a entity value followed by its potential :ref:`synonyms <synonyms>`.
+The entity file is a comma (``,``) separated file. Each line corresponds to an
+entity value followed by its potential :ref:`synonyms <synonyms>`.
 
-If a value or a synonym has a comma in it, the value must be put between double quotes ``"``, if the value contains double quotes, it must be doubled to be escaped like this:  ``"A value with a "","" in it"`` which correspond to the actual value ``A value with a "," in it``
+If a value or a synonym contains a comma, the value must be put between
+double quotes ``"``. If the value contains double quotes, it must be doubled
+to be escaped like this:  ``"A value with a "","" in it"`` which corresponds
+to the actual value ``A value with a "," in it``.
+
+.. Note::
+
+    By default entities are generated as :ref:`automatically extensible <auto_extensible>`, i.e. the recognition will accept additional values than the ones listed in the entity file.
+    This behavior can be changed by adding at the beginning of the entity file the following:
+
+    .. code-block:: bash
+
+       # automatically_extensible=false
 
 We are now ready to generate our dataset:
 
 .. code-block:: bash
 
-    generate-dataset --language en --intent-files   turnLightOn.txt turnLightOff.txt setTemperature.txt --entity-files room.txt > dataset.json
+    snips-nlu generate-dataset en intent_turnLightOn.txt intent_turnLightOff.txt intent_setTemperature.txt entity_room.txt > dataset.json
 
 .. note::
 
     We used ``en`` as the language here but other languages are supported,
     please check the :ref:`languages` section to know more.
 
-Let's have a look at what has been generated and more precisely the
-``"entities"`` part of the json:
+Now, the ``"entities"`` part of the generated json looks like that:
 
 .. code-block:: json
 
     {
       "entities": {
         "room": {
-          "use_synonyms": true,
           "automatically_extensible": true,
           "data": [
             {
-              "value": "bedroom",
-              "synonyms": []
+              "synonyms": [],
+              "value": "bedroom"
             },
             {
-              "value": "living room",
-              "synonyms": ["main room"]
+              "synonyms": [
+                "main room"
+              ],
+              "value": "living room"
             },
             {
-              "value": "bathroom",
-              "synonyms": []
-            },
-            {
-              "value": "garden",
-              "synonyms": ["yard", "backyard,"]
+              "synonyms": [
+                "yard",
+                "backyard,"
+              ],
+              "value": "garden"
             }
-          ]
+          ],
+          "use_synonyms": true
         },
         "snips/temperature": {}
       }
@@ -145,41 +163,51 @@ By default, the ``room`` entity is set to be
 :ref:`automatically extensible <auto_extensible>` but in our case we don't want
 to handle any entity value that would not be part of the dataset, so we set
 this attribute to ``false``.
-Moreover we are going to add some rooms that were not in the previous sentences
-and that we want our assistant to cover. We also add some
-:ref:`synonyms <synonyms>`, so at the end this is what we have:
+Moreover, we are going to add some rooms that were not in the previous sentences
+and that we want our assistant to cover. Additionally, we add some
+:ref:`synonyms <synonyms>`. Finally, the entities part looks like that:
 
 .. code-block:: json
 
     {
       "entities": {
         "room": {
-          "use_synonyms": true,
           "automatically_extensible": false,
           "data": [
             {
-              "value": "bedroom",
-              "synonyms": ["sleeping room"]
+              "synonyms": [],
+              "value": "bathroom"
             },
             {
-              "value": "living room",
-              "synonyms": ["main room"]
+              "synonyms": [
+                "sleeping room"
+              ],
+              "value": "bedroom"
             },
             {
-              "value": "bathroom",
-              "synonyms": []
+              "synonyms": [
+                "main room",
+                "lounge"
+              ],
+              "value": "living room"
             },
             {
-              "value": "garden",
-              "synonyms": ["yard", "backyard,"]
+              "synonyms": [
+                "yard",
+                "backyard,"
+              ],
+              "value": "garden"
             }
-          ]
+          ],
+          "use_synonyms": true
         },
         "snips/temperature": {}
       }
     }
 
-We don't need to edit the ``snips/temperature`` entity as it is a builtin entity.
+
+We don't need to edit the ``snips/temperature`` entity as it is a builtin
+entity.
 
 Now that we have our dataset ready, let's move to the next step which is to
 create an NLU engine.
@@ -201,13 +229,13 @@ The simplest way to create an NLU engine is the following:
 In this example the engine was created with default parameters which, in
 many cases, will be sufficient.
 
-However, in some cases it may be required to tune a bit the engine and provide
+However, in some cases it may be required to tune the engine a bit and provide
 a customized configuration. Typically, different languages may require
 different sets of features. You can check the :class:`.NLUEngineConfig` to get
 more details about what can be configured.
 
-We created a list of `sample configurations`_, one per supported language, that
-have some language specific enhancements. In this tutorial we will use the
+We have built a list of `default configurations`_, one per supported language,
+that have some language specific enhancements. In this tutorial we will use the
 `english one`_.
 
 Before training the engine, note that you need to load language specific
@@ -219,13 +247,11 @@ resources used to improve performance with the :func:`.load_resources` function.
     import json
 
     from snips_nlu import SnipsNLUEngine, load_resources
+    from snips_nlu.default_configs import CONFIG_EN
 
     load_resources(u"en")
 
-    with io.open("config_en.json") as f:
-        config = json.load(f)
-
-    engine = SnipsNLUEngine(config=config)
+    engine = SnipsNLUEngine(config=CONFIG_EN)
 
 At this point, we can try to parse something:
 
@@ -258,7 +284,7 @@ We are now ready to parse:
 
 .. code-block:: python
 
-    parsing = engine.parse(u"Hey, lights on in the entrance !")
+    parsing = engine.parse(u"Hey, lights on in the lounge !")
     print(json.dumps(parsing, indent=2))
 
 You should get the following output (with a slightly different ``probability``
@@ -292,37 +318,60 @@ value):
 Notice that the ``lounge`` slot value points to ``living room`` as defined
 earlier in the entity synonyms of the dataset.
 
+.. _none_intent:
+
+---------------
+The None intent
+---------------
+
+On top of the intents that you have declared in your dataset, the NLU engine
+generates an implicit intent to cover utterances that does not correspond to
+any of your intents. We refer to it as the **None** intent.
+
+The NLU engine is trained to recognize when the input corresponds to the None
+intent. Here is what you should get if you try parsing ``"foo bar"`` with the
+engine we previously created:
+
+.. code-block:: json
+
+    {
+      "input": "foo bar",
+      "intent": null,
+      "slots": null
+    }
+
 Persisting
 ----------
 
-As a final step, we will persist the engine in a json. That may be useful in
-various contexts, for instance if you want to train on a machine and parse on
-another one.
+As a final step, we will persist the engine into a directory. That may be
+useful in various contexts, for instance if you want to train on a machine and
+parse on another one.
 
 You can persist the engine with the following API:
 
 .. code-block:: python
 
-    engine_json = json.dumps(engine.to_dict())
-    with io.open("trained_engine.json", mode="w") as f:
-        # f.write(engine_json.decode("utf8"))  # Python 2
-        f.write(engine_json)  # Python 3
+    engine.persist("path/to/directory")
 
 
 And load it:
 
 .. code-block:: python
 
-
-    with io.open("trained_engine.json") as f:
-        engine_dict = json.load(f)
-
-    loaded_engine = SnipsNLUEngine.from_dict(engine_dict)
+    loaded_engine = SnipsNLUEngine.from_path("path/to/directory")
 
     loaded_engine.parse(u"Turn lights on in the bathroom please")
 
 
+Alternatively, you can persist/load the engine as a ``bytearray``:
+
+.. code-block:: python
+
+    engine_bytes = engine.to_byte_array()
+    loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+
+
+.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json
+.. _default configurations: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs
+.. _english one: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs/config_en.py
 .. _chatito: https://github.com/rodrigopivi/Chatito
-.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
-.. _sample configurations: https://github.com/snipsco/snips-nlu/blob/master/samples/configs
-.. _english one: https://github.com/snipsco/snips-nlu/blob/master/samples/configs/config_en.json

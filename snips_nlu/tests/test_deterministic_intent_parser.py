@@ -1,123 +1,27 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import io
-import os
-import re
 from builtins import range
-
 from mock import patch
 
-from snips_nlu.constants import (RES_MATCH_RANGE, VALUE, ENTITY, DATA, TEXT,
-                                 SLOT_NAME, RES_INTENT_NAME, RES_SLOTS,
-                                 RES_INTENT, LANGUAGE_EN, SNIPS_ORDINAL,
-                                 SNIPS_DATETIME, START, END, ENTITY_KIND)
+from snips_nlu.constants import (
+    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
+    RES_MATCH_RANGE, RES_SLOTS, SLOT_NAME, SNIPS_DATETIME, SNIPS_ORDINAL,
+    START, TEXT, VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _replace_builtin_entities, _preprocess_builtin_entities)
+    _get_range_shift, _replace_builtin_entities,
+    _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import SAMPLE_DATASET, TEST_PATH, SnipsTest
+from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH, \
+    BEVERAGE_DATASET
 
 
-class TestDeterministicIntentParser(SnipsTest):
+class TestDeterministicIntentParser(FixtureTest):
     def setUp(self):
-        self.intent_dataset = {
-            "entities": {
-                "dummy_entity_1": {
-                    "automatically_extensible": False,
-                    "use_synonyms": True,
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy_a",
-                                "dummy 2a",
-                                "dummy a",
-                                "2 dummy a"
-                            ],
-                            "value": "dummy_a"
-                        },
-                        {
-                            "synonyms": [
-                                "dummy_b",
-                                "dummy_bb",
-                                "dummy b"
-                            ],
-                            "value": "dummy_b"
-                        },
-                        {
-                            "synonyms": [
-                                "dummy d"
-                            ],
-                            "value": "dummy d"
-                        }
-                    ]
-                },
-                "dummy_entity_2": {
-                    "automatically_extensible": False,
-                    "use_synonyms": True,
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy_c",
-                                "dummy_cc",
-                                "dummy c",
-                                "3p.m."
-                            ],
-                            "value": "dummy_c"
-                        }
-                    ]
-                },
-                "snips/datetime": {}
-            },
-            "intents": {
-                "dummy_intent_1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "This is a first "
-                                },
-                                {
-                                    "text": "dummy_1",
-                                    "slot_name": "dummy_slot_name",
-                                    "entity": "dummy_entity_1"
-                                },
-                                {
-                                    "text": " query with a second "
-                                },
-                                {
-                                    "text": "dummy_2",
-                                    "slot_name": "dummy_slot_name2",
-                                    "entity": "dummy_entity_2"
-                                },
-                                {
-                                    "text": " "
-                                },
-                                {
-                                    "text": "at 10p.m.",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                },
-                                {
-                                    "text": " or "
-                                },
-                                {
-                                    "text": "next monday",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                }
-
-                            ]
-                        }
-                    ]
-                }
-            },
-            "language": "en",
-            "snips_nlu_version": "0.1.0"
-        }
-
+        super(TestDeterministicIntentParser, self).setUp()
         self.duplicated_utterances_dataset = {
             "entities": {},
             "intents": {
@@ -239,7 +143,27 @@ class TestDeterministicIntentParser(SnipsTest):
                         {
                             "data": [
                                 {
-                                    "text": "This, is, a "
+                                    "text": "This    is  a  "
+                                },
+                                {
+                                    "text": "dummy_1",
+                                    "slot_name": "dummy_slot_name",
+                                    "entity": "dummy_entity_1"
+                                },
+                                {
+                                    "text": " "
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "tomorrow evening",
+                                    "slot_name": "startTime",
+                                    "entity": "snips/datetime"
+                                },
+                                {
+                                    "text": " there is a "
                                 },
                                 {
                                     "text": "dummy_1",
@@ -247,7 +171,7 @@ class TestDeterministicIntentParser(SnipsTest):
                                     "entity": "dummy_entity_1"
                                 }
                             ]
-                        }
+                        },
                     ]
                 }
             },
@@ -257,11 +181,11 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_get_intent(self):
         # Given
-        dataset = validate_and_format_dataset(self.intent_dataset)
+        dataset = validate_and_format_dataset(self.slots_dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
-        text = "this is a first dummy_a query with a second dummy_c at " \
-               "10p.m. or at 12p.m."
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         parsing = parser.parse(text)
@@ -293,13 +217,14 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_get_intent_after_deserialization(self):
         # Given
-        dataset = validate_and_format_dataset(self.intent_dataset)
+        dataset = validate_and_format_dataset(self.slots_dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
-        deserialized_parser = DeterministicIntentParser \
-            .from_dict(parser.to_dict())
-        text = "this is a first dummy_a query with a second dummy_c at " \
-               "10p.m. or at 12p.m."
+        parser.persist(self.tmp_file_path)
+        deserialized_parser = DeterministicIntentParser.from_path(
+            self.tmp_file_path)
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         parsing = deserialized_parser.parse(text)
@@ -368,6 +293,17 @@ class TestDeterministicIntentParser(SnipsTest):
                                     entity="dummy_entity_1",
                                     slot_name="dummy_slot_name")
                 ]
+            ),
+            (
+                " at 8am ’ there is a dummy  a",
+                [
+                    unresolved_slot(match_range=(1, 7), value="at 8am",
+                                    entity="snips/datetime",
+                                    slot_name="startTime"),
+                    unresolved_slot(match_range=(21, 29), value="dummy  a",
+                                    entity="dummy_entity_1",
+                                    slot_name="dummy_slot_name")
+                ]
             )
         ]
 
@@ -384,8 +320,9 @@ class TestDeterministicIntentParser(SnipsTest):
         dataset = validate_and_format_dataset(dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
-        deserialized_parser = DeterministicIntentParser \
-            .from_dict(parser.to_dict())
+        parser.persist(self.tmp_file_path)
+        deserialized_parser = DeterministicIntentParser.from_path(
+            self.tmp_file_path)
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -448,12 +385,25 @@ class TestDeterministicIntentParser(SnipsTest):
             # Then
             self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        intent_parser = DeterministicIntentParser().fit(dataset)
+
+        # When
+        intent_parser_bytes = intent_parser.to_byte_array()
+        loaded_intent_parser = DeterministicIntentParser.from_byte_array(
+            intent_parser_bytes)
+        result = loaded_intent_parser.parse("make me two cups of coffee")
+
+        # Then
+        self.assertEqual("MakeCoffee", result[RES_INTENT][RES_INTENT_NAME])
+
     def test_should_parse_naughty_strings(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.txt")
-        with io.open(naughty_strings_path, encoding='utf8') as f:
+        naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
+        with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
@@ -466,9 +416,8 @@ class TestDeterministicIntentParser(SnipsTest):
 
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
-        naughty_strings_path = os.path.join(TEST_PATH, "resources",
-                                            "naughty_strings.txt")
-        with io.open(naughty_strings_path, encoding='utf8') as f:
+        naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
+        with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
@@ -543,11 +492,11 @@ class TestDeterministicIntentParser(SnipsTest):
     def test_should_be_serializable_before_fitting(self):
         # Given
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_pattern_length=43)
         parser = DeterministicIntentParser(config=config)
 
         # When
-        actual_dict = parser.to_dict()
+        parser.persist(self.tmp_file_path)
 
         # Then
         expected_dict = {
@@ -555,7 +504,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_entities": 43
+                "max_pattern_length": 43
             },
             "language_code": None,
             "group_names_to_slot_names": None,
@@ -563,31 +512,34 @@ class TestDeterministicIntentParser(SnipsTest):
             "slot_names_to_entities": None
         }
 
-        self.assertDictEqual(actual_dict, expected_dict)
+        metadata = {"unit_name": "deterministic_intent_parser"}
+        self.assertJsonContent(self.tmp_file_path / "metadata.json",
+                               metadata)
+        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
+                               expected_dict)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           "._generate_regexes")
+           "._generate_patterns")
     def test_should_be_serializable(self, mocked_generate_regexes):
         # Given
 
         # pylint: disable=unused-argument
-        def mock_generate_regexes(utterances, joined_entity_utterances,
-                                  group_names_to_slot_names, language):
-            regexes = [re.compile(r"mocked_regex_%s" % i)
-                       for i in range(len(utterances))]
+        def mock_generate_patterns(utterances, joined_entity_utterances,
+                                   group_names_to_slot_names, language):
+            patterns = ["mocked_regex_%s" % i for i in range(len(utterances))]
             group_to_slot = {"group_0": "dummy slot name"}
-            return regexes, group_to_slot
+            return patterns, group_to_slot
 
         # pylint: enable=unused-argument
 
-        mocked_generate_regexes.side_effect = mock_generate_regexes
+        mocked_generate_regexes.side_effect = mock_generate_patterns
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=100)
+                                                 max_pattern_length=100)
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
-        actual_dict = parser.to_dict()
+        parser.persist(self.tmp_file_path)
 
         # Then
         expected_dict = {
@@ -595,7 +547,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_entities": 100
+                "max_pattern_length": 100
             },
             "language_code": "en",
             "group_names_to_slot_names": {
@@ -613,21 +565,28 @@ class TestDeterministicIntentParser(SnipsTest):
                 ]
             },
             "slot_names_to_entities": {
-                "dummy_slot_name": "dummy_entity_1",
-                "dummy slot nàme": "dummy_entity_1",
-                "dummy_slot_name3": "dummy_entity_2",
-                "dummy_slot_name2": "dummy_entity_2"
+                "dummy_intent_1": {
+                    "dummy_slot_name": "dummy_entity_1",
+                    "dummy_slot_name3": "dummy_entity_2",
+                    "dummy_slot_name2": "dummy_entity_2"
+                },
+                "dummy_intent_2": {
+                    "dummy slot nàme": "dummy_entity_1"
+                }
             }
         }
-
-        self.assertDictEqual(actual_dict, expected_dict)
+        metadata = {"unit_name": "deterministic_intent_parser"}
+        self.assertJsonContent(self.tmp_file_path / "metadata.json",
+                               metadata)
+        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
+                               expected_dict)
 
     def test_should_be_deserializable(self):
         # Given
         parser_dict = {
             "config": {
                 "max_queries": 42,
-                "max_entities": 43
+                "max_pattern_length": 43
             },
             "language_code": "en",
             "group_names_to_slot_names": {
@@ -645,9 +604,14 @@ class TestDeterministicIntentParser(SnipsTest):
                 "world_slot": "world_entity"
             }
         }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "deterministic_intent_parser"}
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When
-        parser = DeterministicIntentParser.from_dict(parser_dict)
+        parser = DeterministicIntentParser.from_path(self.tmp_file_path)
 
         # Then
         patterns = {
@@ -665,7 +629,7 @@ class TestDeterministicIntentParser(SnipsTest):
             "world_slot": "world_entity"
         }
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_pattern_length=43)
         expected_parser = DeterministicIntentParser(config=config)
         expected_parser.language = LANGUAGE_EN
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
@@ -679,20 +643,25 @@ class TestDeterministicIntentParser(SnipsTest):
         parser_dict = {
             "config": {
                 "max_queries": 42,
-                "max_entities": 43
+                "max_pattern_length": 43
             },
             "language_code": None,
             "group_names_to_slot_names": None,
             "patterns": None,
             "slot_names_to_entities": None
         }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "deterministic_intent_parser"}
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When
-        parser = DeterministicIntentParser.from_dict(parser_dict)
+        parser = DeterministicIntentParser.from_path(self.tmp_file_path)
 
         # Then
         config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_entities=43)
+                                                 max_pattern_length=43)
         expected_parser = DeterministicIntentParser(config=config)
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
@@ -758,20 +727,31 @@ class TestDeterministicIntentParser(SnipsTest):
         ]
         self.assertSequenceEqual(deduplicated_slots, expected_slots)
 
-    def test_should_not_train_intents_too_big(self):
+    def test_should_limit_nb_queries(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         config = DeterministicIntentParserConfig(max_queries=2,
-                                                 max_entities=200)
+                                                 max_pattern_length=1000)
 
         # When
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
-        not_fitted_intent = "dummy_intent_1"
-        fitted_intent = "dummy_intent_2"
-        self.assertGreater(len(parser.regexes_per_intent[fitted_intent]), 0)
-        self.assertListEqual(parser.regexes_per_intent[not_fitted_intent], [])
+        self.assertEqual(len(parser.regexes_per_intent["dummy_intent_1"]), 2)
+        self.assertEqual(len(parser.regexes_per_intent["dummy_intent_2"]), 1)
+
+    def test_should_limit_patterns_length(self):
+        # Given
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        config = DeterministicIntentParserConfig(max_queries=1000,
+                                                 max_pattern_length=300)
+
+        # When
+        parser = DeterministicIntentParser(config=config).fit(dataset)
+
+        # Then
+        self.assertEqual(3, len(parser.regexes_per_intent["dummy_intent_1"]))
+        self.assertEqual(1, len(parser.regexes_per_intent["dummy_intent_2"]))
 
     @patch('snips_nlu.intent_parser.deterministic_intent_parser'
            '.get_builtin_entities')
@@ -806,54 +786,23 @@ class TestDeterministicIntentParser(SnipsTest):
         self.assertDictEqual(expected_mapping, range_mapping)
         self.assertEqual(expected_processed_text, processed_text)
 
-    def test_should_preprocess_builtin_entities(self):
+    def test_should_get_range_shift(self):
         # Given
-        language = LANGUAGE_EN
-        utterance = {
-            DATA: [
-                {
-                    TEXT: "Raise temperature in room number one to "
-                },
-                {
-                    TEXT: "five degrees",
-                    SLOT_NAME: "room_temperature",
-                    ENTITY: "temperature"
-                },
-                {
-                    TEXT: " at "
-                },
-                {
-                    TEXT: "9pm",
-                    SLOT_NAME: "time",
-                    ENTITY: "snips/datetime"
-                },
-            ]
+        ranges_mapping = {
+            (2, 5): {START: 2, END: 4},
+            (8, 9): {START: 7, END: 11}
         }
+
+        # When / Then
+        self.assertEqual(-1, _get_range_shift((6, 7), ranges_mapping))
+        self.assertEqual(2, _get_range_shift((12, 13), ranges_mapping))
+
+    def test_should_replace_tokenized_out_characters(self):
+        # Given
+        string = ": hello, it's me !  "
 
         # When
-
-        processed_utterance = _preprocess_builtin_entities(utterance, language)
+        cleaned_string = _replace_tokenized_out_characters(string, "en", "_")
 
         # Then
-        expected_utterance = {
-            DATA: [
-                {
-                    TEXT: "Raise temperature in room number %SNIPSNUMBER% to "
-                },
-                {
-                    TEXT: "%SNIPSTEMPERATURE%",
-                    SLOT_NAME: "room_temperature",
-                    ENTITY: "temperature"
-                },
-                {
-                    TEXT: " at "
-                },
-                {
-                    TEXT: "%SNIPSDATETIME%",
-                    SLOT_NAME: "time",
-                    ENTITY: "snips/datetime"
-                },
-            ]
-        }
-
-        self.assertDictEqual(expected_utterance, processed_utterance)
+        self.assertEqual("__hello__it_s_me_!__", cleaned_string)

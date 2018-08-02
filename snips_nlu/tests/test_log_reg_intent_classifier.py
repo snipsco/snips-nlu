@@ -1,31 +1,31 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+from builtins import next, range, str
+
 import numpy as np
-from builtins import next
-from builtins import range
-from builtins import str
 from future.utils import itervalues
 from mock import patch
 
-from snips_nlu.constants import INTENTS, DATA, UTTERANCES, RES_INTENT_NAME, \
-    LANGUAGE_EN
-from snips_nlu.dataset import validate_and_format_dataset, get_text_from_chunks
+from snips_nlu.constants import (
+    INTENTS, LANGUAGE_EN, RES_INTENT_NAME, UTTERANCES)
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
-from snips_nlu.intent_classifier.log_reg_classifier_utils import \
-    remove_builtin_slots, get_noise_it, generate_smart_noise, \
-    generate_noise_utterances, add_unknown_word_to_utterances, \
-    build_training_data
+from snips_nlu.intent_classifier.log_reg_classifier_utils import (
+    add_unknown_word_to_utterances, build_training_data,
+    generate_noise_utterances, generate_smart_noise, get_noise_it,
+    remove_builtin_slots, text_to_utterance)
 from snips_nlu.pipeline.configs import (
-    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
-from snips_nlu.tests.utils import SAMPLE_DATASET, get_empty_dataset, \
-    BEVERAGE_DATASET, SnipsTest
+    IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig)
+from snips_nlu.tests.utils import (
+    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
 
 
 # pylint: disable=W0613
 def get_mocked_augment_utterances(dataset, intent_name, language,
                                   min_utterances, capitalization_ratio,
+                                  add_builtin_entities_examples,
                                   random_state):
     return dataset[INTENTS][intent_name][UTTERANCES]
 
@@ -33,7 +33,7 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 # pylint: enable=W0613
 
 
-class TestLogRegIntentClassifier(SnipsTest):
+class TestLogRegIntentClassifier(FixtureTest):
     def test_intent_classifier_should_get_intent(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
@@ -96,7 +96,7 @@ class TestLogRegIntentClassifier(SnipsTest):
         intercept = intent_classifier.classifier.intercept_.tolist()
 
         # When
-        classifier_dict = intent_classifier.to_dict()
+        intent_classifier.persist(self.tmp_file_path)
 
         # Then
         intent_list = sorted(SAMPLE_DATASET[INTENTS])
@@ -110,7 +110,10 @@ class TestLogRegIntentClassifier(SnipsTest):
             "intent_list": intent_list,
             "featurizer": mocked_dict
         }
-        self.assertEqual(expected_dict, classifier_dict)
+        metadata = {"unit_name": "log_reg_intent_classifier"}
+        self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.assertJsonContent(self.tmp_file_path / "intent_classifier.json",
+                               expected_dict)
 
     @patch('snips_nlu.intent_classifier.featurizer.Featurizer.from_dict')
     def test_should_be_deserializable(self, mock_from_dict):
@@ -144,9 +147,14 @@ class TestLogRegIntentClassifier(SnipsTest):
             "config": config,
             "featurizer": mocked_featurizer.to_dict(),
         }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "log_reg_intent_classifier"}
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        self.writeJsonContent(self.tmp_file_path / "intent_classifier.json",
+                              classifier_dict)
 
         # When
-        classifier = LogRegIntentClassifier.from_dict(classifier_dict)
+        classifier = LogRegIntentClassifier.from_path(self.tmp_file_path)
 
         # Then
         self.assertEqual(classifier.intent_list, intent_list)
@@ -160,11 +168,27 @@ class TestLogRegIntentClassifier(SnipsTest):
         # Given
         dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         classifier = LogRegIntentClassifier().fit(dataset)
-        classifier_dict = classifier.to_dict()
+        classifier.persist(self.tmp_file_path)
 
         # When
-        loaded_classifier = LogRegIntentClassifier.from_dict(classifier_dict)
+        loaded_classifier = LogRegIntentClassifier.from_path(
+            self.tmp_file_path)
         result = loaded_classifier.get_intent("Make me two cups of tea")
+
+        # Then
+        expected_intent = "MakeTea"
+        self.assertEqual(expected_intent, result[RES_INTENT_NAME])
+
+    def test_should_be_serializable_into_bytearray(self):
+        # Given
+        dataset = BEVERAGE_DATASET
+        intent_classifier = LogRegIntentClassifier().fit(dataset)
+
+        # When
+        intent_classifier_bytes = intent_classifier.to_byte_array()
+        loaded_classifier = LogRegIntentClassifier.from_byte_array(
+            intent_classifier_bytes)
+        result = loaded_classifier.get_intent("make me two cups of tea")
 
         # Then
         expected_intent = "MakeTea"
@@ -211,15 +235,16 @@ class TestLogRegIntentClassifier(SnipsTest):
 
         text = " "
         noise_size = 6
-        utterance = [text] + [text] * noise_size
-        labels = [1] + [None] * noise_size
+        utterances = [text] + [text] * noise_size
+        utterances = [text_to_utterance(t) for t in utterances]
+        labels = [0] + [1] * noise_size
         intent_list = ["dummy_intent_1", None]
-        mocked_build_training.return_value = utterance, labels, intent_list
+        mocked_build_training.return_value = utterances, labels, intent_list
 
         # When / Then
         intent_classifier = LogRegIntentClassifier().fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
-        self.assertEqual(intent, None)
+        self.assertEqual(None, intent)
 
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
@@ -237,21 +262,21 @@ class TestLogRegIntentClassifier(SnipsTest):
             dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA]) for intent
-                               in itervalues(dataset[INTENTS]) for utterance in
-                               intent[UTTERANCES]]
+        expected_utterances = [utterance for intent
+                               in itervalues(dataset[INTENTS])
+                               for utterance in intent[UTTERANCES]]
         expected_intent_mapping = [u'dummy_intent_1', u'dummy_intent_2']
-        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_noise(
-            self, mocked_augment_utterances, mocked_get_noises):
+            self, mocked_augment_utterances, mocked_get_noise):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
-        mocked_get_noises.return_value = mocked_noises
+        mocked_get_noise.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -281,7 +306,7 @@ class TestLogRegIntentClassifier(SnipsTest):
             dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA])
+        expected_utterances = [utterance
                                for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
@@ -290,21 +315,22 @@ class TestLogRegIntentClassifier(SnipsTest):
                              len(noise)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0,
                                 random_state)
-        noisy_utterances = [next(noise_it) for _ in range(noise_size)]
-        expected_utterances += list(noisy_utterances)
+        noisy_utterances = [text_to_utterance(next(noise_it))
+                            for _ in range(noise_size)]
+        expected_utterances += noisy_utterances
         expected_intent_mapping = sorted(dataset["intents"])
         expected_intent_mapping.append(None)
-        self.assertListEqual(utterances, expected_utterances)
+        self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_unknown_noise(
-            self, mocked_augment_utterances, mocked_get_subtitles):
+            self, mocked_augment_utterances, mocked_get_noise):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
-        mocked_get_subtitles.return_value = mocked_noises
+        mocked_get_noise.return_value = mocked_noises
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -335,19 +361,20 @@ class TestLogRegIntentClassifier(SnipsTest):
             dataset, LANGUAGE_EN, data_augmentation_config, random_state)
 
         # Then
-        expected_utterances = [get_text_from_chunks(utterance[DATA])
+        expected_utterances = [utterance
                                for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
         noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
                              len(noise)))
-        noisy_utterances = [replacement_string for _ in range(noise_size)]
-        expected_utterances += list(noisy_utterances)
+        noisy_utterances = [text_to_utterance(replacement_string)
+                            for _ in range(noise_size)]
+        expected_utterances += noisy_utterances
         expected_intent_mapping = sorted(dataset["intents"])
         expected_intent_mapping.append(None)
-        self.assertListEqual(utterances, expected_utterances)
-        self.assertListEqual(intent_mapping, expected_intent_mapping)
+        self.assertListEqual(expected_utterances, utterances)
+        self.assertListEqual(expected_intent_mapping, intent_mapping)
 
     def test_should_build_training_data_with_no_data(self):
         # Given
@@ -367,8 +394,8 @@ class TestLogRegIntentClassifier(SnipsTest):
         self.assertListEqual(utterances, expected_utterances)
         self.assertListEqual(intent_mapping, expected_intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
-    def test_generate_noise_utterances(self, mocked_get_noises):
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
+    def test_generate_noise_utterances(self, mocked_get_noise):
         # Given
         language = LANGUAGE_EN
         num_intents = 2
@@ -376,7 +403,7 @@ class TestLogRegIntentClassifier(SnipsTest):
         utterances_length = 5
 
         noise = [str(i) for i in range(utterances_length)]
-        mocked_get_noises.return_value = noise
+        mocked_get_noise.return_value = noise
 
         augmented_utterances = [
             {
@@ -399,7 +426,7 @@ class TestLogRegIntentClassifier(SnipsTest):
             augmented_utterances, num_intents, config, language, random_state)
 
         # Then
-        joined_noise = " ".join(noise)
+        joined_noise = text_to_utterance(" ".join(noise))
         for u in noise_utterances:
             self.assertEqual(u, joined_noise)
 
@@ -495,7 +522,7 @@ class TestLogRegIntentClassifier(SnipsTest):
         ]
         self.assertEqual(expected_utterances, noisy_utterances)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noises")
+    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     def test_generate_noise_utterances_should_replace_unknown_words(
             self, mocked_noise):
         # Given

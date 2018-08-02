@@ -23,3 +23,7 @@ class ProcessingUnitConfig(with_metaclass(ABCMeta, Config)):
     @classproperty
     def unit_name(self):
         raise NotImplementedError
+
+    @abstractmethod
+    def get_required_resources(self):
+        raise NotImplementedError

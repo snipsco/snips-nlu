@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 from snips_nlu.constants import (
-    RES_INTENT_NAME, RES_PROBABILITY, RES_INTENT, RES_SLOTS, RES_MATCH_RANGE,
-    RES_RAW_VALUE, RES_INPUT, RES_SLOT_NAME, RES_ENTITY, RES_VALUE)
+    RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
+    RES_PROBABILITY, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
 
 
 def intent_classification_result(intent_name, probability):
@@ -12,10 +12,7 @@ def intent_classification_result(intent_name, probability):
     Example:
 
         >>> intent_classification_result("GetWeather", 0.93)
-        {
-            "intentName": "GetWeather",
-            "probability": 0.93
-        }
+        {'intentName': 'GetWeather', 'probability': 0.93}
     """
     return {
         RES_INTENT_NAME: intent_name,
@@ -28,15 +25,18 @@ def unresolved_slot(match_range, value, entity, slot_name):
 
     Example:
 
-        >>> unresolved_slot([0, 8], "tomorrow", "snips/datetime", "startDate")
+        >>> import json
+        >>> slot = unresolved_slot([0, 8], "tomorrow", "snips/datetime", \
+            "startDate")
+        >>> print(json.dumps(slot, indent=4, sort_keys=True))
         {
-            "value": "tomorrow",
-            "range": {
-                "start": 0,
-                "end": 8
-            },
             "entity": "snips/datetime",
-            "slotName": "startDate"
+            "range": {
+                "end": 8,
+                "start": 0
+            },
+            "slotName": "startDate",
+            "value": "tomorrow"
         }
     """
     return {
@@ -54,19 +54,20 @@ def custom_slot(internal_slot, resolved_value=None):
     Example:
 
         >>> s = unresolved_slot([10, 19], "earl grey", "beverage", "beverage")
-        >>> custom_slot(s, "tea")
+        >>> import json
+        >>> print(json.dumps(custom_slot(s, "tea"), indent=4, sort_keys=True))
         {
+            "entity": "beverage",
+            "range": {
+                "end": 19,
+                "start": 10
+            },
             "rawValue": "earl grey",
+            "slotName": "beverage",
             "value": {
                 "kind": "Custom",
                 "value": "tea"
-            },
-            "range": {
-                "start": 10,
-                "end": 19
-            },
-            "entity": "beverage",
-            "slotName": "beverage"
+            }
         }
     """
 
@@ -100,20 +101,21 @@ def builtin_slot(internal_slot, resolved_value):
         ...     "value": 20,
         ...     "unit": "celsius"
         ... }
-        >>> builtin_slot(s, resolved)
+        >>> import json
+        >>> print(json.dumps(builtin_slot(s, resolved), indent=4))
         {
-            "rawValue": "earl grey",
+            "range": {
+                "start": 10,
+                "end": 32
+            },
+            "rawValue": "twenty degrees celsius",
             "value": {
                 "kind": "Temperature",
                 "value": 20,
                 "unit": "celsius"
             },
-            "range": {
-                "start": 10,
-                "end": 19
-            },
-            "entity": "beverage",
-            "slotName": "beverage"
+            "entity": "snips/temperature",
+            "slotName": "beverageTemperature"
         }
     """
     return {
@@ -146,21 +148,23 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         ...     "value": 20,
         ...     "unit": "celsius"
         ... }
-        >>> resolved_slot({"start": 10, "end": 19}, "earl grey",
+        >>> slot = resolved_slot({"start": 10, "end": 19}, "earl grey",
         ... resolved_value, "beverage", "beverage")
+        >>> import json
+        >>> print(json.dumps(slot, indent=4, sort_keys=True))
         {
+            "entity": "beverage",
+            "range": {
+                "end": 19,
+                "start": 10
+            },
             "rawValue": "earl grey",
+            "slotName": "beverage",
             "value": {
                 "kind": "Temperature",
-                "value": 20,
-                "unit": "celsius"
-            },
-            "range": {
-                "start": 10,
-                "end": 19
-            },
-            "entity": "beverage",
-            "slotName": "beverage"
+                "unit": "celsius",
+                "value": 20
+            }
         }
     """
     return {
@@ -178,32 +182,36 @@ def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
 
     Example:
 
-          >>> text = "Hello Bill!"
-          >>> intent_result = intent_classification_result("Greeting", 0.95)
-          >>> internal_slot = unresolved_slot([6, 10], "John", "name",
-          ... "greetee")
-          >>> slots = [custom_slot(internal_slot, "William")]
-          >>> parsing_result(text, intent_result, slots)
-          {
+        >>> text = "Hello Bill!"
+        >>> intent_result = intent_classification_result("Greeting", 0.95)
+        >>> internal_slot = unresolved_slot([6, 10], "Bill", "name",
+        ... "greetee")
+        >>> slots = [custom_slot(internal_slot, "William")]
+        >>> res = parsing_result(text, intent_result, slots)
+        >>> import json
+        >>> print(json.dumps(res, indent=4, sort_keys=True))
+        {
             "input": "Hello Bill!",
             "intent": {
                 "intentName": "Greeting",
                 "probability": 0.95
             },
-            "slots: [{
-                "rawValue": "Bill",
-                "value": {
-                    "kind": "Custom",
-                    "value": "William",
-                },
-                "range": {
-                    "start": 6,
-                    "end": 10
-                },
-                "entity": "name",
-                "slotName": "greetee"
-            }]
-          }
+            "slots": [
+                {
+                    "entity": "name",
+                    "range": {
+                        "end": 10,
+                        "start": 6
+                    },
+                    "rawValue": "Bill",
+                    "slotName": "greetee",
+                    "value": {
+                        "kind": "Custom",
+                        "value": "William"
+                    }
+                }
+            ]
+        }
     """
     return {
         RES_INPUT: input,

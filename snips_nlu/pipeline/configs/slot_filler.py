@@ -2,8 +2,10 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
-from snips_nlu.pipeline.configs import default_features_factories
+from snips_nlu.constants import STOP_WORDS
+from snips_nlu.pipeline.configs import (
+    Config, ProcessingUnitConfig, default_features_factories)
+from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
@@ -19,8 +21,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         crf_args (dict, optional): Allow to overwrite the parameters of the CRF
             defined in *sklearn_crfsuite*, see :class:`sklearn_crfsuite.CRF`
             (default={"c1": .1, "c2": .1, "algorithm": "lbfgs"})
-        exhaustive_permutations_threshold (int, optional):
-            TODO: properly document this
         data_augmentation_config (dict or :class:`.SlotFillerDataAugmentationConfig`, optional):
             Specify how to augment data before training the CRF, see the
             corresponding config object for more details.
@@ -33,7 +33,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
     # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=None, crf_args=None,
-                 exhaustive_permutations_threshold=4 ** 3,
                  data_augmentation_config=None, random_seed=None):
         if tagging_scheme is None:
             from snips_nlu.slot_filler.crf_utils import TaggingScheme
@@ -48,8 +47,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         self._tagging_scheme = None
         self.tagging_scheme = tagging_scheme
         self.crf_args = crf_args
-        self.exhaustive_permutations_threshold = \
-            exhaustive_permutations_threshold
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         self.random_seed = random_seed
@@ -92,14 +89,23 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         from snips_nlu.slot_filler import CRFSlotFiller
         return CRFSlotFiller.unit_name
 
+    def get_required_resources(self):
+        # Import here to avoid circular imports
+        from snips_nlu.slot_filler.feature_factory import get_feature_factory
+
+        resources = self.data_augmentation_config.get_required_resources()
+        for config in self.feature_factory_configs:
+            factory = get_feature_factory(config)
+            resources = merge_required_resources(
+                resources, factory.get_required_resources())
+        return resources
+
     def to_dict(self):
         return {
             "unit_name": self.unit_name,
             "feature_factory_configs": self.feature_factory_configs,
             "crf_args": self.crf_args,
             "tagging_scheme": self.tagging_scheme.value,
-            "exhaustive_permutations_threshold":
-                self.exhaustive_permutations_threshold,
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
             "random_seed": self.random_seed
@@ -126,16 +132,27 @@ class SlotFillerDataAugmentationConfig(Config):
         capitalization_ratio (float, optional): If an entity has one or more
             capitalized values, the data augmentation will randomly capitalize
             its values with a ratio of *capitalization_ratio* (default=.2)
+        add_builtin_entities_examples (bool, optional): If True, some builtin
+            entity examples will be automatically added to the training data.
+            Default is True.
     """
 
-    def __init__(self, min_utterances=200, capitalization_ratio=.2):
+    def __init__(self, min_utterances=200, capitalization_ratio=.2,
+                 add_builtin_entities_examples=True):
         self.min_utterances = min_utterances
         self.capitalization_ratio = capitalization_ratio
+        self.add_builtin_entities_examples = add_builtin_entities_examples
+
+    def get_required_resources(self):
+        return {
+            STOP_WORDS: True
+        }
 
     def to_dict(self):
         return {
             "min_utterances": self.min_utterances,
-            "capitalization_ratio": self.capitalization_ratio
+            "capitalization_ratio": self.capitalization_ratio,
+            "add_builtin_entities_examples": self.add_builtin_entities_examples
         }
 
     @classmethod

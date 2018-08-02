@@ -1,7 +1,14 @@
+from __future__ import unicode_literals
+
+import logging
+
+from future.builtins import object, str
 from future.utils import iteritems
+from mock import MagicMock
 
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.utils import LimitedSizeDict, ranges_overlap
+from snips_nlu.utils import (
+    DifferedLoggingMessage, LimitedSizeDict, ranges_overlap)
 
 
 class TestLimitedSizeDict(SnipsTest):
@@ -72,3 +79,30 @@ class TestUtils(SnipsTest):
         self.assertFalse(ranges_overlap(range1, range5))
         self.assertTrue(ranges_overlap(range1, range6))
         self.assertTrue(ranges_overlap(range1, range7))
+
+    def test_differed_logging_message(self):
+        # Given
+        def fn(a, b, c):
+            return a + b + c
+
+        mocked_fn = MagicMock()
+        mocked_fn.side_effect = fn
+
+        class Greeter(object):
+            def greet(self):
+                return "Yo!"
+
+        levels = [logging.DEBUG, logging.INFO, logging.WARNING]
+        logger = logging.Logger("my_dummy_logger", logging.INFO)
+        logger.addHandler(logging.StreamHandler())
+        _a, _b, _c = 1, 2, 3
+
+        with self.fail_if_exception("Failed to log"):
+            # When/Then
+            my_obj = Greeter()
+            logger.log(logging.INFO,
+                       "Greeting: %s", DifferedLoggingMessage(my_obj.greet))
+            for l in levels:
+                logger.log(l, "Level: %s -> %s", str(l),
+                           DifferedLoggingMessage(mocked_fn, _a, _b, c=_c))
+        self.assertEqual(2, mocked_fn.call_count)

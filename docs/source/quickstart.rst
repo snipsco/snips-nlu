@@ -3,6 +3,15 @@
 Quickstart
 ==========
 
+In this section, we assume that you have installed ``snips-nlu`` and loaded
+resources for English:
+
+.. code-block:: sh
+
+    pip install snips-nlu
+    python -m snips_nlu download en
+
+
 The Snips NLU engine, in its default configuration, needs to be trained on
 some data before it can start extracting information. Thus, the first thing to
 do is to build a dataset that can be fed into Snips NLU.
@@ -101,4 +110,4 @@ You should get something that looks like this:
 Congrats, you parsed your first intent!
 
 
-.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/samples/sample_dataset.json
+.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json

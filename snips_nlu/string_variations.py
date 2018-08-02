@@ -3,21 +3,19 @@ from __future__ import unicode_literals
 
 import itertools
 import re
+from builtins import range, str, zip
 
-from builtins import range
-from builtins import str
-from builtins import zip
 from future.utils import iteritems
-from snips_nlu_utils import normalize
 from num2words import num2words
+from snips_nlu_utils import normalize
 
 from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
-    VALUE, RES_MATCH_RANGE, SNIPS_NUMBER, LANGUAGE_EN, LANGUAGE_ES,
-    LANGUAGE_FR, LANGUAGE_DE, ENTITY, START, END)
-from snips_nlu.languages import get_punctuation_regex, supports_num2words, \
-    get_default_sep
-from snips_nlu.tokenization import tokenize_light
+    END, ENTITY, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR,
+    RES_MATCH_RANGE, SNIPS_NUMBER, START, VALUE)
+from snips_nlu.languages import (
+    get_default_sep, get_punctuation_regex, supports_num2words)
+from snips_nlu.preprocessing import tokenize_light
 
 AND_UTTERANCES = {
     LANGUAGE_EN: ["and", "&"],
@@ -32,6 +30,8 @@ AND_REGEXES = {
         re.IGNORECASE)
     for language, utterances in iteritems(AND_UTTERANCES)
 }
+
+MAX_ENTITY_VARIATIONS = 10
 
 
 def build_variated_query(string, ranges_and_utterances):
@@ -49,19 +49,25 @@ def build_variated_query(string, ranges_and_utterances):
 
 def and_variations(string, language):
     and_regex = AND_REGEXES.get(language, None)
-    variations = set()
     if and_regex is None:
-        return variations
+        return set()
 
     matches = [m for m in and_regex.finditer(string)]
     if not matches:
-        return variations
+        return set()
 
     matches = sorted(matches, key=lambda x: x.start())
-    values = [({START: m.start(), END: m.end()}, AND_UTTERANCES[language])
+    and_utterances = AND_UTTERANCES[language]
+    values = [({START: m.start(), END: m.end()}, and_utterances)
               for m in matches]
-    combinations = itertools.product(range(len(AND_UTTERANCES[language])),
-                                     repeat=len(values))
+
+    n_values = len(values)
+    n_and_utterances = len(and_utterances)
+    if n_and_utterances ** n_values > MAX_ENTITY_VARIATIONS:
+        return set()
+
+    combinations = itertools.product(range(n_and_utterances), repeat=n_values)
+    variations = set()
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])
                                  for i, ix in enumerate(c)]
@@ -70,16 +76,20 @@ def and_variations(string, language):
 
 
 def punctuation_variations(string, language):
-    variations = set()
     matches = [m for m in get_punctuation_regex(language).finditer(string)]
     if not matches:
-        return variations
+        return set()
 
     matches = sorted(matches, key=lambda x: x.start())
     values = [({START: m.start(), END: m.end()}, (m.group(0), ""))
               for m in matches]
 
-    combinations = itertools.product(range(2), repeat=len(matches))
+    n_values = len(values)
+    if 2 ** n_values > MAX_ENTITY_VARIATIONS:
+        return set()
+
+    combinations = itertools.product(range(2), repeat=n_values)
+    variations = set()
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])
                                  for i, ix in enumerate(c)]
@@ -103,17 +113,16 @@ def alphabetic_value(number_entity, language):
 
 
 def numbers_variations(string, language):
-    variations = set()
     if not supports_num2words(language):
-        return variations
+        return set()
 
     number_entities = get_builtin_entities(
-        string, language, scope=[SNIPS_NUMBER])
+        string, language, scope=[SNIPS_NUMBER], use_cache=True)
 
     number_entities = sorted(number_entities,
                              key=lambda x: x[RES_MATCH_RANGE][START])
     if not number_entities:
-        return variations
+        return set()
 
     digit_values = [digit_value(e) for e in number_entities]
     alpha_values = [alphabetic_value(e, language) for e in number_entities]
@@ -122,7 +131,12 @@ def numbers_variations(string, language):
               zip(number_entities, digit_values, alpha_values)
               if a is not None]
 
-    combinations = itertools.product(range(2), repeat=len(values))
+    n_values = len(values)
+    if 2 ** n_values > MAX_ENTITY_VARIATIONS:
+        return set()
+
+    combinations = itertools.product(range(2), repeat=n_values)
+    variations = set()
     for c in combinations:
         ranges_and_utterances = [(values[i][0], values[i][1][ix])
                                  for i, ix in enumerate(c)]

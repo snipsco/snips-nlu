@@ -10,9 +10,10 @@ from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
-from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
-from snips_nlu.constants import (
-    DATA, ENTITIES, ENTITY, ENTITY_KIND, NGRAM, TEXT, UTTERANCES)
+from snips_nlu.builtin_entities import get_builtin_entity_parser, \
+    is_builtin_entity
+from snips_nlu.constants import (DATA, ENTITIES, ENTITY, ENTITY_KIND, NGRAM,
+                                 TEXT, UTTERANCES, BUILTIN_ENTITY_PARSER)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
@@ -25,7 +26,8 @@ from snips_nlu.slot_filler.features_utils import get_all_ngrams
 class Featurizer(object):
     def __init__(self, language, unknown_words_replacement_string,
                  config=FeaturizerConfig(), tfidf_vectorizer=None,
-                 best_features=None, entity_utterances_to_feature_names=None):
+                 best_features=None, entity_utterances_to_feature_names=None,
+                 builtin_entity_parser=None):
         self.config = config
         self.language = language
         if tfidf_vectorizer is None:
@@ -39,7 +41,11 @@ class Featurizer(object):
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
 
+        self.builtin_entity_parser = builtin_entity_parser
+
     def fit(self, dataset, utterances, classes):
+        if self.builtin_entity_parser is None:
+            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
         utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
             return None
@@ -104,7 +110,8 @@ class Featurizer(object):
     def preprocess_utterances(self, utterances):
         return [
             _preprocess_utterance(
-                u, self.language, self.entity_utterances_to_feature_names,
+                u, self.language, self.builtin_entity_parser,
+                self.entity_utterances_to_feature_names,
                 self.config.word_clusters_name)
             for u in utterances
         ]
@@ -127,44 +134,45 @@ class Featurizer(object):
             entity_utterances_to_entity_names = dict()
 
         tfidf_vectorizer = {
-            'vocab': vocab,
-            'idf_diag': idf_diag
+            "vocab": vocab,
+            "idf_diag": idf_diag
         }
 
         return {
-            'language_code': self.language,
-            'tfidf_vectorizer': tfidf_vectorizer,
-            'best_features': self.best_features,
-            'entity_utterances_to_feature_names':
+            "language_code": self.language,
+            "tfidf_vectorizer": tfidf_vectorizer,
+            "best_features": self.best_features,
+            "entity_utterances_to_feature_names":
                 entity_utterances_to_entity_names,
-            'config': self.config.to_dict(),
-            'unknown_words_replacement_string':
+            "config": self.config.to_dict(),
+            "unknown_words_replacement_string":
                 self.unknown_words_replacement_string
         }
 
     @classmethod
-    def from_dict(cls, obj_dict):
+    def from_dict(cls, obj_dict, **shared):
         """Creates a :class:`Featurizer` instance from a :obj:`dict`
 
         The dict must have been generated with :func:`~Featurizer.to_dict`
         """
-        language = obj_dict['language_code']
+        language = obj_dict["language_code"]
         config = FeaturizerConfig.from_dict(obj_dict["config"])
         tfidf_vectorizer = _deserialize_tfidf_vectorizer(
             obj_dict["tfidf_vectorizer"], language, config.sublinear_tf)
         entity_utterances_to_entity_names = {
             k: set(v) for k, v in
-            iteritems(obj_dict['entity_utterances_to_feature_names'])
+            iteritems(obj_dict["entity_utterances_to_feature_names"])
         }
         self = cls(
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
             entity_utterances_to_feature_names=
             entity_utterances_to_entity_names,
-            best_features=obj_dict['best_features'],
+            best_features=obj_dict["best_features"],
             config=config,
             unknown_words_replacement_string=obj_dict[
-                "unknown_words_replacement_string"]
+                "unknown_words_replacement_string"],
+            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER)
         )
         return self
 
@@ -221,7 +229,7 @@ def _get_dataset_entities_features(normalized_stemmed_tokens,
     return entity_features
 
 
-def _preprocess_utterance(utterance, language,
+def _preprocess_utterance(utterance, language, builtin_entity_parser,
                           entity_utterances_to_features_names,
                           word_clusters_name):
     utterance_text = get_text_from_chunks(utterance[DATA])
@@ -233,8 +241,8 @@ def _preprocess_utterance(utterance, language,
     entities_features = _get_dataset_entities_features(
         normalized_stemmed_tokens, entity_utterances_to_features_names)
 
-    builtin_entities = get_builtin_entities(utterance_text, language,
-                                            use_cache=True)
+    builtin_entities = builtin_entity_parser.parse(utterance_text,
+                                                   use_cache=True)
     builtin_entities_features = [
         _builtin_entity_to_feature(ent[ENTITY_KIND], language)
         for ent in builtin_entities

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from future.utils import iteritems, itervalues
 
-from snips_nlu.constants import INTENTS, RES_INTENT_NAME
+from snips_nlu.constants import BUILTIN_ENTITY_PARSER, INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
@@ -31,12 +31,12 @@ class ProbabilisticIntentParser(IntentParser):
     config_type = ProbabilisticIntentParserConfig
 
     # pylint:disable=line-too-long
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The probabilistic intent parser can be configured by passing a
         :class:`.ProbabilisticIntentParserConfig`"""
         if config is None:
             config = self.config_type()
-        super(ProbabilisticIntentParser, self).__init__(config)
+        super(ProbabilisticIntentParser, self).__init__(config, **shared)
         self.intent_classifier = None
         self.slot_fillers = dict()
 
@@ -71,6 +71,8 @@ class ProbabilisticIntentParser(IntentParser):
         if self.intent_classifier is None:
             self.intent_classifier = build_processing_unit(
                 self.config.intent_classifier_config)
+        self.intent_classifier.builtin_entity_parser = \
+            self.builtin_entity_parser
         if force_retrain or not self.intent_classifier.fitted:
             self.intent_classifier.fit(dataset)
 
@@ -83,6 +85,8 @@ class ProbabilisticIntentParser(IntentParser):
                 slot_filler_config = deepcopy(self.config.slot_filler_config)
                 self.slot_fillers[intent_name] = build_processing_unit(
                     slot_filler_config)
+            self.slot_fillers[intent_name].builtin_entity_parser = \
+                self.builtin_entity_parser
             if force_retrain or not self.slot_fillers[intent_name].fitted:
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
         logger.debug("Fitted slot fillers in %s",
@@ -154,7 +158,7 @@ class ProbabilisticIntentParser(IntentParser):
         self.persist_metadata(path)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`ProbabilisticIntentParser` instance from a path
 
         The data at the given path must have been generated using
@@ -169,17 +173,18 @@ class ProbabilisticIntentParser(IntentParser):
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)
 
-        parser = cls(config=cls.config_type.from_dict(model["config"]))
+        parser = cls(config=cls.config_type.from_dict(model["config"]),
+                     builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER))
         classifier = None
         intent_classifier_path = path / "intent_classifier"
         if intent_classifier_path.exists():
-            classifier = load_processing_unit(intent_classifier_path)
+            classifier = load_processing_unit(intent_classifier_path, **shared)
 
         slot_fillers = dict()
         for slot_filler_conf in model["slot_fillers"]:
             intent = slot_filler_conf["intent"]
             slot_filler_path = path / slot_filler_conf["slot_filler_name"]
-            slot_filler = load_processing_unit(slot_filler_path)
+            slot_filler = load_processing_unit(slot_filler_path, **shared)
             slot_fillers[intent] = slot_filler
 
         parser.intent_classifier = classifier

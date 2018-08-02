@@ -8,6 +8,7 @@ from pathlib import Path
 
 from future.utils import with_metaclass
 
+from snips_nlu.constants import BUILTIN_ENTITY_PARSER
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.utils import classproperty, json_string, temp_dir, unzip_archive
 
@@ -22,13 +23,14 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
     represents the :class:`.ProcessingUnitConfig` used to initialize it.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, **shared):
         if config is None or isinstance(config, ProcessingUnitConfig):
             self.config = config
         elif isinstance(config, dict):
             self.config = self.config_type.from_dict(config)
         else:
             raise ValueError("Unexpected config type: %s" % type(config))
+        self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
 
     def persist_metadata(self, path, **kwargs):
         metadata = {"unit_name": self.unit_name}
@@ -50,7 +52,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         pass
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         raise NotImplementedError
 
     def to_byte_array(self):
@@ -77,7 +79,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         return processing_unit_bytes
 
     @classmethod
-    def from_byte_array(cls, unit_bytes):
+    def from_byte_array(cls, unit_bytes, **shared):
         """Load a :class:`ProcessingUnit` instance from a bytearray
 
         Args:
@@ -90,16 +92,17 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
             with archive_path.open(mode="wb") as f:
                 f.write(unit_bytes)
             unzip_archive(archive_path, str(tmp_dir))
-            processing_unit = cls.from_path(tmp_dir / cleaned_unit_name)
+            processing_unit = cls.from_path(tmp_dir / cleaned_unit_name,
+                                            **shared)
         return processing_unit
 
 
 def _sanitize_unit_name(unit_name):
-    return unit_name\
-        .lower()\
-        .strip()\
-        .replace(" ", "")\
-        .replace("/", "")\
+    return unit_name \
+        .lower() \
+        .strip() \
+        .replace(" ", "") \
+        .replace("/", "") \
         .replace("\\", "")
 
 
@@ -127,22 +130,24 @@ def get_processing_unit_config(unit_config):
                          % type(unit_config))
 
 
-def build_processing_unit(unit_config):
+def build_processing_unit(unit_config, **shared):
     """Creates a new :class:`ProcessingUnit` from the provided *unit_config*
 
     Args:
         unit_config (:class:`.ProcessingUnitConfig`): The processing unit
             config
+        shared (kwargs): attributes shared across the NLU pipeline such as
+            'builtin_entity_parser'.
     """
     unit = _get_unit_type(unit_config.unit_name)
-    return unit(unit_config)
+    return unit(unit_config, **shared)
 
 
-def load_processing_unit(unit_path):
+def load_processing_unit(unit_path, **shared):
     """Load a :class:`ProcessingUnit` from a persisted processing unit
     directory"""
     unit_path = Path(unit_path)
     with (unit_path / "metadata.json").open(encoding="utf8") as f:
         metadata = json.load(f)
     unit = _get_unit_type(metadata["unit_name"])
-    return unit.from_path(unit_path)
+    return unit.from_path(unit_path, **shared)

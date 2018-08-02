@@ -4,23 +4,21 @@ from abc import ABCMeta, abstractmethod
 from builtins import map, object, str
 
 from future.utils import iteritems, with_metaclass
-from snips_nlu_ontology.builtin_entities import get_supported_entities
+from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape, normalize
 
-from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import (END, GAZETTEERS, LANGUAGE, NGRAM,
-                                 RES_MATCH_RANGE, START, STEMS, TOKEN_INDEXES,
-                                 UTTERANCES, WORD_CLUSTERS)
+from snips_nlu.constants import (
+    END, GAZETTEERS, LANGUAGE, NGRAM, RES_MATCH_RANGE, START, STEMS,
+    TOKEN_INDEXES, UTTERANCES, WORD_CLUSTERS)
+from snips_nlu.dataset import get_dataset_gazetteer_entities
 from snips_nlu.languages import get_default_sep
-from snips_nlu.preprocessing import stem, stem_token, normalize_token
+from snips_nlu.preprocessing import normalize_token, stem, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
-from snips_nlu.slot_filler.features_utils import (entity_filter,
-                                                  get_all_ngrams,
-                                                  get_intent_custom_entities,
-                                                  get_word_chunk,
-                                                  initial_string_from_tokens)
+from snips_nlu.slot_filler.features_utils import (
+    entity_filter, get_all_ngrams, get_intent_custom_entities, get_word_chunk,
+    initial_string_from_tokens)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
@@ -63,7 +61,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         return self
 
     @abstractmethod
-    def build_features(self):
+    def build_features(self, builtin_entity_parser):
         """Build a list of :class:`.Feature`"""
         pass
 
@@ -83,7 +81,7 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     def compute_feature(self, tokens, token_index):
         pass
 
-    def build_features(self):
+    def build_features(self, builtin_entity_parser=None):
         return [
             Feature(
                 base_name=self.feature_name,
@@ -423,7 +421,7 @@ class EntityMatchFactory(CRFFeatureFactory):
             return stem_token(token, self.language)
         return normalize_token(token)
 
-    def build_features(self):
+    def build_features(self, builtin_entity_parser=None):
         features = []
         for name, collection in iteritems(self.collections):
             # We need to call this wrapper in order to properly capture
@@ -496,16 +494,17 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
-        self.builtin_entities = list(get_supported_entities(self.language))
+        self.builtin_entities = self._get_builtin_entity_scope(dataset, intent)
         self.args["entity_labels"] = self.builtin_entities
 
-    def build_features(self):
+    def build_features(self, builtin_entity_parser):
         features = []
 
         for builtin_entity in self.builtin_entities:
             # We need to call this wrapper in order to properly capture
             # `builtin_entity`
-            builtin_entity_match = self._build_entity_match_fn(builtin_entity)
+            builtin_entity_match = self._build_entity_match_fn(
+                builtin_entity, builtin_entity_parser)
             for offset in self.offsets:
                 feature_name = "builtin_entity_match_%s" % builtin_entity
                 feature = Feature(feature_name, builtin_entity_match, offset,
@@ -514,15 +513,15 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
         return features
 
-    def _build_entity_match_fn(self, builtin_entity):
+    def _build_entity_match_fn(self, builtin_entity, builtin_entity_parser):
 
         def builtin_entity_match(tokens, token_index):
             text = initial_string_from_tokens(tokens)
             start = tokens[token_index].start
             end = tokens[token_index].end
 
-            builtin_entities = get_builtin_entities(
-                text, self.language, scope=[builtin_entity], use_cache=True)
+            builtin_entities = builtin_entity_parser.parse(
+                text, scope=[builtin_entity], use_cache=True)
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
             for ent in builtin_entities:
@@ -537,6 +536,14 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
                                          self.tagging_scheme)
 
         return builtin_entity_match
+
+    @staticmethod
+    def _get_builtin_entity_scope(dataset, intent=None):
+        language = dataset[LANGUAGE]
+        grammar_entities = list(get_supported_grammar_entities(language))
+        gazetteer_entities = list(
+            get_dataset_gazetteer_entities(dataset, intent))
+        return grammar_entities + gazetteer_entities
 
 
 FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,

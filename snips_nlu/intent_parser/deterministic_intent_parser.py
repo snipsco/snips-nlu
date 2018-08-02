@@ -8,11 +8,12 @@ from pathlib import Path
 
 from future.utils import iteritems
 
-from snips_nlu.builtin_entities import (get_builtin_entities,
+from snips_nlu.builtin_entities import (get_builtin_entity_parser,
                                         is_builtin_entity)
-from snips_nlu.constants import (
-    DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
-    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
+from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, DATA, END, ENTITIES,
+                                 ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
+                                 RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START,
+                                 TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
@@ -42,12 +43,12 @@ class DeterministicIntentParser(IntentParser):
     unit_name = "deterministic_intent_parser"
     config_type = DeterministicIntentParserConfig
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The deterministic intent parser can be configured by passing a
         :class:`.DeterministicIntentParserConfig`"""
         if config is None:
             config = self.config_type()
-        super(DeterministicIntentParser, self).__init__(config)
+        super(DeterministicIntentParser, self).__init__(config, **shared)
         self.language = None
         self.regexes_per_intent = None
         self.group_names_to_slot_names = None
@@ -81,6 +82,8 @@ class DeterministicIntentParser(IntentParser):
         """Fit the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
+        if self.builtin_entity_parser is None:
+            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
@@ -126,7 +129,7 @@ class DeterministicIntentParser(IntentParser):
             intents = [intents]
 
         ranges_mapping, processed_text = _replace_builtin_entities(
-            text, self.language)
+            text, self.language, self.builtin_entity_parser)
 
         # We try to match both the input text and the preprocessed text to
         # cover inconsistencies between labeled data and builtin entity parsing
@@ -193,7 +196,7 @@ class DeterministicIntentParser(IntentParser):
         self.persist_metadata(path)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`DeterministicIntentParser` instance from a path
 
         The data at the given path must have been generated using
@@ -207,7 +210,7 @@ class DeterministicIntentParser(IntentParser):
 
         with metadata_path.open(encoding="utf8") as f:
             metadata = json.load(f)
-        return cls.from_dict(metadata)
+        return cls.from_dict(metadata, **shared)
 
     def to_dict(self):
         """Returns a json-serializable dict"""
@@ -220,14 +223,15 @@ class DeterministicIntentParser(IntentParser):
         }
 
     @classmethod
-    def from_dict(cls, unit_dict):
+    def from_dict(cls, unit_dict, **shared):
         """Creates a :class:`DeterministicIntentParser` instance from a dict
 
         The dict must have been generated with
         :func:`~DeterministicIntentParser.to_dict`
         """
         config = cls.config_type.from_dict(unit_dict["config"])
-        parser = cls(config=config)
+        parser = cls(config=config,
+                     builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER))
         parser.patterns = unit_dict["patterns"]
         parser.language = unit_dict["language_code"]
         parser.group_names_to_slot_names = unit_dict[
@@ -394,8 +398,8 @@ def _get_entity_name_placeholder(entity_label, language):
         tokenize_light(entity_label, language)).upper()
 
 
-def _replace_builtin_entities(text, language):
-    builtin_entities = get_builtin_entities(text, language, use_cache=True)
+def _replace_builtin_entities(text, language, builtin_entity_parser):
+    builtin_entities = builtin_entity_parser.parse(text, use_cache=True)
     if not builtin_entities:
         return dict(), text
 

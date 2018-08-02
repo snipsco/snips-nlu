@@ -2,12 +2,13 @@
 from __future__ import unicode_literals
 
 from builtins import range
+
 from mock import patch
 
+from snips_nlu.builtin_entities import BuiltinEntityParser
 from snips_nlu.constants import (
-    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
-    RES_MATCH_RANGE, RES_SLOTS, SLOT_NAME, SNIPS_DATETIME, SNIPS_ORDINAL,
-    START, TEXT, VALUE)
+    DATA, END, ENTITY, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
+    RES_SLOTS, SLOT_NAME, START, TEXT)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
@@ -15,8 +16,8 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
     _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH, \
-    BEVERAGE_DATASET
+from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest, \
+    SAMPLE_DATASET, TEST_PATH
 from snips_nlu.utils import NotTrained
 
 
@@ -230,7 +231,8 @@ class TestDeterministicIntentParser(FixtureTest):
         parser = DeterministicIntentParser().fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path)
+            self.tmp_file_path,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
         text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -330,7 +332,9 @@ class TestDeterministicIntentParser(FixtureTest):
         parser = DeterministicIntentParser().fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path)
+            self.tmp_file_path,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
+
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -401,7 +405,8 @@ class TestDeterministicIntentParser(FixtureTest):
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = DeterministicIntentParser.from_byte_array(
-            intent_parser_bytes)
+            intent_parser_bytes,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
         result = loaded_intent_parser.parse("make me two cups of coffee")
 
         # Then
@@ -757,35 +762,22 @@ class TestDeterministicIntentParser(FixtureTest):
         self.assertEqual(3, len(parser.regexes_per_intent["dummy_intent_1"]))
         self.assertEqual(1, len(parser.regexes_per_intent["dummy_intent_2"]))
 
-    @patch('snips_nlu.intent_parser.deterministic_intent_parser'
-           '.get_builtin_entities')
-    def test_should_replace_builtin_entities(self, mock_get_builtin_entities):
+    def test_should_replace_builtin_entities(self):
         # Given
         text = "Be the first to be there at 9pm"
-        mock_get_builtin_entities.return_value = [
-            {
-                RES_MATCH_RANGE: {START: 7, END: 12},
-                VALUE: "first",
-                ENTITY_KIND: SNIPS_ORDINAL
-            },
-            {
-                RES_MATCH_RANGE: {START: 28, END: 31},
-                VALUE: "9pm",
-                ENTITY_KIND: SNIPS_DATETIME
-            }
-        ]
 
         # When
         range_mapping, processed_text = _replace_builtin_entities(
-            text=text, language=LANGUAGE_EN)
+            text=text, language=LANGUAGE_EN,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
 
         # Then
         expected_mapping = {
-            (7, 21): {START: 7, END: 12},
-            (37, 52): {START: 28, END: 31}
+            (3, 17): {START: 3, END: 12},
+            (30, 45): {START: 25, END: 31}
         }
         expected_processed_text = \
-            "Be the %SNIPSORDINAL% to be there at %SNIPSDATETIME%"
+            "Be %SNIPSORDINAL% to be there %SNIPSDATETIME%"
 
         self.assertDictEqual(expected_mapping, range_mapping)
         self.assertEqual(expected_processed_text, processed_text)

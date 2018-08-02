@@ -2,8 +2,7 @@ from __future__ import unicode_literals
 
 from snips_nlu_ontology import get_all_languages
 
-from snips_nlu.builtin_entities import (BuiltinEntityParser,
-                                        get_builtin_entities)
+from snips_nlu.builtin_entities import BuiltinEntityParser
 from snips_nlu.constants import ENTITY_KIND
 from snips_nlu.tests.utils import SnipsTest
 
@@ -12,7 +11,7 @@ class TestBuiltInEntities(SnipsTest):
     def test_builtin_entity_parser_should_parse(self):
         # Given
         text = "we'll be 2 at the meeting"
-        parser = BuiltinEntityParser("en")
+        parser = BuiltinEntityParser("en", None)
 
         # When / Then
         parse = parser.parse(text)
@@ -38,10 +37,11 @@ class TestBuiltInEntities(SnipsTest):
         text = ""
 
         for language in get_all_languages():
+            parser = BuiltinEntityParser(language, None)
             msg = "get_builtin_entities does not support %s." % language
             with self.fail_if_exception(msg):
                 # When / Then
-                get_builtin_entities(text, language)
+                parser.parse(text)
 
     def test_get_builtin_entities_should_respect_scope(self):
         # Given
@@ -49,7 +49,8 @@ class TestBuiltInEntities(SnipsTest):
 
         # When
         scope = ["snips/number"]
-        parse = get_builtin_entities(text, "en", scope=scope)
+        parser = BuiltinEntityParser("en", None)
+        parse = parser.parse(text, scope=scope)
 
         # Then
         self.assertEqual(len(parse), 1)

@@ -4,11 +4,11 @@ from __future__ import unicode_literals
 import json
 
 import numpy as np
-from future.builtins import bytes
 from future.utils import iteritems
-from mock import patch, mock
+from mock import mock, patch
 
-from snips_nlu.constants import LANGUAGE_EN, DATA, TEXT, ENTITY, SLOT_NAME
+from snips_nlu.constants import DATA, ENTITY, LANGUAGE_EN, SLOT_NAME, \
+    SNIPS_DATETIME, SNIPS_NUMBER, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
@@ -16,8 +16,8 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     text_to_utterance
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
-from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.preprocessing import tokenize_light
+from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.utils import json_string
 
 
@@ -89,9 +89,9 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         expected_serialized = {
             "config": {
-                'sublinear_tf': False,
-                'pvalue_threshold': pvalue_threshold,
-                'word_clusters_name': "brown_clusters"
+                "sublinear_tf": False,
+                "pvalue_threshold": pvalue_threshold,
+                "word_clusters_name": "brown_clusters"
             },
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
@@ -154,7 +154,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
     @mock.patch("snips_nlu.dataset.get_string_variations")
     def test_get_utterances_entities(self, mocked_get_string_variations):
         # Given
-        def mock_get_string_variations(variation, language):
+        def mock_get_string_variations(variation, language,
+                                       builtin_entity_parser):
             return {variation, variation.lower()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -342,6 +343,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         # Given
         language = LANGUAGE_EN
         dataset = {
+            "language": LANGUAGE_EN,
             "entities": {
                 "dummy1": {
                     "utterances": {

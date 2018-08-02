@@ -175,8 +175,8 @@ class TestSnipsNLUEngine(FixtureTest):
             unit_name = "test_intent_parser"
             config_type = TestIntentParserConfig
 
-            def __init__(self, config):
-                super(TestIntentParser, self).__init__(config)
+            def __init__(self, config, **shared):
+                super(TestIntentParser, self).__init__(config, **shared)
                 self.sub_unit_1 = dict(fitted=False, calls=0)
                 self.sub_unit_2 = dict(fitted=False, calls=0)
 
@@ -254,7 +254,7 @@ class TestSnipsNLUEngine(FixtureTest):
         with self.assertRaises(NotTrained):
             engine.parse("foobar")
 
-    def test_should_be_serializable_into_zip(self):
+    def test_should_be_serializable_into_dir(self):
         # Given
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
@@ -500,6 +500,17 @@ class TestSnipsNLUEngine(FixtureTest):
         self.assertEqual(result[RES_INPUT], input_)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeTea")
         self.assertListEqual(result[RES_SLOTS], expected_slots)
+
+    def test_should_be_serializable_into_bytearray_when_empty(self):
+        # Given
+        engine = SnipsNLUEngine()
+        engine_bytes = engine.to_byte_array()
+
+        # When
+        engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+
+        # Then
+        self.assertFalse(engine.fitted)
 
     def test_should_be_serializable_into_bytearray(self):
         # Given

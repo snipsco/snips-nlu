@@ -1,9 +1,9 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from snips_nlu.builtin_entities import get_builtin_entities
-from snips_nlu.constants import (
-    LANGUAGE_EN, LANGUAGE_FR, RES_MATCH_RANGE, START)
+from snips_nlu.builtin_entities import BuiltinEntityParser
+from snips_nlu.constants import (LANGUAGE_EN, LANGUAGE_FR, RES_MATCH_RANGE,
+                                 SNIPS_NUMBER, START)
 from snips_nlu.string_variations import (
     alphabetic_value, and_variations, get_string_variations,
     numbers_variations, punctuation_variations)
@@ -61,7 +61,8 @@ class TestStringVariations(SnipsTest):
         # Given
         language = LANGUAGE_EN
         string = "1 time and 23 times and one thousand and sixty and 1.2"
-        entities = get_builtin_entities(string, language)
+        parser = BuiltinEntityParser(language, None)
+        entities = parser.parse(string, scope=[SNIPS_NUMBER])
         entities = sorted(entities, key=lambda x: x[RES_MATCH_RANGE][START])
 
         expected_values = ["one", "twenty-three", "one thousand and sixty",
@@ -82,7 +83,8 @@ class TestStringVariations(SnipsTest):
         string = "a and b 2"
 
         # When
-        variations = get_string_variations(string, language)
+        variations = get_string_variations(string, language,
+                                           BuiltinEntityParser("en", None))
 
         # Then
         expected_variations = {
@@ -113,7 +115,8 @@ class TestStringVariations(SnipsTest):
         string = "Küche"
 
         # When
-        variations = get_string_variations(string, language)
+        variations = get_string_variations(string, language,
+                                           BuiltinEntityParser("en", None))
 
         # Then
         expected_variations = {
@@ -130,7 +133,8 @@ class TestStringVariations(SnipsTest):
         string = "france 24"
 
         # When
-        variations = get_string_variations(string, language)
+        variations = get_string_variations(string, language,
+                                           BuiltinEntityParser("en", None))
 
         # Then
         expected_variations = {
@@ -149,7 +153,8 @@ class TestStringVariations(SnipsTest):
         string = "7.62 mm caliber 2 and six"
 
         # When
-        variations = numbers_variations(string, language)
+        variations = numbers_variations(string, language,
+                                        BuiltinEntityParser("en", None))
 
         # Then
         expected_variations = {

@@ -10,16 +10,20 @@ from pathlib import Path
 from future.utils import iteritems
 
 from snips_nlu.__about__ import __model_version__, __version__
-from snips_nlu.builtin_entities import is_builtin_entity
+from snips_nlu.builtin_entities import (
+    get_builtin_entity_parser, is_builtin_entity)
 from snips_nlu.constants import (
-    CAPITALIZE, ENTITIES, LANGUAGE, RES_ENTITY, RES_INTENT, RES_SLOTS)
+    BUILTIN_ENTITY_PARSER, CAPITALIZE, ENTITIES, GAZETTEER_ENTITIES, LANGUAGE,
+    RES_ENTITY, RES_INTENT, RES_SLOTS)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
-from snips_nlu.resources import load_resources_from_dir, persist_resources
+from snips_nlu.resources import (
+    get_builtin_entity_parser_from_dir, load_resources_from_dir,
+    persist_resources)
 from snips_nlu.result import empty_result, is_empty, parsing_result
 from snips_nlu.utils import (
     check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
@@ -51,10 +55,10 @@ class SnipsNLUEngine(ProcessingUnit):
     unit_name = "nlu_engine"
     config_type = NLUEngineConfig
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The NLU engine can be configured by passing a
         :class:`.NLUEngineConfig`"""
-        super(SnipsNLUEngine, self).__init__(config)
+        super(SnipsNLUEngine, self).__init__(config, **shared)
         self.intent_parsers = []
         """list of :class:`.IntentParser`"""
         self._dataset_metadata = None
@@ -78,6 +82,8 @@ class SnipsNLUEngine(ProcessingUnit):
             The same object, trained.
         """
         logger.info("Fitting NLU engine...")
+
+        self.builtin_entity_parser = get_builtin_entity_parser(dataset)
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
 
@@ -95,6 +101,7 @@ class SnipsNLUEngine(ProcessingUnit):
                     break
             if recycled_parser is None:
                 recycled_parser = build_processing_unit(parser_config)
+            recycled_parser.builtin_entity_parser = self.builtin_entity_parser
             if force_retrain or not recycled_parser.fitted:
                 recycled_parser.fit(dataset, force_retrain)
             parsers.append(recycled_parser)
@@ -129,7 +136,6 @@ class SnipsNLUEngine(ProcessingUnit):
         if isinstance(intents, str):
             intents = [intents]
 
-        language = self._dataset_metadata["language_code"]
         entities = self._dataset_metadata["entities"]
 
         for parser in self.intent_parsers:
@@ -139,8 +145,8 @@ class SnipsNLUEngine(ProcessingUnit):
             slots = res[RES_SLOTS]
             scope = [s[RES_ENTITY] for s in slots
                      if is_builtin_entity(s[RES_ENTITY])]
-            resolved_slots = resolve_slots(text, slots, entities, language,
-                                           scope)
+            resolved_slots = resolve_slots(
+                text, slots, entities, self.builtin_entity_parser, scope)
             return parsing_result(text, intent=res[RES_INTENT],
                                   slots=resolved_slots)
         return empty_result(text)
@@ -195,7 +201,7 @@ class SnipsNLUEngine(ProcessingUnit):
                                   required_resources, language)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`SnipsNLUEngine` instance from a directory path
 
         The data at the given path must have been generated using
@@ -218,10 +224,12 @@ class SnipsNLUEngine(ProcessingUnit):
                 "Incompatible data model: persisted object=%s, python lib=%s"
                 % (model_version, __model_version__))
 
-        resources_dir = (directory_path / "resources")
+        resources_dir = directory_path / "resources"
         if resources_dir.is_dir():
             for subdir in resources_dir.iterdir():
-                load_resources_from_dir(subdir)
+                if subdir.is_dir() and (subdir / "metadata.json").exists():
+                    load_resources_from_dir(subdir)
+                    break
 
         nlu_engine = cls(config=model["config"])
         # pylint:disable=protected-access
@@ -230,7 +238,7 @@ class SnipsNLUEngine(ProcessingUnit):
         intent_parsers = []
         for intent_parser_name in model["intent_parsers"]:
             intent_parser_path = directory_path / intent_parser_name
-            intent_parser = load_processing_unit(intent_parser_path)
+            intent_parser = load_processing_unit(intent_parser_path, **shared)
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine

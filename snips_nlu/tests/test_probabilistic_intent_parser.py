@@ -4,6 +4,7 @@ from pathlib import Path
 
 from mock import patch
 
+from snips_nlu.builtin_entities import BuiltinEntityParser
 from snips_nlu.constants import RES_INTENT, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier import IntentClassifier, \
@@ -237,7 +238,8 @@ class TestProbabilisticIntentParser(FixtureTest):
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = ProbabilisticIntentParser.from_byte_array(
-            intent_parser_bytes)
+            intent_parser_bytes,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
         result = loaded_intent_parser.parse("make me two cups of tea")
 
         # Then
@@ -306,7 +308,7 @@ class TestIntentClassifier(IntentClassifier):
     @classmethod
     def from_path(cls, path):
         config = cls.config_type()
-        return TestIntentClassifier(config)
+        return cls(config)
 
 
 class TestSlotFillerConfig(ProcessingUnitConfig):
@@ -342,4 +344,4 @@ class TestSlotFiller(SlotFiller):
     @classmethod
     def from_path(cls, path):
         config = cls.config_type()
-        return TestSlotFiller(config)
+        return cls(config)

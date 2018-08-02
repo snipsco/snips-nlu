@@ -7,6 +7,7 @@ import numpy as np
 from future.utils import itervalues
 from mock import patch
 
+from snips_nlu.builtin_entities import BuiltinEntityParser
 from snips_nlu.constants import (
     INTENTS, LANGUAGE_EN, RES_INTENT_NAME, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
@@ -177,7 +178,8 @@ class TestLogRegIntentClassifier(FixtureTest):
 
         # When
         loaded_classifier = LogRegIntentClassifier.from_path(
-            self.tmp_file_path)
+            self.tmp_file_path,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
         result = loaded_classifier.get_intent("Make me two cups of tea")
 
         # Then
@@ -192,7 +194,8 @@ class TestLogRegIntentClassifier(FixtureTest):
         # When
         intent_classifier_bytes = intent_classifier.to_byte_array()
         loaded_classifier = LogRegIntentClassifier.from_byte_array(
-            intent_classifier_bytes)
+            intent_classifier_bytes,
+            builtin_entity_parser=BuiltinEntityParser("en", None))
         result = loaded_classifier.get_intent("make me two cups of tea")
 
         # Then

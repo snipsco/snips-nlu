@@ -14,10 +14,11 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
+from snips_nlu.builtin_entities import (
+    get_builtin_entity_parser, is_builtin_entity)
 from snips_nlu.constants import (
-    DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY, RES_MATCH_RANGE, RES_VALUE,
-    START)
+    BUILTIN_ENTITY_PARSER, DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
+    RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
@@ -30,8 +31,8 @@ from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.utils import (
     DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
-    check_random_state, fitted_required, get_slot_name_mapping, json_string,
-    log_elapsed_time, mkdir_p, ranges_overlap)
+    check_random_state, fitted_required,get_slot_name_mapping, json_string, log_elapsed_time,
+    mkdir_p, ranges_overlap)
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +47,13 @@ class CRFSlotFiller(SlotFiller):
     unit_name = "crf_slot_filler"
     config_type = CRFSlotFillerConfig
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The CRF slot filler can be configured by passing a
         :class:`.CRFSlotFillerConfig`"""
 
         if config is None:
             config = self.config_type()
-        super(CRFSlotFiller, self).__init__(config)
+        super(CRFSlotFiller, self).__init__(config, **shared)
         self.crf_model = None
         self.features_factories = [get_feature_factory(conf) for conf in
                                    self.config.feature_factory_configs]
@@ -68,7 +69,8 @@ class CRFSlotFiller(SlotFiller):
             self._features = []
             feature_names = set()
             for factory in self.features_factories:
-                for feature in factory.build_features():
+                for feature in factory.build_features(
+                        self.builtin_entity_parser):
                     if feature.name in feature_names:
                         raise KeyError("Duplicated feature: %s" % feature.name)
                     feature_names.add(feature.name)
@@ -110,6 +112,8 @@ class CRFSlotFiller(SlotFiller):
         """
         logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
+        if self.builtin_entity_parser is None:
+            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
         self.language = dataset[LANGUAGE]
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
@@ -272,9 +276,9 @@ class CRFSlotFiller(SlotFiller):
         scope = set(self.slot_name_mapping[slot]
                     for slot in builtin_slots_names)
         builtin_entities = [
-            be for entity_kind in scope for be in get_builtin_entities(
-                text, self.language, [entity_kind], use_cache=True)
-        ]
+            be for entity_kind in scope for be in
+            self.builtin_entity_parser.parse(text, scope=[entity_kind],
+                                             use_cache=True)]
         # We remove builtin entities which conflicts with custom slots
         # extracted by the CRF
         builtin_entities = _filter_overlapping_builtins(
@@ -348,7 +352,7 @@ class CRFSlotFiller(SlotFiller):
         self.persist_metadata(path)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`CRFSlotFiller` instance from a path
 
         The data at the given path must have been generated using
@@ -364,7 +368,9 @@ class CRFSlotFiller(SlotFiller):
             model = json.load(f)
 
         slot_filler_config = cls.config_type.from_dict(model["config"])
-        slot_filler = cls(config=slot_filler_config)
+        slot_filler = cls(
+            config=slot_filler_config,
+            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER))
         slot_filler.language = model["language_code"]
         slot_filler.intent = model["intent"]
         slot_filler.slot_name_mapping = model["slot_name_mapping"]

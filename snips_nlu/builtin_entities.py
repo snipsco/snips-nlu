@@ -8,7 +8,7 @@ from snips_nlu_ontology import (
     get_all_gazetteer_entities, get_all_grammar_entities,
     get_supported_gazetteer_entities)
 
-from snips_nlu.constants import DATA_PATH, LANGUAGE
+from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
 from snips_nlu.utils import LimitedSizeDict
 
 
@@ -38,9 +38,24 @@ _BUILTIN_ENTITY_PARSERS = dict()
 
 def get_builtin_entity_parser(dataset):
     language = dataset[LANGUAGE]
-    gazetteer_entities = [entity for entity in dataset["entities"]
+    gazetteer_entities = [entity for entity in dataset[ENTITIES]
                           if is_gazetteer_entity(entity)]
-    return _get_builtin_entity_parser(language, gazetteer_entities)
+    return get_builtin_entity_parser_from_scope(language, gazetteer_entities)
+
+
+def get_builtin_entity_parser_from_scope(language, gazetteer_entity_scope):
+    global _BUILTIN_ENTITY_PARSERS
+    caching_key = _get_caching_key(language, gazetteer_entity_scope)
+    if caching_key not in _BUILTIN_ENTITY_PARSERS:
+        for entity in gazetteer_entity_scope:
+            if entity not in get_supported_gazetteer_entities(language):
+                raise ValueError("Gazetteer entity '%s' is not supported in "
+                                 "language '%s'" % (entity, language))
+        configurations = _get_gazetteer_entity_configurations(
+            language, gazetteer_entity_scope)
+        _BUILTIN_ENTITY_PARSERS[caching_key] = BuiltinEntityParser(
+            language, configurations)
+    return _BUILTIN_ENTITY_PARSERS[caching_key]
 
 
 def find_gazetteer_entity_data_path(language, entity_name):
@@ -67,21 +82,6 @@ def is_gazetteer_entity(entity_label):
 
 def is_grammar_entity(entity_label):
     return entity_label in get_all_grammar_entities()
-
-
-def _get_builtin_entity_parser(language, gazetteer_entity_scope):
-    global _BUILTIN_ENTITY_PARSERS
-    caching_key = _get_caching_key(language, gazetteer_entity_scope)
-    if caching_key not in _BUILTIN_ENTITY_PARSERS:
-        for entity in gazetteer_entity_scope:
-            if entity not in get_supported_gazetteer_entities(language):
-                raise ValueError("Gazetteer entity '%s' is not supported in "
-                                 "language '%s'" % (entity, language))
-        configurations = _get_gazetteer_entity_configurations(
-            language, gazetteer_entity_scope)
-        _BUILTIN_ENTITY_PARSERS[caching_key] = BuiltinEntityParser(
-            language, configurations)
-    return _BUILTIN_ENTITY_PARSERS[caching_key]
 
 
 def _get_gazetteer_entity_configurations(language, gazetteer_entity_scope):

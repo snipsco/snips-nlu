@@ -42,6 +42,7 @@ UNKNOWNWORD = "unknownword"
 VALIDATED = "validated"
 START = "start"
 END = "end"
+BUILTIN_ENTITY_PARSER = "builtin_entity_parser"
 
 # resources
 STOP_WORDS = "stop_words"
@@ -49,6 +50,7 @@ NOISE = "noise"
 GAZETTEERS = "gazetteers"
 STEMS = "stems"
 WORD_CLUSTERS = "word_clusters"
+GAZETTEER_ENTITIES = "gazetteer_entities"
 RESOURCES_DIR = "resources_dir"
 
 # builtin entities

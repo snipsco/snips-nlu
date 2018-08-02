@@ -5,9 +5,13 @@ import shutil
 from builtins import next
 from pathlib import Path
 
+from snips_nlu_ontology import get_builtin_entity_shortname
+
+from snips_nlu.builtin_entities import (
+    BuiltinEntityParser, find_gazetteer_entity_data_path)
 from snips_nlu.constants import (
-    DATA_PATH, GAZETTEERS, NOISE, RESOURCES_DIR, STEMS, STOP_WORDS,
-    WORD_CLUSTERS)
+    DATA_PATH, GAZETTEERS, GAZETTEER_ENTITIES, NOISE, RESOURCES_DIR, STEMS,
+    STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
@@ -84,6 +88,23 @@ def load_resources_from_dir(resources_dir):
     }
 
 
+def get_builtin_entity_parser_from_dir(resources_dir):
+    with (resources_dir / "metadata.json").open(encoding="utf8") as f:
+        metadata = json.load(f)
+    language = metadata["language"]
+    gazetteer_entities = metadata[GAZETTEER_ENTITIES]
+    if gazetteer_entities:
+        configurations = [{
+            "builtin_entity_name": entity,
+            "resource_path": str(resources_dir / "gazetteer_entities" /
+                                 get_builtin_entity_shortname(entity).lower()),
+            "parser_threshold": 0.6
+        } for entity in gazetteer_entities]
+        return BuiltinEntityParser(language, configurations)
+
+    return BuiltinEntityParser(language, None)
+
+
 def print_compatibility_error(language):
     from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
     pretty_print(
@@ -143,9 +164,9 @@ def get_resources_dir(language):
 
 def merge_required_resources(lhs, rhs):
     if not lhs:
-        return rhs
+        return dict() if rhs is None else rhs
     if not rhs:
-        return lhs
+        return dict() if lhs is None else lhs
     merged_resources = dict()
     if lhs.get(NOISE, False) or rhs.get(NOISE, False):
         merged_resources[NOISE] = True
@@ -181,8 +202,10 @@ def persist_resources(resources_dest_path, required_resources, language):
     if not required_resources.get(STEMS, False):
         metadata[STEMS] = None
 
-    metadata[GAZETTEERS] = list(required_resources.get(GAZETTEERS, []))
-    metadata[WORD_CLUSTERS] = list(required_resources.get(WORD_CLUSTERS, []))
+    metadata[GAZETTEERS] = sorted(required_resources.get(GAZETTEERS, []))
+    metadata[WORD_CLUSTERS] = sorted(required_resources.get(WORD_CLUSTERS, []))
+    metadata[GAZETTEER_ENTITIES] = sorted(
+        required_resources.get(GAZETTEER_ENTITIES, []))
     metadata_dest_path = resources_dest_path / "metadata.json"
     metadata_json = json_string(metadata)
     with metadata_dest_path.open(encoding="utf8", mode="w") as f:
@@ -226,6 +249,14 @@ def persist_resources(resources_dest_path, required_resources, language):
                 .with_suffix(".txt")
             clusters_dest = clusters_dest_dir / clusters_src.name
             shutil.copy(str(clusters_src), str(clusters_dest))
+
+    if metadata[GAZETTEER_ENTITIES]:
+        entities_dest_dir = resources_dest_path / "gazetteer_entities"
+        entities_dest_dir.mkdir()
+        for entity in metadata[GAZETTEER_ENTITIES]:
+            entity_src = find_gazetteer_entity_data_path(language, entity)
+            entity_dest = entities_dest_dir / entity_src.name
+            shutil.copytree(str(entity_src), str(entity_dest))
 
 
 def _get_resource(language, resource_name):

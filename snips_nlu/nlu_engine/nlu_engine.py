@@ -192,7 +192,7 @@ class SnipsNLUEngine(ProcessingUnit):
             f.write(model_json)
 
         if self.fitted:
-            required_resources = self.config.get_required_resources()
+            required_resources = self._get_required_resources()
             if required_resources:
                 language = self._dataset_metadata["language_code"]
                 resources_path = directory_path / "resources"
@@ -225,13 +225,19 @@ class SnipsNLUEngine(ProcessingUnit):
                 % (model_version, __model_version__))
 
         resources_dir = directory_path / "resources"
+        builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         if resources_dir.is_dir():
             for subdir in resources_dir.iterdir():
                 if subdir.is_dir() and (subdir / "metadata.json").exists():
                     load_resources_from_dir(subdir)
+                    if builtin_entity_parser is None:
+                        builtin_entity_parser = \
+                            get_builtin_entity_parser_from_dir(subdir)
+                        shared[BUILTIN_ENTITY_PARSER] = builtin_entity_parser
                     break
 
-        nlu_engine = cls(config=model["config"])
+        nlu_engine = cls(config=model["config"],
+                         builtin_entity_parser=builtin_entity_parser)
         # pylint:disable=protected-access
         nlu_engine._dataset_metadata = model["dataset_metadata"]
         # pylint:enable=protected-access
@@ -242,6 +248,15 @@ class SnipsNLUEngine(ProcessingUnit):
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
+
+    def _get_required_resources(self):
+        required_resources = self.config.get_required_resources()
+        if self.builtin_entity_parser is not None:
+            gazetteer_entities = [
+                conf["builtin_entity_name"] for conf in
+                self.builtin_entity_parser.gazetteer_entity_configurations]
+            required_resources[GAZETTEER_ENTITIES] = gazetteer_entities
+        return required_resources
 
 
 def _get_dataset_metadata(dataset):

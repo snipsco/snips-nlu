@@ -29,9 +29,10 @@ parse as well as easy to read.
 We created a `sample dataset`_ that you can check to better understand the
 format.
 
-You have two options to create your dataset. You can build it manually by
-respecting the format used in the sample or alternatively you can use the
-dataset creation CLI that is contained in the lib.
+You have three options to create your dataset. You can build it manually by
+respecting the format used in the sample, you can also use the dataset creation 
+CLI included in the lib, or alternatively you can use `chatito`_ a DSL 
+tool for dataset generation.
 
 We will go for the second option here and start by creating three files
 corresponding to our three intents and one entity file corresponding to the
@@ -373,3 +374,4 @@ Alternatively, you can persist/load the engine as a ``bytearray``:
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json
 .. _default configurations: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs
 .. _english one: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu/default_configs/config_en.py
+.. _chatito: https://github.com/rodrigopivi/Chatito

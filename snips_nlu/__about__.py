@@ -18,6 +18,6 @@ __download_url__ = "https://github.com/snipsco/snips-nlu-language-resources/rele
 __compatibility__ = "https://raw.githubusercontent.com/snipsco/snips-nlu-language-resources/master/compatibility.json"
 __shortcuts__ = "https://raw.githubusercontent.com/snipsco/snips-nlu-language-resources/master/shortcuts.json"
 
-__entities_download_url__ = "https://resources.snips.ai/nlu-lm/gazetteer-entity"
+__entities_download_url__ = "https://resources.snips.ai/nlu-lm/gazetteer-entities"
 
 # pylint:enable=line-too-long

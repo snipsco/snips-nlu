@@ -68,8 +68,11 @@ def find_gazetteer_entity_data_path(language, entity_name):
         if metadata.get("entity_name") == entity_name \
                 and metadata.get("language") == language:
             return directory / metadata["data_directory"]
-    raise FileNotFoundError("No gazetteer entity data found for '%s' in "
-                            "language '%s'" % (entity_name, language))
+    raise FileNotFoundError(
+        "No data found for the '{e}' builtin entity in language '{lang}'. "
+        "You must download the corresponding resources by running "
+        "'python -m snips_nlu download-entity {e} {lang}' before you can use "
+        "this builtin entity.".format(e=entity_name, lang=language))
 
 
 def is_builtin_entity(entity_label):

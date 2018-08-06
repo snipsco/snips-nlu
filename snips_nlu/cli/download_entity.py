@@ -6,45 +6,38 @@ import plac
 from snips_nlu_ontology import get_builtin_entity_shortname
 
 from snips_nlu import __about__
-from snips_nlu.cli import download, link
+from snips_nlu.cli.download import download_from_resource_name
+from snips_nlu.cli.link import link_resources
 from snips_nlu.cli.utils import (
     PrettyPrintLevel, check_resources_alias, get_compatibility, get_json,
     get_resources_version, install_remote_package, pretty_print)
-# inspired from
-# https://github.com/explosion/spaCy/blob/master/spacy/cli/download.py
 from snips_nlu.utils import get_package_path
 
+
+# inspired from
+# https://github.com/explosion/spaCy/blob/master/spacy/cli/download.py
 
 @plac.annotations(
     entity_name=("Name of the builtin entity to download, e.g. "
                  "snips/musicArtist", "positional", None, str),
     language=("Language of the builtin entity", "positional", None, str),
-    direct=("force direct download. Needs entity name with version and "
-            "won't perform compatibility check", "flag", "d", bool),
     pip_args=("Additional arguments to be passed to `pip install` when "
               "installing the builtin entity package"))
 # pylint: disable=keyword-arg-before-vararg
-def download_builtin_entity(entity_name, language, direct=False, *pip_args):
+def download_builtin_entity(entity_name, language, *pip_args):
     """Download compatible language or gazetteer entity resources"""
-    if direct:
-        url_tail = '{r}/{r}.tar.gz#egg={r}'.format(r=entity_name)
-        download_url = __about__.__entities_download_url__ + '/' + url_tail
-        exit_code = install_remote_package(download_url, pip_args)
-        if exit_code != 0:
-            sys.exit(exit_code)
-    else:
-        download(language, direct=False, *pip_args)
+    download_from_resource_name(language, pip_args, verbose=False)
 
-        shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
-        check_resources_alias(entity_name, shortcuts)
+    shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
+    check_resources_alias(entity_name, shortcuts)
 
-        compatibility = get_compatibility()
-        resource_name_lower = entity_name.lower()
-        long_resource_name = shortcuts.get(resource_name_lower,
-                                           resource_name_lower)
+    compatibility = get_compatibility()
+    resource_name_lower = entity_name.lower()
+    long_resource_name = shortcuts.get(resource_name_lower,
+                                       resource_name_lower)
 
-        _download_and_link_entity(
-            long_resource_name, entity_name, language, compatibility, pip_args)
+    _download_and_link_entity(
+        long_resource_name, entity_name, language, compatibility, pip_args)
 
 
 # pylint: enable=keyword-arg-before-vararg
@@ -59,7 +52,9 @@ def _download_and_link_entity(long_resource_name, entity_name, language,
     entity_base_url = _get_entity_base_url(language, entity_alias, version)
     latest = get_json(entity_base_url + "/latest",
                       "Latest entity resources version")
-    latest_url = entity_base_url + "/" + latest["filename"]
+    latest_url = "{b}/{n}#egg={r}=={v}".format(
+        b=entity_base_url, n=latest["filename"], r=full_resource_name,
+        v=latest["version"])
     exit_code = install_remote_package(latest_url, pip_args)
     if exit_code != 0:
         sys.exit(exit_code)
@@ -70,14 +65,19 @@ def _download_and_link_entity(long_resource_name, entity_name, language,
         # subprocess
         package_path = get_package_path(full_resource_name)
         link_alias = entity_alias + "_" + language
-        link(full_resource_name, link_alias, force=True,
-             resources_path=package_path)
+        link_path, resources_dir = link_resources(
+            full_resource_name, link_alias, force=True,
+            resources_path=package_path)
+        pretty_print("%s --> %s" % (str(resources_dir), str(link_path)),
+                     "You can now use the '%s' builtin entity" % entity_name,
+                     title="Linking successful",
+                     level=PrettyPrintLevel.SUCCESS)
     except:  # pylint:disable=bare-except
         pretty_print(
             "Creating a shortcut link for '%s' didn't work." % entity_name,
             title="The builtin entity resources were successfully downloaded, "
                   "however linking failed.",
-            level=PrettyPrintLevel.WARNING)
+            level=PrettyPrintLevel.ERROR)
 
 
 def _get_entity_base_url(language, entity_alias, version):

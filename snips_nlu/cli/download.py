@@ -6,7 +6,7 @@ import plac
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu import __about__
-from snips_nlu.cli.link import link
+from snips_nlu.cli.link import link_resources
 from snips_nlu.cli.utils import (
     PrettyPrintLevel, check_resources_alias, get_compatibility, get_json,
     get_resources_version, install_remote_package, pretty_print)
@@ -34,15 +34,17 @@ def download(resource_name, direct=False,
         if dl != 0:
             sys.exit(dl)
     else:
-        shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
-        check_resources_alias(resource_name, shortcuts)
+        download_from_resource_name(resource_name, pip_args)
 
-        compatibility = get_compatibility()
-        resource_name = resource_name.lower()
-        full_resource_name = shortcuts.get(resource_name, resource_name)
 
-        _download_and_link(resource_name, full_resource_name, compatibility,
-                           pip_args)
+def download_from_resource_name(resource_name, pip_args, verbose=True):
+    shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
+    check_resources_alias(resource_name, shortcuts)
+    compatibility = get_compatibility()
+    resource_name = resource_name.lower()
+    full_resource_name = shortcuts.get(resource_name, resource_name)
+    _download_and_link(resource_name, full_resource_name, compatibility,
+                       pip_args, verbose)
 
 
 @plac.annotations(
@@ -55,7 +57,7 @@ def download_all_languages(*pip_args):
 
 
 def _download_and_link(resource_alias, resource_fullname, compatibility,
-                       pip_args):
+                       pip_args, verbose):
     version = get_resources_version(resource_fullname, resource_alias,
                                     compatibility)
     url_tail = '{r}-{v}/{r}-{v}.tar.gz#egg={r}=={v}'.format(
@@ -70,12 +72,19 @@ def _download_and_link(resource_alias, resource_fullname, compatibility,
         # package, which fails if the resource was just installed via
         # subprocess
         package_path = get_package_path(resource_fullname)
-        link(resource_fullname, resource_alias, force=True,
-             resources_path=package_path)
+        link_path, resources_dir = link_resources(
+            resource_fullname, resource_alias, force=True,
+            resources_path=package_path)
+        if verbose:
+            pretty_print("%s --> %s" % (str(resources_dir), str(link_path)),
+                         "You can now load the resources via "
+                         "snips_nlu.load_resources('%s')" % resource_alias,
+                         title="Linking successful",
+                         level=PrettyPrintLevel.SUCCESS)
     except:  # pylint:disable=bare-except
         pretty_print(
             "Creating a shortcut link for '{r}' didn't work.\nYou can "
-            "still load the resources via its full package name: "
+            "still load the resources using the full package name: "
             "snips_nlu.load_resources('{n}')".format(r=resource_alias,
                                                      n=resource_fullname),
             title="The language resources were successfully downloaded, "

@@ -6,7 +6,6 @@ import sys
 from enum import Enum, unique
 
 import requests
-from future.utils import itervalues
 
 from snips_nlu import __about__
 
@@ -91,10 +90,11 @@ def install_remote_package(download_url, user_pip_args=None):
 
 
 def check_resources_alias(resource_name, shortcuts):
-    available_aliases = set(shortcuts).union(itervalues(shortcuts))
+    available_aliases = set(shortcuts)
     if resource_name.lower() not in available_aliases:
         aliases = ", ".join(sorted(available_aliases))
         pretty_print(
             "No resources found for {r}, available resource aliases are "
-            "(case insensitive): {a}".format(r=resource_name, a=aliases),
-            title="Unknown language resources", exits=1)
+            "(case insensitive):\n{a}".format(r=resource_name, a=aliases),
+            title="Unknown language resources", exits=1,
+            level=PrettyPrintLevel.ERROR)

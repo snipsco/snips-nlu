@@ -23,8 +23,7 @@ PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
 
 class SnipsTest(TestCase):
 
-    def __init__(self, methodName='runTest'):
-        super(SnipsTest, self).__init__(methodName)
+    def setUp(self):
         for l in get_all_languages():
             load_resources(l)
 
@@ -39,14 +38,14 @@ class SnipsTest(TestCase):
     def assertJsonContent(self, json_path, expected_dict):
         if not json_path.exists():
             self.fail("Json file not found: %s" % str(json_path))
-        with json_path.open() as f:
+        with json_path.open(encoding="utf8") as f:
             data = json.load(f)
         self.assertDictEqual(expected_dict, data)
 
     def assertFileContent(self, path, expected_content):
         if not path.exists():
             self.fail("File not found: %s" % str(path))
-        with path.open() as f:
+        with path.open(encoding="utf8") as f:
             data = f.read()
         self.assertEqual(expected_content, data)
 
@@ -68,6 +67,7 @@ class FixtureTest(SnipsTest):
 
     # pylint: disable=protected-access
     def setUp(self):
+        super(FixtureTest, self).setUp()
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 

@@ -23,6 +23,7 @@ class TestCLI(SnipsTest):
 
     # pylint: disable=protected-access
     def setUp(self):
+        super(TestCLI, self).setUp()
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 
@@ -159,6 +160,40 @@ class TestCLI(SnipsTest):
         # Then
         expected_entity_dict = {
             "automatically_extensible": True,
+            "data": [
+                {
+                    "synonyms": [
+                        "big apple"
+                    ],
+                    "value": "new york"
+                },
+                {
+                    "synonyms": [
+                        "city of lights"
+                    ],
+                    "value": "paris"
+                },
+                {
+                    "synonyms": [],
+                    "value": "london"
+                }
+            ],
+            "use_synonyms": True
+        }
+        self.assertDictEqual(expected_entity_dict, entity_dict)
+
+    def test_should_generate_entity_from_file_with_autoextensible(self):
+        # Given
+        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
+        entity_file = examples_path / "entity_location_autoextent_false.txt"
+
+        # When
+        entity_dataset = CustomEntity.from_file(entity_file)
+        entity_dict = entity_dataset.json
+
+        # Then
+        expected_entity_dict = {
+            "automatically_extensible": False,
             "data": [
                 {
                     "synonyms": [

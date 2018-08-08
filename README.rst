@@ -24,6 +24,13 @@ Snips NLU
 
 Check out our `blog post`_ to get more details about why we built Snips NLU and how it works under the hood.
 
+System requirements
+-------------------
+- 64-bit Linux, MacOS >= 10.11, 64-bit Windows
+- Python 2.7 or Python >= 3.4
+- RAM: Snips NLU will typically use between 100MB and 200MB of RAM, depending on the language and the size of the dataset.
+
+
 Installation
 ------------
 

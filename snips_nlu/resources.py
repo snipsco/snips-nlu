@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import shutil
+
 from builtins import next
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from snips_nlu.builtin_entities import (
 from snips_nlu.constants import (
     DATA_PATH, GAZETTEERS, GAZETTEER_ENTITIES, NOISE, RESOURCES_DIR, STEMS,
     STOP_WORDS, WORD_CLUSTERS)
+from snips_nlu.parser.custom_entity_parser import EntityStemsUsage
 from snips_nlu.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
@@ -172,6 +174,22 @@ def merge_required_resources(lhs, rhs):
         merged_resources[NOISE] = True
     if lhs.get(STOP_WORDS, False) or rhs.get(STOP_WORDS, False):
         merged_resources[STOP_WORDS] = True
+
+    lhs_stem_usage = lhs.get(STEMS, EntityStemsUsage.NO_STEMS)
+    rhs_stem_usage = rhs.get(STEMS, EntityStemsUsage.NO_STEMS)
+    if lhs_stem_usage == rhs_stem_usage:
+        stem_usage = lhs_stem_usage
+    else:
+        if lhs_stem_usage == EntityStemsUsage.NO_STEMS \
+                or rhs_stem_usage == EntityStemsUsage.NO_STEMS:
+            if lhs_stem_usage == EntityStemsUsage.NO_STEMS:
+                stem_usage = rhs_stem_usage
+            else:
+                stem_usage = lhs_stem_usage
+        else:
+            stem_usage = EntityStemsUsage.STEMS_AND_NO_STEMS
+    merged_resources[STEMS] = stem_usage
+
     if lhs.get(STEMS, False) or rhs.get(STEMS, False):
         merged_resources[STEMS] = True
     gazetteers = lhs.get(GAZETTEERS, set()).union(rhs.get(GAZETTEERS, set()))

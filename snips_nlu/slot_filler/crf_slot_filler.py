@@ -14,8 +14,8 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import (
-    get_builtin_entity_parser, is_builtin_entity)
+from snips_nlu.builtin_entities import is_builtin_entity
+
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
     RES_MATCH_RANGE, RES_VALUE, START)
@@ -70,7 +70,7 @@ class CRFSlotFiller(SlotFiller):
             feature_names = set()
             for factory in self.features_factories:
                 for feature in factory.build_features(
-                        self.builtin_entity_parser):
+                        self.builtin_entity_parser, self.custom_entity_parser):
                     if feature.name in feature_names:
                         raise KeyError("Duplicated feature: %s" % feature.name)
                     feature_names.add(feature.name)
@@ -112,8 +112,8 @@ class CRFSlotFiller(SlotFiller):
         """
         logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
-        if self.builtin_entity_parser is None:
-            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)

@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-from builtins import object, str
 
 from snips_nlu_ontology import (
     BuiltinEntityParser as _BuiltinEntityParser, get_all_builtin_entities,
@@ -9,28 +8,21 @@ from snips_nlu_ontology import (
     get_supported_gazetteer_entities)
 
 from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
-from snips_nlu.utils import LimitedSizeDict
+from snips_nlu.parser.entity_parser import (
+    EntityParser, _get_caching_key)
 
 
-class BuiltinEntityParser(object):
-    def __init__(self, language, gazetteer_entity_configurations):
-        if gazetteer_entity_configurations is None:
-            gazetteer_entity_configurations = []
+class BuiltinEntityParser(EntityParser):
+    def __init__(self, language, entity_configurations):
+        if entity_configurations is None:
+            entity_configurations = []
         self.language = language
-        self.gazetteer_entity_configurations = gazetteer_entity_configurations
-        self.parser = _BuiltinEntityParser(
-            language, gazetteer_entity_configurations)
-        self._cache = LimitedSizeDict(size_limit=1000)
+        self.entity_configurations = entity_configurations
+        self._parser = _BuiltinEntityParser(language, entity_configurations)
 
-    def parse(self, text, scope=None, use_cache=True):
-        text = text.lower()
-        if not use_cache:
-            return self.parser.parse(text, scope)
-        cache_key = (text, str(scope))
-        if cache_key not in self._cache:
-            parser_result = self.parser.parse(text, scope)
-            self._cache[cache_key] = parser_result
-        return self._cache[cache_key]
+    @property
+    def parser(self):
+        return self._parser
 
 
 _BUILTIN_ENTITY_PARSERS = dict()
@@ -58,7 +50,19 @@ def get_builtin_entity_parser_from_scope(language, gazetteer_entity_scope):
     return _BUILTIN_ENTITY_PARSERS[caching_key]
 
 
-def find_gazetteer_entity_data_path(language, entity_name):
+def is_builtin_entity(entity_label):
+    return entity_label in get_all_builtin_entities()
+
+
+def is_gazetteer_entity(entity_label):
+    return entity_label in get_all_gazetteer_entities()
+
+
+def is_grammar_entity(entity_label):
+    return entity_label in get_all_grammar_entities()
+
+
+def _find_gazetteer_entity_data_path(language, entity_name):
     for directory in DATA_PATH.iterdir():
         if not directory.is_dir():
             continue
@@ -77,27 +81,9 @@ def find_gazetteer_entity_data_path(language, entity_name):
         "this builtin entity.".format(e=entity_name, lang=language))
 
 
-def is_builtin_entity(entity_label):
-    return entity_label in get_all_builtin_entities()
-
-
-def is_gazetteer_entity(entity_label):
-    return entity_label in get_all_gazetteer_entities()
-
-
-def is_grammar_entity(entity_label):
-    return entity_label in get_all_grammar_entities()
-
-
 def _get_gazetteer_entity_configurations(language, gazetteer_entity_scope):
     return [{
         "builtin_entity_name": entity_name,
-        "resource_path": str(find_gazetteer_entity_data_path(
+        "resource_path": str(_find_gazetteer_entity_data_path(
             language, entity_name))
     } for entity_name in gazetteer_entity_scope]
-
-
-def _get_caching_key(language, gazetteer_entity_scope):
-    tuple_key = (language,)
-    tuple_key += tuple(entity for entity in sorted(gazetteer_entity_scope))
-    return tuple_key

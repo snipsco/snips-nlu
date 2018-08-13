@@ -2,16 +2,16 @@ from __future__ import unicode_literals
 
 import json
 import logging
-from builtins import str
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 
+from builtins import str
 from future.utils import iteritems
-
-from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.builtin_entities import (
     get_builtin_entity_parser, is_builtin_entity)
+
+from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CAPITALIZE, ENTITIES, GAZETTEER_ENTITIES, LANGUAGE,
     RES_ENTITY, RES_INTENT, RES_SLOTS)
@@ -84,6 +84,7 @@ class SnipsNLUEngine(ProcessingUnit):
         logger.info("Fitting NLU engine...")
 
         self.builtin_entity_parser = get_builtin_entity_parser(dataset)
+        self.custom_entity_parser = self.custom_entity_parser.fit(dataset)
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
 
@@ -101,7 +102,12 @@ class SnipsNLUEngine(ProcessingUnit):
                     break
             if recycled_parser is None:
                 recycled_parser = build_processing_unit(parser_config)
-            recycled_parser.builtin_entity_parser = self.builtin_entity_parser
+            if hasattr(recycled_parser, "builtin_entity_parser"):
+                recycled_parser.builtin_entity_parser = \
+                    self.builtin_entity_parser
+            if hasattr(recycled_parser, "custom_entity_parser"):
+                recycled_parser.custom_entity_parser = \
+                    self.custom_entity_parser
             if force_retrain or not recycled_parser.fitted:
                 recycled_parser.fit(dataset, force_retrain)
             parsers.append(recycled_parser)

@@ -2,13 +2,16 @@ from __future__ import unicode_literals
 
 import json
 import shutil
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from builtins import object
 from pathlib import Path
 
 from future.utils import with_metaclass
 
-from snips_nlu.constants import BUILTIN_ENTITY_PARSER
+from snips_nlu.constants import BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER
+from snips_nlu.parser import get_builtin_entity_parser
+from snips_nlu.parser.custom_entity_parser import CustomEntityParser, \
+    get_custom_entity_parser
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.utils import classproperty, json_string, temp_dir, unzip_archive
 
@@ -31,6 +34,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         else:
             raise ValueError("Unexpected config type: %s" % type(config))
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
+        self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
 
     def persist_metadata(self, path, **kwargs):
         metadata = {"unit_name": self.unit_name}
@@ -54,6 +58,11 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
     @classmethod
     def from_path(cls, path, **shared):
         raise NotImplementedError
+
+    @abstractproperty
+    def fitted(self):
+        """Whether or not the intent parser has already been trained"""
+        pass
 
     def to_byte_array(self):
         """Serialize the :class:`ProcessingUnit` instance into a bytearray
@@ -95,6 +104,24 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
             processing_unit = cls.from_path(tmp_dir / cleaned_unit_name,
                                             **shared)
         return processing_unit
+
+    def fit_builtin_entity_parser_if_needed(self, dataset):
+        # We fit an entity parser only if the unit has already been fitted
+        # on a dataset, in this case we want to refit. We also if the parser
+        # is none.
+        # In the other case the parser is provided fitted by another unit
+        if self.builtin_entity_parser is None or self.fitted:
+            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
+        return self
+
+    def fit_custom_entity_parser_if_needed(self, dataset):
+        # We fit an entity parser only if the unit has already been fitted
+        # on a dataset, in this case we want to refit. We also if the parser
+        # is none.
+        # In the other case the parser is provided fitted by another unit
+        if self.custom_entity_parser is None or self.fitted:
+            self.custom_entity_parser = get_custom_entity_parser(dataset)
+        return self
 
 
 def _sanitize_unit_name(unit_name):

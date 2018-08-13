@@ -2,9 +2,10 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.constants import NOISE, STOP_WORDS, WORD_CLUSTERS
+from snips_nlu.constants import NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
+from snips_nlu.parser.custom_entity_parser import EntityStemsUsage
 from snips_nlu.utils import classproperty
 
 
@@ -13,7 +14,8 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.LogRegIntentClassifier`
 
     Args:
-        data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
+        data_augmentation_config (
+        :class:`IntentClassifierDataAugmentationConfig`):
             Defines the strategy of the underlying data augmentation
         featurizer_config (:class:`FeaturizerConfig`): Configuration of the
             :class:`.Featurizer` used underneath
@@ -169,14 +171,16 @@ class FeaturizerConfig(Config):
         if self.word_clusters_name is None:
             return None
         return {
-            WORD_CLUSTERS: {self.word_clusters_name}
+            WORD_CLUSTERS: {self.word_clusters_name},
+            STEMS: EntityStemsUsage.STEMS
         }
 
     def to_dict(self):
         return {
             "sublinear_tf": self.sublinear_tf,
             "pvalue_threshold": self.pvalue_threshold,
-            "word_clusters_name": self.word_clusters_name
+            "word_clusters_name": self.word_clusters_name,
+            "stem": self.stem_usage
         }
 
     @classmethod

@@ -1,23 +1,24 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
-from builtins import map, object, str
 
+from builtins import object, str
 from future.utils import iteritems, with_metaclass
 from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape, normalize
 
 from snips_nlu.constants import (
-    END, GAZETTEERS, LANGUAGE, NGRAM, RES_MATCH_RANGE, START, STEMS,
-    TOKEN_INDEXES, UTTERANCES, WORD_CLUSTERS)
+    END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE, START, STEMS,
+    UTTERANCES, WORD_CLUSTERS)
 from snips_nlu.dataset import get_dataset_gazetteer_entities
 from snips_nlu.languages import get_default_sep
+from snips_nlu.parser.custom_entity_parser import EntityStemsUsage
 from snips_nlu.preprocessing import normalize_token, stem, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
-    entity_filter, get_all_ngrams, get_intent_custom_entities, get_word_chunk,
+    entity_filter, get_intent_custom_entities, get_word_chunk,
     initial_string_from_tokens)
 
 
@@ -61,7 +62,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         return self
 
     @abstractmethod
-    def build_features(self, builtin_entity_parser):
+    def build_features(self, builtin_entity_parser, custom_entity_parser):
         """Build a list of :class:`.Feature`"""
         pass
 
@@ -81,7 +82,8 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     def compute_feature(self, tokens, token_index):
         pass
 
-    def build_features(self, builtin_entity_parser=None):
+    def build_features(self, builtin_entity_parser=None,
+                       custom_entity_parser=None):
         return [
             Feature(
                 base_name=self.feature_name,
@@ -182,7 +184,8 @@ class NgramFactory(SingleFeatureFactory):
         unigram, n=2 is a bigram etc
     -   'use_stemming' (bool): Whether or not to stem the n-gram
     -   'common_words_gazetteer_name' (str, optional): If defined, use a
-        gazetteer of common words and replace out-of-corpus ngram with the alias
+        gazetteer of common words and replace out-of-corpus ngram with the
+        alias
         'rare_word'
 
     """
@@ -421,41 +424,48 @@ class EntityMatchFactory(CRFFeatureFactory):
             return stem_token(token, self.language)
         return normalize_token(token)
 
-    def build_features(self, builtin_entity_parser=None):
+    def build_features(self, builtin_entity_parser=None,
+                       custom_entity_parser=None):
         features = []
-        for name, collection in iteritems(self.collections):
+        for entity_name in custom_entity_parser.entities:
             # We need to call this wrapper in order to properly capture
             # `collection`
-            collection_match = self._build_collection_match_fn(collection)
+            collection_match = self._build_entity_match_fn(
+                entity_name, custom_entity_parser)
 
             for offset in self.offsets:
-                feature = Feature("entity_match_%s" % name,
+                feature = Feature("entity_match_%s" % entity_name,
                                   collection_match, offset, self.drop_out)
                 features.append(feature)
         return features
 
-    def _build_collection_match_fn(self, collection):
-        collection_set = set(collection)
+    def _build_entity_match_fn(self, entity, custom_entity_parser):
 
-        def collection_match(tokens, token_index):
-            normalized_tokens = list(map(self._transform, tokens))
-            ngrams = get_all_ngrams(normalized_tokens)
-            ngrams = [ngram for ngram in ngrams if
-                      token_index in ngram[TOKEN_INDEXES]]
-            ngrams = sorted(ngrams, key=lambda ng: len(ng[TOKEN_INDEXES]),
-                            reverse=True)
-            for ngram in ngrams:
-                if ngram[NGRAM] in collection_set:
-                    return get_scheme_prefix(token_index,
-                                             sorted(ngram[TOKEN_INDEXES]),
-                                             self.tagging_scheme)
-            return None
+        def entity_match(tokens, token_index):
+            text = initial_string_from_tokens(tokens)
+            start = tokens[token_index].start
+            end = tokens[token_index].end
 
-        return collection_match
+            custom_entities = custom_entity_parser.parse(
+                text, scope=[entity], use_cache=True)
+            custom_entities = [ent for ent in custom_entities
+                               if entity_filter(ent, start, end)]
+            for ent in custom_entities:
+                entity_start = ent[RES_MATCH_RANGE][START]
+                entity_end = ent[RES_MATCH_RANGE][END]
+                indexes = []
+                for index, token in enumerate(tokens):
+                    if (entity_start <= token.start < entity_end) \
+                            and (entity_start < token.end <= entity_end):
+                        indexes.append(index)
+                return get_scheme_prefix(token_index, indexes,
+                                         self.tagging_scheme)
+
+        return entity_match
 
     def get_required_resources(self):
         if self.use_stemming:
-            return {STEMS: True}
+            return {STEMS: EntityStemsUsage.STEMS}
         return None
 
 
@@ -497,7 +507,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         self.builtin_entities = self._get_builtin_entity_scope(dataset, intent)
         self.args["entity_labels"] = self.builtin_entities
 
-    def build_features(self, builtin_entity_parser):
+    def build_features(self, builtin_entity_parser, custom_entity_parser=None):
         features = []
 
         for builtin_entity in self.builtin_entities:

@@ -43,6 +43,8 @@ VALIDATED = "validated"
 START = "start"
 END = "end"
 BUILTIN_ENTITY_PARSER = "builtin_entity_parser"
+CUSTOM_ENTITY_PARSER = "custom_entity_parser"
+PARSER_THRESHOLD = "parser_threshold"
 
 # resources
 STOP_WORDS = "stop_words"

@@ -67,6 +67,8 @@ class LogRegIntentClassifier(IntentClassifier):
         """
         logger.debug("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
         if self.builtin_entity_parser is None:
             self.builtin_entity_parser = get_builtin_entity_parser(dataset)
         language = dataset[LANGUAGE]
@@ -84,7 +86,9 @@ class LogRegIntentClassifier(IntentClassifier):
             language,
             data_augmentation_config.unknown_words_replacement_string,
             self.config.featurizer_config,
-            builtin_entity_parser=self.builtin_entity_parser)
+            builtin_entity_parser=self.builtin_entity_parser,
+            custom_entity_parser=self.custom_entity_parser
+        )
         self.featurizer = self.featurizer.fit(dataset, utterances, classes)
         if self.featurizer is None:
             return self
@@ -216,8 +220,8 @@ class LogRegIntentClassifier(IntentClassifier):
         intent_classifier.intent_list = unit_dict['intent_list']
         featurizer = unit_dict['featurizer']
         if featurizer is not None:
-            intent_classifier.featurizer = Featurizer.from_dict(featurizer,
-                                                                **shared)
+            intent_classifier.featurizer = Featurizer.from_dict(
+                featurizer, **shared)
         return intent_classifier
 
     def to_dict(self):

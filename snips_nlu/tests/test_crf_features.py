@@ -420,7 +420,7 @@ class TestCRFFeatures(SnipsTest):
 
     def test_builtin_entity_match_factory(self):
         # Given
-        def mock_builtin_entity_scope(dataset, intent):
+        def mock_builtin_entity_scope(dataset, _):
             if dataset[LANGUAGE] == LANGUAGE_EN:
                 return {SNIPS_NUMBER, SNIPS_DATETIME}
             return []
@@ -436,6 +436,7 @@ class TestCRFFeatures(SnipsTest):
         tokens = tokenize("one tea tomorrow at 2pm", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
+        # pylint: disable=protected-access
         factory._get_builtin_entity_scope = mock_builtin_entity_scope
         mocked_dataset = {"language": "en"}
         factory.fit(mocked_dataset, None)

@@ -7,8 +7,7 @@ import numpy as np
 from future.utils import iteritems
 from mock import mock, patch
 
-from snips_nlu.constants import DATA, ENTITY, LANGUAGE_EN, SLOT_NAME, \
-    SNIPS_DATETIME, SNIPS_NUMBER, TEXT
+from snips_nlu.constants import DATA, ENTITY, LANGUAGE_EN, SLOT_NAME, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import (
     Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
@@ -154,6 +153,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
     @mock.patch("snips_nlu.dataset.get_string_variations")
     def test_get_utterances_entities(self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation, variation.lower()}

@@ -69,7 +69,8 @@ class TestDataset(SnipsTest):
         # When/Then
         with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual("Expected entities to have key: 'unknown_entity'", str(ctx.exception.args[0]))
+        self.assertEqual("Expected entities to have key: 'unknown_entity'",
+                         str(ctx.exception.args[0]))
 
     def test_missing_entity_key_should_raise_exception(self):
         # Given
@@ -87,7 +88,8 @@ class TestDataset(SnipsTest):
         # When/Then
         with self.assertRaises(KeyError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual("Expected entity to have key: 'use_synonyms'", str(ctx.exception.args[0]))
+        self.assertEqual("Expected entity to have key: 'use_synonyms'",
+                         str(ctx.exception.args[0]))
 
     def test_invalid_language_should_raise_exception(self):
         # Given
@@ -106,6 +108,7 @@ class TestDataset(SnipsTest):
     def test_should_format_dataset_by_adding_synonyms(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation.lower(), variation.title()}
@@ -156,6 +159,7 @@ class TestDataset(SnipsTest):
     def test_should_format_dataset_by_adding_entity_values(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation, variation.title()}
@@ -266,6 +270,7 @@ class TestDataset(SnipsTest):
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation}
@@ -404,6 +409,7 @@ class TestDataset(SnipsTest):
     def test_should_remove_empty_entities_value_and_empty_synonyms(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation, variation.title()}
@@ -515,6 +521,7 @@ class TestDataset(SnipsTest):
     def test_should_add_capitalize_field(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation, variation.title()}
@@ -684,6 +691,7 @@ class TestDataset(SnipsTest):
     def test_should_normalize_synonyms(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation.lower(), variation.title()}
@@ -756,6 +764,7 @@ class TestDataset(SnipsTest):
     def test_dataset_should_handle_synonyms(
             self, mocked_get_string_variations):
         # Given
+        # pylint: disable=unused-argument
         def mock_get_string_variations(variation, language,
                                        builtin_entity_parser):
             return {variation.lower(), variation.title()}

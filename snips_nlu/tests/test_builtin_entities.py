@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 from mock import patch
@@ -200,6 +201,7 @@ class TestBuiltInEntities(SnipsTest):
             }
         }
 
+        # pylint: disable=unused-argument
         def mock_find_gazetteer_entity_data_path(language, entity_name):
             return "mocked_path"
 

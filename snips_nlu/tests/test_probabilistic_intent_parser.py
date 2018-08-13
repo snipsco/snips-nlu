@@ -288,7 +288,7 @@ class TestIntentClassifierConfig(ProcessingUnitConfig):
     def get_required_resources(self):
         return None
 
-
+# pylint: disable=abstract-method
 class TestIntentClassifier(IntentClassifier):
     unit_name = "test_intent_classifier"
     config_type = TestIntentClassifierConfig
@@ -297,6 +297,7 @@ class TestIntentClassifier(IntentClassifier):
         return None
 
     def fit(self, dataset):
+        self._fitted = True
         return self
 
     def persist(self, path):
@@ -306,7 +307,7 @@ class TestIntentClassifier(IntentClassifier):
             f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         config = cls.config_type()
         return cls(config)
 
@@ -325,6 +326,7 @@ class TestSlotFillerConfig(ProcessingUnitConfig):
         return None
 
 
+# pylint: disable=abstract-method
 class TestSlotFiller(SlotFiller):
     unit_name = "test_slot_filler"
     config_type = TestSlotFillerConfig
@@ -342,6 +344,6 @@ class TestSlotFiller(SlotFiller):
             f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         config = cls.config_type()
         return cls(config)

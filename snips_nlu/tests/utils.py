@@ -21,6 +21,7 @@ WEATHER_DATASET_PATH = TEST_PATH / "resources" / "weather_dataset.json"
 PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
 
 
+# pylint: disable=invalid-name
 class SnipsTest(TestCase):
 
     def setUp(self):

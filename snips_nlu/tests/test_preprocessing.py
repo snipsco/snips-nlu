@@ -18,7 +18,7 @@ class TestPreprocessing(SnipsTest):
         tokens = tokenize(text, language)
 
         # Then
-        self.assertListEqual(tokens, [])
+        self.assertListEqual(tokens, tuple())
 
     def test_should_tokenize_only_white_spaces(self):
         # Given
@@ -29,7 +29,7 @@ class TestPreprocessing(SnipsTest):
         tokens = tokenize(text, language)
 
         # Then
-        self.assertListEqual(tokens, [])
+        self.assertListEqual(tokens, tuple())
 
     def test_should_tokenize_literals(self):
         # Given
@@ -45,7 +45,7 @@ class TestPreprocessing(SnipsTest):
             Token(value='Beautiful', start=6, end=15),
             Token(value='World', start=16, end=21)
         ]
-        self.assertListEqual(tokens, expected_tokens)
+        self.assertTupleEqual(tokens, expected_tokens)
 
     def test_should_tokenize_symbols(self):
         # Given
@@ -61,7 +61,7 @@ class TestPreprocessing(SnipsTest):
             Token(value='%', start=3, end=4),
             Token(value='!!', start=5, end=7)
         ]
-        self.assertListEqual(tokens, expected_tokens)
+        self.assertTupleEqual(tokens, expected_tokens)
 
     def test_space_should_by_ignored(self):
         # Given

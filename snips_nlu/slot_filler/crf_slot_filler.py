@@ -186,7 +186,7 @@ class CRFSlotFiller(SlotFiller):
         training.
         """
 
-        cache = ({} for token in tokens)
+        cache = tuple({} for token in tokens)
         features = []
         random_state = check_random_state(self.config.random_seed)
         initial_string_tokens = initial_string_from_tokens(tokens)

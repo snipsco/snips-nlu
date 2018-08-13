@@ -98,7 +98,7 @@ class IsDigitFactory(SingleFeatureFactory):
 
     name = "is_digit"
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         return "1" if tokens[token_index].value.isdigit() else None
 
 
@@ -107,7 +107,7 @@ class IsFirstFactory(SingleFeatureFactory):
 
     name = "is_first"
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         return "1" if token_index == 0 else None
 
 
@@ -116,7 +116,7 @@ class IsLastFactory(SingleFeatureFactory):
 
     name = "is_last"
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         return "1" if token_index == len(tokens) - 1 else None
 
 
@@ -137,7 +137,7 @@ class PrefixFactory(SingleFeatureFactory):
     def prefix_size(self):
         return self.args["prefix_size"]
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         return get_word_chunk(normalize_token(tokens[token_index]),
                               self.prefix_size, 0)
 
@@ -159,7 +159,7 @@ class SuffixFactory(SingleFeatureFactory):
     def suffix_size(self):
         return self.args["suffix_size"]
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         return get_word_chunk(normalize_token(tokens[token_index]),
                               self.suffix_size, len(tokens[token_index].value),
                               reverse=True)
@@ -170,7 +170,7 @@ class LengthFactory(SingleFeatureFactory):
 
     name = "length"
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         return str(len(tokens[token_index].value))
 
 
@@ -516,13 +516,13 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
     def _build_entity_match_fn(self, builtin_entity):
 
-        def builtin_entity_match(tokens, token_index):
-            text = initial_string_from_tokens(tokens)
+        def builtin_entity_match(tokens, token_index, _initial_text):
             start = tokens[token_index].start
             end = tokens[token_index].end
 
             builtin_entities = get_builtin_entities(
-                text, self.language, scope=[builtin_entity], use_cache=True)
+                _initial_text, self.language, scope=[builtin_entity],
+                use_cache=True)
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
             for ent in builtin_entities:

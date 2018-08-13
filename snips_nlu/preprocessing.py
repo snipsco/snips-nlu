@@ -73,10 +73,10 @@ def tokenize(string, language):
     Returns:
         list of :class:`.Token`: The list of tokenized values
     """
-    tokens = [Token(value=token["value"],
-                    start=token["char_range"]["start"],
-                    end=token["char_range"]["end"])
-              for token in _tokenize(string, language)]
+    tokens = tuple(Token(value=token["value"],
+                   start=token["char_range"]["start"],
+                   end=token["char_range"]["end"])
+              for token in _tokenize(string, language))
     return tokens
 
 

@@ -28,6 +28,7 @@ from snips_nlu.slot_filler.crf_utils import (OUTSIDE, TAGS, TOKENS,
                                              utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
+from snips_nlu.slot_filler.features_utils import initial_string_from_tokens
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.utils import (DifferedLoggingMessage, NotTrained,
                              UnupdatableDict, check_persisted_path,
@@ -185,16 +186,17 @@ class CRFSlotFiller(SlotFiller):
         training.
         """
 
-        cache = [{TOKEN_NAME: token} for token in tokens]
+        cache = ({} for token in tokens)
         features = []
         random_state = check_random_state(self.config.random_seed)
+        initial_string_tokens = initial_string_from_tokens(tokens)
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
             for feature in self.features:
                 f_drop_out = feature.drop_out
                 if drop_out and random_state.rand() < f_drop_out:
                     continue
-                value = feature.compute(i, cache)
+                value = feature.compute(i, cache, tokens, initial_string_tokens)
                 if value is not None:
                     token_features[feature.name] = value
             features.append(token_features)

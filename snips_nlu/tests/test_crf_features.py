@@ -81,7 +81,7 @@ class TestCRFFeatures(SnipsTest):
     def test_single_feature_factory(self):
         # Given
         class TestSingleFeatureFactory(SingleFeatureFactory):
-            def compute_feature(self, tokens, token_index):
+            def compute_feature(self, tokens, token_index, _initial_text=None):
                 value = tokens[token_index].value
                 return "%s_%s" % (value, len(value))
 

@@ -48,16 +48,16 @@ class Feature(object):
         self._name = _offset_name(value, self.offset)
         self._base_name = _offset_name(value, 0)
 
-    def compute(self, token_index, cache):
-        if not 0 <= (token_index + self.offset) < len(cache):
+    def compute(self, token_index, cache, tokens, _initial_text):
+        cache_index = token_index + self.offset
+        if not 0 <= cache_index < len(cache):
             return None
-
-        if self.base_name in cache[token_index + self.offset]:
-            return cache[token_index + self.offset][self.base_name]
-
-        tokens = [c["token"] for c in cache]
-        value = self.function(tokens, token_index + self.offset)
-        cache[token_index + self.offset][self.base_name] = value
+        cache_dict = cache[cache_index]
+        base_name = self.base_name
+        value = cache_dict.get(base_name)
+        if value is None:
+            value = self.function(tokens, cache_index, _initial_text)
+            cache_dict[base_name] = value
         return value
 
 

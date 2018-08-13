@@ -17,14 +17,16 @@ class BuiltinEntityParser(object):
         self._cache = LimitedSizeDict(size_limit=1000)
 
     def parse(self, text, scope=None, use_cache=True):
-        text = text.lower()  # Rustling only works with lowercase
-        if not use_cache:
-            return self.parser.parse(text, scope)
-        cache_key = (text, str(scope))
-        if cache_key not in self._cache:
-            parser_result = self.parser.parse(text, scope)
+        if use_cache is not True:
+            text_lower = text.lower()  # Rustling only works with lowercase
+            self.parser.parse(text_lower, scope)
+        cache_key = (text, scope)
+        parser_result = self._cache.get(cache_key)
+        if parser_result is None:
+            text_lower = text.lower()  # Rustling only works with lowercase
+            parser_result = self.parser.parse(text_lower, scope)
             self._cache[cache_key] = parser_result
-        return self._cache[cache_key]
+        return parser_result
 
     def supports_entity(self, entity):
         return entity in self.supported_entities

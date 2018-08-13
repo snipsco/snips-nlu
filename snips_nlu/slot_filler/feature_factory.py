@@ -4,8 +4,8 @@ from abc import ABCMeta, abstractmethod
 
 from builtins import object, str
 from future.utils import iteritems, with_metaclass
-from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape, normalize
+from snips_nlu_ontology import get_supported_grammar_entities
 
 from snips_nlu.constants import (
     END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE, START, STEMS,

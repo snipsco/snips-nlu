@@ -8,7 +8,7 @@ from pathlib import Path
 
 from builtins import str
 from future.utils import iteritems
-from snips_nlu.builtin_entities import (
+from snips_nlu.parser.builtin_entity_parser import (
     get_builtin_entity_parser, is_builtin_entity)
 
 from snips_nlu.__about__ import __model_version__, __version__

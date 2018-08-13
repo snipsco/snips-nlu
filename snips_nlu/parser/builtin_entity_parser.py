@@ -62,7 +62,7 @@ def is_grammar_entity(entity_label):
     return entity_label in get_all_grammar_entities()
 
 
-def _find_gazetteer_entity_data_path(language, entity_name):
+def find_gazetteer_entity_data_path(language, entity_name):
     for directory in DATA_PATH.iterdir():
         if not directory.is_dir():
             continue
@@ -84,6 +84,6 @@ def _find_gazetteer_entity_data_path(language, entity_name):
 def _get_gazetteer_entity_configurations(language, gazetteer_entity_scope):
     return [{
         "builtin_entity_name": entity_name,
-        "resource_path": str(_find_gazetteer_entity_data_path(
+        "resource_path": str(find_gazetteer_entity_data_path(
             language, entity_name))
     } for entity_name in gazetteer_entity_scope]

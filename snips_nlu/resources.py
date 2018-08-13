@@ -8,7 +8,7 @@ from pathlib import Path
 
 from snips_nlu_ontology import get_builtin_entity_shortname
 
-from snips_nlu.builtin_entities import (
+from snips_nlu.parser.builtin_entity_parser import (
     BuiltinEntityParser, find_gazetteer_entity_data_path)
 from snips_nlu.constants import (
     DATA_PATH, GAZETTEERS, GAZETTEER_ENTITIES, NOISE, RESOURCES_DIR, STEMS,

@@ -40,11 +40,11 @@ class TestPreprocessing(SnipsTest):
         tokens = tokenize(text, language)
 
         # Then
-        expected_tokens = [
+        expected_tokens = (
             Token(value='Hello', start=0, end=5),
             Token(value='Beautiful', start=6, end=15),
             Token(value='World', start=16, end=21)
-        ]
+        )
         self.assertTupleEqual(tokens, expected_tokens)
 
     def test_should_tokenize_symbols(self):
@@ -56,11 +56,11 @@ class TestPreprocessing(SnipsTest):
         tokens = tokenize(text, language)
 
         # Then
-        expected_tokens = [
+        expected_tokens = (
             Token(value='$$', start=0, end=2),
             Token(value='%', start=3, end=4),
             Token(value='!!', start=5, end=7)
-        ]
+        )
         self.assertTupleEqual(tokens, expected_tokens)
 
     def test_space_should_by_ignored(self):

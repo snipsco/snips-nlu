@@ -25,13 +25,14 @@ class TestCRFFeatures(SnipsTest):
         def fn(tokens, token_index):
             value = tokens[token_index].value
             return "%s_%s" % (value, len(value))
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
+        cache = [{TOKEN_NAME: token} for token in tokens]
 
-        cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", LANGUAGE_EN)]
         feature = Feature("test_feature", fn)
 
         # When
-        res = feature.compute(1, cache)
+        res = feature.compute(1, cache, tokens, text)
 
         # Then
         self.assertEqual(res, "beautiful_9")
@@ -41,13 +42,13 @@ class TestCRFFeatures(SnipsTest):
         def fn(tokens, token_index):
             value = tokens[token_index].value
             return "%s_%s" % (value, len(value))
-
-        cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", LANGUAGE_EN)]
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
+        cache = [{TOKEN_NAME: token} for token in tokens]
         feature = Feature("test_feature", fn, offset=1)
 
         # When
-        res = feature.compute(1, cache)
+        res = feature.compute(1, cache, tokens, text)
 
         # Then
         self.assertEqual(res, "world_5")
@@ -59,18 +60,18 @@ class TestCRFFeatures(SnipsTest):
             return "%s_%s" % (value, len(value))
 
         mocked_fn = MagicMock(side_effect=fn)
-
-        cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", LANGUAGE_EN)]
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
+        cache = [{TOKEN_NAME: token} for token in tokens]
         feature = Feature("test_feature", mocked_fn, offset=0)
-        feature.compute(2, cache)
+        feature.compute(2, cache, tokens, text)
         feature1 = Feature("test_feature", mocked_fn, offset=1)
         feature2 = Feature("test_feature", mocked_fn, offset=2)
 
         # When
-        res1 = feature1.compute(1, cache)
-        res1_bis = feature1.compute(0, cache)
-        res2 = feature2.compute(0, cache)
+        res1 = feature1.compute(1, cache, tokens, text)
+        res1_bis = feature1.compute(0, cache, tokens, text)
+        res2 = feature2.compute(0, cache, tokens, text)
 
         # Then
         self.assertEqual(res1, "world_5")
@@ -93,12 +94,13 @@ class TestCRFFeatures(SnipsTest):
         factory = TestSingleFeatureFactory(config)
         factory.fit(None, None)
         features = factory.build_features()
-        cache = [{TOKEN_NAME: token} for token in
-                 tokenize("hello beautiful world", LANGUAGE_EN)]
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
+        cache = [{TOKEN_NAME: token} for token in tokens]
 
         # When
-        res_0 = features[0].compute(0, cache)
-        res_1 = features[1].compute(0, cache)
+        res_0 = features[0].compute(0, cache, tokens, text)
+        res_1 = features[1].compute(0, cache, tokens, text)
 
         # Then
         self.assertEqual(len(features), 2)
@@ -114,15 +116,16 @@ class TestCRFFeatures(SnipsTest):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello 1 world", LANGUAGE_EN)
+        text = "hello 1 world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
         features = factory.build_features()
 
         # When
-        res1 = features[0].compute(0, cache)
-        res2 = features[0].compute(1, cache)
+        res1 = features[0].compute(0, cache, tokens, text)
+        res2 = features[0].compute(1, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, IsDigitFactory)
@@ -137,15 +140,16 @@ class TestCRFFeatures(SnipsTest):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
         features = factory.build_features()
 
         # When
-        res1 = features[0].compute(0, cache)
-        res2 = features[0].compute(1, cache)
+        res1 = features[0].compute(0, cache, tokens, text)
+        res2 = features[0].compute(1, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, IsFirstFactory)
@@ -160,15 +164,16 @@ class TestCRFFeatures(SnipsTest):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
         features = factory.build_features()
 
         # When
-        res1 = features[0].compute(0, cache)
-        res2 = features[0].compute(2, cache)
+        res1 = features[0].compute(0, cache, tokens, text)
+        res2 = features[0].compute(2, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, IsLastFactory)
@@ -185,14 +190,15 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
         features = factory.build_features()
 
         # When
-        res = features[0].compute(1, cache)
+        res = features[0].compute(1, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, PrefixFactory)
@@ -208,14 +214,15 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
         features = factory.build_features()
 
         # When
-        res = features[0].compute(1, cache)
+        res = features[0].compute(1, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, SuffixFactory)
@@ -229,14 +236,15 @@ class TestCRFFeatures(SnipsTest):
             "args": {},
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         factory.fit(None, None)
         features = factory.build_features()
 
         # When
-        res = features[0].compute(2, cache)
+        res = features[0].compute(2, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, LengthFactory)
@@ -254,7 +262,8 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-        tokens = tokenize("hello beautiful world", LANGUAGE_EN)
+        text = "hello beautiful world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -262,7 +271,7 @@ class TestCRFFeatures(SnipsTest):
         features = factory.build_features()
 
         # When
-        res = features[0].compute(0, cache)
+        res = features[0].compute(0, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, NgramFactory)
@@ -283,7 +292,8 @@ class TestCRFFeatures(SnipsTest):
         }
 
         mock_get_gazetteer.return_value = {"hello", "beautiful", "world"}
-        tokens = tokenize("hello beautiful foobar world", LANGUAGE_EN)
+        text = "hello beautiful foobar world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -291,7 +301,7 @@ class TestCRFFeatures(SnipsTest):
         features = factory.build_features()
 
         # When
-        res = features[0].compute(1, cache)
+        res = features[0].compute(1, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, NgramFactory)
@@ -307,8 +317,8 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-
-        tokens = tokenize("hello Beautiful foObar world", LANGUAGE_EN)
+        text = "hello Beautiful foObar world"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -316,7 +326,7 @@ class TestCRFFeatures(SnipsTest):
         features = factory.build_features()
 
         # When
-        res = features[0].compute(1, cache)
+        res = features[0].compute(1, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, ShapeNgramFactory)
@@ -346,8 +356,8 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-
-        tokens = tokenize("hello word1 word2", LANGUAGE_EN)
+        text = "hello word1 word2"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -355,9 +365,9 @@ class TestCRFFeatures(SnipsTest):
         features = factory.build_features()
 
         # When
-        res0 = features[0].compute(0, cache)
-        res1 = features[0].compute(1, cache)
-        res2 = features[0].compute(2, cache)
+        res0 = features[0].compute(0, cache, tokens, text)
+        res1 = features[0].compute(1, cache, tokens, text)
+        res2 = features[0].compute(2, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, WordClusterFactory)
@@ -376,8 +386,8 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-
-        tokens = tokenize("2 dummy a and dummy_c", LANGUAGE_EN)
+        text = "2 dummy a and dummy_c"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         dataset = deepcopy(SAMPLE_DATASET)
@@ -387,17 +397,17 @@ class TestCRFFeatures(SnipsTest):
         # When
         features = factory.build_features()
         features = sorted(features, key=lambda f: f.base_name)
-        res0 = features[0].compute(0, cache)
-        res1 = features[0].compute(1, cache)
-        res2 = features[0].compute(2, cache)
-        res3 = features[0].compute(3, cache)
-        res4 = features[0].compute(4, cache)
+        res0 = features[0].compute(0, cache, tokens, text)
+        res1 = features[0].compute(1, cache, tokens, text)
+        res2 = features[0].compute(2, cache, tokens, text)
+        res3 = features[0].compute(3, cache, tokens, text)
+        res4 = features[0].compute(4, cache, tokens, text)
 
-        res5 = features[1].compute(0, cache)
-        res6 = features[1].compute(1, cache)
-        res7 = features[1].compute(2, cache)
-        res8 = features[1].compute(3, cache)
-        res9 = features[1].compute(4, cache)
+        res5 = features[1].compute(0, cache, tokens, text)
+        res6 = features[1].compute(1, cache, tokens, text)
+        res7 = features[1].compute(2, cache, tokens, text)
+        res8 = features[1].compute(3, cache, tokens, text)
+        res9 = features[1].compute(4, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, EntityMatchFactory)
@@ -433,8 +443,8 @@ class TestCRFFeatures(SnipsTest):
             },
             "offsets": [0]
         }
-
-        tokens = tokenize("one tea tomorrow at 2pm", LANGUAGE_EN)
+        text = "one tea tomorrow at 2pm"
+        tokens = tokenize(text, LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         mocked_dataset = {"language": "en"}
@@ -443,17 +453,17 @@ class TestCRFFeatures(SnipsTest):
         # When
         features = factory.build_features()
         features = sorted(features, key=lambda f: f.base_name)
-        res0 = features[0].compute(0, cache)
-        res1 = features[0].compute(1, cache)
-        res2 = features[0].compute(2, cache)
-        res3 = features[0].compute(3, cache)
-        res4 = features[0].compute(4, cache)
+        res0 = features[0].compute(0, cache, tokens, text)
+        res1 = features[0].compute(1, cache, tokens, text)
+        res2 = features[0].compute(2, cache, tokens, text)
+        res3 = features[0].compute(3, cache, tokens, text)
+        res4 = features[0].compute(4, cache, tokens, text)
 
-        res5 = features[1].compute(0, cache)
-        res6 = features[1].compute(1, cache)
-        res7 = features[1].compute(2, cache)
-        res8 = features[1].compute(3, cache)
-        res9 = features[1].compute(4, cache)
+        res5 = features[1].compute(0, cache, tokens, text)
+        res6 = features[1].compute(1, cache, tokens, text)
+        res7 = features[1].compute(2, cache, tokens, text)
+        res8 = features[1].compute(3, cache, tokens, text)
+        res9 = features[1].compute(4, cache, tokens, text)
 
         # Then
         self.assertIsInstance(factory, BuiltinEntityMatchFactory)

@@ -139,8 +139,8 @@ class SnipsNLUEngine(ProcessingUnit):
             if is_empty(res):
                 continue
             slots = res[RES_SLOTS]
-            scope = [s[RES_ENTITY] for s in slots
-                     if is_builtin_entity(s[RES_ENTITY])]
+            scope = (s[RES_ENTITY] for s in slots
+                     if is_builtin_entity(s[RES_ENTITY]))
             resolved_slots = resolve_slots(text, slots, entities, language,
                                            scope)
             return parsing_result(text, intent=res[RES_INTENT],

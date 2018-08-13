@@ -256,11 +256,11 @@ class CRFSlotFiller(SlotFiller):
         return log
 
     def _augment_slots(self, text, tokens, tags, builtin_slots_names):
-        scope = set(self.slot_name_mapping[slot]
-                    for slot in builtin_slots_names)
+        scope = tuple(set(self.slot_name_mapping[slot]
+                    for slot in builtin_slots_names))
         builtin_entities = [
             be for entity_kind in scope for be in get_builtin_entities(
-                text, self.language, [entity_kind], use_cache=True)
+                text, self.language, (entity_kind,), use_cache=True)
         ]
         # We remove builtin entities which conflicts with custom slots
         # extracted by the CRF

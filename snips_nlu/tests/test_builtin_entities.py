@@ -48,7 +48,7 @@ class TestBuiltInEntities(SnipsTest):
         text = "meet me at 10 p.m."
 
         # When
-        scope = ["snips/number"]
+        scope = ("snips/number",)
         parse = get_builtin_entities(text, "en", scope=scope)
 
         # Then

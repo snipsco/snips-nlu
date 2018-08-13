@@ -224,7 +224,7 @@ class NgramFactory(SingleFeatureFactory):
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         max_len = len(tokens)
         end = token_index + self.n
         if 0 <= token_index < max_len and end <= max_len:
@@ -297,7 +297,7 @@ class ShapeNgramFactory(SingleFeatureFactory):
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         max_len = len(tokens)
         end = token_index + self.n
         if 0 <= token_index < max_len and end <= max_len:
@@ -348,7 +348,7 @@ class WordClusterFactory(SingleFeatureFactory):
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
 
-    def compute_feature(self, tokens, token_index):
+    def compute_feature(self, tokens, token_index, _initial_text=None):
         if self.use_stemming:
             value = stem_token(tokens[token_index], self.language)
         else:
@@ -439,7 +439,7 @@ class EntityMatchFactory(CRFFeatureFactory):
     def _build_collection_match_fn(self, collection):
         collection_set = set(collection)
 
-        def collection_match(tokens, token_index):
+        def collection_match(tokens, token_index, tokens_text):
             normalized_tokens = list(map(self._transform, tokens))
             ngrams = get_all_ngrams(normalized_tokens)
             ngrams = [ngram for ngram in ngrams if
@@ -521,7 +521,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
             end = tokens[token_index].end
 
             builtin_entities = get_builtin_entities(
-                _initial_text, self.language, scope=[builtin_entity],
+                _initial_text, self.language, scope=(builtin_entity,),
                 use_cache=True)
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]

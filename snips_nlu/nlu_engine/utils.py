@@ -28,7 +28,7 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
                     break
             if not found:
                 builtin_matches = get_builtin_entities(raw_value, language,
-                                                       scope=[entity_name],
+                                                       scope=(entity_name,),
                                                        use_cache=False)
                 if builtin_matches:
                     resolved_slot = builtin_slot(slot,

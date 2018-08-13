@@ -18,7 +18,7 @@ class TestPreprocessing(SnipsTest):
         tokens = tokenize(text, language)
 
         # Then
-        self.assertListEqual(tokens, tuple())
+        self.assertTupleEqual(tokens, tuple())
 
     def test_should_tokenize_only_white_spaces(self):
         # Given
@@ -29,7 +29,7 @@ class TestPreprocessing(SnipsTest):
         tokens = tokenize(text, language)
 
         # Then
-        self.assertListEqual(tokens, tuple())
+        self.assertTupleEqual(tokens, tuple())
 
     def test_should_tokenize_literals(self):
         # Given

@@ -3,6 +3,5 @@
 
 **Checklist**:
 - [ ] My PR is ready for code review
-- [ ] I have added some tests, if applicable
-- [ ] My code respects the [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/)
+- [ ] I have added some tests, if applicable, and run the whole test suite, including [linting tests](../linting_test.py)
 - [ ] I have updated the documentation, if applicable

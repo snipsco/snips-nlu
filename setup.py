@@ -17,7 +17,7 @@ with io.open(os.path.join(root, "README.rst"), encoding="utf8") as f:
     readme = f.read()
 
 required = [
-    "enum34>=1.1,<2.0",
+    "enum34>=1.1,<2.0; python_version<'3.4'",
     "numpy==1.14.0",
     "scipy>=1.0,<2.0",
     "scikit-learn>=0.19,<0.20",

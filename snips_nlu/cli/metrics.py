@@ -1,12 +1,12 @@
 from __future__ import print_function, unicode_literals
 
 import json
-from builtins import bytes
 from pathlib import Path
 
 import plac
 
 from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu.utils import json_string
 
 
 @plac.annotations(
@@ -45,8 +45,7 @@ def cross_val_metrics(dataset_path, output_path, nb_folds=5,
         metrics.pop("parsing_errors")
 
     with Path(output_path).open(mode="w") as f:
-        json_dump = json.dumps(metrics, sort_keys=True, indent=2)
-        f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
+        f.write(json_string(metrics))
 
 
 @plac.annotations(
@@ -78,5 +77,4 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
         metrics.pop("parsing_errors")
 
     with Path(output_path).open(mode="w") as f:
-        json_dump = json.dumps(metrics, sort_keys=True, indent=2)
-        f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
+        f.write(json_string(metrics))

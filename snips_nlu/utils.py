@@ -322,6 +322,15 @@ def check_persisted_path(func):
     return func_wrapper
 
 
+def fitted_required(func):
+    def func_wrapper(self, *args, **kwargs):
+        if not self.fitted:
+            raise NotTrained("%s must be fitted" % self.unit_name)
+        return func(self, *args, **kwargs)
+
+    return func_wrapper
+
+
 def is_package(name):
     """Check if name maps to a package installed via pip.
 

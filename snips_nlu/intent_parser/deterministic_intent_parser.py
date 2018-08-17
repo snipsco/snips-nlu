@@ -21,7 +21,7 @@ from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
     unresolved_slot)
 from snips_nlu.utils import (
-    NotTrained, check_persisted_path, get_slot_name_mappings, json_string,
+    check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
     log_elapsed_time, log_result, ranges_overlap, regex_escape)
 
 GROUP_NAME_PREFIX = "group"
@@ -102,6 +102,7 @@ class DeterministicIntentParser(IntentParser):
     @log_result(
         logger, logging.DEBUG, "DeterministicIntentParser result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed in {elapsed_time}.")
+    @fitted_required
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text*
 
@@ -119,8 +120,6 @@ class DeterministicIntentParser(IntentParser):
         Raises:
             NotTrained: When the intent parser is not fitted
         """
-        if not self.fitted:
-            raise NotTrained("DeterministicIntentParser must be fitted")
         logger.debug("DeterministicIntentParser parsing '%s'...", text)
 
         if isinstance(intents, str):

@@ -16,8 +16,9 @@ from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (
     build_processing_unit, load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
-from snips_nlu.utils import (NotTrained, check_persisted_path, elapsed_since,
-                             json_string, log_elapsed_time, log_result)
+from snips_nlu.utils import (check_persisted_path, elapsed_since,
+                             fitted_required, json_string, log_elapsed_time,
+                             log_result)
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,7 @@ class ProbabilisticIntentParser(IntentParser):
                 "ProbabilisticIntentParser result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG,
                       "ProbabilisticIntentParser parsed in {elapsed_time}")
+    @fitted_required
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by first classifying
         the intent and then using the correspond slot filler to extract slots
@@ -110,9 +112,6 @@ class ProbabilisticIntentParser(IntentParser):
         Raises:
             NotTrained: When the intent parser is not fitted
         """
-        if not self.fitted:
-            raise NotTrained("ProbabilisticIntentParser must be fitted")
-
         logger.debug("Probabilistic intent parser parsing '%s'...", text)
 
         if isinstance(intents, str):

@@ -21,9 +21,9 @@ from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import (NotTrained, check_persisted_path,
-                             get_slot_name_mappings, json_string,
-                             log_elapsed_time, log_result)
+from snips_nlu.utils import (
+    check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
+    log_elapsed_time, log_result)
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +104,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
     @log_result(logger, logging.DEBUG, "Result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed query in {elapsed_time}")
+    @fitted_required
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by calling its intent
         parsers successively
@@ -124,9 +125,6 @@ class SnipsNLUEngine(ProcessingUnit):
         logging.info("NLU engine parsing: '%s'...", text)
         if not isinstance(text, str):
             raise TypeError("Expected unicode but received: %s" % type(text))
-
-        if not self.fitted:
-            raise NotTrained("SnipsNLUEngine must be fitted")
 
         if isinstance(intents, str):
             intents = [intents]

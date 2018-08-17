@@ -92,8 +92,7 @@ class CRFSlotFiller(SlotFiller):
     @property
     def fitted(self):
         """Whether or not the slot filler has already been fitted"""
-        return self.crf_model is not None \
-               and self.crf_model.tagger_ is not None
+        return self.slot_name_mapping is not None
 
     @log_elapsed_time(logger, logging.DEBUG,
                       "Fitted CRFSlotFiller in {elapsed_time}")
@@ -111,9 +110,14 @@ class CRFSlotFiller(SlotFiller):
         """
         logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
+        self.language = dataset[LANGUAGE]
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
-        self.language = dataset[LANGUAGE]
+
+        if not self.slot_name_mapping:
+            # No need to train the CRF if the intent has no slots
+            return self
+
         random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
             dataset, self.intent, language=self.language,
@@ -155,6 +159,10 @@ class CRFSlotFiller(SlotFiller):
         Raises:
             NotTrained: When the slot filler is not fitted
         """
+        if not self.slot_name_mapping:
+            # Early return if the intent has no slots
+            return []
+
         tokens = tokenize(text, self.language)
         if not tokens:
             return []

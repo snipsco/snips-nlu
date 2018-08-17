@@ -16,7 +16,7 @@ from snips_nlu.pipeline.units_registry import register_processing_unit, \
     reset_processing_units
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
-from snips_nlu.utils import json_string
+from snips_nlu.utils import json_string, NotTrained
 
 
 class TestProbabilisticIntentParser(FixtureTest):
@@ -75,6 +75,15 @@ class TestProbabilisticIntentParser(FixtureTest):
                 as mock_fit:
             parser.fit(BEVERAGE_DATASET, force_retrain=False)
             self.assertEqual(1, mock_fit.call_count)
+
+    def test_should_not_parse_when_not_fitted(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+
+        # When / Then
+        self.assertFalse(parser.fitted)
+        with self.assertRaises(NotTrained):
+            parser.parse("foobar")
 
     def test_should_be_serializable_before_fitting(self):
         # Given

@@ -205,6 +205,7 @@ class CRFSlotFiller(SlotFiller):
             features.append(token_features)
         return features
 
+    @fitted_required
     def get_sequence_probability(self, tokens, labels):
         """Gives the joint probability of a sequence of tokens and CRF labels
 
@@ -218,6 +219,8 @@ class CRFSlotFiller(SlotFiller):
             however it can be used to compare a sequence of labels relatively
             to another one.
         """
+        if not self.slot_name_mapping:
+            return 0.0 if any(label != OUTSIDE for label in labels) else 1.0
         features = self.compute_features(tokens)
         return self._get_sequence_probability(features, labels)
 

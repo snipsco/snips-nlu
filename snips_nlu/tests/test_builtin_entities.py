@@ -41,8 +41,8 @@ class TestBuiltInEntities(SnipsTest):
     def test_should_parse_gazetteer_entities(self):
         # Given
         text = "je veux ecouter les daft punk s'il vous plait"
-        parser = get_builtin_entity_parser_from_scope("fr",
-                                                      ["snips/musicArtist"])
+        parser = get_builtin_entity_parser_from_scope(
+            "fr", ["snips/musicArtist"])
 
         # When / Then
         parse = parser.parse(text)
@@ -175,7 +175,7 @@ class TestBuiltInEntities(SnipsTest):
             self, mocked_find_gazetteer_entity_data_path, mocked_parser):
         # Given
         dataset1 = {
-            LANGUAGE: "en",
+            LANGUAGE: "fr",
             ENTITIES: {
                 "snips/musicArtist": {},
                 "snips/musicTrack": {},
@@ -184,7 +184,7 @@ class TestBuiltInEntities(SnipsTest):
         }
 
         dataset2 = {
-            LANGUAGE: "en",
+            LANGUAGE: "fr",
             ENTITIES: {
                 "snips/musicTrack": {},
                 "snips/musicAlbum": {},
@@ -193,7 +193,7 @@ class TestBuiltInEntities(SnipsTest):
         }
 
         dataset3 = {
-            LANGUAGE: "en",
+            LANGUAGE: "fr",
             ENTITIES: {
                 "snips/musicTrack": {},
                 "snips/musicArtist": {},

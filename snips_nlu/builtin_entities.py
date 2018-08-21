@@ -91,8 +91,7 @@ def _get_gazetteer_entity_configurations(language, gazetteer_entity_scope):
     return [{
         "builtin_entity_name": entity_name,
         "resource_path": str(find_gazetteer_entity_data_path(
-            language, entity_name)),
-        "parser_threshold": 0.6
+            language, entity_name))
     } for entity_name in gazetteer_entity_scope]
 
 

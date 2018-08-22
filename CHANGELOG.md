@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+
+## [0.16.3] - 2018-08-22
+### Fixed
+- Issue with synonyms when multiple synonyms have the same normalization
+
 ## [0.16.2] - 2018-08-08
 ### Added
 - `automatically_extensible` flag in dataset generation tool
@@ -127,6 +132,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.16.3]: https://github.com/snipsco/snips-nlu/compare/0.16.2...0.16.3
 [0.16.2]: https://github.com/snipsco/snips-nlu/compare/0.16.1...0.16.2
 [0.16.1]: https://github.com/snipsco/snips-nlu/compare/0.16.0...0.16.1
 [0.16.0]: https://github.com/snipsco/snips-nlu/compare/0.15.1...0.16.0

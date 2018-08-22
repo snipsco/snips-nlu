@@ -49,8 +49,7 @@ class TestDeterministicIntentParser(FixtureTest):
                     ]
                 }
             },
-            "language": "en",
-            "snips_nlu_version": "0.1.0"
+            "language": "en"
         }
 
         self.slots_dataset = {
@@ -177,7 +176,6 @@ class TestDeterministicIntentParser(FixtureTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.0.1"
         }
 
     def test_should_get_intent(self):
@@ -442,7 +440,6 @@ class TestDeterministicIntentParser(FixtureTest):
             },
             "entities": dict(),
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         # Then
@@ -475,7 +472,6 @@ class TestDeterministicIntentParser(FixtureTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         naughty_dataset = validate_and_format_dataset(naughty_dataset)

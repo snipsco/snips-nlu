@@ -37,7 +37,9 @@ def resolve_slots(input, slots, dataset_entities, language, scope):
         else:  # custom slot
             entity = dataset_entities[entity_name]
             normalized_raw_value = normalize(raw_value)
-            if normalized_raw_value in entity[UTTERANCES]:
+            if raw_value in entity[UTTERANCES]:
+                resolved_value = entity[UTTERANCES][raw_value]
+            elif normalized_raw_value in entity[UTTERANCES]:
                 resolved_value = entity[UTTERANCES][normalized_raw_value]
             elif entity[AUTOMATICALLY_EXTENSIBLE]:
                 resolved_value = raw_value

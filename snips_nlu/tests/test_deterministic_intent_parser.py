@@ -17,6 +17,7 @@ from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH, \
     BEVERAGE_DATASET
+from snips_nlu.utils import NotTrained
 
 
 class TestDeterministicIntentParser(FixtureTest):
@@ -214,6 +215,15 @@ class TestDeterministicIntentParser(FixtureTest):
         # Then
         self.assertEqual(intent_name_1, res_1[RES_INTENT][RES_INTENT_NAME])
         self.assertEqual(intent_name_2, res_2[RES_INTENT][RES_INTENT_NAME])
+
+    def test_should_not_parse_when_not_fitted(self):
+        # Given
+        parser = DeterministicIntentParser()
+
+        # When / Then
+        self.assertFalse(parser.fitted)
+        with self.assertRaises(NotTrained):
+            parser.parse("foobar")
 
     def test_should_get_intent_after_deserialization(self):
         # Given

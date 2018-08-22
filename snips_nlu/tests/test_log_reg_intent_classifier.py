@@ -20,17 +20,14 @@ from snips_nlu.pipeline.configs import (
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
+from snips_nlu.utils import NotTrained
 
 
-# pylint: disable=W0613
 def get_mocked_augment_utterances(dataset, intent_name, language,
                                   min_utterances, capitalization_ratio,
                                   add_builtin_entities_examples,
                                   random_state):
     return dataset[INTENTS][intent_name][UTTERANCES]
-
-
-# pylint: enable=W0613
 
 
 class TestLogRegIntentClassifier(FixtureTest):
@@ -68,6 +65,15 @@ class TestLogRegIntentClassifier(FixtureTest):
         self.assertEqual("MakeTea", res1[RES_INTENT_NAME])
         self.assertEqual("MakeCoffee", res2[RES_INTENT_NAME])
         self.assertEqual(None, res3)
+
+    def test_should_not_get_intent_when_not_fitted(self):
+        # Given
+        intent_classifier = LogRegIntentClassifier()
+
+        # When / Then
+        self.assertFalse(intent_classifier.fitted)
+        with self.assertRaises(NotTrained):
+            intent_classifier.get_intent("foobar")
 
     def test_should_get_none_if_empty_dataset(self):
         # Given

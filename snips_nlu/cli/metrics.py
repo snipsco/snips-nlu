@@ -1,12 +1,12 @@
 from __future__ import print_function, unicode_literals
 
 import json
-from builtins import bytes
 from pathlib import Path
 
 import plac
 
 from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu.utils import json_string
 
 
 @plac.annotations(
@@ -35,7 +35,7 @@ def cross_val_metrics(dataset_path, output_path, nb_folds=5,
         include_slot_metrics=not exclude_slot_metrics,
     )
 
-    with Path(dataset_path).open("r", encoding="utf-8") as f:
+    with Path(dataset_path).open("r", encoding="utf8") as f:
         load_resources(json.load(f)["language"])
 
     from snips_nlu_metrics import compute_cross_val_metrics
@@ -44,9 +44,8 @@ def cross_val_metrics(dataset_path, output_path, nb_folds=5,
     if not include_errors:
         metrics.pop("parsing_errors")
 
-    with Path(output_path).open(mode="w") as f:
-        json_dump = json.dumps(metrics, sort_keys=True, indent=2)
-        f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
+    with Path(output_path).open(mode="w", encoding="utf8") as f:
+        f.write(json_string(metrics))
 
 
 @plac.annotations(
@@ -68,7 +67,7 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
         include_slot_metrics=not exclude_slot_metrics
     )
 
-    with Path(train_dataset_path).open("r", encoding="utf-8") as f:
+    with Path(train_dataset_path).open("r", encoding="utf8") as f:
         load_resources(json.load(f)["language"])
 
     from snips_nlu_metrics import compute_train_test_metrics
@@ -77,6 +76,5 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
     if not include_errors:
         metrics.pop("parsing_errors")
 
-    with Path(output_path).open(mode="w") as f:
-        json_dump = json.dumps(metrics, sort_keys=True, indent=2)
-        f.write(bytes(json_dump, encoding="utf8").decode("utf8"))
+    with Path(output_path).open(mode="w", encoding="utf8") as f:
+        f.write(json_string(metrics))

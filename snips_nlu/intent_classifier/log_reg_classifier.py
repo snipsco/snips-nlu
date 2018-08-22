@@ -17,8 +17,9 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data, get_regularization_factor, text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import DifferedLoggingMessage, NotTrained, \
-    check_random_state, json_string, log_elapsed_time, check_persisted_path
+from snips_nlu.utils import (
+    DifferedLoggingMessage, check_persisted_path, check_random_state,
+    fitted_required, json_string, log_elapsed_time)
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,7 @@ class LogRegIntentClassifier(IntentClassifier):
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self
 
+    @fitted_required
     def get_intent(self, text, intents_filter=None):
         """Performs intent classification on the provided *text*
 
@@ -109,9 +111,6 @@ class LogRegIntentClassifier(IntentClassifier):
             NotTrained: When the intent classifier is not fitted
 
         """
-        if not self.fitted:
-            raise NotTrained('LogRegIntentClassifier must be fitted')
-
         if isinstance(intents_filter, str):
             intents_filter = [intents_filter]
 

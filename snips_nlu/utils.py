@@ -265,7 +265,11 @@ def json_debug_string(dict_data):
 
 def json_string(json_object, indent=2, sort_keys=True):
     json_dump = json.dumps(json_object, indent=indent, sort_keys=sort_keys)
-    return bytes(json_dump, encoding="utf8").decode("utf8")
+    return unicode_string(json_dump)
+
+
+def unicode_string(string):
+    return bytes(string, encoding="utf8").decode("utf8")
 
 
 def log_elapsed_time(logger, level, output_msg=None):
@@ -314,6 +318,15 @@ def check_persisted_path(func):
         if Path(path).exists():
             raise OSError("Persisting directory %s already exists" % path)
         return func(self, path, *args, **kwargs)
+
+    return func_wrapper
+
+
+def fitted_required(func):
+    def func_wrapper(self, *args, **kwargs):
+        if not self.fitted:
+            raise NotTrained("%s must be fitted" % self.unit_name)
+        return func(self, *args, **kwargs)
 
     return func_wrapper
 

@@ -15,25 +15,23 @@ from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
-from snips_nlu.constants import (DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
-                                 RES_MATCH_RANGE, RES_VALUE, START)
+from snips_nlu.constants import (
+    DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY, RES_MATCH_RANGE, RES_VALUE,
+    START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
-from snips_nlu.slot_filler.crf_utils import (OUTSIDE, TAGS, TOKENS,
-                                             positive_tagging,
-                                             tag_name_to_slot_name,
-                                             tags_to_preslots, tags_to_slots,
-                                             utterance_to_sample)
+from snips_nlu.slot_filler.crf_utils import (
+    OUTSIDE, TAGS, TOKENS, positive_tagging, tag_name_to_slot_name,
+    tags_to_preslots, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.utils import (DifferedLoggingMessage, NotTrained,
-                             UnupdatableDict, check_persisted_path,
-                             check_random_state, get_slot_name_mapping,
-                             json_string, log_elapsed_time, mkdir_p,
-                             ranges_overlap)
+from snips_nlu.utils import (
+    DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
+    check_random_state, fitted_required, get_slot_name_mapping, json_string,
+    log_elapsed_time, mkdir_p, ranges_overlap)
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +92,7 @@ class CRFSlotFiller(SlotFiller):
     @property
     def fitted(self):
         """Whether or not the slot filler has already been fitted"""
-        return self.crf_model is not None \
-               and self.crf_model.tagger_ is not None
+        return self.slot_name_mapping is not None
 
     @log_elapsed_time(logger, logging.DEBUG,
                       "Fitted CRFSlotFiller in {elapsed_time}")
@@ -113,9 +110,14 @@ class CRFSlotFiller(SlotFiller):
         """
         logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
+        self.language = dataset[LANGUAGE]
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
-        self.language = dataset[LANGUAGE]
+
+        if not self.slot_name_mapping:
+            # No need to train the CRF if the intent has no slots
+            return self
+
         random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
             dataset, self.intent, language=self.language,
@@ -147,6 +149,7 @@ class CRFSlotFiller(SlotFiller):
 
     # pylint:enable=arguments-differ
 
+    @fitted_required
     def get_slots(self, text):
         """Extracts slots from the provided text
 
@@ -156,8 +159,10 @@ class CRFSlotFiller(SlotFiller):
         Raises:
             NotTrained: When the slot filler is not fitted
         """
-        if not self.fitted:
-            raise NotTrained("CRFSlotFiller must be fitted")
+        if not self.slot_name_mapping:
+            # Early return if the intent has no slots
+            return []
+
         tokens = tokenize(text, self.language)
         if not tokens:
             return []
@@ -200,6 +205,7 @@ class CRFSlotFiller(SlotFiller):
             features.append(token_features)
         return features
 
+    @fitted_required
     def get_sequence_probability(self, tokens, labels):
         """Gives the joint probability of a sequence of tokens and CRF labels
 
@@ -213,13 +219,13 @@ class CRFSlotFiller(SlotFiller):
             however it can be used to compare a sequence of labels relatively
             to another one.
         """
+        if not self.slot_name_mapping:
+            return 0.0 if any(label != OUTSIDE for label in labels) else 1.0
         features = self.compute_features(tokens)
         return self._get_sequence_probability(features, labels)
 
+    @fitted_required
     def _get_sequence_probability(self, features, labels):
-        if not self.fitted:
-            raise NotTrained("CRFSlotFiller must be fitted")
-
         # Use a default substitution label when a label was not seen during
         # training
         substitution_label = OUTSIDE if OUTSIDE in self.labels else \
@@ -230,9 +236,13 @@ class CRFSlotFiller(SlotFiller):
         self.crf_model.tagger_.set(features)
         return self.crf_model.tagger_.probability(cleaned_labels)
 
+    @fitted_required
     def log_weights(self):
         """Return a logs for both the label-to-label and label-to-features
          weights"""
+        if not self.slot_name_mapping:
+            return "No weights to display: intent '%s' has no slots" \
+                   % self.intent
         log = ""
         transition_features = self.crf_model.transition_features_
         transition_features = sorted(

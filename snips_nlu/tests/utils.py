@@ -12,7 +12,7 @@ from unittest import TestCase
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import load_resources
-from snips_nlu.utils import json_string
+from snips_nlu.utils import json_string, unicode_string
 
 TEST_PATH = Path(__file__).parent
 SAMPLE_DATASET_PATH = TEST_PATH / "resources" / "sample_dataset.json"
@@ -57,9 +57,8 @@ class SnipsTest(TestCase):
 
     @staticmethod
     def writeFileContent(path, content):
-        content = bytes(content, encoding="utf8")
         with path.open(mode="w") as f:
-            f.write(content.decode("utf8"))
+            f.write(unicode_string(content))
 
 
 class FixtureTest(SnipsTest):

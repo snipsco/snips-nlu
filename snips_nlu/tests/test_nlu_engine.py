@@ -24,7 +24,7 @@ from snips_nlu.result import (
     resolved_slot, unresolved_slot)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import json_string
+from snips_nlu.utils import json_string, NotTrained
 
 
 class TestSnipsNLUEngine(FixtureTest):
@@ -243,6 +243,15 @@ class TestSnipsNLUEngine(FixtureTest):
 
         # Then
         self.assertEqual(empty_result("hello world"), result)
+
+    def test_should_not_get_slots_when_not_fitted(self):
+        # Given
+        engine = SnipsNLUEngine()
+
+        # When / Then
+        self.assertFalse(engine.fitted)
+        with self.assertRaises(NotTrained):
+            engine.parse("foobar")
 
     def test_should_be_serializable_into_zip(self):
         # Given

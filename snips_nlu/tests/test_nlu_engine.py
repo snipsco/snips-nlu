@@ -514,7 +514,6 @@ class TestSnipsNLUEngine(FixtureTest):
                                             mocked_crf_parse):
         # Given
         dataset = {
-            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     "utterances": [
@@ -607,7 +606,6 @@ class TestSnipsNLUEngine(FixtureTest):
     def test_synonyms_should_point_to_base_value(self, mocked_proba_parse):
         # Given
         dataset = {
-            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     "utterances": [
@@ -798,7 +796,6 @@ class TestSnipsNLUEngine(FixtureTest):
                 "snips/datetime": {}
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         })
 
         # When / Then

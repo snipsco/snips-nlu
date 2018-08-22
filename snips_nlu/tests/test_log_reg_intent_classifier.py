@@ -201,7 +201,6 @@ class TestLogRegIntentClassifier(FixtureTest):
         # Given
         language = LANGUAGE_EN
         dataset = {
-            "snips_nlu_version": "0.0.1",
             "entities": {
                 "dummy_entity_1": {
                     "automatically_extensible": True,
@@ -562,7 +561,6 @@ class TestLogRegIntentClassifier(FixtureTest):
         # Given
         language = LANGUAGE_EN
         dataset = {
-            "snips_nlu_version": "0.0.1",
             "entities": {
                 "snips/number": {}
             },
@@ -610,7 +608,6 @@ class TestLogRegIntentClassifier(FixtureTest):
 
         # Then
         expected_dataset = {
-            "snips_nlu_version": "0.0.1",
             "entities": {
                 "snips/number": {}
             },

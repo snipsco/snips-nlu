@@ -87,7 +87,6 @@ def get_empty_dataset(language):
         "intents": {},
         "entities": {},
         "language": language,
-        "snips_nlu_version": "1.1.1"
     }
 
 

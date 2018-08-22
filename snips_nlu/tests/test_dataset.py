@@ -30,7 +30,6 @@ class TestDataset(SnipsTest):
             },
             "entities": {},
             "language": "en",
-            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -65,7 +64,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -84,7 +82,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -98,7 +95,6 @@ class TestDataset(SnipsTest):
             "intents": {},
             "entities": {},
             "language": "eng",
-            "snips_nlu_version": "1.1.1"
         }
 
         # When/Then
@@ -129,7 +125,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
         }
 
         expected_dataset = {
@@ -147,7 +142,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1",
             "validated": True
         }
 
@@ -209,7 +203,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
         }
 
         expected_dataset = {
@@ -258,7 +251,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1",
             "validated": True
         }
 
@@ -320,7 +312,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         expected_dataset = {
@@ -366,7 +357,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1",
             "validated": True
         }
 
@@ -401,7 +391,6 @@ class TestDataset(SnipsTest):
                 SNIPS_DATETIME: {}
             },
             "language": "en",
-            "snips_nlu_version": "0.1.0"
         }
 
         # When / Then
@@ -464,7 +453,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         expected_dataset = {
@@ -510,7 +498,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1",
             "validated": True
         }
 
@@ -597,7 +584,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         expected_dataset = {
@@ -680,7 +666,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1",
             "validated": True
         }
 
@@ -722,7 +707,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.1.0"
         }
 
         expected_dataset = {
@@ -753,7 +737,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.1.0",
             "validated": True
         }
 
@@ -786,7 +769,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "1.1.1"
         }
 
         # When
@@ -847,7 +829,6 @@ class TestDataset(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.15.0"
         }
 
         # When

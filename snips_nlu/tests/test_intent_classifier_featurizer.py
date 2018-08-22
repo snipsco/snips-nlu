@@ -48,7 +48,6 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 }
             },
             "intents": {},
-            "snips_nlu_version": "1.0.1",
             "language": "en"
         }
         dataset = validate_and_format_dataset(dataset)
@@ -197,7 +196,6 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
         language = LANGUAGE_EN
         dataset = validate_and_format_dataset(dataset)
@@ -288,7 +286,6 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 "snips/number": {}
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         dataset = validate_and_format_dataset(dataset)

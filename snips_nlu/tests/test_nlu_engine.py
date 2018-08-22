@@ -16,7 +16,8 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs import NLUEngineConfig, ProcessingUnitConfig
+from snips_nlu.pipeline.configs import NLUEngineConfig, \
+    ProbabilisticIntentParserConfig, ProcessingUnitConfig
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -513,7 +514,6 @@ class TestSnipsNLUEngine(FixtureTest):
                                             mocked_crf_parse):
         # Given
         dataset = {
-            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     "utterances": [
@@ -603,13 +603,9 @@ class TestSnipsNLUEngine(FixtureTest):
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
         ".ProbabilisticIntentParser.parse")
-    @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           ".DeterministicIntentParser.parse")
-    def test_synonyms_should_point_to_base_value(self, mocked_deter_parse,
-                                                 mocked_proba_parse):
+    def test_synonyms_should_point_to_base_value(self, mocked_proba_parse):
         # Given
         dataset = {
-            "snips_nlu_version": "1.1.1",
             "intents": {
                 "dummy_intent_1": {
                     "utterances": [
@@ -651,11 +647,11 @@ class TestSnipsNLUEngine(FixtureTest):
                             entity="dummy_entity_1",
                             slot_name="dummy_slot_name")]
 
-        mocked_deter_parse.return_value = empty_result(text)
         mocked_proba_parse.return_value = parsing_result(
             text, mocked_proba_parser_intent, mocked_proba_parser_slots)
 
-        engine = SnipsNLUEngine().fit(dataset)
+        config = NLUEngineConfig([ProbabilisticIntentParserConfig()])
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
         result = engine.parse(text)
@@ -677,6 +673,106 @@ class TestSnipsNLUEngine(FixtureTest):
         expected_result = parsing_result(
             text, intent=mocked_proba_parser_intent, slots=[expected_slot])
         self.assertEqual(expected_result, result)
+
+    @patch(
+        "snips_nlu.intent_parser.probabilistic_intent_parser"
+        ".ProbabilisticIntentParser.parse")
+    def test_synonyms_should_not_collide_when_remapped_to_base_value(
+            self, mocked_proba_parse):
+        # Given
+        # Given
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "value",
+                                    "entity": "entity1",
+                                    "slot_name": "slot1"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "entity1": {
+                    "data": [
+                        {
+                            "value": "a",
+                            "synonyms": [
+                                "favorïte"
+                            ]
+                        },
+                        {
+                            "value": "b",
+                            "synonyms": [
+                                "favorite"
+                            ]
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": False
+                }
+            },
+            "language": "en",
+        }
+
+        mocked_proba_parser_intent = intent_classification_result(
+            "intent1", 1.0)
+
+        def mock_proba_parse(text, intents):
+            slots = [unresolved_slot(match_range=(0, len(text)), value=text,
+                                     entity="entity1", slot_name="slot1")]
+            return parsing_result(
+                text, mocked_proba_parser_intent, slots)
+
+        mocked_proba_parse.side_effect = mock_proba_parse
+
+        config = NLUEngineConfig([ProbabilisticIntentParserConfig()])
+        engine = SnipsNLUEngine(config).fit(dataset)
+
+        # When
+        result1 = engine.parse("favorite")
+        result2 = engine.parse("favorïte")
+
+        # Then
+        expected_slot1 = {
+            RES_MATCH_RANGE: {
+                "start": 0,
+                "end": 8
+            },
+            RES_RAW_VALUE: "favorite",
+            RES_VALUE: {
+                "kind": "Custom",
+                "value": "b"
+            },
+            RES_ENTITY: "entity1",
+            RES_SLOT_NAME: "slot1"
+        }
+        expected_slot2 = {
+            RES_MATCH_RANGE: {
+                "start": 0,
+                "end": 8
+            },
+            RES_RAW_VALUE: "favorïte",
+            RES_VALUE: {
+                "kind": "Custom",
+                "value": "a"
+            },
+            RES_ENTITY: "entity1",
+            RES_SLOT_NAME: "slot1"
+        }
+        expected_result1 = parsing_result(
+            "favorite", intent=mocked_proba_parser_intent,
+            slots=[expected_slot1])
+        expected_result2 = parsing_result(
+            "favorïte", intent=mocked_proba_parser_intent,
+            slots=[expected_slot2])
+        self.assertEqual(expected_result1, result1)
+        self.assertEqual(expected_result2, result2)
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
@@ -700,7 +796,6 @@ class TestSnipsNLUEngine(FixtureTest):
                 "snips/datetime": {}
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         })
 
         # When / Then

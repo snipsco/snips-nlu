@@ -102,7 +102,6 @@ class TestCRFSlotFiller(FixtureTest):
             },
             "entities": dict(),
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         # Then
@@ -135,7 +134,6 @@ class TestCRFSlotFiller(FixtureTest):
                 }
             },
             "language": "en",
-            "snips_nlu_version": "0.0.1"
         }
 
         naughty_dataset = validate_and_format_dataset(naughty_dataset)

@@ -53,9 +53,6 @@ class TestSnipsNLUEngine(FixtureTest):
             def from_dict(cls, obj_dict):
                 return FirstIntentParserConfig()
 
-            def get_required_resources(self):
-                return None
-
         class FirstIntentParser(IntentParser):
             unit_name = "first_intent_parser"
             config_type = FirstIntentParserConfig
@@ -91,9 +88,6 @@ class TestSnipsNLUEngine(FixtureTest):
             @classmethod
             def from_dict(cls, obj_dict):
                 return SecondIntentParserConfig()
-
-            def get_required_resources(self):
-                return None
 
         class SecondIntentParser(IntentParser):
             unit_name = "second_intent_parser"
@@ -167,9 +161,6 @@ class TestSnipsNLUEngine(FixtureTest):
             @classmethod
             def from_dict(cls, obj_dict):
                 return TestIntentParserConfig()
-
-            def get_required_resources(self):
-                return None
 
         class TestIntentParser(IntentParser):
             unit_name = "test_intent_parser"
@@ -921,9 +912,6 @@ class TestIntentParser1Config(ProcessingUnitConfig):
     def from_dict(cls, obj_dict):
         return TestIntentParser1Config()
 
-    def get_required_resources(self):
-        return None
-
 
 class TestIntentParser1(IntentParser):
     unit_name = "test_intent_parser1"
@@ -961,9 +949,6 @@ class TestIntentParser2Config(ProcessingUnitConfig):
     @classmethod
     def from_dict(cls, obj_dict):
         return TestIntentParser2Config()
-
-    def get_required_resources(self):
-        return None
 
 
 class TestIntentParser2(IntentParser):

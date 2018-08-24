@@ -9,7 +9,6 @@ from snips_nlu.utils import LimitedSizeDict
 
 
 class EntityParser(with_metaclass(ABCMeta, object)):
-
     @abstractproperty
     def parser(self):
         pass

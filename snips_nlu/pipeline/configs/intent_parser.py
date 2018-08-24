@@ -92,9 +92,6 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
             DeterministicIntentParser
         return DeterministicIntentParser.unit_name
 
-    def get_required_resources(self):
-        return None
-
     def to_dict(self):
         return {
             "unit_name": self.unit_name,

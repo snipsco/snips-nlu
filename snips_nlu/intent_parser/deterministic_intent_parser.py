@@ -8,12 +8,12 @@ from pathlib import Path
 
 from future.utils import iteritems
 
-from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS,
     LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.result import (

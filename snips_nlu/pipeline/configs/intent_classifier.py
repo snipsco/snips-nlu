@@ -2,10 +2,11 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.constants import NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS
+from snips_nlu.constants import (
+    CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
+from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.parser.custom_entity_parser import EntityStemsUsage
 from snips_nlu.utils import classproperty
 
 
@@ -129,7 +130,8 @@ class IntentClassifierDataAugmentationConfig(Config):
             raise ValueError("unknown_word_prob is positive (%s) but the "
                              "replacement string is None" % unknown_word_prob)
 
-    def get_required_resources(self):
+    @staticmethod
+    def get_required_resources():
         return {
             NOISE: True,
             STOP_WORDS: True
@@ -162,17 +164,25 @@ class FeaturizerConfig(Config):
     """
 
     def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
-                 word_clusters_name=None):
+                 word_clusters_name=None, use_stemming=False):
         self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
         self.word_clusters_name = word_clusters_name
+        self.use_stemming = use_stemming
 
     def get_required_resources(self):
+        if self.use_stemming:
+            parser_usage = CustomEntityParserUsage.WITH_STEMS
+        else:
+            parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
         if self.word_clusters_name is None:
-            return None
+            word_clusters = {self.word_clusters_name}
+        else:
+            word_clusters = None
         return {
-            WORD_CLUSTERS: {self.word_clusters_name},
-            STEMS: EntityStemsUsage.STEMS
+            WORD_CLUSTERS: word_clusters,
+            STEMS: self.use_stemming,
+            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
         }
 
     def to_dict(self):
@@ -180,7 +190,7 @@ class FeaturizerConfig(Config):
             "sublinear_tf": self.sublinear_tf,
             "pvalue_threshold": self.pvalue_threshold,
             "word_clusters_name": self.word_clusters_name,
-            "stem": self.stem_usage
+            "use_stemming": self.use_stemming
         }
 
     @classmethod

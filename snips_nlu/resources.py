@@ -12,8 +12,8 @@ from snips_nlu.parser.builtin_entity_parser import (
     BuiltinEntityParser, find_gazetteer_entity_data_path)
 from snips_nlu.constants import (
     DATA_PATH, GAZETTEERS, GAZETTEER_ENTITIES, NOISE, RESOURCES_DIR, STEMS,
-    STOP_WORDS, WORD_CLUSTERS)
-from snips_nlu.parser.custom_entity_parser import EntityStemsUsage
+    STOP_WORDS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER_USAGE)
+from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
 from snips_nlu.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
@@ -174,24 +174,13 @@ def merge_required_resources(lhs, rhs):
         merged_resources[NOISE] = True
     if lhs.get(STOP_WORDS, False) or rhs.get(STOP_WORDS, False):
         merged_resources[STOP_WORDS] = True
-
-    lhs_stem_usage = lhs.get(STEMS, EntityStemsUsage.NO_STEMS)
-    rhs_stem_usage = rhs.get(STEMS, EntityStemsUsage.NO_STEMS)
-    if lhs_stem_usage == rhs_stem_usage:
-        stem_usage = lhs_stem_usage
-    else:
-        if lhs_stem_usage == EntityStemsUsage.NO_STEMS \
-                or rhs_stem_usage == EntityStemsUsage.NO_STEMS:
-            if lhs_stem_usage == EntityStemsUsage.NO_STEMS:
-                stem_usage = rhs_stem_usage
-            else:
-                stem_usage = lhs_stem_usage
-        else:
-            stem_usage = EntityStemsUsage.STEMS_AND_NO_STEMS
-    merged_resources[STEMS] = stem_usage
-
     if lhs.get(STEMS, False) or rhs.get(STEMS, False):
         merged_resources[STEMS] = True
+    lhs_parser_usage = lhs.get(CUSTOM_ENTITY_PARSER_USAGE)
+    rhs_parser_usage = rhs.get(CUSTOM_ENTITY_PARSER_USAGE)
+    parser_usage = CustomEntityParserUsage.merge_usages(
+        lhs_parser_usage, rhs_parser_usage)
+    merged_resources[CUSTOM_ENTITY_PARSER_USAGE] = parser_usage
     gazetteers = lhs.get(GAZETTEERS, set()).union(rhs.get(GAZETTEERS, set()))
     if gazetteers:
         merged_resources[GAZETTEERS] = gazetteers

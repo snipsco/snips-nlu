@@ -9,7 +9,6 @@ import numpy as np
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.builtin_entities import get_builtin_entity_parser
 from snips_nlu.constants import BUILTIN_ENTITY_PARSER, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
@@ -69,8 +68,6 @@ class LogRegIntentClassifier(IntentClassifier):
         dataset = validate_and_format_dataset(dataset)
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
-        if self.builtin_entity_parser is None:
-            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
         language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
 

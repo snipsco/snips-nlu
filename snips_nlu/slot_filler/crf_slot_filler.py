@@ -14,13 +14,12 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
-from snips_nlu.builtin_entities import is_builtin_entity
-
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
     RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (
@@ -31,7 +30,8 @@ from snips_nlu.slot_filler.feature_factory import get_feature_factory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.utils import (
     DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
-    check_random_state, fitted_required,get_slot_name_mapping, json_string, log_elapsed_time,
+    check_random_state, fitted_required, get_slot_name_mapping, json_string,
+    log_elapsed_time,
     mkdir_p, ranges_overlap)
 
 logger = logging.getLogger(__name__)

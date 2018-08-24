@@ -8,7 +8,8 @@ from pathlib import Path
 
 from future.utils import with_metaclass
 
-from snips_nlu.constants import BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER
+from snips_nlu.constants import BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, \
+    CUSTOM_ENTITY_PARSER_USAGE
 from snips_nlu.parser import get_builtin_entity_parser
 from snips_nlu.parser.custom_entity_parser import get_custom_entity_parser
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
@@ -60,7 +61,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
 
     @abstractproperty
     def fitted(self):
-        """Whether or not the intent parser has already been trained"""
+        """Whether or not the processing unit has already been trained"""
         pass
 
     def to_byte_array(self):
@@ -118,8 +119,16 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         # on a dataset, in this case we want to refit. We also if the parser
         # is none.
         # In the other case the parser is provided fitted by another unit
+        required_resources = self.config.get_required_resources()
+        if not required_resources:
+            return self
+        parser_usage = required_resources.get(CUSTOM_ENTITY_PARSER_USAGE)
+        if not parser_usage:
+            return self
+
         if self.custom_entity_parser is None or self.fitted:
-            self.custom_entity_parser = get_custom_entity_parser(dataset)
+            self.custom_entity_parser = get_custom_entity_parser(
+                dataset, parser_usage)
         return self
 
 

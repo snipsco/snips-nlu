@@ -2,9 +2,7 @@ from __future__ import unicode_literals
 
 from snips_nlu_utils import compute_all_ngrams
 
-from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (DATA, END, ENTITIES, ENTITY, INTENTS,
-                                 RES_MATCH_RANGE, START, UTTERANCES)
+from snips_nlu.constants import (END, RES_MATCH_RANGE, START)
 from snips_nlu.utils import LimitedSizeDict
 
 _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
@@ -44,18 +42,4 @@ def initial_string_from_tokens(tokens):
 def entity_filter(entity, start, end):
     entity_start = entity[RES_MATCH_RANGE][START]
     entity_end = entity[RES_MATCH_RANGE][END]
-    return (entity_start <= start < entity_end) \
-           and (entity_start < end <= entity_end)
-
-
-def get_intent_custom_entities(dataset, intent):
-    intent_entities = set()
-    for utterance in dataset[INTENTS][intent][UTTERANCES]:
-        for c in utterance[DATA]:
-            if ENTITY in c:
-                intent_entities.add(c[ENTITY])
-    custom_entities = dict()
-    for ent in intent_entities:
-        if not is_builtin_entity(ent):
-            custom_entities[ent] = dataset[ENTITIES][ent]
-    return custom_entities
+    return entity_start <= start < end <= entity_end

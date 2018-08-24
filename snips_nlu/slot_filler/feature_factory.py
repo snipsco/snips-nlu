@@ -1,25 +1,24 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
-
 from builtins import object, str
-from future.utils import iteritems, with_metaclass
-from snips_nlu_utils import get_shape, normalize
-from snips_nlu_ontology import get_supported_grammar_entities
 
-from snips_nlu.constants import (
-    END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE, START, STEMS,
-    UTTERANCES, WORD_CLUSTERS)
+from future.utils import with_metaclass
+from snips_nlu_ontology import get_supported_grammar_entities
+from snips_nlu_utils import get_shape
+
+from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS,
+                                 LANGUAGE, RES_MATCH_RANGE, START, STEMS,
+                                 WORD_CLUSTERS)
 from snips_nlu.dataset import get_dataset_gazetteer_entities
 from snips_nlu.languages import get_default_sep
-from snips_nlu.parser.custom_entity_parser import EntityStemsUsage
-from snips_nlu.preprocessing import normalize_token, stem, stem_token
+from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.preprocessing import Token, normalize_token, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
-    entity_filter, get_intent_custom_entities, get_word_chunk,
-    initial_string_from_tokens)
+    entity_filter, get_word_chunk, initial_string_from_tokens)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
@@ -265,10 +264,10 @@ class ShapeNgramFactory(SingleFeatureFactory):
 
     Possible types of shape are:
 
-        -   xxx: lowercased
-        -   Xxx: Capitalized
-        -   XXX: UPPERCASED
-        -   xX: anything else
+        -   'xxx' -> lowercased
+        -   'Xxx' -> Capitalized
+        -   'XXX' -> UPPERCASED
+        -   'xX' -> None of the above
     """
 
     name = "shape_ngram"
@@ -358,10 +357,10 @@ class WordClusterFactory(SingleFeatureFactory):
         return cluster.get(value, None)
 
     def get_required_resources(self):
-        resources = {WORD_CLUSTERS: {self.cluster_name}}
-        if self.use_stemming:
-            resources[STEMS] = True
-        return resources
+        return {
+            WORD_CLUSTERS: {self.cluster_name},
+            STEMS: self.use_stemming
+        }
 
 
 class EntityMatchFactory(CRFFeatureFactory):
@@ -386,7 +385,6 @@ class EntityMatchFactory(CRFFeatureFactory):
         self.use_stemming = self.args["use_stemming"]
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
-        self.collections = self.args.get("collections")
         self._language = None
         self.language = self.args.get("language_code")
 
@@ -402,61 +400,48 @@ class EntityMatchFactory(CRFFeatureFactory):
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
-
-        def preprocess(string):
-            normalized = normalize(string)
-            if self.use_stemming:
-                return stem(normalized, self.language)
-            return normalized
-
-        intent_entities = get_intent_custom_entities(dataset, intent)
-        self.collections = dict()
-        for entity_name, entity in iteritems(intent_entities):
-            if not entity[UTTERANCES]:
-                continue
-            collection = list(preprocess(e) for e in entity[UTTERANCES])
-            self.collections[entity_name] = collection
-        self.args["collections"] = self.collections
         return self
 
     def _transform(self, token):
         if self.use_stemming:
-            return stem_token(token, self.language)
-        return normalize_token(token)
+            transformed_value = stem_token(token, self.language)
+        else:
+            transformed_value = normalize_token(token)
+        return Token(
+            value=transformed_value,
+            start=token.start,
+            end=token.start + len(transformed_value))
 
     def build_features(self, builtin_entity_parser=None,
                        custom_entity_parser=None):
         features = []
         for entity_name in custom_entity_parser.entities:
             # We need to call this wrapper in order to properly capture
-            # `collection`
-            collection_match = self._build_entity_match_fn(
+            # `entity_name`
+            entity_match = self._build_entity_match_fn(
                 entity_name, custom_entity_parser)
 
             for offset in self.offsets:
                 feature = Feature("entity_match_%s" % entity_name,
-                                  collection_match, offset, self.drop_out)
+                                  entity_match, offset, self.drop_out)
                 features.append(feature)
         return features
 
     def _build_entity_match_fn(self, entity, custom_entity_parser):
 
         def entity_match(tokens, token_index):
-            text = initial_string_from_tokens(tokens)
-            start = tokens[token_index].start
-            end = tokens[token_index].end
-
+            transformed_tokens = [self._transform(token) for token in tokens]
+            text = initial_string_from_tokens(transformed_tokens)
+            token_start = transformed_tokens[token_index].start
+            token_end = transformed_tokens[token_index].end
             custom_entities = custom_entity_parser.parse(
                 text, scope=[entity], use_cache=True)
             custom_entities = [ent for ent in custom_entities
-                               if entity_filter(ent, start, end)]
+                               if entity_filter(ent, token_start, token_end)]
             for ent in custom_entities:
-                entity_start = ent[RES_MATCH_RANGE][START]
-                entity_end = ent[RES_MATCH_RANGE][END]
                 indexes = []
-                for index, token in enumerate(tokens):
-                    if (entity_start <= token.start < entity_end) \
-                            and (entity_start < token.end <= entity_end):
+                for index, token in enumerate(transformed_tokens):
+                    if entity_filter(ent, token.start, token.end):
                         indexes.append(index)
                 return get_scheme_prefix(token_index, indexes,
                                          self.tagging_scheme)
@@ -465,8 +450,16 @@ class EntityMatchFactory(CRFFeatureFactory):
 
     def get_required_resources(self):
         if self.use_stemming:
-            return {STEMS: EntityStemsUsage.STEMS}
-        return None
+            return {
+                STEMS: True,
+                CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITH_STEMS
+            }
+        else:
+            return {
+                STEMS: False,
+                CUSTOM_ENTITY_PARSER_USAGE:
+                    CustomEntityParserUsage.WITHOUT_STEMS
+            }
 
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):

@@ -2,14 +2,12 @@ from __future__ import unicode_literals
 
 import json
 import logging
+from builtins import str
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 
-from builtins import str
 from future.utils import iteritems
-from snips_nlu.parser.builtin_entity_parser import (
-    get_builtin_entity_parser, is_builtin_entity)
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
@@ -18,6 +16,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
+from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
@@ -83,8 +82,8 @@ class SnipsNLUEngine(ProcessingUnit):
         """
         logger.info("Fitting NLU engine...")
 
-        self.builtin_entity_parser = get_builtin_entity_parser(dataset)
-        self.custom_entity_parser = self.custom_entity_parser.fit(dataset)
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
 
@@ -102,12 +101,9 @@ class SnipsNLUEngine(ProcessingUnit):
                     break
             if recycled_parser is None:
                 recycled_parser = build_processing_unit(parser_config)
-            if hasattr(recycled_parser, "builtin_entity_parser"):
-                recycled_parser.builtin_entity_parser = \
-                    self.builtin_entity_parser
-            if hasattr(recycled_parser, "custom_entity_parser"):
-                recycled_parser.custom_entity_parser = \
-                    self.custom_entity_parser
+
+            recycled_parser.builtin_entity_parser = self.builtin_entity_parser
+            recycled_parser.custom_entity_parser = self.custom_entity_parser
             if force_retrain or not recycled_parser.fitted:
                 recycled_parser.fit(dataset, force_retrain)
             parsers.append(recycled_parser)

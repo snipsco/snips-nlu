@@ -17,7 +17,7 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import NLUEngineConfig, \
-    ProbabilisticIntentParserConfig, ProcessingUnitConfig
+    ProbabilisticIntentParserConfig, MLUnitConfig
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -43,7 +43,7 @@ class TestSnipsNLUEngine(FixtureTest):
                                  entity='mocked_entity',
                                  slot_name='mocked_slot_name')]
 
-        class FirstIntentParserConfig(ProcessingUnitConfig):
+        class FirstIntentParserConfig(MLUnitConfig):
             unit_name = "first_intent_parser"
 
             def to_dict(self):
@@ -79,7 +79,7 @@ class TestSnipsNLUEngine(FixtureTest):
                 cfg = cls.config_type()
                 return cls(cfg)
 
-        class SecondIntentParserConfig(ProcessingUnitConfig):
+        class SecondIntentParserConfig(MLUnitConfig):
             unit_name = "second_intent_parser"
 
             def to_dict(self):
@@ -152,7 +152,7 @@ class TestSnipsNLUEngine(FixtureTest):
 
     def test_should_retrain_only_non_trained_subunits(self):
         # Given
-        class TestIntentParserConfig(ProcessingUnitConfig):
+        class TestIntentParserConfig(MLUnitConfig):
             unit_name = "test_intent_parser"
 
             def to_dict(self):
@@ -902,7 +902,7 @@ class TestSnipsNLUEngine(FixtureTest):
 
 
 
-class TestIntentParser1Config(ProcessingUnitConfig):
+class TestIntentParser1Config(MLUnitConfig):
     unit_name = "test_intent_parser1"
 
     def to_dict(self):
@@ -940,7 +940,7 @@ class TestIntentParser1(IntentParser):
         return cls(cfg)
 
 
-class TestIntentParser2Config(ProcessingUnitConfig):
+class TestIntentParser2Config(MLUnitConfig):
     unit_name = "test_intent_parser2"
 
     def to_dict(self):

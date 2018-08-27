@@ -13,6 +13,7 @@ from snips_nlu.constants import (
 from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.parser.entity_parser import (
     EntityParser)
+from snips_nlu.pipeline.processing_unit import SerializableUnit
 from snips_nlu.preprocessing import stem
 from snips_nlu.utils import NotTrained, json_string
 
@@ -37,7 +38,7 @@ class CustomEntityParserUsage(Enum):
         return cls.WITH_AND_WITHOUT_STEMS
 
 
-class CustomEntityParser(EntityParser):
+class CustomEntityParser(EntityParser, SerializableUnit):
     def __init__(self, parser_usage):
         self.parser_usage = parser_usage
         self._parser = None
@@ -81,19 +82,22 @@ class CustomEntityParser(EntityParser):
         return self
 
     def persist(self, path):
+        if self.parser is not None:
+            parser_path = path / "parser"
+            self.parser.dump(str(parser_path))
+        self.persist_metadata(path)
+
+    def persist_metadata(self, path, **kwargs):
         path = Path(path)
-        metadata = {"entities": self.entities}
+        metadata = {"entities": self.entities, "unit_name": self.unit_name}
         metadata_string = json_string(metadata)
         metadata_path = path / "metadata.json"
         with metadata_path.open("w", encoding="utf-8") as f:
             f.write(metadata_string)
-        if self.parser is not None:
-            parser_path = path / "parser"
-            self.parser.dump(str(parser_path))
 
     # pylint: disable=protected-access
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         parser_path = Path(path) / "parser"
         custom_parser = cls(None)
         custom_parser._parser = None

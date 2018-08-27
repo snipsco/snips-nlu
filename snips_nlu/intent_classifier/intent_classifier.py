@@ -2,10 +2,10 @@ from abc import ABCMeta, abstractmethod
 
 from future.utils import with_metaclass
 
-from snips_nlu.pipeline.processing_unit import ProcessingUnit
+from snips_nlu.pipeline.processing_unit import MLUnit
 
 
-class IntentClassifier(with_metaclass(ABCMeta, ProcessingUnit)):
+class IntentClassifier(with_metaclass(ABCMeta, MLUnit)):
     # pylint:disable=line-too-long
     """Abstraction which performs intent classification
 

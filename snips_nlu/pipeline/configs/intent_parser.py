@@ -2,20 +2,20 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.pipeline.processing_unit import get_processing_unit_config
+from snips_nlu.pipeline.configs import MLUnitConfig
+from snips_nlu.pipeline.processing_unit import get_ml_unit_config
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
-class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
+class ProbabilisticIntentParserConfig(MLUnitConfig):
     """Configuration of a :class:`.ProbabilisticIntentParser` object
 
     Args:
-        intent_classifier_config (:class:`.ProcessingUnitConfig`): The
+        intent_classifier_config (:class:`.MLUnitConfig`): The
             configuration of the underlying intent classifier, by default
             it uses a :class:`.LogRegIntentClassifierConfig`
-        slot_filler_config (:class:`.ProcessingUnitConfig`): The configuration
+        slot_filler_config (:class:`.MLUnitConfig`): The configuration
             that will be used for the underlying slot fillers, by default it
             uses a :class:`.CRFSlotFillerConfig`
     """
@@ -28,9 +28,9 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
         if slot_filler_config is None:
             from snips_nlu.pipeline.configs import CRFSlotFillerConfig
             slot_filler_config = CRFSlotFillerConfig()
-        self.intent_classifier_config = get_processing_unit_config(
+        self.intent_classifier_config = get_ml_unit_config(
             intent_classifier_config)
-        self.slot_filler_config = get_processing_unit_config(
+        self.slot_filler_config = get_ml_unit_config(
             slot_filler_config)
 
     # pylint: enable=super-init-not-called
@@ -62,7 +62,7 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
         return cls(**d)
 
 
-class DeterministicIntentParserConfig(ProcessingUnitConfig):
+class DeterministicIntentParserConfig(MLUnitConfig):
     """Configuration of a :class:`.DeterministicIntentParser`
 
     Args:

@@ -12,7 +12,7 @@ from snips_nlu.intent_classifier import IntentClassifier, \
 from snips_nlu.intent_parser import ProbabilisticIntentParser
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, LogRegIntentClassifierConfig,
-    ProbabilisticIntentParserConfig, ProcessingUnitConfig)
+    ProbabilisticIntentParserConfig, MLUnitConfig)
 from snips_nlu.pipeline.units_registry import register_processing_unit, \
     reset_processing_units
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
@@ -275,7 +275,7 @@ class TestProbabilisticIntentParser(FixtureTest):
         self.assertEqual(feature_weights_1, feature_weights_2)
 
 
-class TestIntentClassifierConfig(ProcessingUnitConfig):
+class TestIntentClassifierConfig(MLUnitConfig):
     unit_name = "test_intent_classifier"
 
     def to_dict(self):
@@ -310,7 +310,7 @@ class TestIntentClassifier(IntentClassifier):
         return cls(config)
 
 
-class TestSlotFillerConfig(ProcessingUnitConfig):
+class TestSlotFillerConfig(MLUnitConfig):
     unit_name = "test_slot_filler"
 
     def to_dict(self):

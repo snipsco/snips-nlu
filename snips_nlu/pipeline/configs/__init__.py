@@ -1,4 +1,4 @@
-from .config import Config, ProcessingUnitConfig
+from .config import Config, MLUnitConfig
 from .features import default_features_factories
 from .intent_classifier import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,

@@ -3,53 +3,30 @@ from __future__ import unicode_literals
 import json
 import shutil
 from abc import ABCMeta, abstractmethod, abstractproperty
-from builtins import object
 from pathlib import Path
 
+from future.builtins import object
 from future.utils import with_metaclass
 
-from snips_nlu.constants import BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, \
-    CUSTOM_ENTITY_PARSER_USAGE
+from snips_nlu.constants import (
+    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE)
 from snips_nlu.parser import get_builtin_entity_parser
 from snips_nlu.parser.custom_entity_parser import get_custom_entity_parser
-from snips_nlu.pipeline.configs import ProcessingUnitConfig
+from snips_nlu.pipeline.configs import MLUnitConfig
 from snips_nlu.utils import classproperty, json_string, temp_dir, unzip_archive
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):
     """Abstraction of a NLU pipeline unit
-
-    Pipeline processing units such as intent parsers, intent classifiers and
-    slot fillers must implement this class.
-
-    A :class:`ProcessingUnit` is associated with a *config_type*, which
-    represents the :class:`.ProcessingUnitConfig` used to initialize it.
     """
-
-    def __init__(self, config, **shared):
-        if config is None or isinstance(config, ProcessingUnitConfig):
-            self.config = config
-        elif isinstance(config, dict):
-            self.config = self.config_type.from_dict(config)
-        else:
-            raise ValueError("Unexpected config type: %s" % type(config))
-        self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
-        self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
-
-    def persist_metadata(self, path, **kwargs):
-        metadata = {"unit_name": self.unit_name}
-        metadata.update(kwargs)
-        metadata_json = json_string(metadata)
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(metadata_json)
-
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
         raise NotImplementedError
 
-    @classproperty
-    def config_type(cls):  # pylint:disable=no-self-argument
-        raise NotImplementedError
+
+class SerializableUnit(with_metaclass(ABCMeta, ProcessingUnit)):
+    """Abstraction of a NLU pipeline unit
+    """
 
     @abstractmethod
     def persist(self, path):
@@ -59,10 +36,12 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
     def from_path(cls, path, **shared):
         raise NotImplementedError
 
-    @abstractproperty
-    def fitted(self):
-        """Whether or not the processing unit has already been trained"""
-        pass
+    def persist_metadata(self, path, **kwargs):
+        metadata = {"unit_name": self.unit_name}
+        metadata.update(kwargs)
+        metadata_json = json_string(metadata)
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(metadata_json)
 
     def to_byte_array(self):
         """Serialize the :class:`ProcessingUnit` instance into a bytearray
@@ -73,7 +52,6 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         Returns:
             bytearray: the processing unit as bytearray data
         """
-
         cleaned_unit_name = _sanitize_unit_name(self.unit_name)
         with temp_dir() as tmp_dir:
             processing_unit_dir = tmp_dir / cleaned_unit_name
@@ -104,6 +82,36 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
             processing_unit = cls.from_path(tmp_dir / cleaned_unit_name,
                                             **shared)
         return processing_unit
+
+
+class MLUnit(with_metaclass(ABCMeta, ProcessingUnit, SerializableUnit)):
+    """ML pipeline unit
+
+    ML processing units such as intent parsers, intent classifiers and
+    slot fillers must implement this class.
+
+    A :class:`MLUnit` is associated with a *config_type*, which
+    represents the :class:`.MLUnitConfig` used to initialize it.
+    """
+
+    def __init__(self, config, **shared):
+        if config is None or isinstance(config, MLUnitConfig):
+            self.config = config
+        elif isinstance(config, dict):
+            self.config = self.config_type.from_dict(config)
+        else:
+            raise ValueError("Unexpected config type: %s" % type(config))
+        self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
+        self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
+
+    @classproperty
+    def config_type(cls):  # pylint:disable=no-self-argument
+        raise NotImplementedError
+
+    @abstractproperty
+    def fitted(self):
+        """Whether or not the processing unit has already been trained"""
+        pass
 
     def fit_builtin_entity_parser_if_needed(self, dataset):
         # We fit an entity parser only if the unit has already been fitted
@@ -150,10 +158,10 @@ def _get_unit_type(unit_name):
     return unit
 
 
-def get_processing_unit_config(unit_config):
-    """Returns the :class:`.ProcessingUnitConfig` corresponding to
+def get_ml_unit_config(unit_config):
+    """Returns the :class:`.MLUnitConfig` corresponding to
         *unit_config*"""
-    if isinstance(unit_config, ProcessingUnitConfig):
+    if isinstance(unit_config, MLUnitConfig):
         return unit_config
     elif isinstance(unit_config, dict):
         unit_name = unit_config["unit_name"]
@@ -161,15 +169,15 @@ def get_processing_unit_config(unit_config):
         return processing_unit_type.config_type.from_dict(unit_config)
     else:
         raise ValueError("Expected `unit_config` to be an instance of "
-                         "ProcessingUnitConfig or dict but found: %s"
+                         "MLUnitConfig or dict but found: %s"
                          % type(unit_config))
 
 
-def build_processing_unit(unit_config, **shared):
+def build_ml_unit(unit_config, **shared):
     """Creates a new :class:`ProcessingUnit` from the provided *unit_config*
 
     Args:
-        unit_config (:class:`.ProcessingUnitConfig`): The processing unit
+        unit_config (:class:`.MLUnitConfig`): The processing unit
             config
         shared (kwargs): attributes shared across the NLU pipeline such as
             'builtin_entity_parser'.

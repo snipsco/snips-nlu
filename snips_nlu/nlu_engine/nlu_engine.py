@@ -12,7 +12,7 @@ from future.utils import iteritems
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CAPITALIZE, ENTITIES, GAZETTEER_ENTITIES, LANGUAGE,
-    RES_ENTITY, RES_INTENT, RES_SLOTS)
+    RES_ENTITY, RES_INTENT, RES_SLOTS, CUSTOM_ENTITY_PARSER)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
@@ -180,10 +180,18 @@ class SnipsNLUEngine(MLUnit):
         if self.config is not None:
             config = self.config.to_dict()
 
+        custom_entities_parser_path = None
+        if self.custom_entity_parser is not None:
+            custom_entities_parser_path = \
+                directory_path / "custom_intent_parser"
+            self.custom_entity_parser.persist(custom_entities_parser_path)
+
+
         model = {
             "unit_name": self.unit_name,
             "dataset_metadata": self._dataset_metadata,
             "intent_parsers": intent_parsers,
+            CUSTOM_ENTITY_PARSER: custom_entities_parser_path,
             "config": config,
             "model_version": __model_version__,
             "training_package_version": __version__
@@ -227,19 +235,28 @@ class SnipsNLUEngine(MLUnit):
                 % (model_version, __model_version__))
 
         resources_dir = directory_path / "resources"
-        builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
-        if resources_dir.is_dir():
-            for subdir in resources_dir.iterdir():
-                if subdir.is_dir() and (subdir / "metadata.json").exists():
-                    load_resources_from_dir(subdir)
-                    if builtin_entity_parser is None:
+        builtin_entity_parser_path = shared.get(BUILTIN_ENTITY_PARSER)
+        builtin_entity_parser = None
+        if builtin_entity_parser_path is None:
+            if resources_dir.is_dir():
+                for subdir in resources_dir.iterdir():
+                    if subdir.is_dir() and (subdir / "metadata.json").exists():
+                        load_resources_from_dir(subdir)
                         builtin_entity_parser = \
                             get_builtin_entity_parser_from_dir(subdir)
                         shared[BUILTIN_ENTITY_PARSER] = builtin_entity_parser
-                    break
+                        break
+
+        custom_entity_parser = None
+        custom_entity_parser_path = shared.get(CUSTOM_ENTITY_PARSER)
+        if custom_entity_parser_path is  not None:
+            custom_entity_parser = load_processing_unit(
+                custom_entity_parser_path, **shared)
+            shared[CUSTOM_ENTITY_PARSER] = custom_entity_parser
 
         nlu_engine = cls(config=model["config"],
-                         builtin_entity_parser=builtin_entity_parser)
+                         builtin_entity_parser=builtin_entity_parser,
+                         custom_entity_parser=custom_entity_parser)
         # pylint:disable=protected-access
         nlu_engine._dataset_metadata = model["dataset_metadata"]
         # pylint:enable=protected-access

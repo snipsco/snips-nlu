@@ -4,7 +4,6 @@ import json
 import shutil
 import tempfile
 import traceback as tb
-from builtins import bytes
 from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase

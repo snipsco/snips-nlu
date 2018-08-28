@@ -9,7 +9,7 @@ from future.utils import iteritems, viewvalues
 from snips_nlu_ontology import GazetteerEntityParser
 
 from snips_nlu.constants import (
-    ENTITIES, LANGUAGE, PARSER_THRESHOLD, UTTERANCES)
+    ENTITIES, LANGUAGE, PARSER_THRESHOLD, UTTERANCES, CUSTOM_ENTITY_PARSER)
 from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.parser.entity_parser import (
     EntityParser)
@@ -39,6 +39,8 @@ class CustomEntityParserUsage(Enum):
 
 
 class CustomEntityParser(EntityParser, SerializableUnit):
+    unit_name = CUSTOM_ENTITY_PARSER
+
     def __init__(self, parser_usage):
         self.parser_usage = parser_usage
         self._parser = None

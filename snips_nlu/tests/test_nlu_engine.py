@@ -734,6 +734,7 @@ class TestSnipsNLUEngine(FixtureTest):
         mocked_proba_parser_intent = intent_classification_result(
             "intent1", 1.0)
 
+        # pylint: disable=unused-argument
         def mock_proba_parse(text, intents):
             slots = [unresolved_slot(match_range=(0, len(text)), value=text,
                                      entity="entity1", slot_name="slot1")]

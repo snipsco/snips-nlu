@@ -24,6 +24,7 @@ from snips_nlu.tests.utils import (
 from snips_nlu.utils import NotTrained
 
 
+# pylint: disable=unused-argument
 def get_mocked_augment_utterances(dataset, intent_name, language,
                                   min_utterances, capitalization_ratio,
                                   add_builtin_entities_examples,

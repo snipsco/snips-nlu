@@ -84,7 +84,7 @@ class SerializableUnit(with_metaclass(ABCMeta, ProcessingUnit)):
         return processing_unit
 
 
-class MLUnit(with_metaclass(ABCMeta, ProcessingUnit, SerializableUnit)):
+class MLUnit(with_metaclass(ABCMeta, SerializableUnit)):
     """ML pipeline unit
 
     ML processing units such as intent parsers, intent classifiers and

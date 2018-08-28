@@ -257,6 +257,7 @@ class SnipsNLUEngine(MLUnit):
         nlu_engine = cls(config=model["config"],
                          builtin_entity_parser=builtin_entity_parser,
                          custom_entity_parser=custom_entity_parser)
+
         # pylint:disable=protected-access
         nlu_engine._dataset_metadata = model["dataset_metadata"]
         # pylint:enable=protected-access

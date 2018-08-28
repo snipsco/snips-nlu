@@ -4,14 +4,13 @@ from abc import ABCMeta, abstractmethod
 from builtins import object, str
 
 from future.utils import with_metaclass
-from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
+from snips_nlu_ontology import get_supported_grammar_entities
 
 from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS,
                                  LANGUAGE, RES_MATCH_RANGE, START, STEMS,
                                  WORD_CLUSTERS)
 from snips_nlu.dataset import get_dataset_gazetteer_entities
-from snips_nlu.languages import get_default_sep
 from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
@@ -454,12 +453,11 @@ class EntityMatchFactory(CRFFeatureFactory):
                 STEMS: True,
                 CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITH_STEMS
             }
-        else:
-            return {
-                STEMS: False,
-                CUSTOM_ENTITY_PARSER_USAGE:
-                    CustomEntityParserUsage.WITHOUT_STEMS
-            }
+        return {
+            STEMS: False,
+            CUSTOM_ENTITY_PARSER_USAGE:
+                CustomEntityParserUsage.WITHOUT_STEMS
+        }
 
 
 class BuiltinEntityMatchFactory(CRFFeatureFactory):

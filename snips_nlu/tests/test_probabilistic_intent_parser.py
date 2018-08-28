@@ -94,7 +94,6 @@ class TestProbabilisticIntentParser(FixtureTest):
 
         # Then
         expected_parser_dict = {
-            "unit_name": "probabilistic_intent_parser",
             "config": {
                 "unit_name": "probabilistic_intent_parser",
                 "slot_filler_config": CRFSlotFillerConfig().to_dict(),
@@ -153,7 +152,6 @@ class TestProbabilisticIntentParser(FixtureTest):
             "intent_classifier_config": {"unit_name": "test_intent_classifier"}
         }
         expected_parser_dict = {
-            "unit_name": "probabilistic_intent_parser",
             "config": expected_parser_config,
             "slot_fillers": [
                 {

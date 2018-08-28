@@ -108,7 +108,6 @@ class TestLogRegIntentClassifier(FixtureTest):
         intent_list = sorted(SAMPLE_DATASET[INTENTS])
         intent_list.append(None)
         expected_dict = {
-            "unit_name": "log_reg_intent_classifier",
             "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,

@@ -506,7 +506,6 @@ class TestDeterministicIntentParser(FixtureTest):
 
         # Then
         expected_dict = {
-            "unit_name": "deterministic_intent_parser",
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
@@ -549,7 +548,6 @@ class TestDeterministicIntentParser(FixtureTest):
 
         # Then
         expected_dict = {
-            "unit_name": "deterministic_intent_parser",
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,

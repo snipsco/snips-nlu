@@ -330,7 +330,6 @@ class CRFSlotFiller(SlotFiller):
             crf_model_file = str(destination.name)
 
         model = {
-            "unit_name": self.unit_name,
             "language_code": self.language,
             "intent": self.intent,
             "crf_model_file": crf_model_file,

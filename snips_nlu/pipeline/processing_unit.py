@@ -10,8 +10,8 @@ from future.utils import with_metaclass
 
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE)
-from snips_nlu.parser import get_builtin_entity_parser
-from snips_nlu.parser.custom_entity_parser import get_custom_entity_parser
+from snips_nlu.entity_parser import get_builtin_entity_parser
+from snips_nlu.entity_parser.custom_entity_parser import get_custom_entity_parser
 from snips_nlu.pipeline.configs import MLUnitConfig
 from snips_nlu.utils import classproperty, json_string, temp_dir, unzip_archive
 

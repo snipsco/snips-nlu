@@ -19,7 +19,7 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (

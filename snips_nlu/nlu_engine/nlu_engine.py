@@ -16,7 +16,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
-from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     MLUnit, build_ml_unit, load_processing_unit)

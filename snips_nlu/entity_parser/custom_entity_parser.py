@@ -10,8 +10,8 @@ from snips_nlu_ontology import GazetteerEntityParser
 
 from snips_nlu.constants import (
     ENTITIES, LANGUAGE, PARSER_THRESHOLD, UTTERANCES, CUSTOM_ENTITY_PARSER)
-from snips_nlu.parser.builtin_entity_parser import is_builtin_entity
-from snips_nlu.parser.entity_parser import (
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.entity_parser.entity_parser import (
     EntityParser)
 from snips_nlu.pipeline.processing_unit import SerializableUnit
 from snips_nlu.preprocessing import stem

@@ -8,7 +8,7 @@ from snips_nlu_ontology import (
     get_supported_gazetteer_entities)
 
 from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
-from snips_nlu.parser.entity_parser import EntityParser, _get_caching_key
+from snips_nlu.entity_parser.entity_parser import EntityParser, _get_caching_key
 
 
 class BuiltinEntityParser(EntityParser):

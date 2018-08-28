@@ -8,7 +8,7 @@ from copy import deepcopy
 from future.utils import iteritems, itervalues
 from snips_nlu_ontology import get_all_languages
 
-from snips_nlu.parser.builtin_entity_parser import (
+from snips_nlu.entity_parser.builtin_entity_parser import (
     get_builtin_entity_parser, is_builtin_entity, is_gazetteer_entity)
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,

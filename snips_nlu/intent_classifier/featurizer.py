@@ -16,9 +16,9 @@ from snips_nlu.constants import (
     DATA, ENTITY, ENTITY_KIND, NGRAM, TEXT)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.languages import get_default_sep
-from snips_nlu.parser.builtin_entity_parser import (
+from snips_nlu.entity_parser.builtin_entity_parser import (
     get_builtin_entity_parser, is_builtin_entity)
-from snips_nlu.parser.custom_entity_parser import get_custom_entity_parser
+from snips_nlu.entity_parser.custom_entity_parser import get_custom_entity_parser
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (

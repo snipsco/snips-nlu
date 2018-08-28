@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
-from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import Config, MLUnitConfig
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty

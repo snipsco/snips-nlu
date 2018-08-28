@@ -11,7 +11,7 @@ from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS,
                                  LANGUAGE, RES_MATCH_RANGE, START, STEMS,
                                  WORD_CLUSTERS)
 from snips_nlu.dataset import get_dataset_gazetteer_entities
-from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix

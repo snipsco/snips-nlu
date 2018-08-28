@@ -8,12 +8,12 @@ from pathlib import Path
 
 from snips_nlu_ontology import get_builtin_entity_shortname
 
-from snips_nlu.parser.builtin_entity_parser import (
+from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, find_gazetteer_entity_data_path)
 from snips_nlu.constants import (
     DATA_PATH, GAZETTEERS, GAZETTEER_ENTITIES, NOISE, RESOURCES_DIR, STEMS,
     STOP_WORDS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER_USAGE)
-from snips_nlu.parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
 from snips_nlu.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()

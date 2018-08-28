@@ -5,6 +5,7 @@ import json
 from enum import Enum, unique
 from pathlib import Path
 
+from future.builtins import str
 from future.utils import iteritems, viewvalues
 from snips_nlu_ontology import GazetteerEntityParser
 
@@ -67,7 +68,7 @@ class CustomEntityParser(EntityParser, SerializableUnit):
             for entity_name, entity in iteritems(dataset[ENTITIES])
             if not is_builtin_entity(entity_name)
         }
-        self.entities = [name for name in entities]
+        self.entities = set(entities)
         if self.parser_usage == CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS:
             for ent in viewvalues(entities):
                 ent[UTTERANCES].update(
@@ -84,36 +85,39 @@ class CustomEntityParser(EntityParser, SerializableUnit):
         return self
 
     def persist(self, path):
-        if self.parser is not None:
-            parser_path = path / "parser"
-            self.parser.dump(str(parser_path))
-        self.persist_metadata(path)
-
-    def persist_metadata(self, path, **kwargs):
         path = Path(path)
-        metadata = {"entities": self.entities, "unit_name": self.unit_name}
-        metadata_string = json_string(metadata)
-        metadata_path = path / "metadata.json"
-        with metadata_path.open("w", encoding="utf-8") as f:
-            f.write(metadata_string)
+        _parser_path = None
+        if self.parser is not None:
+            _parser_path = str(path / "parser")
+            self.parser.dump(str(_parser_path))
+        parser_model = {
+            "entities": list(self.entities),
+            "parser": _parser_path,
+            "parser_usage": self.parser_usage,
+        }
+        parser_path = path / "custom_entity_parser.json"
+        with parser_path.open("w", encoding="utf-8") as f:
+            f.write(json_string(parser_model))
+        self.persist_metadata(path)
 
     # pylint: disable=protected-access
     @classmethod
     def from_path(cls, path, **shared):
-        parser_path = Path(path) / "parser"
-        custom_parser = cls(None)
-        custom_parser._parser = None
-        if parser_path.exists():
-            custom_parser._parser = GazetteerEntityParser.load(parser_path)
-        metadata_path = path / "metadata.json"
-        with metadata_path.open("w", encoding="utf-8") as f:
-            metadata = json.load(f)
-        custom_parser.entities = metadata["entities"]
+        path = Path(path)
+
+        model_path = path / "custom_entity_parser.json"
+        with model_path.open("r", encoding="utf-8") as f:
+            model = json.load(f)
+
+        parser_usage = CustomEntityParserUsage(model["parser_usage"])
+        custom_parser = CustomEntityParser(parser_usage)
+        custom_parser.entities = set(model["entities"])
+
+        _parser_path = Path(model["parser"])
+        if _parser_path.exists():
+            custom_parser._parser = GazetteerEntityParser.load(_parser_path)
+
         return custom_parser
-
-
-def get_custom_entity_parser(dataset, parser_usage):
-    return CustomEntityParser(parser_usage).fit(dataset)
 
 
 def _stem_entity_utterances(entity_utterances, language):

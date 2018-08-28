@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from abc import ABCMeta, abstractproperty
 
 from future.utils import with_metaclass
+from future.builtins import object
 
 from snips_nlu.utils import LimitedSizeDict
 
@@ -25,14 +26,8 @@ class EntityParser(with_metaclass(ABCMeta, object)):
         text = text.lower()
         if not use_cache:
             return self.parser.parse(text, scope)
-        cache_key = (text, str(scope))
+        cache_key = (text, tuple(sorted(scope)))
         if cache_key not in self.cache:
             parser_result = self.parser.parse(text, scope)
             self.cache[cache_key] = parser_result
         return self.cache[cache_key]
-
-
-def _get_caching_key(language, entity_scope):
-    tuple_key = (language,)
-    tuple_key += tuple(entity for entity in sorted(entity_scope))
-    return tuple_key

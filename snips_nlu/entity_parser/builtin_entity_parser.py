@@ -8,7 +8,7 @@ from snips_nlu_ontology import (
     get_supported_gazetteer_entities)
 
 from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
-from snips_nlu.entity_parser.entity_parser import EntityParser, _get_caching_key
+from snips_nlu.entity_parser.entity_parser import EntityParser
 
 
 class BuiltinEntityParser(EntityParser):
@@ -86,3 +86,9 @@ def _get_gazetteer_entity_configurations(language, gazetteer_entity_scope):
         "resource_path": str(find_gazetteer_entity_data_path(
             language, entity_name))
     } for entity_name in gazetteer_entity_scope]
+
+
+def _get_caching_key(language, entity_scope):
+    tuple_key = (language,)
+    tuple_key += tuple(entity for entity in sorted(entity_scope))
+    return tuple_key

@@ -11,7 +11,7 @@ from snips_nlu.constants import ENTITIES, ENTITY_KIND, LANGUAGE
 from snips_nlu.tests.utils import SnipsTest
 
 
-class TestBuiltInEntities(SnipsTest):
+class TestBuiltinEntityParser(SnipsTest):
     def setUp(self):
         _BUILTIN_ENTITY_PARSERS.clear()
 

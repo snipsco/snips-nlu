@@ -113,8 +113,8 @@ class CustomEntityParser(EntityParser, SerializableUnit):
         custom_parser = CustomEntityParser(parser_usage)
         custom_parser.entities = set(model["entities"])
 
-        _parser_path = Path(model["parser"])
-        if _parser_path.exists():
+        if model["parser"] is not None:
+            _parser_path = Path(model["parser"])
             custom_parser._parser = GazetteerEntityParser.load(_parser_path)
 
         return custom_parser

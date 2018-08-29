@@ -5,7 +5,7 @@ def default_features_factories():
     from snips_nlu.slot_filler.crf_utils import TaggingScheme
     from snips_nlu.slot_filler.feature_factory import (
         NgramFactory, IsDigitFactory, IsFirstFactory, IsLastFactory,
-        ShapeNgramFactory, EntityMatchFactory, BuiltinEntityMatchFactory)
+        ShapeNgramFactory, CustomEntityMatchFactory, BuiltinEntityMatchFactory)
 
     return [
         {
@@ -67,7 +67,7 @@ def default_features_factories():
                 "use_stemming": True,
                 "tagging_scheme_code": TaggingScheme.BILOU.value,
             },
-            "factory_name": EntityMatchFactory.name,
+            "factory_name": CustomEntityMatchFactory.name,
             "offsets": [-2, -1, 0],
             "drop_out": 0.5
         },

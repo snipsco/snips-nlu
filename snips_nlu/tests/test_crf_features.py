@@ -14,7 +14,7 @@ from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, TaggingScheme, UNIT_PREFIX)
 from snips_nlu.slot_filler.feature import Feature, TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import (
-    BuiltinEntityMatchFactory, EntityMatchFactory, IsDigitFactory,
+    BuiltinEntityMatchFactory, CustomEntityMatchFactory, IsDigitFactory,
     IsFirstFactory, IsLastFactory, LengthFactory, NgramFactory, PrefixFactory,
     ShapeNgramFactory, SingleFeatureFactory, SuffixFactory, WordClusterFactory,
     get_feature_factory)
@@ -402,7 +402,7 @@ class TestCRFFeatures(SnipsTest):
         res9 = features[1].compute(4, cache)
 
         # Then
-        self.assertIsInstance(factory, EntityMatchFactory)
+        self.assertIsInstance(factory, CustomEntityMatchFactory)
         self.assertEqual(len(features), 2)
         self.assertEqual(features[0].base_name, "entity_match_dummy_entity_1")
         self.assertEqual(features[1].base_name, "entity_match_dummy_entity_2")

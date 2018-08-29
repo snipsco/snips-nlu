@@ -364,7 +364,7 @@ class WordClusterFactory(SingleFeatureFactory):
         }
 
 
-class EntityMatchFactory(CRFFeatureFactory):
+class CustomEntityMatchFactory(CRFFeatureFactory):
     """Features: does the considered token belongs to the values of one of the
     entities in the training dataset
 
@@ -382,7 +382,7 @@ class EntityMatchFactory(CRFFeatureFactory):
     name = "entity_match"
 
     def __init__(self, factory_config):
-        super(EntityMatchFactory, self).__init__(factory_config)
+        super(CustomEntityMatchFactory, self).__init__(factory_config)
         self.use_stemming = self.args["use_stemming"]
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
@@ -551,7 +551,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
 FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
              SuffixFactory, LengthFactory, NgramFactory, ShapeNgramFactory,
-             WordClusterFactory, EntityMatchFactory, BuiltinEntityMatchFactory]
+             WordClusterFactory, CustomEntityMatchFactory, BuiltinEntityMatchFactory]
 
 
 def get_feature_factory(factory_config):

@@ -8,11 +8,14 @@ from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
+from snips_nlu.tokenization import normalize
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CAPITALIZE, ENTITIES, GAZETTEER_ENTITIES, LANGUAGE,
-    RES_ENTITY, RES_INTENT, RES_SLOTS, CUSTOM_ENTITY_PARSER)
+    RES_ENTITY, RES_INTENT, RES_SLOTS, CUSTOM_ENTITY_PARSER, RES_VALUE,
+    ENTITY_KIND, RES_MATCH_RANGE, ENTITY, VALUE, AUTOMATICALLY_EXTENSIBLE,
+    UTTERANCES, DATA)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.nlu_engine.utils import resolve_slots
@@ -23,7 +26,8 @@ from snips_nlu.pipeline.processing_unit import (
 from snips_nlu.resources import (
     get_builtin_entity_parser_from_dir, load_resources_from_dir,
     persist_resources)
-from snips_nlu.result import empty_result, is_empty, parsing_result
+from snips_nlu.result import empty_result, is_empty, parsing_result, \
+    builtin_slot, custom_slot
 from snips_nlu.utils import (
     check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
     log_elapsed_time, log_result)
@@ -152,6 +156,55 @@ class SnipsNLUEngine(MLUnit):
             return parsing_result(text, intent=res[RES_INTENT],
                                   slots=resolved_slots)
         return empty_result(text)
+
+    def resolve_slots(self, text, slots, scope):
+        builtin_scope = [entity_kind for entity_kind in scope
+                         if is_builtin_entity(entity_kind)]
+        custom_scope = [entity_kind for entity_kind in scope
+                        if not is_builtin_entity(entity_kind)]
+        # Do not use cached entities here as datetimes must be computed using
+        # current context
+        builtin_entities = self.builtin_entity_parser.parse(
+            text, builtin_scope, use_cache=False)
+        custom_entities = self.custom_entity_parser.parse(
+            text, custom_scope, use_cache=True)
+
+        resolved_slots = []
+        for slot in slots:
+            entity_name = slot[RES_ENTITY]
+            raw_value = slot[RES_VALUE]
+            if is_builtin_entity(entity_name):
+                entities = builtin_entities
+                parser = self.builtin_entity_parser
+                slot_builder = builtin_slot
+                use_cache = False
+            else:
+                entities = custom_entities
+                parser = self.custom_entity_parser
+                slot_builder = custom_slot
+                use_cache = True
+
+            resolved_slot = None
+            for ent in entities:
+                if ent[ENTITY_KIND] == entity_name and \
+                        ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
+                    resolved_slot = slot_builder(slot, ent[ENTITY])
+                    break
+            if resolved_slot is None:
+                matches = parser.parse(
+                    raw_value, scope=[entity_name], use_cache=use_cache)
+                if matches:
+                    resolved_slot = slot_builder(slot, matches[0][VALUE])
+
+            extensible = self._dataset_metadata[ENTITIES][
+                entity_name][AUTOMATICALLY_EXTENSIBLE]
+            if not is_builtin_entity(entity_name) and resolved_slot is None \
+                    and extensible:
+                resolved_slot = custom_slot(slot)
+            if resolved_slot is not None:
+                resolved_slots.append(resolved_slot)
+
+        return resolved_slots
 
     @check_persisted_path
     def persist(self, path):
@@ -286,6 +339,7 @@ def _get_dataset_metadata(dataset):
             continue
         ent = deepcopy(entity)
         ent.pop(CAPITALIZE)
+        ent.pop(UTTERANCES)
         entities[entity_name] = ent
     slot_name_mappings = get_slot_name_mappings(dataset)
     return {

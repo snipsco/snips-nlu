@@ -146,7 +146,6 @@ class ProbabilisticIntentParser(IntentParser):
             self.intent_classifier.persist(path / "intent_classifier")
 
         model = {
-            "unit_name": self.unit_name,
             "config": self.config.to_dict(),
             "slot_fillers": slot_fillers
         }

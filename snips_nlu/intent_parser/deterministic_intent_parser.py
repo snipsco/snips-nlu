@@ -212,7 +212,6 @@ class DeterministicIntentParser(IntentParser):
     def to_dict(self):
         """Returns a json-serializable dict"""
         return {
-            "unit_name": self.unit_name,
             "config": self.config.to_dict(),
             "language_code": self.language,
             "patterns": self.patterns,

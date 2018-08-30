@@ -291,7 +291,6 @@ class TestCRFSlotFiller(FixtureTest):
         self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
 
         expected_slot_filler_dict = {
-            "unit_name": "crf_slot_filler",
             "crf_model_file": None,
             "language_code": None,
             "config": config.to_dict(),
@@ -411,7 +410,6 @@ class TestCRFSlotFiller(FixtureTest):
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
-            "unit_name": "crf_slot_filler",
             "crf_model_file": expected_crf_file,
             "language_code": "en",
             "config": expected_config.to_dict(),

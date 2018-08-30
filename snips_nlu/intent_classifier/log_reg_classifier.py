@@ -227,7 +227,6 @@ class LogRegIntentClassifier(IntentClassifier):
             t_ = self.classifier.t_
 
         return {
-            "unit_name": self.unit_name,
             "config": self.config.to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,

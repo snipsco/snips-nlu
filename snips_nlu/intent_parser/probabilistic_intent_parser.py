@@ -130,17 +130,15 @@ class ProbabilisticIntentParser(IntentParser):
         """Persist the object at the given path"""
         path = Path(path)
         path.mkdir()
+        sorted_slot_fillers = sorted(iteritems(self.slot_fillers))
         slot_fillers = []
-        for intent, slot_filler in iteritems(self.slot_fillers):
-            slot_filler_name = "slot_filler_%s" % intent
+        for i, (intent, slot_filler) in enumerate(sorted_slot_fillers):
+            slot_filler_name = "slot_filler_%s" % i
             slot_filler.persist(path / slot_filler_name)
             slot_fillers.append({
                 "intent": intent,
                 "slot_filler_name": slot_filler_name
             })
-
-        # Only needed to improve testability
-        slot_fillers = sorted(slot_fillers, key=lambda sf: sf["intent"])
 
         if self.intent_classifier is not None:
             self.intent_classifier.persist(path / "intent_classifier")

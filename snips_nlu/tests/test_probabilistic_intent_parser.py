@@ -156,11 +156,11 @@ class TestProbabilisticIntentParser(FixtureTest):
             "slot_fillers": [
                 {
                     "intent": "MakeCoffee",
-                    "slot_filler_name": "slot_filler_MakeCoffee"
+                    "slot_filler_name": "slot_filler_0"
                 },
                 {
                     "intent": "MakeTea",
-                    "slot_filler_name": "slot_filler_MakeTea"
+                    "slot_filler_name": "slot_filler_1"
                 }
             ]
         }
@@ -175,10 +175,10 @@ class TestProbabilisticIntentParser(FixtureTest):
             self.tmp_file_path / "intent_classifier" / "metadata.json",
             metadata_intent_classifier)
         self.assertJsonContent(
-            self.tmp_file_path / "slot_filler_MakeCoffee" / "metadata.json",
+            self.tmp_file_path / "slot_filler_0" / "metadata.json",
             metadata_slot_filler)
         self.assertJsonContent(
-            self.tmp_file_path / "slot_filler_MakeTea" / "metadata.json",
+            self.tmp_file_path / "slot_filler_1" / "metadata.json",
             metadata_slot_filler)
 
     def test_should_be_deserializable(self):

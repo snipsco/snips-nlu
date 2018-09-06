@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+
+## [0.16.5] - 2018-0906
+### Fixed
+- Segfault in CRFSuite when the `CRFSlotFiller` is fitted only on empty utterances 
+
 ## [0.16.4] - 2018-08-30
 ### Fixed
 - Issue with the `CrfSlotFiller` file names in the `ProbabilisticIntentParser` serialization  
@@ -135,6 +140,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.16.5]: https://github.com/snipsco/snips-nlu/compare/0.16.4...0.16.5
 [0.16.4]: https://github.com/snipsco/snips-nlu/compare/0.16.3...0.16.4
 [0.16.3]: https://github.com/snipsco/snips-nlu/compare/0.16.2...0.16.3
 [0.16.2]: https://github.com/snipsco/snips-nlu/compare/0.16.1...0.16.2

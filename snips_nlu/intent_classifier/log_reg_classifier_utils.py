@@ -9,11 +9,12 @@ from uuid import uuid4
 import numpy as np
 from future.utils import iteritems, itervalues
 
-from snips_nlu.builtin_entities import is_builtin_entity
+
 from snips_nlu.constants import (
     DATA, ENTITY, INTENTS, TEXT, UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.resources import get_noise
 

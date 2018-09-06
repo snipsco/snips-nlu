@@ -4,15 +4,16 @@ from abc import ABCMeta, abstractmethod
 from builtins import object, str
 
 from future.utils import with_metaclass
-from snips_nlu_utils import get_shape
 from snips_nlu_ontology import get_supported_grammar_entities
+from snips_nlu_utils import get_shape
 
-from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS,
-                                 LANGUAGE, RES_MATCH_RANGE, START, STEMS,
-                                 WORD_CLUSTERS)
+from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, END, ENTITIES,
+                                 GAZETTEERS, LANGUAGE, RES_MATCH_RANGE, START,
+                                 STEMS, WORD_CLUSTERS)
 from snips_nlu.dataset import get_dataset_gazetteer_entities
-from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
-
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.entity_parser.custom_entity_parser import \
+    CustomEntityParserUsage
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_clusters
@@ -388,6 +389,8 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["tagging_scheme_code"])
         self._language = None
         self.language = self.args.get("language_code")
+        self._entities = None
+        self.entities = self.args.get("entities")
 
     @property
     def language(self):
@@ -397,10 +400,22 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
     def language(self, value):
         if value is not None:
             self._language = value
-            self.args["language_code"] = self.language
+            self.args["language_code"] = value
+
+    @property
+    def entities(self):
+        return self._entities
+
+    @entities.setter
+    def entities(self, value):
+        if value is not None:
+            self._entities = value
+            self.args["entities"] = value
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
+        self.entities = [entity for entity in dataset[ENTITIES]
+                         if not is_builtin_entity(entity)]
         return self
 
     def _transform(self, token):
@@ -416,7 +431,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
     def build_features(self, builtin_entity_parser=None,
                        custom_entity_parser=None):
         features = []
-        for entity_name in custom_entity_parser.entities:
+        for entity_name in self.entities:
             # We need to call this wrapper in order to properly capture
             # `entity_name`
             entity_match = self._build_entity_match_fn(
@@ -551,7 +566,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
 FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
              SuffixFactory, LengthFactory, NgramFactory, ShapeNgramFactory,
-             WordClusterFactory, CustomEntityMatchFactory, BuiltinEntityMatchFactory]
+             WordClusterFactory, CustomEntityMatchFactory,
+             BuiltinEntityMatchFactory]
 
 
 def get_feature_factory(factory_config):

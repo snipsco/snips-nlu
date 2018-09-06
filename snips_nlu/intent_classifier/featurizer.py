@@ -15,10 +15,10 @@ from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE,
     DATA, ENTITY, ENTITY_KIND, NGRAM, TEXT)
 from snips_nlu.dataset import get_text_from_chunks
-from snips_nlu.languages import get_default_sep
-from snips_nlu.entity_parser.builtin_entity_parser import (
-    get_builtin_entity_parser, is_builtin_entity)
+from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
+                                                           is_builtin_entity)
 from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParser
+from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (
@@ -29,8 +29,8 @@ from snips_nlu.slot_filler.features_utils import get_all_ngrams
 class Featurizer(object):
     def __init__(self, language, unknown_words_replacement_string,
                  config=FeaturizerConfig(), tfidf_vectorizer=None,
-                 best_features=None, entity_utterances_to_feature_names=None,
-                 builtin_entity_parser=None, custom_entity_parser=None):
+                 best_features=None, builtin_entity_parser=None,
+                 custom_entity_parser=None):
         self.config = config
         self.language = language
         if tfidf_vectorizer is None:
@@ -38,9 +38,6 @@ class Featurizer(object):
                 self.language, sublinear_tf=self.config.sublinear_tf)
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
-        self.entity_utterances_to_feature_names = \
-            entity_utterances_to_feature_names
-
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
 
@@ -122,7 +119,8 @@ class Featurizer(object):
         # is none.
         # In the other case the parser is provided fitted by another unit
         if self.builtin_entity_parser is None or self.fitted:
-            self.builtin_entity_parser = get_builtin_entity_parser(dataset)
+            self.builtin_entity_parser = BuiltinEntityParser.build(
+                dataset=dataset)
         return self
 
     def fit_custom_entity_parser_if_needed(self, dataset):
@@ -138,7 +136,8 @@ class Featurizer(object):
             return self
 
         if self.custom_entity_parser is None or self.fitted:
-            self.custom_entity_parser = CustomEntityParser(parser_usage).fit(dataset)
+            self.custom_entity_parser = CustomEntityParser.build(
+                dataset, parser_usage)
         return self
 
     def to_dict(self):
@@ -148,15 +147,9 @@ class Featurizer(object):
             vocab = {k: int(v) for k, v in
                      iteritems(self.tfidf_vectorizer.vocabulary_)}
             idf_diag = self.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
-            # pylint: enable=W0212
-            entity_utterances_to_entity_names = {
-                k: list(v)
-                for k, v in iteritems(self.entity_utterances_to_feature_names)
-            }
         else:
             vocab = None
             idf_diag = None
-            entity_utterances_to_entity_names = dict()
 
         tfidf_vectorizer = {
             "vocab": vocab,
@@ -167,8 +160,6 @@ class Featurizer(object):
             "language_code": self.language,
             "tfidf_vectorizer": tfidf_vectorizer,
             "best_features": self.best_features,
-            "entity_utterances_to_feature_names":
-                entity_utterances_to_entity_names,
             "config": self.config.to_dict(),
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string
@@ -184,15 +175,9 @@ class Featurizer(object):
         config = FeaturizerConfig.from_dict(obj_dict["config"])
         tfidf_vectorizer = _deserialize_tfidf_vectorizer(
             obj_dict["tfidf_vectorizer"], language, config.sublinear_tf)
-        entity_utterances_to_entity_names = {
-            k: set(v) for k, v in
-            iteritems(obj_dict["entity_utterances_to_feature_names"])
-        }
         self = cls(
             language=language,
             tfidf_vectorizer=tfidf_vectorizer,
-            entity_utterances_to_feature_names=
-            entity_utterances_to_entity_names,
             best_features=obj_dict["best_features"],
             config=config,
             unknown_words_replacement_string=obj_dict[
@@ -212,13 +197,16 @@ def _preprocess_utterance(utterance, language, builtin_entity_parser,
         utterance_tokens, word_clusters_name, language)
     normalized_stemmed_tokens = [_normalize_stem(t, language, use_stemming)
                                  for t in utterance_tokens]
-    custom_entities = custom_entity_parser.parse(normalized_stemmed_tokens)
+
+    custom_entities = custom_entity_parser.parse(
+        " ".join(normalized_stemmed_tokens))
     custom_entities = [e for e in custom_entities
-                       if e["raw_value"] != unknownword_replacement_string]
-    entities_features = [_entity_name_to_feature(e["entity"], language)
-                         for e in custom_entities]
-    builtin_entities = builtin_entity_parser.parse(utterance_text,
-                                                   use_cache=True)
+                       if e["value"] != unknownword_replacement_string]
+    entities_features = [
+        _entity_name_to_feature(e["entity_identifier"], language)
+        for e in custom_entities]
+    builtin_entities = builtin_entity_parser.parse(
+        utterance_text, use_cache=True)
     builtin_entities_features = [
         _builtin_entity_to_feature(ent[ENTITY_KIND], language)
         for ent in builtin_entities

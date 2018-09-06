@@ -62,11 +62,10 @@ class SnipsTest(TestCase):
 
 
 class FixtureTest(SnipsTest):
-    fixture_dir = TEST_PATH / "fixture"
-
     # pylint: disable=protected-access
     def setUp(self):
         super(FixtureTest, self).setUp()
+        self.fixture_dir = Path(tempfile.mkdtemp())
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 

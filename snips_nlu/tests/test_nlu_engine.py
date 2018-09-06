@@ -14,10 +14,13 @@ from snips_nlu.constants import (
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
+from snips_nlu.entity_parser.custom_entity_parser_usage import \
+    CustomEntityParserUsage
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs import NLUEngineConfig, \
-    ProbabilisticIntentParserConfig, MLUnitConfig
+from snips_nlu.pipeline.configs import (
+    MLUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -25,7 +28,7 @@ from snips_nlu.result import (
     resolved_slot, unresolved_slot)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import json_string, NotTrained
+from snips_nlu.utils import NotTrained, json_string
 
 
 class TestSnipsNLUEngine(FixtureTest):
@@ -271,16 +274,6 @@ class TestSnipsNLUEngine(FixtureTest):
                 "entities": {
                     "Temperature": {
                         "automatically_extensible": True,
-                        "utterances": {
-                            "boiling": "hot",
-                            "Boiling": "hot",
-                            "cold": "cold",
-                            "Cold": "cold",
-                            "hot": "hot",
-                            "Hot": "hot",
-                            "iced": "cold",
-                            "Iced": "cold"
-                        }
                     }
                 },
                 "slot_name_mappings": {
@@ -298,6 +291,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 "test_intent_parser1",
                 "test_intent_parser2"
             ],
+            "builtin_entity_parser": "builtin_entity_parser",
+            "custom_entity_parser": "custom_entity_parser",
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -331,16 +326,6 @@ class TestSnipsNLUEngine(FixtureTest):
                 "entities": {
                     "Temperature": {
                         "automatically_extensible": True,
-                        "utterances": {
-                            "boiling": "hot",
-                            "Boiling": "hot",
-                            "cold": "cold",
-                            "Cold": "cold",
-                            "hot": "hot",
-                            "Hot": "hot",
-                            "iced": "cold",
-                            "Iced": "cold"
-                        }
                     }
                 },
                 "slot_name_mappings": {
@@ -358,6 +343,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 "test_intent_parser1",
                 "test_intent_parser1_2"
             ],
+            "builtin_entity_parser": "builtin_entity_parser",
+            "custom_entity_parser": "custom_entity_parser",
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -409,6 +396,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 "test_intent_parser1",
                 "test_intent_parser2",
             ],
+            "builtin_entity_parser": "builtin_entity_parser",
+            "custom_entity_parser": "custom_entity_parser",
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -417,6 +406,11 @@ class TestSnipsNLUEngine(FixtureTest):
         parser1_path.mkdir()
         parser2_path = self.tmp_file_path / "test_intent_parser2"
         parser2_path.mkdir()
+        builtin_entity_parser_path = \
+            self.tmp_file_path / "builtin_entity_parser"
+        builtin_entity_parser_path.mkdir()
+        custom_entity_parser_path = self.tmp_file_path / "custom_entity_parser"
+        custom_entity_parser_path.mkdir()
         (self.tmp_file_path / "resources").mkdir()
         self.writeJsonContent(self.tmp_file_path / "nlu_engine.json",
                               engine_dict)
@@ -424,6 +418,10 @@ class TestSnipsNLUEngine(FixtureTest):
                               {"unit_name": "test_intent_parser1"})
         self.writeJsonContent(parser2_path / "metadata.json",
                               {"unit_name": "test_intent_parser2"})
+        self.writeJsonContent(builtin_entity_parser_path / "metadata.json",
+                              {"language": "EN"})
+        self.writeJsonContent(custom_entity_parser_path / "metadata.json",
+                              {"parsers_metadata": []})
 
         # When
         engine = SnipsNLUEngine.from_path(self.tmp_file_path)
@@ -451,6 +449,8 @@ class TestSnipsNLUEngine(FixtureTest):
             "dataset_metadata": None,
             "config": None,
             "intent_parsers": [],
+            "builtin_entity_parser": None,
+            "custom_entity_parser": None,
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -510,7 +510,12 @@ class TestSnipsNLUEngine(FixtureTest):
 
         # When
         engine_bytes = engine.to_byte_array()
-        loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+        builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, parser_usage=CustomEntityParserUsage.WITHOUT_STEMS)
+        loaded_engine = SnipsNLUEngine.from_byte_array(
+            engine_bytes, builtin_entity_parser=builtin_entity_parser,
+            custom_entity_parser=custom_entity_parser)
         result = loaded_engine.parse("Make me two cups of coffee")
 
         # Then
@@ -564,7 +569,8 @@ class TestSnipsNLUEngine(FixtureTest):
                                 "dummy2_bis"
                             ]
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 },
                 "dummy_entity_2": {
                     "use_synonyms": False,
@@ -576,7 +582,8 @@ class TestSnipsNLUEngine(FixtureTest):
                                 "dummy2"
                             ]
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en"
@@ -644,7 +651,8 @@ class TestSnipsNLUEngine(FixtureTest):
                                 "dummy1_bis"
                             ]
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en"
@@ -725,7 +733,8 @@ class TestSnipsNLUEngine(FixtureTest):
                         }
                     ],
                     "use_synonyms": True,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en",
@@ -841,7 +850,6 @@ class TestSnipsNLUEngine(FixtureTest):
         message = str(cm.exception.args[0])
         self.assertTrue("Expected unicode but received" in message)
 
-
     def test_should_fit_and_parse_empty_intent(self):
         # Given
         dataset = {
@@ -900,7 +908,6 @@ class TestSnipsNLUEngine(FixtureTest):
             },
             "language": "en",
         }
-
 
 
 class TestIntentParser1Config(MLUnitConfig):

@@ -4,7 +4,7 @@ from builtins import map
 from copy import deepcopy
 
 from snips_nlu.pipeline.configs import MLUnitConfig
-from snips_nlu.pipeline.processing_unit import get_ml_unit_config
+from snips_nlu.pipeline.ml_unit import get_ml_unit_config
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 

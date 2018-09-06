@@ -209,7 +209,8 @@
     "location": {
       "data": [],
       "use_synonyms": true,
-      "automatically_extensible": true
+      "automatically_extensible": true,
+      "parser_threshold": 1.0
     },
     "snips/datetime": {},
     "room": {
@@ -229,7 +230,8 @@
         }
       ],
       "use_synonyms": true,
-      "automatically_extensible": false
+      "automatically_extensible": false,
+      "parser_threshold": 1.0
     }
   },
   "language": "en"

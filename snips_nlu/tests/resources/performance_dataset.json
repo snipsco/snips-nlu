@@ -6308,6 +6308,7 @@
     "weather_location": {
       "use_synonyms": false,
       "data": [],
+      "parser_threshold": 1.0,
       "automatically_extensible": true
     },
     "snips/datetime": {},
@@ -6363,7 +6364,8 @@
           ]
         }
       ],
-      "automatically_extensible": true
+      "automatically_extensible": true,
+      "parser_threshold": 1.0
     }
   },
   "language": "en"

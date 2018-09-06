@@ -175,10 +175,10 @@ class FeaturizerConfig(Config):
             parser_usage = CustomEntityParserUsage.WITH_STEMS
         else:
             parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
-        if self.word_clusters_name is None:
+        if self.word_clusters_name is not None:
             word_clusters = {self.word_clusters_name}
         else:
-            word_clusters = None
+            word_clusters = set()
         return {
             WORD_CLUSTERS: word_clusters,
             STEMS: self.use_stemming,

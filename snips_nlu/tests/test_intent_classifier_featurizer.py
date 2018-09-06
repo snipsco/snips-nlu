@@ -4,15 +4,18 @@ from __future__ import unicode_literals
 import json
 
 import numpy as np
-from future.utils import iteritems
-from mock import mock, patch
+from mock import patch
+from snips_nlu_utils import normalize
 
 from snips_nlu.constants import DATA, ENTITY, LANGUAGE_EN, SLOT_NAME, TEXT
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.entity_parser import CustomEntityParser
+from snips_nlu.entity_parser.custom_entity_parser_usage import \
+    CustomEntityParserUsage
 from snips_nlu.intent_classifier.featurizer import (
-    Featurizer, _get_tfidf_vectorizer, _get_utterances_to_features_names)
-from snips_nlu.intent_classifier.log_reg_classifier_utils import \
-    text_to_utterance
+    Featurizer, _get_tfidf_vectorizer)
+from snips_nlu.intent_classifier.log_reg_classifier_utils import (
+    text_to_utterance)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import tokenize_light
@@ -43,7 +46,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                         }
                     ],
                     "use_synonyms": True,
-                    "automatically_extensible": True
+                    "automatically_extensible": True,
+                    "parser_threshold": 1.0
                 }
             },
             "intents": {},
@@ -71,8 +75,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         with self.fail_if_exception(msg):
             dumped = json_string(serialized_featurizer)
 
-        msg = "SnipsNLUEngine should be deserializable from dict with unicode" \
-              " values"
+        msg = "SnipsNLUEngine should be deserializable from dict with " \
+              "unicode values"
         with self.fail_if_exception(msg):
             _ = Featurizer.from_dict(json.loads(dumped))
 
@@ -82,21 +86,17 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         # pylint: enable=W0212
 
         best_features = featurizer.best_features
-        entity_utterances_to_feature_names = {
-            "entity1": ["entityfeatureentity2"]
-        }
 
         expected_serialized = {
             "config": {
                 "sublinear_tf": False,
                 "pvalue_threshold": pvalue_threshold,
-                "word_clusters_name": "brown_clusters"
+                "word_clusters_name": "brown_clusters",
+                "use_stemming": False
             },
             "language_code": "en",
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
-            "entity_utterances_to_feature_names":
-                entity_utterances_to_feature_names,
             "unknown_words_replacement_string": None
         }
         self.assertDictEqual(expected_serialized, serialized_featurizer)
@@ -111,11 +111,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         config = {
             "pvalue_threshold": 0.4,
             "sublinear_tf": False,
-            "word_clusters_name": "brown_clusters"
-        }
-
-        entity_utterances_to_feature_names = {
-            "entity_1": ["entityfeatureentity_1"]
+            "word_clusters_name": "brown_clusters",
+            "use_stemming": False
         }
 
         featurizer_dict = {
@@ -123,8 +120,6 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "language_code": language,
             "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
             "best_features": best_features,
-            "entity_utterances_to_feature_names":
-                entity_utterances_to_feature_names,
             "unknown_words_replacement_string": None
         }
 
@@ -143,90 +138,17 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         self.assertListEqual(featurizer.best_features, best_features)
         self.assertEqual(config, featurizer.config.to_dict())
 
-        self.assertDictEqual(
-            featurizer.entity_utterances_to_feature_names,
-            {
-                k: set(v) for k, v
-                in iteritems(entity_utterances_to_feature_names)
-            })
-
-    @mock.patch("snips_nlu.dataset.get_string_variations")
-    def test_get_utterances_entities(self, mocked_get_string_variations):
-        # Given
-        # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation, variation.lower()}
-
-        mocked_get_string_variations.side_effect = mock_get_string_variations
-        dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": []
-
-                }
-            },
-            "entities": {
-                "entity1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        },
-                        {
-                            "value": "éntity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": False,
-                    "automatically_extensible": False
-                },
-                "entity2": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": []
-                        },
-                        {
-                            "value": "Éntity 2",
-                            "synonyms": ["Éntity_2", "Alternative entity 2"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False
-                }
-            },
-            "language": "en",
-        }
-        language = LANGUAGE_EN
-        dataset = validate_and_format_dataset(dataset)
-
-        # When
-        utterance_to_feature_names = _get_utterances_to_features_names(
-            dataset, language)
-
-        # Then
-        expected_utterance_to_entity_names = {
-            "entity 1": {"entityfeatureentity2", "entityfeatureentity1"},
-            "éntity 1": {"entityfeatureentity1"},
-            "éntity 2": {"entityfeatureentity2"},
-            "Éntity 2": {"entityfeatureentity2"},
-            "Éntity_2": {"entityfeatureentity2"},
-            "éntity_2": {"entityfeatureentity2"},
-            "alternative entity 2": {"entityfeatureentity2"},
-            "Alternative entity 2": {"entityfeatureentity2"}
-        }
-
-        self.assertDictEqual(
-            utterance_to_feature_names, expected_utterance_to_entity_names)
-
     @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
     @patch("snips_nlu.intent_classifier.featurizer.stem")
-    def test_preprocess_utterances(self, mocked_stem, mocked_word_cluster):
+    @patch("snips_nlu.entity_parser.custom_entity_parser.stem")
+    def test_preprocess_utterances(
+            self, mocked_parser_stem, mocked_featurizer_stem,
+            mocked_word_cluster):
         # Given
         language = LANGUAGE_EN
 
         def _stem(t):
+            t = normalize(t)
             if t == "beautiful":
                 s = "beauty"
             elif t == "birdy":
@@ -247,7 +169,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
             "entity": "cluster_3"
         }
 
-        mocked_stem.side_effect = stem_function
+        mocked_parser_stem.side_effect = stem_function
+        mocked_featurizer_stem.side_effect = stem_function
 
         dataset = {
             "intents": {
@@ -268,7 +191,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                         }
                     ],
                     "use_synonyms": False,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "parser_threshold": 1.0
                 },
                 "entity_2": {
                     "data": [
@@ -282,7 +206,8 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                         }
                     ],
                     "use_synonyms": True,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "parser_threshold": 1.0
                 },
                 "snips/number": {}
             },
@@ -315,10 +240,15 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         utterances.append(labeled_utterance)
         labels = np.array([0, 0, 1, 1])
 
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS)
+
         featurizer = Featurizer(
             language,
             None,
-            config=FeaturizerConfig(word_clusters_name="brown_clusters")
+            custom_entity_parser=custom_entity_parser,
+            config=FeaturizerConfig(word_clusters_name="brown_clusters",
+                                    use_stemming=True)
         ).fit(dataset, utterances, labels)
 
         # When
@@ -338,34 +268,6 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         ]
 
         self.assertListEqual(utterances, expected_utterances)
-
-    def test_featurizer_should_exclude_replacement_string(self):
-        # Given
-        language = LANGUAGE_EN
-        dataset = {
-            "language": LANGUAGE_EN,
-            "entities": {
-                "dummy1": {
-                    "utterances": {
-                        "unknownword": "unknownword",
-                        "what": "what"
-                    }
-                }
-            }
-        }
-        replacement_string = "unknownword"
-        featurizer = Featurizer(
-            language, unknown_words_replacement_string=replacement_string,
-            config=FeaturizerConfig())
-        utterances = [text_to_utterance("hello dude")]
-        y = np.array([1])
-
-        # When
-        featurizer.fit(dataset, utterances, y)
-
-        # Then
-        self.assertNotIn(replacement_string,
-                         featurizer.entity_utterances_to_feature_names)
 
     def test_featurizer_should_be_serialized_when_not_fitted(self):
         # Given

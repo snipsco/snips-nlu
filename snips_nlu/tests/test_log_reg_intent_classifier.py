@@ -7,10 +7,12 @@ import numpy as np
 from future.utils import itervalues
 from mock import patch
 
-from snips_nlu.builtin_entities import BuiltinEntityParser
 from snips_nlu.constants import (
     INTENTS, LANGUAGE_EN, RES_INTENT_NAME, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
+from snips_nlu.entity_parser.custom_entity_parser_usage import \
+    CustomEntityParserUsage
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -178,9 +180,13 @@ class TestLogRegIntentClassifier(FixtureTest):
         classifier.persist(self.tmp_file_path)
 
         # When
+        builtin_entity_parser = BuiltinEntityParser.build(language="en")
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
         loaded_classifier = LogRegIntentClassifier.from_path(
             self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser("en", None))
+            builtin_entity_parser=builtin_entity_parser,
+            custom_entity_parser=custom_entity_parser)
         result = loaded_classifier.get_intent("Make me two cups of tea")
 
         # Then
@@ -189,14 +195,18 @@ class TestLogRegIntentClassifier(FixtureTest):
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
         intent_classifier = LogRegIntentClassifier().fit(dataset)
 
         # When
         intent_classifier_bytes = intent_classifier.to_byte_array()
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
+        builtin_entity_parser = BuiltinEntityParser.build(language="en")
         loaded_classifier = LogRegIntentClassifier.from_byte_array(
             intent_classifier_bytes,
-            builtin_entity_parser=BuiltinEntityParser("en", None))
+            builtin_entity_parser=builtin_entity_parser,
+            custom_entity_parser=custom_entity_parser)
         result = loaded_classifier.get_intent("make me two cups of tea")
 
         # Then
@@ -219,7 +229,8 @@ class TestLogRegIntentClassifier(FixtureTest):
                             "value": "...",
                             "synonyms": [],
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 }
             },
             "intents": {

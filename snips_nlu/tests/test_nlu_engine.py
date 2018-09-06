@@ -830,6 +830,67 @@ class TestSnipsNLUEngine(FixtureTest):
         self.assertTrue("Expected unicode but received" in message)
 
 
+    def test_should_fit_and_parse_empty_intent(self):
+        # Given
+        dataset = {
+            "intents": {
+                "dummy_intent": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": " "
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": "en",
+            "entities": dict()
+        }
+
+        engine = SnipsNLUEngine()
+
+        # When / Then
+        engine.fit(dataset)
+        engine.parse("ya", intents=["dummy_intent"])
+
+    def test_should_fit_and_parse_empty_intent_with_empty_slot(self):
+        dataset = {
+            "intents": {
+                "dummy_intent": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": " ",
+                                    "slot_name": "dummy_slot",
+                                    "entity": "dummy_entity"
+                                }
+                            ]
+                        }
+                    ],
+                }
+            },
+            "entities": {
+                "dummy_entity": {
+                    "use_synonyms": True,
+                    "automatically_extensible": True,
+                    "parser_threshold": 1.0,
+                    "data": [
+                        {
+                            "value": " ",
+                            "synonyms": []
+                        }
+                    ]
+                }
+            },
+            "language": "en",
+        }
+
+
+
 class TestIntentParser1Config(ProcessingUnitConfig):
     unit_name = "test_intent_parser1"
 

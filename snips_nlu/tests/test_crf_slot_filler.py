@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 from builtins import range
-from pathlib import Path
-
 from mock import MagicMock
+from pathlib import Path
+from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
     DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_MATCH_RANGE, SLOT_NAME,
@@ -12,10 +12,12 @@ from snips_nlu.constants import (
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
-from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, _disambiguate_builtin_entities,
-    _filter_overlapping_builtins, _get_slots_permutations,
-    _spans_to_tokens_indexes)
+from snips_nlu.slot_filler.crf_slot_filler import (CRFSlotFiller,
+                                                   _disambiguate_builtin_entities,
+                                                   _ensure_safe,
+                                                   _filter_overlapping_builtins,
+                                                   _get_slots_permutations,
+                                                   _spans_to_tokens_indexes)
 from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, TaggingScheme)
 from snips_nlu.slot_filler.feature_factory import (
@@ -887,3 +889,41 @@ class TestCRFSlotFiller(FixtureTest):
             "O||O",
         }
         self.assertSetEqual(expected_permutations, slots_permutations)
+
+    def test_should_fit_and_parse_empty_intent(self):
+        # Given
+        dataset = {
+            "intents": {
+                "dummy_intent": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": " "
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "language": "en",
+            "entities": dict()
+        }
+
+        slot_filler = CRFSlotFiller()
+
+        # When
+        slot_filler.fit(dataset, "dummy_intent")
+        slot_filler.get_slots("ya")
+
+    def test___ensure_safe(self):
+        unsafe_examples = [
+            ([[]], [[]]),
+            ([[], []], [[], []]),
+        ]
+
+        # We don't assert anything here but it segfault otherwise
+        for X, Y in unsafe_examples:
+            X, Y = _ensure_safe(X, Y)
+            model = CRF().fit(X, Y)
+            model.predict_single([""])

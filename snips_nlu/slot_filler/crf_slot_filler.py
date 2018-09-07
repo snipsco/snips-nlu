@@ -132,12 +132,17 @@ class CRFSlotFiller(SlotFiller):
         for factory in self.features_factories:
             factory.fit(dataset, intent)
 
+        # Ensure that X, Y are safe and that the OUTSIDE label is learnt to
+        # avoid segfault at inference time
         # pylint: disable=C0103
         X = [self.compute_features(sample[TOKENS], drop_out=True)
              for sample in crf_samples]
+        Y = [[tag for tag in sample[TAGS]] for sample in crf_samples]
+        X, Y = _ensure_safe(X, Y)
+
         # ensure ascii tags
-        Y = [[_encode_tag(tag) for tag in sample[TAGS]]
-             for sample in crf_samples]
+        Y = [[_encode_tag(tag) for tag in y] for y in Y]
+
         # pylint: enable=C0103
         self.crf_model = _get_crf_model(self.config.crf_args)
         self.crf_model.fit(X, Y)
@@ -503,3 +508,21 @@ def _crf_model_from_path(crf_model_path):
         f.flush()
         crf = CRF(model_filename=f.name)
     return crf
+
+# pylint: disable=invalid-name
+def _ensure_safe(X, Y):
+    """Ensure that Y has at least one not empty label, otherwise the CRF model
+    does not contain any label and crashes at
+    Args:
+        X: features
+        Y: labels
+
+    Returns: (safe_X, safe_Y) a pair of safe features and labels
+
+    """
+    safe_X = list(X)
+    safe_Y = list(Y)
+    if not any(X) or not any(Y):
+        safe_X.append([""])  # empty feature
+        safe_Y.append([OUTSIDE])  # outside label
+    return safe_X, safe_Y

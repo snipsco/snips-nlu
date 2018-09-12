@@ -60,6 +60,8 @@ def get_builtin_entity_parser_from_scope(language, gazetteer_entity_scope):
 
 def find_gazetteer_entity_data_path(language, entity_name):
     for directory in DATA_PATH.iterdir():
+        if not directory.is_dir():
+            continue
         metadata_path = directory / "metadata.json"
         if not metadata_path.exists():
             continue

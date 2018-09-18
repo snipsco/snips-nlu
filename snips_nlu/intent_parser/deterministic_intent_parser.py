@@ -179,8 +179,7 @@ class DeterministicIntentParser(IntentParser):
                 match_range=rng, value=value, entity=entity,
                 slot_name=slot_name)
             slots.append(parsed_slot)
-        parsed_slots = _deduplicate_overlapping_slots(
-            slots, self.language)
+        parsed_slots = _deduplicate_overlapping_slots(slots, self.language)
         parsed_slots = sorted(parsed_slots,
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
@@ -415,18 +414,14 @@ def _deduplicate_overlapping_slots(slots, language):
         return ranges_overlap(lhs_slot[RES_MATCH_RANGE],
                               rhs_slot[RES_MATCH_RANGE])
 
-    def resolve(lhs_slot, rhs_slot):
-        lhs_tokens = tokenize(lhs_slot[RES_VALUE], language)
-        rhs_tokens = tokenize(rhs_slot[RES_VALUE], language)
-        if len(lhs_tokens) > len(rhs_tokens):
-            return lhs_slot
-        elif len(lhs_tokens) == len(rhs_tokens) \
-                and len(lhs_slot[RES_VALUE]) > len(rhs_slot[RES_VALUE]):
-            return lhs_slot
-        else:
-            return rhs_slot
+    def sort_key_fn(slot):
+        tokens = tokenize(slot[RES_VALUE], language)
+        return -(len(tokens) + len(slot[RES_VALUE]))
 
-    return deduplicate_overlapping_items(slots, overlap, resolve)
+    deduplicated_slots = deduplicate_overlapping_items(
+        slots, overlap, sort_key_fn)
+    return sorted(deduplicated_slots,
+                  key=lambda slot: slot[RES_MATCH_RANGE][START])
 
 
 def _deduplicate_overlapping_entities(entities):
@@ -434,13 +429,13 @@ def _deduplicate_overlapping_entities(entities):
         return ranges_overlap(lhs_entity[RES_MATCH_RANGE],
                               rhs_entity[RES_MATCH_RANGE])
 
-    def resolve(lhs_entity, rhs_entity):
-        if len(lhs_entity[RES_VALUE]) > len(rhs_entity[RES_VALUE]):
-            return lhs_entity
-        else:
-            return rhs_entity
+    def sort_key_fn(entity):
+        return -len(entity[RES_VALUE])
 
-    return deduplicate_overlapping_items(entities, overlap, resolve)
+    deduplicated_entities = deduplicate_overlapping_items(
+        entities, overlap, sort_key_fn)
+    return sorted(deduplicated_entities,
+                  key=lambda entity: entity[RES_MATCH_RANGE][START])
 
 
 def _get_entity_name_placeholder(entity_label, language):

@@ -363,14 +363,11 @@ def get_package_path(name):
     return Path(pkg.__file__).parent
 
 
-def deduplicate_overlapping_items(items, overlap_fn, resolve_fn):
-    deduplicated_item = []
-    for item in items:
-        is_overlapping = False
-        for item_index, dedup_item in enumerate(deduplicated_item):
-            if overlap_fn(item, dedup_item):
-                is_overlapping = True
-                deduplicated_item[item_index] = resolve_fn(item, dedup_item)
-        if not is_overlapping:
-            deduplicated_item.append(item)
-    return deduplicated_item
+def deduplicate_overlapping_items(items, overlap_fn, sort_key_fn):
+    sorted_items = sorted(items, key=sort_key_fn)
+    deduplicated_items = []
+    for item in sorted_items:
+        if not any(overlap_fn(item, dedup_item)
+                   for dedup_item in deduplicated_items):
+            deduplicated_items.append(item)
+    return deduplicated_items

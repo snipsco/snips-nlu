@@ -679,34 +679,28 @@ class TestDeterministicIntentParser(FixtureTest):
         language = LANGUAGE_EN
         slots = [
             unresolved_slot(
-                [3, 7],
-                "non_overlapping1",
+                [0, 3],
+                "kid",
                 "e",
                 "s1"
             ),
             unresolved_slot(
-                [9, 16],
-                "aaaaaaa",
+                [4, 8],
+                "loco",
                 "e1",
                 "s2"
             ),
             unresolved_slot(
-                [10, 18],
-                "bbbbbbbb",
+                [0, 8],
+                "kid loco",
                 "e1",
                 "s3"
             ),
             unresolved_slot(
-                [17, 23],
-                "b cccc",
-                "e1",
+                [9, 13],
+                "song",
+                "e2",
                 "s4"
-            ),
-            unresolved_slot(
-                [50, 60],
-                "non_overlapping2",
-                "e",
-                "s5"
             ),
         ]
 
@@ -716,22 +710,16 @@ class TestDeterministicIntentParser(FixtureTest):
         # Then
         expected_slots = [
             unresolved_slot(
-                [3, 7],
-                "non_overlapping1",
-                "e",
-                "s1"
-            ),
-            unresolved_slot(
-                [17, 23],
-                "b cccc",
+                [0, 8],
+                "kid loco",
                 "e1",
-                "s4"
+                "s3"
             ),
             unresolved_slot(
-                [50, 60],
-                "non_overlapping2",
-                "e",
-                "s5"
+                [9, 13],
+                "song",
+                "e2",
+                "s4"
             ),
         ]
         self.assertSequenceEqual(deduplicated_slots, expected_slots)

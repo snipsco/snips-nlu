@@ -4,12 +4,12 @@ from copy import deepcopy
 
 from snips_nlu.constants import STOP_WORDS
 from snips_nlu.pipeline.configs import (
-    Config, MLUnitConfig, default_features_factories)
+    Config, ProcessingUnitConfig, default_features_factories)
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
-class CRFSlotFillerConfig(MLUnitConfig):
+class CRFSlotFillerConfig(ProcessingUnitConfig):
     # pylint: disable=line-too-long
     """Configuration of a :class:`.CRFSlotFiller`
 

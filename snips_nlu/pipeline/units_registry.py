@@ -9,7 +9,7 @@ BUILTIN_NLU_PROCESSING_UNITS = [
     ProbabilisticIntentParser,
     DeterministicIntentParser,
     LogRegIntentClassifier,
-    CRFSlotFiller,
+    CRFSlotFiller
 ]
 
 NLU_PROCESSING_UNITS = {

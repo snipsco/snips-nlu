@@ -2,10 +2,10 @@ from abc import ABCMeta, abstractmethod
 
 from future.utils import with_metaclass
 
-from snips_nlu.pipeline.ml_unit import MLUnit
+from snips_nlu.pipeline.processing_unit import ProcessingUnit
 
 
-class SlotFiller(with_metaclass(ABCMeta, MLUnit)):
+class SlotFiller(with_metaclass(ABCMeta, ProcessingUnit)):
     """Abstraction which performs slot filling
 
     A custom slot filler must inherit this class to be used in a

@@ -20,7 +20,7 @@ from snips_nlu.entity_parser.custom_entity_parser_usage import \
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
-    MLUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig)
+    ProcessingUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -46,7 +46,7 @@ class TestSnipsNLUEngine(FixtureTest):
                                  entity='mocked_entity',
                                  slot_name='mocked_slot_name')]
 
-        class FirstIntentParserConfig(MLUnitConfig):
+        class FirstIntentParserConfig(ProcessingUnitConfig):
             unit_name = "first_intent_parser"
 
             def to_dict(self):
@@ -82,7 +82,7 @@ class TestSnipsNLUEngine(FixtureTest):
                 cfg = cls.config_type()
                 return cls(cfg)
 
-        class SecondIntentParserConfig(MLUnitConfig):
+        class SecondIntentParserConfig(ProcessingUnitConfig):
             unit_name = "second_intent_parser"
 
             def to_dict(self):
@@ -155,7 +155,7 @@ class TestSnipsNLUEngine(FixtureTest):
 
     def test_should_retrain_only_non_trained_subunits(self):
         # Given
-        class TestIntentParserConfig(MLUnitConfig):
+        class TestIntentParserConfig(ProcessingUnitConfig):
             unit_name = "test_intent_parser"
 
             def to_dict(self):
@@ -877,7 +877,7 @@ class TestSnipsNLUEngine(FixtureTest):
         engine.parse("ya", intents=["dummy_intent"])
 
 
-class TestIntentParser1Config(MLUnitConfig):
+class TestIntentParser1Config(ProcessingUnitConfig):
     unit_name = "test_intent_parser1"
 
     def to_dict(self):
@@ -915,7 +915,7 @@ class TestIntentParser1(IntentParser):
         return cls(cfg)
 
 
-class TestIntentParser2Config(MLUnitConfig):
+class TestIntentParser2Config(ProcessingUnitConfig):
     unit_name = "test_intent_parser2"
 
     def to_dict(self):

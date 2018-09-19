@@ -3,18 +3,18 @@ from __future__ import unicode_literals
 from builtins import map
 from copy import deepcopy
 
-from snips_nlu.pipeline.configs import MLUnitConfig
-from snips_nlu.pipeline.ml_unit import get_ml_unit_config
+from snips_nlu.pipeline.configs import ProcessingUnitConfig
+from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
-class NLUEngineConfig(MLUnitConfig):
+class NLUEngineConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.SnipsNLUEngine` object
 
     Args:
         intent_parsers_configs (list): List of intent parser configs
-            (:class:`.MLUnitConfig`). The order in the list determines
+            (:class:`.ProcessingUnitConfig`). The order in the list determines
             the order in which each parser will be called by the nlu engine.
     """
 
@@ -29,7 +29,7 @@ class NLUEngineConfig(MLUnitConfig):
                 DeterministicIntentParserConfig(),
                 ProbabilisticIntentParserConfig()
             ]
-        self.intent_parsers_configs = list(map(get_ml_unit_config,
+        self.intent_parsers_configs = list(map(get_processing_unit_config,
                                                intent_parsers_configs))
 
     # pylint: enable=super-init-not-called

@@ -13,9 +13,8 @@ from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
-from snips_nlu.pipeline.ml_unit import build_ml_unit
 from snips_nlu.pipeline.processing_unit import (
-    load_processing_unit)
+    load_processing_unit, build_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
 from snips_nlu.utils import (check_persisted_path, elapsed_since,
                              fitted_required, json_string, log_elapsed_time,
@@ -72,7 +71,7 @@ class ProbabilisticIntentParser(IntentParser):
         self.fit_custom_entity_parser_if_needed(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
-            self.intent_classifier = build_ml_unit(
+            self.intent_classifier = build_processing_unit(
                 self.config.intent_classifier_config)
         self.intent_classifier.builtin_entity_parser = \
             self.builtin_entity_parser
@@ -86,7 +85,7 @@ class ProbabilisticIntentParser(IntentParser):
             # We need to copy the slot filler config as it may be mutated
             if self.slot_fillers.get(intent_name) is None:
                 slot_filler_config = deepcopy(self.config.slot_filler_config)
-                self.slot_fillers[intent_name] = build_ml_unit(
+                self.slot_fillers[intent_name] = build_processing_unit(
                     slot_filler_config)
             self.slot_fillers[intent_name].builtin_entity_parser = \
                 self.builtin_entity_parser

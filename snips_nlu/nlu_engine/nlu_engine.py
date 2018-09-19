@@ -20,9 +20,8 @@ from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity, is_gazetteer_entity)
 from snips_nlu.pipeline.configs import NLUEngineConfig
-from snips_nlu.pipeline.ml_unit import MLUnit, build_ml_unit
 from snips_nlu.pipeline.processing_unit import (
-    load_processing_unit)
+    ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import (
     builtin_slot, custom_slot, empty_result, is_empty, parsing_result)
@@ -33,7 +32,7 @@ from snips_nlu.utils import (
 logger = logging.getLogger(__name__)
 
 
-class SnipsNLUEngine(MLUnit):
+class SnipsNLUEngine(ProcessingUnit):
     """Main class to use for intent parsing
 
     A :class:`SnipsNLUEngine` relies on a list of :class:`.IntentParser`
@@ -102,7 +101,7 @@ class SnipsNLUEngine(MLUnit):
                     recycled_parser = parser
                     break
             if recycled_parser is None:
-                recycled_parser = build_ml_unit(parser_config)
+                recycled_parser = build_processing_unit(parser_config)
 
             recycled_parser.builtin_entity_parser = self.builtin_entity_parser
             recycled_parser.custom_entity_parser = self.custom_entity_parser

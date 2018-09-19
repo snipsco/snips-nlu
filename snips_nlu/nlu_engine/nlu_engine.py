@@ -11,14 +11,14 @@ from future.utils import iteritems
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
-    ENTITIES, ENTITY, ENTITY_IDENTIFIER, ENTITY_KIND, GAZETTEER_ENTITIES,
-    LANGUAGE, RESOLVED_VALUE, RES_ENTITY, RES_INTENT, RES_MATCH_RANGE,
+    ENTITIES, ENTITY, ENTITY_IDENTIFIER, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE,
+    RES_ENTITY, RES_INTENT, RES_MATCH_RANGE,
     RES_SLOTS, RES_VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
-    BuiltinEntityParser, is_builtin_entity, is_gazetteer_entity)
+    BuiltinEntityParser, is_builtin_entity)
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
@@ -259,7 +259,7 @@ class SnipsNLUEngine(ProcessingUnit):
             f.write(model_json)
 
         if self.fitted:
-            required_resources = self._get_required_resources()
+            required_resources = self.config.get_required_resources()
             if required_resources:
                 language = self._dataset_metadata["language_code"]
                 resources_path = directory_path / "resources"
@@ -313,10 +313,7 @@ class SnipsNLUEngine(ProcessingUnit):
                 shared[CUSTOM_ENTITY_PARSER] = CustomEntityParser.from_path(
                     parser_path)
 
-        nlu_engine = cls(
-            config=model["config"],
-            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER),
-            custom_entity_parser=shared.get(CUSTOM_ENTITY_PARSER))
+        nlu_engine = cls(config=model["config"], **shared)
 
         # pylint:disable=protected-access
         nlu_engine._dataset_metadata = dataset_metadata
@@ -328,15 +325,6 @@ class SnipsNLUEngine(ProcessingUnit):
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
-
-    def _get_required_resources(self):
-        required_resources = self.config.get_required_resources()
-        if self._dataset_metadata is not None:
-            gazetteer_entities = [
-                entity for entity in self._dataset_metadata["entities"]
-                if is_gazetteer_entity(entity)]
-            required_resources[GAZETTEER_ENTITIES] = gazetteer_entities
-        return required_resources
 
 
 def _get_dataset_metadata(dataset):

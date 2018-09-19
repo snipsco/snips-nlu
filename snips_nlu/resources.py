@@ -6,10 +6,8 @@ from builtins import next
 from pathlib import Path
 
 from snips_nlu.constants import (
-    CUSTOM_ENTITY_PARSER_USAGE, DATA_PATH, GAZETTEERS, GAZETTEER_ENTITIES,
-    NOISE, RESOURCES_DIR, STEMS, STOP_WORDS, WORD_CLUSTERS)
-from snips_nlu.entity_parser.builtin_entity_parser import (
-    find_gazetteer_entity_data_path)
+    CUSTOM_ENTITY_PARSER_USAGE, DATA_PATH, GAZETTEERS, NOISE, RESOURCES_DIR,
+    STEMS, STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.utils import get_package_path, is_package, json_string
@@ -192,8 +190,6 @@ def persist_resources(resources_dest_path, required_resources, language):
 
     metadata[GAZETTEERS] = sorted(required_resources.get(GAZETTEERS, []))
     metadata[WORD_CLUSTERS] = sorted(required_resources.get(WORD_CLUSTERS, []))
-    metadata[GAZETTEER_ENTITIES] = sorted(
-        required_resources.get(GAZETTEER_ENTITIES, []))
     metadata_dest_path = resources_dest_path / "metadata.json"
     metadata_json = json_string(metadata)
     with metadata_dest_path.open(encoding="utf8", mode="w") as f:
@@ -222,7 +218,7 @@ def persist_resources(resources_dest_path, required_resources, language):
         gazetteer_src_dir = resources_src_path / "gazetteers"
         gazetteer_dest_dir = resources_dest_path / "gazetteers"
         gazetteer_dest_dir.mkdir()
-        for gazetteer in metadata["gazetteers"]:
+        for gazetteer in metadata[GAZETTEERS]:
             gazetteer_src = (gazetteer_src_dir / gazetteer) \
                 .with_suffix(".txt")
             gazetteer_dest = gazetteer_dest_dir / gazetteer_src.name
@@ -237,14 +233,6 @@ def persist_resources(resources_dest_path, required_resources, language):
                 .with_suffix(".txt")
             clusters_dest = clusters_dest_dir / clusters_src.name
             shutil.copy(str(clusters_src), str(clusters_dest))
-
-    if metadata[GAZETTEER_ENTITIES]:
-        entities_dest_dir = resources_dest_path / "gazetteer_entities"
-        entities_dest_dir.mkdir()
-        for entity in metadata[GAZETTEER_ENTITIES]:
-            entity_src = find_gazetteer_entity_data_path(language, entity)
-            entity_dest = entities_dest_dir / entity_src.name
-            shutil.copytree(str(entity_src), str(entity_dest))
 
 
 def _get_resource(language, resource_name):

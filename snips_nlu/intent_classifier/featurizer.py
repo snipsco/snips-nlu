@@ -114,20 +114,18 @@ class Featurizer(object):
         ]
 
     def fit_builtin_entity_parser_if_needed(self, dataset):
-        # We fit an entity parser only if the unit has already been fitted
-        # on a dataset, in this case we want to refit. We also if the parser
-        # is none.
-        # In the other case the parser is provided fitted by another unit
+        # We only fit a builtin entity parser when the unit has already been
+        # fitted or if the parser is none.
+        # In the other cases the parser is provided fitted by another unit.
         if self.builtin_entity_parser is None or self.fitted:
             self.builtin_entity_parser = BuiltinEntityParser.build(
                 dataset=dataset)
         return self
 
     def fit_custom_entity_parser_if_needed(self, dataset):
-        # We fit an entity parser only if the unit has already been fitted
-        # on a dataset, in this case we want to refit. We also if the parser
-        # is none.
-        # In the other case the parser is provided fitted by another unit
+        # We only fit a custom entity parser when the unit has already been
+        # fitted or if the parser is none.
+        # In the other cases the parser is provided fitted by another unit.
         required_resources = self.config.get_required_resources()
         if not required_resources:
             return self
@@ -202,9 +200,10 @@ def _preprocess_utterance(utterance, language, builtin_entity_parser,
         " ".join(normalized_stemmed_tokens))
     custom_entities = [e for e in custom_entities
                        if e["value"] != unknownword_replacement_string]
-    entities_features = [
+    custom_entities_features = [
         _entity_name_to_feature(e["entity_identifier"], language)
         for e in custom_entities]
+
     builtin_entities = builtin_entity_parser.parse(
         utterance_text, use_cache=True)
     builtin_entities_features = [
@@ -224,8 +223,8 @@ def _preprocess_utterance(utterance, language, builtin_entity_parser,
         filtered_normalized_stemmed_tokens)
     if builtin_entities_features:
         features += " " + " ".join(sorted(builtin_entities_features))
-    if entities_features:
-        features += " " + " ".join(sorted(entities_features))
+    if custom_entities_features:
+        features += " " + " ".join(sorted(custom_entities_features))
     if word_clusters_features:
         features += " " + " ".join(sorted(word_clusters_features))
 

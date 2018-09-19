@@ -52,9 +52,8 @@ def _build_builtin_parser(language, gazetteer_entities):
     with temp_dir() as serialization_dir:
         gazetteer_entity_parser = None
         if gazetteer_entities:
-            parser_name = _build_gazetteer_parser(
+            gazetteer_entity_parser = _build_gazetteer_parser(
                 serialization_dir, gazetteer_entities, language)
-            gazetteer_entity_parser = parser_name
 
         metadata = {
             "language": language.upper(),

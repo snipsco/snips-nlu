@@ -269,17 +269,17 @@ class SnipsNLUEngine(MLUnit):
                                   required_resources, language)
 
     @classmethod
-    def from_path(cls, parser_directory_name, **shared):
+    def from_path(cls, path, **shared):
         """Load a :class:`SnipsNLUEngine` instance from a directory path
 
         The data at the given path must have been generated using
         :func:`~SnipsNLUEngine.persist`
 
         Args:
-            parser_directory_name (str): The path where the nlu engine is
+            path (str): The path where the nlu engine is
                 stored.
         """
-        directory_path = Path(parser_directory_name)
+        directory_path = Path(path)
         model_path = directory_path / "nlu_engine.json"
         if not model_path.exists():
             raise OSError("Missing nlu engine model file: %s"
@@ -301,16 +301,16 @@ class SnipsNLUEngine(MLUnit):
                 load_resources_from_dir(resources_dir)
 
         if shared.get(BUILTIN_ENTITY_PARSER) is None:
-            parser_directory_name = model["builtin_entity_parser"]
-            if parser_directory_name is not None:
-                parser_path = directory_path / parser_directory_name
+            path = model["builtin_entity_parser"]
+            if path is not None:
+                parser_path = directory_path / path
                 shared[BUILTIN_ENTITY_PARSER] = BuiltinEntityParser.from_path(
                     parser_path)
 
         if shared.get(CUSTOM_ENTITY_PARSER) is None:
-            parser_directory_name = model["custom_entity_parser"]
-            if parser_directory_name is not None:
-                parser_path = directory_path / parser_directory_name
+            path = model["custom_entity_parser"]
+            if path is not None:
+                parser_path = directory_path / path
                 shared[CUSTOM_ENTITY_PARSER] = CustomEntityParser.from_path(
                     parser_path)
 

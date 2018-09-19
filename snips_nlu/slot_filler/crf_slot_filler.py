@@ -15,7 +15,7 @@ from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
-    BUILTIN_ENTITY_PARSER, DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
+    DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
     RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
@@ -512,6 +512,7 @@ def _crf_model_from_path(crf_model_path):
         f.flush()
         crf = CRF(model_filename=f.name)
     return crf
+
 
 # pylint: disable=invalid-name
 def _ensure_safe(X, Y):

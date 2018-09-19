@@ -876,39 +876,6 @@ class TestSnipsNLUEngine(FixtureTest):
         engine.fit(dataset)
         engine.parse("ya", intents=["dummy_intent"])
 
-    def test_should_fit_and_parse_empty_intent_with_empty_slot(self):
-        dataset = {
-            "intents": {
-                "dummy_intent": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": " ",
-                                    "slot_name": "dummy_slot",
-                                    "entity": "dummy_entity"
-                                }
-                            ]
-                        }
-                    ],
-                }
-            },
-            "entities": {
-                "dummy_entity": {
-                    "use_synonyms": True,
-                    "automatically_extensible": True,
-                    "parser_threshold": 1.0,
-                    "data": [
-                        {
-                            "value": " ",
-                            "synonyms": []
-                        }
-                    ]
-                }
-            },
-            "language": "en",
-        }
-
 
 class TestIntentParser1Config(MLUnitConfig):
     unit_name = "test_intent_parser1"

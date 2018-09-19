@@ -2,8 +2,9 @@
 from __future__ import unicode_literals
 
 from builtins import range
-from mock import MagicMock
 from pathlib import Path
+
+from mock import MagicMock
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
@@ -13,12 +14,10 @@ from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
-from snips_nlu.slot_filler.crf_slot_filler import (CRFSlotFiller,
-                                                   _disambiguate_builtin_entities,
-                                                   _ensure_safe,
-                                                   _filter_overlapping_builtins,
-                                                   _get_slots_permutations,
-                                                   _spans_to_tokens_indexes)
+from snips_nlu.slot_filler.crf_slot_filler import (
+    CRFSlotFiller, _disambiguate_builtin_entities, _ensure_safe,
+    _filter_overlapping_builtins, _get_slots_permutations,
+    _spans_to_tokens_indexes)
 from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, TaggingScheme)
 from snips_nlu.slot_filler.feature_factory import (
@@ -941,7 +940,7 @@ class TestCRFSlotFiller(FixtureTest):
         ]
 
         # We don't assert anything here but it segfault otherwise
-        for X, Y in unsafe_examples:
-            X, Y = _ensure_safe(X, Y)
-            model = CRF().fit(X, Y)
+        for x, y in unsafe_examples:
+            x, y = _ensure_safe(x, y)
+            model = CRF().fit(x, y)
             model.predict_single([""])

@@ -8,6 +8,8 @@ from future.utils import with_metaclass
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.utils import classproperty, json_string
 
+import json
+
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):
     """Abstraction of a NLU pipeline unit
@@ -89,8 +91,9 @@ def build_processing_unit(unit_config):
 def load_processing_unit(unit_path):
     """Load a :class:`ProcessingUnit` from a persisted processing unit
     directory"""
-    unit_path = Path(unit_path)
-    with (unit_path / "metadata.json").open() as f:
-        metadata = json.load(f)
+    # unit_path = Path(unit_path)
+    # with (unit_path / "metadata.json").open() as f:
+    #    metadata = json.load(f)
+    metadata = unit_path
     unit = _get_unit_type(metadata["unit_name"])
-    return unit.from_path(unit_path)
+    return unit.from_dict(unit_path)

@@ -98,6 +98,13 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
         return cls(**d)
 
 
+class LogRegIntentClassifierAllClsConfig(LogRegIntentClassifierConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier import LogRegIntentClassifierAllCls
+        return LogRegIntentClassifierAllCls.unit_name
+
+
 class IntentClassifierDataAugmentationConfig(Config):
     """Configuration used by a :class:`.LogRegIntentClassifier` which defines
         how to augment data to improve the training of the classifier
@@ -160,10 +167,11 @@ class FeaturizerConfig(Config):
     """
 
     def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
-                 word_clusters_name=None):
+                 word_clusters_name=None, keep_important_stopwords=True):
         self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
         self.word_clusters_name = word_clusters_name
+        self.keep_important_stopwords = keep_important_stopwords
 
     def get_required_resources(self):
         if self.word_clusters_name is None:
@@ -176,7 +184,8 @@ class FeaturizerConfig(Config):
         return {
             "sublinear_tf": self.sublinear_tf,
             "pvalue_threshold": self.pvalue_threshold,
-            "word_clusters_name": self.word_clusters_name
+            "word_clusters_name": self.word_clusters_name,
+            "keep_important_stopwords": self.keep_important_stopwords
         }
 
     @classmethod

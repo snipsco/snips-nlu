@@ -32,6 +32,7 @@ class TestResult(SnipsTest):
             RES_INTENT: {RES_INTENT_NAME: 'world', RES_PROBABILITY: 0.5},
             RES_SLOTS: [{RES_MATCH_RANGE: {"start": 3, "end": 5},
                          RES_ENTITY: 'slot_entity',
+                         RES_PROBABILITY: 1.0,
                          RES_SLOT_NAME: 'slot_name',
                          RES_VALUE: 'slot_value'}],
             RES_INPUT: input_}

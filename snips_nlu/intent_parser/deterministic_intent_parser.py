@@ -200,14 +200,15 @@ class DeterministicIntentParser(IntentParser):
         The data at the given path must have been generated using
         :func:`~DeterministicIntentParser.persist`
         """
-        path = Path(path)
-        metadata_path = path / "intent_parser.json"
-        if not metadata_path.exists():
-            raise OSError("Missing deterministic intent parser metadata file: "
-                          "%s" % metadata_path.name)
+        #path = Path(path)
+        #metadata_path = path / "intent_parser.json"
+        #if not metadata_path.exists():
+        #    raise OSError("Missing deterministic intent parser metadata file: "
+        #                  "%s" % metadata_path.name)
 
-        with metadata_path.open() as f:
-            metadata = json.load(f)
+        #with metadata_path.open() as f:
+        #    metadata = json.load(f)
+        metadata = path
         return cls.from_dict(metadata)
 
     def to_dict(self):

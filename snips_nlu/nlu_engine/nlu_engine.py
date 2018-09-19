@@ -277,6 +277,43 @@ class SnipsNLUEngine(ProcessingUnit):
             engine = cls.from_path(tmp_dir / "trained_engine")
         return engine
 
+    def to_dict(self):
+        """Returns a json-serializable dict"""
+        intent_parsers = [parser.to_dict() for parser in self.intent_parsers]
+        return {
+            "unit_name": self.unit_name,
+            "dataset_metadata": self._dataset_metadata,
+            "intent_parsers": intent_parsers,
+            "config": self.config.to_dict(),
+            "model_version": __model_version__,
+            "training_package_version": __version__
+        }
+
+    @classmethod
+    def from_dict(cls, unit_dict):
+        """Creates a :class:`SnipsNLUEngine` instance from a dict
+
+        The dict must have been generated with :func:`~SnipsNLUEngine.to_dict`
+
+        Raises:
+            ValueError: When there is a mismatch with the model version
+        """
+        model_version = unit_dict.get("model_version")
+        if model_version is None or model_version != __model_version__:
+            raise ValueError(
+                "Incompatible data model: persisted object=%s, python lib=%s"
+                % (model_version, __model_version__))
+
+        nlu_engine = cls(config=unit_dict["config"])
+        # pylint:disable=protected-access
+        nlu_engine._dataset_metadata = unit_dict["dataset_metadata"]
+        # pylint:enable=protected-access
+        nlu_engine.intent_parsers = [
+            load_processing_unit(parser_dict)
+            for parser_dict in unit_dict["intent_parsers"]]
+
+        return nlu_engine
+
 
 def _get_dataset_metadata(dataset):
     entities = dict()

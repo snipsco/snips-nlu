@@ -164,14 +164,15 @@ class ProbabilisticIntentParser(IntentParser):
         The data at the given path must have been generated using
         :func:`~ProbabilisticIntentParser.persist`
         """
-        path = Path(path)
-        model_path = path / "intent_parser.json"
-        if not model_path.exists():
-            raise OSError("Missing probabilistic intent parser model file: "
-                          "%s" % model_path.name)
+        #path = Path(path)
+        #model_path = path / "intent_parser.json"
+        #if not model_path.exists():
+        #    raise OSError("Missing probabilistic intent parser model file: "
+        #                  "%s" % model_path.name)
 
-        with model_path.open() as f:
-            model = json.load(f)
+        #with model_path.open() as f:
+        #    model = json.load(f)
+        model = path
 
         parser = cls(config=cls.config_type.from_dict(model["config"]))
         classifier = None
@@ -186,6 +187,44 @@ class ProbabilisticIntentParser(IntentParser):
             slot_filler = load_processing_unit(slot_filler_path)
             slot_fillers[intent] = slot_filler
 
+        parser.intent_classifier = classifier
+        parser.slot_fillers = slot_fillers
+        return parser
+
+    def to_dict(self):
+        """Returns a json-serializable dict"""
+        intent_classifier_dict = None
+
+        if self.intent_classifier is not None:
+            intent_classifier_dict = self.intent_classifier.to_dict()
+
+        slot_fillers = {
+            intent: slot_filler.to_dict()
+            for intent, slot_filler in iteritems(self.slot_fillers)}
+
+        return {
+            "unit_name": self.unit_name,
+            "intent_classifier": intent_classifier_dict,
+            "config": self.config.to_dict(),
+            "slot_fillers": slot_fillers,
+        }
+
+    @classmethod
+    def from_dict(cls, unit_dict):
+        """Creates a :class:`ProbabilisticIntentParser` instance from a dict
+
+        The dict must have been generated with
+        :func:`~ProbabilisticIntentParser.to_dict`
+        """
+        slot_fillers = {
+            intent: load_processing_unit(slot_filler_dict) for
+            intent, slot_filler_dict in
+            iteritems(unit_dict["slot_fillers"])}
+        classifier = None
+        if unit_dict["intent_classifier"] is not None:
+            classifier = load_processing_unit(unit_dict["intent_classifier"])
+
+        parser = cls(config=cls.config_type.from_dict(unit_dict["config"]))
         parser.intent_classifier = classifier
         parser.slot_fillers = slot_fillers
         return parser

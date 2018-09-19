@@ -33,6 +33,7 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
     # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=None, crf_args=None,
+                 exhaustive_permutations_threshold=4 ** 3,
                  data_augmentation_config=None, random_seed=None):
         if tagging_scheme is None:
             from snips_nlu.slot_filler.crf_utils import TaggingScheme
@@ -47,6 +48,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         self._tagging_scheme = None
         self.tagging_scheme = tagging_scheme
         self.crf_args = crf_args
+        self.exhaustive_permutations_threshold = \
+            exhaustive_permutations_threshold
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         self.random_seed = random_seed
@@ -106,6 +109,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
             "feature_factory_configs": self.feature_factory_configs,
             "crf_args": self.crf_args,
             "tagging_scheme": self.tagging_scheme.value,
+            "exhaustive_permutations_threshold":
+                self.exhaustive_permutations_threshold,
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
             "random_seed": self.random_seed
@@ -118,6 +123,13 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
             d = deepcopy(obj_dict)
             d.pop("unit_name")
         return cls(**d)
+
+
+class CRFSlotFillerWithProbsConfig(CRFSlotFillerConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.slot_filler import CRFSlotFillerWithProbs
+        return CRFSlotFillerWithProbs.unit_name
 
 
 class SlotFillerDataAugmentationConfig(Config):

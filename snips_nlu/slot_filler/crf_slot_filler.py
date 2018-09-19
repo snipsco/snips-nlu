@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import io
 import base64
 import json
 import logging
@@ -16,11 +17,11 @@ from sklearn_crfsuite import CRF
 
 from snips_nlu.builtin_entities import get_builtin_entities, is_builtin_entity
 from snips_nlu.constants import (DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
-                                 RES_MATCH_RANGE, RES_VALUE, START)
+                                 RES_MATCH_RANGE, RES_VALUE, START, STEMS)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
-from snips_nlu.preprocessing import tokenize
+from snips_nlu.preprocessing import tokenize, stem
 from snips_nlu.slot_filler.crf_utils import (OUTSIDE, TAGS, TOKENS,
                                              positive_tagging,
                                              tag_name_to_slot_name,
@@ -164,7 +165,13 @@ class CRFSlotFiller(SlotFiller):
         features = self.compute_features(tokens)
         tags = [_decode_tag(tag) for tag in
                 self.crf_model.predict_single(features)]
-        slots = tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
+        import operator
+        new_tags = []
+        for t in self.crf_model.predict_marginals_single(features):
+            max_entry = max(t.iteritems(), key=operator.itemgetter(1))
+            new_tags.append((_decode_tag(max_entry[0]), max_entry[1]))
+
+        slots = tags_to_slots(text, tokens, new_tags, self.config.tagging_scheme,
                               self.slot_name_mapping)
 
         builtin_slots_names = set(slot_name for (slot_name, entity) in
@@ -176,6 +183,7 @@ class CRFSlotFiller(SlotFiller):
         # Replace tags corresponding to builtin entities by outside tags
         tags = _replace_builtin_tags(tags, builtin_slots_names)
         return self._augment_slots(text, tokens, tags, builtin_slots_names)
+
 
     def compute_features(self, tokens, drop_out=False):
         """Compute features on the provided tokens
@@ -253,7 +261,7 @@ class CRFSlotFiller(SlotFiller):
             log += "\n%s %s: %s" % (feat, _decode_tag(tag), weight)
         return log
 
-    def _augment_slots(self, text, tokens, tags, builtin_slots_names):
+    def _augment_slots(self, text, tokens, tags, builtin_slots_names, with_probs=False):
         scope = set(self.slot_name_mapping[slot]
                     for slot in builtin_slots_names)
         builtin_entities = [
@@ -296,15 +304,20 @@ class CRFSlotFiller(SlotFiller):
                 indexes = tokens_indexes[slot_index]
                 sub_tags_sequence = positive_tagging(
                     self.config.tagging_scheme, slot, len(indexes))
-                updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
+
+                if with_probs:
+                    tag_probs = [ut[1] for ut in updated_tags]
+                    sub_tags_sequence = zip(sub_tags_sequence, tag_probs[indexes[0]:indexes[-1] + 1])
+                #updated_tags[indexes[0]:indexes[-1] + 1] = sub_tags_sequence
+                updated_tags[indexes[0]:indexes[-1] + 1] = \
+                                                   zip(sub_tags_sequence, [ut[1] for ut in updated_tags[indexes[0]:indexes[-1] + 1]])
             score = self._get_sequence_probability(features, updated_tags)
             if score > best_permutation_score:
                 best_updated_tags = updated_tags
                 best_permutation_score = score
         slots = tags_to_slots(text, tokens, best_updated_tags,
                               self.config.tagging_scheme,
-                              self.slot_name_mapping)
-
+                              self.slot_name_mapping, with_probs=with_probs)
         return _reconciliate_builtin_slots(text, slots, builtin_entities)
 
     @check_persisted_path
@@ -358,6 +371,40 @@ class CRFSlotFiller(SlotFiller):
         if crf_model_file is not None:
             crf = _crf_model_from_path(path / crf_model_file)
             slot_filler.crf_model = crf
+        return slot_filler
+
+    def to_dict(self):
+        """Returns a json-serializable dict"""
+        crf_model_data = None
+
+        if self.crf_model is not None:
+            crf_model_data = _serialize_crf_model(self.crf_model)
+
+        return {
+            "unit_name": self.unit_name,
+            "language_code": self.language,
+            "intent": self.intent,
+            "slot_name_mapping": self.slot_name_mapping,
+            "crf_model_data": crf_model_data,
+            "config": self.config.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, unit_dict):
+        """Creates a :class:`CRFSlotFiller` instance from a dict
+
+        The dict must have been generated with :func:`~CRFSlotFiller.to_dict`
+        """
+        slot_filler_config = cls.config_type.from_dict(unit_dict["config"])
+        slot_filler = cls(config=slot_filler_config)
+
+        crf_model_data = unit_dict["crf_model_data"]
+        if crf_model_data is not None:
+            crf = _deserialize_crf_model(crf_model_data)
+            slot_filler.crf_model = crf
+        slot_filler.language = unit_dict["language_code"]
+        slot_filler.intent = unit_dict["intent"]
+        slot_filler.slot_name_mapping = unit_dict["slot_name_mapping"]
         return slot_filler
 
     def __del__(self):
@@ -491,6 +538,21 @@ def _crf_model_from_path(crf_model_path):
     with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",
                                      delete=False) as f:
         f.write(crf_model_data)
+        f.flush()
+        crf = CRF(model_filename=f.name)
+    return crf
+
+def _serialize_crf_model(crf_model):
+    with io.open(crf_model.modelfile.name, mode='rb') as f:
+        crfsuite_data = base64.b64encode(f.read()).decode('ascii')
+    return crfsuite_data
+
+
+def _deserialize_crf_model(crf_model_data):
+    b64_data = base64.b64decode(crf_model_data)
+    with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",
+                                     delete=False) as f:
+        f.write(b64_data)
         f.flush()
         crf = CRF(model_filename=f.name)
     return crf

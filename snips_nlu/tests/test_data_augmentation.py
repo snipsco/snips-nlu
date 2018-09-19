@@ -81,7 +81,8 @@ class TestDataAugmentation(SnipsTest):
 
     @patch("snips_nlu.data_augmentation.get_builtin_entity_examples")
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
-    def test_entities_iterators_with_builtin_examples(self, _,
+    def test_entities_iterators_with_builtin_examples(self,
+                                                      _,
                                                       mocked_builtin_entity_examples):
         # Given
         language = "en"

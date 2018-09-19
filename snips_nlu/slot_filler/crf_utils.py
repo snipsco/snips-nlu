@@ -1,9 +1,10 @@
 from __future__ import unicode_literals
+import types
 
 from builtins import range
 from enum import Enum, unique
 
-from snips_nlu.constants import END, SLOT_NAME, START, TEXT
+from snips_nlu.constants import END, SLOT_NAME, START, TEXT, PROBABILITY
 from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
 
@@ -31,126 +32,147 @@ class TaggingScheme(Enum):
          BWEMO"""
 
 
+         
+def _resolve_slot_name(tag_tuple):
+    if (isinstance(tag_tuple[0], types.TupleType)):
+        return tag_tuple[0][0]          
+    else:
+        return tag_tuple[0]
+
+
 def tag_name_to_slot_name(tag):
-    return tag[2:]
+    return _resolve_slot_name(tag)[2:]
 
 
 def start_of_io_slot(tags, i):
     if i == 0:
-        return tags[i] != OUTSIDE
-    if tags[i] == OUTSIDE:
+        return _resolve_slot_name(tags[i]) != OUTSIDE
+    if _resolve_slot_name(tags[i]) == OUTSIDE:
         return False
-    return tags[i - 1] == OUTSIDE
+    return _resolve_slot_name(tags[i - 1]) == OUTSIDE
 
 
 def end_of_io_slot(tags, i):
     if i + 1 == len(tags):
-        return tags[i] != OUTSIDE
-    if tags[i] == OUTSIDE:
+        return _resolve_slot_name(tags[i]) != OUTSIDE
+    if _resolve_slot_name(tags[i]) == OUTSIDE:
         return False
-    return tags[i + 1] == OUTSIDE
+    return _resolve_slot_name(tags[i + 1]) == OUTSIDE
 
 
 def start_of_bio_slot(tags, i):
     if i == 0:
-        return tags[i] != OUTSIDE
-    if tags[i] == OUTSIDE:
+        return _resolve_slot_name(tags[i]) != OUTSIDE
+    if _resolve_slot_name(tags[i]) == OUTSIDE:
         return False
-    if tags[i].startswith(BEGINNING_PREFIX):
-        return True
-    if tags[i - 1] != OUTSIDE:
+    try:    
+        if _resolve_slot_name(tags[i]).startswith(BEGINNING_PREFIX):
+            return True
+    except:
+        raise ValueError(tags)       
+    if _resolve_slot_name(tags[i - 1]) != OUTSIDE:
         return False
     return True
 
 
 def end_of_bio_slot(tags, i):
     if i + 1 == len(tags):
-        return tags[i] != OUTSIDE
-    if tags[i] == OUTSIDE:
+        return _resolve_slot_name(tags[i]) != OUTSIDE
+    if _resolve_slot_name(tags[i]) == OUTSIDE:
         return False
-    if tags[i + 1].startswith(INSIDE_PREFIX):
+    if _resolve_slot_name(tags[i + 1]).startswith(INSIDE_PREFIX):
         return False
     return True
 
 
 def start_of_bilou_slot(tags, i):
     if i == 0:
-        return tags[i] != OUTSIDE
-    if tags[i] == OUTSIDE:
+        return _resolve_slot_name(tags[i]) != OUTSIDE
+    if _resolve_slot_name(tags[i]) == OUTSIDE:
         return False
-    if tags[i].startswith(BEGINNING_PREFIX):
+    if _resolve_slot_name(tags[i]).startswith(BEGINNING_PREFIX):
         return True
-    if tags[i].startswith(UNIT_PREFIX):
+    if _resolve_slot_name(tags[i]).startswith(UNIT_PREFIX):
         return True
-    if tags[i - 1].startswith(UNIT_PREFIX):
+    if _resolve_slot_name(tags[i - 1]).startswith(UNIT_PREFIX):
         return True
-    if tags[i - 1].startswith(LAST_PREFIX):
+    if _resolve_slot_name(tags[i - 1]).startswith(LAST_PREFIX):
         return True
-    if tags[i - 1] != OUTSIDE:
+    if _resolve_slot_name(tags[i - 1]) != OUTSIDE:
         return False
     return True
 
 
 def end_of_bilou_slot(tags, i):
     if i + 1 == len(tags):
-        return tags[i] != OUTSIDE
-    if tags[i] == OUTSIDE:
+        return _resolve_slot_name(tags[i]) != OUTSIDE
+    if _resolve_slot_name(tags[i]) == OUTSIDE:
         return False
-    if tags[i + 1] == OUTSIDE:
+    if _resolve_slot_name(tags[i + 1]) == OUTSIDE:
         return True
-    if tags[i].startswith(LAST_PREFIX):
+    if _resolve_slot_name(tags[i]).startswith(LAST_PREFIX):
         return True
-    if tags[i].startswith(UNIT_PREFIX):
+    if _resolve_slot_name(tags[i]).startswith(UNIT_PREFIX):
         return True
-    if tags[i + 1].startswith(BEGINNING_PREFIX):
+    if _resolve_slot_name(tags[i + 1]).startswith(BEGINNING_PREFIX):
         return True
-    if tags[i + 1].startswith(UNIT_PREFIX):
+    if _resolve_slot_name(tags[i + 1]).startswith(UNIT_PREFIX):
         return True
     return False
 
 
-def _tags_to_preslots(tags, tokens, is_start_of_slot, is_end_of_slot):
+def list_product(list):
+    from operator import mul
+    return reduce(mul, list, 1)
+
+
+def _tags_to_preslots(tags, tokens, is_start_of_slot, is_end_of_slot, with_probs = False):
     slots = []
     current_slot_start = 0
     for i, tag in enumerate(tags):
+        tag_ = {}  
         if is_start_of_slot(tags, i):
             current_slot_start = i
         if is_end_of_slot(tags, i):
-            slots.append({
-                RANGE: {
+            tag_[RANGE] = {
                     START: tokens[current_slot_start].start,
                     END: tokens[i].end
-                },
-                SLOT_NAME: tag_name_to_slot_name(tag)
-            })
+                           }
+            tag_[SLOT_NAME] = tag_name_to_slot_name(tag)      
+            if with_probs:
+                tag_[PROBABILITY] = list_product([tag[1] for tag in tags[current_slot_start:i+1]])
+            slots.append(tag_)
             current_slot_start = i
     return slots
 
 
-def tags_to_preslots(tokens, tags, tagging_scheme):
+def tags_to_preslots(tokens, tags, tagging_scheme, with_probs = False):
     if tagging_scheme == TaggingScheme.IO:
         slots = _tags_to_preslots(tags, tokens, start_of_io_slot,
-                                  end_of_io_slot)
+                                  end_of_io_slot, with_probs = with_probs)
     elif tagging_scheme == TaggingScheme.BIO:
         slots = _tags_to_preslots(tags, tokens, start_of_bio_slot,
-                                  end_of_bio_slot)
+                                  end_of_bio_slot, with_probs = with_probs)
     elif tagging_scheme == TaggingScheme.BILOU:
         slots = _tags_to_preslots(tags, tokens, start_of_bilou_slot,
-                                  end_of_bilou_slot)
+                                  end_of_bilou_slot, with_probs = with_probs)
     else:
         raise ValueError("Unknown tagging scheme %s" % tagging_scheme)
     return slots
 
 
-def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping):
-    slots = tags_to_preslots(tokens, tags, tagging_scheme)
-    return [
-        unresolved_slot(match_range=slot[RANGE],
-                        value=text[slot[RANGE][START]:slot[RANGE][END]],
-                        entity=intent_slots_mapping[slot[SLOT_NAME]],
-                        slot_name=slot[SLOT_NAME])
-        for slot in slots
-    ]
+def tags_to_slots(text, tokens, tags, tagging_scheme, intent_slots_mapping, with_probs = False):
+    slots = tags_to_preslots(tokens, tags, tagging_scheme, with_probs = with_probs)
+    temp_slots = []
+    for slot in slots: 
+        slot_params = dict(unresolved_slot(range=slot[RANGE],
+                    value=text[slot[RANGE][START]:slot[RANGE][END]],
+                    entity=intent_slots_mapping[slot[SLOT_NAME]],
+                    slot_name=slot[SLOT_NAME]))
+        if with_probs:
+            slot_params['probability'] = slot[PROBABILITY]
+        temp_slots.append(unresolved_slot(**slot_params))
+    return temp_slots      
 
 
 def positive_tagging(tagging_scheme, slot_name, slot_size):

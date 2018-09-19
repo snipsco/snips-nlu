@@ -147,6 +147,7 @@ class TestCRFSlotFiller(FixtureTest):
             slots = slot_filler.get_slots("string0")
             expected_slot = {
                 "entity": "non_ascìi_entïty",
+                "probability": 1.0,
                 "range": {
                     "start": 0,
                     "end": 7

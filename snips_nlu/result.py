@@ -1,8 +1,12 @@
 from __future__ import unicode_literals
 
 from snips_nlu.constants import (
-    RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
-    RES_PROBABILITY, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
+    RES_ENTITY, RES_INPUT,
+    RES_INTENT, RES_INTENT_NAME,
+    RES_MATCH_RANGE,
+    RES_PROBABILITY, RES_RAW_VALUE,
+    RES_SLOTS, RES_SLOT_NAME,
+    RES_VALUE, RES_INPUT)
 
 
 def intent_classification_result(intent_name, probability):
@@ -20,7 +24,7 @@ def intent_classification_result(intent_name, probability):
     }
 
 
-def unresolved_slot(match_range, value, entity, slot_name):
+def unresolved_slot(range, value, entity, slot_name, probability=1.0):
     """Creates an internal slot yet to be resolved
 
     Example:
@@ -37,14 +41,17 @@ def unresolved_slot(match_range, value, entity, slot_name):
             },
             "slotName": "startDate",
             "value": "tomorrow"
+            "probability": 0.7
         }
     """
-    return {
-        RES_MATCH_RANGE: _convert_range(match_range),
+    result = {
+        RES_MATCH_RANGE: _convert_range(range),
         RES_VALUE: value,
         RES_ENTITY: entity,
         RES_SLOT_NAME: slot_name
     }
+    result[RES_PROBABILITY] = probability
+    return result
 
 
 def custom_slot(internal_slot, resolved_value=None):
@@ -73,16 +80,17 @@ def custom_slot(internal_slot, resolved_value=None):
 
     if resolved_value is None:
         resolved_value = internal_slot[RES_VALUE]
-    return {
-        RES_MATCH_RANGE: _convert_range(internal_slot[RES_MATCH_RANGE]),
-        RES_RAW_VALUE: internal_slot[RES_VALUE],
-        RES_VALUE: {
-            "kind": "Custom",
-            "value": resolved_value
-        },
-        RES_ENTITY: internal_slot[RES_ENTITY],
-        RES_SLOT_NAME: internal_slot[RES_SLOT_NAME]
-    }
+    result = {RES_MATCH_RANGE: _convert_range(internal_slot[RES_MATCH_RANGE]),
+              RES_RAW_VALUE: internal_slot[RES_VALUE],
+              RES_VALUE: {"kind": "Custom",
+                          "value": resolved_value
+                         },
+              RES_ENTITY: internal_slot[RES_ENTITY],
+              RES_SLOT_NAME: internal_slot[RES_SLOT_NAME]
+             }
+    if internal_slot.get(RES_PROBABILITY) is not None:
+        result[RES_PROBABILITY] = internal_slot.get(RES_PROBABILITY)
+    return result
 
 
 def builtin_slot(internal_slot, resolved_value):
@@ -118,6 +126,7 @@ def builtin_slot(internal_slot, resolved_value):
             "slotName": "beverageTemperature"
         }
     """
+    """
     return {
         RES_MATCH_RANGE: _convert_range(internal_slot[RES_MATCH_RANGE]),
         RES_RAW_VALUE: internal_slot[RES_VALUE],
@@ -125,9 +134,22 @@ def builtin_slot(internal_slot, resolved_value):
         RES_ENTITY: internal_slot[RES_ENTITY],
         RES_SLOT_NAME: internal_slot[RES_SLOT_NAME]
     }
+   """
+    result = {
+        RES_MATCH_RANGE: _convert_range(internal_slot[RES_MATCH_RANGE]),
+        RES_RAW_VALUE: internal_slot[RES_VALUE],
+        RES_VALUE: resolved_value,
+        RES_ENTITY: internal_slot[RES_ENTITY],
+        RES_SLOT_NAME: internal_slot[RES_SLOT_NAME]
+             }
+    if internal_slot.get(RES_PROBABILITY) is not None:
+        result[RES_PROBABILITY] = internal_slot.get(RES_PROBABILITY)
+    return result
 
 
-def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
+def resolved_slot(match_range, raw_value,
+                  resolved_value, entity,
+                  slot_name, probability=1.0):
     """Creates a resolved slot
 
     Args:
@@ -137,6 +159,10 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         resolved_value (dict): Resolved value of the slot
         entity (str): Entity which the slot belongs to
         slot_name (str): Slot type
+        probability (float):
+        If coming from a probabilistic model, the probability
+            that this is a slot for the detected entity. If not provided,
+            this is a result from deterministic parser and 1.0 is returned
 
     Returns:
         dict: The resolved slot
@@ -153,6 +179,7 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         >>> import json
         >>> print(json.dumps(slot, indent=4, sort_keys=True))
         {
+            "probability": 1.0,
             "entity": "beverage",
             "range": {
                 "end": 19,
@@ -167,13 +194,15 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
             }
         }
     """
-    return {
+    result = {
         RES_MATCH_RANGE: match_range,
         RES_RAW_VALUE: raw_value,
         RES_VALUE: resolved_value,
         RES_ENTITY: entity,
         RES_SLOT_NAME: slot_name
     }
+    result[RES_PROBABILITY] = probability
+    return result
 
 
 def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
@@ -230,6 +259,14 @@ def is_empty(result):
         True
     """
     return result[RES_INTENT] is None and result[RES_SLOTS] is None
+
+
+def is_empty_list(input):
+    """
+    Added to this file to handle the failed nosetest
+    """
+    res = (input == [])
+    return res
 
 
 def empty_result(input):  # pylint:disable=redefined-builtin

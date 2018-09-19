@@ -463,6 +463,7 @@ class TestDeterministicIntentParser(FixtureTest):
 
             expected_slot = {
                 'entity': 'non_ascìi_entïty',
+                'probability': 1.0,
                 'range': {
                     "start": 0,
                     "end": 7

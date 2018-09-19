@@ -60,6 +60,25 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
         return cls(**d)
 
 
+class ProbabilisticIntentParserAllClsConfig(ProbabilisticIntentParserConfig):
+    def __init__(self, intent_classifier_config=None, slot_filler_config=None):
+        if intent_classifier_config is None:
+            from snips_nlu.pipeline.configs import LogRegIntentClassifierAllClsConfig
+            intent_classifier_config = LogRegIntentClassifierAllClsConfig()
+        if slot_filler_config is None:
+            from snips_nlu.pipeline.configs import CRFSlotFillerWithProbsConfig
+            slot_filler_config = CRFSlotFillerWithProbsConfig()
+        self.intent_classifier_config = get_processing_unit_config(
+            intent_classifier_config)
+        self.slot_filler_config = get_processing_unit_config(
+            slot_filler_config)
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_parser import ProbabilisticIntentParserAllCls
+        return ProbabilisticIntentParserAllCls.unit_name
+
+
 class DeterministicIntentParserConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.DeterministicIntentParser`
 
@@ -78,10 +97,10 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
     """
 
     # pylint: disable=super-init-not-called
-    def __init__(self, max_queries=100, max_pattern_length=1000):
+    def __init__(self, max_queries=100, max_pattern_length=1000, max_entities=200):
         self.max_queries = max_queries
         self.max_pattern_length = max_pattern_length
-
+        self.max_entities = max_entities
     # pylint: enable=super-init-not-called
 
     @classproperty
@@ -97,7 +116,8 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         return {
             "unit_name": self.unit_name,
             "max_queries": self.max_queries,
-            "max_pattern_length": self.max_pattern_length
+            "max_pattern_length": self.max_pattern_length,
+            "max_entities": self.max_entities
         }
 
     @classmethod

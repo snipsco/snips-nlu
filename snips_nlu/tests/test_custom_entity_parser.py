@@ -7,8 +7,9 @@ from mock import patch
 
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser import CustomEntityParser
-from snips_nlu.entity_parser.custom_entity_parser import \
-    CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import (
+    CustomEntityParserUsage, _compute_char_shifts)
+from snips_nlu.preprocessing import tokenize
 from snips_nlu.tests.utils import FixtureTest
 
 DATASET = validate_and_format_dataset({
@@ -155,6 +156,38 @@ class TestCustomEntityParser(FixtureTest):
         ]
         self.assertListEqual(expected_entities, result)
 
+    def test_should_parse_with_proper_tokenization(self):
+        # Given
+        parser = CustomEntityParser.build(
+            DATASET, CustomEntityParserUsage.WITHOUT_STEMS)
+        text = "  dummy_1?dummy_2"
+
+        # When
+        result = parser.parse(text)
+
+        # Then
+        expected_entities = [
+            {
+                "value": "dummy_1",
+                "resolved_value": "dummy_entity_1",
+                "range": {
+                    "start": 2,
+                    "end": 9
+                },
+                "entity_identifier": "dummy_entity_1"
+            },
+            {
+                "value": "dummy_2",
+                "resolved_value": "dummy_entity_2",
+                "range": {
+                    "start": 10,
+                    "end": 17
+                },
+                "entity_identifier": "dummy_entity_2"
+            }
+        ]
+        self.assertListEqual(expected_entities, result)
+
     def test_should_respect_scope(self):
         # Given
         parser = CustomEntityParser.build(
@@ -220,6 +253,18 @@ class TestCustomEntityParser(FixtureTest):
             }
         ]
         self.assertListEqual(expected_entities, result)
+
+    def test_should_compute_tokenization_shift(self):
+        # Given
+        text = "  hello?   world"
+        tokens = tokenize(text, "en")
+
+        # When
+        shifts = _compute_char_shifts(tokens)
+
+        # Then
+        expected_shifts = [-2, -2, -2, -2, -2, -1, -1, -3, -3, -3, -3, -3, -3]
+        self.assertListEqual(expected_shifts, shifts)
 
 
 # pylint: disable=unused-argument

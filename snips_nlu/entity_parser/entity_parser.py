@@ -1,7 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from abc import ABCMeta, abstractclassmethod
+from abc import ABCMeta, abstractclassmethod, abstractmethod
+from copy import deepcopy
 
 from future.builtins import object
 from future.utils import with_metaclass
@@ -14,9 +15,6 @@ class EntityParser(with_metaclass(ABCMeta, object)):
         self._parser = parser
         self._cache = LimitedSizeDict(size_limit=1000)
 
-    def persist(self, path):
-        self._parser.persist(path)
-
     def parse(self, text, scope=None, use_cache=True):
         text = text.lower()
         if not use_cache:
@@ -26,8 +24,12 @@ class EntityParser(with_metaclass(ABCMeta, object)):
         if cache_key not in self._cache:
             parser_result = self._parser.parse(text, scope)
             self._cache[cache_key] = parser_result
-        return self._cache[cache_key]
+        return deepcopy(self._cache[cache_key])
+
+    @abstractmethod
+    def persist(self, path):
+        pass
 
     @abstractclassmethod
     def from_path(cls, path):
-        raise NotImplementedError
+        pass

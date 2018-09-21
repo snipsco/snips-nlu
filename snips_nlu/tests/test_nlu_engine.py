@@ -5,7 +5,7 @@ from builtins import str
 from copy import deepcopy
 from pathlib import Path
 
-from mock import patch
+from mock import patch, MagicMock
 from snips_nlu_ontology import get_all_languages
 
 import snips_nlu
@@ -357,8 +357,13 @@ class TestSnipsNLUEngine(FixtureTest):
             self.tmp_file_path / "test_intent_parser1_2" / "metadata.json",
             {"unit_name": "test_intent_parser1"})
 
-    def test_should_be_deserializable_from_dir(self):
+    @patch("snips_nlu.nlu_engine.nlu_engine.CustomEntityParser")
+    @patch("snips_nlu.nlu_engine.nlu_engine.BuiltinEntityParser")
+    def test_should_be_deserializable_from_dir(
+            self, mocked_builtin_entity_parser, mocked_custom_entity_parser):
         # Given
+        mocked_builtin_entity_parser.from_path = MagicMock()
+        mocked_custom_entity_parser.from_path = MagicMock()
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
 
@@ -406,11 +411,6 @@ class TestSnipsNLUEngine(FixtureTest):
         parser1_path.mkdir()
         parser2_path = self.tmp_file_path / "test_intent_parser2"
         parser2_path.mkdir()
-        builtin_entity_parser_path = \
-            self.tmp_file_path / "builtin_entity_parser"
-        builtin_entity_parser_path.mkdir()
-        custom_entity_parser_path = self.tmp_file_path / "custom_entity_parser"
-        custom_entity_parser_path.mkdir()
         (self.tmp_file_path / "resources").mkdir()
         self.writeJsonContent(self.tmp_file_path / "nlu_engine.json",
                               engine_dict)
@@ -418,10 +418,6 @@ class TestSnipsNLUEngine(FixtureTest):
                               {"unit_name": "test_intent_parser1"})
         self.writeJsonContent(parser2_path / "metadata.json",
                               {"unit_name": "test_intent_parser2"})
-        self.writeJsonContent(builtin_entity_parser_path / "metadata.json",
-                              {"language": "EN"})
-        self.writeJsonContent(custom_entity_parser_path / "metadata.json",
-                              {"parsers_metadata": []})
 
         # When
         engine = SnipsNLUEngine.from_path(self.tmp_file_path)
@@ -435,6 +431,10 @@ class TestSnipsNLUEngine(FixtureTest):
         self.assertDictEqual(engine._dataset_metadata, dataset_metadata)
         # pylint:enable=protected-access
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
+        mocked_custom_entity_parser.from_path.assert_called_once_with(
+            self.tmp_file_path / "custom_entity_parser")
+        mocked_builtin_entity_parser.from_path.assert_called_once_with(
+            self.tmp_file_path / "builtin_entity_parser")
 
     def test_should_be_serializable_into_dir_when_empty(self):
         # Given

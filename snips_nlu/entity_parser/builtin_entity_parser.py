@@ -16,6 +16,9 @@ _BUILTIN_ENTITY_PARSERS = dict()
 
 
 class BuiltinEntityParser(EntityParser):
+    def persist(self, path):
+        self._parser.persist(path)
+
     @classmethod
     def from_path(cls, path):
         parser = _BuiltinEntityParser.from_path(path)

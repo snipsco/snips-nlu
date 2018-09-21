@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from copy import deepcopy
+
 from snips_nlu_utils import compute_all_ngrams
 
 from snips_nlu.constants import (END, RES_MATCH_RANGE, START)
@@ -15,7 +17,7 @@ def get_all_ngrams(tokens):
     if key not in _NGRAMS_CACHE:
         ngrams = compute_all_ngrams(tokens, len(tokens))
         _NGRAMS_CACHE[key] = ngrams
-    return _NGRAMS_CACHE[key]
+    return deepcopy(_NGRAMS_CACHE[key])
 
 
 def get_word_chunk(word, chunk_size, chunk_start, reverse=False):

@@ -243,12 +243,12 @@ def _get_tokens_clusters(tokens, language, cluster_name):
 
 def _entity_name_to_feature(entity_name, language):
     return "entityfeature%s" % "".join(tokenize_light(
-        entity_name, language))
+        entity_name.lower(), language))
 
 
 def _builtin_entity_to_feature(builtin_entity_label, language):
     return "builtinentityfeature%s" % "".join(tokenize_light(
-        builtin_entity_label, language))
+        builtin_entity_label.lower(), language))
 
 
 def _normalize_stem(text, language, use_stemming):

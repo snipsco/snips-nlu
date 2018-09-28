@@ -16,9 +16,8 @@ def debug_training(dataset_path, config_path=None):
 
     load_resources(dataset["language"])
 
-    if config_path is None:
-        config = NLUEngineConfig()
-    else:
+    config = None
+    if config_path is not None:
         with Path(config_path).open("r", encoding="utf8") as f:
             config = NLUEngineConfig.from_dict(json.load(f))
 

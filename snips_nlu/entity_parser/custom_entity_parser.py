@@ -59,8 +59,10 @@ class CustomEntityParser(EntityParser):
         }
         if parser_usage == CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS:
             for ent in viewvalues(custom_entities):
-                ent[UTTERANCES].update(
-                    _stem_entity_utterances(ent[UTTERANCES], language))
+                stemmed_utterances = _stem_entity_utterances(
+                    ent[UTTERANCES], language)
+                ent[UTTERANCES] = _merge_entity_utterances(
+                    ent[UTTERANCES], stemmed_utterances)
         elif parser_usage == CustomEntityParserUsage.WITH_STEMS:
             for ent in viewvalues(custom_entities):
                 ent[UTTERANCES] = _stem_entity_utterances(
@@ -102,6 +104,13 @@ def _stem_entity_utterances(entity_utterances, language):
         stem(raw_value, language): resolved_value
         for raw_value, resolved_value in iteritems(entity_utterances)
     }
+
+
+def _merge_entity_utterances(raw_utterances, stemmed_utterances):
+    for raw_stemmed_value, resolved_value in iteritems(stemmed_utterances):
+        if raw_stemmed_value not in raw_utterances:
+            raw_utterances[raw_stemmed_value] = resolved_value
+    return raw_utterances
 
 
 def _create_custom_entity_parser_configuration(entities):

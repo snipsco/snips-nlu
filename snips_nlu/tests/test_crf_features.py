@@ -376,18 +376,18 @@ class TestCRFFeatures(SnipsTest):
             "factory_name": "entity_match",
             "args": {
                 "tagging_scheme_code": TaggingScheme.BILOU.value,
-                "use_stemming": False
+                "use_stemming": True
             },
             "offsets": [0]
         }
 
-        tokens = tokenize("2 dummy a and dummy_c", LANGUAGE_EN)
+        tokens = tokenize("2 dummy a had dummy_c", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
         dataset = deepcopy(SAMPLE_DATASET)
         dataset = validate_and_format_dataset(dataset)
         custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
+            dataset, CustomEntityParserUsage.WITH_STEMS)
         factory.fit(dataset, "dummy_intent_1")
 
         # When

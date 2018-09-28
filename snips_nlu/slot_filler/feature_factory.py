@@ -418,15 +418,21 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
                          if not is_builtin_entity(entity)]
         return self
 
-    def _transform(self, token):
+    def _transform(self, tokens):
         if self.use_stemming:
-            transformed_value = stem_token(token, self.language)
+            light_tokens = (stem_token(t, self.language) for t in tokens)
         else:
-            transformed_value = normalize_token(token)
-        return Token(
-            value=transformed_value,
-            start=token.start,
-            end=token.start + len(transformed_value))
+            light_tokens = (normalize_token(t) for t in tokens)
+        current_index = 0
+        transformed_tokens = []
+        for light_token in light_tokens:
+            transformed_token = Token(
+                value=light_token,
+                start=current_index,
+                end=current_index + len(light_token))
+            transformed_tokens.append(transformed_token)
+            current_index = transformed_token.end + 1
+        return transformed_tokens
 
     def build_features(self, builtin_entity_parser=None,
                        custom_entity_parser=None):
@@ -446,7 +452,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
     def _build_entity_match_fn(self, entity, custom_entity_parser):
 
         def entity_match(tokens, token_index):
-            transformed_tokens = [self._transform(token) for token in tokens]
+            transformed_tokens = self._transform(tokens)
             text = initial_string_from_tokens(transformed_tokens)
             token_start = transformed_tokens[token_index].start
             token_end = transformed_tokens[token_index].end

@@ -11,7 +11,7 @@ def default_features_factories():
         {
             "args": {
                 "common_words_gazetteer_name": None,
-                "use_stemming": True,
+                "use_stemming": False,
                 "n": 1
             },
             "factory_name": NgramFactory.name,
@@ -20,7 +20,7 @@ def default_features_factories():
         {
             "args": {
                 "common_words_gazetteer_name": None,
-                "use_stemming": True,
+                "use_stemming": False,
                 "n": 2
             },
             "factory_name": NgramFactory.name,
@@ -64,7 +64,7 @@ def default_features_factories():
         },
         {
             "args": {
-                "use_stemming": True,
+                "use_stemming": False,
                 "tagging_scheme_code": TaggingScheme.BILOU.value,
             },
             "factory_name": CustomEntityMatchFactory.name,

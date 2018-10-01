@@ -7,10 +7,11 @@ from future.utils import with_metaclass
 from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
-from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, END, ENTITIES,
-                                 GAZETTEERS, LANGUAGE, RES_MATCH_RANGE, START,
-                                 STEMS, WORD_CLUSTERS)
-from snips_nlu.dataset import get_dataset_gazetteer_entities
+from snips_nlu.constants import (
+    CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
+    START, STEMS, WORD_CLUSTERS)
+from snips_nlu.dataset import (
+    extract_intent_entities, get_dataset_gazetteer_entities)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser import \
     CustomEntityParserUsage
@@ -414,8 +415,9 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
-        self.entities = [entity for entity in dataset[ENTITIES]
-                         if not is_builtin_entity(entity)]
+        self.entities = extract_intent_entities(
+            dataset, lambda e: not is_builtin_entity(e))[intent]
+        self.entities = list(self.entities)
         return self
 
     def _transform(self, tokens):

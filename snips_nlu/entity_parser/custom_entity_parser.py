@@ -20,9 +20,10 @@ from snips_nlu.utils import json_string
 
 
 class CustomEntityParser(EntityParser):
-    def __init__(self, parser, language=None):
+    def __init__(self, parser, language, parser_usage):
         super(CustomEntityParser, self).__init__(parser)
         self.language = language
+        self.parser_usage = parser_usage
 
     def persist(self, path):
         path = Path(path)
@@ -30,6 +31,7 @@ class CustomEntityParser(EntityParser):
         parser_directory = "parser"
         metadata = {
             "language": self.language,
+            "parser_usage": self.parser_usage.value,
             "parser_directory": parser_directory
         }
         with (path / "metadata.json").open(mode="w", encoding="utf8") as f:
@@ -42,9 +44,10 @@ class CustomEntityParser(EntityParser):
         with (path / "metadata.json").open(encoding="utf8") as f:
             metadata = json.load(f)
         language = metadata["language"]
+        parser_usage = CustomEntityParserUsage(metadata["parser_usage"])
         parser_path = path / metadata["parser_directory"]
         parser = GazetteerEntityParser.from_path(parser_path)
-        return cls(parser, language)
+        return cls(parser, language, parser_usage)
 
     @classmethod
     def build(cls, dataset, parser_usage):
@@ -73,7 +76,7 @@ class CustomEntityParser(EntityParser):
         configuration = _create_custom_entity_parser_configuration(
             custom_entities)
         parser = GazetteerEntityParser.build(configuration)
-        return cls(parser, language)
+        return cls(parser, language, parser_usage)
 
     def parse(self, text, scope=None, use_cache=True):
         text = text.lower()

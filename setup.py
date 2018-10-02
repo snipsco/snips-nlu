@@ -33,7 +33,7 @@ required = [
 
 extras_require = {
     "doc": [
-        "sphinx>=1.7,<2.0",
+        "sphinx>=1.8,<1.9",
         "sphinxcontrib-napoleon>=0.6.1,<0.7",
         "sphinx-rtd-theme>=0.2.4,<0.3"
     ],

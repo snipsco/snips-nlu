@@ -87,7 +87,11 @@ class SnipsNLUEngine(ProcessingUnit):
         self._dataset_metadata = _get_dataset_metadata(dataset)
         if self.config is None:
             language = self._dataset_metadata["language_code"]
-            self.config = self.config_type.from_dict(DEFAULT_CONFIGS[language])
+            default_config = DEFAULT_CONFIGS.get(language)
+            if default_config is not None:
+                self.config = self.config_type.from_dict(default_config)
+            else:
+                self.config = self.config_type()
 
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)

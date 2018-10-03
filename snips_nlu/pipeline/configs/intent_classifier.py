@@ -15,8 +15,7 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.LogRegIntentClassifier`
 
     Args:
-        data_augmentation_config (
-        :class:`IntentClassifierDataAugmentationConfig`):
+        data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
             Defines the strategy of the underlying data augmentation
         featurizer_config (:class:`FeaturizerConfig`): Configuration of the
             :class:`.Featurizer` used underneath

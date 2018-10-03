@@ -100,3 +100,4 @@ Result and output format
 ------------------------
 
 .. automodule:: snips_nlu.result
+   :members:

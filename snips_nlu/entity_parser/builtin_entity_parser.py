@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import json
 import shutil
 
+from future.builtins import str
+
 from snips_nlu_ontology import (
     BuiltinEntityParser as _BuiltinEntityParser, get_all_builtin_entities,
     get_all_gazetteer_entities, get_all_grammar_entities,
@@ -89,7 +91,7 @@ def _build_gazetteer_parser(target_dir, gazetteer_entities, language):
         }
         gazetteer_parser_metadata.append(parser_metadata)
         # Copy the single entity parser
-        shutil.copytree(source_parser_path, target_parser_path)
+        shutil.copytree(str(source_parser_path), str(target_parser_path))
     # Dump the parser metadata
     gazetteer_entity_parser_metadata = {
         "parsers_metadata": gazetteer_parser_metadata

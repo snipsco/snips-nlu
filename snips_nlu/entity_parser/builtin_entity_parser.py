@@ -14,6 +14,11 @@ from snips_nlu.utils import json_string, temp_dir
 
 _BUILTIN_ENTITY_PARSERS = dict()
 
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 class BuiltinEntityParser(EntityParser):
     def persist(self, path):

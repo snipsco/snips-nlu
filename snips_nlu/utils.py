@@ -24,6 +24,7 @@ from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
 
+# pylint: disable=invalid-name
 
 class abstractclassmethod(classmethod):
     __isabstractmethod__ = True
@@ -68,7 +69,7 @@ def classproperty(func):
     return ClassPropertyDescriptor(func)
 
 
-# pylint: enable=C0103
+# pylint: enable=invalid-name
 
 
 def type_error(expected_type, found_type):

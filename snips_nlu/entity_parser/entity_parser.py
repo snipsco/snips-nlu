@@ -9,10 +9,15 @@ from future.utils import with_metaclass
 
 from snips_nlu.utils import LimitedSizeDict
 
+# pylint: disable=ungrouped-imports
+
 try:
     from abc import abstractclassmethod
 except ImportError:
     from snips_nlu.utils import abstractclassmethod
+
+
+# pylint: enable=ungrouped-imports
 
 
 class EntityParser(with_metaclass(ABCMeta, object)):

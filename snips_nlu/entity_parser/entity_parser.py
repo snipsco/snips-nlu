@@ -1,13 +1,18 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from abc import ABCMeta, abstractclassmethod, abstractmethod
+from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
 from future.builtins import object
 from future.utils import with_metaclass
 
 from snips_nlu.utils import LimitedSizeDict
+
+try:
+    from abc import abstractclassmethod
+except ImportError:
+    from snips_nlu.utils import abstractclassmethod
 
 
 class EntityParser(with_metaclass(ABCMeta, object)):

@@ -53,6 +53,7 @@ class TestCustomEntityParser(FixtureTest):
 
         # When
         result = parser.parse(text)
+        result = sorted(result, key=lambda e: e["range"]["start"])
 
         # Then
         expected_entities = [
@@ -164,6 +165,7 @@ class TestCustomEntityParser(FixtureTest):
 
         # When
         result = parser.parse(text)
+        result = sorted(result, key=lambda e: e["range"]["start"])
 
         # Then
         expected_entities = [

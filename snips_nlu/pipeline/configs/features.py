@@ -5,13 +5,13 @@ def default_features_factories():
     from snips_nlu.slot_filler.crf_utils import TaggingScheme
     from snips_nlu.slot_filler.feature_factory import (
         NgramFactory, IsDigitFactory, IsFirstFactory, IsLastFactory,
-        ShapeNgramFactory, EntityMatchFactory, BuiltinEntityMatchFactory)
+        ShapeNgramFactory, CustomEntityMatchFactory, BuiltinEntityMatchFactory)
 
     return [
         {
             "args": {
                 "common_words_gazetteer_name": None,
-                "use_stemming": True,
+                "use_stemming": False,
                 "n": 1
             },
             "factory_name": NgramFactory.name,
@@ -20,7 +20,7 @@ def default_features_factories():
         {
             "args": {
                 "common_words_gazetteer_name": None,
-                "use_stemming": True,
+                "use_stemming": False,
                 "n": 2
             },
             "factory_name": NgramFactory.name,
@@ -64,10 +64,10 @@ def default_features_factories():
         },
         {
             "args": {
-                "use_stemming": True,
+                "use_stemming": False,
                 "tagging_scheme_code": TaggingScheme.BILOU.value,
             },
-            "factory_name": EntityMatchFactory.name,
+            "factory_name": CustomEntityMatchFactory.name,
             "offsets": [-2, -1, 0],
             "drop_out": 0.5
         },

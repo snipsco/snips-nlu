@@ -4,7 +4,6 @@ import json
 import shutil
 import tempfile
 import traceback as tb
-from builtins import bytes
 from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
@@ -21,6 +20,7 @@ WEATHER_DATASET_PATH = TEST_PATH / "resources" / "weather_dataset.json"
 PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
 
 
+# pylint: disable=invalid-name
 class SnipsTest(TestCase):
 
     def setUp(self):
@@ -62,11 +62,10 @@ class SnipsTest(TestCase):
 
 
 class FixtureTest(SnipsTest):
-    fixture_dir = TEST_PATH / "fixture"
-
     # pylint: disable=protected-access
     def setUp(self):
         super(FixtureTest, self).setUp()
+        self.fixture_dir = Path(tempfile.mkdtemp())
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 

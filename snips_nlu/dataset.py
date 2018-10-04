@@ -1,32 +1,46 @@
 from __future__ import division, unicode_literals
 
 import json
+from builtins import str
 from collections import Counter
 from copy import deepcopy
 
-from builtins import str
 from future.utils import iteritems, itervalues
 from snips_nlu_ontology import get_all_languages
 
-from snips_nlu.builtin_entities import is_builtin_entity
-from snips_nlu.constants import (
-    AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
-    LANGUAGE, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS, UTTERANCES, VALIDATED,
-    VALUE)
+from snips_nlu.constants import (AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA,
+                                 ENTITIES, ENTITY, INTENTS, LANGUAGE,
+                                 PARSER_THRESHOLD, SLOT_NAME, SYNONYMS, TEXT,
+                                 USE_SYNONYMS, UTTERANCES, VALIDATED, VALUE)
+from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
+                                                           is_builtin_entity,
+                                                           is_gazetteer_entity)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.utils import validate_key, validate_keys, validate_type
 
 
-def extract_queries_entities(dataset):
+def extract_utterance_entities(dataset):
     entities_values = {ent_name: set() for ent_name in dataset[ENTITIES]}
 
     for intent in itervalues(dataset[INTENTS]):
-        for query in intent[UTTERANCES]:
-            for chunk in query[DATA]:
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
                 if ENTITY in chunk:
                     entities_values[chunk[ENTITY]].add(chunk[TEXT].strip())
     return {k: list(v) for k, v in iteritems(entities_values)}
+
+
+def extract_intent_entities(dataset, entity_filter=None):
+    intent_entities = {intent: set() for intent in dataset[INTENTS]}
+    for intent_name, intent_data in iteritems(dataset[INTENTS]):
+        for utterance in intent_data[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if ENTITY in chunk:
+                    if entity_filter and not entity_filter(chunk[ENTITY]):
+                        continue
+                    intent_entities[intent_name].add(chunk[ENTITY])
+    return intent_entities
 
 
 def validate_and_format_dataset(dataset):
@@ -50,16 +64,17 @@ def validate_and_format_dataset(dataset):
     for intent in itervalues(dataset[INTENTS]):
         validate_and_format_intent(intent, dataset[ENTITIES])
 
-    queries_entities_values = extract_queries_entities(dataset)
+    utterance_entities_values = extract_utterance_entities(dataset)
+    builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
-        queries_entities = queries_entities_values[entity_name]
+        uterrance_entities = utterance_entities_values[entity_name]
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
-                validate_and_format_builtin_entity(entity, queries_entities)
+                validate_and_format_builtin_entity(entity, uterrance_entities)
         else:
             dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
-                entity, queries_entities, language)
+                entity, uterrance_entities, language, builtin_entity_parser)
     dataset[VALIDATED] = True
     return dataset
 
@@ -115,17 +130,26 @@ def _extract_entity_values(entity):
     return values
 
 
-def validate_and_format_custom_entity(entity, queries_entities, language):
+def validate_and_format_custom_entity(entity, queries_entities, language,
+                                      builtin_entity_parser):
     validate_type(entity, dict)
-    mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA]
+
+    # TODO: this is here temporarily, only to allow backward compatibility
+    if PARSER_THRESHOLD not in entity:
+        entity[PARSER_THRESHOLD] = 1.0
+
+    mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA,
+                      PARSER_THRESHOLD]
     validate_keys(entity, mandatory_keys, object_label="entity")
     validate_type(entity[USE_SYNONYMS], bool)
     validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool)
     validate_type(entity[DATA], list)
+    validate_type(entity[PARSER_THRESHOLD], float)
 
     formatted_entity = dict()
     formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
         AUTOMATICALLY_EXTENSIBLE]
+    formatted_entity[PARSER_THRESHOLD] = entity[PARSER_THRESHOLD]
     use_synonyms = entity[USE_SYNONYMS]
 
     # Validate format and filter out unused data
@@ -169,7 +193,8 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
             values_to_variate.update(set(data[SYNONYMS]))
         variations[ent_value] = set(
             v for value in values_to_variate
-            for v in get_string_variations(value, language))
+            for v in get_string_variations(value, language,
+                                           builtin_entity_parser))
     variation_counter = Counter(
         [v for vars in itervalues(variations) for v in vars])
     non_colliding_variations = {
@@ -187,7 +212,8 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
 
     # Merge queries entities
     queries_entities_variations = {
-        ent: get_string_variations(ent, language) for ent in queries_entities
+        ent: get_string_variations(ent, language, builtin_entity_parser)
+        for ent in queries_entities
     }
     for original_ent, variations in iteritems(queries_entities_variations):
         if not original_ent or original_ent in validated_utterances:
@@ -203,3 +229,9 @@ def validate_and_format_custom_entity(entity, queries_entities, language):
 def validate_and_format_builtin_entity(entity, queries_entities):
     validate_type(entity, dict)
     return {UTTERANCES: set(queries_entities)}
+
+
+def get_dataset_gazetteer_entities(dataset, intent=None):
+    if intent is not None:
+        return extract_intent_entities(dataset, is_gazetteer_entity)[intent]
+    return {e for e in dataset[ENTITIES] if is_gazetteer_entity(e)}

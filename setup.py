@@ -18,13 +18,14 @@ with io.open(os.path.join(root, "README.rst"), encoding="utf8") as f:
 
 required = [
     "enum34>=1.1,<2.0; python_version<'3.4'",
+    "future>=0.16,<0.17",
     "numpy==1.14.0",
     "scipy>=1.0,<2.0",
     "scikit-learn>=0.19,<0.20",
     "sklearn-crfsuite>=0.3.6,<0.4",
     "semantic_version>=2.6,<3.0",
-    "snips_nlu_utils>=0.6.1,<0.7",
-    "snips_nlu_ontology==0.57.3",
+    "snips_nlu_utils>=0.7,<0.8",
+    "snips_nlu_ontology==0.59.0",
     "num2words>=0.5.6,<0.6",
     "plac>=0.9.6,<1.0",
     "requests>=2.0,<3.0",

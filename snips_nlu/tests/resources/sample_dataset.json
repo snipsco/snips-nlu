@@ -3,6 +3,7 @@
     "dummy_entity_1": {
       "automatically_extensible": false,
       "use_synonyms": true,
+      "parser_threshold": 1.0,
       "data": [
         {
           "synonyms": [
@@ -32,6 +33,7 @@
     "dummy_entity_2": {
       "automatically_extensible": false,
       "use_synonyms": true,
+      "parser_threshold": 1.0,
       "data": [
         {
           "synonyms": [

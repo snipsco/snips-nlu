@@ -9,7 +9,6 @@ from future.utils import iteritems
 from num2words import num2words
 from snips_nlu_utils import normalize
 
-from snips_nlu.builtin_entities import get_builtin_entities
 from snips_nlu.constants import (
     END, ENTITY, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR,
     RES_MATCH_RANGE, SNIPS_NUMBER, START, VALUE)
@@ -112,12 +111,12 @@ def alphabetic_value(number_entity, language):
     return num2words(value, lang=language)
 
 
-def numbers_variations(string, language):
+def numbers_variations(string, language, builtin_entity_parser):
     if not supports_num2words(language):
         return set()
 
-    number_entities = get_builtin_entities(
-        string, language, scope=[SNIPS_NUMBER], use_cache=True)
+    number_entities = builtin_entity_parser.parse(
+        string, scope=[SNIPS_NUMBER], use_cache=True)
 
     number_entities = sorted(number_entities,
                              key=lambda x: x[RES_MATCH_RANGE][START])
@@ -156,7 +155,7 @@ def flatten(results):
     return set(i for r in results for i in r)
 
 
-def get_string_variations(string, language):
+def get_string_variations(string, language, builtin_entity_parser):
     variations = {string}
     variations.update(flatten(case_variations(v) for v in variations))
     variations.update(flatten(normalization_variations(v) for v in variations))
@@ -167,7 +166,8 @@ def get_string_variations(string, language):
     variations.update(
         flatten(punctuation_variations(v, language) for v in variations))
     variations.update(
-        flatten(numbers_variations(v, language) for v in variations))
+        flatten(numbers_variations(v, language, builtin_entity_parser)
+                for v in variations))
     # Add single space variations
     single_space_variations = set(" ".join(v.split()) for v in variations)
     variations.update(single_space_variations)

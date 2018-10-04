@@ -10,7 +10,8 @@ from snips_nlu.resources import get_stems
 
 
 def stem(string, language):
-    tokens = tokenize_light(string, language)
+    normalized_string = normalize(string)
+    tokens = tokenize_light(normalized_string, language)
     stemmed_tokens = [_stem(token, language) for token in tokens]
     return " ".join(stemmed_tokens)
 
@@ -18,7 +19,9 @@ def stem(string, language):
 def stem_token(token, language):
     if token.stemmed_value:
         return token.stemmed_value
-    token.stemmed_value = stem(normalize(token.value), language)
+    if not token.normalized_value:
+        token.normalized_value = normalize(token.value)
+    token.stemmed_value = _stem(token.normalized_value, language)
     return token.stemmed_value
 
 

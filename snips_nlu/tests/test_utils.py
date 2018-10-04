@@ -95,7 +95,7 @@ class TestUtils(SnipsTest):
         levels = [logging.DEBUG, logging.INFO, logging.WARNING]
         logger = logging.Logger("my_dummy_logger", logging.INFO)
         logger.addHandler(logging.StreamHandler())
-        _a, _b, _c = 1, 2, 3
+        a_, b_, c_ = 1, 2, 3
 
         with self.fail_if_exception("Failed to log"):
             # When/Then
@@ -104,5 +104,5 @@ class TestUtils(SnipsTest):
                        "Greeting: %s", DifferedLoggingMessage(my_obj.greet))
             for l in levels:
                 logger.log(l, "Level: %s -> %s", str(l),
-                           DifferedLoggingMessage(mocked_fn, _a, _b, c=_c))
+                           DifferedLoggingMessage(mocked_fn, a_, b_, c=c_))
         self.assertEqual(2, mocked_fn.call_count)

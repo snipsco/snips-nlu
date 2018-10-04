@@ -23,19 +23,9 @@ install:
 build: false
 
 test_script:
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_de-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_en-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_es-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_fr-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_ja-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_ko-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu download snips_nlu_zh-0.2.0 --direct"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_de de"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_en en"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_es es"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_fr fr"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_ja ja"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_ko ko"
-  - "%PYTHON%\\python.exe -m snips_nlu link snips_nlu_zh zh"
+  - "%PYTHON%\\python.exe -m snips_nlu download-all-languages"
+  - "%PYTHON%\\python.exe -m snips_nlu download-entity snips/musicAlbum fr"
+  - "%PYTHON%\\python.exe -m snips_nlu download-entity snips/musicArtist fr"
+  - "%PYTHON%\\python.exe -m snips_nlu download-entity snips/musicTrack fr"
   - "%PYTHON%\\python.exe -m unittest discover"
   - "%PYTHON%\\python.exe snips_nlu_samples/sample.py"

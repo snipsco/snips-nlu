@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 from future.utils import with_metaclass
 
@@ -21,11 +21,6 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
             force_retrain (bool): Specify whether or not sub units of the
             intent parser that may be already trained should be retrained
         """
-        pass
-
-    @abstractproperty
-    def fitted(self):
-        """Whether or not the intent parser has already been trained"""
         pass
 
     @abstractmethod

@@ -2,21 +2,22 @@
 from __future__ import unicode_literals
 
 from builtins import range
+
 from mock import patch
 
 from snips_nlu.constants import (
-    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
-    RES_MATCH_RANGE, RES_SLOTS, SLOT_NAME, SNIPS_DATETIME, SNIPS_ORDINAL,
-    START, TEXT, VALUE)
+    DATA, END, ENTITY, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
+    RES_SLOTS, SLOT_NAME, START, TEXT)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
     _get_range_shift, _replace_builtin_entities,
     _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET, TEST_PATH, \
-    BEVERAGE_DATASET
+from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest, \
+    SAMPLE_DATASET, TEST_PATH
 from snips_nlu.utils import NotTrained
 
 
@@ -57,6 +58,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 "dummy_entity_1": {
                     "automatically_extensible": False,
                     "use_synonyms": True,
+                    "parser_threshold": 1.0,
                     "data": [
                         {
                             "synonyms": [
@@ -86,6 +88,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 "dummy_entity_2": {
                     "automatically_extensible": False,
                     "use_synonyms": True,
+                    "parser_threshold": 1.0,
                     "data": [
                         {
                             "synonyms": [
@@ -230,7 +233,8 @@ class TestDeterministicIntentParser(FixtureTest):
         parser = DeterministicIntentParser().fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path)
+            self.tmp_file_path,
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
         text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -330,7 +334,9 @@ class TestDeterministicIntentParser(FixtureTest):
         parser = DeterministicIntentParser().fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path)
+            self.tmp_file_path,
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
+
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -401,7 +407,8 @@ class TestDeterministicIntentParser(FixtureTest):
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = DeterministicIntentParser.from_byte_array(
-            intent_parser_bytes)
+            intent_parser_bytes,
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
         result = loaded_intent_parser.parse("make me two cups of coffee")
 
         # Then
@@ -468,6 +475,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 "non_ascìi_entïty": {
                     "use_synonyms": False,
                     "automatically_extensible": True,
+                    "parser_threshold": 1.0,
                     "data": []
                 }
             },
@@ -674,34 +682,28 @@ class TestDeterministicIntentParser(FixtureTest):
         language = LANGUAGE_EN
         slots = [
             unresolved_slot(
-                [3, 7],
-                "non_overlapping1",
+                [0, 3],
+                "kid",
                 "e",
                 "s1"
             ),
             unresolved_slot(
-                [9, 16],
-                "aaaaaaa",
+                [4, 8],
+                "loco",
                 "e1",
                 "s2"
             ),
             unresolved_slot(
-                [10, 18],
-                "bbbbbbbb",
+                [0, 8],
+                "kid loco",
                 "e1",
                 "s3"
             ),
             unresolved_slot(
-                [17, 23],
-                "b cccc",
-                "e1",
+                [9, 13],
+                "song",
+                "e2",
                 "s4"
-            ),
-            unresolved_slot(
-                [50, 60],
-                "non_overlapping2",
-                "e",
-                "s5"
             ),
         ]
 
@@ -711,22 +713,16 @@ class TestDeterministicIntentParser(FixtureTest):
         # Then
         expected_slots = [
             unresolved_slot(
-                [3, 7],
-                "non_overlapping1",
-                "e",
-                "s1"
-            ),
-            unresolved_slot(
-                [17, 23],
-                "b cccc",
+                [0, 8],
+                "kid loco",
                 "e1",
-                "s4"
+                "s3"
             ),
             unresolved_slot(
-                [50, 60],
-                "non_overlapping2",
-                "e",
-                "s5"
+                [9, 13],
+                "song",
+                "e2",
+                "s4"
             ),
         ]
         self.assertSequenceEqual(deduplicated_slots, expected_slots)
@@ -757,35 +753,48 @@ class TestDeterministicIntentParser(FixtureTest):
         self.assertEqual(3, len(parser.regexes_per_intent["dummy_intent_1"]))
         self.assertEqual(1, len(parser.regexes_per_intent["dummy_intent_2"]))
 
-    @patch('snips_nlu.intent_parser.deterministic_intent_parser'
-           '.get_builtin_entities')
-    def test_should_replace_builtin_entities(self, mock_get_builtin_entities):
+    def test_should_replace_builtin_entities(self):
         # Given
         text = "Be the first to be there at 9pm"
-        mock_get_builtin_entities.return_value = [
-            {
-                RES_MATCH_RANGE: {START: 7, END: 12},
-                VALUE: "first",
-                ENTITY_KIND: SNIPS_ORDINAL
-            },
-            {
-                RES_MATCH_RANGE: {START: 28, END: 31},
-                VALUE: "9pm",
-                ENTITY_KIND: SNIPS_DATETIME
-            }
-        ]
 
         # When
+        builtin_entities = [
+            {
+                "entity_kind": "snips/ordinal",
+                "value": "the first",
+                "range": {
+                    "start": 3,
+                    "end": 12
+                }
+            },
+            {
+                "entity_kind": "snips/musicAlbum",
+                "value": "first",
+                "range": {
+                    "start": 7,
+                    "end": 12
+                }
+            },
+            {
+                "entity_kind": "snips/datetime",
+                "value": "at 9pm",
+                "range": {
+                    "start": 25,
+                    "end": 31
+                }
+            }
+        ]
         range_mapping, processed_text = _replace_builtin_entities(
-            text=text, language=LANGUAGE_EN)
+            text=text, language=LANGUAGE_EN,
+            builtin_entities=builtin_entities)
 
         # Then
         expected_mapping = {
-            (7, 21): {START: 7, END: 12},
-            (37, 52): {START: 28, END: 31}
+            (3, 17): {START: 3, END: 12},
+            (30, 45): {START: 25, END: 31}
         }
         expected_processed_text = \
-            "Be the %SNIPSORDINAL% to be there at %SNIPSDATETIME%"
+            "Be %SNIPSORDINAL% to be there %SNIPSDATETIME%"
 
         self.assertDictEqual(expected_mapping, range_mapping)
         self.assertEqual(expected_processed_text, processed_text)

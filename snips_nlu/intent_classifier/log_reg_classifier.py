@@ -39,12 +39,12 @@ class LogRegIntentClassifier(IntentClassifier):
     config_type = LogRegIntentClassifierConfig
 
     # pylint:disable=line-too-long
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The LogReg intent classifier can be configured by passing a
         :class:`.LogRegIntentClassifierConfig`"""
         if config is None:
             config = LogRegIntentClassifierConfig()
-        super(LogRegIntentClassifier, self).__init__(config)
+        super(LogRegIntentClassifier, self).__init__(config, **shared)
         self.classifier = None
         self.intent_list = None
         self.featurizer = None
@@ -66,6 +66,8 @@ class LogRegIntentClassifier(IntentClassifier):
         """
         logger.debug("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
         language = dataset[LANGUAGE]
         random_state = check_random_state(self.config.random_seed)
 
@@ -80,7 +82,10 @@ class LogRegIntentClassifier(IntentClassifier):
         self.featurizer = Featurizer(
             language,
             data_augmentation_config.unknown_words_replacement_string,
-            self.config.featurizer_config)
+            self.config.featurizer_config,
+            builtin_entity_parser=self.builtin_entity_parser,
+            custom_entity_parser=self.custom_entity_parser
+        )
         self.featurizer = self.featurizer.fit(dataset, utterances, classes)
         if self.featurizer is None:
             return self
@@ -172,7 +177,7 @@ class LogRegIntentClassifier(IntentClassifier):
         self.persist_metadata(path)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`LogRegIntentClassifier` instance from a path
 
         The data at the given path must have been generated using
@@ -186,17 +191,17 @@ class LogRegIntentClassifier(IntentClassifier):
 
         with model_path.open(encoding="utf8") as f:
             model_dict = json.load(f)
-        return cls.from_dict(model_dict)
+        return cls.from_dict(model_dict, **shared)
 
     @classmethod
-    def from_dict(cls, unit_dict):
+    def from_dict(cls, unit_dict, **shared):
         """Creates a :class:`LogRegIntentClassifier` instance from a dict
 
         The dict must have been generated with
         :func:`~LogRegIntentClassifier.to_dict`
         """
         config = LogRegIntentClassifierConfig.from_dict(unit_dict["config"])
-        intent_classifier = cls(config=config)
+        intent_classifier = cls(config=config, **shared)
         sgd_classifier = None
         coeffs = unit_dict['coeffs']
         intercept = unit_dict['intercept']
@@ -210,7 +215,8 @@ class LogRegIntentClassifier(IntentClassifier):
         intent_classifier.intent_list = unit_dict['intent_list']
         featurizer = unit_dict['featurizer']
         if featurizer is not None:
-            intent_classifier.featurizer = Featurizer.from_dict(featurizer)
+            intent_classifier.featurizer = Featurizer.from_dict(
+                featurizer, **shared)
         return intent_classifier
 
     def to_dict(self):

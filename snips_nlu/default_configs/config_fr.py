@@ -145,7 +145,8 @@ CONFIG = {
                 "featurizer_config": {
                     "sublinear_tf": False,
                     "pvalue_threshold": 0.4,
-                    "word_clusters_name": None
+                    "word_clusters_name": None,
+                    "use_stemming": True
                 },
                 "random_seed": None
             }

@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "locality": {
+      "automatically_extensible": true,
+      "data": [
+        {
+          "value": "djibouti",
+          "synonyms": []
+        },
+        {
+          "value": "san francisco",
+          "synonyms": []
+        },
+        {
+          "value": "new york city",
+          "synonyms": ["new york", "big apple"]
+        }
+      ],
+      "parser_threshold": 1.0,
+      "use_synonyms": true
+    },
+    "snips/datetime": {}
+  },
+  "intents": {
+    "bookFlight": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "Book me a flight from "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "departure",
+              "text": "Paris"
+            },
+            {
+              "text": " to "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "destination",
+              "text": "London"
+            },
+            {
+              "entity": "snips/datetime",
+              "slot_name": "flight_time",
+              "text": "this weekend"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Find me an airplane for "
+            },
+            {
+              "entity": "snips/datetime",
+              "slot_name": "flight_time",
+              "text": "next tuesday"
+            },
+            {
+              "text": " to go to "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "destination",
+              "text": "Singapour"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "book a flight to "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "destination",
+              "text": "moscow"
+            },
+            {
+              "text": " from "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "departure",
+              "text": "istanbul"
+            },
+            {
+              "entity": "snips/datetime",
+              "slot_name": "flight_time",
+              "text": "in five days"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "I need flight tickets from "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "departure",
+              "text": "new york"
+            },
+            {
+              "text": " to "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "destination",
+              "text": "chicago"
+            },
+            {
+              "entity": "snips/datetime",
+              "slot_name": "flight_datetime",
+              "text": "on January 6th"
+            }
+          ]
+        }
+      ]
+    },
+    "cancelFlight": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "please cancel my flight to "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "destination",
+              "text": "madrid"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Can you cancel the flight I have "
+            },
+            {
+              "entity": "snips/datetime",
+              "slot_name": "flight_time",
+              "text": "this weekend"
+            },
+            {
+              "text": " ?"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "I need you to cancel my flight tickets from "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "departure",
+              "text": "berlin"
+            },
+            {
+              "text": " to "
+            },
+            {
+              "entity": "locality",
+              "slot_name": "destination",
+              "text": "tokyo"
+            },
+            {
+              "text": " please"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "cancel "
+            },
+            {
+              "entity": "snips/datetime",
+              "slot_name": "flight_time",
+              "text": "tomorrow"
+            },
+            {
+              "text": "'s flight"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "language": "en"
+}

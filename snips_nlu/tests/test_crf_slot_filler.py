@@ -2,35 +2,35 @@
 from __future__ import unicode_literals
 
 from builtins import range
-from mock import MagicMock
 from pathlib import Path
+
+from mock import MagicMock
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
     DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_MATCH_RANGE, SLOT_NAME,
     SNIPS_DATETIME, START, TEXT, VALUE)
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
-from snips_nlu.slot_filler.crf_slot_filler import (CRFSlotFiller,
-                                                   _disambiguate_builtin_entities,
-                                                   _ensure_safe,
-                                                   _filter_overlapping_builtins,
-                                                   _get_slots_permutations,
-                                                   _spans_to_tokens_indexes)
+from snips_nlu.slot_filler.crf_slot_filler import (
+    CRFSlotFiller, _disambiguate_builtin_entities, _ensure_safe,
+    _filter_overlapping_builtins, _get_slots_permutations,
+    _spans_to_tokens_indexes)
 from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, TaggingScheme)
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH, WEATHER_DATASET)
+from snips_nlu.utils import NotTrained
 
 
 class TestCRFSlotFiller(FixtureTest):
     def test_should_get_slots(self):
         # Given
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        dataset = BEVERAGE_DATASET
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
         slot_filler = CRFSlotFiller(config)
@@ -49,7 +49,7 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_get_builtin_slots(self):
         # Given
-        dataset = validate_and_format_dataset(WEATHER_DATASET)
+        dataset = WEATHER_DATASET
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "SearchWeatherForecast"
         slot_filler = CRFSlotFiller(config)
@@ -71,9 +71,74 @@ class TestCRFSlotFiller(FixtureTest):
         ]
         self.assertListEqual(expected_slots, slots)
 
+    def test_should_not_use_crf_when_dataset_with_no_slots(self):
+        # Given
+        dataset = {
+            "language": "en",
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "This is an utterance without "
+                                            "slots"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {}
+        }
+        slot_filler = CRFSlotFiller()
+        mock_compute_features = MagicMock()
+        slot_filler.compute_features = mock_compute_features
+
+        # When
+        slot_filler.fit(dataset, "intent1")
+        slots = slot_filler.get_slots("This is an utterance without slots")
+
+        # Then
+        mock_compute_features.assert_not_called()
+        self.assertListEqual([], slots)
+
+    def test_should_compute_sequence_probability_when_no_slots(self):
+        # Given
+        dataset = {
+            "language": "en",
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "This is an utterance without "
+                                            "slots"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {}
+        }
+        slot_filler = CRFSlotFiller().fit(dataset, "intent1")
+        tokens = tokenize("hello world foo bar", "en")
+
+        # When
+        res1 = slot_filler.get_sequence_probability(
+            tokens, ["O", "O", "O", "O"])
+        res2 = slot_filler.get_sequence_probability(
+            tokens, ["O", "O", "B-location", "O"])
+
+        # Then
+        self.assertEqual(1.0, res1)
+        self.assertEqual(0.0, res2)
+
     def test_should_parse_naughty_strings(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset = SAMPLE_DATASET
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
         with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
@@ -85,6 +150,31 @@ class TestCRFSlotFiller(FixtureTest):
         for s in naughty_strings:
             with self.fail_if_exception("Naughty string crashes"):
                 slot_filler.get_slots(s)
+
+    def test_should_not_get_slots_when_not_fitted(self):
+        # Given
+        slot_filler = CRFSlotFiller()
+
+        # When / Then
+        self.assertFalse(slot_filler.fitted)
+        with self.assertRaises(NotTrained):
+            slot_filler.get_slots("foobar")
+
+    def test_should_not_get_sequence_probability_when_not_fitted(self):
+        # Given
+        slot_filler = CRFSlotFiller()
+
+        # When / Then
+        with self.assertRaises(NotTrained):
+            slot_filler.get_sequence_probability(tokens=[], labels=[])
+
+    def test_should_not_log_weights_when_not_fitted(self):
+        # Given
+        slot_filler = CRFSlotFiller()
+
+        # When / Then
+        with self.assertRaises(NotTrained):
+            slot_filler.log_weights()
 
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
@@ -132,13 +222,12 @@ class TestCRFSlotFiller(FixtureTest):
                 "non_ascìi_entïty": {
                     "use_synonyms": False,
                     "automatically_extensible": True,
-                    "data": []
+                    "data": [],
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en",
         }
-
-        naughty_dataset = validate_and_format_dataset(naughty_dataset)
 
         # Then
         with self.fail_if_exception("Naughty string make NLU crash"):
@@ -158,13 +247,21 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_get_slots_after_deserialization(self):
         # Given
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        dataset = BEVERAGE_DATASET
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
         slot_filler = CRFSlotFiller(config)
         slot_filler.fit(dataset, intent)
         slot_filler.persist(self.tmp_file_path)
-        deserialized_slot_filler = CRFSlotFiller.from_path(self.tmp_file_path)
+
+        custom_entity_parser = slot_filler.custom_entity_parser
+        builtin_entity_parser = slot_filler.builtin_entity_parser
+
+        deserialized_slot_filler = CRFSlotFiller.from_path(
+            self.tmp_file_path,
+            custom_entity_parser=custom_entity_parser,
+            builtin_entity_parser=builtin_entity_parser
+        )
 
         # When
         slots = deserialized_slot_filler.get_slots("make me two cups of tea")
@@ -205,7 +302,6 @@ class TestCRFSlotFiller(FixtureTest):
         self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
 
         expected_slot_filler_dict = {
-            "unit_name": "crf_slot_filler",
             "crf_model_file": None,
             "language_code": None,
             "config": config.to_dict(),
@@ -293,7 +389,7 @@ class TestCRFSlotFiller(FixtureTest):
         config = CRFSlotFillerConfig(
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=features_factories)
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset = SAMPLE_DATASET
 
         slot_filler = CRFSlotFiller(config)
         intent = "dummy_intent_1"
@@ -325,7 +421,6 @@ class TestCRFSlotFiller(FixtureTest):
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
-            "unit_name": "crf_slot_filler",
             "crf_model_file": expected_crf_file,
             "language_code": "en",
             "config": expected_config.to_dict(),
@@ -411,14 +506,100 @@ class TestCRFSlotFiller(FixtureTest):
         crf_path = Path(slot_filler.crf_model.modelfile.name)
         self.assertFileContent(crf_path, "foo bar")
 
+    def test_should_be_serializable_when_fitted_without_slots(self):
+        # Given
+        features_factories = [
+            {
+                "factory_name": ShapeNgramFactory.name,
+                "args": {"n": 1},
+                "offsets": [0]
+            },
+            {
+                "factory_name": IsDigitFactory.name,
+                "args": {},
+                "offsets": [-1, 0]
+            }
+        ]
+        config = CRFSlotFillerConfig(
+            tagging_scheme=TaggingScheme.BILOU,
+            feature_factory_configs=features_factories)
+        dataset = {
+            "language": "en",
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "This is an utterance without "
+                                            "slots"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {}
+        }
+
+        slot_filler = CRFSlotFiller(config)
+        slot_filler.fit(dataset, intent="intent1")
+
+        # When
+        slot_filler.persist(self.tmp_file_path)
+
+        # Then
+        metadata_path = self.tmp_file_path / "metadata.json"
+        self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
+        self.assertIsNone(slot_filler.crf_model)
+
+    def test_should_be_deserializable_when_fitted_without_slots(self):
+        # Given
+        dataset = {
+            "language": "en",
+            "intents": {
+                "intent1": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "This is an utterance without "
+                                            "slots"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {}
+        }
+
+        slot_filler = CRFSlotFiller()
+        slot_filler.fit(dataset, intent="intent1")
+        slot_filler.persist(self.tmp_file_path)
+        loaded_slot_filler = CRFSlotFiller.from_path(self.tmp_file_path)
+
+        # When
+        slots = loaded_slot_filler.get_slots(
+            "This is an utterance without slots")
+
+        # Then
+        self.assertListEqual([], slots)
+
     def test_should_be_serializable_into_bytearray(self):
         # Given
         dataset = BEVERAGE_DATASET
         slot_filler = CRFSlotFiller().fit(dataset, "MakeTea")
+        builtin_intent_parser = slot_filler.builtin_entity_parser
+        custom_entity_parser = slot_filler.custom_entity_parser
 
         # When
         slot_filler_bytes = slot_filler.to_byte_array()
-        loaded_slot_filler = CRFSlotFiller.from_byte_array(slot_filler_bytes)
+        loaded_slot_filler = CRFSlotFiller.from_byte_array(
+            slot_filler_bytes,
+            builtin_entity_parser=builtin_intent_parser,
+            custom_entity_parser=custom_entity_parser
+        )
         slots = loaded_slot_filler.get_slots("make me two cups of tea")
 
         # Then
@@ -448,7 +629,7 @@ class TestCRFSlotFiller(FixtureTest):
         slot_filler = CRFSlotFiller(slot_filler_config)
 
         tokens = tokenize("foo hello world bar", LANGUAGE_EN)
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset = SAMPLE_DATASET
         slot_filler.fit(dataset, intent="dummy_intent_1")
 
         # When
@@ -598,7 +779,9 @@ class TestCRFSlotFiller(FixtureTest):
                 raise ValueError("Unexpected tag sequence: %s" % tags_)
 
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        slot_filler = CRFSlotFiller(config=slot_filler_config)
+        slot_filler = CRFSlotFiller(
+            config=slot_filler_config,
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
         slot_filler.language = LANGUAGE_EN
         slot_filler.intent = "intent1"
         slot_filler.slot_name_mapping = {
@@ -757,7 +940,7 @@ class TestCRFSlotFiller(FixtureTest):
         ]
 
         # We don't assert anything here but it segfault otherwise
-        for X, Y in unsafe_examples:
-            X, Y = _ensure_safe(X, Y)
-            model = CRF().fit(X, Y)
+        for x, y in unsafe_examples:
+            x, y = _ensure_safe(x, y)
+            model = CRF().fit(x, y)
             model.predict_single([""])

@@ -1,8 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.17.0] - 2018-10-05
+### Added
+- Support for 3 new builtin entities in French: `snips/musicAlbum`, `snips/musicArtist` and `snips/musicTrack`
+- Minimal support for Italian
 
-## [0.16.5] - 2018-0906
+### Changed
+- model version `0.16.0` => `0.17.0`
+
+### Fixed
+- Bug with entity feature name in intent classification
+
+## [0.16.5] - 2018-09-06
 ### Fixed
 - Segfault in CRFSuite when the `CRFSlotFiller` is fitted only on empty utterances 
 
@@ -140,6 +150,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.17.0]: https://github.com/snipsco/snips-nlu/compare/0.16.5...0.17.0
 [0.16.5]: https://github.com/snipsco/snips-nlu/compare/0.16.4...0.16.5
 [0.16.4]: https://github.com/snipsco/snips-nlu/compare/0.16.3...0.16.4
 [0.16.3]: https://github.com/snipsco/snips-nlu/compare/0.16.2...0.16.3

@@ -8,21 +8,21 @@ from pathlib import Path
 
 from future.utils import iteritems
 
-from snips_nlu.builtin_entities import (get_builtin_entities,
-                                        is_builtin_entity)
 from snips_nlu.constants import (
-    DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS, LANGUAGE,
-    RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
+    BUILTIN_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS,
+    LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
     unresolved_slot)
 from snips_nlu.utils import (
-    NotTrained, check_persisted_path, get_slot_name_mappings, json_string,
-    log_elapsed_time, log_result, ranges_overlap, regex_escape)
+    check_persisted_path, deduplicate_overlapping_items, fitted_required,
+    get_slot_name_mappings, json_string, log_elapsed_time, log_result,
+    ranges_overlap, regex_escape)
 
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
@@ -42,12 +42,12 @@ class DeterministicIntentParser(IntentParser):
     unit_name = "deterministic_intent_parser"
     config_type = DeterministicIntentParserConfig
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The deterministic intent parser can be configured by passing a
         :class:`.DeterministicIntentParserConfig`"""
         if config is None:
             config = self.config_type()
-        super(DeterministicIntentParser, self).__init__(config)
+        super(DeterministicIntentParser, self).__init__(config, **shared)
         self.language = None
         self.regexes_per_intent = None
         self.group_names_to_slot_names = None
@@ -81,6 +81,7 @@ class DeterministicIntentParser(IntentParser):
         """Fit the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
+        self.fit_builtin_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
@@ -102,6 +103,7 @@ class DeterministicIntentParser(IntentParser):
     @log_result(
         logger, logging.DEBUG, "DeterministicIntentParser result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed in {elapsed_time}.")
+    @fitted_required
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text*
 
@@ -119,15 +121,15 @@ class DeterministicIntentParser(IntentParser):
         Raises:
             NotTrained: When the intent parser is not fitted
         """
-        if not self.fitted:
-            raise NotTrained("DeterministicIntentParser must be fitted")
         logger.debug("DeterministicIntentParser parsing '%s'...", text)
 
         if isinstance(intents, str):
             intents = [intents]
 
+        builtin_entities = self.builtin_entity_parser.parse(
+            text, use_cache=True)
         ranges_mapping, processed_text = _replace_builtin_entities(
-            text, self.language)
+            text, self.language, builtin_entities)
 
         # We try to match both the input text and the preprocessed text to
         # cover inconsistencies between labeled data and builtin entity parsing
@@ -175,8 +177,7 @@ class DeterministicIntentParser(IntentParser):
                 match_range=rng, value=value, entity=entity,
                 slot_name=slot_name)
             slots.append(parsed_slot)
-        parsed_slots = _deduplicate_overlapping_slots(
-            slots, self.language)
+        parsed_slots = _deduplicate_overlapping_slots(slots, self.language)
         parsed_slots = sorted(parsed_slots,
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
@@ -194,7 +195,7 @@ class DeterministicIntentParser(IntentParser):
         self.persist_metadata(path)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`DeterministicIntentParser` instance from a path
 
         The data at the given path must have been generated using
@@ -208,12 +209,11 @@ class DeterministicIntentParser(IntentParser):
 
         with metadata_path.open(encoding="utf8") as f:
             metadata = json.load(f)
-        return cls.from_dict(metadata)
+        return cls.from_dict(metadata, **shared)
 
     def to_dict(self):
         """Returns a json-serializable dict"""
         return {
-            "unit_name": self.unit_name,
             "config": self.config.to_dict(),
             "language_code": self.language,
             "patterns": self.patterns,
@@ -222,14 +222,15 @@ class DeterministicIntentParser(IntentParser):
         }
 
     @classmethod
-    def from_dict(cls, unit_dict):
+    def from_dict(cls, unit_dict, **shared):
         """Creates a :class:`DeterministicIntentParser` instance from a dict
 
         The dict must have been generated with
         :func:`~DeterministicIntentParser.to_dict`
         """
         config = cls.config_type.from_dict(unit_dict["config"])
-        parser = cls(config=config)
+        parser = cls(config=config,
+                     builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER))
         parser.patterns = unit_dict["patterns"]
         parser.language = unit_dict["language_code"]
         parser.group_names_to_slot_names = unit_dict[
@@ -371,42 +372,18 @@ def _get_joined_entity_utterances(dataset, language):
     return joined_entity_utterances
 
 
-def _deduplicate_overlapping_slots(slots, language):
-    deduplicated_slots = []
-    for slot in slots:
-        is_overlapping = False
-        for slot_index, dedup_slot in enumerate(deduplicated_slots):
-            if ranges_overlap(slot[RES_MATCH_RANGE],
-                              dedup_slot[RES_MATCH_RANGE]):
-                is_overlapping = True
-                tokens = tokenize(slot[RES_VALUE], language)
-                dedup_tokens = tokenize(dedup_slot[RES_VALUE], language)
-                if len(tokens) > len(dedup_tokens):
-                    deduplicated_slots[slot_index] = slot
-                elif len(tokens) == len(dedup_tokens) \
-                        and len(slot[RES_VALUE]) > len(dedup_slot[RES_VALUE]):
-                    deduplicated_slots[slot_index] = slot
-        if not is_overlapping:
-            deduplicated_slots.append(slot)
-    return deduplicated_slots
-
-
-def _get_entity_name_placeholder(entity_label, language):
-    return "%%%s%%" % "".join(
-        tokenize_light(entity_label, language)).upper()
-
-
-def _replace_builtin_entities(text, language):
-    builtin_entities = get_builtin_entities(text, language, use_cache=True)
+def _replace_builtin_entities(text, language, builtin_entities):
     if not builtin_entities:
         return dict(), text
+
+    builtin_entities = _deduplicate_overlapping_entities(builtin_entities)
+    builtin_entities = sorted(builtin_entities,
+                              key=lambda e: e[RES_MATCH_RANGE][START])
 
     range_mapping = dict()
     processed_text = ""
     offset = 0
     current_ix = 0
-    builtin_entities = sorted(builtin_entities,
-                              key=lambda e: e[RES_MATCH_RANGE][START])
     for ent in builtin_entities:
         ent_start = ent[RES_MATCH_RANGE][START]
         ent_end = ent[RES_MATCH_RANGE][END]
@@ -428,3 +405,37 @@ def _replace_builtin_entities(text, language):
 
     processed_text += text[current_ix:]
     return range_mapping, processed_text
+
+
+def _deduplicate_overlapping_slots(slots, language):
+    def overlap(lhs_slot, rhs_slot):
+        return ranges_overlap(lhs_slot[RES_MATCH_RANGE],
+                              rhs_slot[RES_MATCH_RANGE])
+
+    def sort_key_fn(slot):
+        tokens = tokenize(slot[RES_VALUE], language)
+        return -(len(tokens) + len(slot[RES_VALUE]))
+
+    deduplicated_slots = deduplicate_overlapping_items(
+        slots, overlap, sort_key_fn)
+    return sorted(deduplicated_slots,
+                  key=lambda slot: slot[RES_MATCH_RANGE][START])
+
+
+def _deduplicate_overlapping_entities(entities):
+    def overlap(lhs_entity, rhs_entity):
+        return ranges_overlap(lhs_entity[RES_MATCH_RANGE],
+                              rhs_entity[RES_MATCH_RANGE])
+
+    def sort_key_fn(entity):
+        return -len(entity[RES_VALUE])
+
+    deduplicated_entities = deduplicate_overlapping_items(
+        entities, overlap, sort_key_fn)
+    return sorted(deduplicated_entities,
+                  key=lambda entity: entity[RES_MATCH_RANGE][START])
+
+
+def _get_entity_name_placeholder(entity_label, language):
+    return "%%%s%%" % "".join(
+        tokenize_light(entity_label, language)).upper()

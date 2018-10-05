@@ -11,11 +11,13 @@ __author__ = "Clement Doumouro, Adrien Ball"
 __email__ = "clement.doumouro@snips.ai, adrien.ball@snips.ai"
 __license__ = "Apache License, Version 2.0"
 
-__version__ = "0.16.5"
-__model_version__ = "0.16.0"
+__version__ = "0.17.0"
+__model_version__ = "0.17.0"
 
 __download_url__ = "https://github.com/snipsco/snips-nlu-language-resources/releases/download"
 __compatibility__ = "https://raw.githubusercontent.com/snipsco/snips-nlu-language-resources/master/compatibility.json"
 __shortcuts__ = "https://raw.githubusercontent.com/snipsco/snips-nlu-language-resources/master/shortcuts.json"
+
+__entities_download_url__ = "https://resources.snips.ai/nlu-lm/gazetteer-entities"
 
 # pylint:enable=line-too-long

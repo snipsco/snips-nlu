@@ -5,7 +5,7 @@ from builtins import str
 from copy import deepcopy
 from pathlib import Path
 
-from mock import patch
+from mock import patch, MagicMock
 from snips_nlu_ontology import get_all_languages
 
 import snips_nlu
@@ -14,10 +14,13 @@ from snips_nlu.constants import (
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
+from snips_nlu.entity_parser.custom_entity_parser_usage import \
+    CustomEntityParserUsage
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs import NLUEngineConfig, \
-    ProbabilisticIntentParserConfig, ProcessingUnitConfig
+from snips_nlu.pipeline.configs import (
+    ProcessingUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -25,7 +28,7 @@ from snips_nlu.result import (
     resolved_slot, unresolved_slot)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import json_string
+from snips_nlu.utils import NotTrained, json_string
 
 
 class TestSnipsNLUEngine(FixtureTest):
@@ -53,9 +56,6 @@ class TestSnipsNLUEngine(FixtureTest):
             def from_dict(cls, obj_dict):
                 return FirstIntentParserConfig()
 
-            def get_required_resources(self):
-                return None
-
         class FirstIntentParser(IntentParser):
             unit_name = "first_intent_parser"
             config_type = FirstIntentParserConfig
@@ -78,7 +78,7 @@ class TestSnipsNLUEngine(FixtureTest):
                     f.write(json_string({"unit_name": self.unit_name}))
 
             @classmethod
-            def from_path(cls, path):
+            def from_path(cls, path, **shared):
                 cfg = cls.config_type()
                 return cls(cfg)
 
@@ -91,9 +91,6 @@ class TestSnipsNLUEngine(FixtureTest):
             @classmethod
             def from_dict(cls, obj_dict):
                 return SecondIntentParserConfig()
-
-            def get_required_resources(self):
-                return None
 
         class SecondIntentParser(IntentParser):
             unit_name = "second_intent_parser"
@@ -119,7 +116,7 @@ class TestSnipsNLUEngine(FixtureTest):
                     f.write(json_string({"unit_name": self.unit_name}))
 
             @classmethod
-            def from_path(cls, path):
+            def from_path(cls, path, **shared):
                 cfg = cls.config_type()
                 return cls(cfg)
 
@@ -168,15 +165,12 @@ class TestSnipsNLUEngine(FixtureTest):
             def from_dict(cls, obj_dict):
                 return TestIntentParserConfig()
 
-            def get_required_resources(self):
-                return None
-
         class TestIntentParser(IntentParser):
             unit_name = "test_intent_parser"
             config_type = TestIntentParserConfig
 
-            def __init__(self, config):
-                super(TestIntentParser, self).__init__(config)
+            def __init__(self, config, **shared):
+                super(TestIntentParser, self).__init__(config, **shared)
                 self.sub_unit_1 = dict(fitted=False, calls=0)
                 self.sub_unit_2 = dict(fitted=False, calls=0)
 
@@ -211,7 +205,7 @@ class TestSnipsNLUEngine(FixtureTest):
                     f.write(json_string({"unit_name": self.unit_name}))
 
             @classmethod
-            def from_path(cls, path):
+            def from_path(cls, path, **shared):
                 cfg = cls.config_type()
                 return cls(cfg)
 
@@ -245,7 +239,16 @@ class TestSnipsNLUEngine(FixtureTest):
         # Then
         self.assertEqual(empty_result("hello world"), result)
 
-    def test_should_be_serializable_into_zip(self):
+    def test_should_not_get_slots_when_not_fitted(self):
+        # Given
+        engine = SnipsNLUEngine()
+
+        # When / Then
+        self.assertFalse(engine.fitted)
+        with self.assertRaises(NotTrained):
+            engine.parse("foobar")
+
+    def test_should_be_serializable_into_dir(self):
         # Given
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
@@ -271,16 +274,6 @@ class TestSnipsNLUEngine(FixtureTest):
                 "entities": {
                     "Temperature": {
                         "automatically_extensible": True,
-                        "utterances": {
-                            "boiling": "hot",
-                            "Boiling": "hot",
-                            "cold": "cold",
-                            "Cold": "cold",
-                            "hot": "hot",
-                            "Hot": "hot",
-                            "iced": "cold",
-                            "Iced": "cold"
-                        }
                     }
                 },
                 "slot_name_mappings": {
@@ -298,6 +291,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 "test_intent_parser1",
                 "test_intent_parser2"
             ],
+            "builtin_entity_parser": "builtin_entity_parser",
+            "custom_entity_parser": "custom_entity_parser",
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -331,16 +326,6 @@ class TestSnipsNLUEngine(FixtureTest):
                 "entities": {
                     "Temperature": {
                         "automatically_extensible": True,
-                        "utterances": {
-                            "boiling": "hot",
-                            "Boiling": "hot",
-                            "cold": "cold",
-                            "Cold": "cold",
-                            "hot": "hot",
-                            "Hot": "hot",
-                            "iced": "cold",
-                            "Iced": "cold"
-                        }
                     }
                 },
                 "slot_name_mappings": {
@@ -358,6 +343,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 "test_intent_parser1",
                 "test_intent_parser1_2"
             ],
+            "builtin_entity_parser": "builtin_entity_parser",
+            "custom_entity_parser": "custom_entity_parser",
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -370,8 +357,13 @@ class TestSnipsNLUEngine(FixtureTest):
             self.tmp_file_path / "test_intent_parser1_2" / "metadata.json",
             {"unit_name": "test_intent_parser1"})
 
-    def test_should_be_deserializable_from_dir(self):
+    @patch("snips_nlu.nlu_engine.nlu_engine.CustomEntityParser")
+    @patch("snips_nlu.nlu_engine.nlu_engine.BuiltinEntityParser")
+    def test_should_be_deserializable_from_dir(
+            self, mocked_builtin_entity_parser, mocked_custom_entity_parser):
         # Given
+        mocked_builtin_entity_parser.from_path = MagicMock()
+        mocked_custom_entity_parser.from_path = MagicMock()
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
 
@@ -409,6 +401,8 @@ class TestSnipsNLUEngine(FixtureTest):
                 "test_intent_parser1",
                 "test_intent_parser2",
             ],
+            "builtin_entity_parser": "builtin_entity_parser",
+            "custom_entity_parser": "custom_entity_parser",
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -437,6 +431,10 @@ class TestSnipsNLUEngine(FixtureTest):
         self.assertDictEqual(engine._dataset_metadata, dataset_metadata)
         # pylint:enable=protected-access
         self.assertDictEqual(engine.config.to_dict(), expected_engine_config)
+        mocked_custom_entity_parser.from_path.assert_called_once_with(
+            self.tmp_file_path / "custom_entity_parser")
+        mocked_builtin_entity_parser.from_path.assert_called_once_with(
+            self.tmp_file_path / "builtin_entity_parser")
 
     def test_should_be_serializable_into_dir_when_empty(self):
         # Given
@@ -451,6 +449,8 @@ class TestSnipsNLUEngine(FixtureTest):
             "dataset_metadata": None,
             "config": None,
             "intent_parsers": [],
+            "builtin_entity_parser": None,
+            "custom_entity_parser": None,
             "model_version": snips_nlu.__model_version__,
             "training_package_version": snips_nlu.__version__
         }
@@ -492,6 +492,17 @@ class TestSnipsNLUEngine(FixtureTest):
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeTea")
         self.assertListEqual(result[RES_SLOTS], expected_slots)
 
+    def test_should_be_serializable_into_bytearray_when_empty(self):
+        # Given
+        engine = SnipsNLUEngine()
+        engine_bytes = engine.to_byte_array()
+
+        # When
+        engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+
+        # Then
+        self.assertFalse(engine.fitted)
+
     def test_should_be_serializable_into_bytearray(self):
         # Given
         dataset = BEVERAGE_DATASET
@@ -499,7 +510,12 @@ class TestSnipsNLUEngine(FixtureTest):
 
         # When
         engine_bytes = engine.to_byte_array()
-        loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
+        builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, parser_usage=CustomEntityParserUsage.WITHOUT_STEMS)
+        loaded_engine = SnipsNLUEngine.from_byte_array(
+            engine_bytes, builtin_entity_parser=builtin_entity_parser,
+            custom_entity_parser=custom_entity_parser)
         result = loaded_engine.parse("Make me two cups of coffee")
 
         # Then
@@ -553,7 +569,8 @@ class TestSnipsNLUEngine(FixtureTest):
                                 "dummy2_bis"
                             ]
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 },
                 "dummy_entity_2": {
                     "use_synonyms": False,
@@ -565,7 +582,8 @@ class TestSnipsNLUEngine(FixtureTest):
                                 "dummy2"
                             ]
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en"
@@ -633,7 +651,8 @@ class TestSnipsNLUEngine(FixtureTest):
                                 "dummy1_bis"
                             ]
                         }
-                    ]
+                    ],
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en"
@@ -714,7 +733,8 @@ class TestSnipsNLUEngine(FixtureTest):
                         }
                     ],
                     "use_synonyms": True,
-                    "automatically_extensible": False
+                    "automatically_extensible": False,
+                    "parser_threshold": 1.0
                 }
             },
             "language": "en",
@@ -723,6 +743,7 @@ class TestSnipsNLUEngine(FixtureTest):
         mocked_proba_parser_intent = intent_classification_result(
             "intent1", 1.0)
 
+        # pylint: disable=unused-argument
         def mock_proba_parse(text, intents):
             slots = [unresolved_slot(match_range=(0, len(text)), value=text,
                                      entity="entity1", slot_name="slot1")]
@@ -829,7 +850,6 @@ class TestSnipsNLUEngine(FixtureTest):
         message = str(cm.exception.args[0])
         self.assertTrue("Expected unicode but received" in message)
 
-
     def test_should_fit_and_parse_empty_intent(self):
         # Given
         dataset = {
@@ -856,40 +876,6 @@ class TestSnipsNLUEngine(FixtureTest):
         engine.fit(dataset)
         engine.parse("ya", intents=["dummy_intent"])
 
-    def test_should_fit_and_parse_empty_intent_with_empty_slot(self):
-        dataset = {
-            "intents": {
-                "dummy_intent": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": " ",
-                                    "slot_name": "dummy_slot",
-                                    "entity": "dummy_entity"
-                                }
-                            ]
-                        }
-                    ],
-                }
-            },
-            "entities": {
-                "dummy_entity": {
-                    "use_synonyms": True,
-                    "automatically_extensible": True,
-                    "parser_threshold": 1.0,
-                    "data": [
-                        {
-                            "value": " ",
-                            "synonyms": []
-                        }
-                    ]
-                }
-            },
-            "language": "en",
-        }
-
-
 
 class TestIntentParser1Config(ProcessingUnitConfig):
     unit_name = "test_intent_parser1"
@@ -900,9 +886,6 @@ class TestIntentParser1Config(ProcessingUnitConfig):
     @classmethod
     def from_dict(cls, obj_dict):
         return TestIntentParser1Config()
-
-    def get_required_resources(self):
-        return None
 
 
 class TestIntentParser1(IntentParser):
@@ -927,7 +910,7 @@ class TestIntentParser1(IntentParser):
             f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         cfg = cls.config_type()
         return cls(cfg)
 
@@ -941,9 +924,6 @@ class TestIntentParser2Config(ProcessingUnitConfig):
     @classmethod
     def from_dict(cls, obj_dict):
         return TestIntentParser2Config()
-
-    def get_required_resources(self):
-        return None
 
 
 class TestIntentParser2(IntentParser):
@@ -968,6 +948,6 @@ class TestIntentParser2(IntentParser):
             f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         cfg = cls.config_type()
         return cls(cfg)

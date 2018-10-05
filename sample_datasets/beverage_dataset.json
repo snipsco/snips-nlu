@@ -1,0 +1,139 @@
+{
+  "entities": {
+    "beverage_type": {
+      "automatically_extensible": true,
+      "data": [
+        {
+          "value": "espresso",
+          "synonyms": [
+            "espressi",
+            "espressos",
+            "expresso",
+            "expressos"
+          ]
+        }
+      ],
+      "parser_threshold": 1.0,
+      "use_synonyms": true
+    },
+    "snips/number": {}
+  },
+  "intents": {
+    "prepareBeverage": {
+      "utterances": [
+        {
+          "data": [
+            {
+              "text": "Make me "
+            },
+            {
+              "entity": "snips/number",
+              "slot_name": "number_of_cups",
+              "text": "two"
+            },
+            {
+              "text": " cups of "
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "cappucino"
+            },
+            {
+              "text": " please"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "Please prepare a cup of "
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "tea"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "I'd like to have "
+            },
+            {
+              "entity": "snips/number",
+              "slot_name": "number_of_cups",
+              "text": "one"
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "strong latte"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "can you make an "
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "espresso"
+            },
+            {
+              "text": " please ?"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "serve "
+            },
+            {
+              "entity": "snips/number",
+              "slot_name": "number_of_cups",
+              "text": "three"
+            },
+            {
+              "text": " cups of "
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "tea with milk"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "make me a "
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "coffee"
+            }
+          ]
+        },
+        {
+          "data": [
+            {
+              "text": "I want a "
+            },
+            {
+              "entity": "beverage_type",
+              "slot_name": "beverage_type",
+              "text": "tea"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "language": "en"
+}

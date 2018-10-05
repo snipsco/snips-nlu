@@ -11,7 +11,6 @@ ROOT_PATH = Path(__file__).parent
 RCFILEPATH = ROOT_PATH / "tools" / "pylintrc"
 
 TESTED_PACKAGES = ["snips_nlu", "snips_nlu_samples", "debug"]
-SKIPPED_SUB_PACKAGES = ["tests"]
 
 
 class TestLinting(unittest.TestCase):
@@ -27,8 +26,6 @@ def all_python_files():
     files = []
     for p in TESTED_PACKAGES:
         for dirpath, _, filenames in os.walk(str(ROOT_PATH / p)):
-            if Path(dirpath).name in SKIPPED_SUB_PACKAGES:
-                continue
             files += [
                 os.sep.join([dirpath, f])
                 for f in filenames if f.endswith(".py")

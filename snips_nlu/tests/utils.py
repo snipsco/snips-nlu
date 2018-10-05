@@ -4,7 +4,6 @@ import json
 import shutil
 import tempfile
 import traceback as tb
-from builtins import bytes
 from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
@@ -12,7 +11,7 @@ from unittest import TestCase
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.resources import load_resources
-from snips_nlu.utils import json_string
+from snips_nlu.utils import json_string, unicode_string
 
 TEST_PATH = Path(__file__).parent
 SAMPLE_DATASET_PATH = TEST_PATH / "resources" / "sample_dataset.json"
@@ -21,6 +20,7 @@ WEATHER_DATASET_PATH = TEST_PATH / "resources" / "weather_dataset.json"
 PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
 
 
+# pylint: disable=invalid-name
 class SnipsTest(TestCase):
 
     def setUp(self):
@@ -57,17 +57,15 @@ class SnipsTest(TestCase):
 
     @staticmethod
     def writeFileContent(path, content):
-        content = bytes(content, encoding="utf8")
         with path.open(mode="w") as f:
-            f.write(content.decode("utf8"))
+            f.write(unicode_string(content))
 
 
 class FixtureTest(SnipsTest):
-    fixture_dir = TEST_PATH / "fixture"
-
     # pylint: disable=protected-access
     def setUp(self):
         super(FixtureTest, self).setUp()
+        self.fixture_dir = Path(tempfile.mkdtemp())
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 

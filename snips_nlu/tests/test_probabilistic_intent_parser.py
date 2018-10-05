@@ -6,17 +6,18 @@ from mock import patch
 
 from snips_nlu.constants import RES_INTENT, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.intent_classifier import IntentClassifier, \
-    LogRegIntentClassifier
+from snips_nlu.intent_classifier import (
+    IntentClassifier, LogRegIntentClassifier)
 from snips_nlu.intent_parser import ProbabilisticIntentParser
-from snips_nlu.pipeline.configs import (
-    CRFSlotFillerConfig, LogRegIntentClassifierConfig,
-    ProbabilisticIntentParserConfig, ProcessingUnitConfig)
-from snips_nlu.pipeline.units_registry import register_processing_unit, \
-    reset_processing_units
+from snips_nlu.pipeline.configs import (CRFSlotFillerConfig,
+                                        LogRegIntentClassifierConfig,
+                                        ProcessingUnitConfig,
+                                        ProbabilisticIntentParserConfig)
+from snips_nlu.pipeline.units_registry import (
+    register_processing_unit, reset_processing_units)
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
-from snips_nlu.utils import json_string
+from snips_nlu.utils import NotTrained, json_string
 
 
 class TestProbabilisticIntentParser(FixtureTest):
@@ -76,6 +77,15 @@ class TestProbabilisticIntentParser(FixtureTest):
             parser.fit(BEVERAGE_DATASET, force_retrain=False)
             self.assertEqual(1, mock_fit.call_count)
 
+    def test_should_not_parse_when_not_fitted(self):
+        # Given
+        parser = ProbabilisticIntentParser()
+
+        # When / Then
+        self.assertFalse(parser.fitted)
+        with self.assertRaises(NotTrained):
+            parser.parse("foobar")
+
     def test_should_be_serializable_before_fitting(self):
         # Given
         parser = ProbabilisticIntentParser()
@@ -85,7 +95,6 @@ class TestProbabilisticIntentParser(FixtureTest):
 
         # Then
         expected_parser_dict = {
-            "unit_name": "probabilistic_intent_parser",
             "config": {
                 "unit_name": "probabilistic_intent_parser",
                 "slot_filler_config": CRFSlotFillerConfig().to_dict(),
@@ -144,7 +153,6 @@ class TestProbabilisticIntentParser(FixtureTest):
             "intent_classifier_config": {"unit_name": "test_intent_classifier"}
         }
         expected_parser_dict = {
-            "unit_name": "probabilistic_intent_parser",
             "config": expected_parser_config,
             "slot_fillers": [
                 {
@@ -226,11 +234,16 @@ class TestProbabilisticIntentParser(FixtureTest):
         # Given
         dataset = BEVERAGE_DATASET
         intent_parser = ProbabilisticIntentParser().fit(dataset)
+        builtin_entity_parser = intent_parser.builtin_entity_parser
+        custom_entity_parser = intent_parser.custom_entity_parser
 
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = ProbabilisticIntentParser.from_byte_array(
-            intent_parser_bytes)
+            intent_parser_bytes,
+            builtin_entity_parser=builtin_entity_parser,
+            custom_entity_parser=custom_entity_parser
+        )
         result = loaded_intent_parser.parse("make me two cups of tea")
 
         # Then
@@ -276,18 +289,22 @@ class TestIntentClassifierConfig(ProcessingUnitConfig):
     def from_dict(cls, obj_dict):
         return TestIntentClassifierConfig()
 
-    def get_required_resources(self):
-        return None
 
-
+# pylint: disable=abstract-method
 class TestIntentClassifier(IntentClassifier):
     unit_name = "test_intent_classifier"
     config_type = TestIntentClassifierConfig
+    _fitted = False
+
+    @property
+    def fitted(self):
+        return self._fitted
 
     def get_intent(self, text, intents_filter):
         return None
 
     def fit(self, dataset):
+        self._fitted = True
         return self
 
     def persist(self, path):
@@ -297,9 +314,9 @@ class TestIntentClassifier(IntentClassifier):
             f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         config = cls.config_type()
-        return TestIntentClassifier(config)
+        return cls(config)
 
 
 class TestSlotFillerConfig(ProcessingUnitConfig):
@@ -312,18 +329,22 @@ class TestSlotFillerConfig(ProcessingUnitConfig):
     def from_dict(cls, obj_dict):
         return TestSlotFillerConfig()
 
-    def get_required_resources(self):
-        return None
 
-
+# pylint: disable=abstract-method
 class TestSlotFiller(SlotFiller):
     unit_name = "test_slot_filler"
     config_type = TestSlotFillerConfig
+    _fitted = False
+
+    @property
+    def fitted(self):
+        return self._fitted
 
     def get_slots(self, text):
         return []
 
     def fit(self, dataset, intent):
+        self._fitted = True
         return self
 
     def persist(self, path):
@@ -333,6 +354,6 @@ class TestSlotFiller(SlotFiller):
             f.write(json_string({"unit_name": self.unit_name}))
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         config = cls.config_type()
-        return TestSlotFiller(config)
+        return cls(config)

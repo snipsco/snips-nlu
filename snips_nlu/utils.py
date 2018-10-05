@@ -10,6 +10,7 @@ from builtins import bytes, object, str
 from collections import Mapping, OrderedDict, namedtuple
 from contextlib import contextmanager
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
 from tempfile import mkdtemp
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -22,6 +23,15 @@ from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
+
+# pylint: disable=invalid-name
+
+class abstractclassmethod(classmethod):
+    __isabstractmethod__ = True
+
+    def __init__(self, callable):
+        callable.__isabstractmethod__ = True
+        super(abstractclassmethod, self).__init__(callable)
 
 
 class NotTrained(LookupError):
@@ -59,7 +69,7 @@ def classproperty(func):
     return ClassPropertyDescriptor(func)
 
 
-# pylint: enable=C0103
+# pylint: enable=invalid-name
 
 
 def type_error(expected_type, found_type):
@@ -265,7 +275,11 @@ def json_debug_string(dict_data):
 
 def json_string(json_object, indent=2, sort_keys=True):
     json_dump = json.dumps(json_object, indent=indent, sort_keys=sort_keys)
-    return bytes(json_dump, encoding="utf8").decode("utf8")
+    return unicode_string(json_dump)
+
+
+def unicode_string(string):
+    return bytes(string, encoding="utf8").decode("utf8")
 
 
 def log_elapsed_time(logger, level, output_msg=None):
@@ -273,6 +287,7 @@ def log_elapsed_time(logger, level, output_msg=None):
         output_msg = "Elapsed time ->:\n{elapsed_time}"
 
     def get_wrapper(fn):
+        @wraps(fn)
         def wrapped(*args, **kwargs):
             start = datetime.now()
             msg_fmt = dict()
@@ -292,6 +307,7 @@ def log_result(logger, level, output_msg=None):
         output_msg = "Result ->:\n{result}"
 
     def get_wrapper(fn):
+        @wraps(fn)
         def wrapped(*args, **kwargs):
             msg_fmt = dict()
             res = fn(*args, **kwargs)
@@ -310,10 +326,21 @@ def log_result(logger, level, output_msg=None):
 
 
 def check_persisted_path(func):
+    @wraps(func)
     def func_wrapper(self, path, *args, **kwargs):
         if Path(path).exists():
             raise OSError("Persisting directory %s already exists" % path)
         return func(self, path, *args, **kwargs)
+
+    return func_wrapper
+
+
+def fitted_required(func):
+    @wraps(func)
+    def func_wrapper(self, *args, **kwargs):
+        if not self.fitted:
+            raise NotTrained("%s must be fitted" % self.unit_name)
+        return func(self, *args, **kwargs)
 
     return func_wrapper
 
@@ -348,3 +375,13 @@ def get_package_path(name):
     name = name.lower().replace("-", "_")
     pkg = importlib.import_module(name)
     return Path(pkg.__file__).parent
+
+
+def deduplicate_overlapping_items(items, overlap_fn, sort_key_fn):
+    sorted_items = sorted(items, key=sort_key_fn)
+    deduplicated_items = []
+    for item in sorted_items:
+        if not any(overlap_fn(item, dedup_item)
+                   for dedup_item in deduplicated_items):
+            deduplicated_items.append(item)
+    return deduplicated_items

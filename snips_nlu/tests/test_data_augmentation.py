@@ -81,16 +81,15 @@ class TestDataAugmentation(SnipsTest):
 
     @patch("snips_nlu.data_augmentation.get_builtin_entity_examples")
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
-    def test_entities_iterators_with_builtin_examples(self, _,
-                                                      mocked_builtin_entity_examples):
+    def test_entities_iterators_with_builtin_examples(
+            self, _, mocked_builtin_entity_examples):
         # Given
         language = "en"
 
-        def mock_builtin_entity_examples(builtin_entity_kind, language):
+        def mock_builtin_entity_examples(builtin_entity_kind, _):
             if builtin_entity_kind == "snips/number":
                 return ["2007", "two hundreds and six"]
-            else:
-                return []
+            return []
 
         mocked_builtin_entity_examples.side_effect = \
             mock_builtin_entity_examples

@@ -265,7 +265,8 @@ entity in your dataset as follows:
             "value": "blue",
             "synonyms": []
           }
-        ]
+        ],
+        "parser_threshold": 1.0
       }
     }
 
@@ -361,6 +362,7 @@ not your custom entity is automatically extensible:
       "my_custom_entity": {
         "automatically_extensible": true,
         "use_synonyms": true,
-        "data": []
+        "data": [],
+        "parser_threshold": 1.0
       }
     }

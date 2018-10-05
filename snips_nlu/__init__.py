@@ -8,5 +8,3 @@ from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.resources import load_resources
 
 __builtin_entities_version__ = get_ontology_version()
-
-logging.getLogger(__name__).addHandler(logging.NullHandler())

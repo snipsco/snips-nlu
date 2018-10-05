@@ -4,26 +4,30 @@ import json
 import logging
 from builtins import str
 from collections import defaultdict
-from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
 
 from snips_nlu.__about__ import __model_version__, __version__
-from snips_nlu.builtin_entities import is_builtin_entity
 from snips_nlu.constants import (
-    CAPITALIZE, ENTITIES, LANGUAGE, RES_ENTITY, RES_INTENT, RES_SLOTS)
+    AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
+    ENTITIES, ENTITY, ENTITY_IDENTIFIER, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE,
+    RES_ENTITY, RES_INTENT, RES_MATCH_RANGE,
+    RES_SLOTS, RES_VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
-from snips_nlu.nlu_engine.utils import resolve_slots
+from snips_nlu.entity_parser import CustomEntityParser
+from snips_nlu.entity_parser.builtin_entity_parser import (
+    BuiltinEntityParser, is_builtin_entity)
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.resources import load_resources_from_dir, persist_resources
-from snips_nlu.result import empty_result, is_empty, parsing_result
-from snips_nlu.utils import (NotTrained, check_persisted_path,
-                             get_slot_name_mappings, json_string,
-                             log_elapsed_time, log_result)
+from snips_nlu.result import (
+    builtin_slot, custom_slot, empty_result, is_empty, parsing_result)
+from snips_nlu.utils import (
+    check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
+    log_elapsed_time, log_result)
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +55,10 @@ class SnipsNLUEngine(ProcessingUnit):
     unit_name = "nlu_engine"
     config_type = NLUEngineConfig
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, **shared):
         """The NLU engine can be configured by passing a
         :class:`.NLUEngineConfig`"""
-        super(SnipsNLUEngine, self).__init__(config)
+        super(SnipsNLUEngine, self).__init__(config, **shared)
         self.intent_parsers = []
         """list of :class:`.IntentParser`"""
         self._dataset_metadata = None
@@ -78,12 +82,19 @@ class SnipsNLUEngine(ProcessingUnit):
             The same object, trained.
         """
         logger.info("Fitting NLU engine...")
+
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
-
         if self.config is None:
             language = self._dataset_metadata["language_code"]
-            self.config = self.config_type.from_dict(DEFAULT_CONFIGS[language])
+            default_config = DEFAULT_CONFIGS.get(language)
+            if default_config is not None:
+                self.config = self.config_type.from_dict(default_config)
+            else:
+                self.config = self.config_type()
+
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
 
         parsers = []
         for parser_config in self.config.intent_parsers_configs:
@@ -95,6 +106,9 @@ class SnipsNLUEngine(ProcessingUnit):
                     break
             if recycled_parser is None:
                 recycled_parser = build_processing_unit(parser_config)
+
+            recycled_parser.builtin_entity_parser = self.builtin_entity_parser
+            recycled_parser.custom_entity_parser = self.custom_entity_parser
             if force_retrain or not recycled_parser.fitted:
                 recycled_parser.fit(dataset, force_retrain)
             parsers.append(recycled_parser)
@@ -104,6 +118,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
     @log_result(logger, logging.DEBUG, "Result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed query in {elapsed_time}")
+    @fitted_required
     def parse(self, text, intents=None):
         """Performs intent parsing on the provided *text* by calling its intent
         parsers successively
@@ -125,27 +140,72 @@ class SnipsNLUEngine(ProcessingUnit):
         if not isinstance(text, str):
             raise TypeError("Expected unicode but received: %s" % type(text))
 
-        if not self.fitted:
-            raise NotTrained("SnipsNLUEngine must be fitted")
-
         if isinstance(intents, str):
             intents = [intents]
-
-        language = self._dataset_metadata["language_code"]
-        entities = self._dataset_metadata["entities"]
 
         for parser in self.intent_parsers:
             res = parser.parse(text, intents)
             if is_empty(res):
                 continue
-            slots = res[RES_SLOTS]
-            scope = [s[RES_ENTITY] for s in slots
-                     if is_builtin_entity(s[RES_ENTITY])]
-            resolved_slots = resolve_slots(text, slots, entities, language,
-                                           scope)
+            resolved_slots = self.resolve_slots(text, res[RES_SLOTS])
             return parsing_result(text, intent=res[RES_INTENT],
                                   slots=resolved_slots)
         return empty_result(text)
+
+    def resolve_slots(self, text, slots):
+        builtin_scope = [slot[RES_ENTITY] for slot in slots
+                         if is_builtin_entity(slot[RES_ENTITY])]
+        custom_scope = [slot[RES_ENTITY] for slot in slots
+                        if not is_builtin_entity(slot[RES_ENTITY])]
+        # Do not use cached entities here as datetimes must be computed using
+        # current context
+        builtin_entities = self.builtin_entity_parser.parse(
+            text, builtin_scope, use_cache=False)
+        custom_entities = self.custom_entity_parser.parse(
+            text, custom_scope, use_cache=True)
+
+        resolved_slots = []
+        for slot in slots:
+            entity_name = slot[RES_ENTITY]
+            raw_value = slot[RES_VALUE]
+            if is_builtin_entity(entity_name):
+                entities = builtin_entities
+                parser = self.builtin_entity_parser
+                slot_builder = builtin_slot
+                use_cache = False
+                entity_name_key = ENTITY_KIND
+                extensible = False
+                resolved_value_key = ENTITY
+            else:
+                entities = custom_entities
+                parser = self.custom_entity_parser
+                slot_builder = custom_slot
+                use_cache = True
+                entity_name_key = ENTITY_IDENTIFIER
+                extensible = self._dataset_metadata[ENTITIES][entity_name][
+                    AUTOMATICALLY_EXTENSIBLE]
+                resolved_value_key = RESOLVED_VALUE
+
+            resolved_slot = None
+            for ent in entities:
+                if ent[entity_name_key] == entity_name and \
+                        ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
+                    resolved_slot = slot_builder(slot, ent[resolved_value_key])
+                    break
+            if resolved_slot is None:
+                matches = parser.parse(
+                    raw_value, scope=[entity_name], use_cache=use_cache)
+                if matches:
+                    resolved_slot = slot_builder(
+                        slot, matches[0][resolved_value_key])
+
+            if resolved_slot is None and extensible:
+                resolved_slot = slot_builder(slot)
+
+            if resolved_slot is not None:
+                resolved_slots.append(resolved_slot)
+
+        return resolved_slots
 
     @check_persisted_path
     def persist(self, path):
@@ -174,14 +234,29 @@ class SnipsNLUEngine(ProcessingUnit):
         if self.config is not None:
             config = self.config.to_dict()
 
+        builtin_entity_parser = None
+        if self.builtin_entity_parser is not None:
+            builtin_entity_parser = "builtin_entity_parser"
+            builtin_entity_parser_path = directory_path / builtin_entity_parser
+            self.builtin_entity_parser.persist(builtin_entity_parser_path)
+
+        custom_entity_parser = None
+        if self.custom_entity_parser is not None:
+            custom_entity_parser = "custom_entity_parser"
+            custom_entity_parser_path = directory_path / custom_entity_parser
+            self.custom_entity_parser.persist(custom_entity_parser_path)
+
         model = {
             "unit_name": self.unit_name,
             "dataset_metadata": self._dataset_metadata,
             "intent_parsers": intent_parsers,
+            "custom_entity_parser": custom_entity_parser,
+            "builtin_entity_parser": builtin_entity_parser,
             "config": config,
             "model_version": __model_version__,
             "training_package_version": __version__
         }
+
         model_json = json_string(model)
         model_path = directory_path / "nlu_engine.json"
         with model_path.open(mode="w") as f:
@@ -197,14 +272,15 @@ class SnipsNLUEngine(ProcessingUnit):
                                   required_resources, language)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, **shared):
         """Load a :class:`SnipsNLUEngine` instance from a directory path
 
         The data at the given path must have been generated using
         :func:`~SnipsNLUEngine.persist`
 
         Args:
-            path (str): The path where the nlu engine is stored.
+            path (str): The path where the nlu engine is
+                stored.
         """
         directory_path = Path(path)
         model_path = directory_path / "nlu_engine.json"
@@ -220,32 +296,50 @@ class SnipsNLUEngine(ProcessingUnit):
                 "Incompatible data model: persisted object=%s, python lib=%s"
                 % (model_version, __model_version__))
 
-        resources_dir = (directory_path / "resources")
-        if resources_dir.is_dir():
-            for subdir in resources_dir.iterdir():
-                load_resources_from_dir(subdir)
+        dataset_metadata = model["dataset_metadata"]
+        if dataset_metadata is not None:
+            language = dataset_metadata["language_code"]
+            resources_dir = directory_path / "resources" / language
+            if resources_dir.is_dir():
+                load_resources_from_dir(resources_dir)
 
-        nlu_engine = cls(config=model["config"])
+        if shared.get(BUILTIN_ENTITY_PARSER) is None:
+            path = model["builtin_entity_parser"]
+            if path is not None:
+                parser_path = directory_path / path
+                shared[BUILTIN_ENTITY_PARSER] = BuiltinEntityParser.from_path(
+                    parser_path)
+
+        if shared.get(CUSTOM_ENTITY_PARSER) is None:
+            path = model["custom_entity_parser"]
+            if path is not None:
+                parser_path = directory_path / path
+                shared[CUSTOM_ENTITY_PARSER] = CustomEntityParser.from_path(
+                    parser_path)
+
+        nlu_engine = cls(config=model["config"], **shared)
+
         # pylint:disable=protected-access
-        nlu_engine._dataset_metadata = model["dataset_metadata"]
+        nlu_engine._dataset_metadata = dataset_metadata
         # pylint:enable=protected-access
         intent_parsers = []
         for intent_parser_name in model["intent_parsers"]:
             intent_parser_path = directory_path / intent_parser_name
-            intent_parser = load_processing_unit(intent_parser_path)
+            intent_parser = load_processing_unit(intent_parser_path, **shared)
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
 
 
 def _get_dataset_metadata(dataset):
+    dataset = dataset
     entities = dict()
     for entity_name, entity in iteritems(dataset[ENTITIES]):
         if is_builtin_entity(entity_name):
             continue
-        ent = deepcopy(entity)
-        ent.pop(CAPITALIZE)
-        entities[entity_name] = ent
+        entities[entity_name] = {
+            AUTOMATICALLY_EXTENSIBLE: entity[AUTOMATICALLY_EXTENSIBLE]
+        }
     slot_name_mappings = get_slot_name_mappings(dataset)
     return {
         "language_code": dataset[LANGUAGE],

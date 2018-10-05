@@ -8,7 +8,7 @@ from snips_nlu.default_configs import CONFIG_EN
 
 SAMPLE_DATASET_PATH = Path(__file__).parent / "sample_dataset.json"
 
-with SAMPLE_DATASET_PATH.open() as f:
+with SAMPLE_DATASET_PATH.open(encoding="utf8") as f:
     sample_dataset = json.load(f)
 
 load_resources("en")

@@ -11,7 +11,7 @@ from future.utils import iteritems
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
-    ENTITIES, ENTITY, ENTITY_IDENTIFIER, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE,
+    ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE,
     RES_ENTITY, RES_INTENT, RES_MATCH_RANGE,
     RES_SLOTS, RES_VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
@@ -173,7 +173,6 @@ class SnipsNLUEngine(ProcessingUnit):
                 parser = self.builtin_entity_parser
                 slot_builder = builtin_slot
                 use_cache = False
-                entity_name_key = ENTITY_KIND
                 extensible = False
                 resolved_value_key = ENTITY
             else:
@@ -181,14 +180,13 @@ class SnipsNLUEngine(ProcessingUnit):
                 parser = self.custom_entity_parser
                 slot_builder = custom_slot
                 use_cache = True
-                entity_name_key = ENTITY_IDENTIFIER
                 extensible = self._dataset_metadata[ENTITIES][entity_name][
                     AUTOMATICALLY_EXTENSIBLE]
                 resolved_value_key = RESOLVED_VALUE
 
             resolved_slot = None
             for ent in entities:
-                if ent[entity_name_key] == entity_name and \
+                if ent[ENTITY_KIND] == entity_name and \
                         ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
                     resolved_slot = slot_builder(slot, ent[resolved_value_key])
                     break

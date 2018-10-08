@@ -9,11 +9,11 @@ from pathlib import Path
 from future.utils import iteritems
 
 from snips_nlu.constants import (
-    BUILTIN_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS,
-    LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
+    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
+    ENTITY_KIND, INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME,
+    START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
-from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.result import (
@@ -82,16 +82,16 @@ class DeterministicIntentParser(IntentParser):
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
         self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
         self.group_names_to_slot_names = dict()
-        joined_entity_utterances = _get_joined_entity_utterances(
-            dataset, self.language)
+        entity_placeholders = _get_entity_placeholders(dataset, self.language)
         self.slot_names_to_entities = get_slot_name_mappings(dataset)
         for intent_name, intent in iteritems(dataset[INTENTS]):
             utterances = intent[UTTERANCES]
             patterns, self.group_names_to_slot_names = _generate_patterns(
-                utterances, joined_entity_utterances,
+                utterances, entity_placeholders,
                 self.group_names_to_slot_names, self.language)
             patterns = [p for p in patterns
                         if len(p) < self.config.max_pattern_length]
@@ -128,8 +128,11 @@ class DeterministicIntentParser(IntentParser):
 
         builtin_entities = self.builtin_entity_parser.parse(
             text, use_cache=True)
-        ranges_mapping, processed_text = _replace_builtin_entities(
-            text, self.language, builtin_entities)
+        custom_entities = self.custom_entity_parser.parse(
+            text, use_cache=True)
+        all_entities = builtin_entities + custom_entities
+        ranges_mapping, processed_text = _replace_entities_with_placeholders(
+            text, self.language, all_entities)
 
         # We try to match both the input text and the preprocessed text to
         # cover inconsistencies between labeled data and builtin entity parsing
@@ -151,7 +154,7 @@ class DeterministicIntentParser(IntentParser):
         return empty_result(text)
 
     def _get_matching_result(self, text, processed_text, regex, intent,
-                             builtin_entities_ranges_mapping=None):
+                             entities_ranges_mapping=None):
         found_result = regex.match(processed_text)
         if found_result is None:
             return None
@@ -163,12 +166,12 @@ class DeterministicIntentParser(IntentParser):
             entity = self.slot_names_to_entities[intent][slot_name]
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
-            if builtin_entities_ranges_mapping is not None:
-                if rng in builtin_entities_ranges_mapping:
-                    rng = builtin_entities_ranges_mapping[rng]
+            if entities_ranges_mapping is not None:
+                if rng in entities_ranges_mapping:
+                    rng = entities_ranges_mapping[rng]
                 else:
                     shift = _get_range_shift(
-                        rng, builtin_entities_ranges_mapping)
+                        rng, entities_ranges_mapping)
                     rng = {START: rng[0] + shift, END: rng[1] + shift}
             else:
                 rng = {START: rng[0], END: rng[1]}
@@ -229,8 +232,11 @@ class DeterministicIntentParser(IntentParser):
         :func:`~DeterministicIntentParser.to_dict`
         """
         config = cls.config_type.from_dict(unit_dict["config"])
-        parser = cls(config=config,
-                     builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER))
+        parser = cls(
+            config=config,
+            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER),
+            custom_entity_parser=shared.get(CUSTOM_ENTITY_PARSER),
+        )
         parser.patterns = unit_dict["patterns"]
         parser.language = unit_dict["language_code"]
         parser.group_names_to_slot_names = unit_dict[
@@ -299,8 +305,8 @@ def _generate_new_index(slots_name_to_labels):
     return index
 
 
-def _query_to_pattern(query, joined_entity_utterances,
-                      group_names_to_slot_names, language):
+def _query_to_pattern(query, entity_placeholders, group_names_to_slot_names,
+                      language):
     pattern = []
     for chunk in query[DATA]:
         if SLOT_NAME in chunk:
@@ -309,7 +315,7 @@ def _query_to_pattern(query, joined_entity_utterances,
             entity = chunk[ENTITY]
             group_names_to_slot_names[max_index] = slot_name
             pattern.append(
-                r"(?P<%s>%s)" % (max_index, joined_entity_utterances[entity]))
+                r"(?P<%s>%s)" % (max_index, entity_placeholders[entity]))
         else:
             tokens = tokenize_light(chunk[TEXT], language)
             pattern += [regex_escape(t) for t in tokens]
@@ -338,53 +344,38 @@ def _get_queries_with_unique_context(intent_queries, language):
     return queries
 
 
-def _generate_patterns(intent_queries, joined_entity_utterances,
+def _generate_patterns(intent_queries, entity_placeholders,
                        group_names_to_labels, language):
     queries = _get_queries_with_unique_context(intent_queries, language)
     # Join all the entities utterances with a "|" to create the patterns
     patterns = set()
     for query in queries:
         pattern, group_names_to_labels = _query_to_pattern(
-            query, joined_entity_utterances, group_names_to_labels, language)
+            query, entity_placeholders, group_names_to_labels, language)
         patterns.add(pattern)
     return list(patterns), group_names_to_labels
 
 
-def _get_joined_entity_utterances(dataset, language):
-    joined_entity_utterances = dict()
-    for entity_name, entity in iteritems(dataset[ENTITIES]):
-        # matches are performed in a case insensitive manner
-        utterances = set(u.lower() for u in entity[UTTERANCES])
-        patterns = []
-        if is_builtin_entity(entity_name):
-            # We add a placeholder value for builtin entities
-            placeholder = _get_entity_name_placeholder(entity_name, language)
-            patterns.append(regex_escape(placeholder))
-        else:
-            for utterance in utterances:
-                tokens = tokenize_light(utterance, language)
-                pattern = WHITESPACE_PATTERN.join(regex_escape(t)
-                                                  for t in tokens)
-                patterns.append(pattern)
-        patterns = (p for p in patterns if p)
-        joined_entity_utterances[entity_name] = r"|".join(
-            sorted(patterns, key=len, reverse=True))
-    return joined_entity_utterances
+def _get_entity_placeholders(dataset, language):
+    return {
+        e: _get_entity_name_placeholder(e, language)
+        for e in dataset[ENTITIES]
+    }
 
 
-def _replace_builtin_entities(text, language, builtin_entities):
-    if not builtin_entities:
+def _replace_entities_with_placeholders(text, language, entities):
+    if not entities:
         return dict(), text
 
-    builtin_entities = _deduplicate_overlapping_entities(builtin_entities)
-    builtin_entities = sorted(builtin_entities,
-                              key=lambda e: e[RES_MATCH_RANGE][START])
+    entities = _deduplicate_overlapping_entities(entities)
+    entities = sorted(
+        entities, key=lambda e: e[RES_MATCH_RANGE][START])
 
     range_mapping = dict()
     processed_text = ""
     offset = 0
     current_ix = 0
-    for ent in builtin_entities:
+    for ent in entities:
         ent_start = ent[RES_MATCH_RANGE][START]
         ent_end = ent[RES_MATCH_RANGE][END]
         rng_start = ent_start + offset
@@ -392,8 +383,8 @@ def _replace_builtin_entities(text, language, builtin_entities):
         processed_text += text[current_ix:ent_start]
 
         entity_length = ent_end - ent_start
-        entity_place_holder = _get_entity_name_placeholder(ent[ENTITY_KIND],
-                                                           language)
+        entity_place_holder = _get_entity_name_placeholder(
+            ent[ENTITY_KIND], language)
 
         offset += len(entity_place_holder) - entity_length
 

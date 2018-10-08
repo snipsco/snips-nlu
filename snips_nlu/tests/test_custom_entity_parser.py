@@ -64,7 +64,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 0,
                     "end": 14
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             },
             {
                 "value": "dummy_1",
@@ -73,7 +73,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 15,
                     "end": 22
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             },
             {
                 "value": "dummy_entity_2",
@@ -82,7 +82,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 23,
                     "end": 37
                 },
-                "entity_identifier": "dummy_entity_2"
+                "entity_kind": "dummy_entity_2"
             },
             {
                 "value": "dummy_2",
@@ -91,7 +91,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 38,
                     "end": 45
                 },
-                "entity_identifier": "dummy_entity_2"
+                "entity_kind": "dummy_entity_2"
             }
         ]
         self.assertListEqual(expected_entities, result)
@@ -117,7 +117,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 0,
                     "end": 13
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             }
         ]
         self.assertListEqual(expected_entities, result)
@@ -143,7 +143,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 0,
                     "end": 13
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             },
             {
                 "value": "dummy_1",
@@ -152,7 +152,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 14,
                     "end": 21
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             }
         ]
         self.assertListEqual(expected_entities, result)
@@ -176,7 +176,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 2,
                     "end": 9
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             },
             {
                 "value": "dummy_2",
@@ -185,7 +185,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 10,
                     "end": 17
                 },
-                "entity_identifier": "dummy_entity_2"
+                "entity_kind": "dummy_entity_2"
             }
         ]
         self.assertListEqual(expected_entities, result)
@@ -242,7 +242,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 0,
                     "end": 14
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             },
             {
                 "value": "dummy_1",
@@ -251,7 +251,7 @@ class TestCustomEntityParser(FixtureTest):
                     "start": 15,
                     "end": 22
                 },
-                "entity_identifier": "dummy_entity_1"
+                "entity_kind": "dummy_entity_1"
             }
         ]
         self.assertListEqual(expected_entities, result)

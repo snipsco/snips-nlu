@@ -10,7 +10,7 @@ from snips_nlu_ontology import GazetteerEntityParser
 
 from snips_nlu.constants import (
     END, ENTITIES, LANGUAGE, PARSER_THRESHOLD, RES_MATCH_RANGE, START,
-    UTTERANCES)
+    UTTERANCES, ENTITY_KIND)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
@@ -97,6 +97,7 @@ class CustomEntityParser(EntityParser):
         for entity in entities:
             start = entity[RES_MATCH_RANGE][START]
             end = entity[RES_MATCH_RANGE][END]
+            entity[ENTITY_KIND] = entity.pop("entity_identifier")
             entity[RES_MATCH_RANGE][START] -= shifts[start]
             entity[RES_MATCH_RANGE][END] -= shifts[end - 1]
         return entities

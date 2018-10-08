@@ -3,16 +3,15 @@ from __future__ import unicode_literals
 import json
 import logging
 import re
-
 from builtins import str
 from pathlib import Path
 
 from future.utils import iteritems
 
-from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
-                                 DATA, END, ENTITIES, ENTITY, ENTITY_KIND,
-                                 INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE,
-                                 SLOT_NAME, START, TEXT, UTTERANCES)
+from snips_nlu.constants import (
+    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
+    ENTITY_KIND, INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME,
+    START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig

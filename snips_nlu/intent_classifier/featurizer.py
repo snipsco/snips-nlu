@@ -201,7 +201,7 @@ def _preprocess_utterance(utterance, language, builtin_entity_parser,
     custom_entities = [e for e in custom_entities
                        if e["value"] != unknownword_replacement_string]
     custom_entities_features = [
-        _entity_name_to_feature(e["entity_identifier"], language)
+        _entity_name_to_feature(e[ENTITY_KIND], language)
         for e in custom_entities]
 
     builtin_entities = builtin_entity_parser.parse(

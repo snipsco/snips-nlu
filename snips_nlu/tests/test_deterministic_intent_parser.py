@@ -12,7 +12,7 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _get_range_shift, _replace_builtin_entities,
+    _get_range_shift, _replace_entities_with_placeholders,
     _replace_tokenized_out_characters)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
@@ -231,10 +231,12 @@ class TestDeterministicIntentParser(FixtureTest):
         dataset = validate_and_format_dataset(self.slots_dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
+        custom_entity_parser = parser.custom_entity_parser
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
             self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
+            custom_entity_parser=custom_entity_parser)
         text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -332,10 +334,12 @@ class TestDeterministicIntentParser(FixtureTest):
         dataset = validate_and_format_dataset(dataset)
 
         parser = DeterministicIntentParser().fit(dataset)
+        custom_entity_parser = parser.custom_entity_parser
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
             self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
+            custom_entity_parser=custom_entity_parser)
 
         texts = [
             (
@@ -403,12 +407,15 @@ class TestDeterministicIntentParser(FixtureTest):
         # Given
         dataset = BEVERAGE_DATASET
         intent_parser = DeterministicIntentParser().fit(dataset)
+        custom_entity_parser = intent_parser.custom_entity_parser
 
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = DeterministicIntentParser.from_byte_array(
             intent_parser_bytes,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
+            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
+            custom_entity_parser=custom_entity_parser
+        )
         result = loaded_intent_parser.parse("make me two cups of coffee")
 
         # Then
@@ -750,15 +757,15 @@ class TestDeterministicIntentParser(FixtureTest):
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
-        self.assertEqual(3, len(parser.regexes_per_intent["dummy_intent_1"]))
+        self.assertEqual(4, len(parser.regexes_per_intent["dummy_intent_1"]))
         self.assertEqual(1, len(parser.regexes_per_intent["dummy_intent_2"]))
 
-    def test_should_replace_builtin_entities(self):
+    def test_should_replace_entities(self):
         # Given
         text = "Be the first to be there at 9pm"
 
         # When
-        builtin_entities = [
+        entities = [
             {
                 "entity_kind": "snips/ordinal",
                 "value": "the first",
@@ -768,7 +775,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 }
             },
             {
-                "entity_kind": "snips/musicAlbum",
+                "entity_kind": "my_custom_entity",
                 "value": "first",
                 "range": {
                     "start": 7,
@@ -784,9 +791,8 @@ class TestDeterministicIntentParser(FixtureTest):
                 }
             }
         ]
-        range_mapping, processed_text = _replace_builtin_entities(
-            text=text, language=LANGUAGE_EN,
-            builtin_entities=builtin_entities)
+        range_mapping, processed_text = _replace_entities_with_placeholders(
+            text=text, language=LANGUAGE_EN, entities=entities)
 
         # Then
         expected_mapping = {

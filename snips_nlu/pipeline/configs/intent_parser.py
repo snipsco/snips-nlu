@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
+from snips_nlu.constants import CUSTOM_ENTITY_PARSER_USAGE
+from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.resources import merge_required_resources
@@ -91,6 +93,11 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         from snips_nlu.intent_parser.deterministic_intent_parser import \
             DeterministicIntentParser
         return DeterministicIntentParser.unit_name
+
+    def get_required_resources(self):
+        return {
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
+        }
 
     def to_dict(self):
         return {

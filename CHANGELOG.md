@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.17.1] - 2018-10-09
+### Fixed
+- `DeterministicIntentParser` now relies on the custom entity parser
+
+### Changed
+- Bump `snips-nlu-ontology` to `0.60`
+
 ## [0.17.0] - 2018-10-05
 ### Added
 - Support for 3 new builtin entities in French: `snips/musicAlbum`, `snips/musicArtist` and `snips/musicTrack`
@@ -150,6 +157,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.17.1]: https://github.com/snipsco/snips-nlu/compare/0.17.0...0.17.1
 [0.17.0]: https://github.com/snipsco/snips-nlu/compare/0.16.5...0.17.0
 [0.16.5]: https://github.com/snipsco/snips-nlu/compare/0.16.4...0.16.5
 [0.16.4]: https://github.com/snipsco/snips-nlu/compare/0.16.3...0.16.4

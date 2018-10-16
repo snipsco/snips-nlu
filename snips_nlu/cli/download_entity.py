@@ -3,7 +3,10 @@ from __future__ import print_function, unicode_literals
 import sys
 
 import plac
-from snips_nlu_ontology import get_builtin_entity_shortname
+
+from future.builtins import str
+from snips_nlu_ontology import (
+    get_builtin_entity_shortname, get_supported_gazetteer_entities)
 
 from snips_nlu import __about__
 from snips_nlu.cli.download import download_from_resource_name
@@ -38,6 +41,29 @@ def download_builtin_entity(entity_name, language, *pip_args):
 
     _download_and_link_entity(
         long_resource_name, entity_name, language, compatibility, pip_args)
+
+
+@plac.annotations(
+    language=("Language of the builtin entity", "positional", None, str),
+    pip_args=("Additional arguments to be passed to `pip install` when "
+              "installing the builtin entity package"))
+# pylint: disable=keyword-arg-before-vararg
+def download_language_builtin_entities(language, *pip_args):
+    """Download all gazetteer entity resources for a given language as well as
+    basic language resources for this language"""
+    download_from_resource_name(language, pip_args, verbose=False)
+
+    shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
+    for entity_name in get_supported_gazetteer_entities(language):
+        check_resources_alias(entity_name, shortcuts)
+
+        compatibility = get_compatibility()
+        resource_name_lower = entity_name.lower()
+        long_resource_name = shortcuts.get(resource_name_lower,
+                                           resource_name_lower)
+
+        _download_and_link_entity(
+            long_resource_name, entity_name, language, compatibility, pip_args)
 
 
 # pylint: enable=keyword-arg-before-vararg

@@ -41,7 +41,7 @@ def link_resources(origin, link_name, force, resources_path):
             else Path(resources_path)
     if not resources_path.exists():
         raise OSError("%s not found" % str(resources_path))
-    link_path = DATA_PATH / link_name
+    link_path = DATA_PATH / str(link_name)
     if link_path.is_symlink() and not force:
         raise OSError("Symlink already exists: %s" % str(link_path))
     elif link_path.is_symlink():

@@ -2,8 +2,7 @@
 from __future__ import unicode_literals
 
 from mock import patch
-from snips_nlu_ontology import (
-    get_all_languages, get_supported_gazetteer_entities)
+from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.constants import ENTITIES, ENTITY_KIND, LANGUAGE
 from snips_nlu.entity_parser.builtin_entity_parser import (

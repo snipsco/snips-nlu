@@ -24,8 +24,7 @@ build: false
 
 test_script:
   - "%PYTHON%\\python.exe -m snips_nlu download-all-languages"
-  - "%PYTHON%\\python.exe -m snips_nlu download-entity snips/musicAlbum fr"
-  - "%PYTHON%\\python.exe -m snips_nlu download-entity snips/musicArtist fr"
-  - "%PYTHON%\\python.exe -m snips_nlu download-entity snips/musicTrack fr"
+  - "%PYTHON%\\python.exe -m snips_nlu download-language-entities fr"
+  - "%PYTHON%\\python.exe -m snips_nlu download-language-entities en"
   - "%PYTHON%\\python.exe -m unittest discover"
   - "%PYTHON%\\python.exe snips_nlu_samples/sample.py"

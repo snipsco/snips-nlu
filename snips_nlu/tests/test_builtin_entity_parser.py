@@ -19,9 +19,7 @@ class TestBuiltinEntityParser(SnipsTest):
         # Given
         text = "we'll be 2 at the meeting"
         language = "en"
-        parser = BuiltinEntityParser.build(
-            language=language,
-            gazetteer_entity_scope=get_supported_gazetteer_entities(language))
+        parser = BuiltinEntityParser.build(language=language)
 
         # When / Then
         parse = parser.parse(text)

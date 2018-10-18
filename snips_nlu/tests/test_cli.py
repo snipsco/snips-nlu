@@ -39,7 +39,8 @@ class TestCLI(SnipsTest):
 
     def test_train(self):
         # Given / When
-        train(BEVERAGE_DATASET_PATH, str(self.tmp_file_path), config_path=None)
+        train(BEVERAGE_DATASET_PATH, str(self.tmp_file_path), config_path=None,
+              verbose=False)
 
         # Then
         if not self.tmp_file_path.exists():
@@ -50,7 +51,8 @@ class TestCLI(SnipsTest):
 
     def test_parse(self):
         # Given / When
-        train(BEVERAGE_DATASET_PATH, str(self.tmp_file_path), config_path=None)
+        train(BEVERAGE_DATASET_PATH, str(self.tmp_file_path), config_path=None,
+              verbose=False)
 
         # When
         with self.fail_if_exception("Failed to parse using CLI script"):

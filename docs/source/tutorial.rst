@@ -30,9 +30,9 @@ We created a `sample dataset`_ that you can check to better understand the
 format.
 
 You have three options to create your dataset. You can build it manually by
-respecting the format used in the sample, you can also use the dataset creation 
-CLI included in the lib, or alternatively you can use `chatito`_ a DSL 
-tool for dataset generation.
+respecting the format used in the sample, you can also use the
+:ref:`dataset creation CLI <dataset_cli>` included in the lib, or alternatively
+you can use `chatito`_ a DSL tool for dataset generation.
 
 We will go for the second option here and start by creating three files
 corresponding to our three intents and one entity file corresponding to the
@@ -93,24 +93,10 @@ Let's move to the ``entity_room.txt`` entity file:
 
     bedroom
     living room,main room
-    garden,yard,"backyard,"
+    garden,yard,backyard
 
 The entity file is a comma (``,``) separated file. Each line corresponds to an
 entity value followed by its potential :ref:`synonyms <synonyms>`.
-
-If a value or a synonym contains a comma, the value must be put between
-double quotes ``"``. If the value contains double quotes, it must be doubled
-to be escaped like this:  ``"A value with a "","" in it"`` which corresponds
-to the actual value ``A value with a "," in it``.
-
-.. Note::
-
-    By default entities are generated as :ref:`automatically extensible <auto_extensible>`, i.e. the recognition will accept additional values than the ones listed in the entity file.
-    This behavior can be changed by adding at the beginning of the entity file the following:
-
-    .. code-block:: bash
-
-       # automatically_extensible=false
 
 We are now ready to generate our dataset:
 
@@ -145,7 +131,7 @@ Now, the ``"entities"`` part of the generated json looks like that:
             {
               "synonyms": [
                 "yard",
-                "backyard,"
+                "backyard"
               ],
               "value": "garden"
             }
@@ -195,7 +181,7 @@ and that we want our assistant to cover. Additionally, we add some
             {
               "synonyms": [
                 "yard",
-                "backyard,"
+                "backyard"
               ],
               "value": "garden"
             }

@@ -2,9 +2,9 @@ from __future__ import print_function, unicode_literals
 
 import json
 import logging
+from pathlib import Path
 
 import plac
-from pathlib import Path
 
 from snips_nlu import SnipsNLUEngine, load_resources
 from snips_nlu.cli.utils import set_nlu_logger

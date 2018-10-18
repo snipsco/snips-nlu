@@ -1,20 +1,21 @@
-from __future__ import unicode_literals
-
-import sys
-
-import plac
-
-from snips_nlu.cli import (
-    cross_val_metrics, download, download_all_languages, generate_dataset,
-    link, train_test_metrics)
-from snips_nlu.cli.download_entity import (
-    download_builtin_entity, download_language_builtin_entities)
-from snips_nlu.cli.inference import parse
-from snips_nlu.cli.training import train
-from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
+from __future__ import print_function, unicode_literals
 
 
 def main():
+    import sys
+
+    import plac
+
+    from snips_nlu.__about__ import __version__, __model_version__
+    from snips_nlu.cli import (
+        cross_val_metrics, download, download_all_languages, generate_dataset,
+        link, train_test_metrics)
+    from snips_nlu.cli.download_entity import (
+        download_builtin_entity, download_language_builtin_entities)
+    from snips_nlu.cli.inference import parse
+    from snips_nlu.cli.training import train
+    from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
+
     commands = {
         "train": train,
         "parse": parse,
@@ -22,6 +23,8 @@ def main():
         "download-all-languages": download_all_languages,
         "download-entity": download_builtin_entity,
         "download-language-entities": download_language_builtin_entities,
+        "version": lambda: print(__version__),
+        "model-version": lambda: print(__model_version__),
         "link": link,
         "generate-dataset": generate_dataset,
         "cross-val-metrics": cross_val_metrics,

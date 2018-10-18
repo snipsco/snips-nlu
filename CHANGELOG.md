@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.17.3] - 2018-10-18
+### Fixed
+- Crash with num2words and floats
+
 ## [0.17.2] - 2018-10-15
 ### Added
 - Support for builtin music entities in english
@@ -161,6 +165,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.17.3]: https://github.com/snipsco/snips-nlu/compare/0.17.2...0.17.3
 [0.17.2]: https://github.com/snipsco/snips-nlu/compare/0.17.1...0.17.2
 [0.17.1]: https://github.com/snipsco/snips-nlu/compare/0.17.0...0.17.1
 [0.17.0]: https://github.com/snipsco/snips-nlu/compare/0.16.5...0.17.0

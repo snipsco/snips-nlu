@@ -81,6 +81,7 @@ the :ref:`api` documentation or alternatively check the `github repository`_.
    installation
    quickstart
    tutorial
+   cli
    data_model
    languages
    api

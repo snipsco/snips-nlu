@@ -108,7 +108,7 @@ def alphabetic_value(number_entity, language):
     value = number_entity[ENTITY][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
         return None
-    return num2words(value, lang=language)
+    return num2words(int(value), lang=language)
 
 
 def numbers_variations(string, language, builtin_entity_parser):

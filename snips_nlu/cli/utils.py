@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals
 
+import logging
 import os
 import subprocess
 import sys
@@ -7,6 +8,7 @@ from enum import Enum, unique
 
 import requests
 
+import snips_nlu
 from snips_nlu import __about__
 
 
@@ -98,3 +100,11 @@ def check_resources_alias(resource_name, shortcuts):
             "(case insensitive):\n{a}".format(r=resource_name, a=aliases),
             title="Unknown language resources", exits=1,
             level=PrettyPrintLevel.ERROR)
+
+
+def set_nlu_logger(level=logging.INFO):
+    logger = logging.getLogger(snips_nlu.__name__)
+    logger.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setLevel(level)
+    logger.addHandler(handler)

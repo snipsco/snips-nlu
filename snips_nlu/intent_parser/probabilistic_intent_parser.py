@@ -75,6 +75,9 @@ class ProbabilisticIntentParser(IntentParser):
                 self.config.intent_classifier_config)
         self.intent_classifier.builtin_entity_parser = \
             self.builtin_entity_parser
+        self.intent_classifier.custom_entity_parser = \
+            self.custom_entity_parser
+
         if force_retrain or not self.intent_classifier.fitted:
             self.intent_classifier.fit(dataset)
 

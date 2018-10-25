@@ -9,7 +9,7 @@ from snips_nlu.constants import ROOT_PATH
 from snips_nlu.intent_classifier.starspace_intent_classifier import (
     StarSpaceIntentClassifier, StarSpaceIntentClassifierConfig)
 from snips_nlu.pipeline.configs import IntentClassifierDataAugmentationConfig
-from snips_nlu.tests.utils import SnipsTest, BEVERAGE_DATASET
+from snips_nlu.tests.utils import SnipsTest
 
 snips_nlu_logger = logging.getLogger("snips_nlu")
 
@@ -18,6 +18,7 @@ handler.setLevel(logging.DEBUG)
 
 snips_nlu_logger.addHandler(handler)
 snips_nlu_logger.setLevel(logging.DEBUG)
+
 
 class TestStarSpaceIntentClassifier(SnipsTest):
     def test_startspace_intent_classifier(self):
@@ -30,7 +31,7 @@ class TestStarSpaceIntentClassifier(SnipsTest):
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             min_utterances=200, noise_factor=5)
         config = StarSpaceIntentClassifierConfig(
-            validation_patience=20, margin=0.4,
+            validation_patience=20, margin=0.3,
             data_augmentation_config=data_augmentation_config,
             embedding_dim=10, max_intents=2, use_stemming=True)
         classifier = StarSpaceIntentClassifier(config)
@@ -53,7 +54,6 @@ class TestStarSpaceIntentClassifier(SnipsTest):
 
         classifier.builtin_entity_parser.persist(builtin_entity_parser_path)
         classifier.custom_entity_parser.persist(custom_entity_parser_path)
-
 
         # Then
         print("Result -> ", res)

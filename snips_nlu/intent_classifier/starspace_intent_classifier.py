@@ -13,11 +13,10 @@ from future.utils import iteritems, viewvalues
 from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
 
-from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, DATA, ENTITY,
-                                 ENTITY_KIND, INTENTS, ROOT_PATH, STEMS, TEXT,
-                                 UTTERANCES, WORD_CLUSTERS)
+from snips_nlu.constants import (DATA, ENTITY,
+                                 ENTITY_KIND, INTENTS, ROOT_PATH, TEXT,
+                                 UTTERANCES)
 from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
-from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.featurizer import (
@@ -26,11 +25,11 @@ from snips_nlu.intent_classifier.featurizer import (
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data)
 from snips_nlu.pipeline.configs import (
-    IntentClassifierDataAugmentationConfig, ProcessingUnitConfig)
+    StarSpaceIntentClassifierConfig)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.result import intent_classification_result
 from snips_nlu.utils import (
-    check_random_state, classproperty, json_string, temp_dir)
+    check_random_state, json_string, temp_dir)
 
 """
 TODO: just save the labels embedding and the model at inference use the label
@@ -38,82 +37,6 @@ TODO: just save the labels embedding and the model at inference use the label
 
 TODO: add a None intent
 """
-
-
-class StarSpaceIntentClassifierConfig(ProcessingUnitConfig):
-    """Configuration of a :class:`.Featurizer` object
-
-    Args:
-        sublinear_tf (bool, optional): Whether or not to use sublinear
-            (vs linear) term frequencies, default is *False*.
-        pvalue_threshold (float, optional): max pvalue for a feature to be
-        kept in the feature selection
-    """
-
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.intent_classifier.starspace_intent_classifier \
-            import StarSpaceIntentClassifier
-        return StarSpaceIntentClassifier.unit_name
-
-    def __init__(self, embedding_dim, max_intents, validation_ratio=0.1,
-                 validation_patience=10, n_threads=4, neg_search_limit=50,
-                 margin=0.05, data_augmentation_config=None,
-                 word_clusters_name=None, use_stemming=False,
-                 unknown_word_prob=0, random_seed=None,
-                 unknown_words_replacement_string=None):
-        if data_augmentation_config is None:
-            data_augmentation_config = IntentClassifierDataAugmentationConfig()
-        self.embedding_dim = embedding_dim
-        self.max_intents = max_intents
-        self.validation_ratio = validation_ratio
-        self.validation_patience = validation_patience
-        self.n_threads = n_threads
-        self.neg_search_limit = neg_search_limit
-        self.margin = margin
-        self.data_augmentation_config = data_augmentation_config
-        self.unknown_word_prob = unknown_word_prob
-        self.unknown_words_replacement_string = \
-            unknown_words_replacement_string
-        self.word_clusters_name = word_clusters_name
-        self.use_stemming = use_stemming
-        self.random_seed = random_seed
-
-    def get_required_resources(self):
-        if self.use_stemming:
-            parser_usage = CustomEntityParserUsage.WITH_STEMS
-        else:
-            parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
-        if self.word_clusters_name is not None:
-            word_clusters = {self.word_clusters_name}
-        else:
-            word_clusters = set()
-        return {
-            WORD_CLUSTERS: word_clusters,
-            STEMS: self.use_stemming,
-            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
-        }
-
-    def to_dict(self):
-        return {
-            "embedding_dim": self.embedding_dim,
-            "max_intents": self.max_intents,
-            "validation_patience": self.validation_patience,
-            "n_threads": self.n_threads,
-            "neg_search_limit": self.neg_search_limit,
-            "validation_ratio": self.validation_ratio,
-            "margin": self.margin,
-            "random_seed": self.random_seed,
-            "word_clusters_name": self.word_clusters_name,
-            "use_stemming": self.use_stemming,
-            "unknown_words_replacement_string": \
-                self.unknown_words_replacement_string,
-            "data_augmentation_config": self.data_augmentation_config.to_dict()
-        }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
 
 class StarSpaceIntentClassifier(IntentClassifier):
@@ -159,10 +82,10 @@ class StarSpaceIntentClassifier(IntentClassifier):
         if num_utterances < 2:
             raise ValueError("Dataset should have at least 2 utterances")
 
-        val_ix = min(num_utterances - 1,
-                     int(num_utterances * self.config.validation_ratio))
-        val_dataset = starspace_dataset[:val_ix]
-        train_dataset = starspace_dataset[val_ix:]
+        train_id = min(num_utterances - 1,
+                       int(num_utterances * self.config.validation_ratio))
+        val_dataset = starspace_dataset[:train_id]
+        train_dataset = starspace_dataset[train_id:]
         self.base_labels = list(dataset[INTENTS])
 
         max_neg_samples = 2 * len(dataset[INTENTS])
@@ -218,13 +141,14 @@ class StarSpaceIntentClassifier(IntentClassifier):
         similarities = cosine_similarity(
             self.labels_embeddings, text_embeddings.reshape(1, -1)).flatten()
         probs = (similarities + 1.0) / 2.0
-        intent_ix_and_probs = zip(self.labels, probs)
+        labels = ["+".join(label) if label != (None,) else None
+                  for label in self.labels]
+        intent_ix_and_probs = zip(labels, probs)
         return sorted(intent_ix_and_probs, key=itemgetter(1), reverse=True)
 
     def get_intent(self, text, intents_filter=None):
         intents_probs = self.get_intents_probs(text)
         best_intent, best_prob = intents_probs[0]
-        best_intent = "+".join(str(i) for i in best_intent)
         if intents_filter is not None and best_intent not in intents_filter:
             return None
         return intent_classification_result(best_intent, best_prob)
@@ -376,7 +300,6 @@ def create_multi_intent_dataset(dataset, max_intents, random_state,
         for intent_id, intent in iteritems(multi_intent_dataset[INTENTS])
     }
     total_queries = sum(viewvalues(num_queries))
-
 
     for combination_size in range(2, max_intents + 1):
         all_intents_combinations = list(

@@ -10,6 +10,104 @@ from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
+class StarSpaceIntentClassifierConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.Featurizer` object
+
+    Args:
+        sublinear_tf (bool, optional): Whether or not to use sublinear
+            (vs linear) term frequencies, default is *False*.
+        pvalue_threshold (float, optional): max pvalue for a feature to be
+        kept in the feature selection
+    """
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.starspace_intent_classifier \
+            import StarSpaceIntentClassifier
+        return StarSpaceIntentClassifier.unit_name
+
+    def __init__(self, embedding_dim=10, max_intents=2, validation_ratio=0.1,
+                 validation_patience=10, n_threads=4, neg_search_limit=50,
+                 margin=0.05, data_augmentation_config=None,
+                 word_clusters_name=None, use_stemming=False,
+                 unknown_word_prob=0, random_seed=None,
+                 unknown_words_replacement_string=None):
+        if data_augmentation_config is None:
+            data_augmentation_config = IntentClassifierDataAugmentationConfig()
+        self.embedding_dim = embedding_dim
+        self.max_intents = max_intents
+        self.validation_ratio = validation_ratio
+        self.validation_patience = validation_patience
+        self.n_threads = n_threads
+        self.neg_search_limit = neg_search_limit
+        self.margin = margin
+        self.data_augmentation_config = data_augmentation_config
+        self.unknown_word_prob = unknown_word_prob
+        self.unknown_words_replacement_string = \
+            unknown_words_replacement_string
+        self.word_clusters_name = word_clusters_name
+        self.use_stemming = use_stemming
+        self.random_seed = random_seed
+
+    @property
+    def data_augmentation_config(self):
+        return self._data_augmentation_config
+
+    @data_augmentation_config.setter
+    def data_augmentation_config(self, value):
+        if isinstance(value, dict):
+            self._data_augmentation_config = \
+                IntentClassifierDataAugmentationConfig.from_dict(value)
+        elif isinstance(value, IntentClassifierDataAugmentationConfig):
+            self._data_augmentation_config = value
+        else:
+            raise TypeError("Expected instance of "
+                            "IntentClassifierDataAugmentationConfig or dict"
+                            "but received: %s" % type(value))
+
+    def get_required_resources(self):
+        if self.use_stemming:
+            parser_usage = CustomEntityParserUsage.WITH_STEMS
+        else:
+            parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
+        if self.word_clusters_name is not None:
+            word_clusters = {self.word_clusters_name}
+        else:
+            word_clusters = set()
+        return {
+            WORD_CLUSTERS: word_clusters,
+            STEMS: self.use_stemming,
+            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
+        }
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "embedding_dim": self.embedding_dim,
+            "max_intents": self.max_intents,
+            "validation_patience": self.validation_patience,
+            "n_threads": self.n_threads,
+            "neg_search_limit": self.neg_search_limit,
+            "validation_ratio": self.validation_ratio,
+            "margin": self.margin,
+            "random_seed": self.random_seed,
+            "word_clusters_name": self.word_clusters_name,
+            "use_stemming": self.use_stemming,
+            "unknown_words_replacement_string": \
+                self.unknown_words_replacement_string,
+            "data_augmentation_config": self.data_augmentation_config.to_dict()
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)
+
+
+
 class LogRegIntentClassifierConfig(ProcessingUnitConfig):
     # pylint: disable=line-too-long
     """Configuration of a :class:`.LogRegIntentClassifier`

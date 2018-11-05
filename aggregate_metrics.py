@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import unicode_literals, division
+from __future__ import division, unicode_literals
 
 import itertools
 import json
@@ -8,15 +8,15 @@ from copy import deepcopy
 import fire
 import matplotlib.pyplot as plt
 import numpy as np
-from future.utils import itervalues
+from future.utils import iteritems
 from pathlib import Path
 
 
 def get_f1(metrics):
     metrics = deepcopy(metrics)
-    num_intents =  len(metrics["metrics"])
-    total_f1 = sum(i["intent"]["f1"] for i in itervalues(metrics["metrics"]))
-    return total_f1 / num_intents
+    not_none_f1s = [i["intent"]["f1"] for name, i
+                    in iteritems(metrics["metrics"]) if name != "null"]
+    return sum(not_none_f1s) / len(not_none_f1s)
 
 
 def draw_confusion_matrix(metrics, metrics_path, f1):

@@ -4,7 +4,7 @@ import numpy as np
 import scipy.sparse as sp
 from builtins import object, range
 from future.utils import iteritems
-from future.builtins import zip
+from scipy.sparse import csr_matrix, hstack
 from sklearn.cluster import KMeans
 from sklearn.exceptions import NotFittedError
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
@@ -87,6 +87,7 @@ class Featurizer(object):
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             preprocessed_utterances)
+
         # pylint: enable=C0103
         features_idx = {self.tfidf_vectorizer.vocabulary_[word]: word for word
                         in self.tfidf_vectorizer.vocabulary_}
@@ -112,6 +113,10 @@ class Featurizer(object):
                         self.config.pvalue_threshold / 2.0:
                     self.best_features.remove(feat)
 
+        min_cluster_ix = X_train_tfidf.shape[1]
+        max_cluster_ix = min_cluster_ix + X_train_clusters.shape[1]
+        for i in range(X_train_tfidf.shape[0], max_cluster_ix):
+            self.best_features.append(i)
         return self
 
     def transform(self, utterances):
@@ -119,16 +124,16 @@ class Featurizer(object):
 
         X_clusterer = self.kmeans_tfidf_vectorizer.transform(
             preprocessed_utterances)
-        labels = self.kmeans_clusterer.predict(X_clusterer)
-        preprocessed_utterances = [
-            u + " knncluster%s" % l
-            for u, l in zip(preprocessed_utterances, labels)
-        ]
+        X_train_clusters = self.kmeans_clusterer.transform(X_clusterer)
 
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.transform(
             preprocessed_utterances)
-        X = X_train_tfidf[:, self.best_features]
+
+        X_train = hstack(
+            (X_train_tfidf, csr_matrix(X_train_clusters)), format="csr")
+
+        X = X_train[:, self.best_features]
         # pylint: enable=C0103
         return X
 
@@ -142,7 +147,7 @@ class Featurizer(object):
                 self.custom_entity_parser, self.config.word_clusters_name,
                 self.config.use_stemming,
                 self.unknown_words_replacement_string
-            ,
+                ,
                 self.kmeans_tfidf_vectorizer
             )
             for u in utterances

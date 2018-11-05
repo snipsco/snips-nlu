@@ -4,10 +4,102 @@ from copy import deepcopy
 
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
-from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import \
+    CustomEntityParserUsage
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
+
+
+class FastTextIntentClassifierConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.Featurizer` object
+
+    Args:
+        sublinear_tf (bool, optional): Whether or not to use sublinear
+            (vs linear) term frequencies, default is *False*.
+        pvalue_threshold (float, optional): max pvalue for a feature to be
+        kept in the feature selection
+    """
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.fastext_intent_classifier \
+            import FastTextIntentClassifier
+        return FastTextIntentClassifier.unit_name
+
+    def __init__(self, embedding_dims=None, learning_rates=None, epochs=None,
+                 validation_ratio=0.1, n_threads=4,
+                 data_augmentation_config=None, use_stemming=False,
+                 unknown_word_prob=0, random_seed=None,
+                 unknown_words_replacement_string=None):
+        if learning_rates is None:
+            learning_rates = [0.1, 0.25, 0.5, 0.75]
+        if embedding_dims is None:
+            embedding_dims = [3, 5, 7, 10]
+        if epochs is None:
+            epochs = [10, 20, 30, 50]
+        if data_augmentation_config is None:
+            data_augmentation_config = IntentClassifierDataAugmentationConfig()
+        self.epochs = epochs
+        self.embedding_dims = embedding_dims
+        self.learning_rates = learning_rates
+        self.validation_ratio = validation_ratio
+        self.n_threads = n_threads
+        self.data_augmentation_config = data_augmentation_config
+        self.unknown_word_prob = unknown_word_prob
+        self.unknown_words_replacement_string = \
+            unknown_words_replacement_string
+        self.use_stemming = use_stemming
+        self.random_seed = random_seed
+
+    @property
+    def data_augmentation_config(self):
+        return self._data_augmentation_config
+
+    @data_augmentation_config.setter
+    def data_augmentation_config(self, value):
+        if isinstance(value, dict):
+            self._data_augmentation_config = \
+                IntentClassifierDataAugmentationConfig.from_dict(value)
+        elif isinstance(value, IntentClassifierDataAugmentationConfig):
+            self._data_augmentation_config = value
+        else:
+            raise TypeError("Expected instance of "
+                            "IntentClassifierDataAugmentationConfig or dict"
+                            "but received: %s" % type(value))
+
+    def get_required_resources(self):
+        if self.use_stemming:
+            parser_usage = CustomEntityParserUsage.WITH_STEMS
+        else:
+            parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
+        return {
+            STEMS: self.use_stemming,
+            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
+        }
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "embedding_dims": self.embedding_dims,
+            "epochs": self.epochs,
+            "learning_rates": self.learning_rates,
+            "n_threads": self.n_threads,
+            "validation_ratio": self.validation_ratio,
+            "random_seed": self.random_seed,
+            "use_stemming": self.use_stemming,
+            "unknown_words_replacement_string": \
+                self.unknown_words_replacement_string,
+            "data_augmentation_config": self.data_augmentation_config.to_dict()
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)
 
 
 class LogRegIntentClassifierConfig(ProcessingUnitConfig):
@@ -15,7 +107,8 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.LogRegIntentClassifier`
 
     Args:
-        data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
+        data_augmentation_config (
+        :class:`IntentClassifierDataAugmentationConfig`):
             Defines the strategy of the underlying data augmentation
         featurizer_config (:class:`FeaturizerConfig`): Configuration of the
             :class:`.Featurizer` used underneath

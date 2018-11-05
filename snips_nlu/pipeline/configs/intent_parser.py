@@ -10,6 +10,53 @@ from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
+class IntentOnlyIntentParserConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.ProbabilisticIntentParser` object
+
+    Args:
+        intent_classifier_config (:class:`.ProcessingUnitConfig`): The
+            configuration of the underlying intent classifier, by default
+            it uses a :class:`.LogRegIntentClassifierConfig`
+        slot_filler_config (:class:`.ProcessingUnitConfig`): The configuration
+            that will be used for the underlying slot fillers, by default it
+            uses a :class:`.CRFSlotFillerConfig`
+    """
+
+    # pylint: disable=super-init-not-called
+    def __init__(self, intent_classifier_config=None):
+        if intent_classifier_config is None:
+            from snips_nlu.pipeline.configs import \
+                FastTextIntentClassifierConfig
+            intent_classifier_config = FastTextIntentClassifierConfig()
+
+        self.intent_classifier_config = get_processing_unit_config(
+            intent_classifier_config)
+
+    # pylint: enable=super-init-not-called
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_parser import IntentOnlyIntentParser
+        return IntentOnlyIntentParser.unit_name
+
+    def get_required_resources(self):
+        return self.intent_classifier_config.get_required_resources()
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "intent_classifier_config": self.intent_classifier_config.to_dict()
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)
+
+
 class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.ProbabilisticIntentParser` object
 

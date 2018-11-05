@@ -4,6 +4,7 @@ import numpy as np
 import scipy.sparse as sp
 from builtins import object, range
 from future.utils import iteritems
+from future.builtins import zip
 from sklearn.cluster import KMeans
 from sklearn.exceptions import NotFittedError
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
@@ -31,13 +32,19 @@ from snips_nlu.slot_filler.features_utils import get_all_ngrams
 class Featurizer(object):
     def __init__(self, language, unknown_words_replacement_string,
                  config=FeaturizerConfig(), tfidf_vectorizer=None,
-                 best_features=None, builtin_entity_parser=None,
-                 custom_entity_parser=None):
+                 best_features=None,
+                 builtin_entity_parser=None, custom_entity_parser=None):
         self.config = config
         self.language = language
         if tfidf_vectorizer is None:
             tfidf_vectorizer = _get_tfidf_vectorizer(
                 self.language, sublinear_tf=self.config.sublinear_tf)
+
+        self.kmeans_tfidf_vectorizer = TfidfVectorizer(
+            tokenizer=lambda x: tokenize_light(x, language),
+            ngram_range=(1, 3),
+            sublinear_tf=self.config.sublinear_tf)
+
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
         self.unknown_words_replacement_string = \
@@ -109,6 +116,15 @@ class Featurizer(object):
 
     def transform(self, utterances):
         preprocessed_utterances = self.preprocess_utterances(utterances)
+
+        X_clusterer = self.kmeans_tfidf_vectorizer.transform(
+            preprocessed_utterances)
+        labels = self.kmeans_clusterer.predict(X_clusterer)
+        preprocessed_utterances = [
+            u + " knncluster%s" % l
+            for u, l in zip(preprocessed_utterances, labels)
+        ]
+
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.transform(
             preprocessed_utterances)
@@ -126,6 +142,8 @@ class Featurizer(object):
                 self.custom_entity_parser, self.config.word_clusters_name,
                 self.config.use_stemming,
                 self.unknown_words_replacement_string
+            ,
+                self.kmeans_tfidf_vectorizer
             )
             for u in utterances
         ]
@@ -205,7 +223,8 @@ class Featurizer(object):
 
 def _preprocess_utterance(utterance, language, builtin_entity_parser,
                           custom_entity_parser, word_clusters_name,
-                          use_stemming, unknownword_replacement_string):
+                          use_stemming, unknownword_replacement_string,
+                          kmean_cluster):
     utterance_text = get_text_from_chunks(utterance[DATA])
     utterance_tokens = tokenize_light(utterance_text, language)
     word_clusters_features = _get_word_cluster_features(

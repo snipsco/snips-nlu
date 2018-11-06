@@ -1,24 +1,26 @@
 from __future__ import division, unicode_literals
 
-from builtins import object, range
-
 import numpy as np
 import scipy.sparse as sp
+from builtins import object, range
 from future.utils import iteritems
+from sklearn.cluster import KMeans
 from sklearn.exceptions import NotFittedError
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
 from sklearn.utils.validation import check_is_fitted
 from snips_nlu_utils import normalize
 
-from snips_nlu.constants import (
-    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE,
-    DATA, ENTITY, ENTITY_KIND, NGRAM, TEXT)
+from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
+                                 CUSTOM_ENTITY_PARSER_USAGE, DATA, END,
+                                 ENTITY_KIND, NGRAM, RES_MATCH_RANGE, START,
+                                 VALUE)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
                                                            is_builtin_entity)
 from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParser
-from snips_nlu.languages import get_default_sep
+from snips_nlu.intent_parser.deterministic_intent_parser import \
+    _deduplicate_overlapping_entities
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (
@@ -61,6 +63,20 @@ class Featurizer(object):
             return None
 
         preprocessed_utterances = self.preprocess_utterances(utterances)
+
+        X_clusterer = self.kmeans_tfidf_vectorizer.fit_transform(
+            preprocessed_utterances)
+
+        # We hope to find 5 formulation per intents
+        target_num_clusters = len(dataset["intents"]) * 5
+        if len(preprocessed_utterances) > target_num_clusters:
+            n_clusters = target_num_clusters
+        else:
+            n_clusters = len(dataset["intents"])
+
+        self.kmeans_clusterer = KMeans(n_clusters=n_clusters, n_jobs=-1)
+        X_train_clusters = self.kmeans_clusterer.fit_transform(X_clusterer)
+
         # pylint: disable=C0103
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             preprocessed_utterances)
@@ -109,7 +125,8 @@ class Featurizer(object):
                 u, self.language, self.builtin_entity_parser,
                 self.custom_entity_parser, self.config.word_clusters_name,
                 self.config.use_stemming,
-                self.unknown_words_replacement_string)
+                self.unknown_words_replacement_string
+            )
             for u in utterances
         ]
 
@@ -196,38 +213,54 @@ def _preprocess_utterance(utterance, language, builtin_entity_parser,
     normalized_stemmed_tokens = [_normalize_stem(t, language, use_stemming)
                                  for t in utterance_tokens]
 
-    custom_entities = custom_entity_parser.parse(
-        " ".join(normalized_stemmed_tokens))
-    custom_entities = [e for e in custom_entities
-                       if e["value"] != unknownword_replacement_string]
-    custom_entities_features = [
-        _entity_name_to_feature(e[ENTITY_KIND], language)
-        for e in custom_entities]
-
+    # Detect builtin + custom
+    normalized_stemmed_utterances = " ".join(normalized_stemmed_tokens)
+    custom_entities = custom_entity_parser.parse(normalized_stemmed_utterances)
     builtin_entities = builtin_entity_parser.parse(
-        utterance_text, use_cache=True)
-    builtin_entities_features = [
-        _builtin_entity_to_feature(ent[ENTITY_KIND], language)
-        for ent in builtin_entities
-    ]
+        normalized_stemmed_utterances)
+    all_entities = custom_entities + builtin_entities
 
-    # We remove values of builtin slots from the utterance to avoid learning
-    # specific samples such as '42' or 'tomorrow'
-    filtered_normalized_stemmed_tokens = [
-        _normalize_stem(chunk[TEXT], language, use_stemming)
-        for chunk in utterance[DATA]
-        if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])
-    ]
+    # Remove overlapping entities
+    all_entities = _deduplicate_overlapping_entities(all_entities)
 
-    features = get_default_sep(language).join(
-        filtered_normalized_stemmed_tokens)
-    if builtin_entities_features:
-        features += " " + " ".join(sorted(builtin_entities_features))
-    if custom_entities_features:
-        features += " " + " ".join(sorted(custom_entities_features))
+    # Replace with placeholder
+    features = _add_entities_features(
+        normalized_stemmed_utterances, all_entities,
+        unknownword_replacement_string, language)
+
     if word_clusters_features:
         features += " " + " ".join(sorted(word_clusters_features))
 
+    return features
+
+
+def _add_entities_features(query, entities, unknownword_replacement_string,
+                           language):
+    entities = [e for e in entities
+                if e["value"] != unknownword_replacement_string]
+    features = "BOSSYMBOL "
+    cur_ix = 0
+    for ent in entities:
+        start, end = (ent[RES_MATCH_RANGE][START], ent[RES_MATCH_RANGE][END])
+        if start > cur_ix:
+            features += query[cur_ix:start]
+        if is_builtin_entity(ent[ENTITY_KIND]):
+            placeholder = _builtin_entity_to_feature(
+                ent[ENTITY_KIND], language)
+        else:
+            placeholder = _entity_name_to_feature(ent[ENTITY_KIND], language)
+        features += placeholder
+        cur_ix = end
+
+    if cur_ix < len(query):
+        features += query[cur_ix:]
+
+    features += " EOSSYMBOL"
+
+    # Add all the custom matched values at the end of the query
+    for ent in entities:
+        if not is_builtin_entity(ent[ENTITY_KIND]):
+            features += " %s" % ent[VALUE]
     return features
 
 

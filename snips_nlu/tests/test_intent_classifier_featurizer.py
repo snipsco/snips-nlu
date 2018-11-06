@@ -197,10 +197,6 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                 "entity_2": {
                     "data": [
                         {
-                            "value": "entity 1",
-                            "synonyms": []
-                        },
-                        {
                             "value": "Éntity 2",
                             "synonyms": ["Éntity_2", "Alternative entity 2"]
                         }
@@ -219,7 +215,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         utterances = [
             text_to_utterance("hÉllo wOrld Éntity_2"),
             text_to_utterance("beauTiful World entity 1"),
-            text_to_utterance("Bird bïrdy"),
+            text_to_utterance("Bird bïrdy 1 entity 1 something two entity 1"),
         ]
 
         labeled_utterance = {
@@ -256,15 +252,10 @@ class TestIntentClassifierFeaturizer(SnipsTest):
 
         # Then
         expected_utterances = [
-            "hello world entity_2 builtinentityfeaturesnipsnumber "
-            "entityfeatureentity_2",
-            "beauty world ent 1 builtinentityfeaturesnipsnumber "
-            "entityfeatureentity_1 entityfeatureentity_2 "
-            "cluster_1 cluster_3",
-            "bird bird",
-            "beauty ent bird entity_2 builtinentityfeaturesnipsnumber "
-            "builtinentityfeaturesnipsnumber entityfeatureentity_1 "
-            "entityfeatureentity_2 entityfeatureentity_2 cluster_1"
+            "BOSSYMBOL hello world entityfeatureentity_2 EOSSYMBOL entity_2",
+            "BOSSYMBOL beauty world entityfeatureentity_1 EOSSYMBOL ent 1 cluster_1 cluster_3",
+            "BOSSYMBOL bird bird builtinentityfeaturesnipsnumber entityfeatureentity_1 something builtinentityfeaturesnipsnumber entityfeatureentity_1 EOSSYMBOL ent 1 ent 1 cluster_3 cluster_3",
+            "BOSSYMBOL beauty entityfeatureentity_1 bird entityfeatureentity_2 EOSSYMBOL ent 1 entity_2 cluster_1"
         ]
 
         self.assertListEqual(utterances, expected_utterances)

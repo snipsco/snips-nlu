@@ -15,7 +15,7 @@ from snips_nlu_utils import normalize
 from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
                                  CUSTOM_ENTITY_PARSER_USAGE, DATA, END,
                                  ENTITY_KIND, NGRAM, RES_MATCH_RANGE, START,
-                                 VALUE, TEXT, ENTITY)
+                                 VALUE, TEXT, ENTITY, ENTITIES)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
                                                            is_builtin_entity)
@@ -114,8 +114,10 @@ class Featurizer(object):
                         self.config.pvalue_threshold / 2.0:
                     self.best_features.remove(feat)
 
+        self.entities = {e: i for i, e in enumerate(dataset[ENTITIES])}
+        num_entities = len(self.entities)
         min_cluster_ix = X_train_tfidf.shape[1]
-        max_cluster_ix = min_cluster_ix + X_train_clusters.shape[1]
+        max_cluster_ix = min_cluster_ix + X_train_clusters.shape[1] + num_entities
         for i in range(X_train_tfidf.shape[0], max_cluster_ix):
             self.best_features.append(i)
         return self
@@ -125,14 +127,33 @@ class Featurizer(object):
 
         X_clusterer = self.kmeans_tfidf_vectorizer.transform(
             preprocessed_utterances)
-        X_train_clusters = self.kmeans_clusterer.transform(X_clusterer)
+        X_clusters = self.kmeans_clusterer.transform(X_clusterer)
 
         # pylint: disable=C0103
-        X_train_tfidf = self.tfidf_vectorizer.transform(
+        X_tfidf = self.tfidf_vectorizer.transform(
             preprocessed_utterances)
 
+        X_entities = np.zeros((len(utterances), len(self.entities)),
+                              dtype=np.float)
+        for i, u in enumerate(utterances):
+            utterance_text = get_text_from_chunks(u[DATA])
+            utterance_tokens = tokenize_light(utterance_text, self.language)
+            normalized_stemmed_tokens = [
+                _normalize_stem(t, self.language,  self.config.use_stemming)
+                for t in utterance_tokens]
+            custom_entities = self.custom_entity_parser.parse(
+                " ".join(normalized_stemmed_tokens))
+
+            builtin_entities = self.custom_entity_parser.parse(
+                " ".join(normalized_stemmed_tokens))
+            entities = custom_entities + builtin_entities
+            for ent in entities:
+                ent_ix = self.entities[ent[ENTITY_KIND]]
+                X_entities[i, ent_ix] += 1.0
+
         X_train = hstack(
-            (X_train_tfidf, csr_matrix(X_train_clusters)), format="csr")
+            (X_tfidf, csr_matrix(X_clusters), csr_matrix(X_entities)),
+            format="csr")
 
         X = X_train[:, self.best_features]
         # pylint: enable=C0103
@@ -144,10 +165,8 @@ class Featurizer(object):
     def preprocess_utterances(self, utterances):
         return [
             _preprocess_utterance(
-                u, self.language, self.builtin_entity_parser,
-                self.custom_entity_parser, self.config.word_clusters_name,
-                self.config.use_stemming,
-                self.unknown_words_replacement_string,
+                u, self.language, self.config.word_clusters_name,
+                self.config.use_stemming
             )
             for u in utterances
         ]
@@ -225,30 +244,29 @@ class Featurizer(object):
         return self
 
 
-def _preprocess_utterance(utterance, language, builtin_entity_parser,
-                          custom_entity_parser, word_clusters_name,
-                          use_stemming, unknownword_replacement_string):
+def _preprocess_utterance(utterance, language, word_clusters_name,
+                          use_stemming):
     utterance_text = get_text_from_chunks(utterance[DATA])
     utterance_tokens = tokenize_light(utterance_text, language)
     word_clusters_features = _get_word_cluster_features(
         utterance_tokens, word_clusters_name, language)
-    normalized_stemmed_tokens = [_normalize_stem(t, language, use_stemming)
-                                 for t in utterance_tokens]
-
-    custom_entities = custom_entity_parser.parse(
-        " ".join(normalized_stemmed_tokens))
-    custom_entities = [e for e in custom_entities
-                       if e["value"] != unknownword_replacement_string]
-    custom_entities_features = [
-        _entity_name_to_feature(e[ENTITY_KIND], language)
-        for e in custom_entities]
-
-    builtin_entities = builtin_entity_parser.parse(
-        utterance_text, use_cache=True)
-    builtin_entities_features = [
-        _builtin_entity_to_feature(ent[ENTITY_KIND], language)
-        for ent in builtin_entities
-    ]
+    # normalized_stemmed_tokens = [_normalize_stem(t, language, use_stemming)
+    #                              for t in utterance_tokens]
+    #
+    # custom_entities = custom_entity_parser.parse(
+    #     " ".join(normalized_stemmed_tokens))
+    # custom_entities = [e for e in custom_entities
+    #                    if e["value"] != unknownword_replacement_string]
+    # custom_entities_features = [
+    #     _entity_name_to_feature(e[ENTITY_KIND], language)
+    #     for e in custom_entities]
+    #
+    # builtin_entities = builtin_entity_parser.parse(
+    #     utterance_text, use_cache=True)
+    # builtin_entities_features = [
+    #     _builtin_entity_to_feature(ent[ENTITY_KIND], language)
+    #     for ent in builtin_entities
+    # ]
 
     # We remove values of builtin slots from the utterance to avoid learning
     # specific samples such as '42' or 'tomorrow'
@@ -260,10 +278,10 @@ def _preprocess_utterance(utterance, language, builtin_entity_parser,
 
     features = get_default_sep(language).join(
         filtered_normalized_stemmed_tokens)
-    if builtin_entities_features:
-        features += " " + " ".join(sorted(builtin_entities_features))
-    if custom_entities_features:
-        features += " " + " ".join(sorted(custom_entities_features))
+    # if builtin_entities_features:
+    #     features += " " + " ".join(sorted(builtin_entities_features))
+    # if custom_entities_features:
+    #     features += " " + " ".join(sorted(custom_entities_features))
     if word_clusters_features:
         features += " " + " ".join(sorted(word_clusters_features))
 

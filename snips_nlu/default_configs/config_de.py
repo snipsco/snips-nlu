@@ -182,7 +182,7 @@ CONFIG = {
                     "sublinear_tf": False,
                     "pvalue_threshold": 0.4,
                     "word_clusters_name": None,
-                    "use_stemming": True
+                    "use_stemming": False
                 },
                 "random_seed": None
             }

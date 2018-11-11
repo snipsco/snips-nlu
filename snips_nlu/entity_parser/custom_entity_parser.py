@@ -87,7 +87,7 @@ class CustomEntityParser(EntityParser):
         if cache_key not in self._cache:
             parser_result = self._parse(text, scope)
             self._cache[cache_key] = parser_result
-        return deepcopy(self._cache[cache_key])
+        return self._cache[cache_key]
 
     def _parse(self, text, scope):
         tokens = tokenize(text, self.language)

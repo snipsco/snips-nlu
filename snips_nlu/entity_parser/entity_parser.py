@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
-from copy import deepcopy
 
 from future.builtins import object
 from future.utils import with_metaclass

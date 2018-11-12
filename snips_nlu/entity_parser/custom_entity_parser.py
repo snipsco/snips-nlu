@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 import json
-from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems, viewvalues

@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from abc import ABCMeta, abstractmethod
-from copy import deepcopy
 
 from future.builtins import object
 from future.utils import with_metaclass
@@ -34,7 +33,7 @@ class EntityParser(with_metaclass(ABCMeta, object)):
         if cache_key not in self._cache:
             parser_result = self._parser.parse(text, scope)
             self._cache[cache_key] = parser_result
-        return deepcopy(self._cache[cache_key])
+        return self._cache[cache_key]
 
     @abstractmethod
     def persist(self, path):

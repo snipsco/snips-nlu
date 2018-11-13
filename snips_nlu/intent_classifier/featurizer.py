@@ -42,9 +42,9 @@ class Featurizer(object):
             tfidf_vectorizer = _get_tfidf_vectorizer(
                 self.language, sublinear_tf=self.config.sublinear_tf)
 
-        self.kmeans_count_vectorizer = CountVectorizer(
-            tokenizer=lambda x: tokenize_light(x, language),
-            ngram_range=(1, 2))
+        # self.kmeans_count_vectorizer = CountVectorizer(
+        #     tokenizer=lambda x: tokenize_light(x, language),
+        #     ngram_range=(1, 2))
 
         self.tfidf_vectorizer = tfidf_vectorizer
         self.best_features = best_features
@@ -70,43 +70,43 @@ class Featurizer(object):
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
             return None
 
-        k_mean_utterances = [
-            _normalize_stem(
-                get_text_from_chunks(u[DATA]),
-                self.language,
-                self.config.use_stemming
-            ) for u in utterances
-        ]
-        self.kmeans_count_vectorizer.fit(k_mean_utterances)
-
-        unique_classes = set(classes)
-        kmeans_utterances_per_class = {c: [] for c in unique_classes}
-        for u, c in zip(k_mean_utterances, classes):
-            kmeans_utterances_per_class[c].append(u)
-
-
-        target_num_clusters = 5
-        self.clusterers = dict()
-        self.normalizers = dict()
-        for c in unique_classes:
-            c_utterances = kmeans_utterances_per_class[c]
-            x_clusters = self.kmeans_count_vectorizer.transform(c_utterances)
-
-            # Normalize the vectors to compute k-mean with cosine distance
-            normalizer = Normalizer()
-            x_clusters = normalizer.fit_transform(x_clusters)
-            self.normalizers[c] = normalizer
-
-            if len(c_utterances) > 5 * target_num_clusters:
-                n_clusters = target_num_clusters
-            else:
-                n_clusters = 1
-            self.clusterers[c] = KMeans(
-                n_clusters=n_clusters, n_jobs=-1).fit(x_clusters)
+        # k_mean_utterances = [
+        #     _normalize_stem(
+        #         get_text_from_chunks(u[DATA]),
+        #         self.language,
+        #         self.config.use_stemming
+        #     ) for u in utterances
+        # ]
+        # self.kmeans_count_vectorizer.fit(k_mean_utterances)
+        #
+        # unique_classes = set(classes)
+        # kmeans_utterances_per_class = {c: [] for c in unique_classes}
+        # for u, c in zip(k_mean_utterances, classes):
+        #     kmeans_utterances_per_class[c].append(u)
 
 
-        X_intent_clusters = self._intents_clusters_features(
-            k_mean_utterances)
+        # target_num_clusters = 5
+        # self.clusterers = dict()
+        # self.normalizers = dict()
+        # for c in unique_classes:
+        #     c_utterances = kmeans_utterances_per_class[c]
+        #     x_clusters = self.kmeans_count_vectorizer.transform(c_utterances)
+        #
+        #     # Normalize the vectors to compute k-mean with cosine distance
+        #     normalizer = Normalizer()
+        #     x_clusters = normalizer.fit_transform(x_clusters)
+        #     self.normalizers[c] = normalizer
+        #
+        #     if len(c_utterances) > 5 * target_num_clusters:
+        #         n_clusters = target_num_clusters
+        #     else:
+        #         n_clusters = 1
+        #     self.clusterers[c] = KMeans(
+        #         n_clusters=n_clusters, n_jobs=-1).fit(x_clusters)
+        #
+        #
+        # X_intent_clusters = self._intents_clusters_features(
+        #     k_mean_utterances)
 
         preprocessed_utterances = self.preprocess_utterances(utterances)
         # pylint: disable=C0103
@@ -122,8 +122,9 @@ class Featurizer(object):
 
         self.entities = {e: i for i, e in enumerate(dataset[ENTITIES])}
 
-        X_train = hstack(
-            (X_train_tfidf, csr_matrix(X_intent_clusters)), format="csr")
+        # X_train = hstack(
+        #     (X_train_tfidf, csr_matrix(X_intent_clusters)), format="csr")
+        X_train = X_train_tfidf
 
         _, pval = chi2(X_train, classes)
         self.best_features = [i for i, v in enumerate(pval) if
@@ -139,7 +140,8 @@ class Featurizer(object):
                 continue
             feature_names[utterance_index] = {
                 "word": features_idx[utterance_index],
-                "pval": pval[utterance_index]}
+                "pval": pval[utterance_index]
+            }
 
         for feat in feature_names:
             if feature_names[feat]["word"] in stop_words:
@@ -156,22 +158,23 @@ class Featurizer(object):
         return self
 
     def transform(self, utterances):
-        k_mean_utterances = [
-            _normalize_stem(
-                get_text_from_chunks(u[DATA]),
-                self.language,
-                self.config.use_stemming
-            ) for u in utterances
-        ]
-        X_clusters = self._intents_clusters_features(k_mean_utterances)
+        # k_mean_utterances = [
+        #     _normalize_stem(
+        #         get_text_from_chunks(u[DATA]),
+        #         self.language,
+        #         self.config.use_stemming
+        #     ) for u in utterances
+        # ]
+        # X_clusters = self._intents_clusters_features(k_mean_utterances)
 
         preprocessed_utterances = self.preprocess_utterances(utterances)
-        # pylint: disable=C0103
+        # # pylint: disable=C0103
         X_tfidf = self.tfidf_vectorizer.transform(
             preprocessed_utterances)
+        #
+        # X_train = hstack((X_tfidf, csr_matrix(X_clusters)), format="csr")
 
-        X_train = hstack((X_tfidf, csr_matrix(X_clusters)), format="csr")
-
+        X_train = X_tfidf
         X = X_train[:, self.best_features]
         # pylint: enable=C0103
         return X

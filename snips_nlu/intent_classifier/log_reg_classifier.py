@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import NuSVC
 
 from snips_nlu.constants import LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
@@ -94,6 +96,9 @@ class LogRegIntentClassifier(IntentClassifier):
         alpha = get_regularization_factor(dataset)
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)
+        # self.classifier = NuSVC(nu=.1, probability=True, kernel="linear")
+
+        # self.classifier = MultinomialNB(alpha=10)
         self.classifier.fit(X, classes)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self

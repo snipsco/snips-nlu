@@ -124,7 +124,6 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         """
         cleaned_unit_name = _sanitize_unit_name(cls.unit_name)
         with temp_dir() as tmp_dir:
-            archive_path = (tmp_dir / cleaned_unit_name).with_suffix(".zip")
             file_io = io.BytesIO(unit_bytes)
             unzip_archive(file_io, str(tmp_dir))
             processing_unit = cls.from_path(tmp_dir / cleaned_unit_name,

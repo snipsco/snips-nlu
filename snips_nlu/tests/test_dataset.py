@@ -5,8 +5,7 @@ from builtins import str
 
 from mock import mock
 
-from snips_nlu.constants import (
-    ENTITIES, SNIPS_DATETIME)
+from snips_nlu.constants import ENTITIES, SNIPS_DATETIME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SnipsTest
 
@@ -155,7 +154,7 @@ class TestDataset(SnipsTest):
             validate_and_format_dataset(dataset)
         self.assertEqual("Unknown language: 'eng'", str(ctx.exception.args[0]))
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_should_format_dataset_by_adding_synonyms(
             self, mocked_get_string_variations):
         # Given
@@ -208,7 +207,7 @@ class TestDataset(SnipsTest):
         # Then
         self.assertDictEqual(expected_dataset, dataset)
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_should_format_dataset_by_adding_entity_values(
             self, mocked_get_string_variations):
         # Given
@@ -321,7 +320,7 @@ class TestDataset(SnipsTest):
         # Then
         self.assertEqual(expected_dataset, dataset)
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_should_add_missing_reference_entity_values_when_not_use_synonyms(
             self, mocked_get_string_variations):
         # Given
@@ -462,7 +461,7 @@ class TestDataset(SnipsTest):
         with self.fail_if_exception("Could not validate dataset"):
             validate_and_format_dataset(dataset)
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_should_remove_empty_entities_value_and_empty_synonyms(
             self, mocked_get_string_variations):
         # Given
@@ -576,7 +575,7 @@ class TestDataset(SnipsTest):
         # Then
         self.assertEqual(expected_dataset, dataset)
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_should_add_capitalize_field(
             self, mocked_get_string_variations):
         # Given
@@ -752,7 +751,7 @@ class TestDataset(SnipsTest):
         # Then
         self.assertDictEqual(expected_dataset, dataset)
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_should_normalize_synonyms(
             self, mocked_get_string_variations):
         # Given
@@ -827,7 +826,7 @@ class TestDataset(SnipsTest):
         # Then
         self.assertDictEqual(expected_dataset, dataset)
 
-    @mock.patch("snips_nlu.dataset.get_string_variations")
+    @mock.patch("snips_nlu.dataset.validation.get_string_variations")
     def test_dataset_should_handle_synonyms(
             self, mocked_get_string_variations):
         # Given

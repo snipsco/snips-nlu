@@ -12,34 +12,12 @@ from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
     UTTERANCES, VALIDATED, VALUE)
+from snips_nlu.dataset import extract_utterance_entities
 from snips_nlu.entity_parser.builtin_entity_parser import (
-    BuiltinEntityParser, is_builtin_entity, is_gazetteer_entity)
+    BuiltinEntityParser, is_builtin_entity)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.utils import validate_key, validate_keys, validate_type
-
-
-def extract_utterance_entities(dataset):
-    entities_values = {ent_name: set() for ent_name in dataset[ENTITIES]}
-
-    for intent in itervalues(dataset[INTENTS]):
-        for utterance in intent[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if ENTITY in chunk:
-                    entities_values[chunk[ENTITY]].add(chunk[TEXT].strip())
-    return {k: list(v) for k, v in iteritems(entities_values)}
-
-
-def extract_intent_entities(dataset, entity_filter=None):
-    intent_entities = {intent: set() for intent in dataset[INTENTS]}
-    for intent_name, intent_data in iteritems(dataset[INTENTS]):
-        for utterance in intent_data[UTTERANCES]:
-            for chunk in utterance[DATA]:
-                if ENTITY in chunk:
-                    if entity_filter and not entity_filter(chunk[ENTITY]):
-                        continue
-                    intent_entities[intent_name].add(chunk[ENTITY])
-    return intent_entities
 
 
 def validate_and_format_dataset(dataset):
@@ -61,7 +39,7 @@ def validate_and_format_dataset(dataset):
         raise ValueError("Unknown language: '%s'" % language)
 
     for intent in itervalues(dataset[INTENTS]):
-        validate_and_format_intent(intent, dataset[ENTITIES])
+        _validate_and_format_intent(intent, dataset[ENTITIES])
 
     utterance_entities_values = extract_utterance_entities(dataset)
     builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
@@ -70,15 +48,16 @@ def validate_and_format_dataset(dataset):
         uterrance_entities = utterance_entities_values[entity_name]
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
-                validate_and_format_builtin_entity(entity, uterrance_entities)
+                _validate_and_format_builtin_entity(entity, uterrance_entities)
         else:
-            dataset[ENTITIES][entity_name] = validate_and_format_custom_entity(
+            dataset[ENTITIES][
+                entity_name] = _validate_and_format_custom_entity(
                 entity, uterrance_entities, language, builtin_entity_parser)
     dataset[VALIDATED] = True
     return dataset
 
 
-def validate_and_format_intent(intent, entities):
+def _validate_and_format_intent(intent, entities):
     validate_type(intent, dict)
     validate_key(intent, UTTERANCES, object_label="intent dict")
     validate_type(intent[UTTERANCES], list)
@@ -100,11 +79,7 @@ def validate_and_format_intent(intent, entities):
     return intent
 
 
-def get_text_from_chunks(chunks):
-    return "".join(chunk[TEXT] for chunk in chunks)
-
-
-def has_any_capitalization(entity_utterances, language):
+def _has_any_capitalization(entity_utterances, language):
     for utterance in entity_utterances:
         tokens = tokenize_light(utterance, language)
         if any(t.isupper() or t.istitle() for t in tokens):
@@ -112,7 +87,7 @@ def has_any_capitalization(entity_utterances, language):
     return False
 
 
-def add_entity_variations(utterances, entity_variations, entity_value):
+def _add_entity_variations(utterances, entity_variations, entity_value):
     utterances[entity_value] = entity_value
     for variation in entity_variations[entity_value]:
         if variation:
@@ -129,8 +104,8 @@ def _extract_entity_values(entity):
     return values
 
 
-def validate_and_format_custom_entity(entity, queries_entities, language,
-                                      builtin_entity_parser):
+def _validate_and_format_custom_entity(entity, queries_entities, language,
+                                       builtin_entity_parser):
     validate_type(entity, dict)
 
     # TODO: this is here temporarily, only to allow backward compatibility
@@ -169,8 +144,8 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
 
     # Compute capitalization before normalizing
     # Normalization lowercase and hence lead to bad capitalization calculation
-    formatted_entity[CAPITALIZE] = has_any_capitalization(queries_entities,
-                                                          language)
+    formatted_entity[CAPITALIZE] = _has_any_capitalization(queries_entities,
+                                                           language)
 
     validated_utterances = dict()
     # Map original values an synonyms
@@ -208,7 +183,7 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
 
     for entry in entity[DATA]:
         entry_value = entry[VALUE]
-        validated_utterances = add_entity_variations(
+        validated_utterances = _add_entity_variations(
             validated_utterances, non_colliding_variations, entry_value)
 
     # Merge queries entities
@@ -227,12 +202,6 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     return formatted_entity
 
 
-def validate_and_format_builtin_entity(entity, queries_entities):
+def _validate_and_format_builtin_entity(entity, queries_entities):
     validate_type(entity, dict)
     return {UTTERANCES: set(queries_entities)}
-
-
-def get_dataset_gazetteer_entities(dataset, intent=None):
-    if intent is not None:
-        return extract_intent_entities(dataset, is_gazetteer_entity)[intent]
-    return {e for e in dataset[ENTITIES] if is_gazetteer_entity(e)}

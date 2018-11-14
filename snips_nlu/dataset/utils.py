@@ -1,0 +1,38 @@
+from future.utils import iteritems, itervalues
+
+from snips_nlu.constants import (
+    DATA, ENTITIES, ENTITY, INTENTS, TEXT, UTTERANCES)
+from snips_nlu.entity_parser.builtin_entity_parser import is_gazetteer_entity
+
+
+def extract_utterance_entities(dataset):
+    entities_values = {ent_name: set() for ent_name in dataset[ENTITIES]}
+
+    for intent in itervalues(dataset[INTENTS]):
+        for utterance in intent[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if ENTITY in chunk:
+                    entities_values[chunk[ENTITY]].add(chunk[TEXT].strip())
+    return {k: list(v) for k, v in iteritems(entities_values)}
+
+
+def extract_intent_entities(dataset, entity_filter=None):
+    intent_entities = {intent: set() for intent in dataset[INTENTS]}
+    for intent_name, intent_data in iteritems(dataset[INTENTS]):
+        for utterance in intent_data[UTTERANCES]:
+            for chunk in utterance[DATA]:
+                if ENTITY in chunk:
+                    if entity_filter and not entity_filter(chunk[ENTITY]):
+                        continue
+                    intent_entities[intent_name].add(chunk[ENTITY])
+    return intent_entities
+
+
+def get_text_from_chunks(chunks):
+    return "".join(chunk[TEXT] for chunk in chunks)
+
+
+def get_dataset_gazetteer_entities(dataset, intent=None):
+    if intent is not None:
+        return extract_intent_entities(dataset, is_gazetteer_entity)[intent]
+    return {e for e in dataset[ENTITIES] if is_gazetteer_entity(e)}

@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import shutil
+import io
 from abc import ABCMeta, abstractmethod, abstractproperty
 from pathlib import Path
 
@@ -123,10 +124,8 @@ class ProcessingUnit(with_metaclass(ABCMeta, object)):
         """
         cleaned_unit_name = _sanitize_unit_name(cls.unit_name)
         with temp_dir() as tmp_dir:
-            archive_path = (tmp_dir / cleaned_unit_name).with_suffix(".zip")
-            with archive_path.open(mode="wb") as f:
-                f.write(unit_bytes)
-            unzip_archive(archive_path, str(tmp_dir))
+            file_io = io.BytesIO(unit_bytes)
+            unzip_archive(file_io, str(tmp_dir))
             processing_unit = cls.from_path(tmp_dir / cleaned_unit_name,
                                             **shared)
         return processing_unit

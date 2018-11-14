@@ -1,20 +1,18 @@
 from __future__ import division, unicode_literals
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import numpy as np
 from future.builtins import object, range, str, zip
 from future.utils import iteritems
 from scipy.sparse import csr_matrix, hstack
 from scipy.spatial.distance import cosine
-from sklearn.cluster import KMeans
 from sklearn.exceptions import NotFittedError
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer, \
-    CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.feature_selection import chi2
-from sklearn.preprocessing import Normalizer
 from sklearn.utils.validation import check_is_fitted
 from snips_nlu_utils import normalize
+from snips_nlu_utils._snips_nlu_utils_py import compute_all_ngrams
 
 from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
                                  CUSTOM_ENTITY_PARSER_USAGE, DATA, END,
@@ -70,20 +68,45 @@ class Featurizer(object):
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
             return None
 
-        # k_mean_utterances = [
-        #     _normalize_stem(
-        #         get_text_from_chunks(u[DATA]),
-        #         self.language,
-        #         self.config.use_stemming
-        #     ) for u in utterances
-        # ]
+        normalized_stemmed_utterances = [
+            _normalize_stem(
+                get_text_from_chunks(u[DATA]),
+                self.language,
+                self.config.use_stemming
+            ) for u in utterances
+        ]
+
+        none_class = max(classes)
+        utterances_per_classes = defaultdict(list)
+        for u, c in zip(normalized_stemmed_utterances, classes):
+            if c == none_class:
+                continue
+            utterances_per_classes[c].append(u)
+
+        k = 5
+        self.top_bigrams_per_classes = dict()
+        for cls, utt in iteritems(utterances_per_classes):
+            bigrams = [
+                ng for u in utt
+                for ng in compute_all_ngrams(
+                    tokenize_light(u, self.language), 2)
+            ]
+            bigrams = [ng["ngram"] for ng in bigrams
+                       if len(ng["token_indexes"]) == 2]
+            top_bigrams = Counter(bigrams).most_common(k)
+            # print "utterances examples: %s" % utt[:5]
+            # print "top bigrams for %s: %s" % (cls, top_bigrams)
+            self.top_bigrams_per_classes[cls] = set(top_bigrams)
+
+        X_top_ngrams = self._get_top_ngrams_feature(
+            [get_text_from_chunks(u[DATA]) for u in utterances])
+
         # self.kmeans_count_vectorizer.fit(k_mean_utterances)
         #
         # unique_classes = set(classes)
         # kmeans_utterances_per_class = {c: [] for c in unique_classes}
         # for u, c in zip(k_mean_utterances, classes):
         #     kmeans_utterances_per_class[c].append(u)
-
 
         # target_num_clusters = 5
         # self.clusterers = dict()
@@ -124,7 +147,11 @@ class Featurizer(object):
 
         # X_train = hstack(
         #     (X_train_tfidf, csr_matrix(X_intent_clusters)), format="csr")
+
         X_train = X_train_tfidf
+
+        # X_train = hstack(
+        #     (X_train_tfidf, csr_matrix(X_top_ngrams)), format="csr")
 
         _, pval = chi2(X_train, classes)
         self.best_features = [i for i, v in enumerate(pval) if
@@ -155,16 +182,20 @@ class Featurizer(object):
         # max_cluster_ix = min_cluster_ix + num_entities
         # for i in range(X_train_tfidf.shape[0], max_cluster_ix):
         #     self.best_features.append(i)
+        min_top_k_ix = X_train.shape[1]
+        max_top_k_ix = min_top_k_ix + X_top_ngrams.shape[1]
+        for i in range(min_top_k_ix, max_top_k_ix):
+            self.best_features.append(i)
         return self
 
     def transform(self, utterances):
-        # k_mean_utterances = [
-        #     _normalize_stem(
-        #         get_text_from_chunks(u[DATA]),
-        #         self.language,
-        #         self.config.use_stemming
-        #     ) for u in utterances
-        # ]
+        top_k_utterances = [
+            _normalize_stem(
+                get_text_from_chunks(u[DATA]),
+                self.language,
+                self.config.use_stemming
+            ) for u in utterances
+        ]
         # X_clusters = self._intents_clusters_features(k_mean_utterances)
 
         preprocessed_utterances = self.preprocess_utterances(utterances)
@@ -174,11 +205,35 @@ class Featurizer(object):
         #
         # X_train = hstack((X_tfidf, csr_matrix(X_clusters)), format="csr")
 
-        X_train = X_tfidf
+        X_top_k = self._get_top_ngrams_feature(top_k_utterances)
+
+        X_train = hstack((X_tfidf, csr_matrix(X_top_k)), format="csr")
         X = X_train[:, self.best_features]
         # pylint: enable=C0103
         return X
 
+    def _get_top_ngrams_feature(self, utterances):
+        X_top_bigrams = np.zeros(
+            (len(utterances), len(self.top_bigrams_per_classes)),
+            dtype=np.float)
+
+        normalized_stemmed_utterances = [
+            _normalize_stem(u,self.language,self.config.use_stemming)
+            for u in utterances
+        ]
+
+        for i, u in enumerate(normalized_stemmed_utterances):
+            bigrams = [ng["ngram"] for ng in
+                       compute_all_ngrams(tokenize_light(u, self.language), 2)
+                       if len(ng["token_indexes"]) == 2]
+            bigrams = set(bigrams)
+            for c, c_bigrams in sorted(
+                    iteritems(self.top_bigrams_per_classes)):
+                for b in c_bigrams:
+                    if b in bigrams:
+                        X_top_bigrams[i, c] += 1.0
+
+        return X_top_bigrams
 
     def _intents_clusters_features(self, utterances):
         x_clusters = []

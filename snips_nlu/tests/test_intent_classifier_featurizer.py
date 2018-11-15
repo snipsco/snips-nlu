@@ -47,7 +47,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "intents": {},
@@ -192,7 +192,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                     ],
                     "use_synonyms": False,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "entity_2": {
                     "data": [
@@ -207,7 +207,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "snips/number": {}
             },

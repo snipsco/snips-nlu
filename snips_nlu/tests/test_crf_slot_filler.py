@@ -223,7 +223,7 @@ class TestCRFSlotFiller(FixtureTest):
                     "use_synonyms": False,
                     "automatically_extensible": True,
                     "data": [],
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",

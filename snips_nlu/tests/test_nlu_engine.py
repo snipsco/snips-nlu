@@ -570,7 +570,7 @@ class TestSnipsNLUEngine(FixtureTest):
                             ]
                         }
                     ],
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "dummy_entity_2": {
                     "use_synonyms": False,
@@ -583,7 +583,7 @@ class TestSnipsNLUEngine(FixtureTest):
                             ]
                         }
                     ],
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en"
@@ -652,7 +652,7 @@ class TestSnipsNLUEngine(FixtureTest):
                             ]
                         }
                     ],
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en"
@@ -734,7 +734,7 @@ class TestSnipsNLUEngine(FixtureTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",

@@ -45,7 +45,7 @@ START = "start"
 END = "end"
 BUILTIN_ENTITY_PARSER = "builtin_entity_parser"
 CUSTOM_ENTITY_PARSER = "custom_entity_parser"
-PARSER_THRESHOLD = "parser_threshold"
+MATCHING_STRICTNESS = "matching_strictness"
 
 # resources
 STOP_WORDS = "stop_words"

@@ -9,7 +9,7 @@ from future.utils import iteritems, viewvalues
 from snips_nlu_ontology import GazetteerEntityParser
 
 from snips_nlu.constants import (
-    END, ENTITIES, LANGUAGE, PARSER_THRESHOLD, RES_MATCH_RANGE, START,
+    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, RES_MATCH_RANGE, START,
     UTTERANCES, ENTITY_KIND)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
@@ -123,7 +123,7 @@ def _create_custom_entity_parser_configuration(entities):
             {
                 "entity_identifier": entity_name,
                 "entity_parser": {
-                    "threshold": entity[PARSER_THRESHOLD],
+                    "threshold": entity[MATCHING_STRICTNESS],
                     "gazetteer": [
                         {
                             "raw_value": k,

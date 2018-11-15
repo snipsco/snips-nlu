@@ -8,13 +8,12 @@ from copy import deepcopy
 from future.utils import iteritems, itervalues
 from snips_nlu_ontology import get_all_languages
 
-from snips_nlu.constants import (AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA,
-                                 ENTITIES, ENTITY, INTENTS, LANGUAGE,
-                                 PARSER_THRESHOLD, SLOT_NAME, SYNONYMS, TEXT,
-                                 USE_SYNONYMS, UTTERANCES, VALIDATED, VALUE)
-from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
-                                                           is_builtin_entity,
-                                                           is_gazetteer_entity)
+from snips_nlu.constants import (
+    AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
+    LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
+    UTTERANCES, VALIDATED, VALUE)
+from snips_nlu.entity_parser.builtin_entity_parser import (
+    BuiltinEntityParser, is_builtin_entity, is_gazetteer_entity)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.utils import validate_key, validate_keys, validate_type
@@ -135,21 +134,23 @@ def validate_and_format_custom_entity(entity, queries_entities, language,
     validate_type(entity, dict)
 
     # TODO: this is here temporarily, only to allow backward compatibility
-    if PARSER_THRESHOLD not in entity:
-        entity[PARSER_THRESHOLD] = 1.0
+    if MATCHING_STRICTNESS not in entity:
+        strictness = entity.get("parser_threshold", 1.0)
+
+        entity[MATCHING_STRICTNESS] = strictness
 
     mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA,
-                      PARSER_THRESHOLD]
+                      MATCHING_STRICTNESS]
     validate_keys(entity, mandatory_keys, object_label="entity")
     validate_type(entity[USE_SYNONYMS], bool)
     validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool)
     validate_type(entity[DATA], list)
-    validate_type(entity[PARSER_THRESHOLD], float)
+    validate_type(entity[MATCHING_STRICTNESS], float)
 
     formatted_entity = dict()
     formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
         AUTOMATICALLY_EXTENSIBLE]
-    formatted_entity[PARSER_THRESHOLD] = entity[PARSER_THRESHOLD]
+    formatted_entity[MATCHING_STRICTNESS] = entity[MATCHING_STRICTNESS]
     use_synonyms = entity[USE_SYNONYMS]
 
     # Validate format and filter out unused data

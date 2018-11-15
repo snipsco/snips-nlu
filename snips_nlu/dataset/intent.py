@@ -35,10 +35,32 @@ class Intent(object):
         utterances (list of :class:`.IntentUtterance`): intent utterances
     """
 
-    def __init__(self, intent_name):
+    def __init__(self, intent_name, slot_mapping=None):
+        if slot_mapping is None:
+            slot_mapping = dict()
         self.intent_name = intent_name
         self.utterances = []
-        self.slot_mapping = dict()
+        self.slot_mapping = slot_mapping
+
+    @classmethod
+    def from_yaml(cls, yaml_dict):
+        """Build an :class:`.Intent` from its YAML definition dict"""
+        object_type = yaml_dict.get("type")
+        if object_type and object_type != "intent":
+            raise IntentFormatError("Wrong type: '%s'" % object_type)
+        intent_name = yaml_dict.get("name")
+        if not intent_name:
+            raise IntentFormatError("No 'name' attribute found")
+        slot_mapping = dict()
+        for slot in yaml_dict.get("slots", []):
+            slot_mapping[slot["name"]] = slot["entity"]
+        dataset = cls(intent_name, slot_mapping)
+        utterances = (u.strip() for u in yaml_dict["utterances"] if u.strip())
+        if not utterances:
+            raise IntentFormatError(
+                "Intent must contain at least one utterance")
+        dataset.add_utterances(utterances)
+        return dataset
 
     @classmethod
     def from_file(cls, filepath):
@@ -51,18 +73,16 @@ class Intent(object):
         intent_name = stem[7:]
         if not intent_name:
             raise IntentFormatError("Intent name must not be empty")
+        dataset = cls(intent_name)
         with filepath.open(encoding="utf-8") as f:
             lines = iter(l.strip() for l in f if l.strip())
-            return cls.from_iter(intent_name, lines)
+            dataset.add_utterances(lines)
+            return dataset
 
-    @classmethod
-    def from_iter(cls, intent_name, samples_iter):
-        """Generates a dataset from an iterator of samples"""
-        dataset = cls(intent_name)
+    def add_utterances(self, samples_iter):
         for sample in samples_iter:
             utterance = IntentUtterance.parse(sample)
-            dataset.add(utterance)
-        return dataset
+            self.add(utterance)
 
     def add(self, utterance):
         """Adds an :class:`.IntentUtterance` to the dataset"""
@@ -168,7 +188,7 @@ class SM(object):
         self.chunks = []
         self.current = 0
 
-    def add_slot(self, name, entity):
+    def add_slot(self, name, entity=None):
         """Adds a named slot
 
         Args:
@@ -233,7 +253,12 @@ def capture_text(state):
 def capture_slot(state):
     next_pos = state.find(':')
     if next_pos < 0:
-        raise INTENT_FORMATTING_ERROR
+        next_pos = state.find(']')
+        if next_pos < 0:
+            raise INTENT_FORMATTING_ERROR
+        slot_name = state[:next_pos]
+        state.move(next_pos)
+        state.add_slot(slot_name)
     else:
         slot_name = state[:next_pos]
         state.move(next_pos)
@@ -243,9 +268,11 @@ def capture_slot(state):
         entity = state[:next_pos]
         state.move(next_pos)
         state.add_slot(slot_name, entity)
-        if state.read() != '(':
-            raise INTENT_FORMATTING_ERROR
+    if state.peek() == '(':
+        state.read()
         capture_tagged(state)
+    else:
+        capture_text(state)
 
 
 def capture_tagged(state):

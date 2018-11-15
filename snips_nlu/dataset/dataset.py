@@ -3,7 +3,8 @@ from __future__ import print_function, unicode_literals
 
 from pathlib import Path
 
-from snips_nlu.dataset import Entity, Intent
+from snips_nlu.dataset.entity import Entity
+from snips_nlu.dataset.intent import Intent
 
 
 class AssistantDataset(object):

@@ -75,11 +75,11 @@ class Entity(object):
                     "found: %s" % type(entity_value))
             utterances.append(utterance)
 
-        cls(name=entity_name,
-            utterances=utterances,
-            automatically_extensible=auto_extensible,
-            use_synonyms=use_synonyms,
-            matching_strictness=matching_strictness)
+        return cls(name=entity_name,
+                   utterances=utterances,
+                   automatically_extensible=auto_extensible,
+                   use_synonyms=use_synonyms,
+                   matching_strictness=matching_strictness)
 
     @classmethod
     def from_file(cls, filepath):

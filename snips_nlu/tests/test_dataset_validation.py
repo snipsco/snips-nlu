@@ -10,7 +10,7 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.tests.utils import SnipsTest
 
 
-class TestDataset(SnipsTest):
+class TestDatasetValidation(SnipsTest):
     def test_missing_intent_key_should_raise_exception(self):
         # Given
         dataset = {

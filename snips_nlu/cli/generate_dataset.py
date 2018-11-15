@@ -4,7 +4,7 @@ import json
 
 import plac
 
-from snips_nlu.cli.dataset.assistant_dataset import AssistantDataset
+from snips_nlu.dataset import AssistantDataset
 
 
 @plac.annotations(

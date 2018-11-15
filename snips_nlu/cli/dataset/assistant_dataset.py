@@ -1,10 +1,9 @@
 # coding=utf-8
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
 from pathlib import Path
 
-from snips_nlu.cli.dataset.entities import CustomEntity, create_entity
-from snips_nlu.cli.dataset.intent_dataset import IntentDataset
+from snips_nlu.dataset import Entity, Intent
 
 
 class AssistantDataset(object):
@@ -53,10 +52,10 @@ class AssistantDataset(object):
                                      "'intent_' or 'entity_' but found: %s"
                                      % stem)
 
-        intents_datasets = [IntentDataset.from_file(f)
+        intents_datasets = [Intent.from_file(f)
                             for f in intent_filepaths]
 
-        entities = [CustomEntity.from_file(f) for f in entity_filepaths]
+        entities = [Entity.from_file(f) for f in entity_filepaths]
         entity_names = set(e.name for e in entities)
 
         # Add entities appearing only in the intents data
@@ -64,7 +63,7 @@ class AssistantDataset(object):
             for entity_name in intent_data.entities_names:
                 if entity_name not in entity_names:
                     entity_names.add(entity_name)
-                    entities.append(create_entity(entity_name))
+                    entities.append(Entity(name=entity_name))
         return cls(language, intents_datasets, entities)
 
     @property

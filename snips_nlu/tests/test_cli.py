@@ -7,10 +7,10 @@ import tempfile
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli import cross_val_metrics, parse, train, train_test_metrics
 from snips_nlu.cli.dataset import AssistantDataset
-from snips_nlu.cli.dataset.entities import CustomEntity
-from snips_nlu.cli.dataset.intent_dataset import IntentDataset
 from snips_nlu.constants import PACKAGE_PATH
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import (
+    Entity, EntityFormatError, Intent, IntentFormatError,
+    validate_and_format_dataset)
 from snips_nlu.tests.utils import BEVERAGE_DATASET_PATH, SnipsTest, TEST_PATH
 
 
@@ -81,7 +81,7 @@ class TestCLI(SnipsTest):
         intent_file = examples_path / "intent_getWeather.txt"
 
         # When
-        intent_dataset = IntentDataset.from_file(intent_file)
+        intent_dataset = Intent.from_file(intent_file)
         intent_dict = intent_dataset.json
 
         # Then
@@ -156,7 +156,7 @@ class TestCLI(SnipsTest):
         entity_file = examples_path / "entity_location.txt"
 
         # When
-        entity_dataset = CustomEntity.from_file(entity_file)
+        entity_dataset = Entity.from_file(entity_file)
         entity_dict = entity_dataset.json
 
         # Then
@@ -191,7 +191,7 @@ class TestCLI(SnipsTest):
         entity_file = examples_path / "entity_location_autoextent_false.txt"
 
         # When
-        entity_dataset = CustomEntity.from_file(entity_file)
+        entity_dataset = Entity.from_file(entity_file)
         entity_dict = entity_dataset.json
 
         # Then
@@ -419,8 +419,8 @@ class TestCLI(SnipsTest):
         intent_file = examples_path / "getWeather.txt"
 
         # When / Then
-        with self.assertRaises(AssertionError):
-            IntentDataset.from_file(intent_file)
+        with self.assertRaises(IntentFormatError):
+            Intent.from_file(intent_file)
 
     def test_should_fail_generating_entity_with_wrong_file_name(self):
         # Given
@@ -428,5 +428,5 @@ class TestCLI(SnipsTest):
         entity_file = examples_path / "location.txt"
 
         # When / Then
-        with self.assertRaises(AssertionError):
-            CustomEntity.from_file(entity_file)
+        with self.assertRaises(EntityFormatError):
+            Entity.from_file(entity_file)

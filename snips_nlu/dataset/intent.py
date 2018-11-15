@@ -1,4 +1,4 @@
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 from abc import ABCMeta, abstractmethod
 from builtins import object
@@ -6,13 +6,18 @@ from pathlib import Path
 
 from future.utils import with_metaclass
 
-from snips_nlu.constants import UTTERANCES, SLOT_NAME, ENTITY, TEXT, DATA
+from snips_nlu.constants import DATA, ENTITY, SLOT_NAME, TEXT, UTTERANCES
 
-INTENT_FORMATTING_ERROR = AssertionError(
+
+class IntentFormatError(TypeError):
+    pass
+
+
+INTENT_FORMATTING_ERROR = IntentFormatError(
     "Intent file is not properly formatted")
 
 
-class IntentDataset(object):
+class Intent(object):
     """Dataset of an intent
 
     Can parse utterances from a text file or an iterator.
@@ -33,17 +38,19 @@ class IntentDataset(object):
     def __init__(self, intent_name):
         self.intent_name = intent_name
         self.utterances = []
+        self.slot_mapping = dict()
 
     @classmethod
     def from_file(cls, filepath):
         filepath = Path(filepath)
         stem = filepath.stem
         if not stem.startswith("intent_"):
-            raise AssertionError("Intent filename should start with 'intent_' "
-                                 "but found: %s" % stem)
+            raise IntentFormatError(
+                "Intent filename should start with 'intent_' but found: %s"
+                % stem)
         intent_name = stem[7:]
         if not intent_name:
-            raise AssertionError("Intent name must not be empty")
+            raise IntentFormatError("Intent name must not be empty")
         with filepath.open(encoding="utf-8") as f:
             lines = iter(l.strip() for l in f if l.strip())
             return cls.from_iter(intent_name, lines)
@@ -59,6 +66,9 @@ class IntentDataset(object):
 
     def add(self, utterance):
         """Adds an :class:`.IntentUtterance` to the dataset"""
+        for chunk in utterance.slot_chunks:
+            if chunk.name not in self.slot_mapping:
+                self.slot_mapping[chunk.name] = chunk.entity
         self.utterances.append(utterance)
 
     @property
@@ -79,58 +89,19 @@ class IntentDataset(object):
 
 
 class IntentUtterance(object):
-    def __init__(self, input, chunks):
-        self.input = input
+    def __init__(self, chunks):
         self.chunks = chunks
 
     @property
-    def annotated(self):
-        """Annotates with *
+    def text(self):
+        return "".join((chunk.text for chunk in self.chunks))
 
-        Returns: The sentence annotated just with stars
+    @property
+    def slot_chunks(self):
+        return (chunk for chunk in self.chunks if isinstance(chunk, SlotChunk))
 
-        Examples:
-
-            >>> from snips_nlu.cli.dataset.intent_dataset import \
-                IntentUtterance
-            >>> p = "the [role:role](president) of [country:country](France)"
-            >>> u = IntentUtterance.parse(p)
-            >>> u.annotated
-            'the *president* of *France*'
-        """
-        binput = bytearray(self.input, 'utf-8')
-        acc = 0
-        star = ord('*')
-        for chunk in self.chunks:
-            if isinstance(chunk, SlotChunk):
-                binput.insert(chunk.range.start + acc, star)
-                binput.insert(chunk.range.end + acc + 1, star)
-                acc += 2
-        return binput.decode('utf-8')
-
-    @staticmethod
-    def stripped(input, chunks):
-        acc = 0
-        s = ''
-        new_chunks = []
-        for chunk in chunks:
-            start = chunk.range.start
-            end = chunk.range.end
-            s += input[start:end]
-            if isinstance(chunk, SlotChunk):
-                acc += chunk.tag_range.size
-                rng = Range(start - acc, end - acc)
-                new_chunk = SlotChunk(chunk.name, chunk.entity, rng,
-                                      chunk.text, chunk.tag_range)
-                new_chunks.append(new_chunk)
-                acc += 1
-            else:
-                rng = Range(start - acc, end - acc)
-                new_chunks.append(TextChunk(chunk.text, rng))
-        return s, new_chunks
-
-    @staticmethod
-    def parse(string):
+    @classmethod
+    def parse(cls, string):
         """Parses an utterance
 
         Args:
@@ -138,29 +109,28 @@ class IntentUtterance(object):
 
         Examples:
 
-            >>> from snips_nlu.cli.dataset.intent_dataset import \
-                IntentUtterance
+            >>> from snips_nlu.dataset.intent import IntentUtterance
             >>> u = IntentUtterance.\
                 parse("president of [country:default](France)")
+            >>> u.text
+            'president of France'
             >>> len(u.chunks)
             2
             >>> u.chunks[0].text
             'president of '
-            >>> u.chunks[0].range.start
-            0
-            >>> u.chunks[0].range.end
-            13
+            >>> u.chunks[1].name
+            'country'
+            >>> u.chunks[1].entity
+            'default'
         """
         sm = SM(string)
         capture_text(sm)
-        string, chunks = IntentUtterance.stripped(string, sm.chunks)
-        return IntentUtterance(string, chunks)
+        return cls(sm.chunks)
 
 
 class Chunk(with_metaclass(ABCMeta, object)):
-    def __init__(self, text, range):
+    def __init__(self, text):
         self.text = text
-        self.range = range
 
     @abstractmethod
     def json(self):
@@ -168,11 +138,10 @@ class Chunk(with_metaclass(ABCMeta, object)):
 
 
 class SlotChunk(Chunk):
-    def __init__(self, slot_name, entity, range, text, tag_range):
-        super(SlotChunk, self).__init__(text, range)
+    def __init__(self, slot_name, entity, text):
+        super(SlotChunk, self).__init__(text)
         self.name = slot_name
         self.entity = entity
-        self.tag_range = tag_range
 
     @property
     def json(self):
@@ -191,16 +160,6 @@ class TextChunk(Chunk):
         }
 
 
-class Range(object):
-    def __init__(self, start, end=None):
-        self.start = start
-        self.end = end
-
-    @property
-    def size(self):
-        return self.end - self.start + 1
-
-
 class SM(object):
     """State Machine for parsing"""
 
@@ -209,24 +168,19 @@ class SM(object):
         self.chunks = []
         self.current = 0
 
-    def add_slot(self, slot_start, name, entity):
+    def add_slot(self, name, entity):
         """Adds a named slot
 
         Args:
-            slot_start (int): position where the slot tag started
             name (str): slot name
             entity (str): entity name
         """
-        tag_range = Range(slot_start - 1)
-        chunk = SlotChunk(slot_name=name, entity=entity, range=None, text=None,
-                          tag_range=tag_range)
+        chunk = SlotChunk(slot_name=name, entity=entity, text=None)
         self.chunks.append(chunk)
 
     def add_text(self, text):
         """Adds a simple text chunk using the current position"""
-        start = self.current
-        end = start + len(text)
-        chunk = TextChunk(text=text, range=Range(start=start, end=end))
+        chunk = TextChunk(text=text)
         self.chunks.append(chunk)
 
     def add_tagged(self, text):
@@ -234,10 +188,7 @@ class SM(object):
         if not self.chunks:
             raise AssertionError("Cannot add tagged text because chunks list "
                                  "is empty")
-        chunk = self.chunks[-1]
-        chunk.text = text
-        chunk.tag_range.end = self.current - 1
-        chunk.range = Range(start=self.current, end=self.current + len(text))
+        self.chunks[-1].text = text
 
     def find(self, s):
         return self.input.find(s, self.current)
@@ -280,7 +231,6 @@ def capture_text(state):
 
 
 def capture_slot(state):
-    slot_start = state.current
     next_pos = state.find(':')
     if next_pos < 0:
         raise INTENT_FORMATTING_ERROR
@@ -292,7 +242,7 @@ def capture_slot(state):
             raise INTENT_FORMATTING_ERROR
         entity = state[:next_pos]
         state.move(next_pos)
-        state.add_slot(slot_start, slot_name, entity)
+        state.add_slot(slot_name, entity)
         if state.read() != '(':
             raise INTENT_FORMATTING_ERROR
         capture_tagged(state)

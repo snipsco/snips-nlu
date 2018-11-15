@@ -136,7 +136,7 @@ Now, the ``"entities"`` part of the generated json looks like that:
               "value": "garden"
             }
           ],
-          "parser_threshold": 1.0,
+          "matching_strictness": 1.0,
           "use_synonyms": true
         },
         "snips/temperature": {}
@@ -186,7 +186,7 @@ and that we want our assistant to cover. Additionally, we add some
               "value": "garden"
             }
           ],
-          "parser_threshold": 1.0,
+          "matching_strictness": 1.0,
           "use_synonyms": true
         },
         "snips/temperature": {}

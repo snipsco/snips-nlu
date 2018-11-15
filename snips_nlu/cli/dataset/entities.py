@@ -9,9 +9,9 @@ from pathlib import Path
 import six
 from future.utils import with_metaclass
 
-from snips_nlu.constants import (AUTOMATICALLY_EXTENSIBLE, DATA,
-                                 PARSER_THRESHOLD, SYNONYMS, USE_SYNONYMS,
-                                 VALUE)
+from snips_nlu.constants import (
+    AUTOMATICALLY_EXTENSIBLE, DATA, MATCHING_STRICTNESS, SYNONYMS,
+    USE_SYNONYMS, VALUE)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 
 AUTO_EXT_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
@@ -38,12 +38,12 @@ class CustomEntity(Entity):
     """
 
     def __init__(self, name, utterances, automatically_extensible,
-                 use_synonyms, parser_threshold=1.0):
+                 use_synonyms, matching_strictness=1.0):
         super(CustomEntity, self).__init__(name)
         self.utterances = utterances
         self.automatically_extensible = automatically_extensible
         self.use_synonyms = use_synonyms
-        self.parser_threshold = parser_threshold
+        self.matching_strictness = matching_strictness
 
     @classmethod
     def from_file(cls, filepath):
@@ -86,7 +86,7 @@ class CustomEntity(Entity):
             AUTOMATICALLY_EXTENSIBLE: self.automatically_extensible,
             USE_SYNONYMS: self.use_synonyms,
             DATA: [u.json for u in self.utterances],
-            PARSER_THRESHOLD: self.parser_threshold
+            MATCHING_STRICTNESS: self.matching_strictness
         }
 
 

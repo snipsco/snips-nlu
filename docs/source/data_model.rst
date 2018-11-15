@@ -266,7 +266,7 @@ entity in your dataset as follows:
             "synonyms": []
           }
         ],
-        "parser_threshold": 1.0
+        "matching_strictness": 1.0
       }
     }
 
@@ -363,6 +363,6 @@ not your custom entity is automatically extensible:
         "automatically_extensible": true,
         "use_synonyms": true,
         "data": [],
-        "parser_threshold": 1.0
+        "matching_strictness": 1.0
       }
     }

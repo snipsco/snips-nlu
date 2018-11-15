@@ -26,7 +26,7 @@ DATASET = validate_and_format_dataset({
             ],
             "use_synonyms": True,
             "automatically_extensible": True,
-            "parser_threshold": 1.0
+            "matching_strictness": 1.0
         },
         "dummy_entity_2": {
             "data": [
@@ -37,7 +37,7 @@ DATASET = validate_and_format_dataset({
             ],
             "use_synonyms": True,
             "automatically_extensible": True,
-            "parser_threshold": 1.0
+            "matching_strictness": 1.0
         }
     },
     "language": "en"

@@ -81,7 +81,7 @@ class TestDataset(SnipsTest):
                 "entity1": {
                     "data": [],
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -93,10 +93,10 @@ class TestDataset(SnipsTest):
         self.assertEqual("Expected entity to have key: 'use_synonyms'",
                          str(ctx.exception.args[0]))
 
-    def test_missing_parser_threshold_should_be_handled(self):
+    def test_missing_matching_strictness_should_be_handled(self):
         # TODO: This test is temporary, and must be removed once the backward
-        # compatibility with the previous dataset format (without
-        # "parser_threshold"), gets deprecated.
+        # compatibility with the previous dataset format, without
+        # "matching_strictness", gets deprecated.
 
         # Given
         dataset = {
@@ -115,7 +115,32 @@ class TestDataset(SnipsTest):
         dataset = validate_and_format_dataset(dataset)
 
         self.assertEqual(
-            1.0, dataset["entities"]["entity1"].get("parser_threshold"))
+            1.0, dataset["entities"]["entity1"].get("matching_strictness"))
+
+    def test_deprecated_parser_threshold_should_be_handled(self):
+        # TODO: This test is temporary, and must be removed once the backward
+        # compatibility with the previous dataset format, using
+        # "parser_threshold", gets deprecated.
+
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {
+                "entity1": {
+                    "data": [],
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "parser_threshold": 0.5
+                }
+            },
+            "language": "en",
+        }
+
+        # When/Then
+        dataset = validate_and_format_dataset(dataset)
+
+        self.assertEqual(
+            0.5, dataset["entities"]["entity1"].get("matching_strictness"))
 
     def test_invalid_language_should_raise_exception(self):
         # Given
@@ -152,7 +177,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -170,7 +195,7 @@ class TestDataset(SnipsTest):
                     },
                     "automatically_extensible": False,
                     "capitalize": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -234,7 +259,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -283,7 +308,7 @@ class TestDataset(SnipsTest):
                     },
                     "automatically_extensible": False,
                     "capitalize": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -347,7 +372,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": False,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -393,7 +418,7 @@ class TestDataset(SnipsTest):
                         },
                     "automatically_extensible": False,
                     "capitalize": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -492,7 +517,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": False,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -538,7 +563,7 @@ class TestDataset(SnipsTest):
                         },
                     "capitalize": False,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -612,13 +637,13 @@ class TestDataset(SnipsTest):
                     "data": [],
                     "use_synonyms": False,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "entity2": {
                     "data": [],
                     "use_synonyms": False,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "entity3": {
                     "data": [
@@ -629,7 +654,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": False,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -692,7 +717,7 @@ class TestDataset(SnipsTest):
                         },
                     "automatically_extensible": True,
                     "capitalize": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "entity2": {
                     "utterances": {
@@ -703,7 +728,7 @@ class TestDataset(SnipsTest):
                     },
                     "automatically_extensible": True,
                     "capitalize": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 },
                 "entity3": {
                     "utterances":
@@ -714,7 +739,7 @@ class TestDataset(SnipsTest):
                         },
                     "automatically_extensible": True,
                     "capitalize": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -758,7 +783,7 @@ class TestDataset(SnipsTest):
                     "data": [],
                     "use_synonyms": True,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -789,7 +814,7 @@ class TestDataset(SnipsTest):
                     },
                     "automatically_extensible": True,
                     "capitalize": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -824,7 +849,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",
@@ -843,7 +868,7 @@ class TestDataset(SnipsTest):
                     "Entity 2": "Ëntity 1",
                 },
                 "capitalize": False,
-                "parser_threshold": 1.0
+                "matching_strictness": 1.0
             }
         }
 
@@ -886,7 +911,7 @@ class TestDataset(SnipsTest):
                     ],
                     "use_synonyms": True,
                     "automatically_extensible": False,
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "language": "en",

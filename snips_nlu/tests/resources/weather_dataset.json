@@ -290,12 +290,12 @@
       "use_synonyms": false,
       "data": [],
       "automatically_extensible": true,
-      "parser_threshold": 1.0
+      "matching_strictness": 1.0
     },
     "snips/datetime": {},
     "weather_condition": {
       "use_synonyms": true,
-      "parser_threshold": 1.0,
+      "matching_strictness": 1.0,
       "data": [
         {
           "value": "wind",

@@ -16,7 +16,7 @@
           "synonyms": ["new york", "big apple"]
         }
       ],
-      "parser_threshold": 1.0,
+      "matching_strictness": 1.0,
       "use_synonyms": true
     },
     "snips/datetime": {}

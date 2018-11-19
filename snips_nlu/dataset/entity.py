@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import csv
 import re
+from builtins import str
 from pathlib import Path
 
 import six

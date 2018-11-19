@@ -7,7 +7,7 @@ import numbers
 import os
 import shutil
 from builtins import bytes, object, str
-from collections import Mapping, OrderedDict, namedtuple
+from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
@@ -23,6 +23,7 @@ from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
+
 
 # pylint: disable=invalid-name
 
@@ -97,12 +98,6 @@ def validate_keys(obj, keys, object_label=None):
         validate_key(obj, key, object_label)
 
 
-def validate_range(rng):
-    if not isinstance(rng, (list, tuple)) or len(rng) != 2 or rng[0] > rng[1]:
-        raise ValueError("range must be a length 2 list or tuple and must be "
-                         "valid")
-
-
 class LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         if "size_limit" not in kwds:
@@ -136,17 +131,6 @@ class UnupdatableDict(dict):
         if key in self:
             raise KeyError("Can't update key '%s'" % key)
         super(UnupdatableDict, self).__setitem__(key, value)
-
-
-def namedtuple_with_defaults(typename, field_names, default_values=()):
-    T = namedtuple(typename, field_names)  # pylint: disable=C0103
-    T.__new__.__defaults__ = (None,) * len(T._fields)
-    if isinstance(default_values, Mapping):
-        prototype = T(**default_values)
-    else:
-        prototype = T(*default_values)
-    T.__new__.__defaults__ = tuple(prototype)
-    return T
 
 
 def mkdir_p(path):

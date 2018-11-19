@@ -1,199 +1,293 @@
+from __future__ import unicode_literals
+
+import io
 from unittest import TestCase
 
-from snips_nlu.constants import PACKAGE_PATH
+import mock
+from mock import patch
+
 from snips_nlu.dataset import AssistantDataset, validate_and_format_dataset
 
-
-class TestDatasetLoading(TestCase):
-    def test_should_generate_dataset_from_files(self):
-        # Given
-        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
-        intent_file_1 = examples_path / "intent_whoIsGame.txt"
-        intent_file_2 = examples_path / "intent_getWeather.txt"
-        entity_file_1 = examples_path / "entity_location.txt"
-
-        dataset = AssistantDataset.from_files(
-            "en", [intent_file_1, intent_file_2, entity_file_1])
-        dataset_dict = dataset.json
-
-        # When / Then
-        expected_dataset_dict = {
-            "entities": {
-                "company": {
-                    "automatically_extensible": True,
-                    "data": [],
-                    "use_synonyms": True,
-                    "matching_strictness": 1.0,
+EXPECTED_DATASET_DICT = {
+    "entities": {
+        "company": {
+            "automatically_extensible": True,
+            "data": [],
+            "use_synonyms": True,
+            "matching_strictness": 1.0,
+        },
+        "country": {
+            "automatically_extensible": True,
+            "data": [],
+            "use_synonyms": True,
+            "matching_strictness": 1.0,
+        },
+        "location": {
+            "automatically_extensible": True,
+            "data": [
+                {
+                    "synonyms": [
+                        "big apple"
+                    ],
+                    "value": "new york"
                 },
-                "country": {
-                    "automatically_extensible": True,
-                    "data": [],
-                    "use_synonyms": True,
-                    "matching_strictness": 1.0,
-                },
-                "location": {
-                    "automatically_extensible": True,
+                {
+                    "synonyms": [],
+                    "value": "london"
+                }
+            ],
+            "use_synonyms": True,
+            "matching_strictness": 1.0,
+        },
+        "role": {
+            "automatically_extensible": True,
+            "data": [],
+            "use_synonyms": True,
+            "matching_strictness": 1.0,
+        },
+        "snips/datetime": {}
+    },
+    "intents": {
+        "getWeather": {
+            "utterances": [
+                {
                     "data": [
                         {
-                            "synonyms": [
-                                "big apple"
-                            ],
-                            "value": "new york"
+                            "text": "what is the weather in "
                         },
                         {
-                            "synonyms": [
-                                "city of lights"
-                            ],
-                            "value": "paris"
+                            "entity": "location",
+                            "slot_name": "weatherLocation",
+                            "text": "Paris"
                         },
                         {
-                            "synonyms": [],
-                            "value": "london"
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "matching_strictness": 1.0,
-                },
-                "role": {
-                    "automatically_extensible": True,
-                    "data": [],
-                    "use_synonyms": True,
-                    "matching_strictness": 1.0,
-                },
-                "snips/datetime": {}
-            },
-            "intents": {
-                "getWeather": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "what is the weather in "
-                                },
-                                {
-                                    "entity": "location",
-                                    "slot_name": "weatherLocation",
-                                    "text": "Paris"
-                                },
-                                {
-                                    "text": "?"
-                                }
-                            ]
-                        },
-                        {
-                            "data": [
-                                {
-                                    "text": "Will it rain "
-                                },
-                                {
-                                    "entity": "snips/datetime",
-                                    "slot_name": "weatherDate",
-                                    "text": "tomorrow"
-                                },
-                                {
-                                    "text": " in "
-                                },
-                                {
-                                    "entity": "location",
-                                    "slot_name": "weatherLocation",
-                                    "text": "Moscow"
-                                },
-                                {
-                                    "text": "?"
-                                }
-                            ]
-                        },
-                        {
-                            "data": [
-                                {
-                                    "text": "How is the weather in "
-                                },
-                                {
-                                    "entity": "location",
-                                    "slot_name": "weatherLocation",
-                                    "text": "San Francisco"
-                                },
-                                {
-                                    "entity": "snips/datetime",
-                                    "slot_name": "weatherDate",
-                                    "text": "today"
-                                },
-                                {
-                                    "text": "?"
-                                }
-                            ]
+                            "text": "?"
                         }
                     ]
                 },
-                "whoIsGame": {
-                    "utterances": [
+                {
+                    "data": [
                         {
-                            "data": [
-                                {
-                                    "text": "who is the "
-                                },
-                                {
-                                    "entity": "role",
-                                    "slot_name": "role",
-                                    "text": "president"
-                                },
-                                {
-                                    "text": " of "
-                                },
-                                {
-                                    "entity": "country",
-                                    "slot_name": "country",
-                                    "text": "France"
-                                }
-                            ]
+                            "text": "is it raining in "
                         },
                         {
-                            "data": [
-                                {
-                                    "text": "who is the "
-                                },
-                                {
-                                    "entity": "role",
-                                    "slot_name": "role",
-                                    "text": "prime minister"
-                                },
-                                {
-                                    "text": " of "
-                                },
-                                {
-                                    "entity": "country",
-                                    "slot_name": "country",
-                                    "text": "UK"
-                                }
-                            ]
+                            "entity": "location",
+                            "slot_name": "weatherLocation",
+                            "text": "new york"
                         },
                         {
-                            "data": [
-                                {
-                                    "text": "who is the "
-                                },
-                                {
-                                    "entity": "role",
-                                    "slot_name": "role",
-                                    "text": "CEO"
-                                },
-                                {
-                                    "text": " of "
-                                },
-                                {
-                                    "entity": "company",
-                                    "slot_name": "company",
-                                    "text": "Google"
-                                },
-                                {
-                                    "text": " please"
-                                }
-                            ]
+                            "entity": "snips/datetime",
+                            "slot_name": "weatherDate",
+                            "text": "Today"
                         }
                     ]
                 }
-            },
-            "language": "en"
+            ]
+        },
+        "whoIsGame": {
+            "utterances": [
+                {
+                    "data": [
+                        {
+                            "text": "who is the "
+                        },
+                        {
+                            "entity": "role",
+                            "slot_name": "role",
+                            "text": "president"
+                        },
+                        {
+                            "text": " of "
+                        },
+                        {
+                            "entity": "country",
+                            "slot_name": "country",
+                            "text": "France"
+                        }
+                    ]
+                },
+                {
+                    "data": [
+                        {
+                            "text": "who is the "
+                        },
+                        {
+                            "entity": "role",
+                            "slot_name": "role",
+                            "text": "CEO"
+                        },
+                        {
+                            "text": " of "
+                        },
+                        {
+                            "entity": "company",
+                            "slot_name": "company",
+                            "text": "Google"
+                        },
+                        {
+                            "text": " please"
+                        }
+                    ]
+                }
+            ]
         }
+    },
+    "language": "en"
+}
+
+
+class TestDatasetLoading(TestCase):
+    @patch("snips_nlu.dataset.dataset.io")
+    def test_should_generate_dataset_from_yaml_files(self, mock_io):
+        # Given
+        intent_file_1 = "whoIsGame.yaml"
+        intent_file_2 = "getWeather.yaml"
+        entity_file_1 = "location.yaml"
+
+        who_is_game_yaml = """
+# whoIsGame Intent
+---
+type: intent
+name: whoIsGame
+utterances:
+  - who is the [role](president) of [country](France)
+  - who is the [role](CEO) of [company](Google) please
+        """
+
+        get_weather_yaml = """
+# getWeather Intent
+---
+type: intent
+name: getWeather
+utterances:
+  - what is the weather in [weatherLocation:location](Paris)?
+  - is it raining in [weatherLocation] [weatherDate:snips/datetime]
+        """
+
+        location_yaml = """
+# Location Entity
+---
+type: entity
+name: location
+automatically_extensible: true
+values:
+- [new york, big apple]
+- london
+        """
+
+        # pylint:disable=unused-argument
+        def mock_open(filename, **kwargs):
+            if filename == intent_file_1:
+                return io.StringIO(who_is_game_yaml)
+            if filename == intent_file_2:
+                return io.StringIO(get_weather_yaml)
+            if filename == entity_file_1:
+                return io.StringIO(location_yaml)
+            return None
+
+        # pylint:enable=unused-argument
+
+        mock_io.open.side_effect = mock_open
+        dataset_files = [intent_file_1, intent_file_2, entity_file_1]
+
+        # When
+        dataset = AssistantDataset.from_yaml_files("en", dataset_files)
+        dataset_dict = dataset.json
+
+        # Then
         validate_and_format_dataset(dataset_dict)
-        self.assertDictEqual(expected_dataset_dict, dataset_dict)
+        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
+
+    @mock.patch("snips_nlu.dataset.dataset.io")
+    def test_should_generate_dataset_from_merged_yaml_file(self, mock_io):
+        # Given
+        dataset_file = "dataset.yaml"
+        dataset_yaml = """
+# whoIsGame Intent
+---
+type: intent
+name: whoIsGame
+utterances:
+  - who is the [role](president) of [country](France)
+  - who is the [role](CEO) of [company](Google) please
+
+# getWeather Intent
+---
+type: intent
+name: getWeather
+utterances:
+  - what is the weather in [weatherLocation:location](Paris)?
+  - is it raining in [weatherLocation] [weatherDate:snips/datetime]
+  
+# Location Entity
+---
+type: entity
+name: location
+automatically_extensible: true
+values:
+- [new york, big apple]
+- london
+        """
+
+        # pylint:disable=unused-argument
+        def mock_open(filename, **kwargs):
+            if filename == dataset_file:
+                return io.StringIO(dataset_yaml)
+            return None
+
+        # pylint:enable=unused-argument
+
+        mock_io.open.side_effect = mock_open
+
+        # When
+        dataset = AssistantDataset.from_yaml_files("en", [dataset_file])
+        dataset_dict = dataset.json
+
+        # Then
+        validate_and_format_dataset(dataset_dict)
+        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
+
+    def test_should_generate_dataset_from_files(self):
+        # Given
+        intent_file_1 = "intent_whoIsGame.txt"
+        intent_file_2 = "intent_getWeather.txt"
+        entity_file_1 = "entity_location.txt"
+
+        who_is_game_txt = """
+who is the [role:role](president) of [country:country](France)
+who is the [role:role](CEO) of [company:company](Google) please
+"""
+
+        get_weather_txt = """
+what is the weather in [weatherLocation:location](Paris)?
+is it raining in [weatherLocation] [weatherDate:snips/datetime]
+"""
+
+        location_txt = """
+new york,big apple
+london
+        """
+
+        # pylint:disable=unused-argument
+        def mock_open(self_, *args, **kwargs):
+            if str(self_) == intent_file_1:
+                return io.StringIO(who_is_game_txt)
+            if str(self_) == intent_file_2:
+                return io.StringIO(get_weather_txt)
+            if str(self_) == entity_file_1:
+                return io.StringIO(location_txt)
+            return None
+
+        # pylint:enable=unused-argument
+
+        dataset_files = [intent_file_1, intent_file_2, entity_file_1]
+
+        # When
+        with patch("pathlib.io") as mock_io:
+            mock_io.open.side_effect = mock_open
+            dataset = AssistantDataset.from_files("en", dataset_files)
+        dataset_dict = dataset.json
+
+        # When / Then
+        validate_and_format_dataset(dataset_dict)
+        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)

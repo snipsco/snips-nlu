@@ -30,6 +30,7 @@ required = [
     "plac>=0.9.6,<1.0",
     "requests>=2.0,<3.0",
     "pathlib==1.0.1; python_version < '3.4'",
+    "pyaml>=17,<18"
 ]
 
 extras_require = {

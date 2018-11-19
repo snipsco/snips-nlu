@@ -1,4 +1,0 @@
-# automatically_extensible=false
-new york,big apple
-paris,city of lights
-london

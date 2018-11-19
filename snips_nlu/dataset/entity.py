@@ -22,19 +22,19 @@ class EntityFormatError(TypeError):
 class Entity(object):
     """Entity of an :class:`.AssistantDataset`
 
-    This class can represents both a custom entity and a builtin entity
+    This class can represents both a custom or a builtin entity
 
     Attributes:
         name (str): name of the entity
         utterances (list of :class:`.EntityUtterance`): entity utterances
             (only for custom entities)
         automatically_extensible (bool): whether or not the entity can be
-            extended to values not present in the dataset (only for custom
+            extended to values not present in the data (only for custom
             entities)
         use_synonyms (bool): whether or not to map entity values using
             synonyms (only for custom entities)
         matching_strictness (float): controls the matching strictness of the
-            entity (only for custom entities)
+            entity (only for custom entities). Must be between 0.0 and 1.0.
     """
 
     def __init__(self, name, utterances=None, automatically_extensible=True,
@@ -59,7 +59,7 @@ class Entity(object):
             raise EntityFormatError("Wrong type: '%s'" % object_type)
         entity_name = yaml_dict.get("name")
         if not entity_name:
-            raise EntityFormatError("No 'name' attribute found")
+            raise EntityFormatError("Missing 'name' attribute")
         auto_extensible = yaml_dict.get(AUTOMATICALLY_EXTENSIBLE, True)
         use_synonyms = yaml_dict.get(USE_SYNONYMS, True)
         matching_strictness = yaml_dict.get("matching_strictness", 1.0)
@@ -100,6 +100,8 @@ class Entity(object):
             reader = csv.reader(list(it))
             autoextent = True
             for row in reader:
+                if not row or not row[0].strip():
+                    continue
                 if six.PY2:
                     row = [cell.decode("utf-8") for cell in row]
                 value = row[0]
@@ -142,6 +144,10 @@ class EntityUtterance(object):
         if synonyms is None:
             synonyms = []
         self.synonyms = synonyms
+
+    @property
+    def variations(self):
+        return [self.value] + self.synonyms
 
     @property
     def json(self):

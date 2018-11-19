@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
+
 import io
 from unittest import TestCase
 
 import yaml
+from mock import patch
 
-from snips_nlu.constants import PACKAGE_PATH
 from snips_nlu.dataset import Entity, EntityFormatError
 
 
@@ -132,10 +134,24 @@ values:
         with self.assertRaises(EntityFormatError):
             Entity.from_yaml(yaml_dict)
 
-    def test_from_text_file(self):
+    @patch("pathlib.io")
+    def test_from_text_file(self, mock_io):
         # Given
-        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
-        entity_file = examples_path / "entity_location.txt"
+        entity_file = "entity_location.txt"
+        location_txt = """
+new york,big apple
+paris,city of lights
+london
+        """
+
+        # pylint:disable=unused-argument
+        def mock_open(self_, *args, **kwargs):
+            if str(self_) == entity_file:
+                return io.StringIO(location_txt)
+            return None
+
+        # pylint:enable=unused-argument
+        mock_io.open.side_effect = mock_open
 
         # When
         entity = Entity.from_file(entity_file)
@@ -167,10 +183,25 @@ values:
         }
         self.assertDictEqual(expected_entity_dict, entity_dict)
 
-    def test_from_file_with_autoextensible(self):
+    @patch("pathlib.io")
+    def test_from_file_with_autoextensible(self, mock_io):
         # Given
-        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
-        entity_file = examples_path / "entity_location_autoextent_false.txt"
+        entity_file = "entity_location.txt"
+        location_txt = """# automatically_extensible=false
+new york,big apple
+paris,city of lights
+london
+        """
+
+        # pylint:disable=unused-argument
+        def mock_open(self_, *args, **kwargs):
+            if str(self_) == entity_file:
+                return io.StringIO(location_txt)
+            return None
+
+        # pylint:enable=unused-argument
+
+        mock_io.open.side_effect = mock_open
 
         # When
         entity_dataset = Entity.from_file(entity_file)
@@ -204,8 +235,7 @@ values:
 
     def test_should_fail_generating_entity_with_wrong_file_name(self):
         # Given
-        examples_path = PACKAGE_PATH / "cli" / "dataset" / "examples"
-        entity_file = examples_path / "location.txt"
+        entity_file = "location.txt"
 
         # When / Then
         with self.assertRaises(EntityFormatError):

@@ -50,9 +50,10 @@ def validate_and_format_dataset(dataset):
             dataset[ENTITIES][entity_name] = \
                 _validate_and_format_builtin_entity(entity, uterrance_entities)
         else:
-            dataset[ENTITIES][
-                entity_name] = _validate_and_format_custom_entity(
-                entity, uterrance_entities, language, builtin_entity_parser)
+            dataset[ENTITIES][entity_name] = \
+                _validate_and_format_custom_entity(
+                    entity, uterrance_entities, language,
+                    builtin_entity_parser)
     dataset[VALIDATED] = True
     return dataset
 

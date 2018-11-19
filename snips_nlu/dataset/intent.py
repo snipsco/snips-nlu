@@ -33,14 +33,17 @@ class Intent(object):
     Attributes:
         intent_name (str): name of the intent
         utterances (list of :class:`.IntentUtterance`): intent utterances
+        slot_mapping (dict): mapping between slot names and entities
     """
 
-    def __init__(self, intent_name, slot_mapping=None):
+    def __init__(self, intent_name, utterances, slot_mapping=None):
         if slot_mapping is None:
             slot_mapping = dict()
         self.intent_name = intent_name
-        self.utterances = []
+        self.utterances = utterances
         self.slot_mapping = slot_mapping
+        self._complete_slot_name_mapping()
+        self._ensure_entity_names()
 
     @classmethod
     def from_yaml(cls, yaml_dict):
@@ -50,17 +53,16 @@ class Intent(object):
             raise IntentFormatError("Wrong type: '%s'" % object_type)
         intent_name = yaml_dict.get("name")
         if not intent_name:
-            raise IntentFormatError("No 'name' attribute found")
+            raise IntentFormatError("Missing 'name' attribute")
         slot_mapping = dict()
         for slot in yaml_dict.get("slots", []):
             slot_mapping[slot["name"]] = slot["entity"]
-        dataset = cls(intent_name, slot_mapping)
-        utterances = (u.strip() for u in yaml_dict["utterances"] if u.strip())
+        utterances = [IntentUtterance.parse(u.strip())
+                      for u in yaml_dict["utterances"] if u.strip()]
         if not utterances:
             raise IntentFormatError(
                 "Intent must contain at least one utterance")
-        dataset.add_utterances(utterances)
-        return dataset
+        return cls(intent_name, utterances, slot_mapping)
 
     @classmethod
     def from_file(cls, filepath):
@@ -73,27 +75,30 @@ class Intent(object):
         intent_name = stem[7:]
         if not intent_name:
             raise IntentFormatError("Intent name must not be empty")
-        dataset = cls(intent_name)
         with filepath.open(encoding="utf-8") as f:
             lines = iter(l.strip() for l in f if l.strip())
-            dataset.add_utterances(lines)
-            return dataset
+            utterances = [IntentUtterance.parse(sample) for sample in lines]
+        return cls(intent_name, utterances)
 
-    def add_utterances(self, samples_iter):
-        for sample in samples_iter:
-            utterance = IntentUtterance.parse(sample)
-            self.add(utterance)
+    def _complete_slot_name_mapping(self):
+        for utterance in self.utterances:
+            for chunk in utterance.slot_chunks:
+                if chunk.entity and chunk.slot_name not in self.slot_mapping:
+                    self.slot_mapping[chunk.slot_name] = chunk.entity
+        return self
 
-    def add(self, utterance):
-        """Adds an :class:`.IntentUtterance` to the dataset"""
-        for chunk in utterance.slot_chunks:
-            if chunk.name not in self.slot_mapping:
-                self.slot_mapping[chunk.name] = chunk.entity
-        self.utterances.append(utterance)
+    def _ensure_entity_names(self):
+        for utterance in self.utterances:
+            for chunk in utterance.slot_chunks:
+                if chunk.entity:
+                    continue
+                chunk.entity = self.slot_mapping.get(
+                    chunk.slot_name, chunk.slot_name)
+        return self
 
     @property
     def json(self):
-        """Intent dataset in json format"""
+        """Intent data in json format"""
         return {
             UTTERANCES: [
                 {DATA: [chunk.json for chunk in utterance.chunks]}
@@ -103,7 +108,7 @@ class Intent(object):
 
     @property
     def entities_names(self):
-        """Set of entity names present in the intent dataset"""
+        """Set of entity names present in the intent utterances"""
         return set(chunk.entity for u in self.utterances
                    for chunk in u.chunks if isinstance(chunk, SlotChunk))
 
@@ -138,7 +143,7 @@ class IntentUtterance(object):
             2
             >>> u.chunks[0].text
             'president of '
-            >>> u.chunks[1].name
+            >>> u.chunks[1].slot_name
             'country'
             >>> u.chunks[1].entity
             'default'
@@ -160,14 +165,14 @@ class Chunk(with_metaclass(ABCMeta, object)):
 class SlotChunk(Chunk):
     def __init__(self, slot_name, entity, text):
         super(SlotChunk, self).__init__(text)
-        self.name = slot_name
+        self.slot_name = slot_name
         self.entity = entity
 
     @property
     def json(self):
         return {
             TEXT: self.text,
-            SLOT_NAME: self.name,
+            SLOT_NAME: self.slot_name,
             ENTITY: self.entity,
         }
 
@@ -187,6 +192,10 @@ class SM(object):
         self.input = input
         self.chunks = []
         self.current = 0
+
+    @property
+    def end_of_input(self):
+        return self.current >= len(self.input)
 
     def add_slot(self, name, entity=None):
         """Adds a named slot
@@ -222,6 +231,8 @@ class SM(object):
         self.current = pos + 1
 
     def peek(self):
+        if self.end_of_input:
+            return None
         return self[0]
 
     def read(self):
@@ -251,22 +262,19 @@ def capture_text(state):
 
 
 def capture_slot(state):
-    next_pos = state.find(':')
-    if next_pos < 0:
-        next_pos = state.find(']')
-        if next_pos < 0:
-            raise INTENT_FORMATTING_ERROR
-        slot_name = state[:next_pos]
-        state.move(next_pos)
+    next_colon_pos = state.find(':')
+    next_square_bracket_pos = state.find(']')
+    if next_square_bracket_pos < 0:
+        raise INTENT_FORMATTING_ERROR
+    if next_colon_pos < 0 or next_square_bracket_pos < next_colon_pos:
+        slot_name = state[:next_square_bracket_pos]
+        state.move(next_square_bracket_pos)
         state.add_slot(slot_name)
     else:
-        slot_name = state[:next_pos]
-        state.move(next_pos)
-        next_pos = state.find(']')
-        if next_pos < 0:
-            raise INTENT_FORMATTING_ERROR
-        entity = state[:next_pos]
-        state.move(next_pos)
+        slot_name = state[:next_colon_pos]
+        state.move(next_colon_pos)
+        entity = state[:next_square_bracket_pos]
+        state.move(next_square_bracket_pos)
         state.add_slot(slot_name, entity)
     if state.peek() == '(':
         state.read()

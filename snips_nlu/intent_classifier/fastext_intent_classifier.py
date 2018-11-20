@@ -12,8 +12,7 @@ from future.builtins import str, zip
 from future.utils import iteritems
 from pathlib import Path
 
-from snips_nlu.constants import (DATA, ENTITY,
-                                 ENTITY_KIND, TEXT, ROOT_PATH)
+from snips_nlu.constants import (DATA, ENTITY, ENTITY_KIND, ROOT_PATH, TEXT)
 from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.intent_classifier import IntentClassifier
@@ -26,8 +25,8 @@ from snips_nlu.pipeline.configs.intent_classifier import (
     FastTextIntentClassifierConfig)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import (
-    check_random_state, json_string, temp_dir)
+from snips_nlu.utils import (_train_test_split, check_random_state,
+                             json_string, temp_dir)
 
 logger = logging.getLogger(__name__)
 
@@ -51,29 +50,29 @@ class FastTextIntentClassifier(IntentClassifier):
         random_state = check_random_state(self.config.random_seed)
         data_augmentation_config = self.config.data_augmentation_config
 
-        utterances, classes, intent_list = build_training_data(
-            dataset, self.language, data_augmentation_config,
+        train_dataset, val_dataset = _train_test_split(
+            dataset, self.config.validation_ratio, random_state)
+
+        train_utterances, train_classes, intent_list = build_training_data(
+            train_dataset, self.language, data_augmentation_config,
             random_state)
 
-        fastext_dataset = self._dataset_to_fasttext_file(
-            utterances, classes, intent_list, random_state)
+        val_utterances, val_classes, val_intent_list = build_training_data(
+            val_dataset, self.language, data_augmentation_config, random_state)
 
-        num_utterances = len(fastext_dataset)
-        if num_utterances < 2:
-            raise ValueError("Dataset should have at least 2 utterances")
+        train_fasttext_dataset = self._dataset_to_fasttext_file(
+            train_utterances, train_classes, intent_list, random_state)
 
-        train_id = min(num_utterances - 1,
-                       int(num_utterances * self.config.validation_ratio))
-        val_dataset = fastext_dataset[:train_id]
-        train_dataset = fastext_dataset[train_id:]
+        val_fasttext_dataset = self._dataset_to_fasttext_file(
+            val_utterances, val_classes, intent_list, random_state)
 
         with temp_dir() as tmp_dir:
             train_dataset_path = tmp_dir / "train_dataset.txt"
             val_dataset_path = tmp_dir / "val_dataset.txt"
             with train_dataset_path.open("w", encoding="utf-8") as f:
-                f.write("\n".join(train_dataset))
+                f.write("\n".join(train_fasttext_dataset))
             with val_dataset_path.open("w", encoding="utf-8") as f:
-                f.write("\n".join(val_dataset))
+                f.write("\n".join(val_fasttext_dataset))
 
             self.model, best_f1, best_params = grid_search(
                 train_dataset_path, val_dataset_path,
@@ -263,9 +262,9 @@ def grid_search(train_path, validation_path, learning_rates, embedding_dims,
     validation_examples = None
     validation_labels = None
 
-
     pretrain_vector_path = str(
-        ROOT_PATH / "fastext_snips_dim_10_lr_0.1_epoch_1000_min_3_max_6_loss_0.22.vec")
+        ROOT_PATH /
+        "fastext_snips_dim_10_lr_0.1_epoch_1000_min_3_max_6_loss_0.22.vec")
 
     for lr, dim, epoch, n in product(learning_rates, embedding_dims, epochs,
                                      ngram_lengths):

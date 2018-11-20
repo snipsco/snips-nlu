@@ -6,11 +6,15 @@ import json
 import numbers
 import os
 import shutil
+from copy import deepcopy
+
 from builtins import bytes, object, str
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
+
+from future.utils import iteritems
 from pathlib import Path
 from tempfile import mkdtemp
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -369,3 +373,20 @@ def deduplicate_overlapping_items(items, overlap_fn, sort_key_fn):
                    for dedup_item in deduplicated_items):
             deduplicated_items.append(item)
     return deduplicated_items
+
+
+def _train_test_split(dataset, test_ratio, random_state):
+    train_dataset = deepcopy(dataset)
+    train_dataset[INTENTS] = dict()
+    test_dataset = deepcopy(dataset)
+    test_dataset[INTENTS] = dict()
+
+    for intent_name, intent in iteritems(dataset[INTENTS]):
+        utterances = random_state.permutation(intent[UTTERANCES])
+        test_ix = int(len(utterances) * test_ratio)
+        train_dataset[INTENTS][intent_name] = {
+            UTTERANCES: utterances[:-test_ix].tolist()}
+        test_dataset[INTENTS][intent_name] = {
+            UTTERANCES: utterances[-test_ix:].tolist()}
+
+    return train_dataset, test_dataset

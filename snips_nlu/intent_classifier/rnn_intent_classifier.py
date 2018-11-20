@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 import logging
-from copy import deepcopy
 from itertools import product
 
 import numpy as np
@@ -20,8 +19,8 @@ from tensorflow.python.keras.layers import (Concatenate, Dense, Dropout,
                                             Embedding, LSTM, Masking)
 from tensorflow.python.keras.utils import to_categorical
 
-from snips_nlu.constants import DATA, ENTITY_KIND, INTENTS, LANGUAGE, \
-    ROOT_PATH, UTTERANCES
+from snips_nlu.constants import DATA, ENTITY_KIND, LANGUAGE, \
+    ROOT_PATH
 from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
 from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -30,7 +29,7 @@ from snips_nlu.pipeline.configs.intent_classifier import (
     RNNIntentClassifierConfig)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import check_random_state, temp_dir
+from snips_nlu.utils import check_random_state, temp_dir, _train_test_split
 
 logger = logging.getLogger(__name__)
 
@@ -384,18 +383,3 @@ def grid_search(data, num_customs, num_builtins, tokenizer, config):
     return best_model, best_f1, best_config
 
 
-def _train_test_split(dataset, test_ratio, random_state):
-    train_dataset = deepcopy(dataset)
-    train_dataset[INTENTS] = dict()
-    test_dataset = deepcopy(dataset)
-    test_dataset[INTENTS] = dict()
-
-    for intent_name, intent in iteritems(dataset[INTENTS]):
-        utterances = random_state.permutation(intent[UTTERANCES])
-        test_ix = int(len(utterances) * test_ratio)
-        train_dataset[INTENTS][intent_name] = {
-            UTTERANCES: utterances[:-test_ix].tolist()}
-        test_dataset[INTENTS][intent_name] = {
-            UTTERANCES: utterances[-test_ix:].tolist()}
-
-    return train_dataset, test_dataset

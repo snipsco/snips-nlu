@@ -13,7 +13,7 @@ from future.utils import iteritems
 from pathlib import Path
 
 from snips_nlu.constants import (DATA, ENTITY,
-                                 ENTITY_KIND, TEXT)
+                                 ENTITY_KIND, TEXT, ROOT_PATH)
 from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.intent_classifier import IntentClassifier
@@ -78,7 +78,9 @@ class FastTextIntentClassifier(IntentClassifier):
             self.model, best_f1, best_params = grid_search(
                 train_dataset_path, val_dataset_path,
                 self.config.learning_rates, self.config.embedding_dims,
-                self.config.epochs)
+                self.config.epochs, self.config.ngram_lengths)
+            print "Best model F1: %s" % best_f1
+            print "Best model params: %s" % best_params
             logger.debug("Best model F1: %s", best_f1)
             logger.debug("Best model params: %s", best_params)
             # TODO: quantize the model
@@ -252,8 +254,8 @@ def compute_precision_recall(model, validation_examples, validation_labels):
     return precision_matrix, recall_matrix
 
 
-def grid_search(train_path, validation_path, learning_rates,
-                embedding_dims, epochs):
+def grid_search(train_path, validation_path, learning_rates, embedding_dims,
+                epochs, ngram_lengths):
     best_model = None
     best_f1 = None
     best_params = None
@@ -261,12 +263,20 @@ def grid_search(train_path, validation_path, learning_rates,
     validation_examples = None
     validation_labels = None
 
-    for lr, dim, epoch in product(learning_rates, embedding_dims, epochs):
+
+    pretrain_vector_path = str(
+        ROOT_PATH / "fastext_snips_dim_10_lr_0.1_epoch_1000_min_3_max_6_loss_0.22.vec")
+
+    for lr, dim, epoch, n in product(learning_rates, embedding_dims, epochs,
+                                     ngram_lengths):
         model = train_supervised(
-            str(train_path), lr=lr, dim=dim, epoch=epoch, minCount=1,
-            minCountLabel=0, minn=0, maxn=0, neg=5, wordNgrams=1,
-            loss="softmax", bucket=2000000, thread=12, lrUpdateRate=100,
-            t=1e-4, label="__label__", verbose=2, pretrainedVectors="",
+            str(train_path), lr=lr,
+            dim=dim,
+            epoch=epoch, minCount=1,
+            wordNgrams=n, minCountLabel=0, minn=0, maxn=0, neg=5,
+            loss="softmax", bucket=2000000, thread=4, lrUpdateRate=100,
+            t=1e-4, label="__label__", verbose=2,
+            pretrainedVectors=pretrain_vector_path,
         )
 
         if validation_examples is None:
@@ -281,6 +291,11 @@ def grid_search(train_path, validation_path, learning_rates,
 
         if f1 > best_f1:
             best_model = model
-            best_params = {"lr": lr, "dim": dim, "epoch": epoch}
+            best_params = {
+                "lr": lr,
+                "dim": dim,
+                "epoch": epoch,
+                "wordNgrams": n
+            }
             best_f1 = f1
     return best_model, best_f1, best_params

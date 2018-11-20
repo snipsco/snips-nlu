@@ -11,6 +11,90 @@ from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
+class RNNIntentClassifierConfig(ProcessingUnitConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.rnn_intent_classifier \
+            import RNNIntentClassifier
+        return RNNIntentClassifier.unit_name
+
+    def __init__(self, rnn_dims=None, optimizers=None, embeddings=None,
+                 validation_ratio=0.2, dropouts=None, batch_sizes=None,
+                 data_augmentation_config=None, random_seed=None,
+                 num_layers=None):
+
+        if batch_sizes is None:
+            batch_sizes = [8, 16, 32]
+        self.batch_sizes = batch_sizes
+        if rnn_dims is None:
+            rnn_dims = [8, 16, 32]
+        self.rnn_dims = rnn_dims
+        if num_layers is None:
+            num_layers = [1, 2]
+        self.num_layers = num_layers
+        if dropouts is None:
+            dropouts = [0, 0.2]
+        self.dropouts = dropouts
+        if embeddings is None:
+            embeddings = ["balbalba", "other_blabla"]
+        self.embeddings = embeddings
+        if optimizers is None:
+            optimizers = ["adadelta", "rmsprop"]
+        self.optimizers = optimizers
+        self.validation_ratio = validation_ratio
+
+        if data_augmentation_config is None:
+            data_augmentation_config = IntentClassifierDataAugmentationConfig(
+                min_utterances=200)
+        self.data_augmentation_config = data_augmentation_config
+        self.random_seed = random_seed
+
+    @property
+    def data_augmentation_config(self):
+        return self._data_augmentation_config
+
+    @data_augmentation_config.setter
+    def data_augmentation_config(self, value):
+        if isinstance(value, dict):
+            self._data_augmentation_config = \
+                IntentClassifierDataAugmentationConfig.from_dict(value)
+        elif isinstance(value, IntentClassifierDataAugmentationConfig):
+            self._data_augmentation_config = value
+        else:
+            raise TypeError("Expected instance of "
+                            "IntentClassifierDataAugmentationConfig or dict"
+                            "but received: %s" % type(value))
+
+    def get_required_resources(self):
+        parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
+        return {
+            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
+        }
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "validation_ratio": self.validation_ratio,
+            "random_seed": self.random_seed,
+            "data_augmentation_config":
+                self.data_augmentation_config.to_dict(),
+            "rnn_dims": self.rnn_dims,
+            "optimizers": self.optimizers,
+            "dropouts": self.dropouts,
+            "embeddings": self.embeddings,
+            "batch_sizes": self.batch_sizes,
+            "num_layers": self.num_layers
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)
+
+
 class FastTextIntentClassifierConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.Featurizer` object
 
@@ -27,11 +111,14 @@ class FastTextIntentClassifierConfig(ProcessingUnitConfig):
             import FastTextIntentClassifier
         return FastTextIntentClassifier.unit_name
 
-    def __init__(self, embedding_dims=None, learning_rates=None, epochs=None,
+    def __init__(self, embedding_dims=None, ngram_lengths=None,
+                 learning_rates=None,
+                 epochs=None,
                  validation_ratio=0.1, n_threads=4,
                  data_augmentation_config=None, use_stemming=False,
                  unknown_word_prob=0, random_seed=None,
                  unknown_words_replacement_string=None):
+
         if learning_rates is None:
             learning_rates = [0.1, 0.25, 0.5, 0.75]
         if embedding_dims is None:
@@ -40,8 +127,12 @@ class FastTextIntentClassifierConfig(ProcessingUnitConfig):
             epochs = [10, 20, 30, 50]
         if data_augmentation_config is None:
             data_augmentation_config = IntentClassifierDataAugmentationConfig()
+        if ngram_lengths is None:
+            ngram_lengths = [1]
+
         self.epochs = epochs
         self.embedding_dims = embedding_dims
+        self.ngram_lengths = ngram_lengths
         self.learning_rates = learning_rates
         self.validation_ratio = validation_ratio
         self.n_threads = n_threads

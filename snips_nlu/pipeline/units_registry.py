@@ -1,7 +1,9 @@
-from snips_nlu.intent_classifier import (LogRegIntentClassifier, FastTextIntentClassifier)
+from snips_nlu.intent_classifier import (FastTextIntentClassifier,
+                                         LogRegIntentClassifier,
+                                         RNNIntentClassifier)
 from snips_nlu.intent_parser import (DeterministicIntentParser,
-                                     ProbabilisticIntentParser,
-                                     IntentOnlyIntentParser)
+                                     IntentOnlyIntentParser,
+                                     ProbabilisticIntentParser)
 from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
 from snips_nlu.slot_filler import CRFSlotFiller
 
@@ -12,7 +14,8 @@ BUILTIN_NLU_PROCESSING_UNITS = [
     LogRegIntentClassifier,
     CRFSlotFiller,
     IntentOnlyIntentParser,
-    FastTextIntentClassifier
+    FastTextIntentClassifier,
+    RNNIntentClassifier
 ]
 
 NLU_PROCESSING_UNITS = {

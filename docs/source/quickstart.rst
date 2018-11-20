@@ -43,7 +43,7 @@ resources used to improve performance with the :func:`.load_resources` function.
     nlu_engine = SnipsNLUEngine()
 
 Now that we have our engine object created, we need to feed it with our sample
-dataset. In general, this action will require some *machine learning* hence we
+dataset. In general, this action will require some *machine learning*, so we
 will actually *fit* the engine:
 
 .. code-block:: python
@@ -52,7 +52,7 @@ will actually *fit* the engine:
 
 
 Our NLU engine is now trained to recognize new utterances that extend beyond
-what is strictly contained in the dataset, it is able to *generalize*.
+what is strictly contained in the dataset: it is able to *generalize*.
 
 Let's try to parse something now!
 

@@ -81,9 +81,10 @@ the :ref:`api` documentation or alternatively check the `github repository`_.
    installation
    quickstart
    tutorial
-   cli
+   dataset
    data_model
    languages
+   cli
    api
 
 

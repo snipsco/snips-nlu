@@ -1,0 +1,249 @@
+.. _dataset:
+
+Training Dataset Format
+=======================
+
+The Snips NLU library leverages machine learning algorithms and some training
+data in order to produce a powerful intent recognition engine.
+
+The better your training data is, and the more accurate your NLU engine will
+be. Thus, it is worth spending a bit of time to create a dataset that
+corresponds well to your use case.
+
+Snips NLU accepts two different dataset formats. The first one, which relies
+on YAML, is the preferred option if you want to create or edit a dataset
+manually.
+The other dataset format uses JSON and should rather be used if you plan to
+create or edit datasets programmatically.
+
+YAML format
+-----------
+
+The YAML dataset format allows you to define intents and entities using the
+`YAML <http://yaml.org/about.html>`_ syntax.
+
+------
+Entity
+------
+
+Here is what an entity file looks like:
+
+.. code-block:: yaml
+
+    # City Entity
+    ---
+    type: entity # allows to differentiate between entities and intents files
+    name: city # name of the entity
+    values:
+    - london # single entity value
+    - [new york, big apple] # entity value with a synonym
+    - [paris, city of lights]
+
+You can specify entity values either using single YAML scalars (e.g. ``london``),
+or using lists if you want to define some synonyms (e.g.
+``[paris, city of lights]``)
+
+Here is a more comprehensive example which contains additional attributes that
+are optional:
+
+.. code-block:: yaml
+
+    # City Entity
+    ---
+    type: entity
+    name: city
+    automatically_extensible: false # default value is true
+    use_synonyms: false # default value is true
+    matching_strictness: 0.8 # default value is 1.0
+    values:
+    - london
+    - [new york, big apple]
+    - [paris, city of lights]
+
+------
+Intent
+------
+
+Here is the format used to describe an intent:
+
+.. code-block:: yaml
+
+    # searchFlight Intent
+    ---
+    type: intent
+    name: searchFlight # name of the intent
+    utterances:
+      - find me a flight from [origin:city](Paris) to [destination:city](New York)
+      - I need a flight leaving [date:snips/datetime](this weekend) to [destination:city](Berlin)
+      - show me flights to go to [arrival:city](new york) leaving [date:snips/datetime](this evening)
+
+We use a standard markdown-like annotation syntax to annotate slots within
+utterances. The ``[origin:city](Paris)`` chunk describes a slot with its three
+components:
+
+    - ``origin``: the slot name
+    - ``city``: the slot type
+    - ``Paris``: the slot value
+
+Note that different slot names can share the same slot type. This is the case
+for the ``origin`` and ``destination`` slot names in the previous example, which
+have the same slot type ``city``.
+
+If you are to write more than just three utterances, you can actually specify
+the slot mapping explicitly in the intent file and remove it from the
+utterances. This will result in simpler annotations:
+
+.. code-block:: yaml
+
+    # searchFlight Intent
+    ---
+    type: intent
+    name: searchFlight # name of the intent
+    slots:
+      - name: origin
+        entity: city
+      - name: destination
+        entity: city
+      - name: date
+        entity: snips/datetime
+    utterances:
+      - find me a flight from [origin](Paris) to [destination](New York)
+      - I need a flight leaving [date](this weekend) to [destination](Berlin)
+      - show me flights to go to [arrival](new york) leaving [date](this evening)
+
+-------
+Dataset
+-------
+
+You are free to organize the yaml documents as you want. Either having one yaml
+file for each intent and each entity, or gathering some documents together
+(e.g. all entities together, or all intents together) in the same yaml file.
+Here is the yaml file corresponding to the previous ``city`` entity and
+``searchFlight`` intent merged together:
+
+.. code-block:: yaml
+
+    # City Entity
+    ---
+    type: entity # allows to differentiate between entities and intents files
+    name: city # name of the entity
+    values:
+    - london # single entity value
+    - [new york, big apple] # entity value with a synonym
+    - [paris, city of lights]
+
+    # searchFlight Intent
+    ---
+    type: intent
+    name: searchFlight # name of the intent
+    slots:
+      - name: origin
+        entity: city
+      - name: destination
+        entity: city
+      - name: date
+        entity: snips/datetime
+    utterances:
+      - find me a flight from [origin](Paris) to [destination](New York)
+      - I need a flight leaving [date](this weekend) to [destination](Berlin)
+      - show me flights to go to [arrival](new york) leaving [date](this evening)
+
+Once your intents and entities are created using the YAML format described
+previously, you can produce a dataset using the
+:ref:`Command Line Interface (CLI) <cli>`:
+
+.. code-block:: console
+
+    snips-nlu generate-dataset en city.yaml searchFlight.yaml > dataset.json
+
+Or alternatively if you merged the yaml documents into a single file:
+
+.. code-block:: console
+
+    snips-nlu generate-dataset en dataset.yaml > dataset.json
+
+This will generate a JSON dataset and write it in the ``dataset.json`` file.
+The format of the generated file is the second allowed format that is described
+in the next section.
+
+JSON format
+-----------
+
+The JSON format is the format which is eventually used by the training API. It
+was designed to be easy to parse.
+
+We created a `sample dataset`_ that you can check to better understand the
+format.
+
+There are three attributes at the root of the JSON document:
+
+    - ``"language"``: the language of the dataset in :ref:`ISO format <languages>`
+    - ``"intents"``: a dictionary mapping between intents names and intents data
+    - ``"entities"``: a dictionary mapping between entities names and entities data
+
+Here is how the entities are represented in this format:
+
+.. code-block:: json
+
+    {
+      "entities": {
+        "snips/datetime": {},
+        "city": {
+          "data": [
+            {
+              "value": "london",
+              "synonyms": []
+            },
+            {
+              "value": "new york",
+              "synonyms": [
+                "big apple"
+              ]
+            },
+            {
+              "value": "paris",
+              "synonyms": [
+                "city of lights"
+              ]
+            }
+          ],
+          "use_synonyms": true,
+          "automatically_extensible": true,
+          "matching_strictness": 1.0
+        }
+      }
+    }
+
+Note that the ``"snips/datetime"`` entity data is empty as it is a
+:ref:`builtin entity <builtin_entity_resolution>`.
+
+The intent utterances are defined using the following format:
+
+.. code-block:: json
+
+    {
+      "data": [
+        {
+          "text": "find me a flight from "
+        },
+        {
+          "text": "Paris",
+          "entity": "city",
+          "slot_name": "origin"
+        },
+        {
+          "text": " to "
+        },
+        {
+          "text": "New York",
+          "entity": "city",
+          "slot_name": "destination"
+        }
+      ]
+    }
+
+Once you have created a JSON dataset, either directly or with YAML files, you
+can use it to train an NLU engine. To do so, you can use the CLI as documented
+:ref:`here<training_cli>`, or the :ref:`python API <training_the_engine>`.
+
+.. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json

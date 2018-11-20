@@ -4,21 +4,19 @@ Tutorial
 ========
 
 In this section, we will build an NLU assistant for home automation tasks. It
-will be able to understand queries about lights and thermostats. More precisely
-our assistant will contain three :ref:`intents <intent>`:
+will be able to understand queries about lights and thermostats. More
+precisely, our assistant will contain three :ref:`intents <intent>`:
 
 - ``turnLightOn``
 - ``turnLightOff``
 - ``setTemperature``
 
 The first two intents will be about turning on and off the lights in a specific
-room. Thus, these intents will have one :ref:`slot` which will be the ``room``.
-The third intent will let you control the temperature of a specific room, thus
-it will have two slots: the ``roomTemperature`` and the ``room``.
+room. These intents will have one :ref:`slot` which will be the ``room``.
+The third intent will let you control the temperature of a specific room. It
+will have two slots: the ``roomTemperature`` and the ``room``.
 
 The first step is to create an appropriate dataset for this task.
-
-.. _dataset:
 
 Snips dataset format
 --------------------
@@ -250,6 +248,8 @@ At this point, we can try to parse something:
 That will raise a ``NotTrained`` error, as we did not train the engine with
 the dataset that we created.
 
+
+.. _training_the_engine:
 
 Training the engine
 -------------------

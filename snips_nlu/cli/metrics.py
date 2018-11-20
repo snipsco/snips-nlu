@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 
 import plac
-from snips_nlu_metrics import Engine
 
 from snips_nlu import SnipsNLUEngine, load_resources
 from snips_nlu.utils import json_string
 
 
 def make_engine_cls(config):
+    from snips_nlu_metrics import Engine
+
     class ConfigEngine(Engine):
         def __init__(self):
             self.engine = None

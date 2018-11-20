@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.17.4] - 2018-11-20
+### Added
+- Add a `--config` argument in the metrics CLI
+
+### Changed
+- Replace "parser_threshold" by "matching_strictness" in dataset format
+- Optimize loading and inference runtime
+- Disable stemming for intent classification in default configs
+
+
 ## [0.17.3] - 2018-10-18
 ### Fixed
 - Crash with num2words and floats
@@ -165,6 +175,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.17.4]: https://github.com/snipsco/snips-nlu/compare/0.17.3...0.17.4
 [0.17.3]: https://github.com/snipsco/snips-nlu/compare/0.17.2...0.17.3
 [0.17.2]: https://github.com/snipsco/snips-nlu/compare/0.17.1...0.17.2
 [0.17.1]: https://github.com/snipsco/snips-nlu/compare/0.17.0...0.17.1

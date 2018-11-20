@@ -4,6 +4,7 @@ import io
 from unittest import TestCase
 
 import yaml
+from deprecation import fail_if_not_removed
 from mock import patch
 
 from snips_nlu.dataset import Entity, EntityFormatError
@@ -135,6 +136,7 @@ values:
             Entity.from_yaml(yaml_dict)
 
     @patch("pathlib.io")
+    @fail_if_not_removed
     def test_from_text_file(self, mock_io):
         # Given
         entity_file = "entity_location.txt"
@@ -184,6 +186,7 @@ london
         self.assertDictEqual(expected_entity_dict, entity_dict)
 
     @patch("pathlib.io")
+    @fail_if_not_removed
     def test_from_file_with_autoextensible(self, mock_io):
         # Given
         entity_file = "entity_location.txt"
@@ -233,6 +236,7 @@ london
         }
         self.assertDictEqual(expected_entity_dict, entity_dict)
 
+    @fail_if_not_removed
     def test_should_fail_generating_entity_with_wrong_file_name(self):
         # Given
         entity_file = "location.txt"

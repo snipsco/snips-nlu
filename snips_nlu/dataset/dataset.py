@@ -6,8 +6,10 @@ from itertools import cycle
 from pathlib import Path
 
 import yaml
+from deprecation import deprecated
 from snips_nlu_ontology import get_builtin_entity_examples
 
+from snips_nlu.__about__ import __version__
 from snips_nlu.dataset.entity import Entity
 from snips_nlu.dataset.intent import Intent
 
@@ -55,6 +57,9 @@ class AssistantDataset(object):
         return cls(language, intents, entities)
 
     @classmethod
+    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
+                current_version=__version__,
+                details="Use from_yaml_files instead")
     def from_files(cls, language, filenames):
         """Creates an :class:`.AssistantDataset` from a language and a list of
         intent and entity files

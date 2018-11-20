@@ -4,6 +4,7 @@ import io
 from unittest import TestCase
 
 import yaml
+from deprecation import fail_if_not_removed
 from mock import patch
 
 from snips_nlu.dataset import Intent, IntentFormatError
@@ -179,6 +180,7 @@ utterances:
         self.assertDictEqual(expected_intent_dict, intent_dict)
 
     @patch("pathlib.io")
+    @fail_if_not_removed
     def test_should_generate_intent_from_text_file(self, mock_io):
         # Given
         intent_file = "intent_getWeather.txt"
@@ -286,6 +288,7 @@ is it raining in [weatherLocation] [weatherDate:snips/datetime]
 
         self.assertDictEqual(expected_intent_dict, intent_dict)
 
+    @fail_if_not_removed
     def test_should_fail_generating_intent_with_wrong_file_name(self):
         # Given
         intent_file = "getWeather.txt"

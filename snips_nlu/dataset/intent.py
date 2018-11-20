@@ -4,8 +4,10 @@ from abc import ABCMeta, abstractmethod
 from builtins import object
 from pathlib import Path
 
+from deprecation import deprecated
 from future.utils import with_metaclass
 
+from snips_nlu.__about__ import __version__
 from snips_nlu.constants import DATA, ENTITY, SLOT_NAME, TEXT, UTTERANCES
 
 
@@ -65,6 +67,8 @@ class Intent(object):
         return cls(intent_name, utterances, slot_mapping)
 
     @classmethod
+    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
+                current_version=__version__, details="Use from_yaml instead")
     def from_file(cls, filepath):
         filepath = Path(filepath)
         stem = filepath.stem

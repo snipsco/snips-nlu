@@ -4,6 +4,7 @@ import io
 from unittest import TestCase
 
 import mock
+from deprecation import fail_if_not_removed
 from mock import patch
 
 from snips_nlu.dataset import AssistantDataset, validate_and_format_dataset
@@ -247,6 +248,7 @@ values:
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
 
+    @fail_if_not_removed
     def test_should_generate_dataset_from_files(self):
         # Given
         intent_file_1 = "intent_whoIsGame.txt"

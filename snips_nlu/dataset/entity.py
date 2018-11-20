@@ -7,8 +7,10 @@ from builtins import str
 from pathlib import Path
 
 import six
+from deprecation import deprecated
 from snips_nlu_ontology import get_all_builtin_entities
 
+from snips_nlu.__about__ import __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, DATA, MATCHING_STRICTNESS, SYNONYMS,
     USE_SYNONYMS, VALUE)
@@ -83,6 +85,8 @@ class Entity(object):
                    matching_strictness=matching_strictness)
 
     @classmethod
+    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
+                current_version=__version__, details="Use from_yaml instead")
     def from_file(cls, filepath):
         filepath = Path(filepath)
         stem = filepath.stem

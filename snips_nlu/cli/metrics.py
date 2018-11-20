@@ -4,15 +4,33 @@ import json
 from pathlib import Path
 
 import plac
+from snips_nlu_metrics import Engine
 
 from snips_nlu import SnipsNLUEngine, load_resources
 from snips_nlu.utils import json_string
+
+
+def make_engine_cls(config):
+    class ConfigEngine(Engine):
+        def __init__(self):
+            self.engine = None
+            self.config = config
+
+        def fit(self, dataset):
+            self.engine = SnipsNLUEngine(self.config).fit(dataset)
+            return self
+
+        def parse(self, text):
+            return self.engine.parse(text)
+
+    return ConfigEngine
 
 
 @plac.annotations(
     dataset_path=("Path to the dataset file", "positional", None, str),
     output_path=("Destination path for the json metrics", "positional", None,
                  str),
+    config_path=("Path to a NLU engine config file", "option", "c", str),
     nb_folds=("Number of folds to use for the cross-validation", "option", "n",
               int),
     train_size_ratio=("Fraction of the data that we want to use for training "
@@ -20,15 +38,22 @@ from snips_nlu.utils import json_string
     exclude_slot_metrics=("Exclude slot metrics and slot errors in the output",
                           "flag", "s", bool),
     include_errors=("Include parsing errors in the output", "flag", "i", bool))
-def cross_val_metrics(dataset_path, output_path, nb_folds=5,
+def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
                       train_size_ratio=1.0, exclude_slot_metrics=False,
                       include_errors=False):
     def progression_handler(progress):
         print("%d%%" % int(progress * 100))
 
+    if config_path is not None:
+        with Path(config_path).open("r", encoding="utf-8") as f:
+            config = json.load(f)
+        engine_cls = make_engine_cls(config)
+    else:
+        engine_cls = SnipsNLUEngine
+
     metrics_args = dict(
         dataset=dataset_path,
-        engine_class=SnipsNLUEngine,
+        engine_class=engine_cls,
         progression_handler=progression_handler,
         nb_folds=nb_folds,
         train_size_ratio=train_size_ratio,
@@ -55,15 +80,24 @@ def cross_val_metrics(dataset_path, output_path, nb_folds=5,
                        None, str),
     output_path=("Destination path for the json metrics", "positional", None,
                  str),
+    config_path=("Path to a NLU engine config file", "option", "c", str),
     exclude_slot_metrics=("Exclude slot metrics and slot errors in the output",
                           "flag", "s", bool),
     include_errors=("Include parsing errors in the output", "flag", "i", bool))
 def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
-                       exclude_slot_metrics=False, include_errors=False):
+                       config_path=None, exclude_slot_metrics=False,
+                       include_errors=False):
+    if config_path is not None:
+        with Path(config_path).open("r", encoding="utf-8") as f:
+            config = json.load(f)
+        engine_cls = make_engine_cls(config)
+    else:
+        engine_cls = SnipsNLUEngine
+
     metrics_args = dict(
         train_dataset=train_dataset_path,
         test_dataset=test_dataset_path,
-        engine_class=SnipsNLUEngine,
+        engine_class=engine_cls,
         include_slot_metrics=not exclude_slot_metrics
     )
 

@@ -173,8 +173,8 @@ def temp_dir():
         shutil.rmtree(tmp_dir)
 
 
-def unzip_archive(archive_path, destination_dir):
-    with ZipFile(str(archive_path), "r", ZIP_DEFLATED) as zipf:
+def unzip_archive(archive_file, destination_dir):
+    with ZipFile(archive_file, "r", ZIP_DEFLATED) as zipf:
         zipf.extractall(str(destination_dir))
 
 

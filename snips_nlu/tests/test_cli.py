@@ -181,7 +181,7 @@ class TestCLI(SnipsTest):
                 }
             ],
             "use_synonyms": True,
-            "parser_threshold": 1.0
+            "matching_strictness": 1.0
         }
         self.assertDictEqual(expected_entity_dict, entity_dict)
 
@@ -216,7 +216,7 @@ class TestCLI(SnipsTest):
                 }
             ],
             "use_synonyms": True,
-            "parser_threshold": 1.0
+            "matching_strictness": 1.0
         }
         self.assertDictEqual(expected_entity_dict, entity_dict)
 
@@ -238,13 +238,13 @@ class TestCLI(SnipsTest):
                     "automatically_extensible": True,
                     "data": [],
                     "use_synonyms": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                 },
                 "country": {
                     "automatically_extensible": True,
                     "data": [],
                     "use_synonyms": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                 },
                 "location": {
                     "automatically_extensible": True,
@@ -267,13 +267,13 @@ class TestCLI(SnipsTest):
                         }
                     ],
                     "use_synonyms": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                 },
                 "role": {
                     "automatically_extensible": True,
                     "data": [],
                     "use_synonyms": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                 },
                 "snips/datetime": {}
             },

@@ -204,7 +204,7 @@
     "Temperature": {
       "use_synonyms": true,
       "automatically_extensible": true,
-      "parser_threshold": 1.0,
+      "matching_strictness": 1.0,
       "data": [
         {
           "value": "cold",

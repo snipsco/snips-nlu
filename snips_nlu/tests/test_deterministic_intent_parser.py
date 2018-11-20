@@ -58,7 +58,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 "dummy_entity_1": {
                     "automatically_extensible": False,
                     "use_synonyms": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                     "data": [
                         {
                             "synonyms": [
@@ -88,7 +88,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 "dummy_entity_2": {
                     "automatically_extensible": False,
                     "use_synonyms": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                     "data": [
                         {
                             "synonyms": [
@@ -482,7 +482,7 @@ class TestDeterministicIntentParser(FixtureTest):
                 "non_ascìi_entïty": {
                     "use_synonyms": False,
                     "automatically_extensible": True,
-                    "parser_threshold": 1.0,
+                    "matching_strictness": 1.0,
                     "data": []
                 }
             },

@@ -230,7 +230,7 @@ class TestLogRegIntentClassifier(FixtureTest):
                             "synonyms": [],
                         }
                     ],
-                    "parser_threshold": 1.0
+                    "matching_strictness": 1.0
                 }
             },
             "intents": {

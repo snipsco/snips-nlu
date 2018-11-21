@@ -40,6 +40,52 @@ class Dataset(object):
 
     @classmethod
     def from_yaml_files(cls, language, filenames):
+        """Creates a :class:`.Dataset` from a language and a list of YAML files
+        containing intents and entities data
+
+        Each file need not correspond to a single entity nor intent. They can
+        consist in several entities and intents merged together in a single
+        file.
+
+        A dataset can be defined with a YAML document following the schema
+        illustrated in the example below:
+
+        .. code-block:: yaml
+
+            # searchFlight Intent
+            ---
+            type: intent
+            name: searchFlight
+            slots:
+              - name: origin
+                entity: city
+              - name: destination
+                entity: city
+              - name: date
+                entity: snips/datetime
+            utterances:
+              - find me a flight from [origin](Paris) to [destination](New York)
+              - I need a flight leaving [date](this weekend) to [destination](Berlin)
+              - show me flights to go to [destination](new york) leaving [date](this evening)
+
+            # City Entity
+            ---
+            type: entity
+            name: city
+            values:
+              - london
+              - [new york, big apple]
+              - [paris, city of lights]
+
+        Raises:
+            DatasetFormatError: When one of the documents present in the YAML
+                files has a wrong 'type' attribute, which is not 'entity' nor
+                'intent'
+            IntentFormatError: When the YAML document of an intent does not
+                correspond to the :ref:`expected intent format <yaml_intent_format>`
+            EntityFormatError: When the YAML document of an entity does not
+                correspond to the :ref:`expected entity format <yaml_entity_format>`
+        """
         entities = []
         intents = []
         for filename in filenames:

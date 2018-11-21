@@ -25,6 +25,8 @@ YAML format
 The YAML dataset format allows you to define intents and entities using the
 `YAML <http://yaml.org/about.html>`_ syntax.
 
+.. _yaml_entity_format:
+
 Entity
 ------
 
@@ -61,6 +63,8 @@ are optional:
       - london
       - [new york, big apple]
       - [paris, city of lights]
+
+.. _yaml_intent_format:
 
 Intent
 ------
@@ -112,6 +116,9 @@ utterances. This will result in simpler annotations:
       - I need a flight leaving [date](this weekend) to [destination](Berlin)
       - show me flights to go to [destination](new york) leaving [date](this evening)
 
+
+.. _yaml_dataset_format:
+
 Dataset
 -------
 
@@ -147,6 +154,11 @@ Here is the yaml file corresponding to the previous ``city`` entity and
       - london
       - [new york, big apple]
       - [paris, city of lights]
+
+.. important::
+
+    If you plan to have more than one entity or intent in a YAML file, you must
+    separate them using the YAML document separator: ``---``
 
 ---------------------------------------
 Implicit entity values and slot mapping

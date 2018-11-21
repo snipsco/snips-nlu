@@ -24,7 +24,8 @@ class Intent(object):
 
     Attributes:
         intent_name (str): name of the intent
-        utterances (list of :class:`.IntentUtterance`): intent utterances
+        utterances (list of :class:`.IntentUtterance`): annotated intent
+            utterances
         slot_mapping (dict): mapping between slot names and entities
     """
 
@@ -39,7 +40,33 @@ class Intent(object):
 
     @classmethod
     def from_yaml(cls, yaml_dict):
-        """Build an :class:`.Intent` from its YAML definition dict"""
+        """Build an :class:`.Intent` from its YAML definition dict
+
+        An intent can be defined with a YAML document following the schema
+        illustrated in the example below:
+
+        .. code-block:: yaml
+
+            # searchFlight Intent
+            ---
+            type: intent
+            name: searchFlight
+            slots:
+              - name: origin
+                entity: city
+              - name: destination
+                entity: city
+              - name: date
+                entity: snips/datetime
+            utterances:
+              - find me a flight from [origin](Paris) to [destination](New York)
+              - I need a flight leaving [date](this weekend) to [destination](Berlin)
+              - show me flights to go to [destination](new york) leaving [date](this evening)
+
+        Raises:
+            IntentFormatError: When the YAML dict does not correspond to the
+                :ref:`expected intent format <yaml_intent_format>`
+        """
         object_type = yaml_dict.get("type")
         if object_type and object_type != "intent":
             raise IntentFormatError("Wrong type: '%s'" % object_type)
@@ -60,6 +87,7 @@ class Intent(object):
     @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
                 current_version=__version__, details="Use from_yaml instead")
     def from_file(cls, filepath):
+        """Build an :class:`.Intent` from a text file"""
         filepath = Path(filepath)
         stem = filepath.stem
         if not stem.startswith("intent_"):
@@ -102,7 +130,6 @@ class Intent(object):
 
     @property
     def entities_names(self):
-        """Set of entity names present in the intent utterances"""
         return set(chunk.entity for u in self.utterances
                    for chunk in u.chunks if isinstance(chunk, SlotChunk))
 

@@ -25,7 +25,8 @@ class EntityFormatError(TypeError):
 class Entity(object):
     """Entity data of a :class:`.Dataset`
 
-    This class can represents both a custom or a builtin entity
+    This class can represents both a custom or a builtin entity. When the
+    entity is a builtin one, only the `name` attribute is relevant.
 
     Attributes:
         name (str): name of the entity
@@ -56,7 +57,29 @@ class Entity(object):
 
     @classmethod
     def from_yaml(cls, yaml_dict):
-        """Build an :class:`.Entity` from its YAML definition dict"""
+        """Build an :class:`.Entity` from its YAML definition dict
+
+        An entity can be defined with a YAML document following the schema
+        illustrated in the example below:
+
+        .. code-block:: yaml
+
+            # City Entity
+            ---
+            type: entity
+            name: city
+            automatically_extensible: false # default value is true
+            use_synonyms: false # default value is true
+            matching_strictness: 0.8 # default value is 1.0
+            values:
+              - london
+              - [new york, big apple]
+              - [paris, city of lights]
+
+        Raises:
+            EntityFormatError: When the YAML dict does not correspond to the
+                :ref:`expected entity format <yaml_entity_format>`
+        """
         object_type = yaml_dict.get("type")
         if object_type and object_type != "entity":
             raise EntityFormatError("Wrong type: '%s'" % object_type)
@@ -88,6 +111,7 @@ class Entity(object):
     @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
                 current_version=__version__, details="Use from_yaml instead")
     def from_file(cls, filepath):
+        """Build an :class:`.Entity` from a text file"""
         filepath = Path(filepath)
         stem = filepath.stem
         if not stem.startswith("entity_"):

@@ -20,7 +20,7 @@ from snips_nlu.cli.utils import set_nlu_logger
 def train(dataset_path, output_path, config_path, verbose):
     """Train an NLU engine on the provided dataset"""
     if verbose:
-        set_nlu_logger(logging.INFO)
+        set_nlu_logger(logging.DEBUG)
     with Path(dataset_path).open("r", encoding="utf8") as f:
         dataset = json.load(f)
 

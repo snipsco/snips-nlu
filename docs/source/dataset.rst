@@ -76,7 +76,7 @@ Here is the format used to describe an intent:
     utterances:
       - find me a flight from [origin:city](Paris) to [destination:city](New York)
       - I need a flight leaving [date:snips/datetime](this weekend) to [destination:city](Berlin)
-      - show me flights to go to [arrival:city](new york) leaving [date:snips/datetime](this evening)
+      - show me flights to go to [destination:city](new york) leaving [date:snips/datetime](this evening)
 
 We use a standard markdown-like annotation syntax to annotate slots within
 utterances. The ``[origin:city](Paris)`` chunk describes a slot with its three
@@ -110,7 +110,7 @@ utterances. This will result in simpler annotations:
     utterances:
       - find me a flight from [origin](Paris) to [destination](New York)
       - I need a flight leaving [date](this weekend) to [destination](Berlin)
-      - show me flights to go to [arrival](new york) leaving [date](this evening)
+      - show me flights to go to [destination](new york) leaving [date](this evening)
 
 Dataset
 -------
@@ -137,7 +137,7 @@ Here is the yaml file corresponding to the previous ``city`` entity and
     utterances:
       - find me a flight from [origin](Paris) to [destination](New York)
       - I need a flight leaving [date](this weekend) to [destination](Berlin)
-      - show me flights to go to [arrival](new york) leaving [date](this evening)
+      - show me flights to go to [destination](new york) leaving [date](this evening)
 
     # City Entity
     ---
@@ -174,7 +174,7 @@ This results in a much simpler dataset file:
     utterances:
       - find me a flight from [origin] to [destination]
       - I need a flight leaving [date] to [destination]
-      - show me flights to go to [arrival] leaving [date]
+      - show me flights to go to [destination] leaving [date]
 
     # City Entity
     ---
@@ -202,7 +202,7 @@ values as well as implicit slot mapping:
     utterances:
       - find me a flight from [origin:city](Paris) to [destination:city]
       - I need a flight leaving [date:snips/datetime] to [destination]
-      - show me flights to go to [arrival] leaving [date]
+      - show me flights to go to [destination] leaving [date]
 
 Note that the city entity was not provided here, but one value (``Paris``) was
 provided in the first annotated utterance. The mapping between slot name and

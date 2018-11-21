@@ -1,19 +1,27 @@
 from __future__ import unicode_literals, print_function
 
 import json
+import logging
+
 from builtins import input
 
 import plac
 
 from snips_nlu import SnipsNLUEngine
+from snips_nlu.cli.utils import set_nlu_logger
 
 
 @plac.annotations(
     training_path=("Path to a trained engine", "positional", None, str),
     query=("Query to parse. If provided, it disables the interactive "
-           "behavior.", "option", "q", str))
-def parse(training_path, query):
+           "behavior.", "option", "q", str),
+    verbose=("Print logs", "flag", "v"),
+)
+def parse(training_path, query, verbose=False):
     """Load a trained NLU engine and play with its parsing API interactively"""
+    if verbose:
+        set_nlu_logger(logging.DEBUG)
+
     engine = SnipsNLUEngine.from_path(training_path)
 
     if query:

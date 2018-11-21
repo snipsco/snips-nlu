@@ -40,6 +40,7 @@ class Dataset(object):
 
     @classmethod
     def from_yaml_files(cls, language, filenames):
+        # pylint:disable=line-too-long
         """Creates a :class:`.Dataset` from a language and a list of YAML files
         containing intents and entities data
 
@@ -86,6 +87,7 @@ class Dataset(object):
             EntityFormatError: When the YAML document of an entity does not
                 correspond to the :ref:`expected entity format <yaml_entity_format>`
         """
+        # pylint:enable=line-too-long
         entities = []
         intents = []
         for filename in filenames:
@@ -183,6 +185,7 @@ class Dataset(object):
 
     @property
     def json(self):
+        """Dataset data in json format"""
         intents = {intent_data.intent_name: intent_data.json
                    for intent_data in self.intents}
         entities = {entity.name: entity.json for entity in self.entities}

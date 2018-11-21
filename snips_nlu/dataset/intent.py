@@ -40,6 +40,7 @@ class Intent(object):
 
     @classmethod
     def from_yaml(cls, yaml_dict):
+        # pylint:disable=line-too-long
         """Build an :class:`.Intent` from its YAML definition dict
 
         An intent can be defined with a YAML document following the schema
@@ -67,6 +68,7 @@ class Intent(object):
             IntentFormatError: When the YAML dict does not correspond to the
                 :ref:`expected intent format <yaml_intent_format>`
         """
+        # pylint:enable=line-too-long
         object_type = yaml_dict.get("type")
         if object_type and object_type != "intent":
             raise IntentFormatError("Wrong type: '%s'" % object_type)

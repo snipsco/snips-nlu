@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import io
 from unittest import TestCase
 
-import mock
 from deprecation import fail_if_not_removed
 from mock import patch
 
@@ -199,7 +198,7 @@ values:
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
 
-    @mock.patch("snips_nlu.dataset.dataset.io")
+    @patch("snips_nlu.dataset.dataset.io")
     def test_should_generate_dataset_from_merged_yaml_file(self, mock_io):
         # Given
         dataset_file = "dataset.yaml"

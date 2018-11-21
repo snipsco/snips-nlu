@@ -20,17 +20,7 @@ INTENT_FORMATTING_ERROR = IntentFormatError(
 
 
 class Intent(object):
-    """Dataset of an intent
-
-    Can parse utterances from a text file or an iterator.
-
-    An example of utterance is:
-
-        "the [role:role](president) of [country:country](France)"
-
-    a Tag is in this format:
-
-        [slot:entity_name](text_to_tag)
+    """Intent data of a :class:`.Dataset`
 
     Attributes:
         intent_name (str): name of the intent

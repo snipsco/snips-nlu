@@ -1,4 +1,4 @@
-from snips_nlu.dataset.dataset import AssistantDataset
+from snips_nlu.dataset.dataset import Dataset
 from snips_nlu.dataset.entity import Entity, EntityFormatError
 from snips_nlu.dataset.intent import Intent, IntentFormatError
 from snips_nlu.dataset.utils import (

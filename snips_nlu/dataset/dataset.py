@@ -18,12 +18,12 @@ class DatasetFormatError(TypeError):
     pass
 
 
-class AssistantDataset(object):
+class Dataset(object):
     """Dataset used in the main NLU training API
 
     Consists of intents and entities data. This object can be built either from
-    text files (:meth:`.AssistantDataset.from_files`) or from YAML files
-    (:meth:`.AssistantDataset.from_yaml_files`).
+    text files (:meth:`.Dataset.from_files`) or from YAML files
+    (:meth:`.Dataset.from_yaml_files`).
 
     Attributes:
         language (str): language of the intents
@@ -61,8 +61,8 @@ class AssistantDataset(object):
                 current_version=__version__,
                 details="Use from_yaml_files instead")
     def from_files(cls, language, filenames):
-        """Creates an :class:`.AssistantDataset` from a language and a list of
-        intent and entity files
+        """Creates a :class:`.Dataset` from a language and a list of intent and
+        entity files
 
         Args:
             language (str): language of the assistant

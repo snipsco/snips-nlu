@@ -23,7 +23,7 @@ class EntityFormatError(TypeError):
 
 
 class Entity(object):
-    """Entity of an :class:`.AssistantDataset`
+    """Entity data of a :class:`.Dataset`
 
     This class can represents both a custom or a builtin entity
 

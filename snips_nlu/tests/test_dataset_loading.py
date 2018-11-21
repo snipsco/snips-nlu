@@ -7,7 +7,7 @@ import mock
 from deprecation import fail_if_not_removed
 from mock import patch
 
-from snips_nlu.dataset import AssistantDataset, validate_and_format_dataset
+from snips_nlu.dataset import Dataset, validate_and_format_dataset
 
 EXPECTED_DATASET_DICT = {
     "entities": {
@@ -192,7 +192,7 @@ values:
         dataset_files = [intent_file_1, intent_file_2, entity_file_1]
 
         # When
-        dataset = AssistantDataset.from_yaml_files("en", dataset_files)
+        dataset = Dataset.from_yaml_files("en", dataset_files)
         dataset_dict = dataset.json
 
         # Then
@@ -241,7 +241,7 @@ values:
         mock_io.open.side_effect = mock_open
 
         # When
-        dataset = AssistantDataset.from_yaml_files("en", [dataset_file])
+        dataset = Dataset.from_yaml_files("en", [dataset_file])
         dataset_dict = dataset.json
 
         # Then
@@ -287,7 +287,7 @@ london
         # When
         with patch("pathlib.io") as mock_io:
             mock_io.open.side_effect = mock_open
-            dataset = AssistantDataset.from_files("en", dataset_files)
+            dataset = Dataset.from_files("en", dataset_files)
         dataset_dict = dataset.json
 
         # When / Then

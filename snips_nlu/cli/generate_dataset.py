@@ -4,7 +4,7 @@ import json
 
 import plac
 
-from snips_nlu.dataset import AssistantDataset
+from snips_nlu.dataset import Dataset
 
 
 @plac.annotations(
@@ -14,7 +14,7 @@ from snips_nlu.dataset import AssistantDataset
 def generate_dataset(language, *files):
     """Create a Snips NLU dataset from text friendly files"""
     if any(f.endswith(".yml") or f.endswith(".yaml") for f in files):
-        dataset = AssistantDataset.from_yaml_files(language, list(files))
+        dataset = Dataset.from_yaml_files(language, list(files))
     else:
-        dataset = AssistantDataset.from_files(language, list(files))
+        dataset = Dataset.from_files(language, list(files))
     print(json.dumps(dataset.json, indent=2, sort_keys=True))

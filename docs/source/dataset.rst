@@ -18,13 +18,13 @@ create or edit datasets programmatically.
 
 .. _yaml_format:
 
+===========
 YAML format
------------
+===========
 
 The YAML dataset format allows you to define intents and entities using the
 `YAML <http://yaml.org/about.html>`_ syntax.
 
-------
 Entity
 ------
 
@@ -37,9 +37,9 @@ Here is what an entity file looks like:
     type: entity # allows to differentiate between entities and intents files
     name: city # name of the entity
     values:
-    - london # single entity value
-    - [new york, big apple] # entity value with a synonym
-    - [paris, city of lights]
+      - london # single entity value
+      - [new york, big apple] # entity value with a synonym
+      - [paris, city of lights]
 
 You can specify entity values either using single YAML scalars (e.g. ``london``),
 or using lists if you want to define some synonyms (e.g.
@@ -58,11 +58,10 @@ are optional:
     use_synonyms: false # default value is true
     matching_strictness: 0.8 # default value is 1.0
     values:
-    - london
-    - [new york, big apple]
-    - [paris, city of lights]
+      - london
+      - [new york, big apple]
+      - [paris, city of lights]
 
-------
 Intent
 ------
 
@@ -100,7 +99,7 @@ utterances. This will result in simpler annotations:
     # searchFlight Intent
     ---
     type: intent
-    name: searchFlight # name of the intent
+    name: searchFlight
     slots:
       - name: origin
         entity: city
@@ -113,7 +112,6 @@ utterances. This will result in simpler annotations:
       - I need a flight leaving [date](this weekend) to [destination](Berlin)
       - show me flights to go to [arrival](new york) leaving [date](this evening)
 
--------
 Dataset
 -------
 
@@ -125,19 +123,10 @@ Here is the yaml file corresponding to the previous ``city`` entity and
 
 .. code-block:: yaml
 
-    # City Entity
-    ---
-    type: entity # allows to differentiate between entities and intents files
-    name: city # name of the entity
-    values:
-    - london # single entity value
-    - [new york, big apple] # entity value with a synonym
-    - [paris, city of lights]
-
     # searchFlight Intent
     ---
     type: intent
-    name: searchFlight # name of the intent
+    name: searchFlight
     slots:
       - name: origin
         entity: city
@@ -149,6 +138,75 @@ Here is the yaml file corresponding to the previous ``city`` entity and
       - find me a flight from [origin](Paris) to [destination](New York)
       - I need a flight leaving [date](this weekend) to [destination](Berlin)
       - show me flights to go to [arrival](new york) leaving [date](this evening)
+
+    # City Entity
+    ---
+    type: entity
+    name: city
+    values:
+      - london
+      - [new york, big apple]
+      - [paris, city of lights]
+
+---------------------------------------
+Implicit entity values and slot mapping
+---------------------------------------
+
+In order to make the annotation process even easier, there is a mechanism that
+allows to populate entity values automatically based on the entity values that
+are already provided.
+
+This results in a much simpler dataset file:
+
+.. code-block:: yaml
+
+    # searchFlight Intent
+    ---
+    type: intent
+    name: searchFlight
+    slots:
+      - name: origin
+        entity: city
+      - name: destination
+        entity: city
+      - name: date
+        entity: snips/datetime
+    utterances:
+      - find me a flight from [origin] to [destination]
+      - I need a flight leaving [date] to [destination]
+      - show me flights to go to [arrival] leaving [date]
+
+    # City Entity
+    ---
+    type: entity
+    name: city
+    values:
+      - london
+      - [new york, big apple]
+      - [paris, city of lights]
+
+For this to work, you need to provide at least one value for each
+*custom entity*. This can be done either through an entity file, or simply by
+providing an entity value in one of the annotated utterances.
+Entity values are automatically generated for *builtin entities*.
+
+Here is a final example of a valid YAML dataset leveraging implicit entity
+values as well as implicit slot mapping:
+
+.. code-block:: yaml
+
+    # searchFlight Intent
+    ---
+    type: intent
+    name: searchFlight
+    utterances:
+      - find me a flight from [origin:city](Paris) to [destination:city]
+      - I need a flight leaving [date:snips/datetime] to [destination]
+      - show me flights to go to [arrival] leaving [date]
+
+Note that the city entity was not provided here, but one value (``Paris``) was
+provided in the first annotated utterance. The mapping between slot name and
+entity is also inferred from the first two utterances.
 
 Once your intents and entities are created using the YAML format described
 previously, you can produce a dataset using the
@@ -166,10 +224,13 @@ Or alternatively if you merged the yaml documents into a single file:
 
 This will generate a JSON dataset and write it in the ``dataset.json`` file.
 The format of the generated file is the second allowed format that is described
-in the next section.
+in the :ref:`JSON format <json_format>` section.
 
+.. _json_format:
+
+===========
 JSON format
------------
+===========
 
 The JSON format is the format which is eventually used by the training API. It
 was designed to be easy to parse.

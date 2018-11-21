@@ -16,6 +16,8 @@ manually.
 The other dataset format uses JSON and should rather be used if you plan to
 create or edit datasets programmatically.
 
+.. _yaml_format:
+
 YAML format
 -----------
 
@@ -244,6 +246,6 @@ The intent utterances are defined using the following format:
 
 Once you have created a JSON dataset, either directly or with YAML files, you
 can use it to train an NLU engine. To do so, you can use the CLI as documented
-:ref:`here<training_cli>`, or the :ref:`python API <training_the_engine>`.
+:ref:`here <training_cli>`, or the :ref:`python API <training_the_engine>`.
 
 .. _sample dataset: https://github.com/snipsco/snips-nlu/blob/master/snips_nlu_samples/sample_dataset.json

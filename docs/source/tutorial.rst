@@ -18,182 +18,97 @@ will have two slots: the ``roomTemperature`` and the ``room``.
 
 The first step is to create an appropriate dataset for this task.
 
-Snips dataset format
---------------------
+Training Data
+-------------
 
-The format used by Snips to describe the input data is designed to be simple to
-parse as well as easy to read.
+Check the :ref:`Training Dataset Format <dataset>` section for more details
+about the format used to describe the training data.
 
-We created a `sample dataset`_ that you can check to better understand the
-format.
+In this tutorial, we will create our dataset using the
+:ref:`YAML format <yaml_format>`, and create a ``dataset.yaml`` file with the
+following content:
 
-You have three options to create your dataset. You can build it manually by
-respecting the format used in the sample, you can also use the
-:ref:`dataset creation CLI <dataset_cli>` included in the lib, or alternatively
-you can use `chatito`_ a DSL tool for dataset generation.
+.. code-block:: yaml
 
-We will go for the second option here and start by creating three files
-corresponding to our three intents and one entity file corresponding to the
-``room`` entity:
+    # turnLightOn intent
+    ---
+    type: intent
+    name: turnLightOn
+    slots:
+      - name: room
+        entity: room
+    utterances:
+      - Turn on the lights in the [room](kitchen)
+      - give me some light in the [room](bathroom) please
+      - Can you light up the [room](living room) ?
+      - switch the [room](bedroom)'s lights on please
 
-- ``intent_turnLightOn.txt``
-- ``intent_turnLightOff.txt``
-- ``intent_setTemperature.txt``
-- ``entity_room.txt``
+    # turnLightOff intent
+    ---
+    type: intent
+    name: turnLightOff
+    slots:
+      - name: room
+        entity: room
+    utterances:
+      - Turn off the lights in the [room](entrance)
+      - turn the [room](bathroom)'s light out please
+      - switch off the light the [room](kitchen), will you?
+      - Switch the [room](bedroom)'s lights off please
 
-The name of each file is important as the tool will map it to the intent or
-entity name. In particular, the prefixes ``intent_`` and ``entity_`` are
-required in order to distinguish intents from entity files.
+    # setTemperature intent
+    ---
+    type: intent
+    name: setTemperature
+    slots:
+      - name: room
+        entity: room
+      - name: roomTemperature
+        entity: snips/temperature
+    utterances:
+      - Set the temperature to [roomTemperature](19 degrees) in the [room](bedroom)
+      - please set the [room](living room)'s temperature to [roomTemperature](twenty two degrees celsius)
+      - I want [roomTemperature](75 degrees fahrenheit) in the [room](bathroom) please
+      - Can you increase the temperature to [roomTemperature](22 degrees) ?
 
-Let's add training examples for the first intent by inserting the following
-lines in the first file, ``intent_turnLightOn.txt``:
+    # room entity
+    ---
+    type: entity
+    name: room
+    automatically_extensible: no
+    values:
+    - bedroom
+    - [living room, main room, lounge]
+    - [garden, yard, backyard]
 
-.. code-block:: console
+Here, we put all the intents and entities in the same file but we could have
+split them in dedicated files as well.
 
-    Turn on the lights in the [room:room](kitchen)
-    give me some light in the [room:room](bathroom) please
-    Can you light up the [room:room](living room) ?
-    switch the [room:room](bedroom)'s lights on please
+The ``setTemperature`` intent references a ``roomTemperature`` slot which
+relies on the ``snips/temperature`` entity. This entity is a
+:ref:`builtin entity <builtin_entity_resolution>`. It allows to resolve the
+temperature values properly.
 
-We use a standard markdown-like annotation syntax to annotate slots within
-utterances. The ``[room:room]`` chunks describe the slot with its two
-components: :ref:`the slot name and the entity <entity_vs_slot_name>`. In our
-case we used the same value, ``room``, to describe both. The parts with
-parenthesis, like ``(kitchen)``, correspond to the text value of the slot.
+The ``room`` entity makes use of :ref:`synonyms <synonyms>` by defining lists
+like ``[living room, main room, lounge]``. In this case, ``main room`` and
+``lounge`` will point to ``living room``, the first item of the list, which is
+the reference value.
 
-Let's move on to the second intent, and insert this into
-``intent_turnLightOff.txt``:
+Besides, this entity is marked as not
+:ref:`automatically extensible <auto_extensible>` which means that the NLU
+will only output values that we have defined and will not try to match other
+values.
 
-.. code-block:: console
-
-    Turn off the lights in the [room:room](entrance)
-    turn the [room:room](bathroom)'s light out please
-    switch off the light the [room:room](kitchen), will you?
-    Switch the [room:room](bedroom)'s lights off please
-
-And now the last file, ``intent_setTemperature.txt``:
-
-.. code-block:: console
-
-    Set the temperature to [roomTemperature:snips/temperature](19 degrees) in the [room:room](bedroom)
-    please set the [room:room](living room)'s temperature to [roomTemperature:snips/temperature](twenty two degrees celsius)
-    I want [roomTemperature:snips/temperature](75 degrees fahrenheit) in the [room:room](bathroom) please
-    Can you increase the temperature to [roomTemperature:snips/temperature](22 degrees) ?
-
-As you can see here, we used a new slot, ``[room_temperature:snips/temperature]``,
-whose name is ``roomTemperature`` and whose type is ``snips/temperature``. The slot
-type used here is a :ref:`builtin entity <builtin_entity_resolution>`. It
-allows you to resolve the temperature values properly.
-
-Let's move to the ``entity_room.txt`` entity file:
-
-.. code-block:: console
-
-    bedroom
-    living room,main room
-    garden,yard,backyard
-
-The entity file is a comma (``,``) separated file. Each line corresponds to an
-entity value followed by its potential :ref:`synonyms <synonyms>`.
-
-We are now ready to generate our dataset:
+We are now ready to generate our dataset using the :ref:`CLI <cli>`:
 
 .. code-block:: bash
 
-    snips-nlu generate-dataset en intent_turnLightOn.txt intent_turnLightOff.txt intent_setTemperature.txt entity_room.txt > dataset.json
+    snips-nlu generate-dataset en dataset.yaml > dataset.json
 
 .. note::
 
     We used ``en`` as the language here but other languages are supported,
     please check the :ref:`languages` section to know more.
-
-Now, the ``"entities"`` part of the generated json looks like that:
-
-.. code-block:: json
-
-    {
-      "entities": {
-        "room": {
-          "automatically_extensible": true,
-          "data": [
-            {
-              "synonyms": [],
-              "value": "bedroom"
-            },
-            {
-              "synonyms": [
-                "main room"
-              ],
-              "value": "living room"
-            },
-            {
-              "synonyms": [
-                "yard",
-                "backyard"
-              ],
-              "value": "garden"
-            }
-          ],
-          "matching_strictness": 1.0,
-          "use_synonyms": true
-        },
-        "snips/temperature": {}
-      }
-    }
-
-You can see that both entities from the intent utterances and from the ``room``
-entity file were added.
-
-By default, the ``room`` entity is set to be
-:ref:`automatically extensible <auto_extensible>` but in our case we don't want
-to handle any entity value that would not be part of the dataset, so we set
-this attribute to ``false``.
-Moreover, we are going to add some rooms that were not in the previous sentences
-and that we want our assistant to cover. Additionally, we add some
-:ref:`synonyms <synonyms>`. Finally, the entities part looks like that:
-
-.. code-block:: json
-
-    {
-      "entities": {
-        "room": {
-          "automatically_extensible": false,
-          "data": [
-            {
-              "synonyms": [],
-              "value": "bathroom"
-            },
-            {
-              "synonyms": [
-                "sleeping room"
-              ],
-              "value": "bedroom"
-            },
-            {
-              "synonyms": [
-                "main room",
-                "lounge"
-              ],
-              "value": "living room"
-            },
-            {
-              "synonyms": [
-                "yard",
-                "backyard"
-              ],
-              "value": "garden"
-            }
-          ],
-          "matching_strictness": 1.0,
-          "use_synonyms": true
-        },
-        "snips/temperature": {}
-      }
-    }
-
-
-We don't need to edit the ``snips/temperature`` entity as it is a builtin
-entity.
 
 Now that we have our dataset ready, let's move to the next step which is to
 create an NLU engine.

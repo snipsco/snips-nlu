@@ -8,7 +8,7 @@ data in order to produce a powerful intent recognition engine.
 
 The better your training data is, and the more accurate your NLU engine will
 be. Thus, it is worth spending a bit of time to create a dataset that
-corresponds well to your use case.
+matches well your use case.
 
 Snips NLU accepts two different dataset formats. The first one, which relies
 on YAML, is the preferred option if you want to create or edit a dataset

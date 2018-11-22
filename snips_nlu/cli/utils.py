@@ -105,6 +105,6 @@ def check_resources_alias(resource_name, shortcuts):
 def set_nlu_logger(level=logging.INFO):
     logger = logging.getLogger(snips_nlu.__name__)
     logger.setLevel(level)
-    handler = logging.StreamHandler()
+    handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(level)
     logger.addHandler(handler)

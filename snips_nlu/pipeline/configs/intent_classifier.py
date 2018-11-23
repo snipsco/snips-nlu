@@ -118,13 +118,14 @@ class IntentClassifierDataAugmentationConfig(Config):
 
     def __init__(self, min_utterances=20, noise_factor=5,
                  add_builtin_entities_examples=True, unknown_word_prob=0,
-                 unknown_words_replacement_string=None):
+                 unknown_words_replacement_string=None, max_unknown_words=3):
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
         self.add_builtin_entities_examples = add_builtin_entities_examples
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
+        self.max_unknown_words = max_unknown_words
         if unknown_word_prob > 0 and unknown_words_replacement_string is None:
             raise ValueError("unknown_word_prob is positive (%s) but the "
                              "replacement string is None" % unknown_word_prob)

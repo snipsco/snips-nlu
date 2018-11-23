@@ -1,5 +1,3 @@
-import logging
-
 from snips_nlu_ontology import get_ontology_version
 
 from snips_nlu.__about__ import __model_version__, __version__

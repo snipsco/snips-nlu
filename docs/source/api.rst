@@ -96,6 +96,20 @@ Configurations
    :members:
 
 
+Dataset
+-------
+
+.. module:: snips_nlu.dataset
+
+.. autoclass:: Dataset
+   :members:
+
+.. autoclass:: Intent
+   :members:
+
+.. autoclass:: Entity
+   :members:
+
 Result and output format
 ------------------------
 

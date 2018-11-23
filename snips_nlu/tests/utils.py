@@ -14,10 +14,11 @@ from snips_nlu.resources import load_resources
 from snips_nlu.utils import json_string, unicode_string
 
 TEST_PATH = Path(__file__).parent
-SAMPLE_DATASET_PATH = TEST_PATH / "resources" / "sample_dataset.json"
-BEVERAGE_DATASET_PATH = TEST_PATH / "resources" / "beverage_dataset.json"
-WEATHER_DATASET_PATH = TEST_PATH / "resources" / "weather_dataset.json"
-PERFORMANCE_DATASET_PATH = TEST_PATH / "resources" / "performance_dataset.json"
+TEST_RESOURCES_PATH = TEST_PATH / "resources"
+SAMPLE_DATASET_PATH = TEST_RESOURCES_PATH / "sample_dataset.json"
+BEVERAGE_DATASET_PATH = TEST_RESOURCES_PATH / "beverage_dataset.json"
+WEATHER_DATASET_PATH = TEST_RESOURCES_PATH / "weather_dataset.json"
+PERFORMANCE_DATASET_PATH = TEST_RESOURCES_PATH / "performance_dataset.json"
 
 
 # pylint: disable=invalid-name

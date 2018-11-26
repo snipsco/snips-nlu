@@ -97,7 +97,7 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
 )
 def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
                        config_path=None, exclude_slot_metrics=False,
-                       include_errors=False, verbose=True):
+                       include_errors=False, verbose=False):
     if verbose:
         set_nlu_logger(logging.DEBUG)
 

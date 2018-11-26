@@ -133,7 +133,7 @@ class TestLogRegClassifierUtils(SnipsTest):
         max_unknown_words = 3
         rg_it = cycle([i for i in range(1, max_unknown_words + 1)])
 
-        def mocked_choice(a):  # pylint: disable=unused-argument
+        def mocked_randint(a, b):  # pylint: disable=unused-argument
             return next(rg_it)
 
         unknownword_prob = .5
@@ -142,10 +142,10 @@ class TestLogRegClassifierUtils(SnipsTest):
         random_state_rand = MagicMock()
         random_state_rand.side_effect = mocked_rand
         random_state_choice = MagicMock()
-        random_state_choice.side_effect = mocked_choice
+        random_state_choice.side_effect = mocked_randint
 
         random_state.rand = random_state_rand
-        random_state.choice = random_state_choice
+        random_state.randint = random_state_choice
 
         # When
         replacement_string = "unknownword"

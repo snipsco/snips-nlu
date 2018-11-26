@@ -91,11 +91,9 @@ def add_unknown_word_to_utterances(utterances, replacement_string,
                                    unknown_word_prob, max_unknown_words,
                                    random_state):
     new_utterances = deepcopy(utterances)
-    unknown_word_lengths = [i for i in range(1, max_unknown_words + 1)]
     for u in new_utterances:
         if random_state.rand() < unknown_word_prob:
-            # num_unknown = random_state.choice(unknown_word_lengths, p=p)
-            num_unknown = random_state.choice(unknown_word_lengths)
+            num_unknown = random_state.randint(1, max_unknown_words + 1)
             # We choose to put the noise at the end of the sentence and not
             # in the middle so that it doesn't impact to much ngrams
             # computation

@@ -118,7 +118,8 @@ class IntentClassifierDataAugmentationConfig(Config):
 
     def __init__(self, min_utterances=20, noise_factor=5,
                  add_builtin_entities_examples=True, unknown_word_prob=0,
-                 unknown_words_replacement_string=None, max_unknown_words=3):
+                 unknown_words_replacement_string=None,
+                 max_unknown_words=None):
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
         self.add_builtin_entities_examples = add_builtin_entities_examples
@@ -146,6 +147,7 @@ class IntentClassifierDataAugmentationConfig(Config):
             "unknown_word_prob": self.unknown_word_prob,
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string,
+            "max_unknown_words": self.max_unknown_words
         }
 
     @classmethod

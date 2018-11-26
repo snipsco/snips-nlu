@@ -151,13 +151,14 @@ def build_training_data(dataset, language, data_augmentation_config,
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               range(len(utterances))]
-    augmented_utterances = add_unknown_word_to_utterances(
-        augmented_utterances,
-        data_augmentation_config.unknown_words_replacement_string,
-        data_augmentation_config.unknown_word_prob,
-        data_augmentation_config.max_unknown_words,
-        random_state
-    )
+    if data_augmentation_config.unknown_words_replacement_string is not None:
+        augmented_utterances = add_unknown_word_to_utterances(
+            augmented_utterances,
+            data_augmentation_config.unknown_words_replacement_string,
+            data_augmentation_config.unknown_word_prob,
+            data_augmentation_config.max_unknown_words,
+            random_state
+        )
 
     # Adding noise
     noise = get_dataset_specific_noise(dataset, language)

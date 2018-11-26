@@ -27,6 +27,7 @@ class TestConfig(SnipsTest):
             "add_builtin_entities_examples": False,
             "unknown_word_prob": 0.1,
             "unknown_words_replacement_string": "foobar",
+            "max_unknown_words": None,
         }
 
         # When

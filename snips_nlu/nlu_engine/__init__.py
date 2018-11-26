@@ -1,1 +1,1 @@
-from .nlu_engine import SnipsNLUEngine
+from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine

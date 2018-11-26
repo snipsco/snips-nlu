@@ -25,11 +25,13 @@ required = [
     "sklearn-crfsuite>=0.3.6,<0.4",
     "semantic_version>=2.6,<3.0",
     "snips_nlu_utils>=0.7,<0.8",
-    "snips_nlu_ontology>=0.61.1,<0.62",
+    "snips_nlu_ontology>=0.62.0,<0.63",
     "num2words>=0.5.6,<0.6",
     "plac>=0.9.6,<1.0",
     "requests>=2.0,<3.0",
     "pathlib==1.0.1; python_version < '3.4'",
+    "pyaml>=17,<18",
+    "deprecation>=2,<3"
 ]
 
 extras_require = {

@@ -1,11 +1,14 @@
 from __future__ import print_function, unicode_literals
 
 import json
+import logging
+
 from pathlib import Path
 
 import plac
 
 from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu.cli.utils import set_nlu_logger
 from snips_nlu.utils import json_string
 
 
@@ -38,10 +41,15 @@ def make_engine_cls(config):
                       "(between 0 and 1)", "option", "t", float),
     exclude_slot_metrics=("Exclude slot metrics and slot errors in the output",
                           "flag", "s", bool),
-    include_errors=("Include parsing errors in the output", "flag", "i", bool))
+    include_errors=("Include parsing errors in the output", "flag", "i", bool),
+    verbose=("Print logs", "flag", "v"),
+)
 def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
                       train_size_ratio=1.0, exclude_slot_metrics=False,
-                      include_errors=False):
+                      include_errors=False, verbose=False):
+    if verbose:
+        set_nlu_logger(logging.DEBUG)
+
     def progression_handler(progress):
         print("%d%%" % int(progress * 100))
 
@@ -84,10 +92,15 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
     config_path=("Path to a NLU engine config file", "option", "c", str),
     exclude_slot_metrics=("Exclude slot metrics and slot errors in the output",
                           "flag", "s", bool),
-    include_errors=("Include parsing errors in the output", "flag", "i", bool))
+    include_errors=("Include parsing errors in the output", "flag", "i", bool),
+    verbose=("Print logs", "flag", "v"),
+)
 def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
                        config_path=None, exclude_slot_metrics=False,
-                       include_errors=False):
+                       include_errors=False, verbose=False):
+    if verbose:
+        set_nlu_logger(logging.DEBUG)
+
     if config_path is not None:
         with Path(config_path).open("r", encoding="utf-8") as f:
             config = json.load(f)

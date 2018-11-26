@@ -9,8 +9,8 @@ from uuid import uuid4
 import numpy as np
 from future.utils import iteritems, itervalues
 
-from snips_nlu.constants import (
-    DATA, ENTITY, INTENTS, TEXT, UNKNOWNWORD, UTTERANCES)
+from snips_nlu.constants import (DATA, ENTITIES, ENTITY, INTENTS, TEXT,
+                                 UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
@@ -50,16 +50,16 @@ def get_noise_it(noise, mean_length, std_length, random_state):
         # pylint: enable=stop-iteration-return
 
 
-def generate_smart_noise(augmented_utterances, replacement_string, language):
+def generate_smart_noise(noise, augmented_utterances, replacement_string,
+                         language):
     text_utterances = [get_text_from_chunks(u[DATA])
                        for u in augmented_utterances]
     vocab = [w for u in text_utterances for w in tokenize_light(u, language)]
     vocab = set(vocab)
-    noise = get_noise(language)
     return [w if w in vocab else replacement_string for w in noise]
 
 
-def generate_noise_utterances(augmented_utterances, num_intents,
+def generate_noise_utterances(augmented_utterances, noise, num_intents,
                               data_augmentation_config, language,
                               random_state):
     if not augmented_utterances or not num_intents:
@@ -67,11 +67,9 @@ def generate_noise_utterances(augmented_utterances, num_intents,
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
     if data_augmentation_config.unknown_words_replacement_string is not None:
         noise = generate_smart_noise(
-            augmented_utterances,
+            noise, augmented_utterances,
             data_augmentation_config.unknown_words_replacement_string,
             language)
-    else:
-        noise = get_noise(language)
 
     noise_size = min(
         int(data_augmentation_config.noise_factor * avg_num_utterances),
@@ -89,14 +87,38 @@ def generate_noise_utterances(augmented_utterances, num_intents,
         for _ in range(noise_size)]
 
 
-def add_unknown_word_to_utterances(augmented_utterances, replacement_string,
-                                   unknown_word_prob, random_state):
-    for u in augmented_utterances:
-        for chunk in u[DATA]:
-            if ENTITY in chunk and not is_builtin_entity(chunk[ENTITY]) \
-                    and random_state.rand() < unknown_word_prob:
-                chunk[TEXT] = WORD_REGEX.sub(replacement_string, chunk[TEXT])
-    return augmented_utterances
+def add_unknown_word_to_utterances(utterances, replacement_string,
+                                   unknown_word_prob, max_unknown_words,
+                                   random_state):
+    new_utterances = deepcopy(utterances)
+    for u in new_utterances:
+        if random_state.rand() < unknown_word_prob:
+            num_unknown = random_state.randint(1, max_unknown_words + 1)
+            # We choose to put the noise at the end of the sentence and not
+            # in the middle so that it doesn't impact to much ngrams
+            # computation
+            extra_chunk = {
+                TEXT: " " + " ".join(
+                    replacement_string for _ in range(num_unknown))
+            }
+            u[DATA].append(extra_chunk)
+    return new_utterances
+
+
+def get_dataset_specific_noise(dataset, language):
+    """Return a noise list that excludes the dataset entity values"""
+    entities_values = set()
+    for ent_name, ent in iteritems(dataset[ENTITIES]):
+        if is_builtin_entity(ent_name):
+            continue
+        for k, v in iteritems(ent[UTTERANCES]):
+            entities_values.add(k)
+            entities_values.add(v)
+    original_noise = get_noise(language)
+    specific_noise = [n for n in original_noise if n not in entities_values]
+    if not specific_noise:  # Avoid returning an empty noise
+        return original_noise
+    return specific_noise
 
 
 def build_training_data(dataset, language, data_augmentation_config,
@@ -129,17 +151,20 @@ def build_training_data(dataset, language, data_augmentation_config,
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               range(len(utterances))]
-    augmented_utterances = add_unknown_word_to_utterances(
-        augmented_utterances,
-        data_augmentation_config.unknown_words_replacement_string,
-        data_augmentation_config.unknown_word_prob,
-        random_state
-    )
+    if data_augmentation_config.unknown_words_replacement_string is not None:
+        augmented_utterances = add_unknown_word_to_utterances(
+            augmented_utterances,
+            data_augmentation_config.unknown_words_replacement_string,
+            data_augmentation_config.unknown_word_prob,
+            data_augmentation_config.max_unknown_words,
+            random_state
+        )
 
     # Adding noise
+    noise = get_dataset_specific_noise(dataset, language)
     noisy_utterances = generate_noise_utterances(
-        augmented_utterances, len(intents), data_augmentation_config, language,
-        random_state)
+        augmented_utterances, noise, len(intents), data_augmentation_config,
+        language, random_state)
 
     augmented_utterances += noisy_utterances
     utterance_classes += [noise_class for _ in noisy_utterances]

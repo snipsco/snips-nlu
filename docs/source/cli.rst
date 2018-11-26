@@ -14,70 +14,30 @@ is typically used by running ``snips-nlu <command> [args]`` or alternatively
 Creating a dataset
 ------------------
 
-As seen in the :ref:`tutorial` section, a command allows you to generate a
-dataset from a :ref:`language <languages>` and a list of text files describing
-:ref:`intents <intent>` and :ref:`entities <slot>`:
+As seen in the :ref:`tutorial <tutorial>` section, a command allows you to generate a
+dataset from a :ref:`language <languages>` and a list of YAML files containing
+data for :ref:`intents <intent>` and :ref:`entities <slot>`:
 
 .. code-block:: bash
 
-   snips-nlu generate-dataset en intent_1.txt intent_2.txt entity_1.txt
+   snips-nlu generate-dataset en my_first_intent.yaml my_second_intent.yaml my_entity.yaml
 
-This will print a Json string to the standard output. If you want to store the
-dataset directly in a Json file, you just have to pipe the previous command like
+.. note::
+
+    You don't have to use separated files for each intent and entity. You could
+    for instance merge all intents together in a single ``intents.yaml`` file,
+    or even merge all intents and entities in a single ``dataset.yaml`` file.
+
+This will print a JSON string to the standard output. If you want to store the
+dataset directly in a JSON file, you just have to pipe the previous command like
 below:
 
 .. code-block:: bash
 
-   snips-nlu generate-dataset en intent_1.txt intent_2.txt entity_1.txt > dataset.json
+   snips-nlu generate-dataset en my_first_intent.yaml my_second_intent.yaml my_entity.yaml > dataset.json
 
-
-Each intent file corresponds to a single intent, and the name of the file must
-start with ``intent_``. The same is true for entity files, which must start
-with ``entity_``.
-
-An intent file is a text file in which each row corresponds to an utterance.
-Slots, along with their corresponding slot type (entity), can be defined using
-the following syntax:
-
-.. code-block:: console
-
-   Find me a flight from [departure:city](Paris) to [destination:city](London)
-   Find me a flight from [departure:city](Moscow) [departureDate:snips/datetime](tomorrow around 9pm)
-
-In this example, there are three different slots -- ``departure``,
-``destination`` and ``departureDate`` -- and two different entities -- ``city``
-and ``snips/datetime`` (which is a :ref:`builtin entity <builtin_entity_resolution>`).
-Check :ref:`this section <entity_vs_slot_name>` to have more details about the
-difference between slots and entities.
-
-An entity file is a comma separated text file in which each row corresponds to
-an entity value, optionally followed with its :ref:`synonyms <synonyms>`. The syntax used
-is the following:
-
-.. code-block:: console
-
-   bedroom
-   garden,yard,backyard
-
-Here, the entity (room) has two values which are ``"bedroom"`` and ``"garden"``.
-Two synonyms, ``"yard"`` and ``"backyard"``, are defined for ``"garden"``.
-If a value or a synonym contains a comma, the value must be put between
-double quotes ``"``.
-
-If the value contains double quotes, it must be doubled
-to be escaped like this:  ``"A value with a "","" in it"`` which corresponds
-to the actual value ``A value with a "," in it``.
-
-.. Note::
-
-    By default entities are generated as :ref:`automatically extensible <auto_extensible>`,
-    i.e. the recognition will accept additional values than the ones listed in
-    the entity file. This behavior can be changed by adding at the beginning of
-    the entity file the following:
-
-    .. code-block:: bash
-
-       # automatically_extensible=false
+Check the :ref:`Training Dataset Format <dataset>` section for more details
+about the format used to describe the training data.
 
 .. _training_cli:
 

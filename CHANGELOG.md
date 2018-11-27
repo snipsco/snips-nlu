@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.18.0] - 2018-11-26
+### Added
+- New YAML format to create dataset
+- Verbose mode in CLI
+
+### Changed
+- Bump `snips-nlu-ontology` to `0.62.0` to improve memory usage 
+
+
 ## [0.17.4] - 2018-11-20
 ### Added
 - Add a `--config` argument in the metrics CLI
@@ -175,6 +184,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.18.0]: https://github.com/snipsco/snips-nlu/compare/0.17.4...0.18.0
 [0.17.4]: https://github.com/snipsco/snips-nlu/compare/0.17.3...0.17.4
 [0.17.3]: https://github.com/snipsco/snips-nlu/compare/0.17.2...0.17.3
 [0.17.2]: https://github.com/snipsco/snips-nlu/compare/0.17.1...0.17.2

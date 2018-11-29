@@ -153,10 +153,6 @@ class Featurizer(object):
         X_coo = self._get_cooccurrence_features(
             normalized_stemmed_utterances)
 
-        _, pval = chi2(X_coo, classes)
-        top_k_coo = 400
-        self.best_coo_features = np.argpartition(pval, top_k_coo)[:top_k_coo]
-
         # X_markers = self._get_markers_feature(normalized_stemmed_utterances)
 
         # self.kmeans_count_vectorizer.fit(k_mean_utterances)
@@ -245,6 +241,10 @@ class Featurizer(object):
         # max_top_k_ix = min_top_k_ix + X_top_ngrams.shape[1]
         # for i in range(min_top_k_ix, max_top_k_ix):
         #     self.best_features.append(i)
+        _, pval = chi2(X_coo, classes)
+        top_k_coo = len(self.best_tfidf_features)
+        self.best_coo_features = np.argpartition(pval, top_k_coo)[:top_k_coo]
+        self.best_coo_features = []
         return self
 
     def transform(self, utterances):

@@ -85,7 +85,7 @@ class TestIntentClassifierFeaturizer(SnipsTest):
         idf_diag = tfidf_vectorizer._tfidf._idf_diag.data.tolist()
         # pylint: enable=W0212
 
-        best_features = featurizer.best_features
+        best_features = featurizer.best_tfidf_features
 
         expected_serialized = {
             "config": {

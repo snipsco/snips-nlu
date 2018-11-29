@@ -1,8 +1,14 @@
+# coding=utf-8
 from __future__ import division, unicode_literals
+
+import itertools
+import re
+from collections import defaultdict
 
 import numpy as np
 from future.builtins import object, range, str, zip
 from future.utils import iteritems
+from scipy.sparse import csr_matrix, hstack
 from scipy.spatial.distance import cosine
 from sklearn.exceptions import NotFittedError
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
@@ -13,7 +19,7 @@ from snips_nlu_utils._snips_nlu_utils_py import compute_all_ngrams
 
 from snips_nlu.constants import (BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
                                  CUSTOM_ENTITY_PARSER_USAGE, DATA, END,
-                                 ENTITIES, ENTITY, ENTITY_KIND, NGRAM,
+                                 ENTITY, ENTITY_KIND, NGRAM,
                                  RES_MATCH_RANGE, START, TEXT, VALUE)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
@@ -24,6 +30,74 @@ from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (get_stop_words, get_word_cluster)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
+
+MARKERS = {
+    "troppo forte",
+    "troppo forti",
+    "troppo bassa",
+    "troppo basso",
+    "troppo calda",
+    "troppo caldo",
+    "troppo caldi",
+    "troppo alta",
+    "troppo alti",
+    "diminuisci di",
+    "più bassa",
+    "più basse",
+    "più alta",
+    "più alto",
+    "più caldo",
+    "troppo buia",
+    "basta",
+    "smettere",
+    "accensione",
+    "gradi",
+    "meno freddo",
+    "percento",
+    "aumenta",
+    "aumenti",
+    "aumentami",
+    "accendere",
+    "alza",
+    "alzi a",
+    "aprire",
+    "a",
+    "de",
+    "di",
+    "del",
+    "bassa del",
+    "basso del",
+    "alto del",
+    "alta del",
+    "alzoto del",
+    "alzoto di",
+    "bassa",
+    "abbassare",
+    "abbassami",
+    "abbassata",
+    "abbassala",
+    "abbassata di",
+    "abbassalo",
+    "troppo alta",
+    "c'\u00e8 troppa",
+    "riducessi",
+    "luce",
+    "alzarmi",
+    "alzare",
+    "aumentalo",
+    "chiusura",
+    "mi abbassi",
+    "diminuisci",
+    "per cento",
+    "alzaresti",
+    "va aumentato",
+    "accensione",
+    "accostarmi",
+    "accostami"
+}
+
+MARKERS, REGEXES = zip(
+    *[(m, re.compile(r"(?:^|\s)%s(?:$|\s)" % m)) for m in sorted(MARKERS)])
 
 
 class Featurizer(object):
@@ -42,7 +116,7 @@ class Featurizer(object):
         #     ngram_range=(1, 2))
 
         self.tfidf_vectorizer = tfidf_vectorizer
-        self.best_features = best_features
+        self.best_tfidf_features = best_features
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
 
@@ -65,38 +139,25 @@ class Featurizer(object):
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
             return None
 
-        # normalized_stemmed_utterances = [
-        #     _normalize_stem(
-        #         get_text_from_chunks(u[DATA]),
-        #         self.language,
-        #         self.config.use_stemming
-        #     ) for u in utterances
-        # ]
-        #
-        # none_class = max(classes)
-        # utterances_per_classes = defaultdict(list)
-        # for u, c in zip(normalized_stemmed_utterances, classes):
-        #     if c == none_class:
-        #         continue
-        #     utterances_per_classes[c].append(u)
-        #
-        # k = 5
-        # self.top_bigrams_per_classes = dict()
-        # for cls, utt in iteritems(utterances_per_classes):
-        #     bigrams = [
-        #         ng for u in utt
-        #         for ng in compute_all_ngrams(
-        #             tokenize_light(u, self.language), 2)
-        #     ]
-        #     bigrams = [ng["ngram"] for ng in bigrams
-        #                if len(ng["token_indexes"]) == 2]
-        #     top_bigrams = Counter(bigrams).most_common(k)
-        #     # print "utterances examples: %s" % utt[:5]
-        #     # print "top bigrams for %s: %s" % (cls, top_bigrams)
-        #     self.top_bigrams_per_classes[cls] = set(top_bigrams)
-        #
-        # X_top_ngrams = self._get_top_ngrams_feature(
-        #     [get_text_from_chunks(u[DATA]) for u in utterances])
+        normalized_stemmed_utterances = [
+            _normalize_stem(
+                get_text_from_chunks(u[DATA]),
+                self.language,
+                self.config.use_stemming
+            ) for u in utterances
+        ]
+
+        self.none_class_ix = max(classes)
+        self._fit_cooccurence_matrices(normalized_stemmed_utterances, classes)
+
+        X_coo = self._get_cooccurrence_features(
+            normalized_stemmed_utterances)
+
+        _, pval = chi2(X_coo, classes)
+        top_k_coo = 400
+        self.best_coo_features = np.argpartition(pval, top_k_coo)[:top_k_coo]
+
+        # X_markers = self._get_markers_feature(normalized_stemmed_utterances)
 
         # self.kmeans_count_vectorizer.fit(k_mean_utterances)
         #
@@ -133,45 +194,46 @@ class Featurizer(object):
         X_train_tfidf = self.tfidf_vectorizer.fit_transform(
             preprocessed_utterances)
 
-        # pylint: enable=C0103
-        features_idx = {self.tfidf_vectorizer.vocabulary_[word]: word for
-                        word
-                        in self.tfidf_vectorizer.vocabulary_}
+        #
+        # # pylint: enable=C0103
+        # features_idx = {self.tfidf_vectorizer.vocabulary_[word]: word for
+        #                 word
+        #                 in self.tfidf_vectorizer.vocabulary_}
 
-        stop_words = get_stop_words(self.language)
+        # stop_words = get_stop_words(self.language)
 
-        self.entities = {e: i for i, e in enumerate(dataset[ENTITIES])}
+        # self.entities = {e: i for i, e in enumerate(dataset[ENTITIES])}
 
         # X_train = hstack(
         #     (X_train_tfidf, csr_matrix(X_intent_clusters)), format="csr")
 
-        X_train = X_train_tfidf
+        # X_train = hstack((X_train_tfidf, csr_matrix(X_coo)), format="csr")
 
         # X_train = hstack(
         #     (X_train_tfidf, csr_matrix(X_top_ngrams)), format="csr")
 
-        _, pval = chi2(X_train, classes)
-        self.best_features = [i for i, v in enumerate(pval) if
-                              v < self.config.pvalue_threshold]
+        _, pval = chi2(X_train_tfidf, classes)
+        self.best_tfidf_features = [i for i, v in enumerate(pval) if
+                                    v < self.config.pvalue_threshold]
 
-        if not self.best_features:
-            self.best_features = [idx for idx, val in enumerate(pval) if
-                                  val == pval.min()]
+        if not self.best_tfidf_features:
+            self.best_tfidf_features = [idx for idx, val in enumerate(pval) if
+                                        val == pval.min()]
 
-        feature_names = {}
-        for utterance_index in self.best_features:
-            if utterance_index not in features_idx:
-                continue
-            feature_names[utterance_index] = {
-                "word": features_idx[utterance_index],
-                "pval": pval[utterance_index]
-            }
+        # feature_names = {}
+        # for utterance_index in self.best_features:
+        #     if utterance_index not in features_idx:
+        #         continue
+        #     feature_names[utterance_index] = {
+        #         "word": features_idx[utterance_index],
+        #         "pval": pval[utterance_index]
+        #     }
 
-        for feat in feature_names:
-            if feature_names[feat]["word"] in stop_words:
-                if feature_names[feat]["pval"] > \
-                        self.config.pvalue_threshold / 2.0:
-                    self.best_features.remove(feat)
+        # for feat in feature_names:
+        #     if feature_names[feat]["word"] in stop_words:
+        #         if feature_names[feat]["pval"] > \
+        #                 self.config.pvalue_threshold / 2.0:
+        #             self.best_features.remove(feat)
 
         # min_cluster_ix = X_train_tfidf.shape[1]
         # max_cluster_ix = min_cluster_ix + X_train_clusters.shape[1]
@@ -186,14 +248,15 @@ class Featurizer(object):
         return self
 
     def transform(self, utterances):
-        # top_k_utterances = [
-        #     _normalize_stem(
-        #         get_text_from_chunks(u[DATA]),
-        #         self.language,
-        #         self.config.use_stemming
-        #     ) for u in utterances
-        # ]
-        # X_clusters = self._intents_clusters_features(k_mean_utterances)
+        normalized_stemmed_utterances = [
+            _normalize_stem(
+                get_text_from_chunks(u[DATA]),
+                self.language,
+                self.config.use_stemming
+            ) for u in utterances
+        ]
+        X_coo = self._get_cooccurrence_features(normalized_stemmed_utterances)
+
 
         preprocessed_utterances = self.preprocess_utterances(utterances)
         # # pylint: disable=C0103
@@ -205,9 +268,73 @@ class Featurizer(object):
         # X_top_k = self._get_top_ngrams_feature(top_k_utterances)
         #
         # X_train = hstack((X_tfidf, csr_matrix(X_top_k)), format="csr")
-        X_train = X_tfidf
-        X = X_train[:, self.best_features]
+        # X = hstack((X_tfidf, csr_matrix(X_coo)), format="csr")
         # pylint: enable=C0103
+
+        return hstack(
+            (X_tfidf[:, self.best_tfidf_features],
+             csr_matrix(X_coo[:, self.best_coo_features])))
+
+        # return X_tfidf[:, self.best_tfidf_features]
+
+    def _get_cooccurrence_features(self, utterances):
+        X_coo = np.zeros((len(utterances), len(self.word_pairs)))
+        tokenized_utterances = [tokenize_light(u, self.language)
+                                for u in utterances]
+        stop_words = get_stop_words(self.language)
+        tokenized_utterances = [[t for t in u if t not in stop_words]
+                                for u in tokenized_utterances]
+
+        for i, u in enumerate(tokenized_utterances):
+            sorted_u = sorted(u)
+            for w1, w2 in itertools.combinations(sorted_u, 2):
+                if (w1, w2) in self.word_pairs:
+                    X_coo[i, self.word_pairs[(w1, w2)]] = 1
+
+        return X_coo
+
+    def _fit_cooccurence_matrices(self, utterances, classes):
+        tokenized_utterances = [tokenize_light(u, self.language)
+                                for u, c in itertools.izip(utterances, classes)
+                                if c != self.none_class_ix]
+        stop_words = get_stop_words(self.language)
+        tokenized_utterances = [[t for t in u if t not in stop_words]
+                                for u in tokenized_utterances]
+
+        cooccurrence_matrix = self._get_cooccurrence_matrix(
+            tokenized_utterances)
+
+        self.word_pairs = dict()
+        threshold = 2
+        for i, (word_pair, count) in enumerate(
+                sorted(iteritems(cooccurrence_matrix))):
+            if count >= threshold:
+                self.word_pairs[word_pair] = len(self.word_pairs)
+
+        # for m in itervalues(cooccurrence_matrices):
+        #     # ind = np.argpartition(m, 20, axis=None)
+        #     to_print = 20
+        #     top_k = zip(*np.unravel_index(
+        #         np.argsort(m, axis=None)[-to_print:][::-1], dims=m.shape))
+        #     print("\nTop co-occurences:")
+        #     for i, j in top_k:
+        #         print("%s %s: %s" % (words[i], words[j], m[i, j]))
+        return self
+
+    def _get_cooccurrence_matrix(self, utterances):
+        m = defaultdict(int)
+        for u in utterances:
+            sorted_u = sorted(u)
+            for w1, w2 in itertools.combinations(sorted_u, 2):
+                m[(w1, w2)] += 1
+        return m
+
+    def _get_markers_feature(self, utterances):
+        X = np.zeros((len(utterances), len(MARKERS)), dtype=np.float)
+        for i, u in enumerate(utterances):
+            for j, r in enumerate(REGEXES):
+                if r.findall(u):
+                    X[i, j] = 1
         return X
 
     def _get_top_ngrams_feature(self, utterances):
@@ -328,7 +455,7 @@ class Featurizer(object):
         return {
             "language_code": self.language,
             "tfidf_vectorizer": tfidf_vectorizer,
-            "best_features": self.best_features,
+            "best_features": self.best_tfidf_features,
             "config": self.config.to_dict(),
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string

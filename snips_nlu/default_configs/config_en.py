@@ -152,7 +152,7 @@ CONFIG = {
                     "min_utterances": 20,
                     "noise_factor": 5,
                     "add_builtin_entities_examples": True,
-                    "max_unknown_words": 0,
+                    "max_unknown_words": None,
                     "unknown_word_prob": 0,
                     "unknown_words_replacement_string": None
                 },

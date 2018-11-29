@@ -242,7 +242,7 @@ class LogRegIntentClassifier(IntentClassifier):
         }
 
     def log_best_features(self, top_n=20):
-        log = "Top {} features weights by intent:\n".format(top_n)
+        log = "Top {} features weights by intent:".format(top_n)
         voca = {
             v: k for k, v in
             iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)

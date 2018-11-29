@@ -12,11 +12,14 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import \
     build_training_data
-from snips_nlu.pipeline.configs import IntentClassifierDataAugmentationConfig
+from snips_nlu.pipeline.configs import IntentClassifierDataAugmentationConfig, \
+    MitieIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
 
 
 class MitieIntentClassifier(IntentClassifier):
+    unit_name = "mitie_intent_classifier"
+    config_type = MitieIntentClassifierConfig
 
     def __init__(self, config, **shared):
         super(MitieIntentClassifier, self).__init__(config, **shared)
@@ -34,7 +37,7 @@ class MitieIntentClassifier(IntentClassifier):
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
 
-        random_state = check_random_state(111)
+        random_state = check_random_state(self.config.random_seed)
         data_augmentation_config = self.config.data_augmentation_config
         utterances, classes, intent_list = build_training_data(
             dataset, language, data_augmentation_config, random_state)

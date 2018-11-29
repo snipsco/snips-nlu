@@ -11,6 +11,57 @@ from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
 
 
+
+class MitieIntentClassifierConfig(ProcessingUnitConfig):
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.mitie_intent_classifier \
+            import MitieIntentClassifier
+        return MitieIntentClassifier.unit_name
+
+    def __init__(self, data_augmentation_config=None, random_seed=None):
+        if data_augmentation_config is None:
+            data_augmentation_config = IntentClassifierDataAugmentationConfig(
+                min_utterances=200)
+        self.data_augmentation_config = data_augmentation_config
+        self.random_seed = random_seed
+
+    @property
+    def data_augmentation_config(self):
+        return self._data_augmentation_config
+
+    @data_augmentation_config.setter
+    def data_augmentation_config(self, value):
+        if isinstance(value, dict):
+            self._data_augmentation_config = \
+                IntentClassifierDataAugmentationConfig.from_dict(value)
+        elif isinstance(value, IntentClassifierDataAugmentationConfig):
+            self._data_augmentation_config = value
+        else:
+            raise TypeError("Expected instance of "
+                            "IntentClassifierDataAugmentationConfig or dict"
+                            "but received: %s" % type(value))
+
+    def get_required_resources(self):
+        parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
+        return {
+            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
+        }
+
+    def to_dict(self):
+        return {
+            "data_augmentation_config":
+                self.data_augmentation_config.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)
+
 class RNNIntentClassifierConfig(ProcessingUnitConfig):
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument

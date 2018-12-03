@@ -132,6 +132,9 @@ class LogRegIntentClassifier(IntentClassifier):
         X = self.featurizer.transform([text_to_utterance(text)])
         # pylint: enable=C0103
         proba_vec = self._predict_proba(X, intents_filter=intents_filter)
+        logger.debug(
+            "%s", DifferedLoggingMessage(self.log_activation_weights, text, X))
+
         intents_probas = sorted(zip(self.intent_list, proba_vec[0]),
                                 key=lambda p: -p[1])
         for intent, proba in intents_probas:
@@ -242,7 +245,7 @@ class LogRegIntentClassifier(IntentClassifier):
         }
 
     def log_best_features(self, top_n=20):
-        log = "Top {} features weights by intent:\n".format(top_n)
+        log = "Top {} features weights by intent:".format(top_n)
         voca = {
             v: k for k, v in
             iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
@@ -257,4 +260,39 @@ class LogRegIntentClassifier(IntentClassifier):
                 feature_name = features[feature_ix]
                 feature_weight = self.classifier.coef_[intent_ix, feature_ix]
                 log += "\n{} -> {}".format(feature_name, feature_weight)
+        return log
+
+    def log_activation_weights(self, text, x, top_n=50):
+        log = "\n\nTop {} feature activations for: \"{}\":\n".format(
+            top_n, text)
+        activations = np.multiply(
+            self.classifier.coef_, np.asarray(x.todense()))
+        abs_activation = np.absolute(activations).flatten().squeeze()
+
+        if top_n > activations.size:
+            top_n = activations.size
+
+        top_n_activations_ix = np.argpartition(abs_activation, -top_n,
+                                               axis=None)[-top_n:]
+        top_n_activations_ix = np.unravel_index(
+            top_n_activations_ix, activations.shape)
+
+        voca = {
+            v: k for k, v in
+            iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
+        }
+        features = [voca[i] for i in self.featurizer.best_features]
+
+        features_intent_and_activation = [
+            (self.intent_list[i], features[f], activations[i, f])
+            for i, f in zip(*top_n_activations_ix)]
+
+        features_intent_and_activation = sorted(
+            features_intent_and_activation, key=lambda x: abs(x[2]),
+            reverse=True)
+
+        for intent, feature, activation in features_intent_and_activation:
+            log += "\n\n\"{}\" -> ({}, {:.2f})".format(
+                feature, intent, float(activation))
+        log += "\n\n"
         return log

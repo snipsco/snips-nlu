@@ -20,6 +20,11 @@ class PrettyPrintLevel(Enum):
     SUCCESS = 3
 
 
+FMT = "[%(levelname)s][%(asctime)s.%(msecs)03d][%(name)s]: " \
+      "%(message)s"
+DATE_FMT = "%H:%M:%S"
+
+
 def pretty_print(*texts, **kwargs):
     """Print formatted message
 
@@ -105,6 +110,11 @@ def check_resources_alias(resource_name, shortcuts):
 def set_nlu_logger(level=logging.INFO):
     logger = logging.getLogger(snips_nlu.__name__)
     logger.setLevel(level)
+
+    formatter = logging.Formatter(FMT, DATE_FMT)
+
     handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
     handler.setLevel(level)
+
     logger.addHandler(handler)

@@ -121,8 +121,6 @@ class DeterministicIntentParser(IntentParser):
         Raises:
             NotTrained: When the intent parser is not fitted
         """
-        logger.debug("DeterministicIntentParser parsing '%s'...", text)
-
         if isinstance(intents, str):
             intents = [intents]
 

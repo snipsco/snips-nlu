@@ -13,8 +13,8 @@ from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
-from snips_nlu.pipeline.processing_unit import (
-    load_processing_unit, build_processing_unit)
+from snips_nlu.pipeline.processing_unit import (build_processing_unit,
+                                                load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result
 from snips_nlu.utils import (check_persisted_path, elapsed_since,
                              fitted_required, json_string, log_elapsed_time,
@@ -121,8 +121,6 @@ class ProbabilisticIntentParser(IntentParser):
         Raises:
             NotTrained: When the intent parser is not fitted
         """
-        logger.debug("Probabilistic intent parser parsing '%s'...", text)
-
         if isinstance(intents, str):
             intents = [intents]
 

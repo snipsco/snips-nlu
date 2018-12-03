@@ -1,6 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+from builtins import str
+
 from mock import patch
 
 from snips_nlu.constants import (
@@ -258,3 +260,19 @@ class TestLogRegIntentClassifier(FixtureTest):
         intent_classifier = LogRegIntentClassifier().fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(None, intent)
+
+    def test_log_activation_weights(self):
+        # Given
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        intent_classifier = LogRegIntentClassifier().fit(dataset)
+
+        text = "yo"
+        utterances = [text_to_utterance(text)]
+        x = intent_classifier.featurizer.transform(utterances)[0]
+
+        # When
+        log = intent_classifier.log_activation_weights(text, x)
+
+        # Then
+        self.assertIsInstance(log, str)
+        self.assertIn("Top 50", log)

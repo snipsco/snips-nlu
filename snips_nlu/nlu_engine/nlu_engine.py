@@ -27,7 +27,7 @@ from snips_nlu.result import (
     builtin_slot, custom_slot, empty_result, is_empty, parsing_result)
 from snips_nlu.utils import (
     check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
-    log_elapsed_time, log_result)
+    log_elapsed_time)
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +81,6 @@ class SnipsNLUEngine(ProcessingUnit):
         Returns:
             The same object, trained.
         """
-        logger.info("Fitting NLU engine...")
-
         dataset = validate_and_format_dataset(dataset)
         self._dataset_metadata = _get_dataset_metadata(dataset)
         if self.config is None:
@@ -116,7 +114,6 @@ class SnipsNLUEngine(ProcessingUnit):
         self.intent_parsers = parsers
         return self
 
-    @log_result(logger, logging.DEBUG, "Result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed query in {elapsed_time}")
     @fitted_required
     def parse(self, text, intents=None):
@@ -136,7 +133,6 @@ class SnipsNLUEngine(ProcessingUnit):
             NotTrained: When the nlu engine is not fitted
             TypeError: When input type is not unicode
         """
-        logging.info("NLU engine parsing: '%s'...", text)
         if not isinstance(text, str):
             raise TypeError("Expected unicode but received: %s" % type(text))
 

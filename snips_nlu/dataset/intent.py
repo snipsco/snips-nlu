@@ -2,6 +2,9 @@ from __future__ import absolute_import, print_function
 
 from abc import ABCMeta, abstractmethod
 from builtins import object
+from io import IOBase
+
+import yaml
 from pathlib import Path
 
 from deprecation import deprecated
@@ -36,35 +39,80 @@ class Intent(object):
 
     @classmethod
     def from_yaml(cls, yaml_dict):
-        # pylint:disable=line-too-long
-        """Build an :class:`.Intent` from its YAML definition dict
+        """Build an :class:`.Intent` from its YAML definition object
 
-        An intent can be defined with a YAML document following the schema
-        illustrated in the example below:
+        Args:
+            yaml_dict (dict or :class:`.IOBase`): object containing the YAML
+                definition of the intent. It can be either a stream, or the
+                corresponding python dict.
 
-        .. code-block:: yaml
+        Examples:
+            An intent can be defined with a YAML document following the schema
+            illustrated in the example below:
 
-            # searchFlight Intent
-            ---
-            type: intent
-            name: searchFlight
-            slots:
-              - name: origin
-                entity: city
-              - name: destination
-                entity: city
-              - name: date
-                entity: snips/datetime
-            utterances:
-              - find me a flight from [origin](Paris) to [destination](New York)
-              - I need a flight leaving [date](this weekend) to [destination](Berlin)
-              - show me flights to go to [destination](new york) leaving [date](this evening)
+            >>> import io
+            >>> import json
+            >>> intent_yaml = io.StringIO('''
+            ... # searchFlight Intent
+            ... ---
+            ... type: intent
+            ... name: searchFlight
+            ... slots:
+            ...   - name: origin
+            ...     entity: city
+            ...   - name: destination
+            ...     entity: city
+            ...   - name: date
+            ...     entity: snips/datetime
+            ... utterances:
+            ...   - find me a flight from [origin](Oslo) to [destination](Lima)
+            ...   - I need a flight leaving to [destination](Berlin)''')
+            >>> intent = Intent.from_yaml(intent_yaml)
+            >>> print(json.dumps(intent.json, indent=4, sort_keys=True))
+            {
+                "utterances": [
+                    {
+                        "data": [
+                            {
+                                "text": "find me a flight from "
+                            },
+                            {
+                                "entity": "city",
+                                "slot_name": "origin",
+                                "text": "Oslo"
+                            },
+                            {
+                                "text": " to "
+                            },
+                            {
+                                "entity": "city",
+                                "slot_name": "destination",
+                                "text": "Lima"
+                            }
+                        ]
+                    },
+                    {
+                        "data": [
+                            {
+                                "text": "I need a flight leaving to "
+                            },
+                            {
+                                "entity": "city",
+                                "slot_name": "destination",
+                                "text": "Berlin"
+                            }
+                        ]
+                    }
+                ]
+            }
 
         Raises:
             IntentFormatError: When the YAML dict does not correspond to the
                 :ref:`expected intent format <yaml_intent_format>`
         """
-        # pylint:enable=line-too-long
+        if isinstance(yaml_dict, IOBase):
+            yaml_dict = yaml.safe_load(yaml_dict)
+
         object_type = yaml_dict.get("type")
         if object_type and object_type != "intent":
             raise IntentFormatError("Wrong type: '%s'" % object_type)

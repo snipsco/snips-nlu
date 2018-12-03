@@ -198,11 +198,9 @@ values:
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
 
-    @patch("snips_nlu.dataset.dataset.io")
-    def test_should_generate_dataset_from_merged_yaml_file(self, mock_io):
+    def test_should_generate_dataset_from_merged_yaml_file(self):
         # Given
-        dataset_file = "dataset.yaml"
-        dataset_yaml = """
+        dataset_stream = io.StringIO("""
 # whoIsGame Intent
 ---
 type: intent
@@ -227,20 +225,10 @@ automatically_extensible: true
 values:
 - [new york, big apple]
 - london
-        """
-
-        # pylint:disable=unused-argument
-        def mock_open(filename, **kwargs):
-            if filename == dataset_file:
-                return io.StringIO(dataset_yaml)
-            return None
-
-        # pylint:enable=unused-argument
-
-        mock_io.open.side_effect = mock_open
+        """)
 
         # When
-        dataset = Dataset.from_yaml_files("en", [dataset_file])
+        dataset = Dataset.from_yaml_files("en", [dataset_stream])
         dataset_dict = dataset.json
 
         # Then

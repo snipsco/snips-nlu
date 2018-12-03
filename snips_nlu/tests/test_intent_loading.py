@@ -13,7 +13,7 @@ from snips_nlu.dataset import Intent, IntentFormatError
 class TestIntentLoading(TestCase):
     def test_should_load_from_yaml_file(self):
         # Given
-        yaml_stream = io.StringIO("""
+        intent = Intent.from_yaml(io.StringIO("""
 # getWeather Intent
 ---
 type: intent
@@ -22,11 +22,9 @@ utterances:
   - what is the weather in [weatherLocation:location](paris) ?
   - "Will it rain [date:snips/datetime](tomorrow) in
     [weatherLocation:location](london)?"
-        """)
-        yaml_dict = yaml.safe_load(yaml_stream)
+        """))
 
         # When
-        intent = Intent.from_yaml(yaml_dict)
         intent_dict = intent.json
 
         # Then
@@ -76,7 +74,7 @@ utterances:
 
     def test_should_load_from_yaml_file_using_slot_mapping(self):
         # Given
-        yaml_stream = io.StringIO("""
+        intent = Intent.from_yaml(io.StringIO("""
 # getWeather Intent
 ---
 type: intent
@@ -89,11 +87,9 @@ slots:
 utterances:
   - what is the weather in [weatherLocation](paris) ?
   - Will it rain [date] in [weatherLocation](london)?
-        """)
-        yaml_dict = yaml.safe_load(yaml_stream)
+        """))
 
         # When
-        intent = Intent.from_yaml(yaml_dict)
         intent_dict = intent.json
 
         # Then
@@ -143,18 +139,16 @@ utterances:
 
     def test_should_load_from_yaml_file_using_implicit_values(self):
         # Given
-        yaml_stream = io.StringIO("""
+        intent = Intent.from_yaml(io.StringIO("""
 # getWeather Intent
 ---
 type: intent
 name: getWeather
 utterances:
   - what is the weather in [location] ?
-        """)
-        yaml_dict = yaml.safe_load(yaml_stream)
+        """))
 
         # When
-        intent = Intent.from_yaml(yaml_dict)
         intent_dict = intent.json
 
         # Then

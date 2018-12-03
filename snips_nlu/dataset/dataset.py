@@ -3,10 +3,10 @@ from __future__ import print_function, unicode_literals
 
 import io
 from itertools import cycle
-from pathlib import Path
 
 import yaml
 from deprecation import deprecated
+from pathlib import Path
 from snips_nlu_ontology import get_builtin_entity_examples
 
 from snips_nlu.__about__ import __version__
@@ -40,69 +40,150 @@ class Dataset(object):
 
     @classmethod
     def from_yaml_files(cls, language, filenames):
-        # pylint:disable=line-too-long
         """Creates a :class:`.Dataset` from a language and a list of YAML files
-        containing intents and entities data
+        or streams containing intents and entities data
 
         Each file need not correspond to a single entity nor intent. They can
         consist in several entities and intents merged together in a single
         file.
 
-        A dataset can be defined with a YAML document following the schema
-        illustrated in the example below:
+        Args:
+            language (str): language of the dataset (ISO639-1)
+            filenames (iterable): filenames or stream objects corresponding to
+                intents and entities data.
 
-        .. code-block:: yaml
+        Example:
 
-            # searchFlight Intent
-            ---
-            type: intent
-            name: searchFlight
-            slots:
-              - name: origin
-                entity: city
-              - name: destination
-                entity: city
-              - name: date
-                entity: snips/datetime
-            utterances:
-              - find me a flight from [origin](Paris) to [destination](New York)
-              - I need a flight leaving [date](this weekend) to [destination](Berlin)
-              - show me flights to go to [destination](new york) leaving [date](this evening)
+            A dataset can be defined with a YAML document following the schema
+            illustrated in the example below:
 
-            # City Entity
-            ---
-            type: entity
-            name: city
-            values:
-              - london
-              - [new york, big apple]
-              - [paris, city of lights]
+            >>> import io
+            >>> import json
+            >>> dataset_yaml = io.StringIO('''
+            ... # searchFlight Intent
+            ... ---
+            ... type: intent
+            ... name: searchFlight
+            ... slots:
+            ...   - name: origin
+            ...     entity: city
+            ...   - name: destination
+            ...     entity: city
+            ...   - name: date
+            ...     entity: snips/datetime
+            ... utterances:
+            ...   - find me a flight from [origin](Oslo) to [destination](Lima)
+            ...   - I need a flight leaving to [destination](Berlin)
+            ...
+            ... # City Entity
+            ... ---
+            ... type: entity
+            ... name: city
+            ... values:
+            ...   - london
+            ...   - [paris, city of lights]''')
+            >>> dataset = Dataset.from_yaml_files("en", [dataset_yaml])
+            >>> print(json.dumps(dataset.json, indent=4, sort_keys=True))
+            {
+                "entities": {
+                    "city": {
+                        "automatically_extensible": true,
+                        "data": [
+                            {
+                                "synonyms": [],
+                                "value": "london"
+                            },
+                            {
+                                "synonyms": [
+                                    "city of lights"
+                                ],
+                                "value": "paris"
+                            }
+                        ],
+                        "matching_strictness": 1.0,
+                        "use_synonyms": true
+                    }
+                },
+                "intents": {
+                    "searchFlight": {
+                        "utterances": [
+                            {
+                                "data": [
+                                    {
+                                        "text": "find me a flight from "
+                                    },
+                                    {
+                                        "entity": "city",
+                                        "slot_name": "origin",
+                                        "text": "Oslo"
+                                    },
+                                    {
+                                        "text": " to "
+                                    },
+                                    {
+                                        "entity": "city",
+                                        "slot_name": "destination",
+                                        "text": "Lima"
+                                    }
+                                ]
+                            },
+                            {
+                                "data": [
+                                    {
+                                        "text": "I need a flight leaving to "
+                                    },
+                                    {
+                                        "entity": "city",
+                                        "slot_name": "destination",
+                                        "text": "Berlin"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "language": "en"
+            }
 
         Raises:
             DatasetFormatError: When one of the documents present in the YAML
                 files has a wrong 'type' attribute, which is not 'entity' nor
                 'intent'
             IntentFormatError: When the YAML document of an intent does not
-                correspond to the :ref:`expected intent format <yaml_intent_format>`
+                correspond to the
+                :ref:`expected intent format <yaml_intent_format>`
             EntityFormatError: When the YAML document of an entity does not
-                correspond to the :ref:`expected entity format <yaml_entity_format>`
+                correspond to the
+                :ref:`expected entity format <yaml_entity_format>`
         """
-        # pylint:enable=line-too-long
         entities = []
         intents = []
         for filename in filenames:
-            with io.open(filename, encoding="utf8") as f:
-                for doc in yaml.safe_load_all(f):
-                    doc_type = doc.get("type")
-                    if doc_type == "entity":
-                        entities.append(Entity.from_yaml(doc))
-                    elif doc_type == "intent":
-                        intents.append(Intent.from_yaml(doc))
-                    else:
-                        raise DatasetFormatError(
-                            "Invalid 'type' value in YAML file '%s': '%s'"
-                            % (filename, doc_type))
+            if isinstance(filename, io.IOBase):
+                _intents, _entities = cls._load_dataset_parts(
+                    filename, "stream object")
+            else:
+                with io.open(filename, encoding="utf8") as f:
+                    _intents, _entities = cls._load_dataset_parts(f, filename)
+            intents += _intents
+            entities += _entities
         return cls(language, intents, entities)
+
+    @classmethod
+    def _load_dataset_parts(cls, stream, stream_description):
+        intents = []
+        entities = []
+        for doc in yaml.safe_load_all(stream):
+            doc_type = doc.get("type")
+            if doc_type == "entity":
+                entities.append(Entity.from_yaml(doc))
+            elif doc_type == "intent":
+                intents.append(Intent.from_yaml(doc))
+            else:
+                raise DatasetFormatError(
+                    "Invalid 'type' value in YAML file '%s': '%s'"
+                    % (stream_description, doc_type))
+        return intents, entities
 
     @classmethod
     @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",

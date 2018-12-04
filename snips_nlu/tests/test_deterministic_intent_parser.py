@@ -501,15 +501,14 @@ values:
             },
             "language_code": "en",
             "group_names_to_slot_names": {
-                "group_0": "origin",
-                "group_1": "destination",
-                "group_2": "destination"
+                "group0": "destination",
+                "group1": "origin",
             },
             "patterns": {
                 "searchFlight": [
-                    "^\\s*find\\s*flight\\s*from\\s*(?P<group_0>%CITY%)\\s*to"
-                    "\\s*(?P<group_1>%CITY%)\\s*$",
-                    "^\\s*I\\s*need\\s*flight\\s*to\\s*(?P<group_2>%CITY%)"
+                    "^\\s*find\\s*flight\\s*from\\s*(?P<group1>%CITY%)\\s*to"
+                    "\\s*(?P<group0>%CITY%)\\s*$",
+                    "^\\s*i\\s*need\\s*flight\\s*to\\s*(?P<group0>%CITY%)"
                     "\\s*$",
                 ]
             },
@@ -539,14 +538,16 @@ values:
                 "world_group": "world_slot"
             },
             "patterns": {
-                "intent_name": [
+                "my_intent": [
                     "(?P<hello_group>hello?)",
                     "(?P<world_group>world$)"
                 ]
             },
             "slot_names_to_entities": {
-                "hello_slot": "hello_entity",
-                "world_slot": "world_entity"
+                "my_intent": {
+                    "hello_slot": "hello_entity",
+                    "world_slot": "world_entity"
+                }
             }
         }
         self.tmp_file_path.mkdir()
@@ -560,7 +561,7 @@ values:
 
         # Then
         patterns = {
-            "intent_name": [
+            "my_intent": [
                 "(?P<hello_group>hello?)",
                 "(?P<world_group>world$)"
             ]
@@ -570,8 +571,10 @@ values:
             "world_group": "world_slot"
         }
         slot_names_to_entities = {
-            "hello_slot": "hello_entity",
-            "world_slot": "world_entity"
+            "my_intent": {
+                "hello_slot": "hello_entity",
+                "world_slot": "world_entity"
+            }
         }
         config = DeterministicIntentParserConfig(max_queries=42,
                                                  max_pattern_length=43)

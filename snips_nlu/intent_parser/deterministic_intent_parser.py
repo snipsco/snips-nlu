@@ -4,8 +4,10 @@ import json
 import logging
 import re
 from builtins import str
+from collections import defaultdict
+from copy import deepcopy
 
-from future.utils import iteritems
+from future.utils import iteritems, iterkeys, itervalues
 from pathlib import Path
 from snips_nlu_utils import normalize
 
@@ -13,7 +15,8 @@ from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
     ENTITY_KIND, INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME,
     START, TEXT, UTTERANCES)
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import normalize_token, tokenize, tokenize_light
@@ -26,8 +29,6 @@ from snips_nlu.utils import (
     get_slot_name_mappings, json_string, log_elapsed_time, log_result,
     ranges_overlap, regex_escape)
 
-GROUP_NAME_PREFIX = "group"
-GROUP_NAME_SEPARATOR = "_"
 WHITESPACE_PATTERN = r"\s*"
 
 logger = logging.getLogger(__name__)
@@ -50,21 +51,31 @@ class DeterministicIntentParser(IntentParser):
         if config is None:
             config = self.config_type()
         super(DeterministicIntentParser, self).__init__(config, **shared)
+        self._language = None
         self._slot_names_to_entities = None
+        self._group_names_to_slot_names = None
         self.language = None
-        self.regexes_per_intent = None
-        self.group_names_to_slot_names = None
         self.slot_names_to_entities = None
+        self.group_names_to_slot_names = None
+        self.slot_names_to_group_names = None
+        self.regexes_per_intent = None
         self.builtin_scope = None
+        self.stop_words = None
 
     @property
-    def stop_words(self):
-        if self.language is None:
-            return None
-        try:
-            return get_stop_words(self.language)
-        except MissingResource:
-            return set()
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, value):
+        self._language = value
+        if value is None:
+            self.stop_words = None
+        else:
+            try:
+                self.stop_words = get_stop_words(self.language)
+            except MissingResource:
+                self.stop_words = set()
 
     @property
     def slot_names_to_entities(self):
@@ -79,6 +90,17 @@ class DeterministicIntentParser(IntentParser):
             self.builtin_scope = {
                 ent for slot_mapping in itervalues(value)
                 for ent in itervalues(slot_mapping) if is_builtin_entity(ent)}
+
+    @property
+    def group_names_to_slot_names(self):
+        return self._group_names_to_slot_names
+
+    @group_names_to_slot_names.setter
+    def group_names_to_slot_names(self, value):
+        self._group_names_to_slot_names = value
+        if value is not None:
+            self.slot_names_to_group_names = {
+                slot_name: group for group, slot_name in iteritems(value)}
 
     @property
     def patterns(self):
@@ -112,12 +134,12 @@ class DeterministicIntentParser(IntentParser):
         self.fit_custom_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]
         self.regexes_per_intent = dict()
-        self.group_names_to_slot_names = dict()
         entity_placeholders = _get_entity_placeholders(dataset, self.language)
         self.slot_names_to_entities = get_slot_name_mappings(dataset)
+        self.group_names_to_slot_names = _get_group_names_to_slot_names(
+            self.slot_names_to_entities)
+
         for intent_name, intent in iteritems(dataset[INTENTS]):
-            utterances = intent[UTTERANCES]
-            patterns = self._generate_patterns(utterances, entity_placeholders)
             patterns = [p for p in patterns
                         if len(p) < self.config.max_pattern_length]
             patterns = patterns[:self.config.max_queries]
@@ -159,8 +181,8 @@ class DeterministicIntentParser(IntentParser):
 
         # We try to match both the input text and the preprocessed text to
         # cover inconsistencies between labeled data and builtin entity parsing
-        cleaned_text = self._preprocess(text)
-        cleaned_processed_text = self._preprocess(processed_text)
+        cleaned_text = self._preprocess_text(text)
+        cleaned_processed_text = self._preprocess_text(processed_text)
 
         for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
@@ -175,7 +197,7 @@ class DeterministicIntentParser(IntentParser):
                     return res
         return empty_result(text)
 
-    def _preprocess(self, string):
+    def _preprocess_text(self, string):
         """Replace stop words and characters that are tokenized out by
             whitespaces"""
         tokens = tokenize(string, self.language)
@@ -201,7 +223,10 @@ class DeterministicIntentParser(IntentParser):
                                                      probability=1.0)
         slots = []
         for group_name in found_result.groupdict():
-            slot_name = self.group_names_to_slot_names[group_name]
+            ref_group_name = group_name
+            if "_" in group_name:
+                ref_group_name = group_name[:(len(group_name) - 2)]
+            slot_name = self.group_names_to_slot_names[ref_group_name]
             entity = self.slot_names_to_entities[intent][slot_name]
             rng = (found_result.start(group_name),
                    found_result.end(group_name))
@@ -224,29 +249,33 @@ class DeterministicIntentParser(IntentParser):
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return parsing_result(text, parsed_intent, parsed_slots)
 
-    def _generate_patterns(self, intent_queries, entity_placeholders):
+    def _generate_patterns(self, intent_utterances, entity_placeholders):
         unique_patterns = set()
         patterns = []
-        for query in intent_queries:
-            pattern = self._query_to_pattern(query, entity_placeholders)
+        for utterance in intent_utterances:
+            pattern = self._utterance_to_pattern(
+                utterance, entity_placeholders)
             if pattern not in unique_patterns:
                 unique_patterns.add(pattern)
                 patterns.append(pattern)
         return patterns
 
-    def _query_to_pattern(self, query, entity_placeholders):
+    def _utterance_to_pattern(self, utterance, entity_placeholders):
+        slot_names_count = defaultdict(int)
         pattern = []
-        for chunk in query[DATA]:
+        for chunk in utterance[DATA]:
             if SLOT_NAME in chunk:
-                max_index = _generate_new_index(self.group_names_to_slot_names)
                 slot_name = chunk[SLOT_NAME]
-                entity = chunk[ENTITY]
-                self.group_names_to_slot_names[max_index] = slot_name
-                pattern.append(
-                    r"(?P<%s>%s)" % (max_index, entity_placeholders[entity]))
+                slot_names_count[slot_name] += 1
+                group_name = self.slot_names_to_group_names[slot_name]
+                count = slot_names_count[slot_name]
+                if count > 1:
+                    group_name = "%s_%s" % (group_name, count)
+                placeholder = entity_placeholders[chunk[ENTITY]]
+                pattern.append(r"(?P<%s>%s)" % (group_name, placeholder))
             else:
                 tokens = tokenize_light(chunk[TEXT], self.language)
-                pattern += [regex_escape(t) for t in tokens
+                pattern += [regex_escape(t.lower()) for t in tokens
                             if normalize(t) not in self.stop_words]
 
         pattern = r"^%s%s%s$" % (WHITESPACE_PATTERN,
@@ -327,25 +356,11 @@ def _get_range_shift(matched_range, ranges_mapping):
     return shift
 
 
-def _get_index(index):
-    split = index.split(GROUP_NAME_SEPARATOR)
-    if len(split) != 2 or split[0] != GROUP_NAME_PREFIX:
-        raise ValueError("Misformatted index")
-    return int(split[1])
-
-
-def _make_index(i):
-    return "%s%s%s" % (GROUP_NAME_PREFIX, GROUP_NAME_SEPARATOR, i)
-
-
-def _generate_new_index(slots_name_to_labels):
-    if not slots_name_to_labels:
-        index = _make_index(0)
-    else:
-        max_index = max(slots_name_to_labels, key=_get_index)
-        max_index = _get_index(max_index) + 1
-        index = _make_index(max_index)
-    return index
+def _get_group_names_to_slot_names(slot_names_mapping):
+    slot_names = {slot_name for mapping in itervalues(slot_names_mapping)
+                  for slot_name in iterkeys(mapping)}
+    return {"group%s" % i: name
+            for i, name in enumerate(sorted(slot_names))}
 
 
 def _get_entity_placeholders(dataset, language):

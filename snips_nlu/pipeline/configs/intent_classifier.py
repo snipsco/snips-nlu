@@ -119,7 +119,7 @@ class IntentClassifierDataAugmentationConfig(Config):
     def __init__(self, min_utterances=20, noise_factor=5,
                  add_builtin_entities_examples=True, unknown_word_prob=0,
                  unknown_words_replacement_string=None,
-                 max_unknown_words=None, return_top_n_intents = False,
+                 max_unknown_words=None, return_top_n_intents=False,
                  top_n_intents_count=0):
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor

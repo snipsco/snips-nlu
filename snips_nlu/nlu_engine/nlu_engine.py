@@ -152,9 +152,9 @@ class SnipsNLUEngine(ProcessingUnit):
                 final_result = []
                 for item in res:
                     resolved_slots = self.resolve_slots(text, item[RES_SLOTS])
-                    final_result.append(parsing_result(text, 
-                                    intent=item[RES_INTENT],
-                                    slots=resolved_slots))
+                    final_result.append(parsing_result(text,
+                                                       intent=item[RES_INTENT],
+                                                       slots=resolved_slots))
                 return final_result
         return empty_result(text)
 

@@ -50,10 +50,12 @@ class DeterministicIntentParser(IntentParser):
         if config is None:
             config = self.config_type()
         super(DeterministicIntentParser, self).__init__(config, **shared)
+        self._slot_names_to_entities = None
         self.language = None
         self.regexes_per_intent = None
         self.group_names_to_slot_names = None
         self.slot_names_to_entities = None
+        self.builtin_scope = None
 
     @property
     def stop_words(self):
@@ -63,6 +65,20 @@ class DeterministicIntentParser(IntentParser):
             return get_stop_words(self.language)
         except MissingResource:
             return set()
+
+    @property
+    def slot_names_to_entities(self):
+        return self._slot_names_to_entities
+
+    @slot_names_to_entities.setter
+    def slot_names_to_entities(self, value):
+        self._slot_names_to_entities = value
+        if value is None:
+            self.builtin_scope = None
+        else:
+            self.builtin_scope = {
+                ent for slot_mapping in itervalues(value)
+                for ent in itervalues(slot_mapping) if is_builtin_entity(ent)}
 
     @property
     def patterns(self):
@@ -134,7 +150,7 @@ class DeterministicIntentParser(IntentParser):
             intents = [intents]
 
         builtin_entities = self.builtin_entity_parser.parse(
-            text, use_cache=True)
+            text, scope=self.builtin_scope, use_cache=True)
         custom_entities = self.custom_entity_parser.parse(
             text, use_cache=True)
         all_entities = builtin_entities + custom_entities

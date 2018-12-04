@@ -137,11 +137,25 @@ class LogRegIntentClassifier(IntentClassifier):
 
         intents_probas = sorted(zip(self.intent_list, proba_vec[0]),
                                 key=lambda p: -p[1])
-        for intent, proba in intents_probas:
-            if intent is None:
-                return None
-            if intents_filter is None or intent in intents_filter:
-                return intent_classification_result(intent, proba)
+        augmentation_config = self.config.data_augmentation_config
+        if augmentation_config.return_top_n_intents:
+            i_list = []
+            count = 0
+            for intent, proba in intents_probas:
+                if count == augmentation_config.top_n_intents_count:
+                    break
+                if intent is None:
+                    continue
+                if intents_filter is None or intent in intents_filter:
+                    i_list.append(intent_classification_result(intent, proba))
+                    count += 1
+            return i_list
+        else:
+            for intent, proba in intents_probas:
+                if intent is None:
+                    return None
+                if intents_filter is None or intent in intents_filter:
+                    return intent_classification_result(intent, proba)
         return None
 
     def _predict_proba(self, X, intents_filter):  # pylint: disable=C0103

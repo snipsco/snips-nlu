@@ -141,11 +141,21 @@ class SnipsNLUEngine(ProcessingUnit):
 
         for parser in self.intent_parsers:
             res = parser.parse(text, intents)
-            if is_empty(res):
-                continue
-            resolved_slots = self.resolve_slots(text, res[RES_SLOTS])
-            return parsing_result(text, intent=res[RES_INTENT],
-                                  slots=resolved_slots)
+            if isinstance(res, dict):
+                if is_empty(res):
+                    continue
+                resolved_slots = self.resolve_slots(text, res[RES_SLOTS])
+                return parsing_result(text, intent=res[RES_INTENT],
+                                      slots=resolved_slots)
+
+            if isinstance(res, list):
+                final_result = []
+                for item in res:
+                    resolved_slots = self.resolve_slots(text, item[RES_SLOTS])
+                    final_result.append(parsing_result(text, 
+                                    intent=item[RES_INTENT],
+                                    slots=resolved_slots))
+                return final_result
         return empty_result(text)
 
     def resolve_slots(self, text, slots):

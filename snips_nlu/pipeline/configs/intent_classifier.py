@@ -4,7 +4,8 @@ from copy import deepcopy
 
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
-from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import (
+    CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
 from snips_nlu.utils import classproperty
@@ -126,6 +127,8 @@ class IntentClassifierDataAugmentationConfig(Config):
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
+        if max_unknown_words is not None and max_unknown_words < 1:
+            raise ValueError("max_unknown_words must be None or >= 1")
         self.max_unknown_words = max_unknown_words
         if unknown_word_prob > 0 and unknown_words_replacement_string is None:
             raise ValueError("unknown_word_prob is positive (%s) but the "

@@ -139,9 +139,22 @@ class DeterministicIntentParser(IntentParser):
         self.group_names_to_slot_names = _get_group_names_to_slot_names(
             self.slot_names_to_entities)
 
+        # Do not use ambiguous patterns that appear in more than one intent
+        all_patterns = set()
+        ambiguous_patterns = set()
+        intent_patterns = dict()
         for intent_name, intent in iteritems(dataset[INTENTS]):
+            patterns = self._generate_patterns(intent[UTTERANCES],
+                                               entity_placeholders)
             patterns = [p for p in patterns
                         if len(p) < self.config.max_pattern_length]
+            existing_patterns = {p for p in patterns if p in all_patterns}
+            ambiguous_patterns.update(existing_patterns)
+            all_patterns.update(set(patterns))
+            intent_patterns[intent_name] = patterns
+
+        for intent_name, patterns in iteritems(intent_patterns):
+            patterns = [p for p in patterns if p not in ambiguous_patterns]
             patterns = patterns[:self.config.max_queries]
             regexes = [re.compile(p, re.IGNORECASE) for p in patterns]
             self.regexes_per_intent[intent_name] = regexes

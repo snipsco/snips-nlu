@@ -24,21 +24,6 @@ from snips_nlu.utils import NotTrained
 class TestDeterministicIntentParser(FixtureTest):
     def setUp(self):
         super(TestDeterministicIntentParser, self).setUp()
-        dup_dataset_stream = io.StringIO("""
----
-type: intent
-name: dummy_intent_1
-utterances:
-  - Hello world
-  
----
-type: intent
-name: dummy_intent_2
-utterances:
-  - Hello world""")
-        self.duplicated_utterances_dataset = Dataset.from_yaml_files(
-            "en", [dup_dataset_stream]).json
-
         slots_dataset_stream = io.StringIO("""
 ---
 type: intent
@@ -115,23 +100,29 @@ values:
 
         self.assertEqual(expected_intent, parsing[RES_INTENT])
 
-    def test_should_get_intent_when_filter(self):
+    def test_should_ignore_ambiguous_utterances(self):
         # Given
-        dataset = validate_and_format_dataset(
-            self.duplicated_utterances_dataset)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: dummy_intent_1
+utterances:
+  - Hello world
 
+---
+type: intent
+name: dummy_intent_2
+utterances:
+  - Hello world""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
         text = "Hello world"
-        intent_name_1 = "dummy_intent_1"
-        intent_name_2 = "dummy_intent_2"
 
         # When
-        res_1 = parser.parse(text, intent_name_1)
-        res_2 = parser.parse(text, [intent_name_2])
+        res = parser.parse(text)
 
         # Then
-        self.assertEqual(intent_name_1, res_1[RES_INTENT][RES_INTENT_NAME])
-        self.assertEqual(intent_name_2, res_2[RES_INTENT][RES_INTENT_NAME])
+        self.assertIsNone(res[RES_INTENT])
 
     def test_should_not_parse_when_not_fitted(self):
         # Given

@@ -124,13 +124,28 @@ class ProbabilisticIntentParser(IntentParser):
         if isinstance(intents, str):
             intents = [intents]
 
-        intent_result = self.intent_classifier.get_intent(text, intents)
-        if intent_result is None:
+        data_augmentation_config = self.config.intent_classifier_config\
+                                   .data_augmentation_config
+
+        intent_results = self.intent_classifier.get_intent(text, intents)
+        if intent_results is None:
             return empty_result(text)
 
-        intent_name = intent_result[RES_INTENT_NAME]
-        slots = self.slot_fillers[intent_name].get_slots(text)
-        return parsing_result(text, intent_result, slots)
+        if data_augmentation_config.return_top_n_intents:
+            final_output = []
+            for intent_result in intent_results:
+                intent_name = intent_result[RES_INTENT_NAME]
+                slots = self.slot_fillers[intent_name].get_slots(text)
+                final_output.append(parsing_result(text, intent_result, slots))
+            return final_output
+        else:
+            if intent_results is None:
+                return empty_result(text)
+
+            intent_name = intent_results[RES_INTENT_NAME]
+            slots = self.slot_fillers[intent_name].get_slots(text)
+            return parsing_result(text, intent_results, slots)
+
 
     @check_persisted_path
     def persist(self, path):

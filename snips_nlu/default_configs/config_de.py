@@ -4,7 +4,8 @@ CONFIG = {
         {
             "unit_name": "deterministic_intent_parser",
             "max_queries": 100,
-            "max_pattern_length": 1000
+            "max_pattern_length": 1000,
+            "ignore_stop_words": True
         },
         {
             "unit_name": "probabilistic_intent_parser",

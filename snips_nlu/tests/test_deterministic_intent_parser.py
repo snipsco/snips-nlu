@@ -86,7 +86,8 @@ values:
         mock_get_stop_words.return_value = {"a", "hey"}
         dataset = validate_and_format_dataset(self.slots_dataset)
 
-        parser = DeterministicIntentParser().fit(dataset)
+        config = DeterministicIntentParserConfig(ignore_stop_words=True)
+        parser = DeterministicIntentParser(config).fit(dataset)
         text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -419,8 +420,8 @@ utterances:
 
     def test_should_be_serializable_before_fitting(self):
         # Given
-        config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_pattern_length=43)
+        config = DeterministicIntentParserConfig(
+            max_queries=42, max_pattern_length=43, ignore_stop_words=True)
         parser = DeterministicIntentParser(config=config)
 
         # When
@@ -431,7 +432,8 @@ utterances:
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_pattern_length": 43
+                "max_pattern_length": 43,
+                "ignore_stop_words": True
             },
             "language_code": None,
             "group_names_to_slot_names": None,
@@ -476,8 +478,8 @@ values:
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
         mock_get_stop_words.return_value = {"a", "me"}
-        config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_pattern_length=100)
+        config = DeterministicIntentParserConfig(
+            max_queries=42, max_pattern_length=100, ignore_stop_words=True)
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
@@ -488,7 +490,8 @@ values:
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_pattern_length": 100
+                "max_pattern_length": 100,
+                "ignore_stop_words": True
             },
             "language_code": "en",
             "group_names_to_slot_names": {

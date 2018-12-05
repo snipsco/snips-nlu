@@ -19,7 +19,7 @@ from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import normalize_token, tokenize, tokenize_light
-from snips_nlu.resources import MissingResource, get_stop_words
+from snips_nlu.resources import get_stop_words
 from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
     unresolved_slot)
@@ -68,9 +68,9 @@ class DeterministicIntentParser(IntentParser):
         if value is None:
             self.stop_words = None
         else:
-            try:
+            if self.config.ignore_stop_words:
                 self.stop_words = get_stop_words(self.language)
-            except MissingResource:
+            else:
                 self.stop_words = set()
 
     @property
@@ -213,7 +213,7 @@ class DeterministicIntentParser(IntentParser):
         current_idx = 0
         cleaned_string = ""
         for token in tokens:
-            if normalize_token(token) in self.stop_words:
+            if self.stop_words and normalize_token(token) in self.stop_words:
                 token.value = "".join(" " for _ in range(len(token.value)))
             prefix_length = token.start - current_idx
             cleaned_string += "".join((" " for _ in range(prefix_length)))

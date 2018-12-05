@@ -179,24 +179,21 @@ installed `snips-nlu`, fetched the english resources and downloaded one of the `
 
 .. code-block:: python
 
-    from __future__ import unicode_literals, print_function
+    >>> from __future__ import unicode_literals, print_function
+    >>> import io
+    >>> import json
+    >>> from snips_nlu import SnipsNLUEngine, load_resources
+    >>> from snips_nlu.default_configs import CONFIG_EN
+    >>> with io.open("sample_datasets/lights_dataset.json") as f:
+    ...     sample_dataset = json.load(f)
+    >>> load_resources("en")
+    >>> nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
+    >>> nlu_engine = nlu_engine.fit(sample_dataset)
+    >>> text = "Please turn the light on in the kitchen"
+    >>> parsing = nlu_engine.parse(text)
+    >>> parsing["intent"]["intentName"]
+    'turnLightOn'
 
-    import io
-    import json
-
-    from snips_nlu import SnipsNLUEngine, load_resources
-    from snips_nlu.default_configs import CONFIG_EN
-
-    with io.open("sample_dataset.json") as f:
-        sample_dataset = json.load(f)
-
-    load_resources("en")
-    nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
-    nlu_engine.fit(sample_dataset)
-
-    text = "What will be the weather in San Francisco next week?"
-    parsing = nlu_engine.parse(text)
-    print(json.dumps(parsing, indent=2))
 
 What it does is training an NLU engine on a sample weather dataset and parsing
 a weather query.

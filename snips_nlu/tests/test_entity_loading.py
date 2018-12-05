@@ -13,7 +13,7 @@ from snips_nlu.dataset import Entity, EntityFormatError
 class TestEntityLoading(TestCase):
     def test_from_yaml_file(self):
         # Given
-        yaml_stream = io.StringIO("""
+        entity = Entity.from_yaml(io.StringIO("""
 # Location Entity
 ---
 type: entity
@@ -25,11 +25,9 @@ values:
 - [new york, big apple]
 - [paris, city of lights]
 - london
-        """)
-        yaml_dict = yaml.safe_load(yaml_stream)
+        """))
 
         # When
-        entity = Entity.from_yaml(yaml_dict)
         entity_dict = entity.json
 
         # Then
@@ -60,7 +58,7 @@ values:
 
     def test_from_yaml_file_with_defaults(self):
         # Given
-        yaml_stream = io.StringIO("""
+        entity = Entity.from_yaml(io.StringIO("""
 # Location Entity
 ---
 name: location
@@ -68,11 +66,9 @@ values:
 - [new york, big apple]
 - [paris, city of lights]
 - london
-        """)
-        yaml_dict = yaml.safe_load(yaml_stream)
+        """))
 
         # When
-        entity = Entity.from_yaml(yaml_dict)
         entity_dict = entity.json
 
         # Then
@@ -113,11 +109,10 @@ values:
 - [paris, city of lights]
 - london
         """)
-        yaml_dict = yaml.safe_load(yaml_stream)
 
         # When / Then
         with self.assertRaises(EntityFormatError):
-            Entity.from_yaml(yaml_dict)
+            Entity.from_yaml(yaml_stream)
 
     def test_fail_from_yaml_file_when_no_name(self):
         # Given

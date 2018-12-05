@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from builtins import range
 
 from mock import patch
@@ -8,178 +9,57 @@ from mock import patch
 from snips_nlu.constants import (
     DATA, END, ENTITY, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
     RES_SLOTS, SLOT_NAME, START, TEXT)
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import Dataset, validate_and_format_dataset
 from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _get_range_shift, _replace_entities_with_placeholders,
-    _replace_tokenized_out_characters)
+    _get_range_shift, _replace_entities_with_placeholders)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
-from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest, \
-    SAMPLE_DATASET, TEST_PATH
+from snips_nlu.tests.utils import (
+    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH)
 from snips_nlu.utils import NotTrained
 
 
 class TestDeterministicIntentParser(FixtureTest):
     def setUp(self):
         super(TestDeterministicIntentParser, self).setUp()
-        self.duplicated_utterances_dataset = {
-            "entities": {},
-            "intents": {
-                "dummy_intent_1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "Hello world"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "dummy_intent_2": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "Hello world"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            },
-            "language": "en"
-        }
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: dummy_intent_1
+slots:
+  - name: dummy_slot_name
+    entity: dummy_entity_1
+  - name: dummy_slot_name2
+    entity: dummy_entity_2
+  - name: startTime
+    entity: snips/datetime
+utterances:
+  - >
+      This is a [dummy_slot_name](dummy_1) query with another 
+      [dummy_slot_name2](dummy_2) [startTime](at 10p.m.) or 
+      [startTime](tomorrow)
+  - "This    is  a  [dummy_slot_name](dummy_1) "  
+  - "[startTime](tomorrow evening) there is a [dummy_slot_name](dummy_1)"
+  
+---
+type: entity
+name: dummy_entity_1
+automatically_extensible: no
+values:
+- [dummy_a, dummy 2a, dummy a, 2 dummy a]
+- [dummy_b, dummy b, dummy_bb, dummy_b]
+- dummy d
 
-        self.slots_dataset = {
-            "entities": {
-                "dummy_entity_1": {
-                    "automatically_extensible": False,
-                    "use_synonyms": True,
-                    "matching_strictness": 1.0,
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy_a",
-                                "dummy 2a",
-                                "dummy a",
-                                "2 dummy a"
-                            ],
-                            "value": "dummy_a"
-                        },
-                        {
-                            "synonyms": [
-                                "dummy_b",
-                                "dummy_bb",
-                                "dummy b"
-                            ],
-                            "value": "dummy_b"
-                        },
-                        {
-                            "synonyms": [
-                                "dummy d"
-                            ],
-                            "value": "dummy d"
-                        }
-                    ]
-                },
-                "dummy_entity_2": {
-                    "automatically_extensible": False,
-                    "use_synonyms": True,
-                    "matching_strictness": 1.0,
-                    "data": [
-                        {
-                            "synonyms": [
-                                "dummy_c",
-                                "dummy_cc",
-                                "dummy c",
-                                "3p.m."
-                            ],
-                            "value": "dummy_c"
-                        }
-                    ]
-                },
-                "snips/datetime": {}
-            },
-            "intents": {
-                "dummy_intent_1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "This is a "
-                                },
-                                {
-                                    "text": "dummy_1",
-                                    "slot_name": "dummy_slot_name",
-                                    "entity": "dummy_entity_1"
-                                },
-                                {
-                                    "text": " query with another "
-                                },
-                                {
-                                    "text": "dummy_2",
-                                    "slot_name": "dummy_slot_name2",
-                                    "entity": "dummy_entity_2"
-                                },
-                                {
-                                    "text": " "
-                                },
-                                {
-                                    "text": "at 10p.m.",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                },
-                                {
-                                    "text": " or "
-                                },
-                                {
-                                    "text": "next monday",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                }
-
-                            ]
-                        },
-                        {
-                            "data": [
-                                {
-                                    "text": "This    is  a  "
-                                },
-                                {
-                                    "text": "dummy_1",
-                                    "slot_name": "dummy_slot_name",
-                                    "entity": "dummy_entity_1"
-                                },
-                                {
-                                    "text": " "
-                                }
-                            ]
-                        },
-                        {
-                            "data": [
-                                {
-                                    "text": "tomorrow evening",
-                                    "slot_name": "startTime",
-                                    "entity": "snips/datetime"
-                                },
-                                {
-                                    "text": " there is a "
-                                },
-                                {
-                                    "text": "dummy_1",
-                                    "slot_name": "dummy_slot_name",
-                                    "entity": "dummy_entity_1"
-                                }
-                            ]
-                        },
-                    ]
-                }
-            },
-            "language": "en",
-        }
+---
+type: entity
+name: dummy_entity_2
+automatically_extensible: no
+values:
+- [dummy_c, 3p.m., dummy_cc, dummy c]""")
+        self.slots_dataset = Dataset.from_yaml_files("en", [
+            slots_dataset_stream]).json
 
     def test_should_get_intent(self):
         # Given
@@ -199,23 +79,51 @@ class TestDeterministicIntentParser(FixtureTest):
 
         self.assertEqual(expected_intent, parsing[RES_INTENT])
 
-    def test_should_get_intent_when_filter(self):
+    @patch("snips_nlu.intent_parser.deterministic_intent_parser"
+           ".get_stop_words")
+    def test_should_get_intent_with_stop_words(self, mock_get_stop_words):
         # Given
-        dataset = validate_and_format_dataset(
-            self.duplicated_utterances_dataset)
+        mock_get_stop_words.return_value = {"a", "hey"}
+        dataset = validate_and_format_dataset(self.slots_dataset)
 
-        parser = DeterministicIntentParser().fit(dataset)
-        text = "Hello world"
-        intent_name_1 = "dummy_intent_1"
-        intent_name_2 = "dummy_intent_2"
+        config = DeterministicIntentParserConfig(ignore_stop_words=True)
+        parser = DeterministicIntentParser(config).fit(dataset)
+        text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
-        res_1 = parser.parse(text, intent_name_1)
-        res_2 = parser.parse(text, [intent_name_2])
+        parsing = parser.parse(text)
 
         # Then
-        self.assertEqual(intent_name_1, res_1[RES_INTENT][RES_INTENT_NAME])
-        self.assertEqual(intent_name_2, res_2[RES_INTENT][RES_INTENT_NAME])
+        probability = 1.0
+        expected_intent = intent_classification_result(
+            intent_name="dummy_intent_1", probability=probability)
+
+        self.assertEqual(expected_intent, parsing[RES_INTENT])
+
+    def test_should_ignore_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: dummy_intent_1
+utterances:
+  - Hello world
+
+---
+type: intent
+name: dummy_intent_2
+utterances:
+  - Hello world""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "Hello world"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        self.assertIsNone(res[RES_INTENT])
 
     def test_should_not_parse_when_not_fitted(self):
         # Given
@@ -462,7 +370,7 @@ class TestDeterministicIntentParser(FixtureTest):
 
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
-        inputs = ("string%s" % i for i in range(10))
+        inputs = ["string%s" % i for i in range(10)]
         utterances = [{
             DATA: [{
                 TEXT: string,
@@ -512,8 +420,8 @@ class TestDeterministicIntentParser(FixtureTest):
 
     def test_should_be_serializable_before_fitting(self):
         # Given
-        config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_pattern_length=43)
+        config = DeterministicIntentParserConfig(
+            max_queries=42, max_pattern_length=43, ignore_stop_words=True)
         parser = DeterministicIntentParser(config=config)
 
         # When
@@ -524,7 +432,8 @@ class TestDeterministicIntentParser(FixtureTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_pattern_length": 43
+                "max_pattern_length": 43,
+                "ignore_stop_words": True
             },
             "language_code": None,
             "group_names_to_slot_names": None,
@@ -539,23 +448,38 @@ class TestDeterministicIntentParser(FixtureTest):
                                expected_dict)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
-           "._generate_patterns")
-    def test_should_be_serializable(self, mocked_generate_regexes):
+           ".get_stop_words")
+    def test_should_be_serializable(self, mock_get_stop_words):
         # Given
+        dataset_stream = io.StringIO(
+            """
+---
+type: intent
+name: searchFlight
+slots:
+  - name: origin
+    entity: city
+  - name: destination
+    entity: city
+utterances:
+  - find me a flight from [origin](Paris) to [destination](New York)
+  - I need a flight to [destination](Berlin)
 
-        # pylint: disable=unused-argument
-        def mock_generate_patterns(utterances, joined_entity_utterances,
-                                   group_names_to_slot_names, language):
-            patterns = ["mocked_regex_%s" % i for i in range(len(utterances))]
-            group_to_slot = {"group_0": "dummy slot name"}
-            return patterns, group_to_slot
+---
+type: entity
+name: city
+values:
+  - london
+  - [new york, big apple]
+  - [paris, city of lights]
+            """
+        )
 
-        # pylint: enable=unused-argument
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
-        mocked_generate_regexes.side_effect = mock_generate_patterns
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        config = DeterministicIntentParserConfig(max_queries=42,
-                                                 max_pattern_length=100)
+        mock_get_stop_words.return_value = {"a", "me"}
+        config = DeterministicIntentParserConfig(
+            max_queries=42, max_pattern_length=100, ignore_stop_words=True)
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
@@ -566,31 +490,26 @@ class TestDeterministicIntentParser(FixtureTest):
             "config": {
                 "unit_name": "deterministic_intent_parser",
                 "max_queries": 42,
-                "max_pattern_length": 100
+                "max_pattern_length": 100,
+                "ignore_stop_words": True
             },
             "language_code": "en",
             "group_names_to_slot_names": {
-                "group_0": "dummy slot name"
+                "group0": "destination",
+                "group1": "origin",
             },
             "patterns": {
-                "dummy_intent_1": [
-                    "mocked_regex_0",
-                    "mocked_regex_1",
-                    "mocked_regex_2",
-                    "mocked_regex_3"
-                ],
-                "dummy_intent_2": [
-                    "mocked_regex_0"
+                "searchFlight": [
+                    "^\\s*find\\s*flight\\s*from\\s*(?P<group1>%CITY%)\\s*to"
+                    "\\s*(?P<group0>%CITY%)\\s*$",
+                    "^\\s*i\\s*need\\s*flight\\s*to\\s*(?P<group0>%CITY%)"
+                    "\\s*$",
                 ]
             },
             "slot_names_to_entities": {
-                "dummy_intent_1": {
-                    "dummy_slot_name": "dummy_entity_1",
-                    "dummy_slot_name3": "dummy_entity_2",
-                    "dummy_slot_name2": "dummy_entity_2"
-                },
-                "dummy_intent_2": {
-                    "dummy slot nàme": "dummy_entity_1"
+                "searchFlight": {
+                    "destination": "city",
+                    "origin": "city",
                 }
             }
         }
@@ -613,14 +532,16 @@ class TestDeterministicIntentParser(FixtureTest):
                 "world_group": "world_slot"
             },
             "patterns": {
-                "intent_name": [
+                "my_intent": [
                     "(?P<hello_group>hello?)",
                     "(?P<world_group>world$)"
                 ]
             },
             "slot_names_to_entities": {
-                "hello_slot": "hello_entity",
-                "world_slot": "world_entity"
+                "my_intent": {
+                    "hello_slot": "hello_entity",
+                    "world_slot": "world_entity"
+                }
             }
         }
         self.tmp_file_path.mkdir()
@@ -634,7 +555,7 @@ class TestDeterministicIntentParser(FixtureTest):
 
         # Then
         patterns = {
-            "intent_name": [
+            "my_intent": [
                 "(?P<hello_group>hello?)",
                 "(?P<world_group>world$)"
             ]
@@ -644,8 +565,10 @@ class TestDeterministicIntentParser(FixtureTest):
             "world_group": "world_slot"
         }
         slot_names_to_entities = {
-            "hello_slot": "hello_entity",
-            "world_slot": "world_entity"
+            "my_intent": {
+                "hello_slot": "hello_entity",
+                "world_slot": "world_entity"
+            }
         }
         config = DeterministicIntentParserConfig(max_queries=42,
                                                  max_pattern_length=43)
@@ -815,13 +738,3 @@ class TestDeterministicIntentParser(FixtureTest):
         # When / Then
         self.assertEqual(-1, _get_range_shift((6, 7), ranges_mapping))
         self.assertEqual(2, _get_range_shift((12, 13), ranges_mapping))
-
-    def test_should_replace_tokenized_out_characters(self):
-        # Given
-        string = ": hello, it's me !  "
-
-        # When
-        cleaned_string = _replace_tokenized_out_characters(string, "en", "_")
-
-        # Then
-        self.assertEqual("__hello__it_s_me_!__", cleaned_string)

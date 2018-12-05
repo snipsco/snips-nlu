@@ -41,11 +41,11 @@ extras_require = {
         "sphinx-rtd-theme>=0.2.4,<0.3"
     ],
     "metrics": [
-        "snips_nlu_metrics>=0.13,<0.14",
+        "snips_nlu_metrics>=0.14,<0.15",
     ],
     "test": [
         "mock>=2.0,<3.0",
-        "snips_nlu_metrics>=0.13,<0.14",
+        "snips_nlu_metrics>=0.14,<0.15",
         "pylint>=1.8,<2.0",
         "coverage>=4.4.2,<5.0"
     ]

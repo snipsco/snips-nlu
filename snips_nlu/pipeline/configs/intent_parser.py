@@ -71,6 +71,8 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         max_queries (int, optional): Maximum number of regex patterns per
             intent. 50 by default.
         max_pattern_length (int, optional): Maximum length of regex patterns.
+        ignore_stop_words (bool, optional): If True, stop words will be
+            removed before building patterns.
 
 
     This allows to deactivate the usage of regular expression when they are
@@ -82,9 +84,11 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
     """
 
     # pylint: disable=super-init-not-called
-    def __init__(self, max_queries=100, max_pattern_length=1000):
+    def __init__(self, max_queries=100, max_pattern_length=1000,
+                 ignore_stop_words=False):
         self.max_queries = max_queries
         self.max_pattern_length = max_pattern_length
+        self.ignore_stop_words = ignore_stop_words
 
     # pylint: enable=super-init-not-called
 
@@ -103,7 +107,8 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         return {
             "unit_name": self.unit_name,
             "max_queries": self.max_queries,
-            "max_pattern_length": self.max_pattern_length
+            "max_pattern_length": self.max_pattern_length,
+            "ignore_stop_words": self.ignore_stop_words
         }
 
     @classmethod

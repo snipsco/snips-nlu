@@ -242,11 +242,7 @@ def empty_result(input):  # pylint:disable=redefined-builtin
     Example:
 
         >>> empty_result("foo bar")
-        {
-            "input": "foo bar",
-            "intent": None,
-            "slots": None
-        }
+        {'input': 'foo bar', 'intent': None, 'slots': None}
     """
     return parsing_result(input=input, intent=None, slots=None)
 

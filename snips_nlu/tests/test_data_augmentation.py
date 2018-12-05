@@ -189,9 +189,9 @@ class TestDataAugmentation(SnipsTest):
         # Given
         language = LANGUAGE_EN
         texts = [
-            ("university of new york", "University of New York"),
-            ("JOHN'S SMITH", "John s Smith"),
-            ("is that it", "is that it")
+            ("the new yorker", "the New Yorker"),
+            ("JOHN AND SMITH", "John and Smith"),
+            ("you and me", "you and me")
         ]
 
         # When
@@ -206,10 +206,10 @@ class TestDataAugmentation(SnipsTest):
         language = LANGUAGE_EN
         ratio = 1
         entities = {
-            "someOneHouse": {
+            "person": {
                 "capitalize": False
             },
-            "university": {
+            "magazine": {
                 "capitalize": True
             }
         }
@@ -217,29 +217,29 @@ class TestDataAugmentation(SnipsTest):
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "i love "
                     },
                     {
-                        "text": "university of new york",
-                        "entity": "university"
+                        "text": "the new yorker",
+                        "entity": "magazine"
                     },
                     {
-                        "text": " right now or "
+                        "text": " and "
                     },
                     {
-                        "text": "university of London",
-                        "entity": "university"
+                        "text": "rock and rolla",
+                        "entity": "magazine"
                     }
                 ]
             },
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "let's visit"
                     },
                     {
-                        "text": "john's smith house",
-                        "entity": "someOneHouse"
+                        "text": "andrew and smith",
+                        "entity": "person"
                     },
                     {
                         "text": " right now"
@@ -258,29 +258,29 @@ class TestDataAugmentation(SnipsTest):
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "i love "
                     },
                     {
-                        "text": "University of New York",
-                        "entity": "university"
+                        "text": "the New Yorker",
+                        "entity": "magazine"
                     },
                     {
-                        "text": " right now or "
+                        "text": " and "
                     },
                     {
-                        "text": "University of London",
-                        "entity": "university"
+                        "text": "Rock and Rolla",
+                        "entity": "magazine"
                     }
                 ]
             },
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "let's visit"
                     },
                     {
-                        "text": "john's smith house",
-                        "entity": "someOneHouse"
+                        "text": "andrew and smith",
+                        "entity": "person"
                     },
                     {
                         "text": " right now"

@@ -264,7 +264,7 @@ class TestLogRegIntentClassifier(FixtureTest):
 
     def test_return_top_n_intent_if_specified(self):
         aug_config = IntentClassifierDataAugmentationConfig(
-            return_top_n_intents = True, top_n_intents_count = 2)
+            return_top_n_intents=True, top_n_intents_count=2)
         log_reg_conf = LogRegIntentClassifierConfig(
             data_augmentation_config=aug_config)
         dataset = validate_and_format_dataset(SAMPLE_DATASET)

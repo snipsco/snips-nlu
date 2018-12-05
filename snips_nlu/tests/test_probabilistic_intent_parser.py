@@ -283,7 +283,7 @@ class TestProbabilisticIntentParser(FixtureTest):
     def test_should_be_able_to_parse_multiple_intent(self):
         aug_config = IntentClassifierDataAugmentationConfig(
             return_top_n_intents=True, top_n_intents_count=2)
-        log_reg_conf=LogRegIntentClassifierConfig(
+        log_reg_conf = LogRegIntentClassifierConfig(
             data_augmentation_config=aug_config)
         conf = ProbabilisticIntentParserConfig(
             intent_classifier_config=log_reg_conf)

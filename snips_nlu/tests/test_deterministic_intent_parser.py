@@ -463,7 +463,7 @@ utterances:
   - find me a flight from [origin](Paris) to [destination](New York)
   - I need a flight to [destination](Berlin)
 
----         
+---
 type: entity
 name: city
 values:

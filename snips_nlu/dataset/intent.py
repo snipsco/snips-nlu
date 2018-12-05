@@ -3,10 +3,9 @@ from __future__ import absolute_import, print_function
 from abc import ABCMeta, abstractmethod
 from builtins import object
 from io import IOBase
-
-import yaml
 from pathlib import Path
 
+import yaml
 from deprecation import deprecated
 from future.utils import with_metaclass
 

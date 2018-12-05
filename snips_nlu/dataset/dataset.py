@@ -3,10 +3,10 @@ from __future__ import print_function, unicode_literals
 
 import io
 from itertools import cycle
+from pathlib import Path
 
 import yaml
 from deprecation import deprecated
-from pathlib import Path
 from snips_nlu_ontology import get_builtin_entity_examples
 
 from snips_nlu.__about__ import __version__
@@ -160,13 +160,13 @@ class Dataset(object):
         intents = []
         for filename in filenames:
             if isinstance(filename, io.IOBase):
-                _intents, _entities = cls._load_dataset_parts(
+                intents_, entities_ = cls._load_dataset_parts(
                     filename, "stream object")
             else:
                 with io.open(filename, encoding="utf8") as f:
-                    _intents, _entities = cls._load_dataset_parts(f, filename)
-            intents += _intents
-            entities += _entities
+                    intents_, entities_ = cls._load_dataset_parts(f, filename)
+            intents += intents_
+            entities += entities_
         return cls(language, intents, entities)
 
     @classmethod

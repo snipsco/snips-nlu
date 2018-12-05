@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import io
 from unittest import TestCase
 
-import yaml
 from deprecation import fail_if_not_removed
 from mock import patch
 

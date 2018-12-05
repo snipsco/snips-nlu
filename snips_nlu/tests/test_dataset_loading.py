@@ -137,14 +137,9 @@ EXPECTED_DATASET_DICT = {
 
 
 class TestDatasetLoading(TestCase):
-    @patch("snips_nlu.dataset.dataset.io")
-    def test_should_generate_dataset_from_yaml_files(self, mock_io):
+    def test_should_generate_dataset_from_yaml_files(self):
         # Given
-        intent_file_1 = "whoIsGame.yaml"
-        intent_file_2 = "getWeather.yaml"
-        entity_file_1 = "location.yaml"
-
-        who_is_game_yaml = """
+        who_is_game_yaml = io.StringIO("""
 # whoIsGame Intent
 ---
 type: intent
@@ -152,9 +147,9 @@ name: whoIsGame
 utterances:
   - who is the [role](president) of [country](France)
   - who is the [role](CEO) of [company](Google) please
-        """
+        """)
 
-        get_weather_yaml = """
+        get_weather_yaml = io.StringIO("""
 # getWeather Intent
 ---
 type: intent
@@ -162,9 +157,9 @@ name: getWeather
 utterances:
   - what is the weather in [weatherLocation:location](Paris)?
   - is it raining in [weatherLocation] [weatherDate:snips/datetime]
-        """
+        """)
 
-        location_yaml = """
+        location_yaml = io.StringIO("""
 # Location Entity
 ---
 type: entity
@@ -173,22 +168,9 @@ automatically_extensible: true
 values:
 - [new york, big apple]
 - london
-        """
+        """)
 
-        # pylint:disable=unused-argument
-        def mock_open(filename, **kwargs):
-            if filename == intent_file_1:
-                return io.StringIO(who_is_game_yaml)
-            if filename == intent_file_2:
-                return io.StringIO(get_weather_yaml)
-            if filename == entity_file_1:
-                return io.StringIO(location_yaml)
-            return None
-
-        # pylint:enable=unused-argument
-
-        mock_io.open.side_effect = mock_open
-        dataset_files = [intent_file_1, intent_file_2, entity_file_1]
+        dataset_files = [who_is_game_yaml, get_weather_yaml, location_yaml]
 
         # When
         dataset = Dataset.from_yaml_files("en", dataset_files)

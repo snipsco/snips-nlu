@@ -5,11 +5,10 @@ import csv
 import re
 from builtins import str
 from io import IOBase
-
-import yaml
 from pathlib import Path
 
 import six
+import yaml
 from deprecation import deprecated
 from snips_nlu_ontology import get_all_builtin_entities
 
@@ -66,11 +65,11 @@ class Entity(object):
             yaml_dict (dict or :class:`.IOBase`): object containing the YAML
                 definition of the entity. It can be either a stream, or the
                 corresponding python dict.
-                
+
         Examples:
             An entity can be defined with a YAML document following the schema
             illustrated in the example below:
-            
+
             >>> import io
             >>> import json
             >>> entity_yaml = io.StringIO('''

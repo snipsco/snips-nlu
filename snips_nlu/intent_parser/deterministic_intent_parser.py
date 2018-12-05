@@ -5,17 +5,16 @@ import logging
 import re
 from builtins import str
 from collections import defaultdict
-from copy import deepcopy
+from pathlib import Path
 
 from future.utils import iteritems, iterkeys, itervalues
-from pathlib import Path
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
     ENTITY_KIND, INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME,
     START, TEXT, UTTERANCES)
-from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
+from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
@@ -54,9 +53,6 @@ class DeterministicIntentParser(IntentParser):
         self._language = None
         self._slot_names_to_entities = None
         self._group_names_to_slot_names = None
-        self.language = None
-        self.slot_names_to_entities = None
-        self.group_names_to_slot_names = None
         self.slot_names_to_group_names = None
         self.regexes_per_intent = None
         self.builtin_scope = None

@@ -16,7 +16,7 @@ from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
 from snips_nlu.pipeline.configs import (
-    LogRegIntentClassifierConfig)
+    LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
 from snips_nlu.utils import NotTrained
@@ -260,6 +260,18 @@ class TestLogRegIntentClassifier(FixtureTest):
         intent_classifier = LogRegIntentClassifier().fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(None, intent)
+
+
+    def test_return_top_n_intent_if_specified(self):
+        aug_config = IntentClassifierDataAugmentationConfig(
+            return_top_n_intents = True, top_n_intents_count = 2)
+        log_reg_conf = LogRegIntentClassifierConfig(
+            data_augmentation_config=aug_config)
+        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        intent_classifier = LogRegIntentClassifier(
+            config=log_reg_conf).fit(dataset)
+        self.assertEqual(len(intent_classifier.get_intent('dummy test')), 2)
+
 
     def test_log_activation_weights(self):
         # Given

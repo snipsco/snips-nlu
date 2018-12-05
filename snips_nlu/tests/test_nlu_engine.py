@@ -20,7 +20,9 @@ from snips_nlu.entity_parser.custom_entity_parser_usage import \
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
-    ProcessingUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig)
+    ProcessingUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig,
+    IntentClassifierDataAugmentationConfig,
+    LogRegIntentClassifierConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -875,6 +877,19 @@ class TestSnipsNLUEngine(FixtureTest):
         # When / Then
         engine.fit(dataset)
         engine.parse("ya", intents=["dummy_intent"])
+
+    def test_should_be_able_to_parse_multiple_intent(self):
+        
+        aug_config = IntentClassifierDataAugmentationConfig(
+            return_top_n_intents=True, top_n_intents_count=2)
+        log_reg_conf=LogRegIntentClassifierConfig(
+            data_augmentation_config=aug_config)
+        parser_conf = ProbabilisticIntentParserConfig(
+            intent_classifier_config=log_reg_conf)
+        config = NLUEngineConfig([parser_conf])
+        engine = SnipsNLUEngine(config=config).fit(BEVERAGE_DATASET)
+        result = engine.parse("get me some coffee")
+        self.assertEqual(len(result), 2)
 
 
 class TestIntentParser1Config(ProcessingUnitConfig):

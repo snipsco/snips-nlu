@@ -12,7 +12,8 @@ from snips_nlu.intent_parser import ProbabilisticIntentParser
 from snips_nlu.pipeline.configs import (CRFSlotFillerConfig,
                                         LogRegIntentClassifierConfig,
                                         ProcessingUnitConfig,
-                                        ProbabilisticIntentParserConfig)
+                                        ProbabilisticIntentParserConfig,
+                                        IntentClassifierDataAugmentationConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
@@ -277,6 +278,19 @@ class TestProbabilisticIntentParser(FixtureTest):
         feature_weights_2 = fitted_parser_2.slot_fillers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
+
+
+    def test_should_be_able_to_parse_multiple_intent(self):
+        aug_config = IntentClassifierDataAugmentationConfig(
+            return_top_n_intents=True, top_n_intents_count=2)
+        log_reg_conf=LogRegIntentClassifierConfig(
+            data_augmentation_config=aug_config)
+        conf = ProbabilisticIntentParserConfig(
+            intent_classifier_config=log_reg_conf)
+        top_n_parser = ProbabilisticIntentParser(conf)
+        top_n_parser.fit(BEVERAGE_DATASET)
+        result = top_n_parser.parse("get me some coffee")
+        self.assertEqual(len(result), 2)
 
 
 class TestIntentClassifierConfig(ProcessingUnitConfig):

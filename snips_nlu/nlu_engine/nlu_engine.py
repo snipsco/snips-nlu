@@ -164,7 +164,8 @@ class SnipsNLUEngine(ProcessingUnit):
         for slot in slots:
             entity_name = slot[RES_ENTITY]
             raw_value = slot[RES_VALUE]
-            if is_builtin_entity(entity_name):
+            is_builtin = is_builtin_entity(entity_name)
+            if is_builtin:
                 entities = builtin_entities
                 parser = self.builtin_entity_parser
                 slot_builder = builtin_slot
@@ -190,8 +191,10 @@ class SnipsNLUEngine(ProcessingUnit):
                 matches = parser.parse(
                     raw_value, scope=[entity_name], use_cache=use_cache)
                 if matches:
-                    resolved_slot = slot_builder(
-                        slot, matches[0][resolved_value_key])
+                    match = matches[0]
+                    if is_builtin or len(match[RES_VALUE]) == len(raw_value):
+                        resolved_slot = slot_builder(
+                            slot, match[resolved_value_key])
 
             if resolved_slot is None and extensible:
                 resolved_slot = slot_builder(slot)

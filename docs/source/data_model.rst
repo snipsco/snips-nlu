@@ -162,6 +162,7 @@ here is ``"Custom"``. There are two classes of slot types or entity:
 
 - **Builtin entities**
 - **Custom entities**
+
 |
 
 .. _builtin_entity_resolution:

@@ -38,7 +38,8 @@ extras_require = {
     "doc": [
         "sphinx>=1.8,<1.9",
         "sphinxcontrib-napoleon>=0.6.1,<0.7",
-        "sphinx-rtd-theme>=0.2.4,<0.3"
+        "sphinx-rtd-theme>=0.2.4,<0.3",
+        "sphinx-tabs>=1.1,<1.2"
     ],
     "metrics": [
         "snips_nlu_metrics>=0.14,<0.15",

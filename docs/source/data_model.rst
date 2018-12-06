@@ -160,9 +160,10 @@ In Snips NLU, extracted slots are represented within the output in this way:
 In this example, the slot value contains a ``"kind"`` attribute whose value
 here is ``"Custom"``. There are two classes of slot types or entity:
 
--   **Builtin entities**
--   **Custom entities**
+- **Builtin entities**
+- **Custom entities**
 
+|
 
 .. _builtin_entity_resolution:
 
@@ -242,45 +243,72 @@ color of your connected light bulbs. What you will do is define a ``"color"``
 entity. On top of that you can provide a list of sample colors by editing the
 entity in your dataset as follows:
 
-.. code-block:: json
+.. tabs::
 
-    {
-      "color": {
-        "automatically_extensible": true,
-        "use_synonyms": true,
-        "data": [
+   .. tab:: JSON
+
+      .. code-block:: json
+
           {
-            "value": "white",
-            "synonyms": []
-          },
-          {
-            "value": "yellow",
-            "synonyms": []
-          },
-          {
-            "value": "pink",
-            "synonyms": []
-          },
-          {
-            "value": "blue",
-            "synonyms": []
+            "color": {
+              "automatically_extensible": true,
+              "use_synonyms": true,
+              "data": [
+                {
+                  "value": "white",
+                  "synonyms": []
+                },
+                {
+                  "value": "yellow",
+                  "synonyms": []
+                },
+                {
+                  "value": "pink",
+                  "synonyms": []
+                },
+                {
+                  "value": "blue",
+                  "synonyms": []
+                }
+              ],
+              "matching_strictness": 1.0
+            }
           }
-        ],
-        "matching_strictness": 1.0
-      }
-    }
+
+   .. tab:: YAML
+
+      .. code-block:: yaml
+      
+          ---
+          type: entity
+          name: color
+          values:
+            - white
+            - yellow
+            - pink
+            - blue
 
 Now imagine that you want to allow some variations around these values e.g.
 using ``"pinky"`` instead of ``"pink"``. You could add these variations in the
 list by adding a new value, however in this case what you want is to tell the
 NLU to consider ``"pinky"`` as a *synonym* of ``"pink"``:
 
-.. code-block:: json
+.. tabs::
 
-    {
-      "value": "pink",
-      "synonyms": ["pinky"]
-    }
+   .. tab:: JSON
+
+      .. code-block:: json
+
+          {
+            "value": "pink",
+            "synonyms": ["pinky"]
+          }
+
+   .. tab:: YAML
+
+      .. code-block:: yaml
+
+         - [pink, pinky]
 
 In this context, Snips NLU will map ``"pinky"`` to its reference value,
 ``"pink"``, in its output.
@@ -356,13 +384,26 @@ Your entity must be *automatically extensible*.
 Now in practice, there is a flag in the dataset that lets you choose whether or
 not your custom entity is automatically extensible:
 
-.. code-block:: json
+.. tabs::
 
-    {
-      "my_custom_entity": {
-        "automatically_extensible": true,
-        "use_synonyms": true,
-        "data": [],
-        "matching_strictness": 1.0
-      }
-    }
+   .. tab:: JSON
+
+      .. code-block:: json
+
+          {
+            "my_custom_entity": {
+              "automatically_extensible": true,
+              "use_synonyms": true,
+              "data": [],
+              "matching_strictness": 1.0
+            }
+          }
+
+   .. tab:: YAML
+
+      .. code-block:: yaml
+
+         ---
+         type: entity
+         name: my_custom_entity
+         automatically_extensible: yes

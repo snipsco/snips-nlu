@@ -116,6 +116,10 @@ utterances. This will result in simpler annotations:
       - I need a flight leaving [date](this weekend) to [destination](Berlin)
       - show me flights to go to [destination](new york) leaving [date](this evening)
 
+.. important::
+
+    If one of your utterances starts with ``[``, you must put it between
+    double quotes to respect the YAML syntax: ``"[origin] to [destination]"``.
 
 .. _yaml_dataset_format:
 

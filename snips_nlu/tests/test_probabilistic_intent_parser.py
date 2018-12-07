@@ -17,7 +17,8 @@ from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
-from snips_nlu.utils import NotTrained, json_string
+from snips_nlu.utils import json_string
+from snips_nlu.exceptions import NotTrained
 
 
 class TestProbabilisticIntentParser(FixtureTest):

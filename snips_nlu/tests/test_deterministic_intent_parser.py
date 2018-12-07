@@ -18,7 +18,7 @@ from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH)
-from snips_nlu.utils import NotTrained
+from snips_nlu.exceptions import NotTrained
 
 
 class TestDeterministicIntentParser(FixtureTest):

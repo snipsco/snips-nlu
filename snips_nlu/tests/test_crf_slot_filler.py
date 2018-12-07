@@ -24,7 +24,7 @@ from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH, WEATHER_DATASET)
-from snips_nlu.utils import NotTrained
+from snips_nlu.exceptions import NotTrained
 
 
 class TestCRFSlotFiller(FixtureTest):

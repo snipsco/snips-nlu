@@ -12,10 +12,7 @@ from snips_nlu_ontology import get_builtin_entity_examples
 from snips_nlu.__about__ import __version__
 from snips_nlu.dataset.entity import Entity
 from snips_nlu.dataset.intent import Intent
-
-
-class DatasetFormatError(TypeError):
-    pass
+from snips_nlu.exceptions import DatasetFormatError
 
 
 class Dataset(object):

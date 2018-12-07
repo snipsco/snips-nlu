@@ -19,6 +19,7 @@ from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
+from snips_nlu.exceptions import InvalidInputError
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
@@ -131,10 +132,11 @@ class SnipsNLUEngine(ProcessingUnit):
 
         Raises:
             NotTrained: When the nlu engine is not fitted
-            TypeError: When input type is not unicode
+            InvalidInputError: When input type is not unicode
         """
         if not isinstance(text, str):
-            raise TypeError("Expected unicode but received: %s" % type(text))
+            raise InvalidInputError("Expected unicode but received: %s"
+                                    % type(text))
 
         if isinstance(intents, str):
             intents = [intents]

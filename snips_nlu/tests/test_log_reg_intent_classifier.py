@@ -19,7 +19,7 @@ from snips_nlu.pipeline.configs import (
     LogRegIntentClassifierConfig)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import NotTrained
+from snips_nlu.exceptions import NotTrained
 
 
 # pylint: disable=unused-argument

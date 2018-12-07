@@ -28,7 +28,8 @@ from snips_nlu.result import (
     resolved_slot, unresolved_slot)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import NotTrained, json_string
+from snips_nlu.utils import json_string
+from snips_nlu.exceptions import NotTrained, InvalidInputError
 
 
 class TestSnipsNLUEngine(FixtureTest):
@@ -845,7 +846,7 @@ class TestSnipsNLUEngine(FixtureTest):
         engine = SnipsNLUEngine().fit(BEVERAGE_DATASET)
 
         # When / Then
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(InvalidInputError) as cm:
             engine.parse(bytes_input)
         message = str(cm.exception.args[0])
         self.assertTrue("Expected unicode but received" in message)

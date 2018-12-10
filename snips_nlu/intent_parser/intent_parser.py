@@ -37,3 +37,19 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
             :func:`.parsing_result` for the output format.
         """
         pass
+
+    @abstractmethod
+    def get_slots(self, text, intent):
+        """Extract slots from a text input, with the knowledge of the intent
+
+        Args:
+            text (str): input
+            intent (str): the intent which the input corresponds to
+
+        Returns:
+            list: the list of extracted slots
+
+        Raises:
+            IntentNotFound: When the intent was not part of the training data
+        """
+        pass

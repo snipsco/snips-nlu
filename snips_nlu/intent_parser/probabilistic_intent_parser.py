@@ -11,6 +11,7 @@ from future.utils import iteritems, itervalues
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (build_processing_unit,
@@ -131,6 +132,23 @@ class ProbabilisticIntentParser(IntentParser):
         intent_name = intent_result[RES_INTENT_NAME]
         slots = self.slot_fillers[intent_name].get_slots(text)
         return parsing_result(text, intent_result, slots)
+
+    def get_slots(self, text, intent):
+        """Extract slots from a text input, with the knowledge of the intent
+
+        Args:
+            text (str): input
+            intent (str): the intent which the input corresponds to
+
+        Returns:
+            list: the list of extracted slots
+
+        Raises:
+            IntentNotFound: When the intent was not part of the training data
+        """
+        if intent not in self.slot_fillers:
+            raise IntentNotFoundError(intent)
+        return self.slot_fillers[intent].get_slots(text)
 
     @check_persisted_path
     def persist(self, path):

@@ -145,66 +145,37 @@ class SnipsNLUEngine(ProcessingUnit):
             res = parser.parse(text, intents)
             if is_empty(res):
                 continue
-            resolved_slots = self.resolve_slots(text, res[RES_SLOTS])
+            resolved_slots = self._resolve_slots(text, res[RES_SLOTS])
             return parsing_result(text, intent=res[RES_INTENT],
                                   slots=resolved_slots)
         return empty_result(text)
 
-    def resolve_slots(self, text, slots):
-        builtin_scope = [slot[RES_ENTITY] for slot in slots
-                         if is_builtin_entity(slot[RES_ENTITY])]
-        custom_scope = [slot[RES_ENTITY] for slot in slots
-                        if not is_builtin_entity(slot[RES_ENTITY])]
-        # Do not use cached entities here as datetimes must be computed using
-        # current context
-        builtin_entities = self.builtin_entity_parser.parse(
-            text, builtin_scope, use_cache=False)
-        custom_entities = self.custom_entity_parser.parse(
-            text, custom_scope, use_cache=True)
+    @log_elapsed_time(logger, logging.DEBUG, "Parsed slots in {elapsed_time}")
+    @fitted_required
+    def get_slots(self, text, intent):
+        """Extract slots from a text input, with the knowledge of the intent
 
-        resolved_slots = []
-        for slot in slots:
-            entity_name = slot[RES_ENTITY]
-            raw_value = slot[RES_VALUE]
-            is_builtin = is_builtin_entity(entity_name)
-            if is_builtin:
-                entities = builtin_entities
-                parser = self.builtin_entity_parser
-                slot_builder = builtin_slot
-                use_cache = False
-                extensible = False
-                resolved_value_key = ENTITY
-            else:
-                entities = custom_entities
-                parser = self.custom_entity_parser
-                slot_builder = custom_slot
-                use_cache = True
-                extensible = self._dataset_metadata[ENTITIES][entity_name][
-                    AUTOMATICALLY_EXTENSIBLE]
-                resolved_value_key = RESOLVED_VALUE
+        Args:
+            text (str): input
+            intent (str): the intent which the input corresponds to
 
-            resolved_slot = None
-            for ent in entities:
-                if ent[ENTITY_KIND] == entity_name and \
-                        ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
-                    resolved_slot = slot_builder(slot, ent[resolved_value_key])
-                    break
-            if resolved_slot is None:
-                matches = parser.parse(
-                    raw_value, scope=[entity_name], use_cache=use_cache)
-                if matches:
-                    match = matches[0]
-                    if is_builtin or len(match[RES_VALUE]) == len(raw_value):
-                        resolved_slot = slot_builder(
-                            slot, match[resolved_value_key])
+        Returns:
+            list: the list of extracted slots
 
-            if resolved_slot is None and extensible:
-                resolved_slot = slot_builder(slot)
+        Raises:
+            IntentNotFound: When the intent was not part of the training data
+            InvalidInputError: When input type is not unicode
+        """
+        if not isinstance(text, str):
+            raise InvalidInputError("Expected unicode but received: %s"
+                                    % type(text))
 
-            if resolved_slot is not None:
-                resolved_slots.append(resolved_slot)
-
-        return resolved_slots
+        for parser in self.intent_parsers:
+            slots = parser.get_slots(text, intent)
+            if not slots:
+                continue
+            return self._resolve_slots(text, slots)
+        return []
 
     @check_persisted_path
     def persist(self, path):
@@ -328,6 +299,62 @@ class SnipsNLUEngine(ProcessingUnit):
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine
+
+    def _resolve_slots(self, text, slots):
+        builtin_scope = [slot[RES_ENTITY] for slot in slots
+                         if is_builtin_entity(slot[RES_ENTITY])]
+        custom_scope = [slot[RES_ENTITY] for slot in slots
+                        if not is_builtin_entity(slot[RES_ENTITY])]
+        # Do not use cached entities here as datetimes must be computed using
+        # current context
+        builtin_entities = self.builtin_entity_parser.parse(
+            text, builtin_scope, use_cache=False)
+        custom_entities = self.custom_entity_parser.parse(
+            text, custom_scope, use_cache=True)
+
+        resolved_slots = []
+        for slot in slots:
+            entity_name = slot[RES_ENTITY]
+            raw_value = slot[RES_VALUE]
+            is_builtin = is_builtin_entity(entity_name)
+            if is_builtin:
+                entities = builtin_entities
+                parser = self.builtin_entity_parser
+                slot_builder = builtin_slot
+                use_cache = False
+                extensible = False
+                resolved_value_key = ENTITY
+            else:
+                entities = custom_entities
+                parser = self.custom_entity_parser
+                slot_builder = custom_slot
+                use_cache = True
+                extensible = self._dataset_metadata[ENTITIES][entity_name][
+                    AUTOMATICALLY_EXTENSIBLE]
+                resolved_value_key = RESOLVED_VALUE
+
+            resolved_slot = None
+            for ent in entities:
+                if ent[ENTITY_KIND] == entity_name and \
+                        ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
+                    resolved_slot = slot_builder(slot, ent[resolved_value_key])
+                    break
+            if resolved_slot is None:
+                matches = parser.parse(
+                    raw_value, scope=[entity_name], use_cache=use_cache)
+                if matches:
+                    match = matches[0]
+                    if is_builtin or len(match[RES_VALUE]) == len(raw_value):
+                        resolved_slot = slot_builder(
+                            slot, match[resolved_value_key])
+
+            if resolved_slot is None and extensible:
+                resolved_slot = slot_builder(slot)
+
+            if resolved_slot is not None:
+                resolved_slots.append(resolved_slot)
+
+        return resolved_slots
 
 
 def _get_dataset_metadata(dataset):

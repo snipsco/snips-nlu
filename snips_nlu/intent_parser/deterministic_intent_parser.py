@@ -13,9 +13,10 @@ from snips_nlu_utils import normalize
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
     ENTITY_KIND, INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME,
-    START, TEXT, UTTERANCES)
+    START, TEXT, UTTERANCES, RES_SLOTS)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import normalize_token, tokenize, tokenize_light
@@ -205,6 +206,26 @@ class DeterministicIntentParser(IntentParser):
                 if res is not None:
                     return res
         return empty_result(text)
+
+    def get_slots(self, text, intent):
+        """Extract slots from a text input, with the knowledge of the intent
+
+        Args:
+            text (str): input
+            intent (str): the intent which the input corresponds to
+
+        Returns:
+            list: the list of extracted slots
+
+        Raises:
+            IntentNotFound: When the intent was not part of the training data
+        """
+        if intent not in self.regexes_per_intent:
+            raise IntentNotFoundError(intent)
+        slots = self.parse(text, intents=[intent])[RES_SLOTS]
+        if slots is None:
+            slots = []
+        return slots
 
     def _preprocess_text(self, string):
         """Replace stop words and characters that are tokenized out by

@@ -1,11 +1,12 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from builtins import str
 from copy import deepcopy
 from pathlib import Path
 
-from mock import patch, MagicMock
+from mock import MagicMock, patch
 from snips_nlu_ontology import get_all_languages
 
 import snips_nlu
@@ -13,14 +14,17 @@ from snips_nlu.constants import (
     END, LANGUAGE, LANGUAGE_EN, RES_ENTITY, RES_INPUT, RES_INTENT,
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import Dataset, validate_and_format_dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import \
     CustomEntityParserUsage
+from snips_nlu.exceptions import IntentNotFoundError, InvalidInputError, \
+    NotTrained
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs import (
-    ProcessingUnitConfig, NLUEngineConfig, ProbabilisticIntentParserConfig)
+from snips_nlu.pipeline.configs import (NLUEngineConfig,
+                                        ProbabilisticIntentParserConfig,
+                                        ProcessingUnitConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
@@ -29,13 +33,90 @@ from snips_nlu.result import (
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
 from snips_nlu.utils import json_string
-from snips_nlu.exceptions import NotTrained, InvalidInputError
 
 
 class TestSnipsNLUEngine(FixtureTest):
     def setUp(self):
         super(TestSnipsNLUEngine, self).setUp()
         reset_processing_units()
+
+    def test_should_get_slots(self):
+        # Given
+        input_text = "hello world"
+        greeting_intent = "greeting"
+        expected_slots = [unresolved_slot(match_range=(6, 11),
+                                          value="world",
+                                          entity="mocked_entity",
+                                          slot_name="mocked_slot_name")]
+        mocked_dataset_metadata = {
+            "language_code": "en",
+            "entities": {
+                "mocked_entity": {
+                    "automatically_extensible": True,
+                    "utterances": dict()
+                }
+            },
+            "slot_name_mappings": {
+                "dummy_intent_1": {
+                    "mocked_slot_name": "mocked_entity"
+                }
+            }
+        }
+
+        class FirstIntentParserConfig(MockIntentParserConfig):
+            unit_name = "first_intent_parser"
+
+        class FirstIntentParser(MockIntentParser):
+            unit_name = "first_intent_parser"
+            config_type = FirstIntentParserConfig
+
+        class SecondIntentParserConfig(MockIntentParserConfig):
+            unit_name = "second_intent_parser"
+
+        class SecondIntentParser(MockIntentParser):
+            unit_name = "second_intent_parser"
+            config_type = SecondIntentParserConfig
+
+            def get_slots(self, text, intent):
+                if text == input_text and intent == greeting_intent:
+                    return expected_slots
+                return []
+
+        register_processing_unit(FirstIntentParser)
+        register_processing_unit(SecondIntentParser)
+
+        config = NLUEngineConfig([FirstIntentParserConfig(),
+                                  SecondIntentParserConfig()])
+        engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
+        engine._dataset_metadata = mocked_dataset_metadata
+
+        # When
+        res_slots = engine.get_slots(input_text, greeting_intent)
+
+        # Then
+        expected_slots = [custom_slot(s) for s in expected_slots]
+        self.assertListEqual(expected_slots, res_slots)
+
+    def test_get_slots_should_raise_with_unknown_intent(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: goodbye
+utterances:
+  - Goodbye [name](Eric)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        nlu_engine = SnipsNLUEngine().fit(dataset)
+
+        # When / Then
+        with self.assertRaises(IntentNotFoundError):
+            nlu_engine.get_slots("Hello John", "greeting3")
 
     def test_should_use_parsers_sequentially(self):
         # Given
@@ -47,79 +128,24 @@ class TestSnipsNLUEngine(FixtureTest):
                                  entity='mocked_entity',
                                  slot_name='mocked_slot_name')]
 
-        class FirstIntentParserConfig(ProcessingUnitConfig):
+        class FirstIntentParserConfig(MockIntentParserConfig):
             unit_name = "first_intent_parser"
 
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return FirstIntentParserConfig()
-
-        class FirstIntentParser(IntentParser):
+        class FirstIntentParser(MockIntentParser):
             unit_name = "first_intent_parser"
             config_type = FirstIntentParserConfig
 
-            def fit(self, dataset, force_retrain):
-                self._fitted = True
-                return self
-
-            @property
-            def fitted(self):
-                return hasattr(self, '_fitted') and self._fitted
-
-            def parse(self, text, intents):
-                return empty_result(text)
-
-            def persist(self, path):
-                path = Path(path)
-                path.mkdir()
-                with (path / "metadata.json").open(mode="w") as f:
-                    f.write(json_string({"unit_name": self.unit_name}))
-
-            @classmethod
-            def from_path(cls, path, **shared):
-                cfg = cls.config_type()
-                return cls(cfg)
-
-        class SecondIntentParserConfig(ProcessingUnitConfig):
+        class SecondIntentParserConfig(MockIntentParserConfig):
             unit_name = "second_intent_parser"
 
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return SecondIntentParserConfig()
-
-        class SecondIntentParser(IntentParser):
+        class SecondIntentParser(MockIntentParser):
             unit_name = "second_intent_parser"
             config_type = SecondIntentParserConfig
-
-            def fit(self, dataset, force_retrain):
-                self._fitted = True
-                return self
-
-            @property
-            def fitted(self):
-                return hasattr(self, '_fitted') and self._fitted
 
             def parse(self, text, intents):
                 if text == input_text:
                     return parsing_result(text, intent, slots)
                 return empty_result(text)
-
-            def persist(self, path):
-                path = Path(path)
-                path.mkdir()
-                with (path / "metadata.json").open(mode="w") as f:
-                    f.write(json_string({"unit_name": self.unit_name}))
-
-            @classmethod
-            def from_path(cls, path, **shared):
-                cfg = cls.config_type()
-                return cls(cfg)
 
         register_processing_unit(FirstIntentParser)
         register_processing_unit(SecondIntentParser)
@@ -156,17 +182,10 @@ class TestSnipsNLUEngine(FixtureTest):
 
     def test_should_retrain_only_non_trained_subunits(self):
         # Given
-        class TestIntentParserConfig(ProcessingUnitConfig):
+        class TestIntentParserConfig(MockIntentParserConfig):
             unit_name = "test_intent_parser"
 
-            def to_dict(self):
-                return {"unit_name": self.unit_name}
-
-            @classmethod
-            def from_dict(cls, obj_dict):
-                return TestIntentParserConfig()
-
-        class TestIntentParser(IntentParser):
+        class TestIntentParser(MockIntentParser):
             unit_name = "test_intent_parser"
             config_type = TestIntentParserConfig
 
@@ -195,20 +214,6 @@ class TestSnipsNLUEngine(FixtureTest):
             def fitted(self):
                 return self.sub_unit_1["fitted"] and \
                        self.sub_unit_2["fitted"]
-
-            def parse(self, text, intents):
-                return empty_result(text)
-
-            def persist(self, path):
-                path = Path(path)
-                path.mkdir()
-                with (path / "metadata.json").open(mode="w") as f:
-                    f.write(json_string({"unit_name": self.unit_name}))
-
-            @classmethod
-            def from_path(cls, path, **shared):
-                cfg = cls.config_type()
-                return cls(cfg)
 
         register_processing_unit(TestIntentParser)
 
@@ -240,7 +245,7 @@ class TestSnipsNLUEngine(FixtureTest):
         # Then
         self.assertEqual(empty_result("hello world"), result)
 
-    def test_should_not_get_slots_when_not_fitted(self):
+    def test_should_not_parse_slots_when_not_fitted(self):
         # Given
         engine = SnipsNLUEngine()
 
@@ -878,77 +883,60 @@ class TestSnipsNLUEngine(FixtureTest):
         engine.parse("ya", intents=["dummy_intent"])
 
 
-class TestIntentParser1Config(ProcessingUnitConfig):
-    unit_name = "test_intent_parser1"
+class MockIntentParserConfig(ProcessingUnitConfig):
+    unit_name = "mock_intent_parser"
 
     def to_dict(self):
         return {"unit_name": self.unit_name}
 
     @classmethod
     def from_dict(cls, obj_dict):
-        return TestIntentParser1Config()
+        return cls()
 
 
-class TestIntentParser1(IntentParser):
+class MockIntentParser(IntentParser):
+    unit_name = "mock_intent_parser"
+    config_type = MockIntentParserConfig
+
+    def fit(self, dataset, force_retrain):
+        self._fitted = True
+        return self
+
+    @property
+    def fitted(self):
+        return hasattr(self, '_fitted') and self._fitted
+
+    def parse(self, text, intents):
+        return empty_result(text)
+
+    def get_slots(self, text, intent):
+        return []
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(json_string({"unit_name": self.unit_name}))
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        cfg = cls.config_type()
+        return cls(cfg)
+
+
+class TestIntentParser1Config(MockIntentParserConfig):
+    unit_name = "test_intent_parser1"
+
+
+class TestIntentParser1(MockIntentParser):
     unit_name = "test_intent_parser1"
     config_type = TestIntentParser1Config
 
-    def fit(self, dataset, force_retrain):
-        self._fitted = True
-        return self
 
-    @property
-    def fitted(self):
-        return hasattr(self, '_fitted') and self._fitted
-
-    def parse(self, text, intents):
-        return empty_result(text)
-
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
-
-    @classmethod
-    def from_path(cls, path, **shared):
-        cfg = cls.config_type()
-        return cls(cfg)
-
-
-class TestIntentParser2Config(ProcessingUnitConfig):
+class TestIntentParser2Config(MockIntentParserConfig):
     unit_name = "test_intent_parser2"
 
-    def to_dict(self):
-        return {"unit_name": self.unit_name}
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return TestIntentParser2Config()
-
-
-class TestIntentParser2(IntentParser):
+class TestIntentParser2(MockIntentParser):
     unit_name = "test_intent_parser2"
     config_type = TestIntentParser2Config
-
-    def fit(self, dataset, force_retrain):
-        self._fitted = True
-        return self
-
-    @property
-    def fitted(self):
-        return hasattr(self, '_fitted') and self._fitted
-
-    def parse(self, text, intents):
-        return empty_result(text)
-
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
-
-    @classmethod
-    def from_path(cls, path, **shared):
-        cfg = cls.config_type()
-        return cls(cfg)

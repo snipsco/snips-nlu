@@ -6,11 +6,12 @@ from builtins import range
 
 from mock import patch
 
-from snips_nlu.constants import (
-    DATA, END, ENTITY, LANGUAGE_EN, RES_INTENT, RES_INTENT_NAME,
-    RES_SLOTS, SLOT_NAME, START, TEXT)
+from snips_nlu.constants import (DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY,
+                                 RES_INTENT, RES_INTENT_NAME, RES_SLOTS,
+                                 RES_VALUE, SLOT_NAME, START, TEXT)
 from snips_nlu.dataset import Dataset, validate_and_format_dataset
 from snips_nlu.entity_parser import BuiltinEntityParser
+from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
     _get_range_shift, _replace_entities_with_placeholders)
@@ -18,7 +19,6 @@ from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import intent_classification_result, unresolved_slot
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH)
-from snips_nlu.exceptions import NotTrained
 
 
 class TestDeterministicIntentParser(FixtureTest):
@@ -61,7 +61,7 @@ values:
         self.slots_dataset = Dataset.from_yaml_files("en", [
             slots_dataset_stream]).json
 
-    def test_should_get_intent(self):
+    def test_should_parse_intent(self):
         # Given
         dataset = validate_and_format_dataset(self.slots_dataset)
 
@@ -81,7 +81,7 @@ values:
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
            ".get_stop_words")
-    def test_should_get_intent_with_stop_words(self, mock_get_stop_words):
+    def test_should_parse_intent_with_stop_words(self, mock_get_stop_words):
         # Given
         mock_get_stop_words.return_value = {"a", "hey"}
         dataset = validate_and_format_dataset(self.slots_dataset)
@@ -134,7 +134,7 @@ utterances:
         with self.assertRaises(NotTrained):
             parser.parse("foobar")
 
-    def test_should_get_intent_after_deserialization(self):
+    def test_should_parse_intent_after_deserialization(self):
         # Given
         dataset = validate_and_format_dataset(self.slots_dataset)
 
@@ -157,7 +157,7 @@ utterances:
             intent_name="dummy_intent_1", probability=probability)
         self.assertEqual(expected_intent, parsing[RES_INTENT])
 
-    def test_should_get_slots(self):
+    def test_should_parse_slots(self):
         # Given
         dataset = self.slots_dataset
         dataset = validate_and_format_dataset(dataset)
@@ -236,7 +236,66 @@ utterances:
             # Then
             self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
-    def test_should_get_slots_after_deserialization(self):
+    def test_should_get_slots(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: greeting2
+utterances:
+  - Hello [name2](Thomas)
+  
+---
+type: intent
+name: goodbye
+utterances:
+  - Goodbye [name](Eric)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+
+        # When
+        slots_greeting1 = parser.get_slots("Hello John", "greeting1")
+        slots_greeting2 = parser.get_slots("Hello Thomas", "greeting2")
+        slots_goodbye = parser.get_slots("Goodbye Eric", "greeting1")
+
+        # Then
+        self.assertEqual(1, len(slots_greeting1))
+        self.assertEqual(1, len(slots_greeting2))
+        self.assertEqual(0, len(slots_goodbye))
+
+        self.assertEqual("John", slots_greeting1[0][RES_VALUE])
+        self.assertEqual("name1", slots_greeting1[0][RES_ENTITY])
+        self.assertEqual("Thomas", slots_greeting2[0][RES_VALUE])
+        self.assertEqual("name2", slots_greeting2[0][RES_ENTITY])
+
+    def test_get_slots_should_raise_with_unknown_intent(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: goodbye
+utterances:
+  - Goodbye [name](Eric)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+
+        # When / Then
+        with self.assertRaises(IntentNotFoundError):
+            parser.get_slots("Hello John", "greeting3")
+
+    def test_should_parse_slots_after_deserialization(self):
         # Given
         dataset = self.slots_dataset
         dataset = validate_and_format_dataset(dataset)

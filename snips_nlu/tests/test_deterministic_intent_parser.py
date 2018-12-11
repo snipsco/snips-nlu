@@ -6,17 +6,18 @@ from builtins import range
 
 from mock import patch
 
-from snips_nlu.constants import (DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY,
-                                 RES_INTENT, RES_INTENT_NAME, RES_SLOTS,
-                                 RES_VALUE, SLOT_NAME, START, TEXT)
-from snips_nlu.dataset import Dataset, validate_and_format_dataset
+from snips_nlu.constants import (
+    DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY, RES_INTENT, RES_INTENT_NAME,
+    RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT)
+from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
     _get_range_shift, _replace_entities_with_placeholders)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
-from snips_nlu.result import intent_classification_result, unresolved_slot
+from snips_nlu.result import (
+    extraction_result, intent_classification_result, unresolved_slot)
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH)
 
@@ -63,11 +64,21 @@ values:
 
     def test_should_parse_intent(self):
         # Given
-        dataset = validate_and_format_dataset(self.slots_dataset)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - foo bar baz
 
+---
+type: intent
+name: intent2
+utterances:
+  - foo bar ban""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
-        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
-               "at 12p.m."
+        text = "foo bar ban"
 
         # When
         parsing = parser.parse(text)
@@ -75,17 +86,67 @@ values:
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
-            intent_name="dummy_intent_1", probability=probability)
+            intent_name="intent2", probability=probability)
 
         self.assertEqual(expected_intent, parsing[RES_INTENT])
+
+    def test_should_parse_intent_with_filter(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - foo bar baz
+
+---
+type: intent
+name: intent2
+utterances:
+  - foo bar ban""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "foo bar ban"
+
+        # When
+        parsing = parser.parse(text, intents=["intent1"])
+
+        # Then
+        self.assertIsNone(parsing[RES_INTENT])
+
+    def test_should_parse_top_intents(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - hello world
+  
+---
+type: intent
+name: intent2
+utterances:
+  - foo bar""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "hello world"
+
+        # When
+        results = parser.parse(text, top_n=3)
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="intent1", probability=1.0)
+        expected_results = [extraction_result(expected_intent, [])]
+        self.assertEqual(expected_results, results)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
            ".get_stop_words")
     def test_should_parse_intent_with_stop_words(self, mock_get_stop_words):
         # Given
         mock_get_stop_words.return_value = {"a", "hey"}
-        dataset = validate_and_format_dataset(self.slots_dataset)
-
+        dataset = self.slots_dataset
         config = DeterministicIntentParserConfig(ignore_stop_words=True)
         parser = DeterministicIntentParser(config).fit(dataset)
         text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
@@ -136,8 +197,7 @@ utterances:
 
     def test_should_parse_intent_after_deserialization(self):
         # Given
-        dataset = validate_and_format_dataset(self.slots_dataset)
-
+        dataset = self.slots_dataset
         parser = DeterministicIntentParser().fit(dataset)
         custom_entity_parser = parser.custom_entity_parser
         parser.persist(self.tmp_file_path)
@@ -160,8 +220,6 @@ utterances:
     def test_should_parse_slots(self):
         # Given
         dataset = self.slots_dataset
-        dataset = validate_and_format_dataset(dataset)
-
         parser = DeterministicIntentParser().fit(dataset)
         texts = [
             (
@@ -236,6 +294,42 @@ utterances:
             # Then
             self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
+    def test_should_get_intents(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name](John)
+
+---
+type: intent
+name: greeting2
+utterances:
+  - How are you [name](Thomas)
+  
+---
+type: intent
+name: greeting3
+utterances:
+  - Hi [name](Robert)""")
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+
+        # When
+        top_intents = parser.get_intents("Hello John")
+
+        # Then
+        expected_intents = [
+            {RES_INTENT_NAME: "greeting1", RES_PROBA: 1.0},
+            {RES_INTENT_NAME: "greeting2", RES_PROBA: 0.0},
+            {RES_INTENT_NAME: "greeting3", RES_PROBA: 0.0},
+            {RES_INTENT_NAME: None, RES_PROBA: 0.0}
+        ]
+        self.assertListEqual(expected_intents, top_intents)
+
     def test_should_get_slots(self):
         # Given
         slots_dataset_stream = io.StringIO("""
@@ -274,6 +368,23 @@ utterances:
         self.assertEqual("Thomas", slots_greeting2[0][RES_VALUE])
         self.assertEqual("name2", slots_greeting2[0][RES_ENTITY])
 
+    def test_should_get_no_slots_with_none_intent(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting
+utterances:
+  - Hello [name](John)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+
+        # When
+        slots = parser.get_slots("Hello John", None)
+
+        # Then
+        self.assertListEqual([], slots)
+
     def test_get_slots_should_raise_with_unknown_intent(self):
         # Given
         slots_dataset_stream = io.StringIO("""
@@ -298,8 +409,6 @@ utterances:
     def test_should_parse_slots_after_deserialization(self):
         # Given
         dataset = self.slots_dataset
-        dataset = validate_and_format_dataset(dataset)
-
         parser = DeterministicIntentParser().fit(dataset)
         custom_entity_parser = parser.custom_entity_parser
         parser.persist(self.tmp_file_path)
@@ -390,7 +499,7 @@ utterances:
 
     def test_should_parse_naughty_strings(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset = SAMPLE_DATASET
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
         with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
@@ -455,8 +564,6 @@ utterances:
             },
             "language": "en",
         }
-
-        naughty_dataset = validate_and_format_dataset(naughty_dataset)
 
         # Then
         with self.fail_if_exception("Exception raised"):
@@ -718,7 +825,7 @@ values:
 
     def test_should_limit_nb_queries(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset = SAMPLE_DATASET
         config = DeterministicIntentParserConfig(max_queries=2,
                                                  max_pattern_length=1000)
 
@@ -731,7 +838,7 @@ values:
 
     def test_should_limit_patterns_length(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset = SAMPLE_DATASET
         config = DeterministicIntentParserConfig(max_queries=1000,
                                                  max_pattern_length=300)
 

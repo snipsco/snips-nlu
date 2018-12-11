@@ -9,7 +9,7 @@ import numpy as np
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.constants import LANGUAGE
+from snips_nlu.constants import LANGUAGE, RES_PROBA, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
@@ -116,17 +116,36 @@ class LogRegIntentClassifier(IntentClassifier):
             NotTrained: When the intent classifier is not fitted
 
         """
+        intents_results = self._get_intents(text, intents_filter)
+        if not intents_results or intents_results[0][RES_INTENT_NAME] is None:
+            return None
+        return intents_results[0]
+
+    @fitted_required
+    def get_intents(self, text):
+        """Performs intent classification on the provided *text* and returns
+            the list of intents ordered by decreasing probability
+
+        The length of the returned list is exactly the number of intents in the
+        dataset + 1 for the None intent
+
+        Raises:
+            NotTrained: when the intent classifier is not fitted
+        """
+        return self._get_intents(text, intents_filter=None)
+
+    def _get_intents(self, text, intents_filter):
         if isinstance(intents_filter, str):
             intents_filter = [intents_filter]
 
-        if not text or not self.intent_list \
-                or self.featurizer is None or self.classifier is None:
-            return None
+        if not text or not self.intent_list or not self.featurizer:
+            results = [intent_classification_result(None, 1.0)]
+            results += [intent_classification_result(i, 0.0)
+                        for i in self.intent_list if i is not None]
+            return results
 
         if len(self.intent_list) == 1:
-            if self.intent_list[0] is None:
-                return None
-            return intent_classification_result(self.intent_list[0], 1.0)
+            return [intent_classification_result(self.intent_list[0], 1.0)]
 
         # pylint: disable=C0103
         X = self.featurizer.transform([text_to_utterance(text)])
@@ -134,15 +153,12 @@ class LogRegIntentClassifier(IntentClassifier):
         proba_vec = self._predict_proba(X, intents_filter=intents_filter)
         logger.debug(
             "%s", DifferedLoggingMessage(self.log_activation_weights, text, X))
+        results = [
+            intent_classification_result(i, proba)
+            for i, proba in zip(self.intent_list, proba_vec[0])
+            if intents_filter is None or i is None or i in intents_filter]
 
-        intents_probas = sorted(zip(self.intent_list, proba_vec[0]),
-                                key=lambda p: -p[1])
-        for intent, proba in intents_probas:
-            if intent is None:
-                return None
-            if intents_filter is None or intent in intents_filter:
-                return intent_classification_result(intent, proba)
-        return None
+        return sorted(results, key=lambda res: -res[RES_PROBA])
 
     def _predict_proba(self, X, intents_filter):  # pylint: disable=C0103
         self.classifier._check_proba()  # pylint: disable=W0212

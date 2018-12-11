@@ -6,14 +6,14 @@ from builtins import str
 from collections import defaultdict
 from pathlib import Path
 
-from future.utils import iteritems
+from future.utils import iteritems, itervalues
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
-    ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE,
-    RES_ENTITY, RES_INTENT, RES_MATCH_RANGE,
-    RES_SLOTS, RES_VALUE)
+    ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE, RES_ENTITY,
+    RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE, RES_PROBA, RES_SLOTS,
+    RES_VALUE)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
@@ -24,8 +24,8 @@ from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import (
     ProcessingUnit, build_processing_unit, load_processing_unit)
 from snips_nlu.resources import load_resources_from_dir, persist_resources
-from snips_nlu.result import (
-    builtin_slot, custom_slot, empty_result, is_empty, parsing_result)
+from snips_nlu.result import (builtin_slot, custom_slot, empty_result,
+                              extraction_result, is_empty, parsing_result)
 from snips_nlu.utils import (
     check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
     log_elapsed_time)
@@ -115,20 +115,28 @@ class SnipsNLUEngine(ProcessingUnit):
         self.intent_parsers = parsers
         return self
 
-    @log_elapsed_time(logger, logging.DEBUG, "Parsed query in {elapsed_time}")
+    @log_elapsed_time(logger, logging.DEBUG, "Parsed input in {elapsed_time}")
     @fitted_required
-    def parse(self, text, intents=None):
+    def parse(self, text, intents=None, top_n=None):
         """Performs intent parsing on the provided *text* by calling its intent
         parsers successively
 
         Args:
             text (str): Input
-            intents (str or list of str): If provided, reduces the scope of
-                intent parsing to the provided list of intents
+            intents (str or list of str, optional): If provided, reduces the
+                scope of intent parsing to the provided list of intents
+            top_n (int, optional): when provided, this method will return a
+                list of at most top_n most likely intents, instead of a single
+                parsing result.
+                Note that the returned list can contain less than ``top_n``
+                elements, for instance when the parameter ``intents`` is not
+                None, or when ``top_n`` is greater than the total number of
+                intents.
 
         Returns:
-            dict: The most likely intent along with the extracted slots. See
-            :func:`.parsing_result` for the output format.
+            dict or list: the most likely intent(s) along with the extracted
+            slots. See :func:`.parsing_result` and :func:`.extraction_result`
+            for the output format.
 
         Raises:
             NotTrained: When the nlu engine is not fitted
@@ -141,14 +149,55 @@ class SnipsNLUEngine(ProcessingUnit):
         if isinstance(intents, str):
             intents = [intents]
 
+        if top_n is None:
+            for parser in self.intent_parsers:
+                res = parser.parse(text, intents)
+                if is_empty(res):
+                    continue
+                resolved_slots = self._resolve_slots(text, res[RES_SLOTS])
+                return parsing_result(text, intent=res[RES_INTENT],
+                                      slots=resolved_slots)
+            return empty_result(text)
+
+        intents_results = self.get_intents(text)
+        if intents is not None:
+            intents_results = [res for res in intents_results
+                               if res[RES_INTENT_NAME] in intents]
+        intents_results = intents_results[:top_n]
+        results = []
+        for intent_res in intents_results:
+            slots = self.get_slots(text, intent_res[RES_INTENT_NAME])
+            results.append(extraction_result(intent_res, slots))
+        return results
+
+    @log_elapsed_time(logger, logging.DEBUG, "Got intents in {elapsed_time}")
+    @fitted_required
+    def get_intents(self, text):
+        """Performs intent classification on the provided *text* and returns
+        the list of intents ordered by decreasing probability
+
+        The length of the returned list is exactly the number of intents in the
+        dataset + 1 for the None intent
+
+        .. note::
+
+            The probabilities returned along with each intent are not
+            guaranteed to sum to 1.0. They should be considered as scores
+            between 0 and 1.
+        """
+        results = None
         for parser in self.intent_parsers:
-            res = parser.parse(text, intents)
-            if is_empty(res):
+            parser_results = parser.get_intents(text)
+            if results is None:
+                results = {res[RES_INTENT_NAME]: res for res in parser_results}
                 continue
-            resolved_slots = self._resolve_slots(text, res[RES_SLOTS])
-            return parsing_result(text, intent=res[RES_INTENT],
-                                  slots=resolved_slots)
-        return empty_result(text)
+
+            for res in parser_results:
+                intent = res[RES_INTENT_NAME]
+                proba = max(res[RES_PROBA], results[intent][RES_PROBA])
+                results[intent][RES_PROBA] = proba
+
+        return sorted(itervalues(results), key=lambda res: -res[RES_PROBA])
 
     @log_elapsed_time(logger, logging.DEBUG, "Parsed slots in {elapsed_time}")
     @fitted_required

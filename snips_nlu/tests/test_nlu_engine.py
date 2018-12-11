@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import io
 from builtins import str
 from copy import deepcopy
-from pathlib import Path
 
 from mock import MagicMock, patch
 from snips_nlu_ontology import get_all_languages
@@ -18,27 +17,178 @@ from snips_nlu.dataset import Dataset, validate_and_format_dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import \
     CustomEntityParserUsage
-from snips_nlu.exceptions import IntentNotFoundError, InvalidInputError, \
-    NotTrained
-from snips_nlu.intent_parser import IntentParser
+from snips_nlu.exceptions import (
+    IntentNotFoundError, InvalidInputError, NotTrained)
 from snips_nlu.nlu_engine import SnipsNLUEngine
-from snips_nlu.pipeline.configs import (NLUEngineConfig,
-                                        ProbabilisticIntentParserConfig,
-                                        ProcessingUnitConfig)
+from snips_nlu.pipeline.configs import (
+    NLUEngineConfig, ProbabilisticIntentParserConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
 from snips_nlu.result import (
     custom_slot, empty_result, intent_classification_result, parsing_result,
-    resolved_slot, unresolved_slot)
+    resolved_slot, unresolved_slot, extraction_result)
 from snips_nlu.tests.utils import (
-    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import json_string
+    BEVERAGE_DATASET, FixtureTest, MockIntentParser, MockIntentParserConfig,
+    SAMPLE_DATASET, get_empty_dataset)
 
 
 class TestSnipsNLUEngine(FixtureTest):
     def setUp(self):
         super(TestSnipsNLUEngine, self).setUp()
         reset_processing_units()
+
+    def test_should_parse_top_intents(self):
+        # Given
+        text = "foo bar ban"
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - foo [slot1:entity1](bak)
+  
+---
+type: intent
+name: intent2
+utterances:
+  - '[slot2:entity2](foo) baz'
+  
+---
+type: intent
+name: intent3
+utterances:
+  - foo bap""")
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        class FirstIntentParserConfig(MockIntentParserConfig):
+            unit_name = "first_intent_parser"
+
+        class FirstIntentParser(MockIntentParser):
+            unit_name = "first_intent_parser"
+            config_type = FirstIntentParserConfig
+
+            def get_intents(self, text):
+                return [
+                    intent_classification_result("intent1", 0.5),
+                    intent_classification_result("intent2", 0.3),
+                    intent_classification_result(None, 0.15),
+                    intent_classification_result("intent3", 0.05)
+                ]
+
+            def get_slots(self, text, intent):
+                if intent == "intent1":
+                    return []
+                if intent == "intent2":
+                    return [
+                        unresolved_slot((0, 3), "foo", "entity2", "slot2")
+                    ]
+                return []
+
+        class SecondIntentParserConfig(MockIntentParserConfig):
+            unit_name = "second_intent_parser"
+
+        class SecondIntentParser(MockIntentParser):
+            unit_name = "second_intent_parser"
+            config_type = SecondIntentParserConfig
+
+            def get_intents(self, text):
+                return [
+                    intent_classification_result("intent2", 0.6),
+                    intent_classification_result("intent1", 0.2),
+                    intent_classification_result(None, 0.15),
+                    intent_classification_result("intent3", 0.05)
+                ]
+
+            def get_slots(self, text, intent):
+                if intent == "intent1":
+                    return [
+                        unresolved_slot((0, 3), "foo", "entity1", "slot1")
+                    ]
+                if intent == "intent2":
+                    return [
+                        unresolved_slot((8, 11), "ban", "entity2", "slot2")
+                    ]
+                return []
+
+        register_processing_unit(FirstIntentParser)
+        register_processing_unit(SecondIntentParser)
+
+        config = NLUEngineConfig([FirstIntentParserConfig(),
+                                  SecondIntentParserConfig()])
+        nlu_engine = SnipsNLUEngine(config).fit(dataset)
+
+        # When
+        results = nlu_engine.parse(text, top_n=3)
+
+        # Then
+        expected_results = [
+            extraction_result(
+                intent_classification_result("intent2", 0.6),
+                [custom_slot(
+                    unresolved_slot((0, 3), "foo", "entity2", "slot2"))]
+            ),
+            extraction_result(
+                intent_classification_result("intent1", 0.5),
+                [custom_slot(
+                    unresolved_slot((0, 3), "foo", "entity1", "slot1"))]
+            ),
+            extraction_result(
+                intent_classification_result(None, 0.15),
+                []
+            ),
+        ]
+        self.assertListEqual(expected_results, results)
+
+    def test_should_get_intents(self):
+        # Given
+        input_text = "hello world"
+
+        class FirstIntentParserConfig(MockIntentParserConfig):
+            unit_name = "first_intent_parser"
+
+        class FirstIntentParser(MockIntentParser):
+            unit_name = "first_intent_parser"
+            config_type = FirstIntentParserConfig
+
+            def get_intents(self, text):
+                return [
+                    intent_classification_result("greeting1", 0.5),
+                    intent_classification_result("greeting2", 0.3),
+                    intent_classification_result(None, 0.2)
+                ]
+
+        class SecondIntentParserConfig(MockIntentParserConfig):
+            unit_name = "second_intent_parser"
+
+        class SecondIntentParser(MockIntentParser):
+            unit_name = "second_intent_parser"
+            config_type = SecondIntentParserConfig
+
+            def get_intents(self, text):
+                return [
+                    intent_classification_result("greeting2", 0.6),
+                    intent_classification_result("greeting1", 0.2),
+                    intent_classification_result(None, 0.1)
+                ]
+
+        register_processing_unit(FirstIntentParser)
+        register_processing_unit(SecondIntentParser)
+
+        config = NLUEngineConfig([FirstIntentParserConfig(),
+                                  SecondIntentParserConfig()])
+        engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
+
+        # When
+        res_intents = engine.get_intents(input_text)
+
+        # Then
+        expected_intents = [
+            intent_classification_result("greeting2", 0.6),
+            intent_classification_result("greeting1", 0.5),
+            intent_classification_result(None, 0.2)
+        ]
+        self.assertListEqual(expected_intents, res_intents)
 
     def test_should_get_slots(self):
         # Given
@@ -88,7 +238,9 @@ class TestSnipsNLUEngine(FixtureTest):
         config = NLUEngineConfig([FirstIntentParserConfig(),
                                   SecondIntentParserConfig()])
         engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
+        # pylint:disable=protected-access
         engine._dataset_metadata = mocked_dataset_metadata
+        # pylint:enable=protected-access
 
         # When
         res_slots = engine.get_slots(input_text, greeting_intent)
@@ -142,7 +294,7 @@ utterances:
             unit_name = "second_intent_parser"
             config_type = SecondIntentParserConfig
 
-            def parse(self, text, intents):
+            def parse(self, text, intents, top_n):
                 if text == input_text:
                     return parsing_result(text, intent, slots)
                 return empty_result(text)
@@ -881,47 +1033,6 @@ utterances:
         # When / Then
         engine.fit(dataset)
         engine.parse("ya", intents=["dummy_intent"])
-
-
-class MockIntentParserConfig(ProcessingUnitConfig):
-    unit_name = "mock_intent_parser"
-
-    def to_dict(self):
-        return {"unit_name": self.unit_name}
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls()
-
-
-class MockIntentParser(IntentParser):
-    unit_name = "mock_intent_parser"
-    config_type = MockIntentParserConfig
-
-    def fit(self, dataset, force_retrain):
-        self._fitted = True
-        return self
-
-    @property
-    def fitted(self):
-        return hasattr(self, '_fitted') and self._fitted
-
-    def parse(self, text, intents):
-        return empty_result(text)
-
-    def get_slots(self, text, intent):
-        return []
-
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
-
-    @classmethod
-    def from_path(cls, path, **shared):
-        cfg = cls.config_type()
-        return cls(cfg)
 
 
 class TestIntentParser1Config(MockIntentParserConfig):

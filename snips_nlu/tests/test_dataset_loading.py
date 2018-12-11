@@ -76,6 +76,9 @@ EXPECTED_DATASET_DICT = {
                             "text": "new york"
                         },
                         {
+                            "text": " "
+                        },
+                        {
                             "entity": "snips/datetime",
                             "slot_name": "weatherDate",
                             "text": "Today"

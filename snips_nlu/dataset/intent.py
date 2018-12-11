@@ -320,7 +320,7 @@ class SM(object):
 def capture_text(state):
     next_pos = state.find('[')
     sub = state[:] if next_pos < 0 else state[:next_pos]
-    if sub.strip():
+    if sub:
         state.add_text(sub)
     if next_pos >= 0:
         state.move(next_pos)

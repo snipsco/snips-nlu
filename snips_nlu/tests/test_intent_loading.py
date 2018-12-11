@@ -18,7 +18,8 @@ class TestIntentLoading(TestCase):
 type: intent
 name: getWeather
 utterances:
-  - what is the weather in [weatherLocation:location](paris) ?
+  - "what is the weather in [weatherLocation:location](paris) 
+    [date:snips/datetime](today) ?"
   - "Will it rain [date:snips/datetime](tomorrow) in
     [weatherLocation:location](london)?"
         """))
@@ -38,6 +39,14 @@ utterances:
                             "text": "paris",
                             "entity": "location",
                             "slot_name": "weatherLocation"
+                        },
+                        {
+                            "text": " "
+                        },
+                        {
+                            "text": "today",
+                            "entity": "snips/datetime",
+                            "slot_name": "date"
                         },
                         {
                             "text": " ?"
@@ -250,6 +259,9 @@ is it raining in [weatherLocation] [weatherDate:snips/datetime]
                             "text": None
                         },
                         {
+                            "text": " "
+                        },
+                        {
                             "entity": "snips/datetime",
                             "slot_name": "weatherDate",
                             "text": None
@@ -268,6 +280,9 @@ is it raining in [weatherLocation] [weatherDate:snips/datetime]
                             "entity": "location",
                             "slot_name": "weatherLocation",
                             "text": None
+                        },
+                        {
+                            "text": " "
                         },
                         {
                             "entity": "snips/datetime",

@@ -171,7 +171,7 @@ class ProbabilisticIntentParser(IntentParser):
             list: the list of extracted slots
 
         Raises:
-            IntentNotFound: When the intent was not part of the training data
+            IntentNotFoundError: When the intent was not part of the training data
         """
         if intent is None:
             return []

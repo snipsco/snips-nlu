@@ -23,6 +23,6 @@ class SlotFiller(with_metaclass(ABCMeta, ProcessingUnit)):
 
         Returns:
             list of dict: The list of extracted slots. See
-                :func:`.unresolved_slot` for the output format of a slot
+            :func:`.unresolved_slot` for the output format of a slot
         """
         pass

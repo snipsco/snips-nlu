@@ -74,6 +74,7 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
             list: the list of extracted slots
 
         Raises:
-            IntentNotFound: when the intent was not part of the training data
+            IntentNotFoundError: when the intent was not part of the training
+                data
         """
         pass

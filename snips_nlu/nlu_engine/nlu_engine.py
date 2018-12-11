@@ -212,7 +212,8 @@ class SnipsNLUEngine(ProcessingUnit):
             list: the list of extracted slots
 
         Raises:
-            IntentNotFound: When the intent was not part of the training data
+            IntentNotFoundError: When the intent was not part of the training
+                data
             InvalidInputError: When input type is not unicode
         """
         if not isinstance(text, str):

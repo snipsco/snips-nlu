@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import io
 from builtins import str
-from copy import deepcopy
 
 from mock import MagicMock, patch
 from snips_nlu_ontology import get_all_languages
@@ -28,8 +27,7 @@ from snips_nlu.result import (
     custom_slot, empty_result, intent_classification_result, parsing_result,
     resolved_slot, unresolved_slot, extraction_result)
 from snips_nlu.tests.utils import (
-    BEVERAGE_DATASET, FixtureTest, MockIntentParser, MockIntentParserConfig,
-    SAMPLE_DATASET, get_empty_dataset)
+    FixtureTest, MockIntentParser, MockIntentParserConfig, get_empty_dataset)
 
 
 class TestSnipsNLUEngine(FixtureTest):
@@ -142,6 +140,19 @@ utterances:
 
     def test_should_get_intents(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+- hello
+
+---
+type: intent
+name: greeting2
+utterances:
+- how are you""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         input_text = "hello world"
 
         class FirstIntentParserConfig(MockIntentParserConfig):
@@ -177,7 +188,7 @@ utterances:
 
         config = NLUEngineConfig([FirstIntentParserConfig(),
                                   SecondIntentParserConfig()])
-        engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
         res_intents = engine.get_intents(input_text)
@@ -192,26 +203,19 @@ utterances:
 
     def test_should_get_slots(self):
         # Given
-        input_text = "hello world"
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+- hello [greeted:name](john)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        input_text = "hello snips"
         greeting_intent = "greeting"
         expected_slots = [unresolved_slot(match_range=(6, 11),
-                                          value="world",
-                                          entity="mocked_entity",
-                                          slot_name="mocked_slot_name")]
-        mocked_dataset_metadata = {
-            "language_code": "en",
-            "entities": {
-                "mocked_entity": {
-                    "automatically_extensible": True,
-                    "utterances": dict()
-                }
-            },
-            "slot_name_mappings": {
-                "dummy_intent_1": {
-                    "mocked_slot_name": "mocked_entity"
-                }
-            }
-        }
+                                          value="snips",
+                                          entity="name",
+                                          slot_name="greeted")]
 
         class FirstIntentParserConfig(MockIntentParserConfig):
             unit_name = "first_intent_parser"
@@ -237,10 +241,7 @@ utterances:
 
         config = NLUEngineConfig([FirstIntentParserConfig(),
                                   SecondIntentParserConfig()])
-        engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
-        # pylint:disable=protected-access
-        engine._dataset_metadata = mocked_dataset_metadata
-        # pylint:enable=protected-access
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
         res_slots = engine.get_slots(input_text, greeting_intent)
@@ -272,13 +273,20 @@ utterances:
 
     def test_should_use_parsers_sequentially(self):
         # Given
-        input_text = "hello world"
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+- hello [greeted:name](john)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        input_text = "hello snips"
         intent = intent_classification_result(
-            intent_name='dummy_intent_1', probability=0.7)
+            intent_name='greeting1', probability=0.7)
         slots = [unresolved_slot(match_range=(6, 11),
-                                 value='world',
-                                 entity='mocked_entity',
-                                 slot_name='mocked_slot_name')]
+                                 value='snips',
+                                 entity='name',
+                                 slot_name='greeted')]
 
         class FirstIntentParserConfig(MockIntentParserConfig):
             unit_name = "first_intent_parser"
@@ -302,27 +310,9 @@ utterances:
         register_processing_unit(FirstIntentParser)
         register_processing_unit(SecondIntentParser)
 
-        mocked_dataset_metadata = {
-            "language_code": "en",
-            "entities": {
-                "mocked_entity": {
-                    "automatically_extensible": True,
-                    "utterances": dict()
-                }
-            },
-            "slot_name_mappings": {
-                "dummy_intent_1": {
-                    "mocked_slot_name": "mocked_entity"
-                }
-            }
-        }
-
         config = NLUEngineConfig([FirstIntentParserConfig(),
                                   SecondIntentParserConfig()])
-        engine = SnipsNLUEngine(config).fit(SAMPLE_DATASET)
-        # pylint:disable=protected-access
-        engine._dataset_metadata = mocked_dataset_metadata
-        # pylint:enable=protected-access
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
         parse = engine.parse(input_text)
@@ -334,6 +324,14 @@ utterances:
 
     def test_should_retrain_only_non_trained_subunits(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+- hello [greeted:name](john)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
         class TestIntentParserConfig(MockIntentParserConfig):
             unit_name = "test_intent_parser"
 
@@ -378,7 +376,7 @@ utterances:
         nlu_engine.intent_parsers.append(intent_parser)
 
         # When
-        nlu_engine.fit(SAMPLE_DATASET, force_retrain=False)
+        nlu_engine.fit(dataset, force_retrain=False)
 
         # Then
         self.assertDictEqual(dict(fitted=True, calls=0),
@@ -408,6 +406,21 @@ utterances:
 
     def test_should_be_serializable_into_dir(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         register_processing_unit(TestIntentParser1)
         register_processing_unit(TestIntentParser2)
 
@@ -415,7 +428,7 @@ utterances:
         parser2_config = TestIntentParser2Config()
         parsers_configs = [parser1_config, parser2_config]
         config = NLUEngineConfig(parsers_configs)
-        engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
         engine.persist(self.tmp_file_path)
@@ -465,13 +478,28 @@ utterances:
 
     def test_should_serialize_duplicated_intent_parsers(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         register_processing_unit(TestIntentParser1)
         parser1_config = TestIntentParser1Config()
         parser1bis_config = TestIntentParser1Config()
 
         parsers_configs = [parser1_config, parser1bis_config]
         config = NLUEngineConfig(parsers_configs)
-        engine = SnipsNLUEngine(config).fit(BEVERAGE_DATASET)
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
         engine.persist(self.tmp_file_path)
@@ -628,7 +656,24 @@ utterances:
 
     def test_should_parse_after_deserialization_from_dir(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+- i want [number_of_cups] cups of [beverage_temperature](boiling hot) tea pls
+- can you prepare [number_of_cups] cup of [beverage_temperature](cold) tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee
+- can you prepare [number_of_cups] cup of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         engine = SnipsNLUEngine().fit(dataset)
         input_ = "Give me 3 cups of hot tea please"
 
@@ -663,7 +708,21 @@ utterances:
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         engine = SnipsNLUEngine().fit(dataset)
 
         # When
@@ -982,9 +1041,26 @@ utterances:
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given
-        text = "brew me an espresso"
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+- i want [number_of_cups] cups of [beverage_temperature](boiling hot) tea pls
+- can you prepare [number_of_cups] cup of [beverage_temperature](cold) tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee
+- can you prepare [number_of_cups] cup of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        text = "please brew me a cup of coffee"
         for language in get_all_languages():
-            dataset = deepcopy(BEVERAGE_DATASET)
             dataset[LANGUAGE] = language
             engine = SnipsNLUEngine()
 
@@ -995,12 +1071,28 @@ utterances:
 
             msg = "Could not parse in '%s'" % language
             with self.fail_if_exception(msg):
-                engine.parse(text)
+                res = engine.parse(text)
+            self.assertEqual("MakeCoffee", res[RES_INTENT][RES_INTENT_NAME])
 
     def test_nlu_engine_should_raise_error_with_bytes_input(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         bytes_input = b"brew me an espresso"
-        engine = SnipsNLUEngine().fit(BEVERAGE_DATASET)
+        engine = SnipsNLUEngine().fit(dataset)
 
         # When / Then
         with self.assertRaises(InvalidInputError) as cm:

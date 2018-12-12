@@ -19,9 +19,6 @@ from snips_nlu.utils import json_string, unicode_string
 
 TEST_PATH = Path(__file__).parent
 TEST_RESOURCES_PATH = TEST_PATH / "resources"
-SAMPLE_DATASET_PATH = TEST_RESOURCES_PATH / "sample_dataset.json"
-BEVERAGE_DATASET_PATH = TEST_RESOURCES_PATH / "beverage_dataset.json"
-WEATHER_DATASET_PATH = TEST_RESOURCES_PATH / "weather_dataset.json"
 PERFORMANCE_DATASET_PATH = TEST_RESOURCES_PATH / "performance_dataset.json"
 
 
@@ -92,15 +89,6 @@ def get_empty_dataset(language):
         "language": language,
     }
 
-
-with SAMPLE_DATASET_PATH.open(encoding='utf8') as dataset_file:
-    SAMPLE_DATASET = json.load(dataset_file)
-
-with BEVERAGE_DATASET_PATH.open(encoding='utf8') as dataset_file:
-    BEVERAGE_DATASET = json.load(dataset_file)
-
-with WEATHER_DATASET_PATH.open(encoding='utf8') as dataset_file:
-    WEATHER_DATASET = json.load(dataset_file)
 
 with PERFORMANCE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     PERFORMANCE_DATASET = json.load(dataset_file)

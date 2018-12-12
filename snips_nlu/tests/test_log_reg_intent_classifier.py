@@ -8,7 +8,7 @@ from mock import patch
 
 from snips_nlu.constants import (
     INTENTS, LANGUAGE_EN, RES_INTENT_NAME, RES_PROBA, UTTERANCES)
-from snips_nlu.dataset import Dataset, validate_and_format_dataset
+from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
@@ -18,8 +18,7 @@ from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
-from snips_nlu.tests.utils import (
-    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
+from snips_nlu.tests.utils import FixtureTest, get_empty_dataset
 
 
 # pylint: disable=unused-argument
@@ -36,22 +35,54 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
 class TestLogRegIntentClassifier(FixtureTest):
     def test_should_get_intent(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        classifier = LogRegIntentClassifier().fit(dataset)
-        text = "This is a dummy_3 query from another intent"
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_first_intent
+utterances:
+- how are you
+- hello how are you?
+- what's up
+
+---
+type: intent
+name: my_second_intent
+utterances:
+- what is the weather today ?
+- does it rain
+- will it rain tomorrow""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        config = LogRegIntentClassifierConfig(random_seed=42)
+        classifier = LogRegIntentClassifier(config).fit(dataset)
+        text = "hey how are you doing ?"
 
         # When
         res = classifier.get_intent(text)
         intent = res[RES_INTENT_NAME]
 
         # Then
-        expected_intent = "dummy_intent_2"
-
-        self.assertEqual(intent, expected_intent)
+        self.assertEqual("my_first_intent", intent)
 
     def test_should_get_none_intent_when_empty_input(self):
         # Given
-        classifier = LogRegIntentClassifier().fit(SAMPLE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_first_intent
+utterances:
+- how are you
+- hello how are you?
+- what's up
+
+---
+type: intent
+name: my_second_intent
+utterances:
+- what is the weather today ?
+- does it rain
+- will it rain tomorrow""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier = LogRegIntentClassifier().fit(dataset)
         text = ""
 
         # When
@@ -62,7 +93,25 @@ class TestLogRegIntentClassifier(FixtureTest):
 
     def test_should_get_intent_when_filter(self):
         # Given
-        classifier = LogRegIntentClassifier().fit(BEVERAGE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a cup of tea
+- i want two cups of tea please
+- can you prepare one cup of tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me a cup of coffee please
+- brew two cups of coffee
+- can you prepare one cup of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        config = LogRegIntentClassifierConfig(random_seed=42)
+        classifier = LogRegIntentClassifier(config).fit(dataset)
 
         # When
         text1 = "Make me two cups of tea"
@@ -181,10 +230,22 @@ utterances:
     def test_should_be_serializable(self, mock_to_dict):
         # Given
         mocked_dict = {"mocked_featurizer_key": "mocked_featurizer_value"}
-
         mock_to_dict.return_value = mocked_dict
 
-        intent_classifier = LogRegIntentClassifier().fit(SAMPLE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - foo bar
+
+---
+type: intent
+name: intent2
+utterances:
+  - lorem ipsum""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        intent_classifier = LogRegIntentClassifier().fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 
@@ -192,8 +253,7 @@ utterances:
         intent_classifier.persist(self.tmp_file_path)
 
         # Then
-        intent_list = sorted(SAMPLE_DATASET[INTENTS])
-        intent_list.append(None)
+        intent_list = ["intent1", "intent2", None]
         expected_dict = {
             "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
@@ -258,8 +318,24 @@ utterances:
 
     def test_should_get_intent_after_deserialization(self):
         # Given
-        dataset = BEVERAGE_DATASET
-        classifier = LogRegIntentClassifier().fit(BEVERAGE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a cup of tea
+- i want two cups of tea please
+- can you prepare one cup of tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me a cup of coffee please
+- brew two cups of coffee
+- can you prepare one cup of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier = LogRegIntentClassifier().fit(dataset)
         classifier.persist(self.tmp_file_path)
 
         # When
@@ -278,7 +354,23 @@ utterances:
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a cup of tea
+- i want two cups of tea please
+- can you prepare one cup of tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me a cup of coffee please
+- brew two cups of coffee
+- can you prepare one cup of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         intent_classifier = LogRegIntentClassifier().fit(dataset)
 
         # When
@@ -349,15 +441,28 @@ utterances:
 
     def test_log_activation_weights(self):
         # Given
-        intent_classifier = LogRegIntentClassifier().fit(SAMPLE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - foo bar
+
+---
+type: intent
+name: intent2
+utterances:
+  - lorem ipsum""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        intent_classifier = LogRegIntentClassifier().fit(dataset)
 
         text = "yo"
         utterances = [text_to_utterance(text)]
         x = intent_classifier.featurizer.transform(utterances)[0]
 
         # When
-        log = intent_classifier.log_activation_weights(text, x)
+        log = intent_classifier.log_activation_weights(text, x, top_n=42)
 
         # Then
         self.assertIsInstance(log, str)
-        self.assertIn("Top 50", log)
+        self.assertIn("Top 42", log)

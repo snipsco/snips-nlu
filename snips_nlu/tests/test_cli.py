@@ -6,9 +6,9 @@ import tempfile
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli import (
     cross_val_metrics, parse, train, train_test_metrics, generate_dataset)
-from snips_nlu.tests.utils import (
-    BEVERAGE_DATASET_PATH, SnipsTest, TEST_PATH, redirect_stdout)
-from snips_nlu.utils import unicode_string
+from snips_nlu.dataset import Dataset
+from snips_nlu.tests.utils import SnipsTest, TEST_PATH, redirect_stdout
+from snips_nlu.utils import unicode_string, json_string
 
 
 def mk_sys_argv(args):
@@ -24,6 +24,31 @@ class TestCLI(SnipsTest):
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+- i want [number_of_cups] cups of [beverage_temperature](boiling hot) tea pls
+- can you prepare [number_of_cups] cup of [beverage_temperature](cold) tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee
+- can you prepare [number_of_cups] cup of coffee""")
+        beverage_dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        self.beverage_dataset_path = self.fixture_dir / "beverage_dataset.json"
+        if self.beverage_dataset_path.exists():
+            self.beverage_dataset_path.unlink()
+        with self.beverage_dataset_path.open(mode="w") as f:
+            f.write(json_string(beverage_dataset))
+
         self.tmp_file_path = self.fixture_dir / next(
             tempfile._get_candidate_names())
         while self.tmp_file_path.exists():
@@ -36,8 +61,8 @@ class TestCLI(SnipsTest):
 
     def test_train(self):
         # Given / When
-        train(BEVERAGE_DATASET_PATH, str(self.tmp_file_path), config_path=None,
-              verbose=False)
+        train(self.beverage_dataset_path, str(self.tmp_file_path),
+              config_path=None, verbose=False)
 
         # Then
         if not self.tmp_file_path.exists():
@@ -48,8 +73,23 @@ class TestCLI(SnipsTest):
 
     def test_parse(self):
         # Given / When
-        train(BEVERAGE_DATASET_PATH, str(self.tmp_file_path), config_path=None,
-              verbose=False)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- brew [number_of_cups:snips/number](one) cup of coffee please
+- make me [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        nlu_engine = SnipsNLUEngine().fit(dataset)
+        nlu_engine.persist(self.tmp_file_path)
 
         # When / Then
         output_target = io.StringIO()
@@ -161,7 +201,8 @@ values:
 
     def test_cross_val_metrics(self):
         # Given / When
-        cross_val_metrics(str(BEVERAGE_DATASET_PATH), str(self.tmp_file_path))
+        cross_val_metrics(str(self.beverage_dataset_path),
+                          str(self.tmp_file_path))
 
         # Then
         if not self.tmp_file_path.exists():
@@ -169,8 +210,9 @@ values:
 
     def test_train_test_metrics(self):
         # Given / When
-        train_test_metrics(str(BEVERAGE_DATASET_PATH),
-                           str(BEVERAGE_DATASET_PATH), str(self.tmp_file_path))
+        train_test_metrics(
+            str(self.beverage_dataset_path), str(self.beverage_dataset_path),
+            str(self.tmp_file_path))
 
         # Then
         if not self.tmp_file_path.exists():

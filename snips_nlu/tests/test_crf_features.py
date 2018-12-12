@@ -1,13 +1,13 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from copy import deepcopy
+import io
 
 from mock import MagicMock, patch
 
 from snips_nlu.constants import LANGUAGE, LANGUAGE_EN, SNIPS_DATETIME, \
     SNIPS_NUMBER
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import \
     CustomEntityParserUsage
@@ -20,7 +20,7 @@ from snips_nlu.slot_filler.feature_factory import (
     IsFirstFactory, IsLastFactory, LengthFactory, NgramFactory, PrefixFactory,
     ShapeNgramFactory, SingleFeatureFactory, SuffixFactory, WordClusterFactory,
     get_feature_factory)
-from snips_nlu.tests.utils import SAMPLE_DATASET, SnipsTest
+from snips_nlu.tests.utils import SnipsTest
 
 
 class TestCRFFeatures(SnipsTest):
@@ -372,6 +372,16 @@ class TestCRFFeatures(SnipsTest):
 
     def test_entity_match_factory(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [entity1](my first entity)
+- this is [entity2](second_entity)""")
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
         config = {
             "factory_name": "entity_match",
             "args": {
@@ -381,14 +391,12 @@ class TestCRFFeatures(SnipsTest):
             "offsets": [0]
         }
 
-        tokens = tokenize("2 dummy a had dummy_c", LANGUAGE_EN)
+        tokens = tokenize("my first entity and second_entity", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         factory = get_feature_factory(config)
-        dataset = deepcopy(SAMPLE_DATASET)
-        dataset = validate_and_format_dataset(dataset)
         custom_entity_parser = CustomEntityParser.build(
             dataset, CustomEntityParserUsage.WITH_STEMS)
-        factory.fit(dataset, "dummy_intent_1")
+        factory.fit(dataset, "my_intent")
 
         # When
         features = factory.build_features(
@@ -409,8 +417,8 @@ class TestCRFFeatures(SnipsTest):
         # Then
         self.assertIsInstance(factory, CustomEntityMatchFactory)
         self.assertEqual(len(features), 2)
-        self.assertEqual(features[0].base_name, "entity_match_dummy_entity_1")
-        self.assertEqual(features[1].base_name, "entity_match_dummy_entity_2")
+        self.assertEqual(features[0].base_name, "entity_match_entity1")
+        self.assertEqual(features[1].base_name, "entity_match_entity2")
         self.assertEqual(res0, BEGINNING_PREFIX)
         self.assertEqual(res1, INSIDE_PREFIX)
         self.assertEqual(res2, LAST_PREFIX)

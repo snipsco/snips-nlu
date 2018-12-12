@@ -26,7 +26,7 @@ from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, TAGS, TOKENS, positive_tagging, tag_name_to_slot_name,
     tags_to_preslots, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
-from snips_nlu.slot_filler.feature_factory import get_feature_factory
+from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
 from snips_nlu.utils import (
     DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
@@ -55,8 +55,9 @@ class CRFSlotFiller(SlotFiller):
             config = self.config_type()
         super(CRFSlotFiller, self).__init__(config, **shared)
         self.crf_model = None
-        self.features_factories = [get_feature_factory(conf) for conf in
-                                   self.config.feature_factory_configs]
+        self.features_factories = [
+            CRFFeatureFactory.from_config(conf)
+            for conf in self.config.feature_factory_configs]
         self._features = None
         self.language = None
         self.intent = None

@@ -32,3 +32,28 @@ class EntityFormatError(DatasetFormatError):
 class IntentFormatError(DatasetFormatError):
     """Raised when attempting to create a Snips NLU intent using a wrong
     format"""
+
+
+class AlreadyRegisteredError(SnipsNLUError):
+    """Raised when attempting to register a subclass which is already
+    registered"""
+
+    def __init__(self, name, new_class, existing_class):
+        msg = "Cannot register %s for %s as it has already been used to " \
+              "register %s" \
+              % (name, new_class.__name__, existing_class.__name__)
+        super(AlreadyRegisteredError, self).__init__(msg)
+
+
+class NotRegisteredError(SnipsNLUError):
+    """Raised when trying to use a subclass which was not registered"""
+
+    def __init__(self, registrable_cls, name=None, registered_cls=None):
+        if name is not None:
+            msg = "'%s' has not been registered for type %s. " \
+                  % (name, registrable_cls)
+        else:
+            msg = "subclass %s has not been registered for type %s. " \
+                  % (registered_cls, registrable_cls)
+        msg += "Use @BaseClass.register('my_component') to register a subclass"
+        super(NotRegisteredError, self).__init__(msg)

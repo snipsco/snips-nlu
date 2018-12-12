@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 import io
-
+from deprecation import fail_if_not_removed
 from mock import MagicMock, patch
 
 from snips_nlu.constants import LANGUAGE, LANGUAGE_EN, SNIPS_DATETIME, \
@@ -11,6 +11,7 @@ from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import \
     CustomEntityParserUsage
+from snips_nlu.exceptions import NotRegisteredError, AlreadyRegisteredError
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, TaggingScheme, UNIT_PREFIX)
@@ -19,7 +20,7 @@ from snips_nlu.slot_filler.feature_factory import (
     BuiltinEntityMatchFactory, CustomEntityMatchFactory, IsDigitFactory,
     IsFirstFactory, IsLastFactory, LengthFactory, NgramFactory, PrefixFactory,
     ShapeNgramFactory, SingleFeatureFactory, SuffixFactory, WordClusterFactory,
-    get_feature_factory)
+    get_feature_factory, CRFFeatureFactory)
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -84,17 +85,18 @@ class TestCRFFeatures(SnipsTest):
 
     def test_single_feature_factory(self):
         # Given
-        class TestSingleFeatureFactory(SingleFeatureFactory):
+        @CRFFeatureFactory.register("my_factory", override=True)
+        class MySingleFeatureFactory(SingleFeatureFactory):
             def compute_feature(self, tokens, token_index):
                 value = tokens[token_index].value
                 return "%s_%s" % (value, len(value))
 
         config = {
-            "factory_name": "test_factory",
+            "factory_name": "my_factory",
             "args": {},
             "offsets": [0, 1]
         }
-        factory = TestSingleFeatureFactory(config)
+        factory = MySingleFeatureFactory(config)
         factory.fit(None, None)
         features = factory.build_features()
         cache = [{TOKEN_NAME: token} for token in
@@ -106,8 +108,8 @@ class TestCRFFeatures(SnipsTest):
 
         # Then
         self.assertEqual(len(features), 2)
-        self.assertEqual(features[0].name, "test_factory")
-        self.assertEqual(features[1].name, "test_factory[+1]")
+        self.assertEqual(features[0].name, "my_factory")
+        self.assertEqual(features[1].name, "my_factory[+1]")
         self.assertEqual(res_0, "hello_5")
         self.assertEqual(res_1, "beautiful_9")
 
@@ -120,7 +122,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello 1 world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         factory.fit(None, None)
         features = factory.build_features()
 
@@ -143,7 +145,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         factory.fit(None, None)
         features = factory.build_features()
 
@@ -166,7 +168,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         factory.fit(None, None)
         features = factory.build_features()
 
@@ -191,7 +193,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         factory.fit(None, None)
         features = factory.build_features()
 
@@ -214,7 +216,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         factory.fit(None, None)
         features = factory.build_features()
 
@@ -235,7 +237,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         factory.fit(None, None)
         features = factory.build_features()
 
@@ -260,7 +262,7 @@ class TestCRFFeatures(SnipsTest):
         }
         tokens = tokenize("hello beautiful world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         mocked_dataset = {"language": "en"}
         factory.fit(mocked_dataset, None)
         features = factory.build_features()
@@ -289,7 +291,7 @@ class TestCRFFeatures(SnipsTest):
         mock_get_gazetteer.return_value = {"hello", "beautiful", "world"}
         tokens = tokenize("hello beautiful foobar world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         mocked_dataset = {"language": "en"}
         factory.fit(mocked_dataset, None)
         features = factory.build_features()
@@ -314,7 +316,7 @@ class TestCRFFeatures(SnipsTest):
 
         tokens = tokenize("hello Beautiful foObar world", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         mocked_dataset = {"language": "en"}
         factory.fit(mocked_dataset, None)
         features = factory.build_features()
@@ -353,7 +355,7 @@ class TestCRFFeatures(SnipsTest):
 
         tokens = tokenize("hello word1 word2", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         mocked_dataset = {"language": "en"}
         factory.fit(mocked_dataset, None)
         features = factory.build_features()
@@ -393,7 +395,7 @@ utterances:
 
         tokens = tokenize("my first entity and second_entity", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         custom_entity_parser = CustomEntityParser.build(
             dataset, CustomEntityParserUsage.WITH_STEMS)
         factory.fit(dataset, "my_intent")
@@ -448,9 +450,10 @@ utterances:
 
         tokens = tokenize("one tea tomorrow at 2pm", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
-        factory = get_feature_factory(config)
+        factory = CRFFeatureFactory.from_config(config)
         # pylint: disable=protected-access
         factory._get_builtin_entity_scope = mock_builtin_entity_scope
+        # pylint: enable=protected-access
         mocked_dataset = {"language": "en"}
         factory.fit(mocked_dataset, None)
 
@@ -488,3 +491,138 @@ utterances:
         self.assertEqual(res7, None)
         self.assertEqual(res8, None)
         self.assertEqual(res9, None)
+
+    def test_custom_single_feature_factory(self):
+        # Given
+        @CRFFeatureFactory.register("my_single_feature", override=True)
+        class MySingleFeatureFactory(SingleFeatureFactory):
+            def compute_feature(self, tokens, token_index):
+                return "(%s)[my_feature]" % tokens[token_index].value
+
+        # When
+        config = {
+            "factory_name": "my_single_feature",
+            "args": {},
+            "offsets": [0, -1]
+        }
+        feature_factory = CRFFeatureFactory.from_config(config)
+        features = feature_factory.build_features()
+        feature_name = features[0].name
+        feature_name_offset = features[1].name
+        tokens = tokenize("hello world", "en")
+        cache = [{TOKEN_NAME: token} for token in tokens]
+        feature_value = features[0].compute(1, cache)
+        feature_value_offset = features[1].compute(1, cache)
+
+        # Then
+        self.assertEqual("my_single_feature", feature_name)
+        self.assertEqual("my_single_feature[-1]", feature_name_offset)
+        self.assertEqual("(world)[my_feature]", feature_value)
+        self.assertEqual("(hello)[my_feature]", feature_value_offset)
+
+    def test_custom_multi_feature_factory(self):
+        # Given
+        @CRFFeatureFactory.register("my_multi_feature_factory", override=True)
+        class MyMultiFeature(CRFFeatureFactory):
+            def build_features(self, builtin_entity_parser=None,
+                               custom_entity_parser=None):
+                first_features = [
+                    Feature("my_first_feature", self.compute_feature_1,
+                            offset=offset) for offset in self.offsets]
+                second_features = [
+                    Feature("my_second_feature", self.compute_feature_2,
+                            offset=offset) for offset in self.offsets]
+                return first_features + second_features
+
+            @staticmethod
+            def compute_feature_1(tokens, token_index):
+                return "(%s)[my_feature_1]" % tokens[token_index].value
+
+            @staticmethod
+            def compute_feature_2(tokens, token_index):
+                return "(%s)[my_feature_2]" % tokens[token_index].value
+
+        # When
+        config = {
+            "factory_name": "my_multi_feature_factory",
+            "args": {},
+            "offsets": [-1, 0]
+        }
+        feature_factory = CRFFeatureFactory.from_config(config)
+        features = feature_factory.build_features()
+        feature_0 = features[0]
+        feature_1 = features[1]
+        feature_2 = features[2]
+        feature_3 = features[3]
+        tokens = tokenize("foo bar baz", "en")
+        cache = [{TOKEN_NAME: token} for token in tokens]
+
+        # Then
+        self.assertEqual("my_first_feature[-1]", feature_0.name)
+        self.assertEqual("(foo)[my_feature_1]", feature_0.compute(1, cache))
+        self.assertEqual("my_first_feature", feature_1.name)
+        self.assertEqual("my_second_feature[-1]", feature_2.name)
+        self.assertEqual("(bar)[my_feature_2]", feature_2.compute(2, cache))
+        self.assertEqual("my_second_feature", feature_3.name)
+
+    def test_factory_from_config(self):
+        # Given
+        @CRFFeatureFactory.register("my_custom_feature")
+        class MySingleFeatureFactory(SingleFeatureFactory):
+            def compute_feature(self, tokens, token_index):
+                return "(%s)[my_custom_feature]" % tokens[token_index].value
+
+        config = {
+            "factory_name": "my_custom_feature",
+            "args": {},
+            "offsets": [0]
+        }
+
+        # When
+        factory = CRFFeatureFactory.from_config(config)
+
+        # Then
+        self.assertIsInstance(factory, MySingleFeatureFactory)
+
+    def test_should_fail_loading_unregistered_factory_from_config(self):
+        config = {
+            "factory_name": "my_unknown_feature",
+            "args": {},
+            "offsets": [0]
+        }
+
+        # When / Then
+        with self.assertRaises(NotRegisteredError):
+            CRFFeatureFactory.from_config(config)
+
+    @fail_if_not_removed
+    def test_get_feature_factory(self):
+        # Given
+        @CRFFeatureFactory.register("my_custom_feature_2")
+        class MyCustomFeatureFactory(SingleFeatureFactory):
+            def compute_feature(self, tokens, token_index):
+                return "(%s)[my_custom_feature]" % tokens[token_index].value
+
+        config = {
+            "factory_name": "my_custom_feature_2",
+            "args": {},
+            "offsets": [0]
+        }
+
+        # When
+        factory = get_feature_factory(config)
+
+        # Then
+        self.assertIsInstance(factory, MyCustomFeatureFactory)
+
+    @fail_if_not_removed
+    def test_should_fail_getting_unregistered_factory(self):
+        config = {
+            "factory_name": "my_unknown_feature",
+            "args": {},
+            "offsets": [0]
+        }
+
+        # When / Then
+        with self.assertRaises(NotRegisteredError):
+            get_feature_factory(config)

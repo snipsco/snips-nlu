@@ -1,12 +1,13 @@
 from __future__ import unicode_literals
 
-from abc import ABCMeta, abstractmethod
-from builtins import object, str
+from builtins import str
 
-from future.utils import with_metaclass
+from deprecation import deprecated
 from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
+from snips_nlu.__about__ import __version__
+from snips_nlu.common.registrable import Registrable
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
     START, STEMS, WORD_CLUSTERS)
@@ -22,9 +23,10 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
+from snips_nlu.utils import classproperty
 
 
-class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
+class CRFFeatureFactory(Registrable):
     """Abstraction to implement to build CRF features
 
     A :class:`CRFFeatureFactory` is initialized with a dict which describes
@@ -36,15 +38,27 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         An empty list corresponds to no feature.
 
 
-    In addition, a 'drop_out' to use during train time can be specified.
+    In addition, a 'drop_out' to use at training time can be specified.
     """
 
     def __init__(self, factory_config):
         self.factory_config = factory_config
 
-    @property
-    def factory_name(self):
-        return self.factory_config["factory_name"]
+    @classmethod
+    def from_config(cls, factory_config):
+        """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
+        config
+
+        Raises:
+            NotRegisteredError: when the factory is not registered
+        """
+        factory_name = factory_config["factory_name"]
+        factory = cls.by_name(factory_name)
+        return factory(factory_config)
+
+    @classproperty
+    def name(cls):
+        return CRFFeatureFactory.registered_name(cls)
 
     @property
     def args(self):
@@ -63,26 +77,24 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         """
         return self
 
-    @abstractmethod
     def build_features(self, builtin_entity_parser, custom_entity_parser):
         """Build a list of :class:`.Feature`"""
-        pass
+        raise NotImplementedError
 
     def get_required_resources(self):
         return None
 
 
-class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
+class SingleFeatureFactory(CRFFeatureFactory):
     """A CRF feature factory which produces only one feature"""
 
     @property
     def feature_name(self):
         # by default, use the factory name
-        return self.factory_name
+        return self.name
 
-    @abstractmethod
     def compute_feature(self, tokens, token_index):
-        pass
+        raise NotImplementedError
 
     def build_features(self, builtin_entity_parser=None,
                        custom_entity_parser=None):
@@ -95,41 +107,37 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
         ]
 
 
+@CRFFeatureFactory.register("is_digit")
 class IsDigitFactory(SingleFeatureFactory):
     """Feature: is the considered token a digit?"""
-
-    name = "is_digit"
 
     def compute_feature(self, tokens, token_index):
         return "1" if tokens[token_index].value.isdigit() else None
 
 
+@CRFFeatureFactory.register("is_first")
 class IsFirstFactory(SingleFeatureFactory):
     """Feature: is the considered token the first in the input?"""
-
-    name = "is_first"
 
     def compute_feature(self, tokens, token_index):
         return "1" if token_index == 0 else None
 
 
+@CRFFeatureFactory.register("is_last")
 class IsLastFactory(SingleFeatureFactory):
     """Feature: is the considered token the last in the input?"""
-
-    name = "is_last"
 
     def compute_feature(self, tokens, token_index):
         return "1" if token_index == len(tokens) - 1 else None
 
 
+@CRFFeatureFactory.register("prefix")
 class PrefixFactory(SingleFeatureFactory):
     """Feature: a prefix of the considered token
 
     This feature has one parameter, *prefix_size*, which specifies the size of
     the prefix
     """
-
-    name = "prefix"
 
     @property
     def feature_name(self):
@@ -144,14 +152,13 @@ class PrefixFactory(SingleFeatureFactory):
                               self.prefix_size, 0)
 
 
+@CRFFeatureFactory.register("suffix")
 class SuffixFactory(SingleFeatureFactory):
     """Feature: a suffix of the considered token
 
     This feature has one parameter, *suffix_size*, which specifies the size of
     the suffix
     """
-
-    name = "suffix"
 
     @property
     def feature_name(self):
@@ -167,15 +174,15 @@ class SuffixFactory(SingleFeatureFactory):
                               reverse=True)
 
 
+@CRFFeatureFactory.register("length")
 class LengthFactory(SingleFeatureFactory):
     """Feature: the length (characters) of the considered token"""
-
-    name = "length"
 
     def compute_feature(self, tokens, token_index):
         return str(len(tokens[token_index].value))
 
 
+@CRFFeatureFactory.register("ngram")
 class NgramFactory(SingleFeatureFactory):
     """Feature: the n-gram consisting of the considered token and potentially
     the following ones
@@ -191,8 +198,6 @@ class NgramFactory(SingleFeatureFactory):
         'rare_word'
 
     """
-
-    name = "ngram"
 
     def __init__(self, factory_config):
         super(NgramFactory, self).__init__(factory_config)
@@ -258,6 +263,7 @@ class NgramFactory(SingleFeatureFactory):
         return resources
 
 
+@CRFFeatureFactory.register("shape_ngram")
 class ShapeNgramFactory(SingleFeatureFactory):
     """Feature: the shape of the n-gram consisting of the considered token and
     potentially the following ones
@@ -272,8 +278,6 @@ class ShapeNgramFactory(SingleFeatureFactory):
         -   'XXX' -> UPPERCASED
         -   'xX' -> None of the above
     """
-
-    name = "shape_ngram"
 
     def __init__(self, factory_config):
         super(ShapeNgramFactory, self).__init__(factory_config)
@@ -309,6 +313,7 @@ class ShapeNgramFactory(SingleFeatureFactory):
         return None
 
 
+@CRFFeatureFactory.register("word_cluster")
 class WordClusterFactory(SingleFeatureFactory):
     """Feature: The cluster which the considered token belongs to, if any
 
@@ -322,8 +327,6 @@ class WordClusterFactory(SingleFeatureFactory):
     clustered into a binary tree resulting in clusters of the form '100111001'
     See https://en.wikipedia.org/wiki/Brown_clustering
     """
-
-    name = "word_cluster"
 
     def __init__(self, factory_config):
         super(WordClusterFactory, self).__init__(factory_config)
@@ -366,6 +369,7 @@ class WordClusterFactory(SingleFeatureFactory):
         }
 
 
+@CRFFeatureFactory.register("entity_match")
 class CustomEntityMatchFactory(CRFFeatureFactory):
     """Features: does the considered token belongs to the values of one of the
     entities in the training dataset
@@ -380,8 +384,6 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
     -   'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
         allows to give more information about the match.
     """
-
-    name = "entity_match"
 
     def __init__(self, factory_config):
         super(CustomEntityMatchFactory, self).__init__(factory_config)
@@ -491,6 +493,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
         }
 
 
+@CRFFeatureFactory.register("builtin_entity_match")
 class BuiltinEntityMatchFactory(CRFFeatureFactory):
     """Features: is the considered token part of a builtin entity such as a
     date, a temperature etc
@@ -502,8 +505,6 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
     :class:`.TaggingScheme`. This allows to give more information about the
     match.
     """
-
-    name = "builtin_entity_match"
 
     def __init__(self, factory_config):
         super(BuiltinEntityMatchFactory, self).__init__(factory_config)
@@ -584,17 +585,14 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         return grammar_entities + gazetteer_entities
 
 
-FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
-             SuffixFactory, LengthFactory, NgramFactory, ShapeNgramFactory,
-             WordClusterFactory, CustomEntityMatchFactory,
-             BuiltinEntityMatchFactory]
-
-
+@deprecated(deprecated_in="0.18.1", removed_in="0.19.0",
+            current_version=__version__,
+            details="Use CRFFeatureFactory.from_config instead")
 def get_feature_factory(factory_config):
     """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
-    config"""
-    factory_name = factory_config["factory_name"]
-    for factory in FACTORIES:
-        if factory_name == factory.name:
-            return factory(factory_config)
-    raise ValueError("Unknown feature factory: %s" % factory_name)
+    config
+
+    Raises:
+        NotRegisteredError: when the factory is not registered
+    """
+    return CRFFeatureFactory.from_config(factory_config)

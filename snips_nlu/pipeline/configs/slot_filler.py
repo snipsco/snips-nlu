@@ -91,11 +91,11 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
 
     def get_required_resources(self):
         # Import here to avoid circular imports
-        from snips_nlu.slot_filler.feature_factory import get_feature_factory
+        from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 
         resources = self.data_augmentation_config.get_required_resources()
         for config in self.feature_factory_configs:
-            factory = get_feature_factory(config)
+            factory = CRFFeatureFactory.from_config(config)
             resources = merge_required_resources(
                 resources, factory.get_required_resources())
         return resources

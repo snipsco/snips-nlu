@@ -1,14 +1,13 @@
 from __future__ import unicode_literals, print_function
 
-import json
 import logging
-
 from builtins import input
 
 import plac
 
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli.utils import set_nlu_logger
+from snips_nlu.utils import unicode_string, json_string
 
 
 @plac.annotations(
@@ -36,7 +35,6 @@ def parse(training_path, query, verbose=False):
 
 
 def print_parsing_result(engine, query):
-    if isinstance(query, bytes):
-        query = query.decode("utf8")
-    json_dump = json.dumps(engine.parse(query), sort_keys=True, indent=2)
+    query = unicode_string(query)
+    json_dump = json_string(engine.parse(query), sort_keys=True, indent=2)
     print(json_dump)

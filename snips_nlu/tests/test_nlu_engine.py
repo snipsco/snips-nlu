@@ -294,7 +294,7 @@ utterances:
             unit_name = "second_intent_parser"
             config_type = SecondIntentParserConfig
 
-            def parse(self, text, intents, top_n):
+            def parse(self, text, intents=None, top_n=None):
                 if text == input_text:
                     return parsing_result(text, intent, slots)
                 return empty_result(text)

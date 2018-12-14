@@ -131,7 +131,9 @@ class ProbabilisticIntentParser(IntentParser):
             NotTrained: when the intent parser is not fitted
         """
         if isinstance(intents, str):
-            intents = [intents]
+            intents = {intents}
+        elif isinstance(intents, list):
+            intents = list(intents)
 
         if top_n is None:
             intent_result = self.intent_classifier.get_intent(text, intents)

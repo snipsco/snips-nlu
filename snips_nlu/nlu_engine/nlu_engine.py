@@ -147,7 +147,9 @@ class SnipsNLUEngine(ProcessingUnit):
                                     % type(text))
 
         if isinstance(intents, str):
-            intents = [intents]
+            intents = {intents}
+        elif isinstance(intents, list):
+            intents = set(intents)
 
         if top_n is None:
             for parser in self.intent_parsers:

@@ -24,11 +24,11 @@ class DatasetFormatError(SnipsNLUError):
     format"""
 
 
-class EntityFormatError(SnipsNLUError):
+class EntityFormatError(DatasetFormatError):
     """Raised when attempting to create a Snips NLU entity using a wrong
     format"""
 
 
-class IntentFormatError(SnipsNLUError):
+class IntentFormatError(DatasetFormatError):
     """Raised when attempting to create a Snips NLU intent using a wrong
     format"""

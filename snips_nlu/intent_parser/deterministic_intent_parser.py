@@ -198,7 +198,9 @@ class DeterministicIntentParser(IntentParser):
 
     def _parse_top_intents(self, text, top_n, intents=None):
         if isinstance(intents, str):
-            intents = [intents]
+            intents = {intents}
+        elif isinstance(intents, list):
+            intents = set(intents)
 
         if top_n < 1:
             raise ValueError(

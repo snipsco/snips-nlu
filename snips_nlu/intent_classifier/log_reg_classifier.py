@@ -136,7 +136,9 @@ class LogRegIntentClassifier(IntentClassifier):
 
     def _get_intents(self, text, intents_filter):
         if isinstance(intents_filter, str):
-            intents_filter = [intents_filter]
+            intents_filter = {intents_filter}
+        elif isinstance(intents_filter, list):
+            intents_filter = set(intents_filter)
 
         if not text or not self.intent_list or not self.featurizer:
             results = [intent_classification_result(None, 1.0)]

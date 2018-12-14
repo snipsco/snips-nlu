@@ -11,11 +11,12 @@ from future.utils import iteritems, itervalues
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (build_processing_unit,
                                                 load_processing_unit)
-from snips_nlu.result import empty_result, parsing_result
+from snips_nlu.result import empty_result, parsing_result, extraction_result
 from snips_nlu.utils import (check_persisted_path, elapsed_since,
                              fitted_required, json_string, log_elapsed_time,
                              log_result)
@@ -105,32 +106,82 @@ class ProbabilisticIntentParser(IntentParser):
     @log_elapsed_time(logger, logging.DEBUG,
                       "ProbabilisticIntentParser parsed in {elapsed_time}")
     @fitted_required
-    def parse(self, text, intents=None):
+    def parse(self, text, intents=None, top_n=None):
         """Performs intent parsing on the provided *text* by first classifying
         the intent and then using the correspond slot filler to extract slots
 
         Args:
-            text (str): Input
-            intents (str or list of str): If provided, reduces the scope of
+            text (str): input
+            intents (str or list of str): if provided, reduces the scope of
                 intent parsing to the provided list of intents
+            top_n (int, optional): when provided, this method will return a
+                list of at most top_n most likely intents, instead of a single
+                parsing result.
+                Note that the returned list can contain less than ``top_n``
+                elements, for instance when the parameter ``intents`` is not
+                None, or when ``top_n`` is greater than the total number of
+                intents.
 
         Returns:
-            dict: The most likely intent along with the extracted slots. See
-            :func:`.parsing_result` for the output format.
+            dict or list: the most likely intent(s) along with the extracted
+            slots. See :func:`.parsing_result` and :func:`.extraction_result`
+            for the output format.
 
         Raises:
-            NotTrained: When the intent parser is not fitted
+            NotTrained: when the intent parser is not fitted
         """
         if isinstance(intents, str):
-            intents = [intents]
+            intents = {intents}
+        elif isinstance(intents, list):
+            intents = list(intents)
 
-        intent_result = self.intent_classifier.get_intent(text, intents)
-        if intent_result is None:
-            return empty_result(text)
+        if top_n is None:
+            intent_result = self.intent_classifier.get_intent(text, intents)
+            if intent_result is None:
+                return empty_result(text)
 
-        intent_name = intent_result[RES_INTENT_NAME]
-        slots = self.slot_fillers[intent_name].get_slots(text)
-        return parsing_result(text, intent_result, slots)
+            intent_name = intent_result[RES_INTENT_NAME]
+            slots = self.slot_fillers[intent_name].get_slots(text)
+            return parsing_result(text, intent_result, slots)
+
+        results = []
+        intents_results = self.intent_classifier.get_intents(text)
+        for intent_result in intents_results[:top_n]:
+            intent_name = intent_result[RES_INTENT_NAME]
+            slots = self.slot_fillers[intent_name].get_slots(text)
+            results.append(extraction_result(intent_result, slots))
+        return results
+
+    @fitted_required
+    def get_intents(self, text):
+        """Returns the list of intents ordered by decreasing probability
+
+        The length of the returned list is exactly the number of intents in the
+        dataset + 1 for the None intent
+        """
+        return self.intent_classifier.get_intents(text)
+
+    @fitted_required
+    def get_slots(self, text, intent):
+        """Extract slots from a text input, with the knowledge of the intent
+
+        Args:
+            text (str): input
+            intent (str): the intent which the input corresponds to
+
+        Returns:
+            list: the list of extracted slots
+
+        Raises:
+            IntentNotFoundError: When the intent was not part of the training
+                data
+        """
+        if intent is None:
+            return []
+
+        if intent not in self.slot_fillers:
+            raise IntentNotFoundError(intent)
+        return self.slot_fillers[intent].get_slots(text)
 
     @check_persisted_path
     def persist(self, path):

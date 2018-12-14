@@ -15,28 +15,33 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import extract_utterance_entities
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
+from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
 from snips_nlu.utils import validate_key, validate_keys, validate_type
 
 
 def validate_and_format_dataset(dataset):
-    """Checks that the dataset is valid and format it"""
+    """Checks that the dataset is valid and format it
+
+    Raise:
+        DatasetFormatError: When the dataset format is wrong
+    """
     # Make this function idempotent
     if dataset.get(VALIDATED, False):
         return dataset
     dataset = deepcopy(dataset)
     dataset = json.loads(json.dumps(dataset))
-    validate_type(dataset, dict)
+    validate_type(dataset, dict, object_label="dataset")
     mandatory_keys = [INTENTS, ENTITIES, LANGUAGE]
     for key in mandatory_keys:
         validate_key(dataset, key, object_label="dataset")
-    validate_type(dataset[ENTITIES], dict)
-    validate_type(dataset[INTENTS], dict)
+    validate_type(dataset[ENTITIES], dict, object_label="entities")
+    validate_type(dataset[INTENTS], dict, object_label="intents")
     language = dataset[LANGUAGE]
-    validate_type(language, str)
+    validate_type(language, str, object_label="language")
     if language not in get_all_languages():
-        raise ValueError("Unknown language: '%s'" % language)
+        raise DatasetFormatError("Unknown language: '%s'" % language)
 
     for intent in itervalues(dataset[INTENTS]):
         _validate_and_format_intent(intent, dataset[ENTITIES])
@@ -59,15 +64,15 @@ def validate_and_format_dataset(dataset):
 
 
 def _validate_and_format_intent(intent, entities):
-    validate_type(intent, dict)
+    validate_type(intent, dict, "intent")
     validate_key(intent, UTTERANCES, object_label="intent dict")
-    validate_type(intent[UTTERANCES], list)
+    validate_type(intent[UTTERANCES], list, object_label="utterances")
     for utterance in intent[UTTERANCES]:
-        validate_type(utterance, dict)
+        validate_type(utterance, dict, object_label="utterance")
         validate_key(utterance, DATA, object_label="utterance")
-        validate_type(utterance[DATA], list)
+        validate_type(utterance[DATA], list, object_label="utterance data")
         for chunk in utterance[DATA]:
-            validate_type(chunk, dict)
+            validate_type(chunk, dict, object_label="utterance chunk")
             validate_key(chunk, TEXT, object_label="chunk")
             if ENTITY in chunk or SLOT_NAME in chunk:
                 mandatory_keys = [ENTITY, SLOT_NAME]
@@ -107,7 +112,7 @@ def _extract_entity_values(entity):
 
 def _validate_and_format_custom_entity(entity, queries_entities, language,
                                        builtin_entity_parser):
-    validate_type(entity, dict)
+    validate_type(entity, dict, object_label="entity")
 
     # TODO: this is here temporarily, only to allow backward compatibility
     if MATCHING_STRICTNESS not in entity:
@@ -117,11 +122,13 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
 
     mandatory_keys = [USE_SYNONYMS, AUTOMATICALLY_EXTENSIBLE, DATA,
                       MATCHING_STRICTNESS]
-    validate_keys(entity, mandatory_keys, object_label="entity")
-    validate_type(entity[USE_SYNONYMS], bool)
-    validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool)
-    validate_type(entity[DATA], list)
-    validate_type(entity[MATCHING_STRICTNESS], float)
+    validate_keys(entity, mandatory_keys, object_label="custom entity")
+    validate_type(entity[USE_SYNONYMS], bool, object_label="use_synonyms")
+    validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool,
+                  object_label="automatically_extensible")
+    validate_type(entity[DATA], list, object_label="entity data")
+    validate_type(entity[MATCHING_STRICTNESS], float,
+                  object_label="matching_strictness")
 
     formatted_entity = dict()
     formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
@@ -132,12 +139,12 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
     # Validate format and filter out unused data
     valid_entity_data = []
     for entry in entity[DATA]:
-        validate_type(entry, dict)
+        validate_type(entry, dict, object_label="entity entry")
         validate_keys(entry, [VALUE, SYNONYMS], object_label="entity entry")
         entry[VALUE] = entry[VALUE].strip()
         if not entry[VALUE]:
             continue
-        validate_type(entry[SYNONYMS], list)
+        validate_type(entry[SYNONYMS], list, object_label="entity synonyms")
         entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS]
                            if len(s.strip()) > 0]
         valid_entity_data.append(entry)
@@ -204,5 +211,5 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
 
 
 def _validate_and_format_builtin_entity(entity, queries_entities):
-    validate_type(entity, dict)
+    validate_type(entity, dict, object_label="builtin entity")
     return {UTTERANCES: set(queries_entities)}

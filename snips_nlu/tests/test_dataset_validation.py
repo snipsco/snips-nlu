@@ -7,6 +7,7 @@ from mock import mock
 
 from snips_nlu.constants import ENTITIES, SNIPS_DATETIME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -33,7 +34,7 @@ class TestDatasetValidation(SnipsTest):
         }
 
         # When/Then
-        with self.assertRaises(KeyError) as ctx:
+        with self.assertRaises(DatasetFormatError) as ctx:
             validate_and_format_dataset(dataset)
         self.assertEqual("Expected chunk to have key: 'slot_name'",
                          str(ctx.exception.args[0]))
@@ -67,7 +68,7 @@ class TestDatasetValidation(SnipsTest):
         }
 
         # When/Then
-        with self.assertRaises(KeyError) as ctx:
+        with self.assertRaises(DatasetFormatError) as ctx:
             validate_and_format_dataset(dataset)
         self.assertEqual("Expected entities to have key: 'unknown_entity'",
                          str(ctx.exception.args[0]))
@@ -87,9 +88,9 @@ class TestDatasetValidation(SnipsTest):
         }
 
         # When/Then
-        with self.assertRaises(KeyError) as ctx:
+        with self.assertRaises(DatasetFormatError) as ctx:
             validate_and_format_dataset(dataset)
-        self.assertEqual("Expected entity to have key: 'use_synonyms'",
+        self.assertEqual("Expected custom entity to have key: 'use_synonyms'",
                          str(ctx.exception.args[0]))
 
     def test_missing_matching_strictness_should_be_handled(self):
@@ -150,7 +151,7 @@ class TestDatasetValidation(SnipsTest):
         }
 
         # When/Then
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(DatasetFormatError) as ctx:
             validate_and_format_dataset(dataset)
         self.assertEqual("Unknown language: 'eng'", str(ctx.exception.args[0]))
 

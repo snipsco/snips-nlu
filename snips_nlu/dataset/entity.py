@@ -16,12 +16,9 @@ from snips_nlu.__about__ import __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, DATA, MATCHING_STRICTNESS, SYNONYMS,
     USE_SYNONYMS, VALUE)
+from snips_nlu.exceptions import EntityFormatError
 
 AUTO_EXT_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
-
-
-class EntityFormatError(TypeError):
-    pass
 
 
 class Entity(object):

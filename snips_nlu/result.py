@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from snips_nlu.constants import (
     RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
-    RES_PROBABILITY, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
+    RES_PROBA, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
 
 
 def intent_classification_result(intent_name, probability):
@@ -16,7 +16,7 @@ def intent_classification_result(intent_name, probability):
     """
     return {
         RES_INTENT_NAME: intent_name,
-        RES_PROBABILITY: probability
+        RES_PROBA: probability
     }
 
 
@@ -215,6 +215,49 @@ def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
     """
     return {
         RES_INPUT: input,
+        RES_INTENT: intent,
+        RES_SLOTS: slots
+    }
+
+
+def extraction_result(intent, slots):
+    """Create the items in the output of :meth:`.SnipsNLUEngine.parse` or
+    :meth:`.IntentParser.parse` when called with a defined ``top_n`` value
+
+    This differs from :func:`.parsing_result` in that the input is omitted.
+
+    Example:
+
+        >>> intent_result = intent_classification_result("Greeting", 0.95)
+        >>> internal_slot = unresolved_slot([6, 10], "Bill", "name",
+        ... "greetee")
+        >>> slots = [custom_slot(internal_slot, "William")]
+        >>> res = extraction_result(intent_result, slots)
+        >>> import json
+        >>> print(json.dumps(res, indent=4, sort_keys=True))
+        {
+            "intent": {
+                "intentName": "Greeting",
+                "probability": 0.95
+            },
+            "slots": [
+                {
+                    "entity": "name",
+                    "range": {
+                        "end": 10,
+                        "start": 6
+                    },
+                    "rawValue": "Bill",
+                    "slotName": "greetee",
+                    "value": {
+                        "kind": "Custom",
+                        "value": "William"
+                    }
+                }
+            ]
+        }
+    """
+    return {
         RES_INTENT: intent,
         RES_SLOTS: slots
     }

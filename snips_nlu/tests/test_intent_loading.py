@@ -6,7 +6,8 @@ from unittest import TestCase
 from deprecation import fail_if_not_removed
 from mock import patch
 
-from snips_nlu.dataset import Intent, IntentFormatError
+from snips_nlu.dataset import Intent
+from snips_nlu.exceptions import IntentFormatError
 
 
 class TestIntentLoading(TestCase):

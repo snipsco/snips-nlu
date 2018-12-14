@@ -7,7 +7,8 @@ import yaml
 from deprecation import fail_if_not_removed
 from mock import patch
 
-from snips_nlu.dataset import Entity, EntityFormatError
+from snips_nlu.dataset import Entity
+from snips_nlu.exceptions import EntityFormatError
 
 
 class TestEntityLoading(TestCase):

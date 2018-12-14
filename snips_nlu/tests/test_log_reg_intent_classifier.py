@@ -1,25 +1,25 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from builtins import str
 
 from mock import patch
 
 from snips_nlu.constants import (
-    INTENTS, LANGUAGE_EN, RES_INTENT_NAME, UTTERANCES)
-from snips_nlu.dataset import validate_and_format_dataset
+    INTENTS, LANGUAGE_EN, RES_INTENT_NAME, RES_PROBA, UTTERANCES)
+from snips_nlu.dataset import Dataset, validate_and_format_dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
+from snips_nlu.exceptions import NotTrained
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
-from snips_nlu.pipeline.configs import (
-    LogRegIntentClassifierConfig)
+from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.tests.utils import (
     BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, get_empty_dataset)
-from snips_nlu.utils import NotTrained
 
 
 # pylint: disable=unused-argument
@@ -30,8 +30,11 @@ def get_mocked_augment_utterances(dataset, intent_name, language,
     return dataset[INTENTS][intent_name][UTTERANCES]
 
 
+# pylint: enable=unused-argument
+
+
 class TestLogRegIntentClassifier(FixtureTest):
-    def test_intent_classifier_should_get_intent(self):
+    def test_should_get_intent(self):
         # Given
         dataset = validate_and_format_dataset(SAMPLE_DATASET)
         classifier = LogRegIntentClassifier().fit(dataset)
@@ -46,10 +49,20 @@ class TestLogRegIntentClassifier(FixtureTest):
 
         self.assertEqual(intent, expected_intent)
 
-    def test_intent_classifier_should_get_intent_when_filter(self):
+    def test_should_get_none_intent_when_empty_input(self):
         # Given
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
-        classifier = LogRegIntentClassifier().fit(dataset)
+        classifier = LogRegIntentClassifier().fit(SAMPLE_DATASET)
+        text = ""
+
+        # When
+        result = classifier.get_intent(text)
+
+        # Then
+        self.assertIsNone(result)
+
+    def test_should_get_intent_when_filter(self):
+        # Given
+        classifier = LogRegIntentClassifier().fit(BEVERAGE_DATASET)
 
         # When
         text1 = "Make me two cups of tea"
@@ -66,7 +79,7 @@ class TestLogRegIntentClassifier(FixtureTest):
         self.assertEqual("MakeCoffee", res2[RES_INTENT_NAME])
         self.assertEqual(None, res3)
 
-    def test_should_not_get_intent_when_not_fitted(self):
+    def test_should_raise_when_not_fitted(self):
         # Given
         intent_classifier = LogRegIntentClassifier()
 
@@ -75,9 +88,9 @@ class TestLogRegIntentClassifier(FixtureTest):
         with self.assertRaises(NotTrained):
             intent_classifier.get_intent("foobar")
 
-    def test_should_get_none_if_empty_dataset(self):
+    def test_should_get_none_intent_when_empty_dataset(self):
         # Given
-        dataset = validate_and_format_dataset(get_empty_dataset(LANGUAGE_EN))
+        dataset = get_empty_dataset(LANGUAGE_EN)
         classifier = LogRegIntentClassifier().fit(dataset)
         text = "this is a dummy query"
 
@@ -88,6 +101,82 @@ class TestLogRegIntentClassifier(FixtureTest):
         expected_intent = None
         self.assertEqual(intent, expected_intent)
 
+    def test_should_get_intents(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - yala yili
+
+---
+type: intent
+name: intent2
+utterances:
+  - yala yili yulu
+
+---
+type: intent
+name: intent3
+utterances:
+  - yili yulu yele""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        config = LogRegIntentClassifierConfig(random_seed=42)
+        classifier = LogRegIntentClassifier(config).fit(dataset)
+        text = "yala yili yulu"
+
+        # When
+        results = classifier.get_intents(text)
+        intents = [res[RES_INTENT_NAME] for res in results]
+
+        # Then
+        expected_intents = ["intent2", "intent1", "intent3", None]
+
+        self.assertEqual(expected_intents, intents)
+
+    def test_should_get_intents_when_empty_dataset(self):
+        # Given
+        dataset = get_empty_dataset(LANGUAGE_EN)
+        classifier = LogRegIntentClassifier().fit(dataset)
+        text = "this is a dummy query"
+
+        # When
+        results = classifier.get_intents(text)
+
+        # Then
+        expected_results = [{RES_INTENT_NAME: None, RES_PROBA: 1.0}]
+        self.assertEqual(expected_results, results)
+
+    def test_should_get_intents_when_empty_input(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - foo bar
+
+---
+type: intent
+name: intent2
+utterances:
+  - lorem ipsum""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier = LogRegIntentClassifier().fit(dataset)
+        text = ""
+
+        # When
+        results = classifier.get_intents(text)
+
+        # Then
+        expected_results = [
+            {RES_INTENT_NAME: None, RES_PROBA: 1.0},
+            {RES_INTENT_NAME: "intent1", RES_PROBA: 0.0},
+            {RES_INTENT_NAME: "intent2", RES_PROBA: 0.0},
+        ]
+        self.assertEqual(expected_results, results)
+
     @patch('snips_nlu.intent_classifier.featurizer.Featurizer.to_dict')
     def test_should_be_serializable(self, mock_to_dict):
         # Given
@@ -95,9 +184,7 @@ class TestLogRegIntentClassifier(FixtureTest):
 
         mock_to_dict.return_value = mocked_dict
 
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
-
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        intent_classifier = LogRegIntentClassifier().fit(SAMPLE_DATASET)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 
@@ -171,8 +258,8 @@ class TestLogRegIntentClassifier(FixtureTest):
 
     def test_should_get_intent_after_deserialization(self):
         # Given
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
-        classifier = LogRegIntentClassifier().fit(dataset)
+        dataset = BEVERAGE_DATASET
+        classifier = LogRegIntentClassifier().fit(BEVERAGE_DATASET)
         classifier.persist(self.tmp_file_path)
 
         # When
@@ -191,7 +278,7 @@ class TestLogRegIntentClassifier(FixtureTest):
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = validate_and_format_dataset(BEVERAGE_DATASET)
+        dataset = BEVERAGE_DATASET
         intent_classifier = LogRegIntentClassifier().fit(dataset)
 
         # When
@@ -246,7 +333,6 @@ class TestLogRegIntentClassifier(FixtureTest):
             },
             "language": language
         }
-        dataset = validate_and_format_dataset(dataset)
 
         text = " "
         noise_size = 6
@@ -263,8 +349,7 @@ class TestLogRegIntentClassifier(FixtureTest):
 
     def test_log_activation_weights(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        intent_classifier = LogRegIntentClassifier().fit(SAMPLE_DATASET)
 
         text = "yo"
         utterances = [text_to_utterance(text)]

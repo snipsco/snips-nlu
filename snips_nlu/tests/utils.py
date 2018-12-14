@@ -11,7 +11,10 @@ from unittest import TestCase
 
 from snips_nlu_ontology import get_all_languages
 
+from snips_nlu.intent_parser import IntentParser
+from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.resources import load_resources
+from snips_nlu.result import empty_result
 from snips_nlu.utils import json_string, unicode_string
 
 TEST_PATH = Path(__file__).parent
@@ -101,6 +104,50 @@ with WEATHER_DATASET_PATH.open(encoding='utf8') as dataset_file:
 
 with PERFORMANCE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     PERFORMANCE_DATASET = json.load(dataset_file)
+
+
+class MockIntentParserConfig(ProcessingUnitConfig):
+    unit_name = "mock_intent_parser"
+
+    def to_dict(self):
+        return {"unit_name": self.unit_name}
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls()
+
+
+class MockIntentParser(IntentParser):
+    unit_name = "mock_intent_parser"
+    config_type = MockIntentParserConfig
+
+    def fit(self, dataset, force_retrain):
+        self._fitted = True
+        return self
+
+    @property
+    def fitted(self):
+        return hasattr(self, '_fitted') and self._fitted
+
+    def parse(self, text, intents=None, top_n=None):
+        return empty_result(text)
+
+    def get_intents(self, text):
+        return []
+
+    def get_slots(self, text, intent):
+        return []
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(json_string({"unit_name": self.unit_name}))
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        cfg = cls.config_type()
+        return cls(cfg)
 
 
 class _RedirectStream(object):

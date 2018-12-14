@@ -11,10 +11,7 @@ from future.utils import with_metaclass
 
 from snips_nlu.__about__ import __version__
 from snips_nlu.constants import DATA, ENTITY, SLOT_NAME, TEXT, UTTERANCES
-
-
-class IntentFormatError(TypeError):
-    pass
+from snips_nlu.exceptions import IntentFormatError
 
 
 class Intent(object):

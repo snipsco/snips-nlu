@@ -20,6 +20,7 @@ import pkg_resources
 
 from snips_nlu.constants import (DATA, END, ENTITY, INTENTS, SLOT_NAME, START,
                                  UTTERANCES)
+from snips_nlu.exceptions import DatasetFormatError, NotTrained
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -33,11 +34,6 @@ class abstractclassmethod(classmethod):
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractclassmethod, self).__init__(callable)
-
-
-class NotTrained(LookupError):
-    """Exception used when a processing unit is used while not fitted"""
-    pass
 
 
 class ClassPropertyDescriptor(object):
@@ -73,24 +69,29 @@ def classproperty(func):
 # pylint: enable=invalid-name
 
 
-def type_error(expected_type, found_type):
-    return TypeError("Expected %s but found: %s" % (expected_type, found_type))
+def type_error(expected_type, found_type, object_label=None):
+    if object_label is None:
+        raise DatasetFormatError("Invalid type: expected %s but found %s"
+                                 % (expected_type, found_type))
+    raise DatasetFormatError("Invalid type for '%s': expected %s but found %s"
+                             % (object_label, expected_type, found_type))
 
 
-def validate_type(obj, expected_type):
+def validate_type(obj, expected_type, object_label=None):
     if not isinstance(obj, expected_type):
-        raise type_error(expected_type=expected_type, found_type=type(obj))
+        type_error(expected_type, type(obj), object_label)
 
 
 def missing_key_error(key, object_label=None):
     if object_label is None:
-        return KeyError("Missing key: '%s'" % key)
-    return KeyError("Expected %s to have key: '%s'" % (object_label, key))
+        raise DatasetFormatError("Missing key: '%s'" % key)
+    raise DatasetFormatError("Expected %s to have key: '%s'"
+                             % (object_label, key))
 
 
 def validate_key(obj, key, object_label=None):
     if key not in obj:
-        raise missing_key_error(key, object_label)
+        missing_key_error(key, object_label)
 
 
 def validate_keys(obj, keys, object_label=None):

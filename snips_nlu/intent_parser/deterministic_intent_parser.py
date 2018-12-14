@@ -12,17 +12,18 @@ from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
-    ENTITY_KIND, INTENTS, LANGUAGE, RES_MATCH_RANGE, RES_VALUE, SLOT_NAME,
-    START, TEXT, UTTERANCES)
+    ENTITY_KIND, INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
+    RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import normalize_token, tokenize, tokenize_light
 from snips_nlu.resources import get_stop_words
-from snips_nlu.result import (
-    empty_result, intent_classification_result, parsing_result,
-    unresolved_slot)
+from snips_nlu.result import (empty_result, extraction_result,
+                              intent_classification_result, parsing_result,
+                              unresolved_slot)
 from snips_nlu.utils import (
     check_persisted_path, deduplicate_overlapping_items, fitted_required,
     get_slot_name_mappings, json_string, log_elapsed_time, log_result,
@@ -160,25 +161,51 @@ class DeterministicIntentParser(IntentParser):
         logger, logging.DEBUG, "DeterministicIntentParser result -> {result}")
     @log_elapsed_time(logger, logging.DEBUG, "Parsed in {elapsed_time}.")
     @fitted_required
-    def parse(self, text, intents=None):
+    def parse(self, text, intents=None, top_n=None):
         """Performs intent parsing on the provided *text*
 
         Intent and slots are extracted simultaneously through pattern matching
 
         Args:
-            text (str): Input
-            intents (str or list of str): If provided, reduces the scope of
-            intent parsing to the provided list of intents
+            text (str): input
+            intents (str or list of str): if provided, reduces the scope of
+                intent parsing to the provided list of intents
+            top_n (int, optional): when provided, this method will return a
+                list of at most top_n most likely intents, instead of a single
+                parsing result.
+                Note that the returned list can contain less than ``top_n``
+                elements, for instance when the parameter ``intents`` is not
+                None, or when ``top_n`` is greater than the total number of
+                intents.
 
         Returns:
-            dict: The matched intent, if any, along with the extracted slots.
-            See :func:`.parsing_result` for the output format.
+            dict or list: the most likely intent(s) along with the extracted
+            slots. See :func:`.parsing_result` and :func:`.extraction_result`
+            for the output format.
 
         Raises:
-            NotTrained: When the intent parser is not fitted
+            NotTrained: when the intent parser is not fitted
         """
+        if top_n is None:
+            top_intents = self._parse_top_intents(text, top_n=1,
+                                                  intents=intents)
+            if top_intents:
+                intent = top_intents[0][RES_INTENT]
+                slots = top_intents[0][RES_SLOTS]
+                return parsing_result(text, intent, slots)
+            return empty_result(text)
+        return self._parse_top_intents(text, top_n=top_n, intents=intents)
+
+    def _parse_top_intents(self, text, top_n, intents=None):
         if isinstance(intents, str):
-            intents = [intents]
+            intents = {intents}
+        elif isinstance(intents, list):
+            intents = set(intents)
+
+        if top_n < 1:
+            raise ValueError(
+                "top_n argument must be greater or equal to 1, but got: %s"
+                % top_n)
 
         builtin_entities = self.builtin_entity_parser.parse(
             text, scope=self.builtin_scope, use_cache=True)
@@ -193,6 +220,8 @@ class DeterministicIntentParser(IntentParser):
         cleaned_text = self._preprocess_text(text)
         cleaned_processed_text = self._preprocess_text(processed_text)
 
+        results = []
+
         for intent, regexes in iteritems(self.regexes_per_intent):
             if intents is not None and intent not in intents:
                 continue
@@ -203,8 +232,56 @@ class DeterministicIntentParser(IntentParser):
                     res = self._get_matching_result(text, cleaned_text, regex,
                                                     intent)
                 if res is not None:
-                    return res
-        return empty_result(text)
+                    results.append(res)
+                    break
+            if len(results) == top_n:
+                return results
+        return results
+
+    @fitted_required
+    def get_intents(self, text):
+        """Returns the list of intents ordered by decreasing probability
+
+        The length of the returned list is exactly the number of intents in the
+        dataset + 1 for the None intent
+        """
+        nb_intents = len(self.regexes_per_intent)
+        top_intents = [intent_result[RES_INTENT] for intent_result in
+                       self._parse_top_intents(text, top_n=nb_intents)]
+        matched_intents = {res[RES_INTENT_NAME] for res in top_intents}
+        for intent in self.regexes_per_intent:
+            if intent not in matched_intents:
+                top_intents.append(intent_classification_result(intent, 0.0))
+
+        # The None intent is not included in the regex patterns and is thus
+        # never matched by the deterministic parser
+        top_intents.append(intent_classification_result(None, 0.0))
+        return top_intents
+
+    @fitted_required
+    def get_slots(self, text, intent):
+        """Extract slots from a text input, with the knowledge of the intent
+
+        Args:
+            text (str): input
+            intent (str): the intent which the input corresponds to
+
+        Returns:
+            list: the list of extracted slots
+
+        Raises:
+            IntentNotFoundError: When the intent was not part of the training
+                data
+        """
+        if intent is None:
+            return []
+
+        if intent not in self.regexes_per_intent:
+            raise IntentNotFoundError(intent)
+        slots = self.parse(text, intents=[intent])[RES_SLOTS]
+        if slots is None:
+            slots = []
+        return slots
 
     def _preprocess_text(self, string):
         """Replace stop words and characters that are tokenized out by
@@ -256,7 +333,7 @@ class DeterministicIntentParser(IntentParser):
         parsed_slots = _deduplicate_overlapping_slots(slots, self.language)
         parsed_slots = sorted(parsed_slots,
                               key=lambda s: s[RES_MATCH_RANGE][START])
-        return parsing_result(text, parsed_intent, parsed_slots)
+        return extraction_result(parsed_intent, parsed_slots)
 
     def _generate_patterns(self, intent_utterances, entity_placeholders):
         unique_patterns = set()

@@ -1,29 +1,260 @@
 from __future__ import unicode_literals
 
+import io
 from pathlib import Path
 
 from mock import patch
 
-from snips_nlu.constants import RES_INTENT, RES_INTENT_NAME
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.constants import (
+    RES_ENTITY, RES_INTENT, RES_INTENT_NAME, RES_SLOTS, RES_VALUE)
+from snips_nlu.dataset import Dataset, validate_and_format_dataset
+from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_classifier import (
     IntentClassifier, LogRegIntentClassifier)
 from snips_nlu.intent_parser import ProbabilisticIntentParser
-from snips_nlu.pipeline.configs import (CRFSlotFillerConfig,
-                                        LogRegIntentClassifierConfig,
-                                        ProcessingUnitConfig,
-                                        ProbabilisticIntentParserConfig)
+from snips_nlu.pipeline.configs import (
+    CRFSlotFillerConfig, LogRegIntentClassifierConfig,
+    ProbabilisticIntentParserConfig, ProcessingUnitConfig)
 from snips_nlu.pipeline.units_registry import (
     register_processing_unit, reset_processing_units)
+from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
 from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
-from snips_nlu.utils import NotTrained, json_string
+from snips_nlu.utils import json_string
 
 
 class TestProbabilisticIntentParser(FixtureTest):
     def setUp(self):
         super(TestProbabilisticIntentParser, self).setUp()
         reset_processing_units()
+
+    def test_should_parse(self):
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - "[slot1:entity1](foo) bar"
+
+---
+type: intent
+name: intent2
+utterances:
+  - foo bar [slot2:entity2](baz)
+
+---
+type: intent
+name: intent3
+utterances:
+  - foz for [slot3:entity3](baz)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
+        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        parser_config = ProbabilisticIntentParserConfig(
+            classifier_config, slot_filler_config)
+        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        text = "foo bar baz"
+
+        # When
+        result = parser.parse(text)
+
+        # Then
+        expected_slots = [
+            unresolved_slot((8, 11), "baz", "entity2", "slot2")
+        ]
+
+        self.assertEqual("intent2", result[RES_INTENT][RES_INTENT_NAME])
+        self.assertEqual(expected_slots, result[RES_SLOTS])
+
+    def test_should_parse_with_filter(self):
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - "[slot1:entity1](foo) bar"
+
+---
+type: intent
+name: intent2
+utterances:
+  - foo bar [slot2:entity2](baz)
+
+---
+type: intent
+name: intent3
+utterances:
+  - foz for [slot3:entity3](baz)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
+        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        parser_config = ProbabilisticIntentParserConfig(
+            classifier_config, slot_filler_config)
+        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        text = "foo bar baz"
+
+        # When
+        result = parser.parse(text, intents=["intent1", "intent3"])
+
+        # Then
+        expected_slots = [
+            unresolved_slot((0, 3), "foo", "entity1", "slot1")
+        ]
+
+        self.assertEqual("intent1", result[RES_INTENT][RES_INTENT_NAME])
+        self.assertEqual(expected_slots, result[RES_SLOTS])
+
+    def test_should_parse_top_intents(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - "[entity1](foo) bar"
+
+---
+type: intent
+name: intent2
+utterances:
+  - foo bar [entity2](baz)
+
+---
+type: intent
+name: intent3
+utterances:
+  - foz for [entity3](baz)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
+        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        parser_config = ProbabilisticIntentParserConfig(
+            classifier_config, slot_filler_config)
+        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        text = "foo bar baz"
+
+        # When
+        results = parser.parse(text, top_n=2)
+        intents = [res[RES_INTENT][RES_INTENT_NAME] for res in results]
+        entities = [[s[RES_VALUE] for s in res[RES_SLOTS]] for res in results]
+
+        # Then
+        expected_intents = ["intent2", "intent1"]
+        expected_entities = [["baz"], ["foo"]]
+
+        self.assertListEqual(expected_intents, intents)
+        self.assertListEqual(expected_entities, entities)
+
+    def test_should_get_intents(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - yala yili
+
+---
+type: intent
+name: intent2
+utterances:
+  - yala yili yulu
+
+---
+type: intent
+name: intent3
+utterances:
+  - yili yulu yele""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
+        parser_config = ProbabilisticIntentParserConfig(classifier_config)
+        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        text = "yala yili yulu"
+
+        # When
+        results = parser.get_intents(text)
+        intents = [res[RES_INTENT_NAME] for res in results]
+
+        # Then
+        expected_intents = ["intent2", "intent1", "intent3", None]
+
+        self.assertEqual(expected_intents, intents)
+
+    def test_should_get_slots(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: greeting2
+utterances:
+  - Hello [name2](John)
+
+---
+type: intent
+name: greeting3
+utterances:
+  - Hello John""")
+        dataset = Dataset.from_yaml_files("en",
+                                          [slots_dataset_stream]).json
+        parser = ProbabilisticIntentParser().fit(dataset)
+
+        # When
+        slots_greeting1 = parser.get_slots("Hello John", "greeting1")
+        slots_greeting2 = parser.get_slots("Hello John", "greeting2")
+        slots_goodbye = parser.get_slots("Hello John", "greeting3")
+
+        # Then
+        self.assertEqual(1, len(slots_greeting1))
+        self.assertEqual(1, len(slots_greeting2))
+        self.assertEqual(0, len(slots_goodbye))
+
+        self.assertEqual("John", slots_greeting1[0][RES_VALUE])
+        self.assertEqual("name1", slots_greeting1[0][RES_ENTITY])
+        self.assertEqual("John", slots_greeting2[0][RES_VALUE])
+        self.assertEqual("name2", slots_greeting2[0][RES_ENTITY])
+
+    def test_should_get_no_slots_with_none_intent(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting
+utterances:
+  - Hello [name](John)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = ProbabilisticIntentParser().fit(dataset)
+
+        # When
+        slots = parser.get_slots("Hello John", None)
+
+        # Then
+        self.assertListEqual([], slots)
+
+    def test_get_slots_should_raise_with_unknown_intent(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: goodbye
+utterances:
+  - Goodbye [name](Eric)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = ProbabilisticIntentParser().fit(dataset)
+
+        # When / Then
+        with self.assertRaises(IntentNotFoundError):
+            parser.get_slots("Hello John", "greeting3")
 
     def test_should_retrain_intent_classifier_when_force_retrain(self):
         # Given
@@ -300,12 +531,15 @@ class TestIntentClassifier(IntentClassifier):
     def fitted(self):
         return self._fitted
 
-    def get_intent(self, text, intents_filter):
-        return None
-
     def fit(self, dataset):
         self._fitted = True
         return self
+
+    def get_intent(self, text, intents_filter):
+        return None
+
+    def get_intents(self, text):
+        return []
 
     def persist(self, path):
         path = Path(path)

@@ -6,7 +6,6 @@ from snips_nlu.constants import STOP_WORDS
 from snips_nlu.pipeline.configs import (
     Config, ProcessingUnitConfig, default_features_factories)
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.common.abc_utils import classproperty
 
 
 class CRFSlotFillerConfig(ProcessingUnitConfig):
@@ -30,7 +29,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
 
     # pylint: enable=line-too-long
 
-    # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=None, crf_args=None,
                  data_augmentation_config=None, random_seed=None):
@@ -50,8 +48,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         self.random_seed = random_seed
-
-    # pylint: enable=super-init-not-called
 
     @property
     def tagging_scheme(self):
@@ -84,8 +80,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
                             "SlotFillerDataAugmentationConfig or dict but "
                             "received: %s" % type(value))
 
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
+    @property
+    def unit_name(self):
         from snips_nlu.slot_filler import CRFSlotFiller
         return CRFSlotFiller.unit_name
 

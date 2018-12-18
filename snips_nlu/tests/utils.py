@@ -11,11 +11,12 @@ from unittest import TestCase
 
 from snips_nlu_ontology import get_all_languages
 
+from snips_nlu.common.utils import json_string, unicode_string
+from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_parser import IntentParser
-from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.resources import load_resources
 from snips_nlu.result import empty_result
-from snips_nlu.common.utils import json_string, unicode_string
+from snips_nlu.slot_filler import SlotFiller
 
 TEST_PATH = Path(__file__).parent
 TEST_RESOURCES_PATH = TEST_PATH / "resources"
@@ -94,21 +95,30 @@ with PERFORMANCE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     PERFORMANCE_DATASET = json.load(dataset_file)
 
 
-class MockIntentParserConfig(ProcessingUnitConfig):
-    unit_name = "mock_intent_parser"
+class _RedirectStream(object):
+    _stream = None
 
-    def to_dict(self):
-        return {"unit_name": self.unit_name}
+    def __init__(self, new_target):
+        self._new_target = new_target
+        # We use a list of old targets to make this CM re-entrant
+        self._old_targets = []
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls()
+    def __enter__(self):
+        self._old_targets.append(getattr(sys, self._stream))
+        setattr(sys, self._stream, self._new_target)
+        return self._new_target
+
+    def __exit__(self, exctype, excinst, exctb):
+        setattr(sys, self._stream, self._old_targets.pop())
+
+
+class redirect_stdout(_RedirectStream):
+    """Context manager for temporarily redirecting stdout to another file"""
+
+    _stream = "stdout"
 
 
 class MockIntentParser(IntentParser):
-    unit_name = "mock_intent_parser"
-    config_type = MockIntentParserConfig
-
     def fit(self, dataset, force_retrain):
         self._fitted = True
         return self
@@ -138,24 +148,56 @@ class MockIntentParser(IntentParser):
         return cls(cfg)
 
 
-class _RedirectStream(object):
-    _stream = None
+class MockIntentClassifier(IntentClassifier):
+    _fitted = False
 
-    def __init__(self, new_target):
-        self._new_target = new_target
-        # We use a list of old targets to make this CM re-entrant
-        self._old_targets = []
+    @property
+    def fitted(self):
+        return self._fitted
 
-    def __enter__(self):
-        self._old_targets.append(getattr(sys, self._stream))
-        setattr(sys, self._stream, self._new_target)
-        return self._new_target
+    def fit(self, dataset):
+        self._fitted = True
+        return self
 
-    def __exit__(self, exctype, excinst, exctb):
-        setattr(sys, self._stream, self._old_targets.pop())
+    def get_intent(self, text, intents_filter):
+        return None
+
+    def get_intents(self, text):
+        return []
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(json_string({"unit_name": self.unit_name}))
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        config = cls.config_type()
+        return cls(config)
 
 
-class redirect_stdout(_RedirectStream):
-    """Context manager for temporarily redirecting stdout to another file"""
+class MockSlotFiller(SlotFiller):
+    _fitted = False
 
-    _stream = "stdout"
+    @property
+    def fitted(self):
+        return self._fitted
+
+    def get_slots(self, text):
+        return []
+
+    def fit(self, dataset, intent):
+        self._fitted = True
+        return self
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            f.write(json_string({"unit_name": self.unit_name}))
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        config = cls.config_type()
+        return cls(config)

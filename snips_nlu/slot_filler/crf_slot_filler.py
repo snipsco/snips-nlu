@@ -40,6 +40,7 @@ from snips_nlu.common.dict_utils import UnupdatableDict
 logger = logging.getLogger(__name__)
 
 
+@SlotFiller.register("crf_slot_filler")
 class CRFSlotFiller(SlotFiller):
     """Slot filler which uses Linear-Chain Conditional Random Fields underneath
 
@@ -47,7 +48,6 @@ class CRFSlotFiller(SlotFiller):
     more about CRFs
     """
 
-    unit_name = "crf_slot_filler"
     config_type = CRFSlotFillerConfig
 
     def __init__(self, config=None, **shared):

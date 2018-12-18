@@ -1,14 +1,11 @@
 from __future__ import unicode_literals
 
-from builtins import map
 from copy import deepcopy
 
 from snips_nlu.constants import CUSTOM_ENTITY_PARSER_USAGE
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.common.abc_utils import classproperty
 
 
 class NLUEngineConfig(ProcessingUnitConfig):
@@ -20,8 +17,8 @@ class NLUEngineConfig(ProcessingUnitConfig):
             the order in which each parser will be called by the nlu engine.
     """
 
-    # pylint: disable=super-init-not-called
     def __init__(self, intent_parsers_configs=None):
+        from snips_nlu.intent_parser import IntentParser
 
         if intent_parsers_configs is None:
             from snips_nlu.pipeline.configs import (
@@ -31,13 +28,11 @@ class NLUEngineConfig(ProcessingUnitConfig):
                 DeterministicIntentParserConfig(),
                 ProbabilisticIntentParserConfig()
             ]
-        self.intent_parsers_configs = list(map(get_processing_unit_config,
-                                               intent_parsers_configs))
+        self.intent_parsers_configs = [
+            IntentParser.get_config(conf) for conf in intent_parsers_configs]
 
-    # pylint: enable=super-init-not-called
-
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
+    @property
+    def unit_name(self):
         from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
         return SnipsNLUEngine.unit_name
 

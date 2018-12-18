@@ -1,32 +1,26 @@
-from snips_nlu.intent_classifier import LogRegIntentClassifier
-from snips_nlu.intent_parser import (DeterministicIntentParser,
-                                     ProbabilisticIntentParser)
-from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine
-from snips_nlu.slot_filler import CRFSlotFiller
+from deprecation import deprecated
 
-BUILTIN_NLU_PROCESSING_UNITS = [
-    SnipsNLUEngine,
-    ProbabilisticIntentParser,
-    DeterministicIntentParser,
-    LogRegIntentClassifier,
-    CRFSlotFiller
-]
-
-NLU_PROCESSING_UNITS = {
-    unit.unit_name: unit for unit in BUILTIN_NLU_PROCESSING_UNITS
-}
+from snips_nlu.__about__ import __version__
+from snips_nlu.common.registrable import Registrable
 
 
+@deprecated(deprecated_in="0.18.1", removed_in="0.19.0",
+            current_version=__version__,
+            details="Use the @BaseClass.register decorator instead")
 def register_processing_unit(unit_type):
-    """Allow to register a custom processing unit"""
-    if unit_type.unit_name not in NLU_PROCESSING_UNITS:
-        NLU_PROCESSING_UNITS[unit_type.unit_name] = unit_type
+    """Allow to register a processing unit
 
-
-def reset_processing_units():
-    """Remove all the custom processing units and reset to the default ones as
-        defined in *BUILTIN_NLU_PROCESSING_UNITS*"""
-    global NLU_PROCESSING_UNITS
-    NLU_PROCESSING_UNITS = {
-        unit.unit_name: unit for unit in BUILTIN_NLU_PROCESSING_UNITS
-    }
+    Raises:
+        AlreadyRegisteredError: when trying to register a processing unit
+            which has already been registered
+        TypeError: when the unit to register does not inherit from a unit
+            base class
+    """
+    bases = unit_type.__bases__
+    for base_cls in bases:
+        if base_cls in Registrable._registry:
+            base_cls.register(unit_type.unit_name)
+    base_names = [base_cls.__name__ for base_cls in Registrable._registry]
+    raise TypeError("%s must inherit from one of the following base class in "
+                    "order to be registered: %s"
+                    % (unit_type.__name__, base_names))

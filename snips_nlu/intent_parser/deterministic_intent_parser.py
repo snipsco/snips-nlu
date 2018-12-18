@@ -35,6 +35,7 @@ WHITESPACE_PATTERN = r"\s*"
 logger = logging.getLogger(__name__)
 
 
+@IntentParser.register("deterministic_intent_parser")
 class DeterministicIntentParser(IntentParser):
     """Intent parser using pattern matching in a deterministic manner
 
@@ -43,7 +44,6 @@ class DeterministicIntentParser(IntentParser):
     first before potentially falling back to another parser.
     """
 
-    unit_name = "deterministic_intent_parser"
     config_type = DeterministicIntentParserConfig
 
     def __init__(self, config=None, **shared):

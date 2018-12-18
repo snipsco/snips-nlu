@@ -13,6 +13,10 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
     :class:`.SnipsNLUEngine`
     """
 
+    @classproperty
+    def unit_name(cls):
+        return IntentParser.registered_name(cls)
+
     @abstractmethod
     def fit(self, dataset, force_retrain):
         """Fit the intent parser with a valid Snips dataset

@@ -33,10 +33,10 @@ LOG_REG_ARGS = {
 }
 
 
+@IntentClassifier.register("log_reg_intent_classifier")
 class LogRegIntentClassifier(IntentClassifier):
     """Intent classifier which uses a Logistic Regression underneath"""
 
-    unit_name = "log_reg_intent_classifier"
     config_type = LogRegIntentClassifierConfig
 
     # pylint:disable=line-too-long

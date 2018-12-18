@@ -9,6 +9,10 @@ from pathlib import Path
 from future.utils import iteritems, itervalues
 
 from snips_nlu.__about__ import __model_version__, __version__
+from snips_nlu.common.dataset_utils import get_slot_name_mappings
+from snips_nlu.common.log_utils import log_elapsed_time
+from snips_nlu.common.utils import (
+    check_persisted_path, fitted_required, json_string)
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
     ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE, RES_ENTITY,
@@ -20,20 +24,18 @@ from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
 from snips_nlu.exceptions import InvalidInputError
+from snips_nlu.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import NLUEngineConfig
-from snips_nlu.pipeline.processing_unit import (
-    ProcessingUnit, build_processing_unit, load_processing_unit)
+from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.resources import load_resources_from_dir, persist_resources
-from snips_nlu.result import (builtin_slot, custom_slot, empty_result,
-                              extraction_result, is_empty, parsing_result)
-from snips_nlu.common.utils import (
-    check_persisted_path, fitted_required, json_string)
-from snips_nlu.common.dataset_utils import get_slot_name_mappings
-from snips_nlu.common.log_utils import log_elapsed_time
+from snips_nlu.result import (
+    builtin_slot, custom_slot, empty_result, extraction_result, is_empty,
+    parsing_result)
 
 logger = logging.getLogger(__name__)
 
 
+@ProcessingUnit.register("nlu_engine")
 class SnipsNLUEngine(ProcessingUnit):
     """Main class to use for intent parsing
 
@@ -54,7 +56,6 @@ class SnipsNLUEngine(ProcessingUnit):
     precision and recall.
     """
 
-    unit_name = "nlu_engine"
     config_type = NLUEngineConfig
 
     def __init__(self, config=None, **shared):
@@ -105,7 +106,7 @@ class SnipsNLUEngine(ProcessingUnit):
                     recycled_parser = parser
                     break
             if recycled_parser is None:
-                recycled_parser = build_processing_unit(parser_config)
+                recycled_parser = IntentParser.from_config(parser_config)
 
             recycled_parser.builtin_entity_parser = self.builtin_entity_parser
             recycled_parser.custom_entity_parser = self.custom_entity_parser
@@ -348,7 +349,8 @@ class SnipsNLUEngine(ProcessingUnit):
         intent_parsers = []
         for intent_parser_name in model["intent_parsers"]:
             intent_parser_path = directory_path / intent_parser_name
-            intent_parser = load_processing_unit(intent_parser_path, **shared)
+            intent_parser = IntentParser.load_from_path(intent_parser_path,
+                                                        **shared)
             intent_parsers.append(intent_parser)
         nlu_engine.intent_parsers = intent_parsers
         return nlu_engine

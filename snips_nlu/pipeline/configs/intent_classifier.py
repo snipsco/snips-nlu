@@ -8,7 +8,6 @@ from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.common.abc_utils import classproperty
 
 
 class LogRegIntentClassifierConfig(ProcessingUnitConfig):
@@ -26,7 +25,6 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
 
     # pylint: enable=line-too-long
 
-    # pylint: disable=super-init-not-called
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
                  random_seed=None):
         if data_augmentation_config is None:
@@ -38,8 +36,6 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
         self.random_seed = random_seed
-
-    # pylint: enable=super-init-not-called
 
     @property
     def data_augmentation_config(self):
@@ -72,8 +68,8 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
             raise TypeError("Expected instance of FeaturizerConfig or dict"
                             "but received: %s" % type(value))
 
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
+    @property
+    def unit_name(self):
         from snips_nlu.intent_classifier import LogRegIntentClassifier
         return LogRegIntentClassifier.unit_name
 

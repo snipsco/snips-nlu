@@ -13,6 +13,10 @@ class IntentClassifier(with_metaclass(ABCMeta, ProcessingUnit)):
     :class:`.ProbabilisticIntentParser`
     """
 
+    @classproperty
+    def unit_name(cls):
+        return IntentClassifier.registered_name(cls)
+
     @abstractmethod
     def fit(self, dataset):
         """Fit the intent classifier with a valid Snips dataset"""

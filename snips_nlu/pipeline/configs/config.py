@@ -1,15 +1,13 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from builtins import object
 
 from future.utils import with_metaclass
-
-from snips_nlu.common.abc_utils import classproperty
 
 
 class Config(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def to_dict(self):
-        raise NotImplementedError
+        pass
 
     @classmethod
     def from_dict(cls, obj_dict):
@@ -20,9 +18,23 @@ class ProcessingUnitConfig(with_metaclass(ABCMeta, Config)):
     """Represents the configuration object needed to initialize a
         :class:`.ProcessingUnit`"""
 
-    @classproperty
+    @abstractproperty
     def unit_name(self):
         raise NotImplementedError
 
     def get_required_resources(self):
         return None
+
+
+class DefaultProcessingUnitConfig(dict, ProcessingUnitConfig):
+    """Default config implemented as a simple dict"""
+    @property
+    def unit_name(self):
+        return self["unit_name"]
+
+    def to_dict(self):
+        return self
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(obj_dict)

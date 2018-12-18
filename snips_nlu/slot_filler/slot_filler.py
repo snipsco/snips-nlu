@@ -3,6 +3,7 @@ from abc import abstractmethod, ABCMeta
 from future.utils import with_metaclass
 
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
+from snips_nlu.common.abc_utils import classproperty
 
 
 class SlotFiller(with_metaclass(ABCMeta, ProcessingUnit)):
@@ -11,6 +12,10 @@ class SlotFiller(with_metaclass(ABCMeta, ProcessingUnit)):
     A custom slot filler must inherit this class to be used in a
     :class:`.ProbabilisticIntentParser`
     """
+
+    @classproperty
+    def unit_name(cls):
+        return SlotFiller.registered_name(cls)
 
     @abstractmethod
     def fit(self, dataset, intent):

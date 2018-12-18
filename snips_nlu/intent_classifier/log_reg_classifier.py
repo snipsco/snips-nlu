@@ -17,9 +17,10 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data, get_regularization_factor, text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import (
-    DifferedLoggingMessage, check_persisted_path, check_random_state,
-    fitted_required, json_string, log_elapsed_time)
+from snips_nlu.common.utils import (
+    check_persisted_path, check_random_state,
+    fitted_required, json_string)
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 
 logger = logging.getLogger(__name__)
 

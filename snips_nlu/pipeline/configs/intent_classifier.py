@@ -8,7 +8,7 @@ from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.utils import classproperty
+from snips_nlu.common.abc_utils import classproperty
 
 
 class LogRegIntentClassifierConfig(ProcessingUnitConfig):

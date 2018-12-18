@@ -9,7 +9,7 @@ import plac
 
 from snips_nlu import SnipsNLUEngine, load_resources
 from snips_nlu.cli.utils import set_nlu_logger
-from snips_nlu.utils import json_string
+from snips_nlu.common.utils import json_string
 
 
 def make_engine_cls(config):

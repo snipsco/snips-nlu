@@ -7,7 +7,7 @@ import plac
 
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli.utils import set_nlu_logger
-from snips_nlu.utils import unicode_string, json_string
+from snips_nlu.common.utils import unicode_string, json_string
 
 
 @plac.annotations(

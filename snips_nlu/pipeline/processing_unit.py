@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
+import io
 import json
 import shutil
-import io
 from abc import ABCMeta, abstractmethod, abstractproperty
 from pathlib import Path
 
@@ -14,7 +14,10 @@ from snips_nlu.constants import (
 from snips_nlu.entity_parser import (
     BuiltinEntityParser, CustomEntityParser, CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.utils import classproperty, json_string, temp_dir, unzip_archive
+from snips_nlu.common.utils import (
+    json_string)
+from snips_nlu.common.io_utils import temp_dir, unzip_archive
+from snips_nlu.common.abc_utils import abstractclassmethod, classproperty
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, object)):

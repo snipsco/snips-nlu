@@ -3,10 +3,10 @@ from __future__ import unicode_literals
 import json
 import logging
 from builtins import str
-from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+from copy import deepcopy
 from future.utils import iteritems, itervalues
 
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
@@ -17,9 +17,9 @@ from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.pipeline.processing_unit import (build_processing_unit,
                                                 load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result, extraction_result
-from snips_nlu.utils import (check_persisted_path, elapsed_since,
-                             fitted_required, json_string, log_elapsed_time,
-                             log_result)
+from snips_nlu.common.utils import (
+    check_persisted_path, elapsed_since, fitted_required, json_string)
+from snips_nlu.common.log_utils import log_elapsed_time, log_result
 
 logger = logging.getLogger(__name__)
 

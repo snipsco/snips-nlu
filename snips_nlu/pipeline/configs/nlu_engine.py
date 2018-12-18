@@ -8,7 +8,7 @@ from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.utils import classproperty
+from snips_nlu.common.abc_utils import classproperty
 
 
 class NLUEngineConfig(ProcessingUnitConfig):

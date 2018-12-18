@@ -18,7 +18,8 @@ from snips_nlu.entity_parser.builtin_entity_parser import (
 from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.utils import validate_key, validate_keys, validate_type
+from snips_nlu.common.dataset_utils import validate_type, validate_key, \
+    validate_keys
 
 
 def validate_and_format_dataset(dataset):

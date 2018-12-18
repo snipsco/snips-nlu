@@ -28,11 +28,14 @@ from snips_nlu.slot_filler.crf_utils import (
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.utils import (
-    DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
-    check_random_state, fitted_required, get_slot_name_mapping, json_string,
-    log_elapsed_time,
-    mkdir_p, ranges_overlap)
+from snips_nlu.common.utils import (
+    check_persisted_path,
+    check_random_state, fitted_required, json_string,
+    ranges_overlap)
+from snips_nlu.common.dataset_utils import get_slot_name_mapping
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
+from snips_nlu.common.io_utils import mkdir_p
+from snips_nlu.common.dict_utils import UnupdatableDict
 
 logger = logging.getLogger(__name__)
 

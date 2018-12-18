@@ -6,7 +6,7 @@ from snips_nlu.constants import STOP_WORDS
 from snips_nlu.pipeline.configs import (
     Config, ProcessingUnitConfig, default_features_factories)
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.utils import classproperty
+from snips_nlu.common.abc_utils import classproperty
 
 
 class CRFSlotFillerConfig(ProcessingUnitConfig):

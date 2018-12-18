@@ -3,7 +3,7 @@ from builtins import object
 
 from future.utils import with_metaclass
 
-from snips_nlu.utils import classproperty
+from snips_nlu.common.abc_utils import classproperty
 
 
 class Config(with_metaclass(ABCMeta, object)):

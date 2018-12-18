@@ -1,8 +1,9 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod, ABCMeta
 
 from future.utils import with_metaclass
 
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
+from snips_nlu.common.abc_utils import classproperty
 
 
 class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):

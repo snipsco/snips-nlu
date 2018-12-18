@@ -20,7 +20,7 @@ from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.utils import json_string
+from snips_nlu.common.utils import json_string
 
 
 class TestIntentClassifierFeaturizer(SnipsTest):

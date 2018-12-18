@@ -23,7 +23,7 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
-from snips_nlu.utils import classproperty
+from snips_nlu.common.abc_utils import classproperty
 
 
 class CRFFeatureFactory(Registrable):

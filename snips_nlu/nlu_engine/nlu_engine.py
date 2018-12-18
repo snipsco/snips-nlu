@@ -26,9 +26,10 @@ from snips_nlu.pipeline.processing_unit import (
 from snips_nlu.resources import load_resources_from_dir, persist_resources
 from snips_nlu.result import (builtin_slot, custom_slot, empty_result,
                               extraction_result, is_empty, parsing_result)
-from snips_nlu.utils import (
-    check_persisted_path, fitted_required, get_slot_name_mappings, json_string,
-    log_elapsed_time)
+from snips_nlu.common.utils import (
+    check_persisted_path, fitted_required, json_string)
+from snips_nlu.common.dataset_utils import get_slot_name_mappings
+from snips_nlu.common.log_utils import log_elapsed_time
 
 logger = logging.getLogger(__name__)
 

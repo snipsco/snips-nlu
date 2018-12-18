@@ -8,7 +8,7 @@ from snips_nlu.cli import (
     cross_val_metrics, parse, train, train_test_metrics, generate_dataset)
 from snips_nlu.dataset import Dataset
 from snips_nlu.tests.utils import SnipsTest, TEST_PATH, redirect_stdout
-from snips_nlu.utils import unicode_string, json_string
+from snips_nlu.common.utils import unicode_string, json_string
 
 
 def mk_sys_argv(args):

@@ -10,7 +10,7 @@ from snips_nlu.constants import (
     STEMS, STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
-from snips_nlu.utils import get_package_path, is_package, json_string
+from snips_nlu.common.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
 

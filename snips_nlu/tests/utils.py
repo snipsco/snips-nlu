@@ -15,7 +15,7 @@ from snips_nlu.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.resources import load_resources
 from snips_nlu.result import empty_result
-from snips_nlu.utils import json_string, unicode_string
+from snips_nlu.common.utils import json_string, unicode_string
 
 TEST_PATH = Path(__file__).parent
 TEST_RESOURCES_PATH = TEST_PATH / "resources"

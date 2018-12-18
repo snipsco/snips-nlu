@@ -1,9 +1,9 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import io
 from builtins import str
 
+import io
 from mock import MagicMock, patch
 from snips_nlu_ontology import get_all_languages
 

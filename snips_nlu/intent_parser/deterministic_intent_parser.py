@@ -24,10 +24,11 @@ from snips_nlu.resources import get_stop_words
 from snips_nlu.result import (empty_result, extraction_result,
                               intent_classification_result, parsing_result,
                               unresolved_slot)
-from snips_nlu.utils import (
+from snips_nlu.common.utils import (
     check_persisted_path, deduplicate_overlapping_items, fitted_required,
-    get_slot_name_mappings, json_string, log_elapsed_time, log_result,
-    ranges_overlap, regex_escape)
+    json_string, ranges_overlap, regex_escape)
+from snips_nlu.common.dataset_utils import get_slot_name_mappings
+from snips_nlu.common.log_utils import log_elapsed_time, log_result
 
 WHITESPACE_PATTERN = r"\s*"
 

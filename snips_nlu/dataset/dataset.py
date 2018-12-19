@@ -153,6 +153,7 @@ class Dataset(object):
                 correspond to the
                 :ref:`expected entity format <yaml_entity_format>`
         """
+        language = unicode_string(language)
         entities = []
         intents = []
         for filename in filenames:

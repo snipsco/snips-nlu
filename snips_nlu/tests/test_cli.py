@@ -24,23 +24,23 @@ class TestCLI(SnipsTest):
         if not self.fixture_dir.exists():
             self.fixture_dir.mkdir()
 
-        dataset_stream = io.StringIO("""
+        dataset_stream = io.StringIO(u"""
 ---
 type: intent
 name: MakeTea
 utterances:
-- make me a [beverage_temperature:Temperature](hot) cup of tea
-- make me [number_of_cups:snips/number](five) tea cups
-- i want [number_of_cups] cups of [beverage_temperature](boiling hot) tea pls
-- can you prepare [number_of_cups] cup of [beverage_temperature](cold) tea ?
+  - make me a [beverage_temperature:Temperature](hot) cup of tea
+  - make me [number_of_cups:snips/number](five) tea cups
+  - i want [number_of_cups] cups of [beverage_temperature](boiling hot) tea pls
+  - can you prepare [number_of_cups] cup of [beverage_temperature](cold) tea ?
 
 ---
 type: intent
 name: MakeCoffee
 utterances:
-- make me [number_of_cups:snips/number](one) cup of coffee please
-- brew [number_of_cups] cups of coffee
-- can you prepare [number_of_cups] cup of coffee""")
+  - make me [number_of_cups:snips/number](one) cup of coffee please
+  - brew [number_of_cups] cups of coffee
+  - can you prepare [number_of_cups] cup of coffee""")
         beverage_dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
         self.beverage_dataset_path = self.fixture_dir / "beverage_dataset.json"
@@ -73,20 +73,20 @@ utterances:
 
     def test_parse(self):
         # Given / When
-        dataset_stream = io.StringIO("""
+        dataset_stream = io.StringIO(u"""
 ---
 type: intent
 name: MakeTea
 utterances:
-- make me a [beverage_temperature:Temperature](hot) cup of tea
-- make me [number_of_cups:snips/number](five) tea cups
+  - make me a [beverage_temperature:Temperature](hot) cup of tea
+  - make me [number_of_cups:snips/number](five) tea cups
 
 ---
 type: intent
 name: MakeCoffee
 utterances:
-- brew [number_of_cups:snips/number](one) cup of coffee please
-- make me [number_of_cups] cups of coffee""")
+  - brew [number_of_cups:snips/number](one) cup of coffee please
+  - make me [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         nlu_engine = SnipsNLUEngine().fit(dataset)
         nlu_engine.persist(self.tmp_file_path)

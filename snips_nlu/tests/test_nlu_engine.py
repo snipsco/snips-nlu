@@ -30,9 +30,6 @@ from snips_nlu.tests.utils import (
 
 
 class TestSnipsNLUEngine(FixtureTest):
-    def setUp(self):
-        super(TestSnipsNLUEngine, self).setUp()
-
     def test_should_parse_top_intents(self):
         # Given
         text = "foo bar ban"
@@ -57,6 +54,7 @@ utterances:
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
+        # pylint:disable=unused-variable
         @IntentParser.register("first_intent_parser", True)
         class FirstIntentParser(MockIntentParser):
             def get_intents(self, text):
@@ -96,6 +94,8 @@ utterances:
                         unresolved_slot((8, 11), "ban", "entity2", "slot2")
                     ]
                 return []
+
+        # pylint:enable=unused-variable
 
         config = NLUEngineConfig(
             ["first_intent_parser", "second_intent_parser"])
@@ -140,6 +140,7 @@ utterances:
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         input_text = "hello world"
 
+        # pylint:disable=unused-variable
         @IntentParser.register("first_intent_parser", True)
         class FirstIntentParser(MockIntentParser):
             def get_intents(self, text):
@@ -158,6 +159,7 @@ utterances:
                     intent_classification_result(None, 0.1)
                 ]
 
+        # pylint:enable=unused-variable
         config = NLUEngineConfig(["first_intent_parser",
                                   "second_intent_parser"])
         engine = SnipsNLUEngine(config).fit(dataset)
@@ -189,6 +191,7 @@ utterances:
                                           entity="name",
                                           slot_name="greeted")]
 
+        # pylint:disable=unused-variable
         @IntentParser.register("first_intent_parser", True)
         class FirstIntentParser(MockIntentParser):
             pass
@@ -199,6 +202,8 @@ utterances:
                 if text == input_text and intent == greeting_intent:
                     return expected_slots
                 return []
+
+        # pylint:enable=unused-variable
 
         config = NLUEngineConfig(
             ["first_intent_parser", "second_intent_parser"])
@@ -249,6 +254,7 @@ utterances:
                                  entity='name',
                                  slot_name='greeted')]
 
+        # pylint:disable=unused-variable
         @IntentParser.register("first_intent_parser", True)
         class FirstIntentParser(MockIntentParser):
             pass
@@ -259,6 +265,8 @@ utterances:
                 if text == input_text:
                     return parsing_result(text, intent, slots)
                 return empty_result(text)
+
+        # pylint:enable=unused-variable
 
         config = NLUEngineConfig(["first_intent_parser",
                                   "second_intent_parser"])
@@ -364,6 +372,7 @@ utterances:
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
+        # pylint:disable=unused-variable
         @IntentParser.register("test_intent_parser1", True)
         class TestIntentParser1(MockIntentParser):
             pass
@@ -371,6 +380,8 @@ utterances:
         @IntentParser.register("test_intent_parser2", True)
         class TestIntentParser2(MockIntentParser):
             pass
+
+        # pylint:enable=unused-variable
 
         parser1_config = {
             "unit_name": "test_intent_parser1",
@@ -456,9 +467,12 @@ utterances:
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
+        # pylint:disable=unused-variable
         @IntentParser.register("my_intent_parser", True)
         class MyIntentParser(MockIntentParser):
             pass
+
+        # pylint:enable=unused-variable
 
         parsers_configs = ["my_intent_parser", "my_intent_parser"]
         config = NLUEngineConfig(parsers_configs)

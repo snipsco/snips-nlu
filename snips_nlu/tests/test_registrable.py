@@ -10,6 +10,7 @@ class TestRegistrable(TestCase):
         class MyBaseClass(Registrable):
             pass
 
+        # pylint:disable=unused-variable
         @MyBaseClass.register("first_subclass")
         class MyFirstSubclass(MyBaseClass):
             pass
@@ -17,6 +18,8 @@ class TestRegistrable(TestCase):
         @MyBaseClass.register("second_subclass")
         class MySecondSubclass(MyBaseClass):
             pass
+
+        # pylint:enable=unused-variable
 
         # When
         my_subclass = MyBaseClass.by_name("second_subclass")
@@ -38,6 +41,7 @@ class TestRegistrable(TestCase):
         class MyBaseClass(Registrable):
             pass
 
+        # pylint:disable=unused-variable
         @MyBaseClass.register("my_duplicated_subclass")
         class MySubclass(MyBaseClass):
             pass
@@ -47,15 +51,19 @@ class TestRegistrable(TestCase):
             @MyBaseClass.register("my_duplicated_subclass")
             class MySecondSubclass(MyBaseClass):
                 pass
+        # pylint:enable=unused-variable
 
     def test_should_override_already_registered_subclass(self):
         # Given
         class MyBaseClass(Registrable):
             pass
 
+        # pylint:disable=unused-variable
         @MyBaseClass.register("my_subclass")
         class MyOverridenSubclass(MyBaseClass):
             pass
+
+        # pylint:enable=unused-variable
 
         @MyBaseClass.register("my_subclass", override=True)
         class MySubclass(MyBaseClass):

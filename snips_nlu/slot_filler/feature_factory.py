@@ -7,6 +7,7 @@ from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
 from snips_nlu.__about__ import __version__
+from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
@@ -23,7 +24,6 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
-from snips_nlu.common.abc_utils import classproperty
 
 
 class CRFFeatureFactory(Registrable):
@@ -57,7 +57,7 @@ class CRFFeatureFactory(Registrable):
         return factory(factory_config)
 
     @classproperty
-    def name(cls):
+    def name(cls):  # pylint:disable=no-self-argument
         return CRFFeatureFactory.registered_name(cls)
 
     @property

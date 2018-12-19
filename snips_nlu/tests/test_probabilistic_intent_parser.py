@@ -22,9 +22,6 @@ from snips_nlu.tests.utils import (
 
 
 class TestProbabilisticIntentParser(FixtureTest):
-    def setUp(self):
-        super(TestProbabilisticIntentParser, self).setUp()
-
     def test_should_parse(self):
         dataset_stream = io.StringIO("""
 ---
@@ -437,6 +434,7 @@ utterances:
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
+        # pylint:disable=unused-variable
         @IntentClassifier.register("my_intent_classifier", True)
         class MyIntentClassifier(MockIntentClassifier):
             pass
@@ -444,6 +442,8 @@ utterances:
         @SlotFiller.register("my_slot_filler", True)
         class MySlotFiller(MockSlotFiller):
             pass
+
+        # pylint:enable=unused-variable
 
         parser_config = ProbabilisticIntentParserConfig(
             intent_classifier_config="my_intent_classifier",

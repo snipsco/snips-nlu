@@ -144,7 +144,7 @@ class MockIntentParser(IntentParser):
 
     @classmethod
     def from_path(cls, path, **shared):
-        cfg = cls.config_type()
+        cfg = cls.config_type()  # pylint:disable=no-value-for-parameter
         return cls(cfg)
 
 
@@ -173,7 +173,7 @@ class MockIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_path(cls, path, **shared):
-        config = cls.config_type()
+        config = cls.config_type()  # pylint:disable=no-value-for-parameter
         return cls(config)
 
 
@@ -199,5 +199,5 @@ class MockSlotFiller(SlotFiller):
 
     @classmethod
     def from_path(cls, path, **shared):
-        config = cls.config_type()
+        config = cls.config_type()  # pylint:disable=no-value-for-parameter
         return cls(config)

@@ -2,8 +2,8 @@ from abc import abstractmethod, ABCMeta
 
 from future.utils import with_metaclass
 
-from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.common.abc_utils import classproperty
+from snips_nlu.pipeline.processing_unit import ProcessingUnit
 
 
 class SlotFiller(with_metaclass(ABCMeta, ProcessingUnit)):
@@ -14,7 +14,7 @@ class SlotFiller(with_metaclass(ABCMeta, ProcessingUnit)):
     """
 
     @classproperty
-    def unit_name(cls):
+    def unit_name(cls):  # pylint:disable=no-self-argument
         return SlotFiller.registered_name(cls)
 
     @abstractmethod

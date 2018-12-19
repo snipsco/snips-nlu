@@ -1,5 +1,5 @@
 # This module is largely inspired by the AllenNLP library
-# See https://github.com/allenai/allennlp/blob/master/allennlp/common/registrable.py
+# See github.com/allenai/allennlp/blob/master/allennlp/common/registrable.py
 
 from collections import defaultdict
 from future.utils import iteritems

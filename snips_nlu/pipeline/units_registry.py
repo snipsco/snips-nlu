@@ -4,6 +4,8 @@ from snips_nlu.__about__ import __version__
 from snips_nlu.common.registrable import Registrable
 
 
+# pylint:disable=protected-access
+
 @deprecated(deprecated_in="0.18.1", removed_in="0.19.0",
             current_version=__version__,
             details="Use the @BaseClass.register decorator instead")
@@ -24,3 +26,5 @@ def register_processing_unit(unit_type):
     raise TypeError("%s must inherit from one of the following base class in "
                     "order to be registered: %s"
                     % (unit_type.__name__, base_names))
+
+# pylint:enable=protected-access

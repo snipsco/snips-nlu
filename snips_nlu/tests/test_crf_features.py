@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import io
+
 from deprecation import fail_if_not_removed
 from mock import MagicMock, patch
 
@@ -11,7 +12,7 @@ from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import \
     CustomEntityParserUsage
-from snips_nlu.exceptions import NotRegisteredError, AlreadyRegisteredError
+from snips_nlu.exceptions import NotRegisteredError
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, LAST_PREFIX, TaggingScheme, UNIT_PREFIX)
@@ -494,10 +495,13 @@ utterances:
 
     def test_custom_single_feature_factory(self):
         # Given
+        # pylint:disable=unused-variable
         @CRFFeatureFactory.register("my_single_feature", override=True)
         class MySingleFeatureFactory(SingleFeatureFactory):
             def compute_feature(self, tokens, token_index):
                 return "(%s)[my_feature]" % tokens[token_index].value
+
+        # pylint:enable=unused-variable
 
         # When
         config = {
@@ -522,6 +526,8 @@ utterances:
 
     def test_custom_multi_feature_factory(self):
         # Given
+
+        # pylint:disable=unused-variable
         @CRFFeatureFactory.register("my_multi_feature_factory", override=True)
         class MyMultiFeature(CRFFeatureFactory):
             def build_features(self, builtin_entity_parser=None,
@@ -541,6 +547,8 @@ utterances:
             @staticmethod
             def compute_feature_2(tokens, token_index):
                 return "(%s)[my_feature_2]" % tokens[token_index].value
+
+        # pylint:enable=unused-variable
 
         # When
         config = {

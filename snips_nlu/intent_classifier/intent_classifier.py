@@ -14,7 +14,7 @@ class IntentClassifier(with_metaclass(ABCMeta, ProcessingUnit)):
     """
 
     @classproperty
-    def unit_name(cls):
+    def unit_name(cls):  # pylint:disable=no-self-argument
         return IntentClassifier.registered_name(cls)
 
     @abstractmethod

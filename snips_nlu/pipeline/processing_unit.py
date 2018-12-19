@@ -43,7 +43,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
 
     @classproperty
-    def unit_name(cls):
+    def unit_name(cls):  # pylint:disable=no-self-argument
         return ProcessingUnit.registered_name(cls)
 
     @classmethod
@@ -123,7 +123,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
             f.write(metadata_json)
 
     @classproperty
-    def config_type(cls):
+    def config_type(cls):  # pylint:disable=no-self-argument
         return DefaultProcessingUnitConfig
 
     @abstractmethod

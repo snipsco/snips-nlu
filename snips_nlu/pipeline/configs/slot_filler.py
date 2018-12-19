@@ -1,14 +1,13 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
+from snips_nlu.common.from_dict import FromDict
 from snips_nlu.constants import STOP_WORDS
 from snips_nlu.pipeline.configs import (
     Config, ProcessingUnitConfig, default_features_factories)
 from snips_nlu.resources import merge_required_resources
 
 
-class CRFSlotFillerConfig(ProcessingUnitConfig):
+class CRFSlotFillerConfig(FromDict, ProcessingUnitConfig):
     # pylint: disable=line-too-long
     """Configuration of a :class:`.CRFSlotFiller`
 
@@ -107,16 +106,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
             "random_seed": self.random_seed
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)
 
-
-class SlotFillerDataAugmentationConfig(Config):
+class SlotFillerDataAugmentationConfig(FromDict, Config):
     """Specify how to augment data before training the CRF
 
     Data augmentation essentially consists in creating additional utterances
@@ -150,10 +141,6 @@ class SlotFillerDataAugmentationConfig(Config):
             "capitalization_ratio": self.capitalization_ratio,
             "add_builtin_entities_examples": self.add_builtin_entities_examples
         }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
 
 def _default_crf_args():

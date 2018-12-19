@@ -3,12 +3,15 @@ from __future__ import unicode_literals
 import json
 import logging
 from builtins import str
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
-from copy import deepcopy
 from future.utils import iteritems, itervalues
 
+from snips_nlu.common.log_utils import log_elapsed_time, log_result
+from snips_nlu.common.utils import (
+    check_persisted_path, elapsed_since, fitted_required, json_string)
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import IntentNotFoundError
@@ -17,9 +20,6 @@ from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
 from snips_nlu.result import empty_result, parsing_result, extraction_result
 from snips_nlu.slot_filler import SlotFiller
-from snips_nlu.common.utils import (
-    check_persisted_path, elapsed_since, fitted_required, json_string)
-from snips_nlu.common.log_utils import log_elapsed_time, log_result
 
 logger = logging.getLogger(__name__)
 
@@ -224,20 +224,22 @@ class ProbabilisticIntentParser(IntentParser):
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)
 
-        parser = cls(config=cls.config_type.from_dict(model["config"]),
-                     **shared)
+        config = cls.config_type.from_dict(model["config"])
+        parser = cls(config=config, **shared)
         classifier = None
         intent_classifier_path = path / "intent_classifier"
         if intent_classifier_path.exists():
+            classifier_unit_name = config.intent_classifier_config.unit_name
             classifier = IntentClassifier.load_from_path(
-                intent_classifier_path, **shared)
+                intent_classifier_path, classifier_unit_name, **shared)
 
         slot_fillers = dict()
+        slot_filler_unit_name = config.slot_filler_config.unit_name
         for slot_filler_conf in model["slot_fillers"]:
             intent = slot_filler_conf["intent"]
             slot_filler_path = path / slot_filler_conf["slot_filler_name"]
-            slot_filler = SlotFiller.load_from_path(slot_filler_path,
-                                                    **shared)
+            slot_filler = SlotFiller.load_from_path(
+                slot_filler_path, slot_filler_unit_name, **shared)
             slot_fillers[intent] = slot_filler
 
         parser.intent_classifier = classifier

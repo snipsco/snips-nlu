@@ -1,14 +1,13 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
+from snips_nlu.common.from_dict import FromDict
 from snips_nlu.constants import CUSTOM_ENTITY_PARSER_USAGE
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
 
 
-class NLUEngineConfig(ProcessingUnitConfig):
+class NLUEngineConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.SnipsNLUEngine` object
 
     Args:
@@ -53,11 +52,3 @@ class NLUEngineConfig(ProcessingUnitConfig):
                 config.to_dict() for config in self.intent_parsers_configs
             ]
         }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)

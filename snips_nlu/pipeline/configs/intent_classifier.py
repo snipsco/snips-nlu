@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
+from snips_nlu.common.from_dict import FromDict
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.entity_parser.custom_entity_parser import (
@@ -10,7 +9,7 @@ from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
 
 
-class LogRegIntentClassifierConfig(ProcessingUnitConfig):
+class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
     # pylint: disable=line-too-long
     """Configuration of a :class:`.LogRegIntentClassifier`
 
@@ -88,16 +87,8 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
             "random_seed": self.random_seed
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)
 
-
-class IntentClassifierDataAugmentationConfig(Config):
+class IntentClassifierDataAugmentationConfig(FromDict, Config):
     """Configuration used by a :class:`.LogRegIntentClassifier` which defines
         how to augment data to improve the training of the classifier
 
@@ -149,12 +140,8 @@ class IntentClassifierDataAugmentationConfig(Config):
             "max_unknown_words": self.max_unknown_words
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
-
-class FeaturizerConfig(Config):
+class FeaturizerConfig(FromDict, Config):
     """Configuration of a :class:`.Featurizer` object
 
     Args:
@@ -193,7 +180,3 @@ class FeaturizerConfig(Config):
             "word_clusters_name": self.word_clusters_name,
             "use_stemming": self.use_stemming
         }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)

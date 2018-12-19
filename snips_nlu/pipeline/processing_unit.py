@@ -53,13 +53,23 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         return unit(unit_config, **shared)
 
     @classmethod
-    def load_from_path(cls, unit_path, **shared):
+    def load_from_path(cls, unit_path, unit_name=None, **shared):
         """Load a :class:`ProcessingUnit` from a persisted processing unit
-        directory"""
+        directory
+
+        Args:
+            unit_path (str or :class:`pathlib.Path`): path to the persisted
+                processing unit
+            unit_name (str, optional): Name of the processing unit to load.
+                By default, the unit name is assumed to be stored in a
+                "metadata.json" file located in the directory at unit_path.
+        """
         unit_path = Path(unit_path)
-        with (unit_path / "metadata.json").open(encoding="utf8") as f:
-            metadata = json.load(f)
-        unit = cls.by_name(metadata["unit_name"])
+        if unit_name is None:
+            with (unit_path / "metadata.json").open(encoding="utf8") as f:
+                metadata = json.load(f)
+            unit_name = metadata["unit_name"]
+        unit = cls.by_name(unit_name)
         return unit.from_path(unit_path, **shared)
 
     @classmethod

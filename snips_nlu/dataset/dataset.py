@@ -10,6 +10,7 @@ from deprecation import deprecated
 from snips_nlu_ontology import get_builtin_entity_examples
 
 from snips_nlu.__about__ import __version__
+from snips_nlu.common.utils import unicode_string
 from snips_nlu.dataset.entity import Entity
 from snips_nlu.dataset.intent import Intent
 from snips_nlu.exceptions import DatasetFormatError
@@ -55,7 +56,7 @@ class Dataset(object):
             illustrated in the example below:
 
             >>> import io
-            >>> import json
+            >>> from snips_nlu.common.utils import json_string
             >>> dataset_yaml = io.StringIO('''
             ... # searchFlight Intent
             ... ---
@@ -80,7 +81,7 @@ class Dataset(object):
             ...   - london
             ...   - [paris, city of lights]''')
             >>> dataset = Dataset.from_yaml_files("en", [dataset_yaml])
-            >>> print(json.dumps(dataset.json, indent=4, sort_keys=True))
+            >>> print(json_string(dataset.json, indent=4, sort_keys=True))
             {
                 "entities": {
                     "city": {

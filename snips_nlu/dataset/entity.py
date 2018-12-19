@@ -68,7 +68,7 @@ class Entity(object):
             illustrated in the example below:
 
             >>> import io
-            >>> import json
+            >>> from snips_nlu.common.utils import json_string
             >>> entity_yaml = io.StringIO('''
             ... # City Entity
             ... ---
@@ -82,7 +82,7 @@ class Entity(object):
             ...   - [new york, big apple]
             ...   - [paris, city of lights]''')
             >>> entity = Entity.from_yaml(entity_yaml)
-            >>> print(json.dumps(entity.json, indent=4, sort_keys=True))
+            >>> print(json_string(entity.json, indent=4, sort_keys=True))
             {
                 "automatically_extensible": false,
                 "data": [

@@ -49,8 +49,6 @@ class DeterministicIntentParser(IntentParser):
     def __init__(self, config=None, **shared):
         """The deterministic intent parser can be configured by passing a
         :class:`.DeterministicIntentParserConfig`"""
-        if config is None:
-            config = self.config_type()
         super(DeterministicIntentParser, self).__init__(config, **shared)
         self._language = None
         self._slot_names_to_entities = None

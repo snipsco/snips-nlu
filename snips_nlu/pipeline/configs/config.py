@@ -22,15 +22,22 @@ class ProcessingUnitConfig(with_metaclass(ABCMeta, Config)):
     def unit_name(self):
         raise NotImplementedError
 
+    def set_unit_name(self, value):
+        pass
+
     def get_required_resources(self):
         return None
 
 
 class DefaultProcessingUnitConfig(dict, ProcessingUnitConfig):
     """Default config implemented as a simple dict"""
+
     @property
     def unit_name(self):
         return self["unit_name"]
+
+    def set_unit_name(self, value):
+        self["unit_name"] = value
 
     def to_dict(self):
         return self

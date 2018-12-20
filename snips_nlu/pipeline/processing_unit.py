@@ -32,15 +32,28 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
     represents the :class:`.ProcessingUnitConfig` used to initialize it.
     """
 
-    def __init__(self, config, **shared):
+    def __init__(self, config, use_default_config=True, **shared):
+        if config is None and use_default_config:
+            config = self.default_config
         if config is None or isinstance(config, ProcessingUnitConfig):
             self.config = config
         elif isinstance(config, dict):
             self.config = self.config_type.from_dict(config)
+            self.config.set_unit_name(self.unit_name)
         else:
             raise ValueError("Unexpected config type: %s" % type(config))
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
+
+    @classproperty
+    def config_type(cls):  # pylint:disable=no-self-argument
+        return DefaultProcessingUnitConfig
+
+    @classproperty
+    def default_config(cls):  # pylint:disable=no-self-argument
+        config = cls.config_type()
+        config.set_unit_name(cls.unit_name)
+        return config
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
@@ -131,10 +144,6 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         metadata_json = json_string(metadata)
         with (path / "metadata.json").open(mode="w") as f:
             f.write(metadata_json)
-
-    @classproperty
-    def config_type(cls):  # pylint:disable=no-self-argument
-        return DefaultProcessingUnitConfig
 
     @abstractmethod
     def persist(self, path):

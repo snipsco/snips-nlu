@@ -61,7 +61,10 @@ class SnipsNLUEngine(ProcessingUnit):
     def __init__(self, config=None, **shared):
         """The NLU engine can be configured by passing a
         :class:`.NLUEngineConfig`"""
-        super(SnipsNLUEngine, self).__init__(config, **shared)
+        # Do not use the global default config, and use per-language default
+        # configs instead
+        super(SnipsNLUEngine, self).__init__(config, use_default_config=False,
+                                             **shared)
         self.intent_parsers = []
         """list of :class:`.IntentParser`"""
         self._dataset_metadata = None

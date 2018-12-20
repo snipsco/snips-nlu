@@ -34,8 +34,6 @@ class ProbabilisticIntentParser(IntentParser):
     def __init__(self, config=None, **shared):
         """The probabilistic intent parser can be configured by passing a
         :class:`.ProbabilisticIntentParserConfig`"""
-        if config is None:
-            config = self.config_type()
         super(ProbabilisticIntentParser, self).__init__(config, **shared)
         self.intent_classifier = None
         self.slot_fillers = dict()

@@ -43,8 +43,6 @@ class LogRegIntentClassifier(IntentClassifier):
     def __init__(self, config=None, **shared):
         """The LogReg intent classifier can be configured by passing a
         :class:`.LogRegIntentClassifierConfig`"""
-        if config is None:
-            config = LogRegIntentClassifierConfig()
         super(LogRegIntentClassifier, self).__init__(config, **shared)
         self.classifier = None
         self.intent_list = None

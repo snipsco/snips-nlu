@@ -9,6 +9,7 @@ from pathlib import Path
 from future.utils import iteritems, itervalues
 
 from snips_nlu.__about__ import __model_version__, __version__
+from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.dataset_utils import get_slot_name_mappings
 from snips_nlu.common.log_utils import log_elapsed_time
 from snips_nlu.common.utils import (
@@ -61,13 +62,16 @@ class SnipsNLUEngine(ProcessingUnit):
     def __init__(self, config=None, **shared):
         """The NLU engine can be configured by passing a
         :class:`.NLUEngineConfig`"""
-        # Do not use the global default config, and use per-language default
-        # configs instead
-        super(SnipsNLUEngine, self).__init__(config, use_default_config=False,
-                                             **shared)
+        super(SnipsNLUEngine, self).__init__(config, **shared)
         self.intent_parsers = []
         """list of :class:`.IntentParser`"""
         self._dataset_metadata = None
+
+    @classmethod
+    def default_config(cls):
+        # Do not use the global default config, and use per-language default
+        # configs instead
+        return None
 
     @property
     def fitted(self):

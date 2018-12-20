@@ -32,16 +32,17 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
     represents the :class:`.ProcessingUnitConfig` used to initialize it.
     """
 
-    def __init__(self, config, use_default_config=True, **shared):
-        if config is None and use_default_config:
-            config = self.default_config
-        if config is None or isinstance(config, ProcessingUnitConfig):
+    def __init__(self, config, **shared):
+        if config is None:
+            self.config = self.default_config()
+        elif isinstance(config, ProcessingUnitConfig):
             self.config = config
         elif isinstance(config, dict):
             self.config = self.config_type.from_dict(config)
-            self.config.set_unit_name(self.unit_name)
         else:
             raise ValueError("Unexpected config type: %s" % type(config))
+        if self.config is not None:
+            self.config.set_unit_name(self.unit_name)
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
 
@@ -49,8 +50,8 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
     def config_type(cls):  # pylint:disable=no-self-argument
         return DefaultProcessingUnitConfig
 
-    @classproperty
-    def default_config(cls):  # pylint:disable=no-self-argument
+    @classmethod
+    def default_config(cls):
         config = cls.config_type()
         config.set_unit_name(cls.unit_name)
         return config

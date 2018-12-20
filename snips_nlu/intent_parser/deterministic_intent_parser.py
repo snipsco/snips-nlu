@@ -14,7 +14,7 @@ from snips_nlu.constants import (
     START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.intent_parser.intent_parser import IntentParser
-from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
+from snips_nlu.pipeline.configs import DeterministicIntentParserConfig, TrieDeterministicIntentParserConfig
 from snips_nlu.preprocessing import tokenize, tokenize_light
 from snips_nlu.result import (
     empty_result, intent_classification_result, parsing_result,
@@ -24,9 +24,12 @@ from snips_nlu.utils import (
     get_slot_name_mappings, json_string, log_elapsed_time, log_result,
     ranges_overlap, regex_escape)
 
+from trie import Trie, SymbolTable
+
 GROUP_NAME_PREFIX = "group"
 GROUP_NAME_SEPARATOR = "_"
 WHITESPACE_PATTERN = r"\s*"
+INTENTS_SLOTNAMES_PATTERN = re.compile(r"\((.+?)\)\((.+?)\)")
 
 logger = logging.getLogger(__name__)
 
@@ -243,6 +246,201 @@ class DeterministicIntentParser(IntentParser):
             "group_names_to_slot_names"]
         parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
         return parser
+
+
+class TrieDeterministicIntentParser(IntentParser):
+    """Intent parser using pattern matching in a deterministic manner
+
+    This intent parser is very strict by nature, and tends to have a very good
+    precision but a low recall. For this reason, it is interesting to use it
+    first before potentially falling back to another parser.
+    """
+
+    unit_name = "trie_deterministic_intent_parser"
+    config_type = TrieDeterministicIntentParserConfig
+
+    def __init__(self, config=None, **shared):
+        """The deterministic intent parser can be configured by passing a
+        :class:`.DeterministicIntentParserConfig`"""
+        if config is None:
+            config = self.config_type()
+        super(TrieDeterministicIntentParser, self).__init__(config, **shared)
+        self.trie = None
+        self.language = None
+        self.placeholders_dict = {}
+        self.table = SymbolTable()
+
+    @property
+    def fitted(self):
+        """Whether or not the intent parser has already been trained"""
+        return self.trie is not None
+
+    def fit(self, dataset, force_retrain=True):
+        """Fit the intent parser with a valid Snips dataset
+
+        Args:
+            dataset (dict): Valid Snips NLU dataset
+            force_retrain (bool): Specify whether or not sub units of the
+            intent parser that may be already trained should be retrained
+        """
+        dataset = validate_and_format_dataset(dataset)
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
+        self.language = dataset[LANGUAGE]
+        placeholders = _get_entity_placeholders(dataset, self.language)
+        trie = Trie()
+        for (key, val) in self._generate_io_mapping(dataset[INTENTS], placeholders):
+            key = [self.table.add_symbol(x) for x in key]
+            val = [self.table.add_symbol(x) for x in val]
+            trie[key] = val
+
+        self.trie = trie
+
+        return self
+
+    @log_result(
+        logger, logging.DEBUG, "FstDeterministicIntentParser result -> {result}")
+    @log_elapsed_time(logger, logging.DEBUG, "Parsed in {elapsed_time}.")
+    @fitted_required
+    def parse(self, text, intents=None):
+        """Performs intent parsing on the provide *text*
+
+        Args:
+            text (str): Input
+            intents (str or list of str): If provided, reduces the scope of
+            intent parsing to the provided list of intents
+
+        Returns:
+            dict: The most likely intent along with the extracted slots. See
+            :func:`.parsing_result` for the output format.
+        """
+        if isinstance(intents, str):
+            intents = [intents]
+
+        builtin_entities = self.builtin_entity_parser.parse(
+            text, use_cache=True)
+        custom_entities = self.custom_entity_parser.parse(
+            text, use_cache=True)
+        all_entities = builtin_entities + custom_entities
+
+        ranges_mapping, processed_text = _replace_entities_with_placeholders(
+            text.lower(), self.language, all_entities)
+        cleaned_processed_text = _replace_tokenized_out_characters(
+            processed_text, self.language)
+
+        key = cleaned_processed_text.lower().split()
+        key = [self.table.get_key(x) for x in key]
+
+        val = self.trie.get(key)
+        val = " ".join([self.table.get_symbol(x) for x in val]) if val else None
+
+        return self.parse_trie_output(text, val, all_entities)
+
+    def parse_trie_output(self, text, output, entities):
+        """Parse the trie output to the parser's result format"""
+        entities.sort(key=lambda a: a['range']['start'])
+        if not output:
+            return empty_result(text)
+        intent_name, rest = output.split("::")
+        parsed_intent = intent_classification_result(intent_name=intent_name, probability=1.0)
+        slots = []
+        for index, match in enumerate(INTENTS_SLOTNAMES_PATTERN.finditer(rest)):
+            (entity_placeholder, slot_name), start, end = match.groups(), match.start(), match.end()
+            entity_name = self.placeholders_dict.get(entity_placeholder)
+            entity = entities[index]
+            value = text[entity['range']['start']: entity['range']['end']]
+            slot = unresolved_slot([entity['range']['start'], entity['range']['end']], value, entity_name, slot_name)
+            slots.append(slot)
+
+        return parsing_result(text, parsed_intent, slots)
+
+    @check_persisted_path
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        table_path = path.joinpath("table.txt")
+        self.table.write_to_file(str(table_path))
+        trie_path = path.joinpath("trie.txt")
+        self.trie.write_to_file(str(trie_path))
+        parser_path = path / "intent_parser.json"
+        parser_json = json_string(self.to_dict())
+        with parser_path.open(mode="w") as f:
+            f.write(parser_json)
+        self.persist_metadata(path)
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        """Load a :class:`DeterministicIntentParser` instance from a path
+
+        The data at the given path must have been generated using
+        :func:`~DeterministicIntentParser.persist`
+        """
+        path = Path(path)
+        metadata_path = path / "intent_parser.json"
+        table_path = path / "table.txt"
+        trie_path = path / "trie.txt"
+        if not metadata_path.exists():
+            raise OSError("Missing deterministic intent parser metadata file: "
+                          "%s" % metadata_path.name)
+
+        with metadata_path.open(encoding="utf8") as f:
+            metadata = json.load(f)
+
+        instance = cls.from_dict(metadata, **shared)
+        instance.table = SymbolTable.from_file(table_path)
+        instance.trie = Trie.from_file(trie_path)
+
+        return instance
+
+    def to_dict(self):
+        """Returns a json-serializable dict"""
+        return {
+            "config": self.config.to_dict(),
+            "language_code": self.language,
+            "placeholders_dict": self.placeholders_dict
+        }
+
+    @classmethod
+    def from_dict(cls, unit_dict, **shared):
+        """Creates a :class:`DeterministicIntentParser` instance from a dict
+
+        The dict must have been generated with
+        :func:`~DeterministicIntentParser.to_dict`
+        """
+        config = cls.config_type.from_dict(unit_dict["config"])
+        parser = cls(
+            config=config,
+            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER),
+            custom_entity_parser=shared.get(CUSTOM_ENTITY_PARSER),
+        )
+
+        parser.language = unit_dict["language_code"]
+        parser.placeholders_dict = unit_dict["placeholders_dict"]
+
+        return parser
+
+    def _generate_io_mapping(self, intents, placeholders):
+        for intent_name, intent in iteritems(intents):
+            utterances = intent[UTTERANCES]
+            queries = _get_queries_with_unique_context(utterances, self.language)
+
+            for query in queries:
+                input_ = []
+                output = ["{}::".format(intent_name)]
+                for chunk in query[DATA]:
+                    if SLOT_NAME in chunk:
+                        slot_name = chunk[SLOT_NAME]
+                        entity_name = chunk[ENTITY]
+                        placeholder = placeholders[entity_name]
+                        self.placeholders_dict[placeholder] = entity_name
+                        olabel = "({})({})".format(placeholder, slot_name)
+                        input_.append(placeholder.lower())
+                        output.append(olabel)
+                    else:
+                        text = [x.lower() for x in tokenize_light(chunk[TEXT], self.language)]
+                        input_.extend(text)
+
+                yield (input_, output)
 
 
 def _replace_tokenized_out_characters(string, language, replacement_char=" "):

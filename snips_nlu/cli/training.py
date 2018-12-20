@@ -3,6 +3,7 @@ from __future__ import print_function, unicode_literals
 import json
 import logging
 from pathlib import Path
+import shutil
 
 import plac
 
@@ -29,11 +30,24 @@ def train(dataset_path, output_path, config_path, verbose):
         with Path(config_path).open("r", encoding="utf8") as f:
             config = json.load(f)
 
+    config = {
+        "unit_name": "nlu_engine",
+        "intent_parsers_configs": [
+            {
+                "unit_name": "trie_deterministic_intent_parser",
+                "max_queries": 1000000,
+                "max_pattern_length": 10000000
+            }
+        ]
+    }
+
     load_resources(dataset["language"])
     print("Create and train the engine...")
     engine = SnipsNLUEngine(config).fit(dataset)
 
     print("Persisting the engine...")
+    if Path(output_path).exists():
+        shutil.rmtree(output_path)
     engine.persist(output_path)
 
     print("Saved the trained engine to %s" % output_path)

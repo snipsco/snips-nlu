@@ -1,3 +1,3 @@
-from .deterministic_intent_parser import DeterministicIntentParser
+from .deterministic_intent_parser import DeterministicIntentParser, TrieDeterministicIntentParser
 from .intent_parser import IntentParser
 from .probabilistic_intent_parser import ProbabilisticIntentParser

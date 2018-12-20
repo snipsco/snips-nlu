@@ -113,3 +113,54 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
             d = deepcopy(obj_dict)
             d.pop("unit_name")
         return cls(**d)
+
+
+class TrieDeterministicIntentParserConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.DeterministicIntentParser`
+
+    Args:
+        max_queries (int, optional): Maximum number of regex patterns per
+            intent. 50 by default.
+        max_pattern_length (int, optional): Maximum length of regex patterns.
+
+
+    This allows to deactivate the usage of regular expression when they are
+    too big to avoid explosion in time and memory
+
+    Note:
+        In the future, a FST will be used instead of regexps, removing the need
+        for all this
+    """
+
+    # pylint: disable=super-init-not-called
+    def __init__(self, max_queries=100, max_pattern_length=1000):
+        self.max_queries = max_queries
+        self.max_pattern_length = max_pattern_length
+
+    # pylint: enable=super-init-not-called
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_parser.deterministic_intent_parser import \
+            TrieDeterministicIntentParser
+        return TrieDeterministicIntentParser.unit_name
+
+    def get_required_resources(self):
+        return {
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
+        }
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "max_queries": self.max_queries,
+            "max_pattern_length": self.max_pattern_length
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        d = obj_dict
+        if "unit_name" in obj_dict:
+            d = deepcopy(obj_dict)
+            d.pop("unit_name")
+        return cls(**d)

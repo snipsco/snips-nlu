@@ -460,15 +460,21 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             token_end = transformed_tokens[token_index].end
             custom_entities = custom_entity_parser.parse(
                 text, scope=[entity], use_cache=True)
+            # only keep builtin entities (of type `entity`) which overlap with
+            # the current token
             custom_entities = [ent for ent in custom_entities
                                if entity_filter(ent, token_start, token_end)]
-            for ent in custom_entities:
+            if custom_entities:
+                # In most cases, 0 or 1 entity will be found. We fall back to
+                # the first entity if 2 or more were found
+                ent = custom_entities[0]
                 indexes = []
                 for index, token in enumerate(transformed_tokens):
                     if entity_filter(ent, token.start, token.end):
                         indexes.append(index)
                 return get_scheme_prefix(token_index, indexes,
                                          self.tagging_scheme)
+            return None
 
         return entity_match
 
@@ -548,9 +554,14 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
             builtin_entities = builtin_entity_parser.parse(
                 text, scope=[builtin_entity], use_cache=True)
+            # only keep builtin entities (of type `builtin_entity`) which
+            # overlap with the current token
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
-            for ent in builtin_entities:
+            if builtin_entities:
+                # In most cases, 0 or 1 entity will be found. We fall back to
+                # the first entity if 2 or more were found
+                ent = builtin_entities[0]
                 entity_start = ent[RES_MATCH_RANGE][START]
                 entity_end = ent[RES_MATCH_RANGE][END]
                 indexes = []
@@ -560,6 +571,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
                         indexes.append(index)
                 return get_scheme_prefix(token_index, indexes,
                                          self.tagging_scheme)
+            return None
 
         return builtin_entity_match
 

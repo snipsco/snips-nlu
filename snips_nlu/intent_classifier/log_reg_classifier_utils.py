@@ -90,6 +90,9 @@ def generate_noise_utterances(augmented_utterances, noise, num_intents,
 def add_unknown_word_to_utterances(utterances, replacement_string,
                                    unknown_word_prob, max_unknown_words,
                                    random_state):
+    if not max_unknown_words:
+        return utterances
+
     new_utterances = deepcopy(utterances)
     for u in new_utterances:
         if random_state.rand() < unknown_word_prob:

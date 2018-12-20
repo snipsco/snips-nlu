@@ -5,6 +5,8 @@ from copy import deepcopy
 from itertools import cycle
 
 import numpy as np
+from numpy.random.mtrand import RandomState
+
 from future.utils import itervalues
 from mock import MagicMock, patch
 
@@ -511,7 +513,6 @@ class TestLogRegClassifierUtils(SnipsTest):
 
         self.assertDictEqual(expected_dataset, filtered_dataset)
 
-
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     def test_get_dataset_specific_noise(self, mocked_noise):
         # Given
@@ -519,9 +520,40 @@ class TestLogRegClassifierUtils(SnipsTest):
         language = "en"
         mocked_noise.return_value = ["dummy_a", "yo"]
 
-
         # When
         noise = get_dataset_specific_noise(dataset, language)
 
         # Then
         self.assertEqual(["yo"], noise)
+
+    def test_add_unknown_word_to_utterances_with_none_max_unknownword(self):
+        # Given
+        utterances = [text_to_utterance("yo")]
+        replacement_string = "yo"
+        unknown_word_prob = 1
+        max_unknown_words = None
+        random_state = RandomState()
+
+        # When / Then
+        with self.fail_if_exception(
+            "Failed to augment utterances with max_unknownword=None"):
+            add_unknown_word_to_utterances(
+                utterances, replacement_string, unknown_word_prob,
+                max_unknown_words, random_state
+            )
+
+    def test_add_unknown_word_to_utterances_with_zero_max_unknownword(self):
+        # Given
+        utterances = [text_to_utterance("yo")]
+        replacement_string = "yo"
+        unknown_word_prob = 1
+        max_unknown_words = 0
+        random_state = RandomState()
+
+        # When / Then
+        with self.fail_if_exception(
+            "Failed to augment utterances with unknown_word_prob=0"):
+            add_unknown_word_to_utterances(
+                utterances, replacement_string, unknown_word_prob,
+                max_unknown_words, random_state
+            )

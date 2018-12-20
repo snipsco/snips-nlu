@@ -127,8 +127,8 @@ class IntentClassifierDataAugmentationConfig(Config):
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
-        if max_unknown_words is not None and max_unknown_words < 1:
-            raise ValueError("max_unknown_words must be None or >= 1")
+        if max_unknown_words is not None and max_unknown_words < 0:
+            raise ValueError("max_unknown_words must be None or >= 0")
         self.max_unknown_words = max_unknown_words
         if unknown_word_prob > 0 and unknown_words_replacement_string is None:
             raise ValueError("unknown_word_prob is positive (%s) but the "

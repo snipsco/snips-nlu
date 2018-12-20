@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 import unittest
-from builtins import str
 from copy import deepcopy
 
 from snips_nlu_ontology import get_all_languages
@@ -37,23 +36,6 @@ class TestConfig(SnipsTest):
 
         # Then
         self.assertDictEqual(config_dict, serialized_config)
-
-    def test_intent_classifier_data_augmentation_config_should_raise(self):
-        # Given
-        config_dict = {
-            "min_utterances": 3,
-            "noise_factor": 2,
-            "add_builtin_entities_examples": False,
-            "unknown_word_prob": 0.1,
-            "unknown_words_replacement_string": "foobar",
-            "max_unknown_words": 0,
-        }
-
-        # When / Then
-        with self.assertRaises(ValueError) as ctx:
-            IntentClassifierDataAugmentationConfig.from_dict(config_dict)
-        self.assertEqual(
-            "max_unknown_words must be None or >= 1", str(ctx.exception))
 
     def test_slot_filler_data_augmentation_config(self):
         # Given

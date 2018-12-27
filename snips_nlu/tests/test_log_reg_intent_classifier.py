@@ -270,7 +270,7 @@ utterances:
     @patch('snips_nlu.intent_classifier.featurizer.Featurizer.from_dict')
     def test_should_be_deserializable(self, mock_from_dict):
         # Given
-        mocked_featurizer = Featurizer(LANGUAGE_EN, None)
+        mocked_featurizer = Featurizer(LANGUAGE_EN)
         mock_from_dict.return_value = mocked_featurizer
 
         intent_list = ["MakeCoffee", "MakeTea", None]

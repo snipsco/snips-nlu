@@ -152,11 +152,14 @@ class FeaturizerConfig(FromDict, Config):
     """
 
     def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
-                 word_clusters_name=None, use_stemming=False):
+                 word_clusters_name=None, use_stemming=False,
+                 added_cooccurrence_feature_ratio=0):
         self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
         self.word_clusters_name = word_clusters_name
         self.use_stemming = use_stemming
+        self.added_cooccurrence_feature_ratio = \
+            added_cooccurrence_feature_ratio
 
     def get_required_resources(self):
         if self.use_stemming:
@@ -178,5 +181,48 @@ class FeaturizerConfig(FromDict, Config):
             "sublinear_tf": self.sublinear_tf,
             "pvalue_threshold": self.pvalue_threshold,
             "word_clusters_name": self.word_clusters_name,
-            "use_stemming": self.use_stemming
+            "use_stemming": self.use_stemming,
+            "added_cooccurrence_feature_ratio":
+                self.added_cooccurrence_feature_ratio
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)
+
+
+class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.CooccurrenceVectorizer` object
+
+        Args:
+            window_size (int, optional): if provided word cooccurrence will be
+             taken into account only in a context window of size window_size.
+             If the window size is 3 then given a word w[i], the vectorizer
+             will only extract the following pairs: (w[i], w[i + 1]),
+             (w[i], w[i + 2]) and (w[i], w[i + 3])
+             Defaults to None, which means that we consider all words
+        """
+
+    def __init__(self, window_size=None, unknown_words_replacement_string=None,
+                 use_stop_words=True):
+        self.window_size = window_size
+        self.unknown_words_replacement_string = \
+            unknown_words_replacement_string
+        self.use_stop_words = use_stop_words
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.featurizer import \
+            CooccurrenceVectorizer
+        return CooccurrenceVectorizer.unit_name
+
+    def get_required_resources(self):
+        return None
+
+    def to_dict(self):
+        return {
+            "unknown_words_replacement_string":
+                self.unknown_words_replacement_string,
+            "window_size": self.window_size,
+            "use_stop_words": self.use_stop_words
         }

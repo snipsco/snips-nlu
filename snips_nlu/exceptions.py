@@ -10,6 +10,11 @@ class NotTrained(SnipsNLUError):
     """Raised when a processing unit is used while not fitted"""
 
 
+class _EmptyDataError(SnipsNLUError):
+    """Raised when a processing unit can't fit because the provided data is
+    empty"""
+
+
 class IntentNotFoundError(SnipsNLUError):
     """Raised when an intent is used although it was not part of the
     training data"""

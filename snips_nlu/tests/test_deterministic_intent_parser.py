@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import io
+
 from builtins import range
 
 from mock import patch
@@ -14,7 +15,7 @@ from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
-    _get_range_shift, _replace_entities_with_placeholders)
+    _get_range_shift)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (
     extraction_result, intent_classification_result, unresolved_slot)
@@ -910,51 +911,6 @@ utterances:
         # Then
         self.assertEqual(2, len(parser.regexes_per_intent["my_first_intent"]))
         self.assertEqual(1, len(parser.regexes_per_intent["my_second_intent"]))
-
-    def test_should_replace_entities(self):
-        # Given
-        text = "Be the first to be there at 9pm"
-
-        # When
-        entities = [
-            {
-                "entity_kind": "snips/ordinal",
-                "value": "the first",
-                "range": {
-                    "start": 3,
-                    "end": 12
-                }
-            },
-            {
-                "entity_kind": "my_custom_entity",
-                "value": "first",
-                "range": {
-                    "start": 7,
-                    "end": 12
-                }
-            },
-            {
-                "entity_kind": "snips/datetime",
-                "value": "at 9pm",
-                "range": {
-                    "start": 25,
-                    "end": 31
-                }
-            }
-        ]
-        range_mapping, processed_text = _replace_entities_with_placeholders(
-            text=text, language=LANGUAGE_EN, entities=entities)
-
-        # Then
-        expected_mapping = {
-            (3, 17): {START: 3, END: 12},
-            (30, 45): {START: 25, END: 31}
-        }
-        expected_processed_text = \
-            "Be %SNIPSORDINAL% to be there %SNIPSDATETIME%"
-
-        self.assertDictEqual(expected_mapping, range_mapping)
-        self.assertEqual(expected_processed_text, processed_text)
 
     def test_should_get_range_shift(self):
         # Given

@@ -58,6 +58,7 @@ class TestConfig(SnipsTest):
         config_dict = {
             "sublinear_tf": True,
             "pvalue_threshold": 0.4,
+            "added_cooccurrence_feature_ratio": 0,
             "word_clusters_name": None,
             "use_stemming": False
         }

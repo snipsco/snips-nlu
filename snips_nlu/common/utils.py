@@ -11,7 +11,8 @@ from pathlib import Path
 import numpy as np
 import pkg_resources
 
-from snips_nlu.constants import END, START
+from snips_nlu.constants import (
+    END, START, RES_MATCH_RANGE, ENTITY_KIND, RES_VALUE)
 from snips_nlu.exceptions import NotTrained
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
@@ -155,3 +156,51 @@ def deduplicate_overlapping_items(items, overlap_fn, sort_key_fn):
                    for dedup_item in deduplicated_items):
             deduplicated_items.append(item)
     return deduplicated_items
+
+
+def replace_entities_with_placeholders(text, entities, placeholder_fn):
+    if not entities:
+        return dict(), text
+
+    entities = deduplicate_overlapping_entities(entities)
+    entities = sorted(
+        entities, key=lambda e: e[RES_MATCH_RANGE][START])
+
+    range_mapping = dict()
+    processed_text = ""
+    offset = 0
+    current_ix = 0
+    for ent in entities:
+        ent_start = ent[RES_MATCH_RANGE][START]
+        ent_end = ent[RES_MATCH_RANGE][END]
+        rng_start = ent_start + offset
+
+        processed_text += text[current_ix:ent_start]
+
+        entity_length = ent_end - ent_start
+        entity_place_holder = placeholder_fn(ent[ENTITY_KIND])
+
+        offset += len(entity_place_holder) - entity_length
+
+        processed_text += entity_place_holder
+        rng_end = ent_end + offset
+        new_range = (rng_start, rng_end)
+        range_mapping[new_range] = ent[RES_MATCH_RANGE]
+        current_ix = ent_end
+
+    processed_text += text[current_ix:]
+    return range_mapping, processed_text
+
+
+def deduplicate_overlapping_entities(entities):
+    def overlap(lhs_entity, rhs_entity):
+        return ranges_overlap(lhs_entity[RES_MATCH_RANGE],
+                              rhs_entity[RES_MATCH_RANGE])
+
+    def sort_key_fn(entity):
+        return -len(entity[RES_VALUE])
+
+    deduplicated_entities = deduplicate_overlapping_items(
+        entities, overlap, sort_key_fn)
+    return sorted(deduplicated_entities,
+                  key=lambda entity: entity[RES_MATCH_RANGE][START])

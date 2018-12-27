@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import json
+import operator
 from copy import deepcopy
 from pathlib import Path
 
@@ -104,14 +105,20 @@ class CustomEntityParser(EntityParser):
 
 
 def _stem_entity_utterances(entity_utterances, language):
-    return {
-        stem(raw_value, language): resolved_value
-        for raw_value, resolved_value in iteritems(entity_utterances)
-    }
+    values = dict()
+    # Sort by resolved value, so that values conflict in a deterministic way
+    for raw_value, resolved_value in sorted(
+            iteritems(entity_utterances), key=operator.itemgetter(1)):
+        stemmed_value = stem(raw_value, language)
+        if stemmed_value not in values:
+            values[stemmed_value] = resolved_value
+    return values
 
 
 def _merge_entity_utterances(raw_utterances, stemmed_utterances):
-    for raw_stemmed_value, resolved_value in iteritems(stemmed_utterances):
+    # Sort by resolved value, so that values conflict in a deterministic way
+    for raw_stemmed_value, resolved_value in sorted(
+            iteritems(stemmed_utterances), key=operator.itemgetter(1)):
         if raw_stemmed_value not in raw_utterances:
             raw_utterances[raw_stemmed_value] = resolved_value
     return raw_utterances

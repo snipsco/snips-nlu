@@ -12,7 +12,7 @@ from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
-    ENTITY_KIND, INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
+    INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
@@ -26,10 +26,10 @@ from snips_nlu.result import (empty_result, extraction_result,
                               unresolved_slot)
 from snips_nlu.common.utils import (
     check_persisted_path, deduplicate_overlapping_items, fitted_required,
-    json_string, ranges_overlap, regex_escape)
+    json_string, ranges_overlap, regex_escape,
+    replace_entities_with_placeholders)
 from snips_nlu.common.dataset_utils import get_slot_name_mappings
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
-
 WHITESPACE_PATTERN = r"\s*"
 
 logger = logging.getLogger(__name__)
@@ -211,8 +211,10 @@ class DeterministicIntentParser(IntentParser):
         custom_entities = self.custom_entity_parser.parse(
             text, use_cache=True)
         all_entities = builtin_entities + custom_entities
-        ranges_mapping, processed_text = _replace_entities_with_placeholders(
-            text, self.language, all_entities)
+        placeholder_fn = lambda entity_name: _get_entity_name_placeholder(
+            entity_name, self.language)
+        ranges_mapping, processed_text = replace_entities_with_placeholders(
+            text, all_entities, placeholder_fn=placeholder_fn)
 
         # We try to match both the input text and the preprocessed text to
         # cover inconsistencies between labeled data and builtin entity parsing
@@ -455,41 +457,6 @@ def _get_entity_placeholders(dataset, language):
     }
 
 
-def _replace_entities_with_placeholders(text, language, entities):
-    if not entities:
-        return dict(), text
-
-    entities = _deduplicate_overlapping_entities(entities)
-    entities = sorted(
-        entities, key=lambda e: e[RES_MATCH_RANGE][START])
-
-    range_mapping = dict()
-    processed_text = ""
-    offset = 0
-    current_ix = 0
-    for ent in entities:
-        ent_start = ent[RES_MATCH_RANGE][START]
-        ent_end = ent[RES_MATCH_RANGE][END]
-        rng_start = ent_start + offset
-
-        processed_text += text[current_ix:ent_start]
-
-        entity_length = ent_end - ent_start
-        entity_place_holder = _get_entity_name_placeholder(
-            ent[ENTITY_KIND], language)
-
-        offset += len(entity_place_holder) - entity_length
-
-        processed_text += entity_place_holder
-        rng_end = ent_end + offset
-        new_range = (rng_start, rng_end)
-        range_mapping[new_range] = ent[RES_MATCH_RANGE]
-        current_ix = ent_end
-
-    processed_text += text[current_ix:]
-    return range_mapping, processed_text
-
-
 def _deduplicate_overlapping_slots(slots, language):
     def overlap(lhs_slot, rhs_slot):
         return ranges_overlap(lhs_slot[RES_MATCH_RANGE],
@@ -503,20 +470,6 @@ def _deduplicate_overlapping_slots(slots, language):
         slots, overlap, sort_key_fn)
     return sorted(deduplicated_slots,
                   key=lambda slot: slot[RES_MATCH_RANGE][START])
-
-
-def _deduplicate_overlapping_entities(entities):
-    def overlap(lhs_entity, rhs_entity):
-        return ranges_overlap(lhs_entity[RES_MATCH_RANGE],
-                              rhs_entity[RES_MATCH_RANGE])
-
-    def sort_key_fn(entity):
-        return -len(entity[RES_VALUE])
-
-    deduplicated_entities = deduplicate_overlapping_items(
-        entities, overlap, sort_key_fn)
-    return sorted(deduplicated_entities,
-                  key=lambda entity: entity[RES_MATCH_RANGE][START])
 
 
 def _get_entity_name_placeholder(entity_label, language):

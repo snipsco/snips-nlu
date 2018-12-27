@@ -9,8 +9,9 @@ import numpy as np
 from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.constants import LANGUAGE, RES_PROBA, RES_INTENT_NAME
+from snips_nlu.constants import LANGUAGE, RES_INTENT_NAME, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.exceptions import _EmptyDataError
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -80,13 +81,16 @@ class LogRegIntentClassifier(IntentClassifier):
 
         self.featurizer = Featurizer(
             language,
-            data_augmentation_config.unknown_words_replacement_string,
-            self.config.featurizer_config,
+            config=self.config.featurizer_config,
+            unknown_words_replacement_string= \
+                data_augmentation_config.unknown_words_replacement_string,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser
         )
-        self.featurizer = self.featurizer.fit(dataset, utterances, classes)
-        if self.featurizer is None:
+        try:
+            self.featurizer = self.featurizer.fit(dataset, utterances, classes)
+        except _EmptyDataError:
+            self.featurizer = None
             return self
 
         X = self.featurizer.transform(utterances)  # pylint: disable=C0103
@@ -263,18 +267,17 @@ class LogRegIntentClassifier(IntentClassifier):
 
     def log_best_features(self, top_n=20):
         log = "Top {} features weights by intent:".format(top_n)
-        voca = {
+        ix_to_feature_name = {
             v: k for k, v in
             iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
         }
-        features = [voca[i] for i in self.featurizer.best_features]
         for intent_ix in range(self.classifier.coef_.shape[0]):
             intent_name = self.intent_list[intent_ix]
             log += "\n\n\nFor intent {}\n".format(intent_name)
             top_features_idx = np.argsort(
                 np.absolute(self.classifier.coef_[intent_ix]))[::-1][:top_n]
             for feature_ix in top_features_idx:
-                feature_name = features[feature_ix]
+                feature_name = ix_to_feature_name[feature_ix]
                 feature_weight = self.classifier.coef_[intent_ix, feature_ix]
                 log += "\n{} -> {}".format(feature_name, feature_weight)
         return log
@@ -294,14 +297,13 @@ class LogRegIntentClassifier(IntentClassifier):
         top_n_activations_ix = np.unravel_index(
             top_n_activations_ix, activations.shape)
 
-        voca = {
+        ix_to_feature_name = {
             v: k for k, v in
             iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
         }
-        features = [voca[i] for i in self.featurizer.best_features]
 
         features_intent_and_activation = [
-            (self.intent_list[i], features[f], activations[i, f])
+            (self.intent_list[i], ix_to_feature_name[f], activations[i, f])
             for i, f in zip(*top_n_activations_ix)]
 
         features_intent_and_activation = sorted(
@@ -310,6 +312,6 @@ class LogRegIntentClassifier(IntentClassifier):
 
         for intent, feature, activation in features_intent_and_activation:
             log += "\n\n\"{}\" -> ({}, {:.2f})".format(
-                feature, intent, float(activation))
+                intent, feature, float(activation))
         log += "\n\n"
         return log

@@ -7,6 +7,7 @@ from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
+from snips_nlu.common.abc_utils import classproperty
 
 
 class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
@@ -226,3 +227,31 @@ class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
             "window_size": self.window_size,
             "use_stop_words": self.use_stop_words
         }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)
+
+
+class TfidfVectorizerConfig(ProcessingUnitConfig):
+    """Configuration of a :class:`.TfidfVectorizer` object"""
+
+    def __init__(self, use_stemming=False):
+        self.use_stemming = use_stemming
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        from snips_nlu.intent_classifier.featurizer import TfidfVectorizer
+        return TfidfVectorizer.unit_name
+
+    def get_required_resources(self):
+        return None
+
+    def to_dict(self):
+        return {
+            "use_stemming": self.use_stemming
+        }
+
+    @classmethod
+    def from_dict(cls, obj_dict):
+        return cls(**obj_dict)

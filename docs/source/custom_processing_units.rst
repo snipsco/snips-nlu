@@ -3,7 +3,7 @@
 Custom Processing Units
 =======================
 
-The Snips NLU library provides a default NLU pipeline containing builtin
+The Snips NLU library provides a default NLU pipeline containing built-in
 processing units such as the :class:`.DeterministicIntentParser` or the
 :class:`.ProbabilisticIntentParser`.
 
@@ -124,10 +124,10 @@ configurable.
 
 Now, let's imagine that we would like to perform a normalization step
 before matching keywords, which would consist in lowercasing the values.
-We could hardcode this behavior in our unit, but what would be ideal is to have
-a way to configure this behavior. This can be done through the use of the
-``config`` attribute of our keyword slot filler. Let's add a boolean parameter
-in the config, so that now our ``KeywordSlotFiller`` implementation looks like
+We could hardcode this behavior in our unit, but what we rather want is a way
+to configure this behavior. This can be done through the use of the ``config``
+attribute of our keyword slot filler. Let's add a boolean parameter in the
+config, so that now our ``KeywordSlotFiller`` implementation looks like
 this:
 
 .. code-block:: python
@@ -201,7 +201,8 @@ this:
            slot_filler.config = cls.config_type.from_dict(model["config"])
            return slot_filler
 
-Now we can define a more specific config for our slot filler:
+With this updated implementation, we can now define a more specific
+configuration for our slot filler:
 
 .. code-block:: python
 
@@ -220,7 +221,7 @@ Now we can define a more specific config for our slot filler:
    nlu_engine = SnipsNLUEngine(engine_config)
 
 
-You can now use train this engine, parse intents, persist it and load it from
+You can now train this engine, parse intents, persist it and load it from
 disk.
 
 .. note::

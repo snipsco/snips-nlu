@@ -1,9 +1,12 @@
-import inspect
-from inspect import Parameter
+try:
+    import funcsigs as inspect
+except ImportError:
+    import inspect
 
 from future.utils import iteritems
 
-KEYWORD_KINDS = {Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY}
+KEYWORD_KINDS = {inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                 inspect.Parameter.KEYWORD_ONLY}
 
 
 class FromDict(object):
@@ -13,7 +16,8 @@ class FromDict(object):
             return cls()
         params = inspect.signature(cls.__init__).parameters
 
-        if any(p.kind == Parameter.VAR_KEYWORD for p in params.values()):
+        if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in
+               params.values()):
             return cls(**dict)
 
         param_names = set()

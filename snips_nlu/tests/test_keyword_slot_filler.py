@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import io
 
 from snips_nlu import SnipsNLUEngine, NLUEngineConfig

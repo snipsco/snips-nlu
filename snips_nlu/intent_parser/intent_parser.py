@@ -30,7 +30,7 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
 
     @abstractmethod
     def parse(self, text, intents, top_n):
-        """Performs intent parsing on the provide *text*
+        """Performs intent parsing on the provided *text*
 
         Args:
             text (str): input

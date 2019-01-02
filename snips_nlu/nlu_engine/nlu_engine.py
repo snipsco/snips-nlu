@@ -9,7 +9,6 @@ from pathlib import Path
 from future.utils import iteritems, itervalues
 
 from snips_nlu.__about__ import __model_version__, __version__
-from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.dataset_utils import get_slot_name_mappings
 from snips_nlu.common.log_utils import log_elapsed_time
 from snips_nlu.common.utils import (

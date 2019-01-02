@@ -21,7 +21,8 @@ def register_processing_unit(unit_type):
     bases = unit_type.__bases__
     for base_cls in bases:
         if base_cls in Registrable._registry:
-            base_cls.register(unit_type.unit_name)
+            base_cls.register(unit_type.unit_name)(unit_type)
+            return
     base_names = [base_cls.__name__ for base_cls in Registrable._registry]
     raise TypeError("%s must inherit from one of the following base class in "
                     "order to be registered: %s"

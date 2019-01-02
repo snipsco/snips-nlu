@@ -52,7 +52,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
 
     @classmethod
     def default_config(cls):
-        config = cls.config_type()
+        config = cls.config_type()  # pylint:disable=no-value-for-parameter
         config.set_unit_name(cls.unit_name)
         return config
 

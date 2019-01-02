@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
+from abc import abstractmethod, ABCMeta
 from builtins import str
 
 from deprecation import deprecated
+from future.utils import with_metaclass
 from snips_nlu_ontology import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
@@ -26,7 +28,7 @@ from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
 
 
-class CRFFeatureFactory(Registrable):
+class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
     """Abstraction to implement to build CRF features
 
     A :class:`CRFFeatureFactory` is initialized with a dict which describes
@@ -77,15 +79,16 @@ class CRFFeatureFactory(Registrable):
         """
         return self
 
+    @abstractmethod
     def build_features(self, builtin_entity_parser, custom_entity_parser):
         """Build a list of :class:`.Feature`"""
-        raise NotImplementedError
+        pass
 
     def get_required_resources(self):
         return None
 
 
-class SingleFeatureFactory(CRFFeatureFactory):
+class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     """A CRF feature factory which produces only one feature"""
 
     @property
@@ -93,8 +96,9 @@ class SingleFeatureFactory(CRFFeatureFactory):
         # by default, use the factory name
         return self.name
 
+    @abstractmethod
     def compute_feature(self, tokens, token_index):
-        raise NotImplementedError
+        pass
 
     def build_features(self, builtin_entity_parser=None,
                        custom_entity_parser=None):

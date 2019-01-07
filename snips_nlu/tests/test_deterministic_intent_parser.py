@@ -18,7 +18,8 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
     _get_range_shift)
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (
-    extraction_result, intent_classification_result, unresolved_slot)
+    extraction_result, intent_classification_result, unresolved_slot,
+    empty_result)
 from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
@@ -112,7 +113,7 @@ utterances:
         parsing = parser.parse(text, intents=["intent1"])
 
         # Then
-        self.assertIsNone(parsing[RES_INTENT])
+        self.assertEqual(empty_result(text, 1.0), parsing)
 
     def test_should_parse_top_intents(self):
         # Given
@@ -184,7 +185,7 @@ utterances:
         res = parser.parse(text)
 
         # Then
-        self.assertIsNone(res[RES_INTENT])
+        self.assertEqual(empty_result(text, 1.0), res)
 
     def test_should_not_parse_when_not_fitted(self):
         # Given

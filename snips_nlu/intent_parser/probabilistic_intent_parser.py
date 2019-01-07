@@ -18,7 +18,7 @@ from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
-from snips_nlu.result import empty_result, parsing_result, extraction_result
+from snips_nlu.result import parsing_result, extraction_result
 from snips_nlu.slot_filler import SlotFiller
 
 logger = logging.getLogger(__name__)
@@ -132,18 +132,21 @@ class ProbabilisticIntentParser(IntentParser):
 
         if top_n is None:
             intent_result = self.intent_classifier.get_intent(text, intents)
-            if intent_result is None:
-                return empty_result(text)
-
             intent_name = intent_result[RES_INTENT_NAME]
-            slots = self.slot_fillers[intent_name].get_slots(text)
+            if intent_name is not None:
+                slots = self.slot_fillers[intent_name].get_slots(text)
+            else:
+                slots = []
             return parsing_result(text, intent_result, slots)
 
         results = []
         intents_results = self.intent_classifier.get_intents(text)
         for intent_result in intents_results[:top_n]:
             intent_name = intent_result[RES_INTENT_NAME]
-            slots = self.slot_fillers[intent_name].get_slots(text)
+            if intent_name is not None:
+                slots = self.slot_fillers[intent_name].get_slots(text)
+            else:
+                slots = []
             results.append(extraction_result(intent_result, slots))
         return results
 

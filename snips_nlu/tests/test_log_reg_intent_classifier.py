@@ -18,6 +18,7 @@ from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
+from snips_nlu.result import intent_classification_result
 from snips_nlu.tests.utils import (FixtureTest, get_empty_dataset)
 
 
@@ -89,7 +90,7 @@ utterances:
         result = classifier.get_intent(text)
 
         # Then
-        self.assertIsNone(result)
+        self.assertEqual(intent_classification_result(None, 1.0), result)
 
     def test_should_get_intent_when_filter(self):
         # Given
@@ -126,7 +127,7 @@ utterances:
         # Then
         self.assertEqual("MakeTea", res1[RES_INTENT_NAME])
         self.assertEqual("MakeCoffee", res2[RES_INTENT_NAME])
-        self.assertEqual(None, res3)
+        self.assertEqual(None, res3[RES_INTENT_NAME])
 
     def test_should_raise_when_not_fitted(self):
         # Given
@@ -147,7 +148,7 @@ utterances:
         intent = classifier.get_intent(text)
 
         # Then
-        expected_intent = None
+        expected_intent = intent_classification_result(None, 1.0)
         self.assertEqual(intent, expected_intent)
 
     def test_should_get_intents(self):
@@ -422,7 +423,7 @@ values:
         # When / Then
         intent_classifier = LogRegIntentClassifier().fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
-        self.assertEqual(None, intent)
+        self.assertEqual(intent_classification_result(None, 1.0), intent)
 
     def test_log_activation_weights(self):
         # Given

@@ -192,7 +192,7 @@ class DeterministicIntentParser(IntentParser):
                 intent = top_intents[0][RES_INTENT]
                 slots = top_intents[0][RES_SLOTS]
                 return parsing_result(text, intent, slots)
-            return empty_result(text)
+            return empty_result(text, probability=1.0)
         return self._parse_top_intents(text, top_n=top_n, intents=intents)
 
     def _parse_top_intents(self, text, top_n, intents=None):

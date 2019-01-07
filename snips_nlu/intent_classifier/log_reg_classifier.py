@@ -117,10 +117,7 @@ class LogRegIntentClassifier(IntentClassifier):
                 classifier is not fitted
 
         """
-        intents_results = self._get_intents(text, intents_filter)
-        if not intents_results or intents_results[0][RES_INTENT_NAME] is None:
-            return None
-        return intents_results[0]
+        return self._get_intents(text, intents_filter)[0]
 
     @fitted_required
     def get_intents(self, text):

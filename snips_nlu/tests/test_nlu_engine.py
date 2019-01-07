@@ -264,7 +264,7 @@ utterances:
             def parse(self, text, intents=None, top_n=None):
                 if text == input_text:
                     return parsing_result(text, intent, slots)
-                return empty_result(text)
+                return empty_result(text, 1.0)
 
         # pylint:enable=unused-variable
 
@@ -343,7 +343,7 @@ utterances:
         result = engine.parse("hello world")
 
         # Then
-        self.assertEqual(empty_result("hello world"), result)
+        self.assertEqual(empty_result("hello world", 1.0), result)
 
     def test_should_not_parse_slots_when_not_fitted(self):
         # Given
@@ -826,7 +826,7 @@ utterances:
                                             entity="dummy_entity_2",
                                             slot_name="other_dummy_slot_name")]
 
-        mocked_regex_parse.return_value = empty_result(text)
+        mocked_regex_parse.return_value = empty_result(text, 1.0)
         mocked_crf_parse.return_value = parsing_result(
             text, mocked_crf_intent, mocked_crf_slots)
 

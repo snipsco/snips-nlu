@@ -287,8 +287,8 @@ section.
 
 .. important::
 
-    Even though the term "probability" is used here, the values should rather
-    be considered as scores as they do not sum to 1.0.
+    Even though the term ``"probability"`` is used here, the values should
+    rather be considered as confidence scores as they do not sum to 1.0.
 
 
 .. _none_intent:
@@ -302,16 +302,39 @@ generates an implicit intent to cover utterances that does not correspond to
 any of your intents. We refer to it as the **None** intent.
 
 The NLU engine is trained to recognize when the input corresponds to the None
-intent. Here is what you should get if you try parsing ``"foo bar"`` with the
-engine we previously created:
+intent. Here is the kind of output you should get if you try parsing
+``"foo bar"`` with the engine we previously created:
 
-.. code-block:: json
+.. tabs::
 
-    {
-      "input": "foo bar",
-      "intent": null,
-      "slots": null
-    }
+   .. tab:: Python
+
+      .. code-block:: python
+
+          {
+            "input": "foo bar",
+            "intent": {
+              "intentName": None,
+              "probability": 0.552122
+            },
+            "slots": []
+          }
+
+   .. tab:: JSON
+
+      .. code-block:: json
+
+          {
+            "input": "foo bar",
+            "intent": {
+              "intentName": null,
+              "probability": 0.552122
+            },
+            "slots": []
+          }
+
+The **None** intent is represented by a ``None`` value in python which
+translates in JSON into a ``null`` value.
 
 Persisting
 ----------

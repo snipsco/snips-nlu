@@ -152,15 +152,34 @@ class FeaturizerConfig(FromDict, Config):
         kept in the feature selection
     """
 
-    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
-                 word_clusters_name=None, use_stemming=False,
+    # TODO: update docstring
+
+    def __init__(self, tfidf_vectorizer_config=None,
+                 cooccurrence_vectorizer_config=None,
+                 pvalue_threshold=0.4,
+                 word_clusters_name=None,
+                 use_stemming=False,
                  added_cooccurrence_feature_ratio=0):
-        self.sublinear_tf = sublinear_tf
         self.pvalue_threshold = pvalue_threshold
         self.word_clusters_name = word_clusters_name
         self.use_stemming = use_stemming
         self.added_cooccurrence_feature_ratio = \
             added_cooccurrence_feature_ratio
+
+        if tfidf_vectorizer_config is None:
+            tfidf_vectorizer_config = TfidfVectorizerConfig()
+        elif isinstance(tfidf_vectorizer_config, dict):
+            tfidf_vectorizer_config = TfidfVectorizerConfig.from_dict(
+                tfidf_vectorizer_config)
+        self.tfidf_vectorizer_config = tfidf_vectorizer_config
+
+        if cooccurrence_vectorizer_config is None:
+            cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig()
+        elif isinstance(cooccurrence_vectorizer_config, dict):
+            cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig \
+                .from_dict(cooccurrence_vectorizer_config)
+        self.cooccurrence_vectorizer_config = cooccurrence_vectorizer_config
+        self.use_stemming = use_stemming
 
     def get_required_resources(self):
         if self.use_stemming:
@@ -179,12 +198,14 @@ class FeaturizerConfig(FromDict, Config):
 
     def to_dict(self):
         return {
-            "sublinear_tf": self.sublinear_tf,
             "pvalue_threshold": self.pvalue_threshold,
             "word_clusters_name": self.word_clusters_name,
             "use_stemming": self.use_stemming,
             "added_cooccurrence_feature_ratio":
-                self.added_cooccurrence_feature_ratio
+                self.added_cooccurrence_feature_ratio,
+            "tfidf_vectorizer_config": self.tfidf_vectorizer_config.to_dict(),
+            "cooccurrence_vectorizer_config":
+                self.cooccurrence_vectorizer_config.to_dict(),
         }
 
     @classmethod
@@ -204,12 +225,14 @@ class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
              Defaults to None, which means that we consider all words
         """
 
+    # TODO: finish docstring
+
     def __init__(self, window_size=None, unknown_words_replacement_string=None,
-                 use_stop_words=True):
+                 filter_stop_words=True):
         self.window_size = window_size
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
-        self.use_stop_words = use_stop_words
+        self.filter_stop_words = filter_stop_words
 
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
@@ -225,7 +248,7 @@ class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string,
             "window_size": self.window_size,
-            "use_stop_words": self.use_stop_words
+            "filter_stop_words": self.filter_stop_words
         }
 
     @classmethod
@@ -236,9 +259,6 @@ class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
 class TfidfVectorizerConfig(ProcessingUnitConfig):
     """Configuration of a :class:`.TfidfVectorizer` object"""
 
-    def __init__(self, use_stemming=False):
-        self.use_stemming = use_stemming
-
     @classproperty
     def unit_name(cls):  # pylint:disable=no-self-argument
         from snips_nlu.intent_classifier.featurizer import TfidfVectorizer
@@ -248,9 +268,7 @@ class TfidfVectorizerConfig(ProcessingUnitConfig):
         return None
 
     def to_dict(self):
-        return {
-            "use_stemming": self.use_stemming
-        }
+        return dict()
 
     @classmethod
     def from_dict(cls, obj_dict):

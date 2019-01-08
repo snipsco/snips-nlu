@@ -80,13 +80,14 @@ class LogRegIntentClassifier(IntentClassifier):
             return self
 
         self.featurizer = Featurizer(
-            language,
             config=self.config.featurizer_config,
             unknown_words_replacement_string= \
                 data_augmentation_config.unknown_words_replacement_string,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser
         )
+        self.featurizer.language = language
+
         try:
             self.featurizer = self.featurizer.fit(dataset, utterances, classes)
         except _EmptyDataError:
@@ -195,7 +196,31 @@ class LogRegIntentClassifier(IntentClassifier):
         """Persist the object at the given path"""
         path = Path(path)
         path.mkdir()
-        classifier_json = json_string(self.to_dict())
+
+        featurizer = None
+        if self.featurizer is not None:
+            featurizer = "featurizer"
+            featurizer_path = path / featurizer
+            self.featurizer.persist(featurizer_path)
+
+        coeffs = None
+        intercept = None
+        t_ = None
+        if self.classifier is not None:
+            coeffs = self.classifier.coef_.tolist()
+            intercept = self.classifier.intercept_.tolist()
+            t_ = self.classifier.t_
+
+        self_as_dict = {
+            "config": self.config.to_dict(),
+            "coeffs": coeffs,
+            "intercept": intercept,
+            "t_": t_,
+            "intent_list": self.intent_list,
+            "featurizer": featurizer
+        }
+
+        classifier_json = json_string(self_as_dict)
         with (path / "intent_classifier.json").open(mode="w") as f:
             f.write(classifier_json)
         self.persist_metadata(path)
@@ -215,61 +240,38 @@ class LogRegIntentClassifier(IntentClassifier):
 
         with model_path.open(encoding="utf8") as f:
             model_dict = json.load(f)
-        return cls.from_dict(model_dict, **shared)
 
-    @classmethod
-    def from_dict(cls, unit_dict, **shared):
-        """Creates a :class:`LogRegIntentClassifier` instance from a dict
-
-        The dict must have been generated with
-        :func:`~LogRegIntentClassifier.to_dict`
-        """
-        config = LogRegIntentClassifierConfig.from_dict(unit_dict["config"])
+        # Create the classifier
+        config = LogRegIntentClassifierConfig.from_dict(model_dict["config"])
         intent_classifier = cls(config=config, **shared)
+        intent_classifier.intent_list = model_dict['intent_list']
+
+        # Create the underlying SGD classifier
         sgd_classifier = None
-        coeffs = unit_dict['coeffs']
-        intercept = unit_dict['intercept']
-        t_ = unit_dict["t_"]
+        coeffs = model_dict['coeffs']
+        intercept = model_dict['intercept']
+        t_ = model_dict["t_"]
         if coeffs is not None and intercept is not None:
             sgd_classifier = SGDClassifier(**LOG_REG_ARGS)
             sgd_classifier.coef_ = np.array(coeffs)
             sgd_classifier.intercept_ = np.array(intercept)
             sgd_classifier.t_ = t_
         intent_classifier.classifier = sgd_classifier
-        intent_classifier.intent_list = unit_dict['intent_list']
-        featurizer = unit_dict['featurizer']
+
+        # Add the featurizer
+        featurizer = model_dict['featurizer']
         if featurizer is not None:
-            intent_classifier.featurizer = Featurizer.from_dict(
-                featurizer, **shared)
+            featurizer_path = path / featurizer
+            intent_classifier.featurizer = Featurizer.from_path(
+                featurizer_path, **shared)
+
         return intent_classifier
-
-    def to_dict(self):
-        """Returns a json-serializable dict"""
-        featurizer_dict = None
-        if self.featurizer is not None:
-            featurizer_dict = self.featurizer.to_dict()
-        coeffs = None
-        intercept = None
-        t_ = None
-        if self.classifier is not None:
-            coeffs = self.classifier.coef_.tolist()
-            intercept = self.classifier.intercept_.tolist()
-            t_ = self.classifier.t_
-
-        return {
-            "config": self.config.to_dict(),
-            "coeffs": coeffs,
-            "intercept": intercept,
-            "t_": t_,
-            "intent_list": self.intent_list,
-            "featurizer": featurizer_dict,
-        }
 
     def log_best_features(self, top_n=20):
         log = "Top {} features weights by intent:".format(top_n)
         ix_to_feature_name = {
             v: k for k, v in
-            iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
+            iteritems(self.featurizer.tfidf_vectorizer.vocabulary)
         }
         for intent_ix in range(self.classifier.coef_.shape[0]):
             intent_name = self.intent_list[intent_ix]
@@ -299,7 +301,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
         ix_to_feature_name = {
             v: k for k, v in
-            iteritems(self.featurizer.tfidf_vectorizer.vocabulary_)
+            iteritems(self.featurizer.tfidf_vectorizer.vocabulary)
         }
 
         features_intent_and_activation = [

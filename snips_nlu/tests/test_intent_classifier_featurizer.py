@@ -1,11 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import json
-
 import numpy as np
 from builtins import str, zip
-from future.utils import itervalues
 from mock import patch
 from snips_nlu_utils import normalize
 
@@ -51,9 +48,11 @@ class TestIntentClassifierFeaturizer(FixtureTest):
     def test_should_be_serializable(self):
         # Given
         pvalue_threshold = 0.42
+        config = FeaturizerConfig(pvalue_threshold=pvalue_threshold,
+                                  word_clusters_name="brown_clusters",
+                                  added_cooccurrence_feature_ratio=0.2)
         featurizer = Featurizer(
-            config=FeaturizerConfig(pvalue_threshold=pvalue_threshold,
-                                    word_clusters_name="brown_clusters"),
+            config=config,
             unknown_words_replacement_string=None)
         dataset = {
             "entities": {
@@ -67,6 +66,9 @@ class TestIntentClassifierFeaturizer(FixtureTest):
                     "use_synonyms": True,
                     "automatically_extensible": True,
                     "matching_strictness": 1.0
+                },
+                "snips/datetime": {
+
                 }
             },
             "intents": {},
@@ -83,77 +85,109 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         ]
         utterances = [text_to_utterance(u) for u in utterances]
         classes = np.array([0, 0, 0, 1, 1])
-
         featurizer.fit(dataset, utterances, classes)
 
         # When
-        serialized_featurizer = featurizer.to_dict()
+        featurizer.persist(self.tmp_file_path)
 
         # Then
-        msg = "Featurizer dict should be json serializable to utf8."
-        with self.fail_if_exception(msg):
-            dumped = json_string(serialized_featurizer)
-
-        msg = "SnipsNLUEngine should be deserializable from dict with " \
-              "unicode values"
-        with self.fail_if_exception(msg):
-            _ = Featurizer.from_dict(json.loads(dumped))
-
-        vocabulary = featurizer.tfidf_vectorizer.vocabulary_
-        # pylint: disable=W0212
-        idf_diag = featurizer.tfidf_vectorizer._tfidf._idf_diag.data.tolist()
-        # pylint: enable=W0212
-
-        expected_serialized = {
-            "config": {
-                "sublinear_tf": False,
-                "pvalue_threshold": pvalue_threshold,
-                "added_cooccurrence_feature_ratio": 0,
-                "word_clusters_name": "brown_clusters",
-                "use_stemming": False
-            },
+        expected_featurizer_dict = {
             "language_code": "en",
-            "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
-            "unknown_words_replacement_string": None,
-            "builtin_entity_scope": []
+            "tfidf_vectorizer": "tfidf_vectorizer",
+            "cooccurrence_vectorizer": "cooccurrence_vectorizer",
+            "config": config.to_dict(),
+            "builtin_entity_scope": ["snips/datetime"],
+            "none_class_index": 1
         }
-        self.assertDictEqual(expected_serialized, serialized_featurizer)
+        featurizer_dict_path = self.tmp_file_path / "featurizer.json"
+        self.assertJsonContent(featurizer_dict_path, expected_featurizer_dict)
 
-    def test_should_be_deserializable(self):
+        expected_metadata = {"unit_name": "featurizer"}
+        metadata_path = self.tmp_file_path / "metadata.json"
+        self.assertJsonContent(metadata_path, expected_metadata)
+
+        tfidf_vectorizer_path = self.tmp_file_path / "tfidf_vectorizer"
+        self.assertTrue(tfidf_vectorizer_path.exists())
+
+        cooccurrence_vectorizer_path = (
+                self.tmp_file_path / "cooccurrence_vectorizer")
+        self.assertTrue(cooccurrence_vectorizer_path.exists())
+
+    def test_should_be_serializable_before_fit(self):
         # Given
-        language = LANGUAGE_EN
-        idf_diag = [1.52, 1.21, 1.04]
-        vocabulary = {"hello": 0, "beautiful": 1, "world": 2}
-
-        config = {
-            "pvalue_threshold": 0.4,
-            "sublinear_tf": False,
-            "added_cooccurrence_feature_ratio": 0,
-            "word_clusters_name": "brown_clusters",
-            "use_stemming": False
-        }
-
-        featurizer_dict = {
-            "config": config,
-            "language_code": language,
-            "tfidf_vectorizer": {"idf_diag": idf_diag, "vocab": vocabulary},
-            "unknown_words_replacement_string": None,
-            "builtin_entity_scope": None
-        }
+        pvalue_threshold = 0.42
+        config = FeaturizerConfig(pvalue_threshold=pvalue_threshold,
+                                  word_clusters_name="brown_clusters",
+                                  added_cooccurrence_feature_ratio=0.2)
+        featurizer = Featurizer(
+            config=config,
+            unknown_words_replacement_string=None)
 
         # When
-        featurizer = Featurizer.from_dict(featurizer_dict)
+        featurizer.persist(self.tmp_file_path)
 
         # Then
-        self.assertEqual(featurizer.language, language)
-        # pylint: disable=W0212
-        self.assertListEqual(
-            featurizer.tfidf_vectorizer._tfidf._idf_diag.data.tolist(),
-            idf_diag)
-        # pylint: enable=W0212
-        self.assertDictEqual(featurizer.tfidf_vectorizer.vocabulary_,
-                             vocabulary)
-        self.assertEqual(config, featurizer.config.to_dict())
+        expected_featurizer_dict = {
+            "language_code": None,
+            "tfidf_vectorizer": None,
+            "cooccurrence_vectorizer": None,
+            "config": config.to_dict(),
+            "builtin_entity_scope": None,
+            "none_class_index": None
+        }
+        featurizer_dict_path = self.tmp_file_path / "featurizer.json"
+        self.assertJsonContent(featurizer_dict_path, expected_featurizer_dict)
+
+        expected_metadata = {"unit_name": "featurizer"}
+        metadata_path = self.tmp_file_path / "metadata.json"
+        self.assertJsonContent(metadata_path, expected_metadata)
+
+        tfidf_vectorizer_path = self.tmp_file_path / "tfidf_vectorizer"
+        self.assertFalse(tfidf_vectorizer_path.exists())
+
+        cooccurrence_vectorizer_path = (
+                self.tmp_file_path / "cooccurrence_vectorizer")
+        self.assertFalse(cooccurrence_vectorizer_path.exists())
+
+    @patch("snips_nlu.intent_classifier.featurizer.TfidfVectorizer.from_path")
+    @patch("snips_nlu.intent_classifier.featurizer.CooccurrenceVectorizer"
+           ".from_path")
+    def test_should_be_deserializable(self, mocked_cooccurrence_load,
+                                      mocked_tfidf_load):
+        # Given
+        mocked_tfidf_load.return_value = "tfidf_vectorizer"
+        mocked_cooccurrence_load.return_value = "cooccurrence_vectorizer"
+
+        language = LANGUAGE_EN
+        config = FeaturizerConfig()
+
+        builtin_scope = ["snips/datetime"]
+        none_class_ix = 2
+        featurizer_dict = {
+            "language_code": language,
+            "tfidf_vectorizer": "tfidf_vectorizer",
+            "cooccurrence_vectorizer": "cooccurrence_vectorizer",
+            "config": config.to_dict(),
+            "builtin_entity_scope": builtin_scope,
+            "none_class_index": none_class_ix
+        }
+
+        self.tmp_file_path.mkdir()
+        featurizer_path = self.tmp_file_path / "featurizer.json"
+        with featurizer_path.open("w", encoding="utf-8") as f:
+            f.write(json_string(featurizer_dict))
+
+        # When
+        featurizer = Featurizer.from_path(self.tmp_file_path)
+
+        # Then
+        self.assertEqual(language, featurizer.language)
+        self.assertEqual(set(builtin_scope), featurizer.builtin_entity_scope)
+        self.assertEqual(none_class_ix, featurizer.none_class_index)
+        self.assertEqual("tfidf_vectorizer", featurizer.tfidf_vectorizer)
+        self.assertEqual("cooccurrence_vectorizer",
+                         featurizer.cooccurrence_vectorizer)
+        self.assertDictEqual(config.to_dict(), featurizer.config.to_dict())
 
     @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
     @patch("snips_nlu.intent_classifier.featurizer.stem")
@@ -241,6 +275,38 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         processed_data = list(zip(*processed_data))
 
         # Then
+        u_0 = {
+            "data": [
+                {
+                    "text": "hello world entity_2"
+                }
+            ]
+        }
+
+        u_1 = {
+            "data": [
+                {
+                    "text": "beauty world ent 1"
+                }
+            ]
+        }
+
+        u_2 = {
+            "data": [
+                {
+                    "text": "bird bird"
+                }
+            ]
+        }
+
+        u_3 = {
+            "data": [
+                {
+                    "text": "bird bird"
+                }
+            ]
+        }
+
         ent_0 = {
             "entity_kind": "entity_2",
             "value": "entity_2",
@@ -279,25 +345,28 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         }
 
         expected_data = [
+            (u_0,
+             "hello world entity_2",
+             [num_0],
+             [ent_0],
+             []
+             ),
             (
-                "hello world entity_2",
-                [num_0],
-                [ent_0],
-                []
-            ),
-            (
+                u_1,
                 "beauty world ent 1",
                 [num_1],
                 [ent_11, ent_12],
                 ["cluster_1", "cluster_3"]
             ),
             (
+                u_2,
                 "bird bird",
                 [],
                 [],
                 []
             ),
             (
+                u_3,
                 "bird bird",
                 [],
                 [],
@@ -436,6 +505,50 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         processed_data = list(zip(*processed_data))
 
         # Then
+        u_0 = {
+            "data": [
+                {
+                    "text": "hello world"
+                },
+                {
+                    "text": "yo"
+                },
+                {
+                    "text": "yo"
+                },
+                {
+                    "text": "yo"
+                },
+                {
+                    "text": "entity_2",
+                    "entity": "entity_2"
+                },
+                {
+                    "text": "entity_2",
+                    "entity": "entity_2"
+                }
+            ]
+        }
+
+        u_1 = {
+            "data": [
+                {
+                    "text": "beauty world"
+                },
+                {
+                    "text": "ent 1",
+                    "entity": "entity_1"
+                }
+            ]
+        }
+        u_2 = {
+            "data": [
+                {
+                    "text": "bird bird"
+                }
+            ]
+        }
+
         ent_00 = {
             "entity_kind": "entity_2",
             "value": "entity_2",
@@ -454,24 +567,28 @@ class TestIntentClassifierFeaturizer(FixtureTest):
 
         expected_data = [
             (
+                u_0,
                 "hello world yo yo yo entity_2 entity_2",
                 [],
                 [ent_00, ent_01],
                 []
             ),
             (
+                u_1,
                 "beauty world ent 1",
                 [],
                 [ent_1],
                 ["cluster_1", "cluster_3"]
             ),
             (
+                u_2,
                 "bird bird",
                 [],
                 [],
                 []
             ),
             (
+                u_2,
                 "bird bird",
                 [],
                 [],
@@ -483,10 +600,9 @@ class TestIntentClassifierFeaturizer(FixtureTest):
 
     def test_featurizer_should_be_serialized_when_not_fitted(self):
         # Given
-        language = LANGUAGE_EN
-        featurizer = Featurizer(language)
+        featurizer = Featurizer()
         # When/Then
-        featurizer.to_dict()
+        featurizer.persist(self.tmp_file_path)
 
     def test_fit_transform_should_be_consistent_with_transform(self):
         # Here we mainly test that the output of fit_transform is
@@ -702,7 +818,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
     def test_transform(self):
         # Given
         config = CooccurrenceVectorizerConfig(
-            use_stop_words=True,
+            filter_stop_words=True,
             window_size=3,
             unknown_words_replacement_string="d")
         vectorizer = CooccurrenceVectorizer(config)
@@ -806,7 +922,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
 
     def test_limit_vocabulary(self):
         # Given
-        config = CooccurrenceVectorizerConfig(use_stop_words=False)
+        config = CooccurrenceVectorizerConfig(filter_stop_words=False)
         vectorizer = CooccurrenceVectorizer(config=config)
         train_data = [
             ("a b", [], []),
@@ -871,10 +987,8 @@ class CooccurrenceVectorizerTest(FixtureTest):
 
 class TestTfidfVectorizer(FixtureTest):
 
-    @patch("snips_nlu.intent_classifier.featurizer.stem")
-    def test_enrich_utterance_for_tfidf(self, mocked_stem):
+    def test_enrich_utterance_for_tfidf(self):
         # Given
-        mocked_stem.side_effect = stem_function
         utterances = [
             {
                 "data": [
@@ -883,17 +997,17 @@ class TestTfidfVectorizer(FixtureTest):
                         "entity": "snips/number"
                     },
                     {
-                        "text": " beauTiful World ",
+                        "text": "beauty world",
                     },
                     {
-                        "text": "entity 1",
+                        "text": "ent 1",
                         "entity": "dummy_entity_1"
                     },
                 ]
             },
-            text_to_utterance("one beauTiful World entity 1"),
-            text_to_utterance("hÉllo wOrld Éntity_2"),
-            text_to_utterance("Bird bïrdy"),
+            text_to_utterance("one beauty world ent 1"),
+            text_to_utterance("hello world entity_2"),
+            text_to_utterance("bird bird"),
         ]
 
         builtin_ents = [
@@ -988,8 +1102,7 @@ class TestTfidfVectorizer(FixtureTest):
             []
         ]
 
-        vectorizer = TfidfVectorizer(
-            config=TfidfVectorizerConfig(use_stemming=True))
+        vectorizer = TfidfVectorizer(config=TfidfVectorizerConfig())
         vectorizer._language = "en"
 
         # When

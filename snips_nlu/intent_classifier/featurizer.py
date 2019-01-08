@@ -1,15 +1,14 @@
 from __future__ import division, unicode_literals
 
 import json
-
-from builtins import str
-from pathlib import Path
+from copy import deepcopy
 
 import numpy as np
 import scipy.sparse as sp
-from scipy.sparse import hstack, dok_matrix
-
+from builtins import str
 from future.utils import iteritems
+from pathlib import Path
+from scipy.sparse import dok_matrix, hstack
 from sklearn.exceptions import NotFittedError as SklearnNotFittedError
 from sklearn.feature_extraction.text import (
     TfidfTransformer, TfidfVectorizer as SklearnTfidfVectorizer)
@@ -17,19 +16,19 @@ from sklearn.feature_selection import chi2
 from sklearn.utils.validation import check_is_fitted
 from snips_nlu_utils import normalize
 
-from snips_nlu.constants import (
-    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE,
-    DATA, ENTITY, ENTITY_KIND, NGRAM, TEXT, LANGUAGE, ENTITIES, RES_VALUE,
-    RES_MATCH_RANGE, START, END)
+from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, DATA, END,
+                                 ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE,
+                                 NGRAM, RES_MATCH_RANGE, RES_VALUE, START,
+                                 TEXT)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
                                                            is_builtin_entity)
 from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParser
-from snips_nlu.exceptions import _EmptyDataError, NotTrained
+from snips_nlu.exceptions import NotTrained, _EmptyDataError
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
-from snips_nlu.pipeline.configs.intent_classifier import \
-    CooccurrenceVectorizerConfig, TfidfVectorizerConfig
+from snips_nlu.pipeline.configs.intent_classifier import (
+    CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (
@@ -38,30 +37,22 @@ from snips_nlu.slot_filler.features_utils import get_all_ngrams
 from snips_nlu.utils import json_string, replace_entities_with_placeholders
 
 
-class Featurizer(object):
+class Featurizer(ProcessingUnit):
     """Feature extractor for text classification relying on ngrams tfidf and
     word cooccurrences features"""
+    config_type = FeaturizerConfig
+    unit_name = "featurizer"
 
-    def __init__(self, language=None, config=FeaturizerConfig(),
-                 tfidf_vectorizer=None,
-                 unknown_words_replacement_string=None,
-                 cooccurrence_vectorizer=None,
-                 builtin_entity_parser=None, custom_entity_parser=None,
-                 builtin_entity_scope=None):
+    def __init__(self, config=None, **shared):
         # TODO: missing docstring
-        self.config = config
-        self.language = language
-        self.tfidf_vectorizer = tfidf_vectorizer
-        self.language = language
-        self.cooccurrence_vectorizer = cooccurrence_vectorizer
-        self.unknown_words_replacement_string = \
-            unknown_words_replacement_string
-
-        self.builtin_entity_parser = builtin_entity_parser
-        self.custom_entity_parser = custom_entity_parser
-
-        self.builtin_entity_scope = builtin_entity_scope
-        self.none_class_ix = None
+        if config is None:
+            config = FeaturizerConfig()
+        super(Featurizer, self).__init__(config, **shared)
+        self.language = None
+        self.tfidf_vectorizer = None
+        self.cooccurrence_vectorizer = None
+        self.builtin_entity_scope = None
+        self.none_class_index = None
 
     @property
     def fitted(self):
@@ -93,21 +84,27 @@ class Featurizer(object):
         self.builtin_entity_scope = set(
             e for e in dataset_entities if is_builtin_entity(e))
 
-        self.none_class_ix = max(classes)
+        self.none_class_index = max(classes)
 
-        normalized, builtin_ents, custom_ents, w_clusters = self. \
-            _preprocess(utterances, training=True)
-        tfidf_data = zip(utterances, builtin_ents, custom_ents, w_clusters)
+        preprocessed = self._preprocess(utterances, training=True)
+        preprocessed_utterances = preprocessed[0]
+        preprocessed_utterances_texts = preprocessed[1]
+        builtin_ents = preprocessed[2]
+        custom_ents = preprocessed[3]
+        w_clusters = preprocessed[4]
+
+        tfidf_data = zip(
+            preprocessed_utterances, builtin_ents, custom_ents, w_clusters)
         x_tfidf = self._fit_transform_tfidf_vectorizer(tfidf_data, classes)
 
         x = x_tfidf
         if self.config.added_cooccurrence_feature_ratio:
             cooccurrence_data = list(
-                zip(normalized, builtin_ents, custom_ents))
+                zip(preprocessed_utterances_texts, builtin_ents, custom_ents))
             # We fit the coocurrence matrix without noise
             non_null_cooccurrence_data, non_null_cooccurrence_classes = zip(*(
                 (d, c) for d, c in zip(cooccurrence_data, classes)
-                if c != self.none_class_ix))
+                if c != self.none_class_index))
             self._fit_cooccurrence_vectorizer(
                 non_null_cooccurrence_data, non_null_cooccurrence_classes)
             # We fit transform all the data
@@ -119,14 +116,19 @@ class Featurizer(object):
         return x
 
     def transform(self, utterances):
-        normalized_utterances, builtin_ents, custom_ents, w_clusters = self. \
-            _preprocess(utterances)
+        preprocessed = self._preprocess(utterances)
+        preprocessed_utterances = preprocessed[0]
+        preprocessed_utterances_texts = preprocessed[1]
+        builtin_ents = preprocessed[2]
+        custom_ents = preprocessed[3]
+        w_clusters = preprocessed[4]
 
-        tfidf_data = zip(utterances, builtin_ents, custom_ents, w_clusters)
+        tfidf_data = zip(
+            preprocessed_utterances, builtin_ents, custom_ents, w_clusters)
         x = self.tfidf_vectorizer.transform(tfidf_data)
         if self.cooccurrence_vectorizer:
-            cooccurrence_data = zip(normalized_utterances, builtin_ents,
-                                    custom_ents)
+            cooccurrence_data = zip(
+                preprocessed_utterances_texts, builtin_ents, custom_ents)
             x_cooccurrence = self.cooccurrence_vectorizer.transform(
                 cooccurrence_data)
             x = hstack((x, x_cooccurrence))
@@ -134,8 +136,8 @@ class Featurizer(object):
 
     def _fit_transform_tfidf_vectorizer(self, x, y):
         self.tfidf_vectorizer = TfidfVectorizer(
-            self.config.tfid_vectorizer_config)
-        x_tfidf = self.tfidf_vectorizer.fit_transform(x, y, self.language)
+            self.config.tfidf_vectorizer_config)
+        x_tfidf = self.tfidf_vectorizer.fit_transform(x, self.language)
         _, tfidf_pval = chi2(x_tfidf, y)
         best_tfidf_features = [i for i, v in enumerate(tfidf_pval)
                                if v < self.config.pvalue_threshold]
@@ -143,8 +145,10 @@ class Featurizer(object):
             best_tfidf_features = [
                 idx for idx, val in enumerate(tfidf_pval) if
                 val == tfidf_pval.min()]
-        best_ngrams = [self.tfidf_vectorizer.vocabulary[f]
-                       for f in best_tfidf_features]
+        best_tfidf_features = set(best_tfidf_features)
+        best_ngrams = [ng for ng, i in
+                       iteritems(self.tfidf_vectorizer.vocabulary)
+                       if i in best_tfidf_features]
         self.tfidf_vectorizer.limit_vocabulary(best_ngrams)
         # We can't return x_tfidf[:best_tfidf_features] because of the
         # normalization in the tranform of the tfidf_vectorizer
@@ -158,20 +162,29 @@ class Featurizer(object):
             x, self.language)
         _, pval = chi2(x_cooccurrence, y)
         top_k = int(self.config.added_cooccurrence_feature_ratio * len(
-            self.tfidf_vectorizer.idf_))
+            self.tfidf_vectorizer.idf_diag))
         top_k_cooccurrence_ix = np.argpartition(pval, top_k, axis=None)
-        top_word_pairs = [self.cooccurrence_vectorizer.word_pairs[i]
-                          for i in top_k_cooccurrence_ix]
+        top_k_cooccurrence_ix = set(top_k_cooccurrence_ix)
+
+        top_word_pairs = [
+            pair for pair, i in iteritems(
+                self.cooccurrence_vectorizer.word_pairs)
+            if i in top_k_cooccurrence_ix
+        ]
+
         self.cooccurrence_vectorizer.limit_word_pairs(top_word_pairs)
         return self
 
     def _preprocess(self, utterances, training=False):
-        text_utterances = [get_text_from_chunks(u[DATA]) for u in utterances]
-
-        normalized_utterances = [
-            _normalize_stem(u, self.language, self.config.use_stemming)
-            for u in text_utterances
-        ]
+        normalized_utterances = deepcopy(utterances)
+        normalized_utterances_texts = []
+        for u in normalized_utterances:
+            for chunk in u[DATA]:
+                chunk[TEXT] = _normalize_stem(chunk[TEXT], self.language,
+                                              self.config.use_stemming)
+            normalized_text = get_default_sep(self.language).join(
+                chunk[TEXT] for chunk in u[DATA])
+            normalized_utterances_texts.append(normalized_text)
 
         if training:
             builtin_ents, custom_ents = zip(*(
@@ -182,26 +195,29 @@ class Featurizer(object):
             builtin_ents = [
                 self.builtin_entity_parser.parse(
                     u, self.builtin_entity_scope, use_cache=True)
-                for u in normalized_utterances
+                for u in normalized_utterances_texts
             ]
 
             custom_ents = [
                 self.custom_entity_parser.parse(u, use_cache=True)
-                for u in normalized_utterances
+                for u in normalized_utterances_texts
             ]
 
         if self.config.word_clusters_name:
+            original_utterances_text = [get_text_from_chunks(u[DATA])
+                                        for u in utterances]
             w_clusters = [
                 _get_word_cluster_features(
                     tokenize_light(u.lower(), self.language),
                     self.config.word_clusters_name,
                     self.language)
-                for u in text_utterances
+                for u in original_utterances_text
             ]
         else:
-            w_clusters = [None for _ in text_utterances]
+            w_clusters = [None for _ in normalized_utterances]
 
-        return (normalized_utterances, builtin_ents, custom_ents, w_clusters)
+        return (normalized_utterances, normalized_utterances_texts,
+                builtin_ents, custom_ents, w_clusters)
 
     def fit_builtin_entity_parser_if_needed(self, dataset):
         # We only fit a builtin entity parser when the unit has already been
@@ -229,52 +245,77 @@ class Featurizer(object):
         return self
 
     def persist(self, path):
-        pass
+        path = Path(path)
+        path.mkdir()
 
-    @classmethod
-    def from_path(cls, path):
-        pass
+        # Persist the vectorizers
+        tfidf_vectorizer = None
+        if self.tfidf_vectorizer:
+            tfidf_vectorizer = self.tfidf_vectorizer.unit_name
+            tfidf_vectorizer_path = path / tfidf_vectorizer
+            self.tfidf_vectorizer.persist(tfidf_vectorizer_path)
 
-    def to_dict(self):
-        """Returns a json-serializable dict"""
+        cooccurrence_vectorizer = None
+        if self.cooccurrence_vectorizer:
+            cooccurrence_vectorizer = self.cooccurrence_vectorizer.unit_name
+            cooccurrence_vectorizer_path = path / cooccurrence_vectorizer
+            self.cooccurrence_vectorizer.persist(cooccurrence_vectorizer_path)
+
         builtin_scope = self.builtin_entity_scope
         if builtin_scope is not None:
             builtin_scope = list(builtin_scope)
 
-        return {
+        # Persist main object
+        self_as_dict = {
             "language_code": self.language,
             "tfidf_vectorizer": tfidf_vectorizer,
+            "cooccurrence_vectorizer": cooccurrence_vectorizer,
             "config": self.config.to_dict(),
-            "unknown_words_replacement_string":
-                self.unknown_words_replacement_string,
-            "builtin_entity_scope": builtin_scope
+            "builtin_entity_scope": builtin_scope,
+            "none_class_index": self.none_class_index
         }
 
+        featurizer_path = type(self).build_unit_path(path)
+        with featurizer_path.open("w", encoding="utf-8") as f:
+            f.write(json_string(self_as_dict))
+
+        # Persist metadata
+        self.persist_metadata(path)
+
     @classmethod
-    def from_dict(cls, obj_dict, **shared):
-        """Creates a :class:`Featurizer` instance from a :obj:`dict`
+    def from_path(cls, path, **shared):
+        path = Path(path)
 
-        The dict must have been generated with :func:`~Featurizer.to_dict`
-        """
-        language = obj_dict.pop("language_code")
-        config = FeaturizerConfig.from_dict(obj_dict.pop("config"))
-        tfidf_vectorizer = _deserialize_tfidf_vectorizer(
-            obj_dict.pop("tfidf_vectorizer"), language, config.sublinear_tf)
+        featurizer_path = cls.build_unit_path(path)
+        with featurizer_path.open("r", encoding="utf-8") as f:
+            featurizer_dict = json.load(f)
 
-        builtin_scope = obj_dict.pop("builtin_entity_scope")
+        featurizer_config = featurizer_dict["config"]
+        featurizer = cls(featurizer_config, **shared)
+
+        featurizer.language = featurizer_dict["language_code"]
+
+        tfidf_vectorizer = featurizer_dict["tfidf_vectorizer"]
+        if tfidf_vectorizer:
+            vectorizer_path = path / featurizer_dict["tfidf_vectorizer"]
+            tfidf_vectorizer = TfidfVectorizer.from_path(
+                vectorizer_path, **shared)
+        featurizer.tfidf_vectorizer = tfidf_vectorizer
+
+        cooccurrence_vectorizer = featurizer_dict["cooccurrence_vectorizer"]
+        if cooccurrence_vectorizer:
+            vectorizer_path = path / featurizer_dict["cooccurrence_vectorizer"]
+            cooccurrence_vectorizer = CooccurrenceVectorizer.from_path(
+                vectorizer_path, **shared)
+        featurizer.cooccurrence_vectorizer = cooccurrence_vectorizer
+
+        builtin_scope = featurizer_dict["builtin_entity_scope"]
         if builtin_scope is not None:
             builtin_scope = set(builtin_scope)
+        featurizer.builtin_entity_scope = builtin_scope
+        featurizer.none_class_index = featurizer_dict["none_class_index"]
 
-        self = cls(
-            language=language,
-            tfidf_vectorizer=tfidf_vectorizer,
-            config=config,
-            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER),
-            custom_entity_parser=shared.get(CUSTOM_ENTITY_PARSER),
-            builtin_entity_scope=builtin_scope,
-            **obj_dict
-        )
-        return self
+        return featurizer
 
 
 def _get_tokens_clusters(tokens, language, cluster_name):
@@ -366,9 +407,7 @@ class TfidfVectorizer(ProcessingUnit):
         # We remove values of builtin slots from the utterance to avoid
         # learning specific samples such as '42' or 'tomorrow'
         filtered_normalized_stemmed_tokens = [
-            _normalize_stem(
-                chunk[TEXT], self.language, self.config.use_stemming)
-            for chunk in utterance[DATA]
+            chunk[TEXT] for chunk in utterance[DATA]
             if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])
         ]
 
@@ -460,7 +499,7 @@ class TfidfVectorizer(ProcessingUnit):
         _vectorizer = None
         if self._tfidf_vectorizer is not None:
             vocab = {k: int(v) for k, v in iteritems(self.vocabulary)}
-            idf_diag = self.idf.tolist()
+            idf_diag = self.idf_diag.tolist()
             _vectorizer = {
                 "vocab": vocab,
                 "idf_diag": idf_diag
@@ -505,9 +544,10 @@ class TfidfVectorizer(ProcessingUnit):
             tfidf_transformer = TfidfTransformer()
             tfidf_transformer._idf_diag = idf_diag
 
-            _vectorizer.vocabulary_ = vocab
             _vectorizer = SklearnTfidfVectorizer(
                 tokenizer=lambda x: tokenize_light(x, vectorizer._language))
+            _vectorizer.vocabulary_ = vocab
+
             _vectorizer._tfidf = tfidf_transformer
 
         vectorizer._tfidf_vectorizer = _vectorizer
@@ -602,7 +642,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
         x = list(x)
         utterances = self._preprocess(x)
         x_coo = dok_matrix((len(x), len(self.word_pairs)), dtype=np.int32)
-        if self.config.use_stop_words:
+        if self.config.filter_stop_words:
             stop_words = get_stop_words(self.language)
             utterances = ([t for t in u if t not in stop_words]
                           for u in utterances)

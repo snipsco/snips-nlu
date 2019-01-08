@@ -201,10 +201,16 @@ CONFIG = {
                     "unknown_words_replacement_string": None
                 },
                 "featurizer_config": {
-                    "sublinear_tf": False,
                     "pvalue_threshold": 0.4,
                     "word_clusters_name": None,
-                    "use_stemming": False
+                    "use_stemming": False,
+                    "added_cooccurrence_feature_ratio": 0,
+                    "tfidf_vectorizer_config": {},
+                    "cooccurrence_vectorizer_config": {
+                        "unknown_words_replacement_string": None,
+                        "window_size": None,
+                        "filter_stop_words": True
+                    }
                 },
                 "random_seed": None
             }

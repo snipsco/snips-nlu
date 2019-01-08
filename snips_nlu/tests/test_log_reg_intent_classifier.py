@@ -2,8 +2,8 @@
 from __future__ import unicode_literals
 
 import io
-from builtins import str
 
+from builtins import str
 from mock import patch
 
 from snips_nlu.constants import (
@@ -18,7 +18,7 @@ from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
-from snips_nlu.tests.utils import FixtureTest, get_empty_dataset
+from snips_nlu.tests.utils import (FixtureTest, get_empty_dataset)
 
 
 # pylint: disable=unused-argument
@@ -226,12 +226,8 @@ utterances:
         ]
         self.assertEqual(expected_results, results)
 
-    @patch('snips_nlu.intent_classifier.featurizer.Featurizer.to_dict')
-    def test_should_be_serializable(self, mock_to_dict):
+    def test_should_be_serializable(self):
         # Given
-        mocked_dict = {"mocked_featurizer_key": "mocked_featurizer_value"}
-        mock_to_dict.return_value = mocked_dict
-
         dataset_stream = io.StringIO("""
 ---
 type: intent
@@ -260,18 +256,23 @@ utterances:
             "intercept": intercept,
             "t_": 701.0,
             "intent_list": intent_list,
-            "featurizer": mocked_dict
+            "featurizer": "featurizer"
         }
         metadata = {"unit_name": "log_reg_intent_classifier"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
         self.assertJsonContent(self.tmp_file_path / "intent_classifier.json",
                                expected_dict)
+        featurizer_path = self.tmp_file_path / "featurizer"
+        self.assertTrue(featurizer_path.exists())
+        self.assertTrue(featurizer_path.is_dir())
 
-    @patch('snips_nlu.intent_classifier.featurizer.Featurizer.from_dict')
-    def test_should_be_deserializable(self, mock_from_dict):
+    def test_should_be_deserializable(self):
         # Given
-        mocked_featurizer = Featurizer(LANGUAGE_EN)
-        mock_from_dict.return_value = mocked_featurizer
+        featurizer = Featurizer()
+        featurizer_path = self.tmp_file_path / "featurizer"
+        self.tmp_file_path.mkdir()
+
+        featurizer.persist(featurizer_path)
 
         intent_list = ["MakeCoffee", "MakeTea", None]
 
@@ -297,9 +298,9 @@ utterances:
             "t_": t_,
             "intent_list": intent_list,
             "config": config,
-            "featurizer": mocked_featurizer.to_dict(),
+            "featurizer": "featurizer",
         }
-        self.tmp_file_path.mkdir()
+
         metadata = {"unit_name": "log_reg_intent_classifier"}
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
         self.writeJsonContent(self.tmp_file_path / "intent_classifier.json",
@@ -466,3 +467,27 @@ utterances:
         # Then
         self.assertIsInstance(log, str)
         self.assertIn("Top 42", log)
+
+    def test_log_best_features(self):
+        # Given
+        dataset_stream = io.StringIO("""
+        ---
+        type: intent
+        name: intent1
+        utterances:
+          - foo bar
+
+        ---
+        type: intent
+        name: intent2
+        utterances:
+          - lorem ipsum""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        intent_classifier = LogRegIntentClassifier().fit(dataset)
+
+        # When
+        log = intent_classifier.log_best_features(20)
+
+        # Then
+        self.assertIsInstance(log, str)
+        self.assertIn("Top 20", log)

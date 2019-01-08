@@ -22,7 +22,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (
     is_builtin_entity)
-from snips_nlu.exceptions import NotTrained, _EmptyDatasetError
+from snips_nlu.exceptions import (NotTrained, DatasetFormatError)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
@@ -89,8 +89,7 @@ class Featurizer(ProcessingUnit):
 
         utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
-            raise _EmptyDatasetError(
-                "Couldn't fit because no utterance was found an")
+            raise DatasetFormatError("Tokenized utterances are empty")
 
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)

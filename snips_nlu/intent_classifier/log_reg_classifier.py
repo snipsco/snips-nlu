@@ -11,7 +11,7 @@ from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.constants import LANGUAGE, RES_INTENT_NAME, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import _EmptyDatasetError
+from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -89,7 +89,7 @@ class LogRegIntentClassifier(IntentClassifier):
         try:
             self.featurizer = self.featurizer.fit(
                 dataset, utterances, classes, none_class)
-        except _EmptyDatasetError:
+        except DatasetFormatError:
             self.featurizer = None
             return self
 

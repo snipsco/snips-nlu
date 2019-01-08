@@ -16,15 +16,14 @@ from sklearn.feature_selection import chi2
 from sklearn.utils.validation import check_is_fitted
 from snips_nlu_utils import normalize
 
-from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE, DATA, END,
-                                 ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE,
-                                 NGRAM, RES_MATCH_RANGE, RES_VALUE, START,
-                                 TEXT)
+from snips_nlu.constants import (
+    CUSTOM_ENTITY_PARSER_USAGE, DATA, END, ENTITIES, ENTITY, ENTITY_KIND,
+    LANGUAGE, NGRAM, RES_MATCH_RANGE, RES_VALUE, START, TEXT)
 from snips_nlu.dataset import get_text_from_chunks
-from snips_nlu.entity_parser.builtin_entity_parser import (BuiltinEntityParser,
-                                                           is_builtin_entity)
+from snips_nlu.entity_parser.builtin_entity_parser import (
+    BuiltinEntityParser, is_builtin_entity)
 from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParser
-from snips_nlu.exceptions import NotTrained, _EmptyDataError
+from snips_nlu.exceptions import NotTrained, _EmptyDatasetError
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
@@ -72,7 +71,7 @@ class Featurizer(ProcessingUnit):
 
         utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
-            raise _EmptyDataError(
+            raise _EmptyDatasetError(
                 "Couldn't fit because no utterance was found an")
 
         self.fit_builtin_entity_parser_if_needed(dataset)

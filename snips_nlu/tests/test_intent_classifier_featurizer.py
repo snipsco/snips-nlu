@@ -713,6 +713,108 @@ class TestIntentClassifierFeaturizer(FixtureTest):
             "Couldn't fit because no utterance was found an",
             str(ctx.exception))
 
+    def test_feature_index_to_feature_name(self):
+        # Given
+        config = FeaturizerConfig(added_cooccurrence_feature_ratio=.75)
+        featurizer = Featurizer(config=config)
+
+        self.assertDictEqual(dict(), featurizer.feature_index_to_feature_name)
+
+        dataset = {
+            "intents": {
+                "intent1": {
+                    "utterances": []
+                }
+            },
+            "entities": {
+                "entity_1": {
+                    "data": [
+                        {
+                            "value": "entity 1",
+                            "synonyms": ["alternative entity 1"]
+                        },
+                        {
+                            "value": "éntity 1",
+                            "synonyms": ["alternative entity 1"]
+                        }
+                    ],
+                    "use_synonyms": False,
+                    "automatically_extensible": False,
+                    "matching_strictness": 1.0
+                },
+                "entity_2": {
+                    "data": [
+                        {
+                            "value": "Éntity 2",
+                            "synonyms": ["Éntity_2", "Alternative entity 2"]
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "matching_strictness": 1.0
+                },
+                "snips/number": {}
+            },
+            "language": "en",
+        }
+
+        dataset = validate_and_format_dataset(dataset)
+
+        utterances = [
+            {
+                "data": [
+                    {
+                        "text": "hÉllo wOrld "
+                    },
+                    {
+                        "text": "Éntity_2",
+                        "entity": "entity_2"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "beauTiful World "
+                    },
+                    {
+                        "text": "entity 1",
+                        "entity": "entity_1"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "Bird bïrdy"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "text": "Bird bïrdy"
+                    }
+                ]
+            }
+        ]
+
+        classes = [0, 0, 1, 1]
+
+        # When
+        featurizer.fit(dataset, utterances, classes, max(classes))
+
+        # Then
+        expected = {
+            0: "ngram:bird",
+            1: "ngram:birdy",
+            2: "ngram:world",
+            3: u'pair:world+ENTITY_1',
+            4: "pair:world+ENTITY_2"
+        }
+        self.assertDictEqual(
+            expected, featurizer.feature_index_to_feature_name)
+
 
 class CooccurrenceVectorizerTest(FixtureTest):
 

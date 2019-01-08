@@ -17,12 +17,11 @@ from sklearn.utils.validation import check_is_fitted
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
-    CUSTOM_ENTITY_PARSER_USAGE, DATA, END, ENTITIES, ENTITY, ENTITY_KIND,
+    DATA, END, ENTITIES, ENTITY, ENTITY_KIND,
     LANGUAGE, NGRAM, RES_MATCH_RANGE, RES_VALUE, START, TEXT)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (
-    BuiltinEntityParser, is_builtin_entity)
-from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParser
+    is_builtin_entity)
 from snips_nlu.exceptions import NotTrained, _EmptyDatasetError
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
@@ -54,13 +53,32 @@ class Featurizer(ProcessingUnit):
 
     @property
     def fitted(self):
-        if not self.tfidf_vectorizer:
+        if not self.tfidf_vectorizer or not self.tfidf_vectorizer.vocabulary:
             return False
-        try:
-            check_is_fitted(self.tfidf_vectorizer, 'vocabulary_')
-            return True
-        except SklearnNotFittedError:
-            return False
+        return True
+
+    @property
+    def feature_index_to_feature_name(self):
+        """Maps the feature index of the feature matrix to printable features
+         names, mainly useful for debug
+
+            Returns:
+                dict: a dict mapping feature indexes to printable features
+                 names
+        """
+        if not self.fitted:
+            return dict()
+
+        index = {
+            i: "ngram:%s" % ng
+            for ng, i in iteritems(self.tfidf_vectorizer.vocabulary)
+        }
+        num_ng = len(index)
+        if self.cooccurrence_vectorizer is not None:
+            for word_pair, j in iteritems(
+                    self.cooccurrence_vectorizer.word_pairs):
+                index[j + num_ng] = "pair:%s+%s" % (word_pair[0], word_pair[1])
+        return index
 
     def fit(self, dataset, utterances, classes, none_class):
         self.fit_transform(dataset, utterances, classes, none_class)
@@ -159,7 +177,8 @@ class Featurizer(ProcessingUnit):
         _, pval = chi2(x_cooccurrence, y)
         top_k = int(self.config.added_cooccurrence_feature_ratio * len(
             self.tfidf_vectorizer.idf_diag))
-        top_k_cooccurrence_ix = np.argpartition(pval, top_k, axis=None)
+        top_k_cooccurrence_ix = np.argpartition(
+            pval, top_k, axis=None)[-top_k:]
         top_k_cooccurrence_ix = set(top_k_cooccurrence_ix)
 
         top_word_pairs = [

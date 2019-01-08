@@ -40,7 +40,6 @@ class LogRegIntentClassifier(IntentClassifier):
 
     config_type = LogRegIntentClassifierConfig
 
-    # pylint:disable=line-too-long
     def __init__(self, config=None, **shared):
         """The LogReg intent classifier can be configured by passing a
         :class:`.LogRegIntentClassifierConfig`"""
@@ -48,8 +47,6 @@ class LogRegIntentClassifier(IntentClassifier):
         self.classifier = None
         self.intent_list = None
         self.featurizer = None
-
-    # pylint:enable=line-too-long
 
     @property
     def fitted(self):
@@ -270,23 +267,26 @@ class LogRegIntentClassifier(IntentClassifier):
         return intent_classifier
 
     def log_best_features(self, top_n=20):
+        if not hasattr(self.featurizer, "feature_index_to_feature_name"):
+            return None
+
         log = "Top {} features weights by intent:".format(top_n)
-        ix_to_feature_name = {
-            v: k for k, v in
-            iteritems(self.featurizer.tfidf_vectorizer.vocabulary)
-        }
+        index_to_feature = self.featurizer.feature_index_to_feature_name
         for intent_ix in range(self.classifier.coef_.shape[0]):
             intent_name = self.intent_list[intent_ix]
             log += "\n\n\nFor intent {}\n".format(intent_name)
             top_features_idx = np.argsort(
                 np.absolute(self.classifier.coef_[intent_ix]))[::-1][:top_n]
             for feature_ix in top_features_idx:
-                feature_name = ix_to_feature_name[feature_ix]
+                feature_name = index_to_feature[feature_ix]
                 feature_weight = self.classifier.coef_[intent_ix, feature_ix]
                 log += "\n{} -> {}".format(feature_name, feature_weight)
         return log
 
     def log_activation_weights(self, text, x, top_n=50):
+        if not hasattr(self.featurizer, "feature_index_to_feature_name"):
+            return None
+
         log = "\n\nTop {} feature activations for: \"{}\":\n".format(
             top_n, text)
         activations = np.multiply(
@@ -301,13 +301,9 @@ class LogRegIntentClassifier(IntentClassifier):
         top_n_activations_ix = np.unravel_index(
             top_n_activations_ix, activations.shape)
 
-        ix_to_feature_name = {
-            v: k for k, v in
-            iteritems(self.featurizer.tfidf_vectorizer.vocabulary)
-        }
-
+        index_to_feature = self.featurizer.feature_index_to_feature_name
         features_intent_and_activation = [
-            (self.intent_list[i], ix_to_feature_name[f], activations[i, f])
+            (self.intent_list[i], index_to_feature[f], activations[i, f])
             for i, f in zip(*top_n_activations_ix)]
 
         features_intent_and_activation = sorted(

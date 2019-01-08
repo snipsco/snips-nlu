@@ -459,9 +459,12 @@ utterances:
 
         text = "yo"
         utterances = [text_to_utterance(text)]
-        x = intent_classifier.featurizer.transform(utterances)[0]
+        intent_classifier = LogRegIntentClassifier()
+        self.assertIsNone(intent_classifier.log_activation_weights(text, None))
 
         # When
+        intent_classifier.fit(SAMPLE_DATASET)
+        x = intent_classifier.featurizer.transform(utterances)[0]
         log = intent_classifier.log_activation_weights(text, x, top_n=42)
 
         # Then
@@ -470,6 +473,7 @@ utterances:
 
     def test_log_best_features(self):
         # Given
+        intent_classifier = LogRegIntentClassifier()
         dataset_stream = io.StringIO("""
         ---
         type: intent
@@ -486,6 +490,8 @@ utterances:
         intent_classifier = LogRegIntentClassifier().fit(dataset)
 
         # When
+        self.assertIsNone(intent_classifier.log_best_features(20))
+        intent_classifier.fit(SAMPLE_DATASET)
         log = intent_classifier.log_best_features(20)
 
         # Then

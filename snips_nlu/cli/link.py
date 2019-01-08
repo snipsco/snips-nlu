@@ -8,7 +8,7 @@ from snips_nlu.cli.compatibility import create_symlink
 from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
 from snips_nlu.constants import DATA_PATH
 from snips_nlu.resources import get_resources_sub_directory
-from snips_nlu.utils import get_package_path, is_package
+from snips_nlu.common.utils import get_package_path, is_package
 
 
 # inspired from

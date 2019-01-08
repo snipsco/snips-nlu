@@ -1,33 +1,27 @@
 from __future__ import unicode_literals
 
 import io
-from pathlib import Path
 
+from future.utils import itervalues
 from mock import patch
 
 from snips_nlu.constants import (
     RES_ENTITY, RES_INTENT, RES_INTENT_NAME, RES_SLOTS, RES_VALUE)
-from snips_nlu.dataset import Dataset, validate_and_format_dataset
+from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_classifier import (
     IntentClassifier, LogRegIntentClassifier)
 from snips_nlu.intent_parser import ProbabilisticIntentParser
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, LogRegIntentClassifierConfig,
-    ProbabilisticIntentParserConfig, ProcessingUnitConfig)
-from snips_nlu.pipeline.units_registry import (
-    register_processing_unit, reset_processing_units)
+    ProbabilisticIntentParserConfig)
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
-from snips_nlu.tests.utils import BEVERAGE_DATASET, FixtureTest
-from snips_nlu.utils import json_string
+from snips_nlu.tests.utils import (
+    FixtureTest, MockIntentClassifier, MockSlotFiller)
 
 
 class TestProbabilisticIntentParser(FixtureTest):
-    def setUp(self):
-        super(TestProbabilisticIntentParser, self).setUp()
-        reset_processing_units()
-
     def test_should_parse(self):
         dataset_stream = io.StringIO("""
 ---
@@ -258,54 +252,114 @@ utterances:
 
     def test_should_retrain_intent_classifier_when_force_retrain(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = ProbabilisticIntentParser()
         intent_classifier = LogRegIntentClassifier()
-        intent_classifier.fit(BEVERAGE_DATASET)
+        intent_classifier.fit(dataset)
         parser.intent_classifier = intent_classifier
 
         # When / Then
         with patch("snips_nlu.intent_classifier.log_reg_classifier"
                    ".LogRegIntentClassifier.fit") as mock_fit:
-            parser.fit(BEVERAGE_DATASET, force_retrain=True)
+            parser.fit(dataset, force_retrain=True)
             mock_fit.assert_called_once()
 
     def test_should_not_retrain_intent_classifier_when_no_force_retrain(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = ProbabilisticIntentParser()
         intent_classifier = LogRegIntentClassifier()
-        intent_classifier.fit(BEVERAGE_DATASET)
+        intent_classifier.fit(dataset)
         parser.intent_classifier = intent_classifier
 
         # When / Then
         with patch("snips_nlu.intent_classifier.log_reg_classifier"
                    ".LogRegIntentClassifier.fit") as mock_fit:
-            parser.fit(BEVERAGE_DATASET, force_retrain=False)
+            parser.fit(dataset, force_retrain=False)
             mock_fit.assert_not_called()
 
     def test_should_retrain_slot_filler_when_force_retrain(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = ProbabilisticIntentParser()
         slot_filler = CRFSlotFiller()
-        slot_filler.fit(BEVERAGE_DATASET, "MakeCoffee")
+        slot_filler.fit(dataset, "MakeCoffee")
         parser.slot_fillers["MakeCoffee"] = slot_filler
 
         # When / Then
         with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
                 as mock_fit:
-            parser.fit(BEVERAGE_DATASET, force_retrain=True)
+            parser.fit(dataset, force_retrain=True)
             self.assertEqual(2, mock_fit.call_count)
 
     def test_should_not_retrain_slot_filler_when_no_force_retrain(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = ProbabilisticIntentParser()
         slot_filler = CRFSlotFiller()
-        slot_filler.fit(BEVERAGE_DATASET, "MakeCoffee")
+        slot_filler.fit(dataset, "MakeCoffee")
         parser.slot_fillers["MakeCoffee"] = slot_filler
 
         # When / Then
         with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
                 as mock_fit:
-            parser.fit(BEVERAGE_DATASET, force_retrain=False)
+            parser.fit(dataset, force_retrain=False)
             self.assertEqual(1, mock_fit.call_count)
 
     def test_should_not_parse_when_not_fitted(self):
@@ -364,15 +418,38 @@ utterances:
 
     def test_should_be_serializable(self):
         # Given
-        register_processing_unit(TestIntentClassifier)
-        register_processing_unit(TestSlotFiller)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # pylint:disable=unused-variable
+        @IntentClassifier.register("my_intent_classifier", True)
+        class MyIntentClassifier(MockIntentClassifier):
+            pass
+
+        @SlotFiller.register("my_slot_filler", True)
+        class MySlotFiller(MockSlotFiller):
+            pass
+
+        # pylint:enable=unused-variable
 
         parser_config = ProbabilisticIntentParserConfig(
-            intent_classifier_config=TestIntentClassifierConfig(),
-            slot_filler_config=TestSlotFillerConfig()
+            intent_classifier_config="my_intent_classifier",
+            slot_filler_config="my_slot_filler"
         )
-        parser = ProbabilisticIntentParser(parser_config)
-        parser.fit(validate_and_format_dataset(BEVERAGE_DATASET))
+        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
 
         # When
         parser.persist(self.tmp_file_path)
@@ -380,8 +457,8 @@ utterances:
         # Then
         expected_parser_config = {
             "unit_name": "probabilistic_intent_parser",
-            "slot_filler_config": {"unit_name": "test_slot_filler"},
-            "intent_classifier_config": {"unit_name": "test_intent_classifier"}
+            "slot_filler_config": {"unit_name": "my_slot_filler"},
+            "intent_classifier_config": {"unit_name": "my_intent_classifier"}
         }
         expected_parser_dict = {
             "config": expected_parser_config,
@@ -397,8 +474,8 @@ utterances:
             ]
         }
         metadata = {"unit_name": "probabilistic_intent_parser"}
-        metadata_slot_filler = {"unit_name": "test_slot_filler"}
-        metadata_intent_classifier = {"unit_name": "test_intent_classifier"}
+        metadata_slot_filler = {"unit_name": "my_slot_filler"}
+        metadata_intent_classifier = {"unit_name": "my_intent_classifier"}
 
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
         self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
@@ -415,13 +492,23 @@ utterances:
 
     def test_should_be_deserializable(self):
         # When
-        register_processing_unit(TestIntentClassifier)
-        register_processing_unit(TestSlotFiller)
+        @IntentClassifier.register("my_intent_classifier", True)
+        class MyIntentClassifier(MockIntentClassifier):
+            pass
 
-        config = ProbabilisticIntentParserConfig(
-            intent_classifier_config=TestIntentClassifierConfig(),
-            slot_filler_config=TestSlotFillerConfig()
-        )
+        @SlotFiller.register("my_slot_filler", True)
+        class MySlotFiller(MockSlotFiller):
+            pass
+
+        parser_config = {
+            "unit_name": "probabilistic_intent_parser",
+            "intent_classifier_config": {
+                "unit_name": "my_intent_classifier"
+            },
+            "slot_filler_config": {
+                "unit_name": "my_slot_filler"
+            }
+        }
         parser_dict = {
             "unit_name": "probabilistic_intent_parser",
             "slot_fillers": [
@@ -434,7 +521,7 @@ utterances:
                     "slot_filler_name": "slot_filler_MakeTea"
                 }
             ],
-            "config": config.to_dict(),
+            "config": parser_config,
         }
         self.tmp_file_path.mkdir()
         (self.tmp_file_path / "intent_classifier").mkdir()
@@ -444,26 +531,42 @@ utterances:
                               parser_dict)
         self.writeJsonContent(
             self.tmp_file_path / "intent_classifier" / "metadata.json",
-            {"unit_name": "test_intent_classifier"})
+            {"unit_name": "my_intent_classifier"})
         self.writeJsonContent(
             self.tmp_file_path / "slot_filler_MakeCoffee" / "metadata.json",
-            {"unit_name": "test_slot_filler"})
+            {"unit_name": "my_slot_filler"})
         self.writeJsonContent(
             self.tmp_file_path / "slot_filler_MakeTea" / "metadata.json",
-            {"unit_name": "test_slot_filler"})
+            {"unit_name": "my_slot_filler"})
 
         # When
         parser = ProbabilisticIntentParser.from_path(self.tmp_file_path)
 
         # Then
-        self.assertDictEqual(parser.config.to_dict(), config.to_dict())
-        self.assertIsNotNone(parser.intent_classifier)
+        self.assertDictEqual(parser.config.to_dict(), parser_config)
+        self.assertIsInstance(parser.intent_classifier, MyIntentClassifier)
         self.assertListEqual(sorted(parser.slot_fillers),
                              ["MakeCoffee", "MakeTea"])
+        for slot_filler in itervalues(parser.slot_fillers):
+            self.assertIsInstance(slot_filler, MySlotFiller)
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         intent_parser = ProbabilisticIntentParser().fit(dataset)
         builtin_entity_parser = intent_parser.builtin_entity_parser
         custom_entity_parser = intent_parser.custom_entity_parser
@@ -482,8 +585,21 @@ utterances:
 
     def test_fitting_should_be_reproducible_after_serialization(self):
         # Given
-        dataset = BEVERAGE_DATASET
-        validated_dataset = validate_and_format_dataset(dataset)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
         seed1 = 666
         seed2 = 42
@@ -497,10 +613,10 @@ utterances:
 
         # When
         fitted_parser_1 = ProbabilisticIntentParser.from_path(
-            self.tmp_file_path).fit(validated_dataset)
+            self.tmp_file_path).fit(dataset)
 
         fitted_parser_2 = ProbabilisticIntentParser.from_path(
-            self.tmp_file_path).fit(validated_dataset)
+            self.tmp_file_path).fit(dataset)
 
         # Then
         feature_weights_1 = fitted_parser_1.slot_fillers[
@@ -508,86 +624,3 @@ utterances:
         feature_weights_2 = fitted_parser_2.slot_fillers[
             "MakeTea"].crf_model.state_features_
         self.assertEqual(feature_weights_1, feature_weights_2)
-
-
-class TestIntentClassifierConfig(ProcessingUnitConfig):
-    unit_name = "test_intent_classifier"
-
-    def to_dict(self):
-        return {"unit_name": self.unit_name}
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return TestIntentClassifierConfig()
-
-
-# pylint: disable=abstract-method
-class TestIntentClassifier(IntentClassifier):
-    unit_name = "test_intent_classifier"
-    config_type = TestIntentClassifierConfig
-    _fitted = False
-
-    @property
-    def fitted(self):
-        return self._fitted
-
-    def fit(self, dataset):
-        self._fitted = True
-        return self
-
-    def get_intent(self, text, intents_filter):
-        return None
-
-    def get_intents(self, text):
-        return []
-
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
-
-    @classmethod
-    def from_path(cls, path, **shared):
-        config = cls.config_type()
-        return cls(config)
-
-
-class TestSlotFillerConfig(ProcessingUnitConfig):
-    unit_name = "test_slot_filler"
-
-    def to_dict(self):
-        return {"unit_name": self.unit_name}
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return TestSlotFillerConfig()
-
-
-# pylint: disable=abstract-method
-class TestSlotFiller(SlotFiller):
-    unit_name = "test_slot_filler"
-    config_type = TestSlotFillerConfig
-    _fitted = False
-
-    @property
-    def fitted(self):
-        return self._fitted
-
-    def get_slots(self, text):
-        return []
-
-    def fit(self, dataset, intent):
-        self._fitted = True
-        return self
-
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
-
-    @classmethod
-    def from_path(cls, path, **shared):
-        config = cls.config_type()
-        return cls(config)

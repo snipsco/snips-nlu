@@ -7,8 +7,10 @@ from future.utils import iteritems
 from mock import MagicMock
 
 from snips_nlu.tests.utils import SnipsTest
-from snips_nlu.utils import (
-    DifferedLoggingMessage, LimitedSizeDict, ranges_overlap)
+from snips_nlu.common.utils import (
+    ranges_overlap)
+from snips_nlu.common.log_utils import DifferedLoggingMessage
+from snips_nlu.common.dict_utils import LimitedSizeDict
 
 
 class TestLimitedSizeDict(SnipsTest):

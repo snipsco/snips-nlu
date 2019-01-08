@@ -16,7 +16,7 @@ from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.preprocessing import stem, tokenize
-from snips_nlu.utils import json_string
+from snips_nlu.common.utils import json_string
 
 
 class CustomEntityParser(EntityParser):

@@ -12,7 +12,8 @@ from snips_nlu_ontology import (
 
 from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
 from snips_nlu.entity_parser.entity_parser import EntityParser
-from snips_nlu.utils import json_string, temp_dir
+from snips_nlu.common.utils import json_string
+from snips_nlu.common.io_utils import temp_dir
 
 _BUILTIN_ENTITY_PARSERS = dict()
 

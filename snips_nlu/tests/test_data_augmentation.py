@@ -185,13 +185,22 @@ class TestDataAugmentation(SnipsTest):
         }
         self.assertEqual(expected_utterance, utterance)
 
-    def test_capitalize(self):
+    @patch("snips_nlu.data_augmentation.get_stop_words")
+    def test_capitalize(self, mocked_get_stop_words):
         # Given
         language = LANGUAGE_EN
+
+        def mock_get_stop_words(lang):
+            if lang == LANGUAGE_EN:
+                return {"the", "and", "you"}
+            return {}
+
+        mocked_get_stop_words.side_effect = mock_get_stop_words
+
         texts = [
             ("the new yorker", "the New Yorker"),
             ("JOHN AND SMITH", "John and Smith"),
-            ("you and me", "you and me")
+            ("you and me", "you and Me")
         ]
 
         # When
@@ -201,9 +210,18 @@ class TestDataAugmentation(SnipsTest):
         expected_capitalized_texts = [text[1] for text in texts]
         self.assertSequenceEqual(capitalized_texts, expected_capitalized_texts)
 
-    def test_should_capitalize_only_right_entities(self):
+    @patch("snips_nlu.data_augmentation.get_stop_words")
+    def test_should_capitalize_only_right_entities(
+            self, mocked_get_stop_words):
         # Given
         language = LANGUAGE_EN
+
+        def mock_get_stop_words(lang):
+            if lang == LANGUAGE_EN:
+                return {"the", "and", "you"}
+            return {}
+
+        mocked_get_stop_words.side_effect = mock_get_stop_words
         ratio = 1
         entities = {
             "person": {

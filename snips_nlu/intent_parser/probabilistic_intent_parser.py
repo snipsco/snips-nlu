@@ -9,39 +9,34 @@ from pathlib import Path
 
 from future.utils import iteritems, itervalues
 
+from snips_nlu.common.log_utils import log_elapsed_time, log_result
+from snips_nlu.common.utils import (
+    check_persisted_path, elapsed_since, fitted_required, json_string)
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import IntentNotFoundError
+from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
-from snips_nlu.pipeline.processing_unit import (build_processing_unit,
-                                                load_processing_unit)
 from snips_nlu.result import empty_result, parsing_result, extraction_result
-from snips_nlu.utils import (check_persisted_path, elapsed_since,
-                             fitted_required, json_string, log_elapsed_time,
-                             log_result)
+from snips_nlu.slot_filler import SlotFiller
 
 logger = logging.getLogger(__name__)
 
 
+@IntentParser.register("probabilistic_intent_parser")
 class ProbabilisticIntentParser(IntentParser):
     """Intent parser which consists in two steps: intent classification then
     slot filling"""
 
-    unit_name = "probabilistic_intent_parser"
     config_type = ProbabilisticIntentParserConfig
 
-    # pylint:disable=line-too-long
     def __init__(self, config=None, **shared):
         """The probabilistic intent parser can be configured by passing a
         :class:`.ProbabilisticIntentParserConfig`"""
-        if config is None:
-            config = self.config_type()
         super(ProbabilisticIntentParser, self).__init__(config, **shared)
         self.intent_classifier = None
         self.slot_fillers = dict()
-
-    # pylint:enable=line-too-long
 
     @property
     def fitted(self):
@@ -72,7 +67,7 @@ class ProbabilisticIntentParser(IntentParser):
         self.fit_custom_entity_parser_if_needed(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
-            self.intent_classifier = build_processing_unit(
+            self.intent_classifier = IntentClassifier.from_config(
                 self.config.intent_classifier_config)
         self.intent_classifier.builtin_entity_parser = \
             self.builtin_entity_parser
@@ -89,7 +84,7 @@ class ProbabilisticIntentParser(IntentParser):
             # We need to copy the slot filler config as it may be mutated
             if self.slot_fillers.get(intent_name) is None:
                 slot_filler_config = deepcopy(self.config.slot_filler_config)
-                self.slot_fillers[intent_name] = build_processing_unit(
+                self.slot_fillers[intent_name] = SlotFiller.from_config(
                     slot_filler_config)
             self.slot_fillers[intent_name].builtin_entity_parser = \
                 self.builtin_entity_parser
@@ -227,18 +222,22 @@ class ProbabilisticIntentParser(IntentParser):
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)
 
-        parser = cls(config=cls.config_type.from_dict(model["config"]),
-                     **shared)
+        config = cls.config_type.from_dict(model["config"])
+        parser = cls(config=config, **shared)
         classifier = None
         intent_classifier_path = path / "intent_classifier"
         if intent_classifier_path.exists():
-            classifier = load_processing_unit(intent_classifier_path, **shared)
+            classifier_unit_name = config.intent_classifier_config.unit_name
+            classifier = IntentClassifier.load_from_path(
+                intent_classifier_path, classifier_unit_name, **shared)
 
         slot_fillers = dict()
+        slot_filler_unit_name = config.slot_filler_config.unit_name
         for slot_filler_conf in model["slot_fillers"]:
             intent = slot_filler_conf["intent"]
             slot_filler_path = path / slot_filler_conf["slot_filler_name"]
-            slot_filler = load_processing_unit(slot_filler_path, **shared)
+            slot_filler = SlotFiller.load_from_path(
+                slot_filler_path, slot_filler_unit_name, **shared)
             slot_fillers[intent] = slot_filler
 
         parser.intent_classifier = classifier

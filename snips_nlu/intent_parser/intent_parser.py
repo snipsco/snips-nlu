@@ -1,7 +1,8 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod, ABCMeta
 
 from future.utils import with_metaclass
 
+from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 
 
@@ -11,6 +12,10 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
     A custom intent parser must inherit this class to be used in a
     :class:`.SnipsNLUEngine`
     """
+
+    @classproperty
+    def unit_name(cls):  # pylint:disable=no-self-argument
+        return IntentParser.registered_name(cls)
 
     @abstractmethod
     def fit(self, dataset, force_retrain):
@@ -25,7 +30,7 @@ class IntentParser(with_metaclass(ABCMeta, ProcessingUnit)):
 
     @abstractmethod
     def parse(self, text, intents, top_n):
-        """Performs intent parsing on the provide *text*
+        """Performs intent parsing on the provided *text*
 
         Args:
             text (str): input

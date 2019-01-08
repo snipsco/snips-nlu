@@ -26,17 +26,21 @@ from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, TAGS, TOKENS, positive_tagging, tag_name_to_slot_name,
     tags_to_preslots, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
-from snips_nlu.slot_filler.feature_factory import get_feature_factory
+from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.utils import (
-    DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
-    check_random_state, fitted_required, get_slot_name_mapping, json_string,
-    log_elapsed_time,
-    mkdir_p, ranges_overlap)
+from snips_nlu.common.utils import (
+    check_persisted_path,
+    check_random_state, fitted_required, json_string,
+    ranges_overlap)
+from snips_nlu.common.dataset_utils import get_slot_name_mapping
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
+from snips_nlu.common.io_utils import mkdir_p
+from snips_nlu.common.dict_utils import UnupdatableDict
 
 logger = logging.getLogger(__name__)
 
 
+@SlotFiller.register("crf_slot_filler")
 class CRFSlotFiller(SlotFiller):
     """Slot filler which uses Linear-Chain Conditional Random Fields underneath
 
@@ -44,19 +48,16 @@ class CRFSlotFiller(SlotFiller):
     more about CRFs
     """
 
-    unit_name = "crf_slot_filler"
     config_type = CRFSlotFillerConfig
 
     def __init__(self, config=None, **shared):
         """The CRF slot filler can be configured by passing a
         :class:`.CRFSlotFillerConfig`"""
-
-        if config is None:
-            config = self.config_type()
         super(CRFSlotFiller, self).__init__(config, **shared)
         self.crf_model = None
-        self.features_factories = [get_feature_factory(conf) for conf in
-                                   self.config.feature_factory_configs]
+        self.features_factories = [
+            CRFFeatureFactory.from_config(conf)
+            for conf in self.config.feature_factory_configs]
         self._features = None
         self.language = None
         self.intent = None

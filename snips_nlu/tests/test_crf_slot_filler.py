@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from builtins import range
 from pathlib import Path
 
@@ -10,7 +11,9 @@ from sklearn_crfsuite import CRF
 from snips_nlu.constants import (
     DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_MATCH_RANGE, SLOT_NAME,
     SNIPS_DATETIME, START, TEXT, VALUE)
+from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser
+from snips_nlu.exceptions import NotTrained
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import Token, tokenize
 from snips_nlu.result import unresolved_slot
@@ -22,15 +25,20 @@ from snips_nlu.slot_filler.crf_utils import (
     BEGINNING_PREFIX, INSIDE_PREFIX, TaggingScheme)
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
-from snips_nlu.tests.utils import (
-    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH, WEATHER_DATASET)
-from snips_nlu.exceptions import NotTrained
+from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
 class TestCRFSlotFiller(FixtureTest):
     def test_should_get_slots(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me [number_of_cups:snips/number](five) cups of tea
+- please I want [number_of_cups](two) cups of tea""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
         slot_filler = CRFSlotFiller(config)
@@ -49,9 +57,19 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_get_builtin_slots(self):
         # Given
-        dataset = WEATHER_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: GetWeather
+utterances:
+- what is the weather [datetime:snips/datetime](at 9pm)
+- what's the weather in [location:weather_location](berlin)
+- What's the weather in [location](tokyo) [datetime](this weekend)?
+- Can you tell me the weather [datetime] please ?
+- what is the weather forecast [datetime] in [location](paris)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = CRFSlotFillerConfig(random_seed=42)
-        intent = "SearchWeatherForecast"
+        intent = "GetWeather"
         slot_filler = CRFSlotFiller(config)
         slot_filler.fit(dataset, intent)
 
@@ -138,13 +156,19 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_parse_naughty_strings(self):
         # Given
-        dataset = SAMPLE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [entity1](my first entity)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
         with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
-        slot_filler = CRFSlotFiller().fit(dataset, "dummy_intent_1")
+        slot_filler = CRFSlotFiller().fit(dataset, "my_intent")
 
         # Then
         for s in naughty_strings:
@@ -247,7 +271,15 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_get_slots_after_deserialization(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me [number_of_cups:snips/number](one) cup of tea
+- i want [number_of_cups] cups of tea please
+- can you prepare [number_of_cups] cups of tea ?""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
         slot_filler = CRFSlotFiller(config)
@@ -374,6 +406,14 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_be_serializable(self):
         # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [slot1:entity1](my first entity)
+- this is [slot2:entity2](second_entity)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         features_factories = [
             {
                 "factory_name": ShapeNgramFactory.name,
@@ -389,10 +429,8 @@ class TestCRFSlotFiller(FixtureTest):
         config = CRFSlotFillerConfig(
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=features_factories)
-        dataset = SAMPLE_DATASET
-
         slot_filler = CRFSlotFiller(config)
-        intent = "dummy_intent_1"
+        intent = "my_intent"
         slot_filler.fit(dataset, intent=intent)
 
         # When
@@ -426,9 +464,8 @@ class TestCRFSlotFiller(FixtureTest):
             "config": expected_config.to_dict(),
             "intent": intent,
             "slot_name_mapping": {
-                "dummy_slot_name": "dummy_entity_1",
-                "dummy_slot_name2": "dummy_entity_2",
-                "dummy_slot_name3": "dummy_entity_2",
+                "slot1": "entity1",
+                "slot2": "entity2",
             }
         }
         slot_filler_path = self.tmp_file_path / "slot_filler.json"
@@ -588,7 +625,15 @@ class TestCRFSlotFiller(FixtureTest):
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me [number_of_cups:snips/number](one) cup of tea
+- i want [number_of_cups] cups of tea please
+- can you prepare [number_of_cups] cups of tea ?""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         slot_filler = CRFSlotFiller().fit(dataset, "MakeTea")
         builtin_intent_parser = slot_filler.builtin_entity_parser
         custom_entity_parser = slot_filler.custom_entity_parser
@@ -629,8 +674,15 @@ class TestCRFSlotFiller(FixtureTest):
         slot_filler = CRFSlotFiller(slot_filler_config)
 
         tokens = tokenize("foo hello world bar", LANGUAGE_EN)
-        dataset = SAMPLE_DATASET
-        slot_filler.fit(dataset, intent="dummy_intent_1")
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [slot1:entity1](my first entity)
+- this is [slot2:entity2](second_entity)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        slot_filler.fit(dataset, intent="my_intent")
 
         # When
         features_with_drop_out = slot_filler.compute_features(tokens, True)

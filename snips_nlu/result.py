@@ -25,10 +25,10 @@ def unresolved_slot(match_range, value, entity, slot_name):
 
     Example:
 
-        >>> import json
+        >>> from snips_nlu.common.utils import json_string
         >>> slot = unresolved_slot([0, 8], "tomorrow", "snips/datetime", \
             "startDate")
-        >>> print(json.dumps(slot, indent=4, sort_keys=True))
+        >>> print(json_string(slot, indent=4, sort_keys=True))
         {
             "entity": "snips/datetime",
             "range": {
@@ -54,8 +54,8 @@ def custom_slot(internal_slot, resolved_value=None):
     Example:
 
         >>> s = unresolved_slot([10, 19], "earl grey", "beverage", "beverage")
-        >>> import json
-        >>> print(json.dumps(custom_slot(s, "tea"), indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(custom_slot(s, "tea"), indent=4, sort_keys=True))
         {
             "entity": "beverage",
             "range": {
@@ -101,21 +101,21 @@ def builtin_slot(internal_slot, resolved_value):
         ...     "value": 20,
         ...     "unit": "celsius"
         ... }
-        >>> import json
-        >>> print(json.dumps(builtin_slot(s, resolved), indent=4))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(builtin_slot(s, resolved), indent=4))
         {
+            "entity": "snips/temperature",
             "range": {
-                "start": 10,
-                "end": 32
+                "end": 32,
+                "start": 10
             },
             "rawValue": "twenty degrees celsius",
+            "slotName": "beverageTemperature",
             "value": {
                 "kind": "Temperature",
-                "value": 20,
-                "unit": "celsius"
-            },
-            "entity": "snips/temperature",
-            "slotName": "beverageTemperature"
+                "unit": "celsius",
+                "value": 20
+            }
         }
     """
     return {
@@ -150,8 +150,8 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         ... }
         >>> slot = resolved_slot({"start": 10, "end": 19}, "earl grey",
         ... resolved_value, "beverage", "beverage")
-        >>> import json
-        >>> print(json.dumps(slot, indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(slot, indent=4, sort_keys=True))
         {
             "entity": "beverage",
             "range": {
@@ -188,8 +188,8 @@ def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
         ... "greetee")
         >>> slots = [custom_slot(internal_slot, "William")]
         >>> res = parsing_result(text, intent_result, slots)
-        >>> import json
-        >>> print(json.dumps(res, indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(res, indent=4, sort_keys=True))
         {
             "input": "Hello Bill!",
             "intent": {
@@ -233,8 +233,8 @@ def extraction_result(intent, slots):
         ... "greetee")
         >>> slots = [custom_slot(internal_slot, "William")]
         >>> res = extraction_result(intent_result, slots)
-        >>> import json
-        >>> print(json.dumps(res, indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(res, indent=4, sort_keys=True))
         {
             "intent": {
                 "intentName": "Greeting",
@@ -284,7 +284,7 @@ def empty_result(input):  # pylint:disable=redefined-builtin
 
     Example:
 
-        >>> empty_result("foo bar")
+        >>> res = empty_result("foo bar")
         {'input': 'foo bar', 'intent': None, 'slots': None}
     """
     return parsing_result(input=input, intent=None, slots=None)

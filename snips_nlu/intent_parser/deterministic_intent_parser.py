@@ -24,16 +24,18 @@ from snips_nlu.resources import get_stop_words
 from snips_nlu.result import (empty_result, extraction_result,
                               intent_classification_result, parsing_result,
                               unresolved_slot)
-from snips_nlu.utils import (
+from snips_nlu.common.utils import (
     check_persisted_path, deduplicate_overlapping_items, fitted_required,
-    get_slot_name_mappings, json_string, log_elapsed_time, log_result,
-    ranges_overlap, regex_escape)
+    json_string, ranges_overlap, regex_escape)
+from snips_nlu.common.dataset_utils import get_slot_name_mappings
+from snips_nlu.common.log_utils import log_elapsed_time, log_result
 
 WHITESPACE_PATTERN = r"\s*"
 
 logger = logging.getLogger(__name__)
 
 
+@IntentParser.register("deterministic_intent_parser")
 class DeterministicIntentParser(IntentParser):
     """Intent parser using pattern matching in a deterministic manner
 
@@ -42,14 +44,11 @@ class DeterministicIntentParser(IntentParser):
     first before potentially falling back to another parser.
     """
 
-    unit_name = "deterministic_intent_parser"
     config_type = DeterministicIntentParserConfig
 
     def __init__(self, config=None, **shared):
         """The deterministic intent parser can be configured by passing a
         :class:`.DeterministicIntentParserConfig`"""
-        if config is None:
-            config = self.config_type()
         super(DeterministicIntentParser, self).__init__(config, **shared)
         self._language = None
         self._slot_names_to_entities = None

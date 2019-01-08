@@ -14,7 +14,7 @@ from snips_nlu.cli.link import link_resources
 from snips_nlu.cli.utils import (
     PrettyPrintLevel, check_resources_alias, get_compatibility, get_json,
     get_resources_version, install_remote_package, pretty_print)
-from snips_nlu.utils import get_package_path
+from snips_nlu.common.utils import get_package_path
 
 
 # inspired from

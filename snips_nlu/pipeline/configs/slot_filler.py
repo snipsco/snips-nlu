@@ -1,15 +1,13 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
+from snips_nlu.common.from_dict import FromDict
 from snips_nlu.constants import STOP_WORDS
 from snips_nlu.pipeline.configs import (
     Config, ProcessingUnitConfig, default_features_factories)
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.utils import classproperty
 
 
-class CRFSlotFillerConfig(ProcessingUnitConfig):
+class CRFSlotFillerConfig(FromDict, ProcessingUnitConfig):
     # pylint: disable=line-too-long
     """Configuration of a :class:`.CRFSlotFiller`
 
@@ -30,7 +28,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
 
     # pylint: enable=line-too-long
 
-    # pylint: disable=super-init-not-called
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=None, crf_args=None,
                  data_augmentation_config=None, random_seed=None):
@@ -50,8 +47,6 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
         self.random_seed = random_seed
-
-    # pylint: enable=super-init-not-called
 
     @property
     def tagging_scheme(self):
@@ -84,18 +79,18 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
                             "SlotFillerDataAugmentationConfig or dict but "
                             "received: %s" % type(value))
 
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
+    @property
+    def unit_name(self):
         from snips_nlu.slot_filler import CRFSlotFiller
         return CRFSlotFiller.unit_name
 
     def get_required_resources(self):
         # Import here to avoid circular imports
-        from snips_nlu.slot_filler.feature_factory import get_feature_factory
+        from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 
         resources = self.data_augmentation_config.get_required_resources()
         for config in self.feature_factory_configs:
-            factory = get_feature_factory(config)
+            factory = CRFFeatureFactory.from_config(config)
             resources = merge_required_resources(
                 resources, factory.get_required_resources())
         return resources
@@ -111,16 +106,8 @@ class CRFSlotFillerConfig(ProcessingUnitConfig):
             "random_seed": self.random_seed
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)
 
-
-class SlotFillerDataAugmentationConfig(Config):
+class SlotFillerDataAugmentationConfig(FromDict, Config):
     """Specify how to augment data before training the CRF
 
     Data augmentation essentially consists in creating additional utterances
@@ -154,10 +141,6 @@ class SlotFillerDataAugmentationConfig(Config):
             "capitalization_ratio": self.capitalization_ratio,
             "add_builtin_entities_examples": self.add_builtin_entities_examples
         }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
 
 def _default_crf_args():

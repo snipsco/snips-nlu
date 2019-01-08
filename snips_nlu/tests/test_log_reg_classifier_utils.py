@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from copy import deepcopy
 from itertools import cycle
 
@@ -11,7 +12,7 @@ from future.utils import itervalues
 from mock import MagicMock, patch
 
 from snips_nlu.constants import INTENTS, LANGUAGE_EN, UTTERANCES
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     add_unknown_word_to_utterances, build_training_data,
     generate_noise_utterances, generate_smart_noise, get_noise_it,
@@ -20,17 +21,32 @@ from snips_nlu.pipeline.configs import (
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig)
 from snips_nlu.tests.test_log_reg_intent_classifier import (
     get_mocked_augment_utterances)
-from snips_nlu.tests.utils import (SAMPLE_DATASET, SnipsTest,
-                                   get_empty_dataset)
+from snips_nlu.tests.utils import SnipsTest, get_empty_dataset
 
 
 class TestLogRegClassifierUtils(SnipsTest):
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
-    def test_should_build_training_data_with_no_stemming_no_noise(
+    def test_should_build_training_data_with_no_noise(
             self, mocked_augment_utterances):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_first_intent
+utterances:
+- how are you
+- hello how are you?
+- what's up
+
+---
+type: intent
+name: my_second_intent
+utterances:
+- what is the weather today ?
+- does it rain
+- will it rain tomorrow""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
         random_state = np.random.RandomState(1)
 
@@ -44,7 +60,7 @@ class TestLogRegClassifierUtils(SnipsTest):
         expected_utterances = [utterance for intent
                                in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
-        expected_intent_mapping = [u'dummy_intent_1', u'dummy_intent_2']
+        expected_intent_mapping = ["my_first_intent", "my_second_intent"]
         self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
@@ -516,10 +532,18 @@ class TestLogRegClassifierUtils(SnipsTest):
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     def test_get_dataset_specific_noise(self, mocked_noise):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- what is the weather in [city](paris)
+- give me the weather in [city](london) 
+- does it rain in [city](tokyo)?""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        dataset = validate_and_format_dataset(dataset)
         language = "en"
-        mocked_noise.return_value = ["dummy_a", "yo"]
-
+        mocked_noise.return_value = ["paris", "tokyo", "yo"]
         # When
         noise = get_dataset_specific_noise(dataset, language)
 

@@ -17,9 +17,10 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data, get_regularization_factor, text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.utils import (
-    DifferedLoggingMessage, check_persisted_path, check_random_state,
-    fitted_required, json_string, log_elapsed_time)
+from snips_nlu.common.utils import (
+    check_persisted_path, check_random_state,
+    fitted_required, json_string)
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +33,16 @@ LOG_REG_ARGS = {
 }
 
 
+@IntentClassifier.register("log_reg_intent_classifier")
 class LogRegIntentClassifier(IntentClassifier):
     """Intent classifier which uses a Logistic Regression underneath"""
 
-    unit_name = "log_reg_intent_classifier"
     config_type = LogRegIntentClassifierConfig
 
     # pylint:disable=line-too-long
     def __init__(self, config=None, **shared):
         """The LogReg intent classifier can be configured by passing a
         :class:`.LogRegIntentClassifierConfig`"""
-        if config is None:
-            config = LogRegIntentClassifierConfig()
         super(LogRegIntentClassifier, self).__init__(config, **shared)
         self.classifier = None
         self.intent_list = None

@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 from abc import ABCMeta, abstractmethod
 from builtins import object
@@ -47,7 +47,7 @@ class Intent(object):
             illustrated in the example below:
 
             >>> import io
-            >>> import json
+            >>> from snips_nlu.common.utils import json_string
             >>> intent_yaml = io.StringIO('''
             ... # searchFlight Intent
             ... ---
@@ -64,7 +64,7 @@ class Intent(object):
             ...   - find me a flight from [origin](Oslo) to [destination](Lima)
             ...   - I need a flight leaving to [destination](Berlin)''')
             >>> intent = Intent.from_yaml(intent_yaml)
-            >>> print(json.dumps(intent.json, indent=4, sort_keys=True))
+            >>> print(json_string(intent.json, indent=4, sort_keys=True))
             {
                 "utterances": [
                     {

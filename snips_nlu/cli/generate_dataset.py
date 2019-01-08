@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals
 import plac
 
 from snips_nlu.dataset import Dataset
-from snips_nlu.utils import unicode_string, json_string
+from snips_nlu.common.utils import unicode_string, json_string
 
 
 @plac.annotations(

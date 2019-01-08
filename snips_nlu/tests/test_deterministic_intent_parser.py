@@ -18,8 +18,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (
     extraction_result, intent_classification_result, unresolved_slot)
-from snips_nlu.tests.utils import (
-    BEVERAGE_DATASET, FixtureTest, SAMPLE_DATASET, TEST_PATH)
+from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
 class TestDeterministicIntentParser(FixtureTest):
@@ -490,7 +489,23 @@ utterances:
 
     def test_should_be_serializable_into_bytearray(self):
         # Given
-        dataset = BEVERAGE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me [number_of_cups:snips/number](one) cup of tea
+- i want [number_of_cups] cups of tea please
+- can you prepare [number_of_cups] cup of tea ?
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](two) cups of coffee
+- brew [number_of_cups] cups of coffee
+- can you prepare [number_of_cups] cup of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         intent_parser = DeterministicIntentParser().fit(dataset)
         custom_entity_parser = intent_parser.custom_entity_parser
 
@@ -508,7 +523,14 @@ utterances:
 
     def test_should_parse_naughty_strings(self):
         # Given
-        dataset = SAMPLE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [slot1:entity1](my first entity)
+- this is [slot2:entity2](second_entity)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
         with naughty_strings_path.open(encoding='utf8') as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
@@ -834,7 +856,21 @@ values:
 
     def test_should_limit_nb_queries(self):
         # Given
-        dataset = SAMPLE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_first_intent
+utterances:
+- this is [slot1:entity1](my first entity)
+- this is [slot2:entity2](my second entity)
+- this is [slot3:entity3](my third entity)
+
+---
+type: intent
+name: my_second_intent
+utterances:
+- this is [slot4:entity4](my fourth entity)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = DeterministicIntentParserConfig(max_queries=2,
                                                  max_pattern_length=1000)
 
@@ -842,21 +878,38 @@ values:
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
-        self.assertEqual(len(parser.regexes_per_intent["dummy_intent_1"]), 2)
-        self.assertEqual(len(parser.regexes_per_intent["dummy_intent_2"]), 1)
+        self.assertEqual(len(parser.regexes_per_intent["my_first_intent"]), 2)
+        self.assertEqual(len(parser.regexes_per_intent["my_second_intent"]), 1)
 
     def test_should_limit_patterns_length(self):
         # Given
-        dataset = SAMPLE_DATASET
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_first_intent
+utterances:
+- how are you
+- hello how are you?
+- what's up
+
+---
+type: intent
+name: my_second_intent
+utterances:
+- what is the weather today ?
+- does it rain
+- will it rain tomorrow""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = DeterministicIntentParserConfig(max_queries=1000,
-                                                 max_pattern_length=300)
+                                                 max_pattern_length=25,
+                                                 ignore_stop_words=False)
 
         # When
         parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
-        self.assertEqual(4, len(parser.regexes_per_intent["dummy_intent_1"]))
-        self.assertEqual(1, len(parser.regexes_per_intent["dummy_intent_2"]))
+        self.assertEqual(2, len(parser.regexes_per_intent["my_first_intent"]))
+        self.assertEqual(1, len(parser.regexes_per_intent["my_second_intent"]))
 
     def test_should_replace_entities(self):
         # Given

@@ -1,13 +1,14 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 import unittest
-from copy import deepcopy
 
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu import SnipsNLUEngine
 from snips_nlu.constants import LANGUAGE, RES_INTENT, RES_INTENT_NAME
+from snips_nlu.dataset import Dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.pipeline.configs import (
@@ -15,7 +16,7 @@ from snips_nlu.pipeline.configs import (
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig,
     NLUEngineConfig, ProbabilisticIntentParserConfig,
     SlotFillerDataAugmentationConfig)
-from snips_nlu.tests.utils import SnipsTest, WEATHER_DATASET
+from snips_nlu.tests.utils import SnipsTest
 
 
 class TestConfig(SnipsTest):
@@ -175,8 +176,26 @@ class TestConfig(SnipsTest):
 
     def test_default_configs_should_work(self):
         # Given
-        dataset = deepcopy(WEATHER_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: TurnLightOn
+utterances:
+- turn on the lights
+- please switch on the light
+- switch the light on
+- can you turn the light on ?
+- I need you to turn on the lights
 
+---
+type: intent
+name: GetWeather
+utterances:
+- what is the weather today
+- What's the weather in tokyo today?
+- Can you tell me the weather please ?
+- what is the weather forecast for this weekend""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         for language in get_all_languages():
             # When
             config = DEFAULT_CONFIGS.get(language)
@@ -189,7 +208,7 @@ class TestConfig(SnipsTest):
             # Then
             self.assertIsNotNone(result[RES_INTENT])
             intent_name = result[RES_INTENT][RES_INTENT_NAME]
-            self.assertEqual("SearchWeatherForecast", intent_name)
+            self.assertEqual("GetWeather", intent_name)
 
 
 if __name__ == '__main__':

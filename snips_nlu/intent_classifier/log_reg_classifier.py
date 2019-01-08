@@ -88,17 +88,19 @@ class LogRegIntentClassifier(IntentClassifier):
         )
         self.featurizer.language = language
 
+        none_class = max(classes)
         try:
-            self.featurizer = self.featurizer.fit(dataset, utterances, classes)
+            self.featurizer = self.featurizer.fit(
+                dataset, utterances, classes, none_class)
         except _EmptyDataError:
             self.featurizer = None
             return self
 
-        X = self.featurizer.transform(utterances)  # pylint: disable=C0103
+        x = self.featurizer.transform(utterances)
         alpha = get_regularization_factor(dataset)
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)
-        self.classifier.fit(X, classes)
+        self.classifier.fit(x, classes)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self
 

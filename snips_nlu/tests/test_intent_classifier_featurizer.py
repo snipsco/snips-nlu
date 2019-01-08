@@ -85,7 +85,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         ]
         utterances = [text_to_utterance(u) for u in utterances]
         classes = np.array([0, 0, 0, 1, 1])
-        featurizer.fit(dataset, utterances, classes)
+        featurizer.fit(dataset, utterances, classes, max(classes))
 
         # When
         featurizer.persist(self.tmp_file_path)
@@ -96,8 +96,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
             "tfidf_vectorizer": "tfidf_vectorizer",
             "cooccurrence_vectorizer": "cooccurrence_vectorizer",
             "config": config.to_dict(),
-            "builtin_entity_scope": ["snips/datetime"],
-            "none_class_index": 1
+            "builtin_entity_scope": ["snips/datetime"]
         }
         featurizer_dict_path = self.tmp_file_path / "featurizer.json"
         self.assertJsonContent(featurizer_dict_path, expected_featurizer_dict)
@@ -132,8 +131,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
             "tfidf_vectorizer": None,
             "cooccurrence_vectorizer": None,
             "config": config.to_dict(),
-            "builtin_entity_scope": None,
-            "none_class_index": None
+            "builtin_entity_scope": None
         }
         featurizer_dict_path = self.tmp_file_path / "featurizer.json"
         self.assertJsonContent(featurizer_dict_path, expected_featurizer_dict)
@@ -168,8 +166,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
             "tfidf_vectorizer": "tfidf_vectorizer",
             "cooccurrence_vectorizer": "cooccurrence_vectorizer",
             "config": config.to_dict(),
-            "builtin_entity_scope": builtin_scope,
-            "none_class_index": none_class_ix
+            "builtin_entity_scope": builtin_scope
         }
 
         self.tmp_file_path.mkdir()
@@ -183,7 +180,6 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         # Then
         self.assertEqual(language, featurizer.language)
         self.assertEqual(set(builtin_scope), featurizer.builtin_entity_scope)
-        self.assertEqual(none_class_ix, featurizer.none_class_index)
         self.assertEqual("tfidf_vectorizer", featurizer.tfidf_vectorizer)
         self.assertEqual("cooccurrence_vectorizer",
                          featurizer.cooccurrence_vectorizer)
@@ -696,7 +692,8 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         classes = [0, 0, 1, 1]
 
         # When
-        x_0 = featurizer.fit_transform(dataset, utterances, classes)
+        x_0 = featurizer.fit_transform(dataset, utterances, classes,
+                                       max(classes))
         x_1 = featurizer.transform(utterances)
 
         # Then
@@ -710,7 +707,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
 
         # When/Then
         with self.assertRaises(_EmptyDataError) as ctx:
-            Featurizer().fit_transform(dataset, utterances, classes)
+            Featurizer().fit_transform(dataset, utterances, classes, None)
 
         self.assertEqual(
             "Couldn't fit because no utterance was found an",

@@ -52,7 +52,6 @@ class Featurizer(ProcessingUnit):
         self.tfidf_vectorizer = None
         self.cooccurrence_vectorizer = None
         self.builtin_entity_scope = None
-        self.none_class_index = None
 
     @property
     def fitted(self):
@@ -64,11 +63,11 @@ class Featurizer(ProcessingUnit):
         except SklearnNotFittedError:
             return False
 
-    def fit(self, dataset, utterances, classes):
-        self.fit_transform(dataset, utterances, classes)
+    def fit(self, dataset, utterances, classes, none_class):
+        self.fit_transform(dataset, utterances, classes, none_class)
         return self
 
-    def fit_transform(self, dataset, utterances, classes):
+    def fit_transform(self, dataset, utterances, classes, none_class):
         self.language = dataset[LANGUAGE]
 
         utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
@@ -83,8 +82,6 @@ class Featurizer(ProcessingUnit):
 
         self.builtin_entity_scope = set(
             e for e in dataset_entities if is_builtin_entity(e))
-
-        self.none_class_index = max(classes)
 
         preprocessed = self._preprocess(utterances, training=True)
         preprocessed_utterances = preprocessed[0]
@@ -104,7 +101,7 @@ class Featurizer(ProcessingUnit):
             # We fit the coocurrence matrix without noise
             non_null_cooccurrence_data, non_null_cooccurrence_classes = zip(*(
                 (d, c) for d, c in zip(cooccurrence_data, classes)
-                if c != self.none_class_index))
+                if c != none_class))
             self._fit_cooccurrence_vectorizer(
                 non_null_cooccurrence_data, non_null_cooccurrence_classes)
             # We fit transform all the data
@@ -271,8 +268,7 @@ class Featurizer(ProcessingUnit):
             "tfidf_vectorizer": tfidf_vectorizer,
             "cooccurrence_vectorizer": cooccurrence_vectorizer,
             "config": self.config.to_dict(),
-            "builtin_entity_scope": builtin_scope,
-            "none_class_index": self.none_class_index
+            "builtin_entity_scope": builtin_scope
         }
 
         featurizer_path = type(self).build_unit_path(path)
@@ -313,7 +309,6 @@ class Featurizer(ProcessingUnit):
         if builtin_scope is not None:
             builtin_scope = set(builtin_scope)
         featurizer.builtin_entity_scope = builtin_scope
-        featurizer.none_class_index = featurizer_dict["none_class_index"]
 
         return featurizer
 

@@ -104,7 +104,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         else:
             raise ValueError(
                 "Expected `unit_config` to be an instance of "
-                "ProcessingUnitConfig or dict but found: %s"
+                "ProcessingUnitConfig or dict or str but found: %s"
                 % type(unit_config))
 
     @abstractproperty

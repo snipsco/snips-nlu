@@ -21,7 +21,7 @@ class FromDict(object):
             return cls(**dict)
 
         param_names = set()
-        for i, (name, param) in enumerate(params.items()):
+        for i, (name, param) in enumerate(iteritems(params)):
             if i == 0 and name == "self":
                 continue
             if param.kind in KEYWORD_KINDS:

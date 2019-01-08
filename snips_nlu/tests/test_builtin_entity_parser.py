@@ -25,7 +25,7 @@ class TestBuiltinEntityParser(SnipsTest):
 
         expected_parse = [
             {
-                "entity": {
+                "resolved_value": {
                     "kind": "Number",
                     "value": 2.0
                 },
@@ -50,7 +50,7 @@ class TestBuiltinEntityParser(SnipsTest):
 
         expected_parse = [
             {
-                "entity": {
+                "resolved_value": {
                     "kind": "MusicArtist",
                     "value": "Daft Punk"
                 },
@@ -104,7 +104,7 @@ class TestBuiltinEntityParser(SnipsTest):
         # Then
         expected_parse1 = [
             {
-                "entity": {
+                "resolved_value": {
                     "kind": "MusicArtist",
                     "value": "Metallica"
                 },
@@ -118,7 +118,7 @@ class TestBuiltinEntityParser(SnipsTest):
         ]
         expected_parse2 = [
             {
-                "entity": {
+                "resolved_value": {
                     "kind": "MusicAlbum",
                     "value": "Metallica"
                 },
@@ -151,7 +151,7 @@ class TestBuiltinEntityParser(SnipsTest):
                     "start": 0,
                     "end": 5
                 },
-                "entity": {
+                "resolved_value": {
                     "kind": "Number",
                     "value": 3.0
                 },
@@ -163,7 +163,7 @@ class TestBuiltinEntityParser(SnipsTest):
                     "start": 0,
                     "end": 23
                 },
-                "entity": {
+                "resolved_value": {
                     "kind": "MusicTrack",
                     "value": "3 nuits par semaine"
                 },

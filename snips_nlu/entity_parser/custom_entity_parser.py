@@ -10,21 +10,44 @@ from future.utils import iteritems, viewvalues
 from snips_nlu_ontology import GazetteerEntityParser
 
 from snips_nlu.constants import (
-    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, RES_MATCH_RANGE, START,
-    UTTERANCES, ENTITY_KIND)
+    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, START, UTTERANCES)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.preprocessing import stem, tokenize
+from snips_nlu.result import parsed_entity
 from snips_nlu.common.utils import json_string
 
 
 class CustomEntityParser(EntityParser):
     def __init__(self, parser, language, parser_usage):
-        super(CustomEntityParser, self).__init__(parser)
+        super(CustomEntityParser, self).__init__()
+        self._parser = parser
         self.language = language
         self.parser_usage = parser_usage
+
+    def _parse(self, text, scope=None):
+        tokens = tokenize(text, self.language)
+        shifts = _compute_char_shifts(tokens)
+        cleaned_text = " ".join(token.value for token in tokens)
+
+        entities = self._parser.parse(cleaned_text, scope)
+        result = []
+        for entity in entities:
+            start = entity["range"]["start"]
+            start -= shifts[start]
+            end = entity["range"]["end"]
+            end -= shifts[end -1]
+            entity_range = {START: start, END: end}
+            ent = parsed_entity(
+                entity_kind=entity["entity_identifier"],
+                entity_value=entity["value"],
+                entity_resolved_value=entity["resolved_value"],
+                entity_range=entity_range
+            )
+            result.append(ent)
+        return result
 
     def persist(self, path):
         path = Path(path)
@@ -78,30 +101,6 @@ class CustomEntityParser(EntityParser):
             custom_entities)
         parser = GazetteerEntityParser.build(configuration)
         return cls(parser, language, parser_usage)
-
-    def parse(self, text, scope=None, use_cache=True):
-        text = text.lower()
-        if not use_cache:
-            return self._parse(text, scope)
-        scope_key = tuple(sorted(scope)) if scope is not None else scope
-        cache_key = (text, scope_key)
-        if cache_key not in self._cache:
-            parser_result = self._parse(text, scope)
-            self._cache[cache_key] = parser_result
-        return self._cache[cache_key]
-
-    def _parse(self, text, scope):
-        tokens = tokenize(text, self.language)
-        shifts = _compute_char_shifts(tokens)
-        cleaned_text = " ".join(token.value for token in tokens)
-        entities = self._parser.parse(cleaned_text, scope)
-        for entity in entities:
-            start = entity[RES_MATCH_RANGE][START]
-            end = entity[RES_MATCH_RANGE][END]
-            entity[ENTITY_KIND] = entity.pop("entity_identifier")
-            entity[RES_MATCH_RANGE][START] -= shifts[start]
-            entity[RES_MATCH_RANGE][END] -= shifts[end - 1]
-        return entities
 
 
 def _stem_entity_utterances(entity_utterances, language):

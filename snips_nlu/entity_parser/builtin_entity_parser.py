@@ -14,6 +14,7 @@ from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.common.utils import json_string
 from snips_nlu.common.io_utils import temp_dir
+from snips_nlu.result import parsed_entity
 
 _BUILTIN_ENTITY_PARSERS = dict()
 
@@ -24,6 +25,23 @@ except NameError:
 
 
 class BuiltinEntityParser(EntityParser):
+    def __init__(self, parser):
+        super(BuiltinEntityParser, self).__init__()
+        self._parser = parser
+
+    def _parse(self, text, scope=None):
+        entities = self._parser.parse(text, scope=scope)
+        result = []
+        for entity in entities:
+            ent = parsed_entity(
+                entity_kind=entity["entity_kind"],
+                entity_value=entity["value"],
+                entity_resolved_value=entity["entity"],
+                entity_range=entity["range"]
+            )
+            result.append(ent)
+        return result
+
     def persist(self, path):
         self._parser.persist(path)
 

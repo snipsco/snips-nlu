@@ -386,7 +386,6 @@ class SnipsNLUEngine(ProcessingUnit):
                 slot_builder = builtin_slot
                 use_cache = False
                 extensible = False
-                resolved_value_key = ENTITY
             else:
                 entities = custom_entities
                 parser = self.custom_entity_parser
@@ -394,13 +393,12 @@ class SnipsNLUEngine(ProcessingUnit):
                 use_cache = True
                 extensible = self._dataset_metadata[ENTITIES][entity_name][
                     AUTOMATICALLY_EXTENSIBLE]
-                resolved_value_key = RESOLVED_VALUE
 
             resolved_slot = None
             for ent in entities:
                 if ent[ENTITY_KIND] == entity_name and \
                         ent[RES_MATCH_RANGE] == slot[RES_MATCH_RANGE]:
-                    resolved_slot = slot_builder(slot, ent[resolved_value_key])
+                    resolved_slot = slot_builder(slot, ent[RESOLVED_VALUE])
                     break
             if resolved_slot is None:
                 matches = parser.parse(
@@ -409,7 +407,7 @@ class SnipsNLUEngine(ProcessingUnit):
                     match = matches[0]
                     if is_builtin or len(match[RES_VALUE]) == len(raw_value):
                         resolved_slot = slot_builder(
-                            slot, match[resolved_value_key])
+                            slot, match[RESOLVED_VALUE])
 
             if resolved_slot is None and extensible:
                 resolved_slot = slot_builder(slot)

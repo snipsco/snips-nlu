@@ -312,7 +312,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         num_0 = {
             "entity_kind": "snips/number",
             "value": "2",
-            "entity": {
+            "resolved_value": {
                 "value": 2.0,
                 "kind": "Number"
             },
@@ -334,7 +334,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
             "entity_kind": "snips/number",
             "value": "1",
             "range": {"start": 17, "end": 18},
-            "entity": {
+            "resolved_value": {
                 "value": 1.0,
                 "kind": "Number"
             },
@@ -709,9 +709,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         with self.assertRaises(DatasetFormatError) as ctx:
             Featurizer().fit_transform(dataset, utterances, classes, None)
 
-        self.assertEqual(
-            "Couldn't fit because no utterance was found an",
-            str(ctx.exception))
+        self.assertEqual("Tokenized utterances are empty", str(ctx.exception))
 
     def test_feature_index_to_feature_name(self):
         # Given

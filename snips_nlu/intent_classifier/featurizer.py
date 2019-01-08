@@ -215,31 +215,6 @@ class Featurizer(ProcessingUnit):
         return (normalized_utterances, normalized_utterances_texts,
                 builtin_ents, custom_ents, w_clusters)
 
-    def fit_builtin_entity_parser_if_needed(self, dataset):
-        # We only fit a builtin entity parser when the unit has already been
-        # fitted or if the parser is none.
-        # In the other cases the parser is provided fitted by another unit.
-        if self.builtin_entity_parser is None or self.fitted:
-            self.builtin_entity_parser = BuiltinEntityParser.build(
-                dataset=dataset)
-        return self
-
-    def fit_custom_entity_parser_if_needed(self, dataset):
-        # We only fit a custom entity parser when the unit has already been
-        # fitted or if the parser is none.
-        # In the other cases the parser is provided fitted by another unit.
-        required_resources = self.config.get_required_resources()
-        if not required_resources:
-            return self
-        parser_usage = required_resources.get(CUSTOM_ENTITY_PARSER_USAGE)
-        if not parser_usage:
-            return self
-
-        if self.custom_entity_parser is None or self.fitted:
-            self.custom_entity_parser = CustomEntityParser.build(
-                dataset, parser_usage)
-        return self
-
     def persist(self, path):
         path = Path(path)
         path.mkdir()

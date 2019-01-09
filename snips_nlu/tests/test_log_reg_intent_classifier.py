@@ -455,15 +455,13 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
-
         text = "yo"
         utterances = [text_to_utterance(text)]
         intent_classifier = LogRegIntentClassifier()
         self.assertIsNone(intent_classifier.log_activation_weights(text, None))
 
         # When
-        intent_classifier.fit(SAMPLE_DATASET)
+        intent_classifier.fit(dataset)
         x = intent_classifier.featurizer.transform(utterances)[0]
         log = intent_classifier.log_activation_weights(text, x, top_n=42)
 
@@ -475,23 +473,23 @@ utterances:
         # Given
         intent_classifier = LogRegIntentClassifier()
         dataset_stream = io.StringIO("""
-        ---
-        type: intent
-        name: intent1
-        utterances:
-          - foo bar
+---
+type: intent
+name: intent1
+utterances:
+  - foo bar
 
-        ---
-        type: intent
-        name: intent2
-        utterances:
-          - lorem ipsum""")
+---
+type: intent
+name: intent2
+utterances:
+  - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        intent_classifier = LogRegIntentClassifier()
 
         # When
         self.assertIsNone(intent_classifier.log_best_features(20))
-        intent_classifier.fit(SAMPLE_DATASET)
+        intent_classifier.fit(dataset)
         log = intent_classifier.log_best_features(20)
 
         # Then

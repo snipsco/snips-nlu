@@ -26,20 +26,21 @@ from snips_nlu.exceptions import (NotTrained, DatasetFormatError)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
-    CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
+    CooccurrenceVectorizerConfig)
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (
     get_stop_words, get_word_cluster)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
-from snips_nlu.utils import json_string, replace_entities_with_placeholders
+from snips_nlu.common.utils import (
+    json_string, replace_entities_with_placeholders)
 
 
+@ProcessingUnit.register("featurizer")
 class Featurizer(ProcessingUnit):
     """Feature extractor for text classification relying on ngrams tfidf and
     word cooccurrences features"""
     config_type = FeaturizerConfig
-    unit_name = "featurizer"
 
     def __init__(self, config=None, **shared):
         # TODO: missing docstring
@@ -339,15 +340,12 @@ def _get_word_cluster_features(query_tokens, clusters_name, language):
     return cluster_features
 
 
+
+@ProcessingUnit.register("tfidf_vectorizer")
 class TfidfVectorizer(ProcessingUnit):
-    # TODO: missing doctring
-    unit_name = "tfidf_vectorizer"
-    config_type = TfidfVectorizerConfig
 
     def __init__(self, config=None, **shared):
         # TODO: missing doctring
-        if config is None:
-            config = TfidfVectorizerConfig()
         super(TfidfVectorizer, self).__init__(config, **shared)
         self._tfidf_vectorizer = None
         self._language = None
@@ -541,8 +539,8 @@ class TfidfVectorizer(ProcessingUnit):
         return vectorizer
 
 
+@ProcessingUnit.register("cooccurrence_vectorizer")
 class CooccurrenceVectorizer(ProcessingUnit):
-    unit_name = "cooccurrence_vectorizer"
     config_type = CooccurrenceVectorizerConfig
 
     def __init__(self, config=None, **shared):

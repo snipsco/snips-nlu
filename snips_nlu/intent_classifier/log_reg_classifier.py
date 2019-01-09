@@ -6,7 +6,6 @@ from builtins import range, str, zip
 from pathlib import Path
 
 import numpy as np
-from future.utils import iteritems
 from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.constants import LANGUAGE, RES_INTENT_NAME, RES_PROBA

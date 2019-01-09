@@ -19,9 +19,9 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
-    CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
+    CooccurrenceVectorizerConfig)
 from snips_nlu.preprocessing import tokenize_light
-from snips_nlu.tests.utils import FixtureTest, SAMPLE_DATASET
+from snips_nlu.tests.utils import FixtureTest
 from snips_nlu.common.utils import json_string
 
 
@@ -703,7 +703,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         # Given
         utterances = []
         classes = []
-        dataset = SAMPLE_DATASET
+        dataset = {"language": "en"}
 
         # When/Then
         with self.assertRaises(DatasetFormatError) as ctx:
@@ -1199,7 +1199,7 @@ class TestTfidfVectorizer(FixtureTest):
             []
         ]
 
-        vectorizer = TfidfVectorizer(config=TfidfVectorizerConfig())
+        vectorizer = TfidfVectorizer()
         vectorizer._language = "en"
 
         # When

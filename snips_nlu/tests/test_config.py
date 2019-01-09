@@ -9,14 +9,15 @@ from snips_nlu import SnipsNLUEngine
 from snips_nlu.constants import LANGUAGE, RES_INTENT, RES_INTENT_NAME
 from snips_nlu.dataset import Dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
-from snips_nlu.intent_classifier import LogRegIntentClassifier
+from snips_nlu.intent_classifier import LogRegIntentClassifier, TfidfVectorizer
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, DeterministicIntentParserConfig, FeaturizerConfig,
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig,
     NLUEngineConfig, ProbabilisticIntentParserConfig,
     SlotFillerDataAugmentationConfig)
+from snips_nlu.pipeline.configs.config import DefaultProcessingUnitConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
-    TfidfVectorizerConfig, CooccurrenceVectorizerConfig)
+    CooccurrenceVectorizerConfig)
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -56,9 +57,11 @@ class TestConfig(SnipsTest):
 
     def test_featurizer_config(self):
         # Given
-        tfid_vectorizer_config = TfidfVectorizerConfig()
+        tfid_vectorizer_config = DefaultProcessingUnitConfig()
+        tfid_vectorizer_config.set_unit_name(TfidfVectorizer.unit_name)
         cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig()
         config_dict = {
+            "unit_name": "featurizer",
             "pvalue_threshold": 0.2,
             "word_clusters_name": "my_clusters",
             "use_stemming": True,
@@ -78,6 +81,7 @@ class TestConfig(SnipsTest):
     def test_cooccurrence_vectorizer_config(self):
         # Given
         config_dict = {
+            "unit_name": "cooccurrence_vectorizer",
             "unknown_words_replacement_string": None,
             "window_size": 5,
             "filter_stop_words": True
@@ -85,17 +89,6 @@ class TestConfig(SnipsTest):
 
         # When
         config = CooccurrenceVectorizerConfig.from_dict(config_dict)
-        serialized_config = config.to_dict()
-
-        # Then
-        self.assertDictEqual(config_dict, serialized_config)
-
-    def test_tfidf_vectorizer_config(self):
-        # Given
-        config_dict = dict()
-
-        # When
-        config = TfidfVectorizerConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then

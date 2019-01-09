@@ -6,8 +6,8 @@ from snips_nlu.constants import (
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
+from snips_nlu.pipeline.configs.config import DefaultProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.common.abc_utils import classproperty
 
 
 class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
@@ -142,7 +142,7 @@ class IntentClassifierDataAugmentationConfig(FromDict, Config):
         }
 
 
-class FeaturizerConfig(FromDict, Config):
+class FeaturizerConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.Featurizer` object
 
     Args:
@@ -151,6 +151,11 @@ class FeaturizerConfig(FromDict, Config):
         pvalue_threshold (float, optional): max pvalue for a feature to be
         kept in the feature selection
     """
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import Featurizer
+        return Featurizer.unit_name
 
     # TODO: update docstring
 
@@ -167,9 +172,11 @@ class FeaturizerConfig(FromDict, Config):
             added_cooccurrence_feature_ratio
 
         if tfidf_vectorizer_config is None:
-            tfidf_vectorizer_config = TfidfVectorizerConfig()
+            from snips_nlu.intent_classifier import TfidfVectorizer
+            tfidf_vectorizer_config = DefaultProcessingUnitConfig()
+            tfidf_vectorizer_config.set_unit_name(TfidfVectorizer.unit_name)
         elif isinstance(tfidf_vectorizer_config, dict):
-            tfidf_vectorizer_config = TfidfVectorizerConfig.from_dict(
+            tfidf_vectorizer_config = DefaultProcessingUnitConfig.from_dict(
                 tfidf_vectorizer_config)
         self.tfidf_vectorizer_config = tfidf_vectorizer_config
 
@@ -198,6 +205,7 @@ class FeaturizerConfig(FromDict, Config):
 
     def to_dict(self):
         return {
+            "unit_name": self.unit_name,
             "pvalue_threshold": self.pvalue_threshold,
             "word_clusters_name": self.word_clusters_name,
             "use_stemming": self.use_stemming,
@@ -208,12 +216,8 @@ class FeaturizerConfig(FromDict, Config):
                 self.cooccurrence_vectorizer_config.to_dict(),
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
-
-class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
+class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.CooccurrenceVectorizer` object
 
         Args:
@@ -234,42 +238,19 @@ class CooccurrenceVectorizerConfig(ProcessingUnitConfig):
             unknown_words_replacement_string
         self.filter_stop_words = filter_stop_words
 
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.intent_classifier.featurizer import \
-            CooccurrenceVectorizer
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import CooccurrenceVectorizer
         return CooccurrenceVectorizer.unit_name
 
     def get_required_resources(self):
-        return None
+        return {STOP_WORDS: True}
 
     def to_dict(self):
         return {
+            "unit_name": self.unit_name,
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string,
             "window_size": self.window_size,
             "filter_stop_words": self.filter_stop_words
         }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
-
-
-class TfidfVectorizerConfig(ProcessingUnitConfig):
-    """Configuration of a :class:`.TfidfVectorizer` object"""
-
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.intent_classifier.featurizer import TfidfVectorizer
-        return TfidfVectorizer.unit_name
-
-    def get_required_resources(self):
-        return None
-
-    def to_dict(self):
-        return dict()
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)

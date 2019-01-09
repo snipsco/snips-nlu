@@ -2,15 +2,17 @@ from __future__ import unicode_literals
 
 import json
 import shutil
-from builtins import next
+from collections import defaultdict
 from pathlib import Path
 
+from future.utils import iteritems
+
+from snips_nlu.common.utils import get_package_path, is_package, json_string
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, DATA_PATH, GAZETTEERS, NOISE, RESOURCES_DIR,
     STEMS, STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
-from snips_nlu.common.utils import get_package_path, is_package, json_string
 
 _RESOURCES = dict()
 
@@ -68,13 +70,13 @@ def load_resources_from_dir(resources_dir):
         print_compatibility_error(language)
         raise
 
-    gazetteers = _load_gazetteers(resources_dir / "gazetteers",
-                                  gazetteer_names)
-    stems = _load_stems(resources_dir / "stemming", stems_filename)
-    word_clusters = _load_word_clusters(resources_dir / "word_clusters",
-                                        clusters_names)
-    stop_words = _load_stop_words(resources_dir, stop_words_filename)
-    noise = _load_noise(resources_dir, noise_filename)
+    gazetteers = _get_gazetteers(resources_dir / "gazetteers",
+                                 gazetteer_names)
+    stems = _get_stems(resources_dir / "stemming", stems_filename)
+    word_clusters = _get_word_clusters(resources_dir / "word_clusters",
+                                       clusters_names)
+    stop_words = _get_stop_words(resources_dir, stop_words_filename)
+    noise = _get_noise(resources_dir, noise_filename)
 
     _RESOURCES[language] = {
         WORD_CLUSTERS: word_clusters,
@@ -247,64 +249,122 @@ def _get_resource(language, resource_name):
     return _RESOURCES[language][resource_name]
 
 
-def _load_stop_words(resources_dir, stop_words_filename):
+def _get_stop_words(resources_dir, stop_words_filename):
     if not stop_words_filename:
         return None
     stop_words_path = (resources_dir / stop_words_filename).with_suffix(".txt")
-    with stop_words_path.open(encoding='utf8') as f:
-        stop_words = set(l.strip() for l in f)
+    return _load_stop_words(stop_words_path)
+
+
+def _load_stop_words(stop_words_path):
+    with stop_words_path.open(encoding="utf8") as f:
+        stop_words = set(l.strip() for l in f if l)
     return stop_words
 
 
-def _load_noise(resources_dir, noise_filename):
+def _persist_stop_words(stop_words, path):
+    with path.open(encoding="utf8", mode="w") as f:
+        for stop_word in stop_words:
+            f.write("%s\n" % stop_word)
+
+
+def _get_noise(resources_dir, noise_filename):
     if not noise_filename:
         return None
     noise_path = (resources_dir / noise_filename).with_suffix(".txt")
-    with noise_path.open(encoding='utf8') as f:
+    return _load_noise(noise_path)
+
+
+def _load_noise(noise_path):
+    with noise_path.open(encoding="utf8") as f:
         # Here we split on a " " knowing that it's always ignored by
         # the tokenization (see tokenization unit tests)
         # It is not important to tokenize precisely as this noise is just used
         # to generate utterances for the None intent
-        noise = next(f).split()
+        noise = [word for l in f for word in l.split()]
     return noise
 
 
-def _load_word_clusters(word_clusters_dir, clusters_names):
+def _persist_noise(noise, path):
+    with path.open(encoding="utf8", mode="w") as f:
+        f.write(" ".join(noise))
+
+
+def _get_word_clusters(word_clusters_dir, clusters_names):
     if not clusters_names:
         return dict()
 
     clusters = dict()
     for clusters_name in clusters_names:
         clusters_path = (word_clusters_dir / clusters_name).with_suffix(".txt")
-        clusters[clusters_name] = dict()
-        with clusters_path.open(encoding="utf8") as f:
-            for line in f:
-                split = line.rstrip().split("\t")
-                clusters[clusters_name][split[0]] = split[1]
+        clusters[clusters_name] = _load_word_clusters(clusters_path)
     return clusters
 
 
-def _load_gazetteers(gazetteers_dir, gazetteer_names):
+def _load_word_clusters(path):
+    clusters = dict()
+    with path.open(encoding="utf8") as f:
+        for line in f:
+            split = line.rstrip().split("\t")
+            if not split:
+                continue
+            clusters[split[0]] = split[1]
+    return clusters
+
+
+def _persist_word_clusters(word_clusters, path):
+    with path.open(encoding="utf8", mode="w") as f:
+        for word, cluster in iteritems(word_clusters):
+            f.write("%s\t%s\n" % (word, cluster))
+
+
+def _get_gazetteers(gazetteers_dir, gazetteer_names):
     if not gazetteer_names:
         return dict()
 
     gazetteers = dict()
     for gazetteer_name in gazetteer_names:
         gazetteer_path = (gazetteers_dir / gazetteer_name).with_suffix(".txt")
-        with gazetteer_path.open(encoding="utf8") as f:
-            gazetteers[gazetteer_name] = set(v.strip() for v in f)
+        gazetteers[gazetteer_name] = _load_gazetteer(gazetteer_path)
     return gazetteers
 
 
-def _load_stems(stems_dir, filename):
+def _load_gazetteer(path):
+    with path.open(encoding="utf8") as f:
+        gazetteer = set(v.strip() for v in f if v)
+    return gazetteer
+
+
+def _persist_gazetteer(gazetteer, path):
+    with path.open(encoding="utf8", mode="w") as f:
+        for word in gazetteer:
+            f.write("%s\n" % word)
+
+
+def _get_stems(stems_dir, filename):
     if not filename:
         return None
     stems_path = (stems_dir / filename).with_suffix(".txt")
-    stems = dict()
-    with stems_path.open(encoding="utf8") as f:
+    return _load_stems(stems_path)
+
+
+def _load_stems(path):
+    with path.open(encoding="utf8") as f:
+        stems = dict()
         for line in f:
             elements = line.strip().split(',')
             stem = elements[0]
             for value in elements[1:]:
                 stems[value] = stem
     return stems
+
+
+def _persist_stems(stems, path):
+    reversed_stems = defaultdict(list)
+    for value, stem in iteritems(stems):
+        reversed_stems[stem].append(value)
+    with path.open(encoding="utf8", mode="w") as f:
+        for stem, values in iteritems(reversed_stems):
+            elements = [stem] + values
+            line = ",".join(elements)
+            f.write("%s\n" % line)

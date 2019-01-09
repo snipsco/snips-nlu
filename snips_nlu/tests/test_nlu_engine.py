@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import io
+import shutil
 from builtins import str
 
 from mock import MagicMock, patch
@@ -22,6 +23,7 @@ from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
     NLUEngineConfig, ProbabilisticIntentParserConfig)
+from snips_nlu.resources import clear_resources
 from snips_nlu.result import (
     custom_slot, empty_result, intent_classification_result, parsing_result,
     resolved_slot, unresolved_slot, extraction_result)
@@ -746,6 +748,35 @@ utterances:
 
         # Then
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeCoffee")
+
+    def test_should_persist_resources_from_memory(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        engine = SnipsNLUEngine().fit(dataset)
+        dir_temp_engine = self.fixture_dir / "temp_engine"
+        engine.persist(dir_temp_engine)
+
+        # When
+        clear_resources()
+        loaded_engine = SnipsNLUEngine.from_path(dir_temp_engine)
+        shutil.rmtree(str(dir_temp_engine))
+
+        # Then
+        loaded_engine.to_byte_array()
 
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"

@@ -264,7 +264,7 @@ class Featurizer(ProcessingUnit):
             "builtin_entity_scope": builtin_scope
         }
 
-        featurizer_path = type(self).build_unit_path(path)
+        featurizer_path = path / "featurizer.json"
         with featurizer_path.open("w", encoding="utf-8") as f:
             f.write(json_string(self_as_dict))
 
@@ -275,7 +275,7 @@ class Featurizer(ProcessingUnit):
     def from_path(cls, path, **shared):
         path = Path(path)
 
-        featurizer_path = cls.build_unit_path(path)
+        featurizer_path = path / "featurizer.json"
         with featurizer_path.open("r", encoding="utf-8") as f:
             featurizer_dict = json.load(f)
 
@@ -497,7 +497,7 @@ class TfidfVectorizer(ProcessingUnit):
         }
 
         path.mkdir()
-        vectorizer_path = type(self).build_unit_path(path)
+        vectorizer_path = path / "vectorizer.json"
         with vectorizer_path.open("w", encoding="utf-8") as f:
             f.write(json_string(self_as_dict))
         self.persist_metadata(path)
@@ -506,8 +506,8 @@ class TfidfVectorizer(ProcessingUnit):
     # pylint: disable=W0212
     def from_path(cls, path, **shared):
         path = Path(path)
-        vectorizer_path = cls.build_unit_path(path)
 
+        vectorizer_path = path / "vectorizer.json"
         with vectorizer_path.open("r", encoding="utf-8") as f:
             vectorizer_dict = json.load(f)
 
@@ -712,7 +712,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
             "config": self.config.to_dict()
         }
         vectorizer_json = json_string(self_as_dict)
-        vectorizer_path = type(self).build_unit_path(path)
+        vectorizer_path = path / "vectorizer.json"
         with vectorizer_path.open(mode="w") as f:
             f.write(vectorizer_json)
         self.persist_metadata(path)
@@ -720,7 +720,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
     @classmethod
     def from_path(cls, path, **shared):
         path = Path(path)
-        vectorizer_path = cls.build_unit_path(path)
+        vectorizer_path = path / "vectorizer.json"
         if not vectorizer_path.exists():
             raise OSError("Missing vectorizer file: %s" % vectorizer_path.name)
 

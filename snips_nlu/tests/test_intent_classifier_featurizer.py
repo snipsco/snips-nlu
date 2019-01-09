@@ -766,7 +766,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
         expected_metadata = {"unit_name": "cooccurrence_vectorizer"}
         self.assertJsonContent(metadata_path, expected_metadata)
 
-        vectorizer_path = self.tmp_file_path / "cooccurrence_vectorizer.json"
+        vectorizer_path = self.tmp_file_path / "vectorizer.json"
         expected_vectorizer = {
             "word_pairs": {
                 "0": ["yo", "yo"]
@@ -799,7 +799,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
 
         self.tmp_file_path.mkdir()
         self.writeJsonContent(
-            self.tmp_file_path / "cooccurrence_vectorizer.json",
+            self.tmp_file_path / "vectorizer.json",
             vectorizer_dict
         )
 

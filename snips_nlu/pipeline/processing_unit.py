@@ -192,16 +192,6 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
                                             **shared)
         return processing_unit
 
-    @classmethod
-    def build_unit_path(cls, unit_dir):
-        """Load a :class:`ProcessingUnit` instance from a bytearray
-            Args:
-                unit_dir (pathlib.Path): directory where the unit will be save
-            Returns:
-                pathlib.Path: the path where the
-        """
-        return unit_dir / ("%s.json" % cls.unit_name)
-
 
 def _sanitize_unit_name(unit_name):
     return unit_name \

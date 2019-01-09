@@ -1,13 +1,15 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
+
 import numpy as np
 from builtins import str, zip
 from mock import patch
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import LANGUAGE_EN
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
@@ -54,37 +56,19 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         featurizer = Featurizer(
             config=config,
             unknown_words_replacement_string=None)
-        dataset = {
-            "entities": {
-                "entity2": {
-                    "data": [
-                        {
-                            "value": "entity1",
-                            "synonyms": ["entity1"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": True,
-                    "matching_strictness": 1.0
-                },
-                "snips/datetime": {
 
-                }
-            },
-            "intents": {},
-            "language": "en"
-        }
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: dummy_intent
+utterances:
+  - this is the number [number:snips/number](one)
+""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         dataset = validate_and_format_dataset(dataset)
-
-        utterances = [
-            "hello world",
-            "beautiful world",
-            "hello here",
-            "bird birdy",
-            "beautiful bird"
-        ]
-        utterances = [text_to_utterance(u) for u in utterances]
-        classes = np.array([0, 0, 0, 1, 1])
+        utterances = [text_to_utterance("this is the number"),
+                      text_to_utterance("yo")]
+        classes = np.array([0, 1])
         featurizer.fit(dataset, utterances, classes, max(classes))
 
         # When
@@ -96,7 +80,7 @@ class TestIntentClassifierFeaturizer(FixtureTest):
             "tfidf_vectorizer": "tfidf_vectorizer",
             "cooccurrence_vectorizer": "cooccurrence_vectorizer",
             "config": config.to_dict(),
-            "builtin_entity_scope": ["snips/datetime"]
+            "builtin_entity_scope": ["snips/number"]
         }
         featurizer_dict_path = self.tmp_file_path / "featurizer.json"
         self.assertJsonContent(featurizer_dict_path, expected_featurizer_dict)
@@ -202,48 +186,34 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         mocked_parser_stem.side_effect = stem_function
         mocked_featurizer_stem.side_effect = stem_function
 
-        dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": []
-                }
-            },
-            "entities": {
-                "entity_1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        },
-                        {
-                            "value": "éntity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": False,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "entity_2": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": []
-                        },
-                        {
-                            "value": "Éntity 2",
-                            "synonyms": ["Éntity_2", "Alternative entity 2"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "snips/number": {}  # To test the builtin feature
-            },
-            "language": "en",
-        }
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+    - dummy utterance
 
+---
+type: entity
+name: entity_1
+automatically_extensible: false
+use_synononyms: false
+matching_strictness: 1.0
+values:
+  - [entity 1, alternative entity 1]
+  - [éntity 1, alternative entity 1]
+  
+---
+type: entity
+name: entity_2
+automatically_extensible: false
+use_synononyms: true
+matching_strictness: 1.0
+values:
+  - entity 1
+  - [Éntity 2, Éntity_2, Alternative entity 2]
+""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
@@ -387,48 +357,34 @@ class TestIntentClassifierFeaturizer(FixtureTest):
 
         mocked_featurizer_stem.side_effect = stem_function
 
-        dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": []
-                }
-            },
-            "entities": {
-                "entity_1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        },
-                        {
-                            "value": "éntity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": False,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "entity_2": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": []
-                        },
-                        {
-                            "value": "Éntity 2",
-                            "synonyms": ["Éntity_2", "Alternative entity 2"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "snips/number": {}  # To test the builtin feature
-            },
-            "language": "en",
-        }
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+    - dummy utterance
 
+---
+type: entity
+name: entity_1
+automatically_extensible: false
+use_synononyms: false
+matching_strictness: 1.0
+values:
+  - [entity 1, alternative entity 1]
+  - [éntity 1, alternative entity 1]
+  
+---
+type: entity
+name: entity_2
+automatically_extensible: false
+use_synononyms: true
+matching_strictness: 1.0
+values:
+  - entity 1
+  - [Éntity 2, Éntity_2, Alternative entity 2]
+""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
@@ -610,44 +566,34 @@ class TestIntentClassifierFeaturizer(FixtureTest):
         config = FeaturizerConfig(added_cooccurrence_feature_ratio=.5)
         featurizer = Featurizer(config=config)
 
-        dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": []
-                }
-            },
-            "entities": {
-                "entity_1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        },
-                        {
-                            "value": "éntity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": False,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "entity_2": {
-                    "data": [
-                        {
-                            "value": "Éntity 2",
-                            "synonyms": ["Éntity_2", "Alternative entity 2"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "snips/number": {}
-            },
-            "language": "en",
-        }
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+    - dummy utterance
 
+---
+type: entity
+name: entity_1
+automatically_extensible: false
+use_synononyms: false
+matching_strictness: 1.0
+values:
+  - [entity 1, alternative entity 1]
+  - [éntity 1, alternative entity 1]
+
+---
+type: entity
+name: entity_2
+automatically_extensible: false
+use_synononyms: true
+matching_strictness: 1.0
+values:
+  - entity 1
+  - [Éntity 2, Éntity_2, Alternative entity 2]
+        """)
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         dataset = validate_and_format_dataset(dataset)
 
         utterances = [
@@ -718,44 +664,34 @@ class TestIntentClassifierFeaturizer(FixtureTest):
 
         self.assertDictEqual(dict(), featurizer.feature_index_to_feature_name)
 
-        dataset = {
-            "intents": {
-                "intent1": {
-                    "utterances": []
-                }
-            },
-            "entities": {
-                "entity_1": {
-                    "data": [
-                        {
-                            "value": "entity 1",
-                            "synonyms": ["alternative entity 1"]
-                        },
-                        {
-                            "value": "éntity 1",
-                            "synonyms": ["alternative entity 1"]
-                        }
-                    ],
-                    "use_synonyms": False,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "entity_2": {
-                    "data": [
-                        {
-                            "value": "Éntity 2",
-                            "synonyms": ["Éntity_2", "Alternative entity 2"]
-                        }
-                    ],
-                    "use_synonyms": True,
-                    "automatically_extensible": False,
-                    "matching_strictness": 1.0
-                },
-                "snips/number": {}
-            },
-            "language": "en",
-        }
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+    - dummy utterance
 
+---
+type: entity
+name: entity_1
+automatically_extensible: false
+use_synononyms: false
+matching_strictness: 1.0
+values:
+  - [entity 1, alternative entity 1]
+  - [éntity 1, alternative entity 1]
+
+---
+type: entity
+name: entity_2
+automatically_extensible: false
+use_synononyms: true
+matching_strictness: 1.0
+values:
+  - entity 1
+  - [Éntity 2, Éntity_2, Alternative entity 2]
+        """)
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         dataset = validate_and_format_dataset(dataset)
 
         utterances = [

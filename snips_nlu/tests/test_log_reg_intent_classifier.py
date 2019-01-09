@@ -395,38 +395,24 @@ utterances:
             self, mocked_build_training):
         # Given
         language = LANGUAGE_EN
-        dataset = {
-            "entities": {
-                "dummy_entity_1": {
-                    "automatically_extensible": True,
-                    "use_synonyms": False,
-                    "data": [
-                        {
-                            "value": "...",
-                            "synonyms": [],
-                        }
-                    ],
-                    "matching_strictness": 1.0
-                }
-            },
-            "intents": {
-                "dummy_intent_1": {
-                    "utterances": [
-                        {
-                            "data": [
-                                {
-                                    "text": "...",
-                                    "slot_name": "dummy_slot_name",
-                                    "entity": "dummy_entity_1"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            },
-            "language": language
-        }
 
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: dummy_intent_1
+utterances:
+  - "[dummy_slot_name:dummy_entity_1](...)"
+  
+---
+type: entity
+name: dummy_entity_1
+automatically_extensible: true
+use_synonyms: false
+matching_strictness: 1.0
+values:
+  - ...
+""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         text = " "
         noise_size = 6
         utterances = [text] + [text] * noise_size

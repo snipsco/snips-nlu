@@ -77,7 +77,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
         self.featurizer = Featurizer(
             config=self.config.featurizer_config,
-            unknown_words_replacement_string= \
+            unknown_words_replacement_string=\
                 data_augmentation_config.unknown_words_replacement_string,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser
@@ -115,7 +115,8 @@ class LogRegIntentClassifier(IntentClassifier):
             *None* if no intent was found
 
         Raises:
-            NotTrained: When the intent classifier is not fitted
+            :class:`snips_nlu.exceptions.NotTrained`: When the intent
+                classifier is not fitted
 
         """
         intents_results = self._get_intents(text, intents_filter)
@@ -132,7 +133,8 @@ class LogRegIntentClassifier(IntentClassifier):
         dataset + 1 for the None intent
 
         Raises:
-            NotTrained: when the intent classifier is not fitted
+            :class:`snips_nlu.exceptions.NotTrained`: when the intent
+                classifier is not fitted
         """
         return self._get_intents(text, intents_filter=None)
 

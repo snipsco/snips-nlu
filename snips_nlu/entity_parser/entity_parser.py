@@ -58,7 +58,7 @@ class EntityParser(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def _parse(self, text, scope=None):
         """Internal parse method to implement in each subclass of
-            .EntityParser.
+         :class:`.EntityParser`
 
             Args:
                 text (str): input text
@@ -73,7 +73,7 @@ class EntityParser(with_metaclass(ABCMeta, object)):
             Returns:
                 list of dict: list of the parsed entities. These entity must
                     have the same output format as the
-                    .snips_nlu.result.parsed_entity function
+                    :func:`snips_nlu.utils.result.parsed_entity` function
         """
         pass
 

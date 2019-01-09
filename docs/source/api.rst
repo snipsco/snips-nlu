@@ -47,6 +47,14 @@ Intent Classifier
 .. autoclass:: LogRegIntentClassifier
    :members:
 
+.. autoclass:: Featurizer
+   :members:
+
+.. autoclass:: TfidfVectorizer
+   :members:
+
+.. autoclass:: CooccurrenceVectorizer
+   :members:
 
 Slot Filler
 -----------
@@ -95,6 +103,11 @@ Configurations
 .. autoclass:: CRFSlotFillerConfig
    :members:
 
+.. autoclass:: FeaturizerConfig
+   :members:
+
+.. autoclass:: CooccurrenceVectorizerConfig
+   :members:
 
 Dataset
 -------

@@ -286,6 +286,7 @@ def empty_result(input):  # pylint:disable=redefined-builtin
     Example:
 
         >>> res = empty_result("foo bar")
+        >>> print(res)
         {'input': 'foo bar', 'intent': None, 'slots': None}
     """
     return parsing_result(input=input, intent=None, slots=None)
@@ -293,7 +294,8 @@ def empty_result(input):  # pylint:disable=redefined-builtin
 
 def parsed_entity(entity_kind, entity_value, entity_resolved_value,
                   entity_range):
-    """Create the items in the output of :meth:`.EntityParser.parse`
+    """Create the items in the output of
+        :meth:`snips_nlu.entity_parser.EntityParser.parse`
 
     Example:
         >>> resolved_value = dict(age=28, role="datascientist")
@@ -307,7 +309,7 @@ def parsed_entity(entity_kind, entity_value, entity_resolved_value,
                 "end": 6,
                 "start": 0
             },
-            "resolved_value: {
+            "resolved_value": {
                 "age": 28,
                 "role": "datascientist"
             },

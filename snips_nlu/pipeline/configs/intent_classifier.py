@@ -11,22 +11,20 @@ from snips_nlu.resources import merge_required_resources
 
 
 class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.LogRegIntentClassifier`"""
+
     # pylint: disable=line-too-long
-    """Configuration of a :class:`.LogRegIntentClassifier`
-
-    Args:
-        data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
-            Defines the strategy of the underlying data augmentation
-        featurizer_config (:class:`FeaturizerConfig`): Configuration of the
-            :class:`.Featurizer` used underneath
-        random_seed (int, optional): Allows to fix the seed ot have
-            reproducible trainings
-    """
-
-    # pylint: enable=line-too-long
-
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
                  random_seed=None):
+        """
+        Args:
+            data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
+                    Defines the strategy of the underlying data augmentation
+            featurizer_config (:class:`FeaturizerConfig`): Configuration of the
+                :class:`.Featurizer` used underneath
+            random_seed (int, optional): Allows to fix the seed ot have
+                reproducible trainings
+        """
         if data_augmentation_config is None:
             data_augmentation_config = IntentClassifierDataAugmentationConfig()
         if featurizer_config is None:
@@ -91,24 +89,24 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
 
 class IntentClassifierDataAugmentationConfig(FromDict, Config):
     """Configuration used by a :class:`.LogRegIntentClassifier` which defines
-        how to augment data to improve the training of the classifier
-
-    Args:
-        min_utterances (int, optional): The minimum number of utterances to
-            automatically generate for each intent, based on the existing
-            utterances. Default is 20.
-        noise_factor (int, optional): Defines the size of the noise to
-            generate to train the implicit *None* intent, as a multiplier of
-            the average size of the other intents. Default is 5.
-        add_builtin_entities_examples (bool, optional): If True, some builtin
-            entity examples will be automatically added to the training data.
-            Default is True.
-    """
+        how to augment data to improve the training of the classifier"""
 
     def __init__(self, min_utterances=20, noise_factor=5,
                  add_builtin_entities_examples=True, unknown_word_prob=0,
                  unknown_words_replacement_string=None,
                  max_unknown_words=None):
+        """
+        Args:
+            min_utterances (int, optional): The minimum number of utterances to
+                automatically generate for each intent, based on the existing
+                utterances. Default is 20.
+            noise_factor (int, optional): Defines the size of the noise to
+                generate to train the implicit *None* intent, as a multiplier
+                of the average size of the other intents. Default is 5.
+            add_builtin_entities_examples (bool, optional): If True, some
+                builtin entity examples will be automatically added to the
+                training data. Default is True.
+        """
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
         self.add_builtin_entities_examples = add_builtin_entities_examples
@@ -143,28 +141,41 @@ class IntentClassifierDataAugmentationConfig(FromDict, Config):
 
 
 class FeaturizerConfig(FromDict, ProcessingUnitConfig):
-    """Configuration of a :class:`.Featurizer` object
+    """Configuration of a :class:`.Featurizer` object"""
 
-    Args:
-        sublinear_tf (bool, optional): Whether or not to use sublinear
-            (vs linear) term frequencies, default is *False*.
-        pvalue_threshold (float, optional): max pvalue for a feature to be
-        kept in the feature selection
-    """
-
-    @property
-    def unit_name(self):
-        from snips_nlu.intent_classifier import Featurizer
-        return Featurizer.unit_name
-
-    # TODO: update docstring
-
+    # pylint: disable=line-too-long
     def __init__(self, tfidf_vectorizer_config=None,
                  cooccurrence_vectorizer_config=None,
                  pvalue_threshold=0.4,
                  word_clusters_name=None,
                  use_stemming=False,
                  added_cooccurrence_feature_ratio=0):
+        """
+        Args:
+            tfidf_vectorizer_config (:class:`.DefaultProcessingUnitConfig`):
+                empty configuration of the featurizer's
+                :attr:`tfidf_vectorizer`
+            cooccurrence_vectorizer_config: (:class:`.CooccurrenceVectorizerConfig`, optional):
+                configuration of the featurizer's
+                :attr:`cooccurrence_vectorizer`
+            pvalue_threshold (float): after fitting the training set to
+                extract tfidf features, a univariate feature selection is
+                applied. Features are tested for independence using a Chi-2
+                test, under the null hypothesis that the each feature should be
+                equally present in each class. Only features having a p-value
+                lower that the threshold are kept
+            word_clusters_name (str, optional): if a word cluster name is
+                provided then the featurizer will use the word clusters IDs
+                detected in the utterances and add them to the utterance text
+                before computing the tfidf. Default to None
+            use_stemming (bool, optional): use stemming before computing the
+                tfdif. Defaults to False (no stemming used)
+            added_cooccurrence_feature_ratio (float, optional): proportion of
+                cooccurrence features to add with respect of the number of
+                tfidf features. For instance with a ratio of 0.5, if 100 tfidf
+                features are remaining after feature selection, a maximum of 50
+                cooccurrence features will be added
+        """
         self.pvalue_threshold = pvalue_threshold
         self.word_clusters_name = word_clusters_name
         self.use_stemming = use_stemming
@@ -187,6 +198,11 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
                 .from_dict(cooccurrence_vectorizer_config)
         self.cooccurrence_vectorizer_config = cooccurrence_vectorizer_config
         self.use_stemming = use_stemming
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import Featurizer
+        return Featurizer.unit_name
 
     def get_required_resources(self):
         if self.use_stemming:
@@ -218,21 +234,22 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
 
 
 class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
-    """Configuration of a :class:`.CooccurrenceVectorizer` object
-
-        Args:
-            window_size (int, optional): if provided word cooccurrence will be
-             taken into account only in a context window of size window_size.
-             If the window size is 3 then given a word w[i], the vectorizer
-             will only extract the following pairs: (w[i], w[i + 1]),
-             (w[i], w[i + 2]) and (w[i], w[i + 3])
-             Defaults to None, which means that we consider all words
-        """
-
-    # TODO: finish docstring
+    """Configuration of a :class:`.CooccurrenceVectorizer` object"""
 
     def __init__(self, window_size=None, unknown_words_replacement_string=None,
                  filter_stop_words=True):
+        """
+        Args:
+            window_size (int, optional): if provided word cooccurrences will be
+                taken into account only in a context window of size
+                :attr:`window_size`. If the window size is 3 then given a word
+                w[i], the vectorizer will only extract the following pairs:
+                (w[i], w[i + 1]), (w[i], w[i + 2]) and (w[i], w[i + 3]).
+                Defaults to None, which means that we consider all words
+            unknown_words_replacement_string (str, optional)
+            filter_stop_words (bool, optional): if True, stop words are ignore
+                when computing cooccurrences
+        """
         self.window_size = window_size
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string

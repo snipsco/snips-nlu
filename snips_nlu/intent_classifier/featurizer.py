@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import numpy as np
 import scipy.sparse as sp
-from builtins import str
+from builtins import str, zip
 from future.utils import iteritems
 from pathlib import Path
 from scipy.sparse import dok_matrix, hstack
@@ -39,13 +39,10 @@ from snips_nlu.common.utils import (
 @ProcessingUnit.register("featurizer")
 class Featurizer(ProcessingUnit):
     """Feature extractor for text classification relying on ngrams tfidf and
-    word cooccurrences features"""
+    optionally word cooccurrences features"""
     config_type = FeaturizerConfig
 
     def __init__(self, config=None, **shared):
-        # TODO: missing docstring
-        if config is None:
-            config = FeaturizerConfig()
         super(Featurizer, self).__init__(config, **shared)
         self.language = None
         self.tfidf_vectorizer = None
@@ -61,11 +58,10 @@ class Featurizer(ProcessingUnit):
     @property
     def feature_index_to_feature_name(self):
         """Maps the feature index of the feature matrix to printable features
-         names, mainly useful for debug
+        names, mainly useful for debug
 
-            Returns:
-                dict: a dict mapping feature indexes to printable features
-                 names
+        Returns:
+            dict: a dict mapping feature indexes to printable features names
         """
         if not self.fitted:
             return dict()
@@ -107,8 +103,8 @@ class Featurizer(ProcessingUnit):
         custom_ents = preprocessed[3]
         w_clusters = preprocessed[4]
 
-        tfidf_data = zip(
-            preprocessed_utterances, builtin_ents, custom_ents, w_clusters)
+        tfidf_data = list(zip(
+            preprocessed_utterances, builtin_ents, custom_ents, w_clusters))
         x_tfidf = self._fit_transform_tfidf_vectorizer(tfidf_data, classes)
 
         x = x_tfidf
@@ -177,6 +173,8 @@ class Featurizer(ProcessingUnit):
         _, pval = chi2(x_cooccurrence, y)
         top_k = int(self.config.added_cooccurrence_feature_ratio * len(
             self.tfidf_vectorizer.idf_diag))
+        # Don't select more word pairs than we have
+        top_k = min(len(self.cooccurrence_vectorizer.word_pairs), top_k)
         top_k_cooccurrence_ix = np.argpartition(
             pval, top_k, axis=None)[-top_k:]
         top_k_cooccurrence_ix = set(top_k_cooccurrence_ix)
@@ -340,17 +338,29 @@ def _get_word_cluster_features(query_tokens, clusters_name, language):
     return cluster_features
 
 
-
 @ProcessingUnit.register("tfidf_vectorizer")
 class TfidfVectorizer(ProcessingUnit):
+    """Wrapper of the scikit-learn TfidfVectorizer"""
 
     def __init__(self, config=None, **shared):
-        # TODO: missing doctring
         super(TfidfVectorizer, self).__init__(config, **shared)
         self._tfidf_vectorizer = None
         self._language = None
 
     def fit(self, x, language):
+        """Fits the idf of the vectorizer on the given utterances after
+        enriching them with builtin entities matches, custom entities matches
+        and the potential word matches
+
+        Args:
+            x (list of 4-tuple): list of 4-tuple in the form: utterance in the
+                dictionary format: (utterance, builtin entities,
+                custom entities, potential word clusters)
+            language (str): language of the given utterances
+
+        Returns:
+            :class:`.TfidfVectorizer`: The fitted vectorizer
+        """
         self._language = language
         self._init_vectorizer()
         utterances = [
@@ -361,6 +371,22 @@ class TfidfVectorizer(ProcessingUnit):
         return self._tfidf_vectorizer.fit(utterances)
 
     def fit_transform(self, x, language):
+        """Fits the idf of the vectorizer on the given utterances after
+        enriching them with builtin entities matches, custom entities matches
+        and the potential word matches. Returns the featurized utterances
+
+        Args:
+            x (list of 4-tuple): list of 4-tuple in the form: utterance in the
+                dictionary format: (utterance, builtin entities,
+                custom entities, potential word clusters)
+            language (str): language of the given utterances
+
+        Returns:
+            :class:`.scipy.sparse.csr_matrix`: A sparse matrix X of shape
+            (len(x), len(self.vocabulary)) where
+            X[i, j] contains tfdif of the ngram of index j of the
+            vocabulary in the utterance i
+        """
         self._language = language
         self._init_vectorizer()
         utterances = [
@@ -375,6 +401,20 @@ class TfidfVectorizer(ProcessingUnit):
             self._tfidf_vectorizer, "vocabulary_")
 
     def transform(self, x):
+        """Featurize the given utterances after enriching them with builtin
+        entities matches, custom entities matches and the potential word
+        matches
+
+        Args:
+            x (list of 4-tuple): list of 4-tuple in the form: utterance in the
+                dictionary format: (utterance, builtin entities,
+                custom entities, potential word clusters)
+
+        Returns:
+            :class:`.scipy.sparse.csr_matrix`: A sparse matrix X of shape
+            (len(x), len(self.vocabulary)) where X[i, j] contains tfdif of the
+            ngram of index j of the vocabulary in the utterance i
+        """
         utterances = [self._enrich_utterance_for_tfidf(*data) for data in x]
         return self._tfidf_vectorizer.transform(utterances)
 
@@ -424,11 +464,13 @@ class TfidfVectorizer(ProcessingUnit):
     # pylint: disable=protected-access
     def limit_vocabulary(self, ngrams):
         """Set the vectorizer vocabulary by limiting it to the given ngrams
+
             Args:
              ngrams (iterable of str or tuples of str): ngrams to keep
 
             Returns:
-                .TfidfVectorizer: the vectorizer with limited vocabulary
+                :class:`.TfidfVectorizer`: The vectorizer with limited
+                vocabulary
         """
         try:
             check_is_fitted(self._tfidf_vectorizer, "vocabulary_")
@@ -541,11 +583,12 @@ class TfidfVectorizer(ProcessingUnit):
 
 @ProcessingUnit.register("cooccurrence_vectorizer")
 class CooccurrenceVectorizer(ProcessingUnit):
+    """Featurizer that takes utterances and extracts ordered word cooccurrence
+     features matrix from them"""
+
     config_type = CooccurrenceVectorizerConfig
 
     def __init__(self, config=None, **shared):
-        if config is None:
-            config = CooccurrenceVectorizerConfig()
         super(CooccurrenceVectorizer, self).__init__(config, **shared)
         self._word_pairs = None
         self._language = None
@@ -559,12 +602,13 @@ class CooccurrenceVectorizer(ProcessingUnit):
         then the vectorizer will only look in a context window of
         self.config.window_size after each word.
 
-            Args:
-             x (iterable): iterable of 3-tuples of the form
-              (tokenized_utterances, builtin_entities, custom_entities)
-             language (str): language used in the utterances
-            Returns:
-             self: the fitted CooccurrenceVectorizer
+        Args:
+            x (iterable): iterable of 3-tuples of the form
+                (tokenized_utterances, builtin_entities, custom_entities)
+            language (str): language used in the utterances
+
+        Returns:
+            :class:`.CooccurrenceVectorizer`: The fitted vectorizer
         """
         self._language = language
         utterances = self._preprocess(list(x))
@@ -585,7 +629,19 @@ class CooccurrenceVectorizer(ProcessingUnit):
         return self.word_pairs is not None
 
     def fit_transform(self, x, language):
-        """Fits the vectorizer and returns the feature matrix"""
+        """Fits the vectorizer and returns the feature matrix
+
+        Args:
+            x (iterable): iterable of 3-tuples of the form
+                (tokenized_utterances, builtin_entities, custom_entities)
+            language (str): language used in the utterances
+
+        Returns:
+            :class:`.scipy.sparse.csr_matrix`: A sparse matrix X of shape
+            (len(x), len(self.word_pairs)) where
+            X[i, j] = 1.0 if x[i][0] contains the words cooccurrence
+            (w1, w2) and if self.word_pairs[(w1, w2)] = j
+        """
         return self.fit(x, language).transform(x)
 
     def _preprocess(self, x):
@@ -615,12 +671,13 @@ class CooccurrenceVectorizer(ProcessingUnit):
     def transform(self, x):
         """Computes the cooccurrence feature matrix.
             Args:
-             x (iterable): iterable of 3-tuples of the form
-              (tokenized_utterances, builtin_entities, custom_entities)
+                x (iterable): iterable of 3-tuples of the form
+                (tokenized_utterances, builtin_entities, custom_entities)
             Returns:
-             A sparse matrix X of shape (len(x), len(self.word_pairs)) where
-             X[i, j] = 1.0 if x[i][0] contains the contains the words
-             cooccurrence (w1, w2) and if self.word_paris[(w1, w2)] = j
+                :class:`.scipy.sparse.csr_matrix`: A sparse matrix X of shape
+                (len(x), len(self.word_pairs)) where
+                X[i, j] = 1.0 if x[i][0] contains the words cooccurrence
+                (w1, w2) and if self.word_pairs[(w1, w2)] = j
         """
         if self.word_pairs is None:
             raise NotTrained("CooccurrenceVectorizer must be fitted")
@@ -653,15 +710,16 @@ class CooccurrenceVectorizer(ProcessingUnit):
         return self._word_pairs
 
     def limit_word_pairs(self, word_pairs):
-        """
-        Set the vectorizer word_pairs to be equal to the by limiting it to the
-         given word_pairs
+        """Set the vectorizer word_pairs to be equal to the by limiting it to
+        the given word_pairs
+
             Args:
                 word_pairs (iterable of 2-tuples (str, str)): word_pairs to
-                 keep
+                    keep
 
             Returns:
-                .CooccurrenceVectorizer: the vectorizer with limited word pairs
+                :class:`.CooccurrenceVectorizer`: The vectorizer with limited
+                word pairs
         """
 
         if self._word_pairs is None:

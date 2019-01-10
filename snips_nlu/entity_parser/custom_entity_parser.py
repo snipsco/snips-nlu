@@ -134,10 +134,10 @@ def _create_custom_entity_parser_configuration(entities):
                         {
                             "raw_value": k,
                             "resolved_value": v
-                        } for k, v in iteritems(entity[UTTERANCES])
+                        } for k, v in sorted(iteritems(entity[UTTERANCES]))
                     ]
                 }
-            } for entity_name, entity in iteritems(entities)
+            } for entity_name, entity in sorted(iteritems(entities))
         ]
     }
 

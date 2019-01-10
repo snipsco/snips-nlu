@@ -15,7 +15,7 @@ from snips_nlu.common.utils import (
     check_persisted_path, fitted_required, json_string)
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
-    ENTITIES, ENTITY, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE, RES_ENTITY,
+    ENTITIES, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE, RES_ENTITY,
     RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE, RES_PROBA, RES_SLOTS,
     RES_VALUE)
 from snips_nlu.dataset import validate_and_format_dataset

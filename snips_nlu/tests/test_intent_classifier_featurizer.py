@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 import io
+from builtins import str, zip
 
 import numpy as np
-from builtins import str, zip
 from mock import patch
 from snips_nlu_utils import normalize
 
@@ -93,7 +93,7 @@ utterances:
         self.assertTrue(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-                self.tmp_file_path / "cooccurrence_vectorizer")
+            self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertTrue(cooccurrence_vectorizer_path.exists())
 
     def test_should_be_serializable_before_fit(self):
@@ -128,7 +128,7 @@ utterances:
         self.assertFalse(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-                self.tmp_file_path / "cooccurrence_vectorizer")
+            self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertFalse(cooccurrence_vectorizer_path.exists())
 
     @patch("snips_nlu.intent_classifier.featurizer.TfidfVectorizer.from_path")
@@ -144,7 +144,6 @@ utterances:
         config = FeaturizerConfig()
 
         builtin_scope = ["snips/datetime"]
-        none_class_ix = 2
         featurizer_dict = {
             "language_code": language,
             "tfidf_vectorizer": "tfidf_vectorizer",
@@ -311,12 +310,13 @@ values:
         }
 
         expected_data = [
-            (u_0,
-             "hello world entity_2",
-             [num_0],
-             [ent_0],
-             []
-             ),
+            (
+                u_0,
+                "hello world entity_2",
+                [num_0],
+                [ent_0],
+                []
+            ),
             (
                 u_1,
                 "beauty world ent 1",

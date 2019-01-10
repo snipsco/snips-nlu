@@ -475,4 +475,3 @@ def _deduplicate_overlapping_slots(slots, language):
 def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(
         tokenize_light(entity_label, language)).upper()
-

@@ -394,8 +394,6 @@ utterances:
     def test_empty_vocabulary_should_fit_and_return_none_intent(
             self, mocked_build_training):
         # Given
-        language = LANGUAGE_EN
-
         dataset_stream = io.StringIO("""
 ---
 type: intent

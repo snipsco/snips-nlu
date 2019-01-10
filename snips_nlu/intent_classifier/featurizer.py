@@ -1,13 +1,13 @@
 from __future__ import division, unicode_literals
 
 import json
+from builtins import str, zip
 from copy import deepcopy
+from pathlib import Path
 
+from future.utils import iteritems
 import numpy as np
 import scipy.sparse as sp
-from builtins import str, zip
-from future.utils import iteritems
-from pathlib import Path
 from scipy.sparse import dok_matrix, hstack
 from sklearn.exceptions import NotFittedError as SklearnNotFittedError
 from sklearn.feature_extraction.text import (
@@ -523,17 +523,17 @@ class TfidfVectorizer(ProcessingUnit):
     def persist(self, path):
         path = Path(path)
 
-        _vectorizer = None
+        vectorizer_ = None
         if self._tfidf_vectorizer is not None:
             vocab = {k: int(v) for k, v in iteritems(self.vocabulary)}
             idf_diag = self.idf_diag.tolist()
-            _vectorizer = {
+            vectorizer_ = {
                 "vocab": vocab,
                 "idf_diag": idf_diag
             }
 
         self_as_dict = {
-            "vectorizer": _vectorizer,
+            "vectorizer": vectorizer_,
             "language_code": self.language,
             "config": self.config.to_dict(),
         }
@@ -556,10 +556,10 @@ class TfidfVectorizer(ProcessingUnit):
         vectorizer = cls(vectorizer_dict["config"], **shared)
         vectorizer._language = vectorizer_dict["language_code"]
 
-        _vectorizer = vectorizer_dict["vectorizer"]
-        if _vectorizer:
-            vocab = _vectorizer["vocab"]
-            idf_diag_data = _vectorizer["idf_diag"]
+        vectorizer_ = vectorizer_dict["vectorizer"]
+        if vectorizer_:
+            vocab = vectorizer_["vocab"]
+            idf_diag_data = vectorizer_["idf_diag"]
             idf_diag_data = np.array(idf_diag_data)
 
             idf_diag_shape = (len(idf_diag_data), len(idf_diag_data))
@@ -571,13 +571,13 @@ class TfidfVectorizer(ProcessingUnit):
             tfidf_transformer = TfidfTransformer()
             tfidf_transformer._idf_diag = idf_diag
 
-            _vectorizer = SklearnTfidfVectorizer(
+            vectorizer_ = SklearnTfidfVectorizer(
                 tokenizer=lambda x: tokenize_light(x, vectorizer._language))
-            _vectorizer.vocabulary_ = vocab
+            vectorizer_.vocabulary_ = vocab
 
-            _vectorizer._tfidf = tfidf_transformer
+            vectorizer_._tfidf = tfidf_transformer
 
-        vectorizer._tfidf_vectorizer = _vectorizer
+        vectorizer._tfidf_vectorizer = vectorizer_
         return vectorizer
 
 
@@ -776,6 +776,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
         self.persist_metadata(path)
 
     @classmethod
+    # pylint: disable=protected-access
     def from_path(cls, path, **shared):
         path = Path(path)
         vectorizer_path = path / "vectorizer.json"

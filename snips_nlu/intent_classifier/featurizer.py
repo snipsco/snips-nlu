@@ -483,8 +483,8 @@ class TfidfVectorizer(ProcessingUnit):
         extra_values = ngrams - existing_ngrams
 
         if extra_values:
-            raise ValueError("Invalid ngrams %s, expected values in %s"
-                             % (sorted(extra_values), sorted(existing_ngrams)))
+            raise ValueError("Invalid ngrams %s, expected values in word_pairs"
+                             % sorted(extra_values))
 
         new_ngrams, new_index = zip(*sorted(
             (ng, self.vocabulary[ng]) for ng in ngrams))
@@ -732,9 +732,8 @@ class CooccurrenceVectorizer(ProcessingUnit):
 
         if extra_values:
             raise ValueError(
-                "Invalid word pairs %s, expected values in %s"
-                % (sorted(extra_values), sorted(existing_pairs))
-            )
+                "Invalid word pairs %s, expected values in word_pairs"
+                % sorted(extra_values))
 
         self._word_pairs = {
             ng: new_i for new_i, ng in enumerate(sorted(word_pairs))

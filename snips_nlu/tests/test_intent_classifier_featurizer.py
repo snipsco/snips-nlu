@@ -1008,14 +1008,8 @@ class CooccurrenceVectorizerTest(FixtureTest):
         }
 
         # When / Then
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(ValueError):
             vectorizer.limit_word_pairs([("a", "f")])
-
-        self.assertEqual(
-            str(ctx.exception),
-            "Invalid word pairs [(u'a', u'f')], expected values in"
-            " [(u'a', u'b'), (u'a', u'c'), (u'a', u'd'), (u'a', u'e')]"
-        )
 
 
 class TestTfidfVectorizer(FixtureTest):
@@ -1214,9 +1208,5 @@ class TestTfidfVectorizer(FixtureTest):
 
         # When / Then
         kept_indexes = ["7", "8"]
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(ValueError):
             vectorizer.limit_vocabulary(kept_indexes)
-
-        expected_ctx = "Invalid ngrams [u'7', u'8'], expected values" \
-                       " in [u'5', u'55', u'6', u'66', u'666']"
-        self.assertEqual(expected_ctx, str(ctx.exception))

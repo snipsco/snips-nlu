@@ -134,13 +134,6 @@ Or simply:
 
     snips-nlu download en
 
-Once the resources have been fetched, they can be loaded in Python using:
-
-.. code-block:: python
-
-    from snips_nlu import load_resources
-
-    load_resources("en")
 
 The list of supported languages is available at 
 `this address <https://snips-nlu.readthedocs.io/en/latest/languages.html>`_.
@@ -183,11 +176,10 @@ installed `snips-nlu`, fetched the english resources and downloaded one of the `
     >>> from __future__ import unicode_literals, print_function
     >>> import io
     >>> import json
-    >>> from snips_nlu import SnipsNLUEngine, load_resources
+    >>> from snips_nlu import SnipsNLUEngine
     >>> from snips_nlu.default_configs import CONFIG_EN
     >>> with io.open("sample_datasets/lights_dataset.json") as f:
     ...     sample_dataset = json.load(f)
-    >>> load_resources("en")
     >>> nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
     >>> nlu_engine = nlu_engine.fit(sample_dataset)
     >>> text = "Please turn the light on in the kitchen"

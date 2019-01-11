@@ -5,7 +5,8 @@ from builtins import next, range
 import numpy as np
 from mock import patch
 
-from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu import load_resources
+from snips_nlu.constants import LANGUAGE_EN, STOP_WORDS
 from snips_nlu.data_augmentation import (
     capitalize, capitalize_utterances, generate_utterance,
     get_contexts_iterator, get_entities_iterators)
@@ -185,17 +186,12 @@ class TestDataAugmentation(SnipsTest):
         }
         self.assertEqual(expected_utterance, utterance)
 
-    @patch("snips_nlu.data_augmentation.get_stop_words")
-    def test_capitalize(self, mocked_get_stop_words):
+    def test_capitalize(self):
         # Given
         language = LANGUAGE_EN
-
-        def mock_get_stop_words(lang):
-            if lang == LANGUAGE_EN:
-                return {"the", "and", "you"}
-            return {}
-
-        mocked_get_stop_words.side_effect = mock_get_stop_words
+        resources = {
+            STOP_WORDS: {"the", "and", "you"}
+        }
 
         texts = [
             ("the new yorker", "the New Yorker"),
@@ -204,24 +200,20 @@ class TestDataAugmentation(SnipsTest):
         ]
 
         # When
-        capitalized_texts = [capitalize(text[0], language) for text in texts]
+        capitalized_texts = [capitalize(text[0], language, resources)
+                             for text in texts]
 
         # Then
         expected_capitalized_texts = [text[1] for text in texts]
         self.assertSequenceEqual(capitalized_texts, expected_capitalized_texts)
 
-    @patch("snips_nlu.data_augmentation.get_stop_words")
-    def test_should_capitalize_only_right_entities(
-            self, mocked_get_stop_words):
+    def test_should_capitalize_only_right_entities(self):
         # Given
         language = LANGUAGE_EN
+        resources = {
+            STOP_WORDS: {"the", "and", "you"}
+        }
 
-        def mock_get_stop_words(lang):
-            if lang == LANGUAGE_EN:
-                return {"the", "and", "you"}
-            return {}
-
-        mocked_get_stop_words.side_effect = mock_get_stop_words
         ratio = 1
         entities = {
             "person": {
@@ -269,7 +261,7 @@ class TestDataAugmentation(SnipsTest):
 
         # When
         capitalized_utterances = capitalize_utterances(
-            utterances, entities, language, ratio, random_state)
+            utterances, entities, language, ratio, resources, random_state)
 
         # Then
         expected_utterances = [

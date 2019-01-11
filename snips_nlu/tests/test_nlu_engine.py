@@ -14,16 +14,12 @@ from snips_nlu.constants import (
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
 from snips_nlu.dataset import Dataset, validate_and_format_dataset
-from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
-from snips_nlu.entity_parser.custom_entity_parser_usage import \
-    CustomEntityParserUsage
 from snips_nlu.exceptions import (
     IntentNotFoundError, InvalidInputError, NotTrained)
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
     NLUEngineConfig, ProbabilisticIntentParserConfig)
-from snips_nlu.resources import clear_resources
 from snips_nlu.result import (
     custom_slot, empty_result, intent_classification_result, parsing_result,
     resolved_slot, unresolved_slot, extraction_result)
@@ -622,9 +618,7 @@ utterances:
                 }
             ]
         }
-        # pylint:disable=protected-access
-        self.assertDictEqual(dataset_metadata, engine._dataset_metadata)
-        # pylint:enable=protected-access
+        self.assertDictEqual(dataset_metadata, engine.dataset_metadata)
         self.assertDictEqual(expected_engine_config, engine.config.to_dict())
         self.assertIsInstance(engine.intent_parsers[0], TestIntentParser1)
         self.assertIsInstance(engine.intent_parsers[1], TestIntentParser2)
@@ -738,12 +732,7 @@ utterances:
 
         # When
         engine_bytes = engine.to_byte_array()
-        builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
-        custom_entity_parser = CustomEntityParser.build(
-            dataset, parser_usage=CustomEntityParserUsage.WITHOUT_STEMS)
-        loaded_engine = SnipsNLUEngine.from_byte_array(
-            engine_bytes, builtin_entity_parser=builtin_entity_parser,
-            custom_entity_parser=custom_entity_parser)
+        loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
         result = loaded_engine.parse("Make me two cups of coffee")
 
         # Then
@@ -771,7 +760,6 @@ utterances:
         engine.persist(dir_temp_engine)
 
         # When
-        clear_resources()
         loaded_engine = SnipsNLUEngine.from_path(dir_temp_engine)
         shutil.rmtree(str(dir_temp_engine))
 

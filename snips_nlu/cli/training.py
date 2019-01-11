@@ -6,7 +6,7 @@ from pathlib import Path
 
 import plac
 
-from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli.utils import set_nlu_logger
 
 
@@ -29,7 +29,6 @@ def train(dataset_path, output_path, config_path, verbose):
         with Path(config_path).open("r", encoding="utf8") as f:
             config = json.load(f)
 
-    load_resources(dataset["language"])
     print("Create and train the engine...")
     engine = SnipsNLUEngine(config).fit(dataset)
 

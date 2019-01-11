@@ -17,7 +17,7 @@ from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
     ENTITIES, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE, RES_ENTITY,
     RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE, RES_PROBA, RES_SLOTS,
-    RES_VALUE)
+    RES_VALUE, RESOURCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
@@ -64,7 +64,7 @@ class SnipsNLUEngine(ProcessingUnit):
         super(SnipsNLUEngine, self).__init__(config, **shared)
         self.intent_parsers = []
         """list of :class:`.IntentParser`"""
-        self._dataset_metadata = None
+        self.dataset_metadata = None
 
     @classmethod
     def default_config(cls):
@@ -75,7 +75,7 @@ class SnipsNLUEngine(ProcessingUnit):
     @property
     def fitted(self):
         """Whether or not the nlu engine has already been fitted"""
-        return self._dataset_metadata is not None
+        return self.dataset_metadata is not None
 
     @log_elapsed_time(
         logger, logging.INFO, "Fitted NLU engine in {elapsed_time}")
@@ -91,15 +91,15 @@ class SnipsNLUEngine(ProcessingUnit):
             The same object, trained.
         """
         dataset = validate_and_format_dataset(dataset)
-        self._dataset_metadata = _get_dataset_metadata(dataset)
         if self.config is None:
-            language = self._dataset_metadata["language_code"]
+            language = dataset[LANGUAGE]
             default_config = DEFAULT_CONFIGS.get(language)
             if default_config is not None:
                 self.config = self.config_type.from_dict(default_config)
             else:
                 self.config = self.config_type()
 
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
 
@@ -112,15 +112,18 @@ class SnipsNLUEngine(ProcessingUnit):
                     recycled_parser = parser
                     break
             if recycled_parser is None:
-                recycled_parser = IntentParser.from_config(parser_config)
+                recycled_parser = IntentParser.from_config(
+                    parser_config,
+                    builtin_entity_parser=self.builtin_entity_parser,
+                    custom_entity_parser=self.custom_entity_parser,
+                    resources=self.resources)
 
-            recycled_parser.builtin_entity_parser = self.builtin_entity_parser
-            recycled_parser.custom_entity_parser = self.custom_entity_parser
             if force_retrain or not recycled_parser.fitted:
                 recycled_parser.fit(dataset, force_retrain)
             parsers.append(recycled_parser)
 
         self.intent_parsers = parsers
+        self.dataset_metadata = _get_dataset_metadata(dataset)
         return self
 
     @log_elapsed_time(logger, logging.DEBUG, "Parsed input in {elapsed_time}")
@@ -280,7 +283,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
         model = {
             "unit_name": self.unit_name,
-            "dataset_metadata": self._dataset_metadata,
+            "dataset_metadata": self.dataset_metadata,
             "intent_parsers": intent_parsers,
             "custom_entity_parser": custom_entity_parser,
             "builtin_entity_parser": builtin_entity_parser,
@@ -297,11 +300,11 @@ class SnipsNLUEngine(ProcessingUnit):
         if self.fitted:
             required_resources = self.config.get_required_resources()
             if required_resources:
-                language = self._dataset_metadata["language_code"]
+                language = self.dataset_metadata["language_code"]
                 resources_path = directory_path / "resources"
                 resources_path.mkdir()
-                persist_resources(resources_path / language,
-                                  required_resources, language)
+                persist_resources(self.resources, resources_path / language,
+                                  required_resources)
 
     @classmethod
     def from_path(cls, path, **shared):
@@ -311,8 +314,7 @@ class SnipsNLUEngine(ProcessingUnit):
         :func:`~SnipsNLUEngine.persist`
 
         Args:
-            path (str): The path where the nlu engine is
-                stored.
+            path (str): The path where the nlu engine is stored
         """
         directory_path = Path(path)
         model_path = directory_path / "nlu_engine.json"
@@ -329,11 +331,12 @@ class SnipsNLUEngine(ProcessingUnit):
                 % (model_version, __model_version__))
 
         dataset_metadata = model["dataset_metadata"]
-        if dataset_metadata is not None:
+        if shared.get(RESOURCES) is None and dataset_metadata is not None:
             language = dataset_metadata["language_code"]
             resources_dir = directory_path / "resources" / language
             if resources_dir.is_dir():
-                load_resources_from_dir(resources_dir)
+                resources = load_resources_from_dir(resources_dir)
+                shared[RESOURCES] = resources
 
         if shared.get(BUILTIN_ENTITY_PARSER) is None:
             path = model["builtin_entity_parser"]
@@ -351,10 +354,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
         config = cls.config_type.from_dict(model["config"])
         nlu_engine = cls(config=config, **shared)
-
-        # pylint:disable=protected-access
-        nlu_engine._dataset_metadata = dataset_metadata
-        # pylint:enable=protected-access
+        nlu_engine.dataset_metadata = dataset_metadata
         intent_parsers = []
         for parser_idx, parser_name in enumerate(model["intent_parsers"]):
             parser_config = config.intent_parsers_configs[parser_idx]
@@ -393,7 +393,7 @@ class SnipsNLUEngine(ProcessingUnit):
                 parser = self.custom_entity_parser
                 slot_builder = custom_slot
                 use_cache = True
-                extensible = self._dataset_metadata[ENTITIES][entity_name][
+                extensible = self.dataset_metadata[ENTITIES][entity_name][
                     AUTOMATICALLY_EXTENSIBLE]
 
             resolved_slot = None

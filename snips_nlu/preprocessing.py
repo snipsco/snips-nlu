@@ -9,19 +9,19 @@ from snips_nlu_utils import (
 from snips_nlu.resources import get_stems
 
 
-def stem(string, language):
+def stem(string, language, resources):
     normalized_string = normalize(string)
     tokens = tokenize_light(normalized_string, language)
-    stemmed_tokens = [_stem(token, language) for token in tokens]
+    stemmed_tokens = [_stem(token, resources) for token in tokens]
     return " ".join(stemmed_tokens)
 
 
-def stem_token(token, language):
+def stem_token(token, resources):
     if token.stemmed_value:
         return token.stemmed_value
     if not token.normalized_value:
         token.normalized_value = normalize(token.value)
-    token.stemmed_value = _stem(token.normalized_value, language)
+    token.stemmed_value = _stem(token.normalized_value, resources)
     return token.stemmed_value
 
 
@@ -32,8 +32,8 @@ def normalize_token(token):
     return token.normalized_value
 
 
-def _stem(string, language):
-    return get_stems(language).get(string, string)
+def _stem(string, resources):
+    return get_stems(resources).get(string, string)
 
 
 class Token(object):

@@ -6,10 +6,9 @@ from builtins import str, zip, range
 
 import numpy as np
 from mock import patch, MagicMock
-from snips_nlu_utils import normalize
 
 from snips_nlu.common.utils import json_string
-from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.constants import LANGUAGE_EN, STEMS, WORD_CLUSTERS, STOP_WORDS
 from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
@@ -19,31 +18,11 @@ from snips_nlu.intent_classifier.featurizer import (
     CooccurrenceVectorizer, Featurizer, TfidfVectorizer)
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
-from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
     CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
-from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.tests.utils import (
     FixtureTest, get_empty_dataset, EntityParserMock)
-
-
-def _stem(t):
-    t = normalize(t)
-    if t == "beautiful":
-        s = "beauty"
-    elif t == "birdy":
-        s = "bird"
-    elif t == "entity":
-        s = "ent"
-    else:
-        s = t
-    return s
-
-
-def stem_function(text, language):
-    return get_default_sep(language).join(
-        [_stem(t) for t in tokenize_light(text, language)])
 
 
 # pylint: disable=protected-access
@@ -92,7 +71,7 @@ utterances:
         self.assertTrue(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-            self.tmp_file_path / "cooccurrence_vectorizer")
+                self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertTrue(cooccurrence_vectorizer_path.exists())
 
     def test_should_be_serializable_before_fit(self):
@@ -125,7 +104,7 @@ utterances:
         self.assertFalse(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-            self.tmp_file_path / "cooccurrence_vectorizer")
+                self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertFalse(cooccurrence_vectorizer_path.exists())
 
     @patch("snips_nlu.intent_classifier.featurizer.TfidfVectorizer.from_path")
@@ -534,22 +513,24 @@ class TestTfidfVectorizer(FixtureTest):
         with self.assertRaises(ValueError):
             vectorizer.limit_vocabulary(kept_indexes)
 
-    @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
-    @patch("snips_nlu.intent_classifier.featurizer.stem")
-    @patch("snips_nlu.entity_parser.custom_entity_parser.stem")
-    def test_preprocess(self, mocked_parser_stem, mocked_featurizer_stem,
-                        mocked_word_cluster):
+    def test_preprocess(self):
         # Given
         language = LANGUAGE_EN
-
-        mocked_word_cluster.return_value = {
-            "beautiful": "cluster_1",
-            "birdy": "cluster_2",
-            "entity": "cluster_3"
+        resources = {
+            STEMS: {
+                "beautiful": "beauty",
+                "birdy": "bird",
+                "entity": "ent"
+            },
+            WORD_CLUSTERS: {
+                "my_word_clusters": {
+                    "beautiful": "cluster_1",
+                    "birdy": "cluster_2",
+                    "entity": "cluster_3"
+                }
+            },
+            STOP_WORDS: set()
         }
-
-        mocked_parser_stem.side_effect = stem_function
-        mocked_featurizer_stem.side_effect = stem_function
 
         dataset_stream = io.StringIO("""
 ---
@@ -582,7 +563,7 @@ values:
         dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITH_STEMS)
+            dataset, CustomEntityParserUsage.WITH_STEMS, resources)
 
         builtin_entity_parser = BuiltinEntityParser.build(dataset, language)
         utterances = [
@@ -593,11 +574,12 @@ values:
         ]
 
         config = TfidfVectorizerConfig(
-            use_stemming=True, word_clusters_name="brown_clusters")
+            use_stemming=True, word_clusters_name="my_word_clusters")
         vectorizer = TfidfVectorizer(
+            config=config,
             custom_entity_parser=custom_entity_parser,
             builtin_entity_parser=builtin_entity_parser,
-            config=config)
+            resources=resources)
         vectorizer._language = language
         vectorizer.builtin_entity_scope = {"snips/number"}
 
@@ -705,20 +687,24 @@ values:
 
         self.assertSequenceEqual(expected_data, processed_data)
 
-    @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
-    @patch("snips_nlu.intent_classifier.featurizer.stem")
-    def test_preprocess_for_training(self, mocked_featurizer_stem,
-                                     mocked_word_cluster):
+    def test_preprocess_for_training(self):
         # Given
         language = LANGUAGE_EN
-
-        mocked_word_cluster.return_value = {
-            "beautiful": "cluster_1",
-            "birdy": "cluster_2",
-            "entity": "cluster_3"
+        resources = {
+            STEMS: {
+                "beautiful": "beauty",
+                "birdy": "bird",
+                "entity": "ent"
+            },
+            WORD_CLUSTERS: {
+                "my_word_clusters": {
+                    "beautiful": "cluster_1",
+                    "birdy": "cluster_2",
+                    "entity": "cluster_3"
+                }
+            },
+            STOP_WORDS: set()
         }
-
-        mocked_featurizer_stem.side_effect = stem_function
 
         dataset_stream = io.StringIO("""
 ---
@@ -750,7 +736,7 @@ values:
         dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITH_STEMS)
+            dataset, CustomEntityParserUsage.WITH_STEMS, resources)
 
         builtin_entity_parser = BuiltinEntityParser.build(dataset, language)
         utterances = [
@@ -816,17 +802,17 @@ values:
         ]
 
         config = TfidfVectorizerConfig(
-            use_stemming=True, word_clusters_name="brown_clusters")
+            use_stemming=True, word_clusters_name="my_word_clusters")
         vectorizer = TfidfVectorizer(
+            config=config,
             custom_entity_parser=custom_entity_parser,
             builtin_entity_parser=builtin_entity_parser,
-            config=config
+            resources=resources
         )
         vectorizer._language = language
 
         # When
-        processed_data = vectorizer._preprocess(
-            utterances, training=True)
+        processed_data = vectorizer._preprocess(utterances, training=True)
         processed_data = list(zip(*processed_data))
 
         # Then
@@ -1258,22 +1244,24 @@ class CooccurrenceVectorizerTest(FixtureTest):
         with self.assertRaises(ValueError):
             vectorizer.limit_word_pairs([("a", "f")])
 
-    @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
-    @patch("snips_nlu.intent_classifier.featurizer.stem")
-    @patch("snips_nlu.entity_parser.custom_entity_parser.stem")
-    def test_preprocess(self, mocked_parser_stem, mocked_featurizer_stem,
-                        mocked_word_cluster):
+    def test_preprocess(self):
         # Given
         language = LANGUAGE_EN
-
-        mocked_word_cluster.return_value = {
-            "beautiful": "cluster_1",
-            "birdy": "cluster_2",
-            "entity": "cluster_3"
+        resources = {
+            STEMS: {
+                "beautiful": "beauty",
+                "birdy": "bird",
+                "entity": "ent"
+            },
+            WORD_CLUSTERS: {
+                "my_word_clusters": {
+                    "beautiful": "cluster_1",
+                    "birdy": "cluster_2",
+                    "entity": "cluster_3"
+                }
+            },
+            STOP_WORDS: set()
         }
-
-        mocked_parser_stem.side_effect = stem_function
-        mocked_featurizer_stem.side_effect = stem_function
 
         dataset_stream = io.StringIO("""
 ---
@@ -1306,7 +1294,7 @@ values:
         dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
+            dataset, CustomEntityParserUsage.WITHOUT_STEMS, resources)
 
         builtin_entity_parser = BuiltinEntityParser.build(dataset, language)
         u_0 = text_to_utterance("hÉllo wOrld Éntity_2")
@@ -1317,9 +1305,10 @@ values:
 
         config = CooccurrenceVectorizerConfig()
         vectorizer = CooccurrenceVectorizer(
+            config=config,
             custom_entity_parser=custom_entity_parser,
             builtin_entity_parser=builtin_entity_parser,
-            config=config
+            resources=resources
         )
 
         vectorizer._language = language
@@ -1391,20 +1380,24 @@ values:
 
         self.assertSequenceEqual(expected_data, processed_data)
 
-    @patch("snips_nlu.intent_classifier.featurizer.get_word_cluster")
-    @patch("snips_nlu.intent_classifier.featurizer.stem")
-    def test_preprocess_for_training(self, mocked_featurizer_stem,
-                                     mocked_word_cluster):
+    def test_preprocess_for_training(self):
         # Given
         language = LANGUAGE_EN
-
-        mocked_word_cluster.return_value = {
-            "beautiful": "cluster_1",
-            "birdy": "cluster_2",
-            "entity": "cluster_3"
+        resources = {
+            STEMS: {
+                "beautiful": "beauty",
+                "birdy": "bird",
+                "entity": "ent"
+            },
+            WORD_CLUSTERS: {
+                "my_word_clusters": {
+                    "beautiful": "cluster_1",
+                    "birdy": "cluster_2",
+                    "entity": "cluster_3"
+                }
+            },
+            STOP_WORDS: set()
         }
-
-        mocked_featurizer_stem.side_effect = stem_function
 
         dataset_stream = io.StringIO("""
 ---
@@ -1437,7 +1430,7 @@ values:
         dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
+            dataset, CustomEntityParserUsage.WITHOUT_STEMS, resources)
 
         builtin_entity_parser = BuiltinEntityParser.build(dataset, language)
         utterances = [
@@ -1497,9 +1490,11 @@ values:
 
         config = CooccurrenceVectorizerConfig()
         vectorizer = CooccurrenceVectorizer(
+            config=config,
             custom_entity_parser=custom_entity_parser,
             builtin_entity_parser=builtin_entity_parser,
-            config=config)
+            resources=resources
+        )
         vectorizer._language = language
 
         # When

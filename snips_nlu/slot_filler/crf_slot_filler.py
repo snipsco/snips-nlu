@@ -14,6 +14,14 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
+from snips_nlu.common.dataset_utils import get_slot_name_mapping
+from snips_nlu.common.dict_utils import UnupdatableDict
+from snips_nlu.common.io_utils import mkdir_p
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
+from snips_nlu.common.utils import (
+    check_persisted_path,
+    check_random_state, fitted_required, json_string,
+    ranges_overlap)
 from snips_nlu.constants import (
     DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
     RES_MATCH_RANGE, RES_VALUE, START)
@@ -28,14 +36,6 @@ from snips_nlu.slot_filler.crf_utils import (
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.common.utils import (
-    check_persisted_path,
-    check_random_state, fitted_required, json_string,
-    ranges_overlap)
-from snips_nlu.common.dataset_utils import get_slot_name_mapping
-from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
-from snips_nlu.common.io_utils import mkdir_p
-from snips_nlu.common.dict_utils import UnupdatableDict
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class CRFSlotFiller(SlotFiller):
         super(CRFSlotFiller, self).__init__(config, **shared)
         self.crf_model = None
         self.features_factories = [
-            CRFFeatureFactory.from_config(conf)
+            CRFFeatureFactory.from_config(conf, **shared)
             for conf in self.config.feature_factory_configs]
         self._features = None
         self.language = None
@@ -70,8 +70,7 @@ class CRFSlotFiller(SlotFiller):
             self._features = []
             feature_names = set()
             for factory in self.features_factories:
-                for feature in factory.build_features(
-                        self.builtin_entity_parser, self.custom_entity_parser):
+                for feature in factory.build_features():
                     if feature.name in feature_names:
                         raise KeyError("Duplicated feature: %s" % feature.name)
                     feature_names.add(feature.name)
@@ -113,8 +112,15 @@ class CRFSlotFiller(SlotFiller):
         """
         logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
+
+        for factory in self.features_factories:
+            factory.custom_entity_parser = self.custom_entity_parser
+            factory.builtin_entity_parser = self.builtin_entity_parser
+            factory.resources = self.resources
+
         self.language = dataset[LANGUAGE]
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
@@ -126,7 +132,7 @@ class CRFSlotFiller(SlotFiller):
         random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
             dataset, self.intent, language=self.language,
-            random_state=random_state,
+            resources=self.resources, random_state=random_state,
             **self.config.data_augmentation_config.to_dict())
 
         crf_samples = [

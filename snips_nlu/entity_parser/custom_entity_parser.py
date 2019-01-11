@@ -74,7 +74,7 @@ class CustomEntityParser(EntityParser):
         return cls(parser, language, parser_usage)
 
     @classmethod
-    def build(cls, dataset, parser_usage):
+    def build(cls, dataset, parser_usage, resources):
         from snips_nlu.dataset import validate_and_format_dataset
 
         dataset = validate_and_format_dataset(dataset)
@@ -87,13 +87,13 @@ class CustomEntityParser(EntityParser):
         if parser_usage == CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS:
             for ent in viewvalues(custom_entities):
                 stemmed_utterances = _stem_entity_utterances(
-                    ent[UTTERANCES], language)
+                    ent[UTTERANCES], language, resources)
                 ent[UTTERANCES] = _merge_entity_utterances(
                     ent[UTTERANCES], stemmed_utterances)
         elif parser_usage == CustomEntityParserUsage.WITH_STEMS:
             for ent in viewvalues(custom_entities):
                 ent[UTTERANCES] = _stem_entity_utterances(
-                    ent[UTTERANCES], language)
+                    ent[UTTERANCES], language, resources)
         elif parser_usage is None:
             raise ValueError("A parser usage must be defined in order to fit "
                              "a CustomEntityParser")
@@ -103,12 +103,12 @@ class CustomEntityParser(EntityParser):
         return cls(parser, language, parser_usage)
 
 
-def _stem_entity_utterances(entity_utterances, language):
+def _stem_entity_utterances(entity_utterances, language, resources):
     values = dict()
     # Sort by resolved value, so that values conflict in a deterministic way
     for raw_value, resolved_value in sorted(
             iteritems(entity_utterances), key=operator.itemgetter(1)):
-        stemmed_value = stem(raw_value, language)
+        stemmed_value = stem(raw_value, language, resources)
         if stemmed_value not in values:
             values[stemmed_value] = resolved_value
     return values

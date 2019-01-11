@@ -30,7 +30,7 @@ from snips_nlu.pipeline.configs.intent_classifier import (
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (
-    get_stop_words, get_word_cluster)
+    get_stop_words, get_word_cluster, load_resources)
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 
 
@@ -746,11 +746,6 @@ class CooccurrenceVectorizer(ProcessingUnit):
         return self
 
 
-def _get_tokens_clusters(tokens, language, cluster_name):
-    clusters = get_word_cluster(language, cluster_name)
-    return [clusters[t] for t in tokens if t in clusters]
-
-
 def _entity_name_to_feature(entity_name, language):
     return "entityfeature%s" % "".join(tokenize_light(
         entity_name.lower(), language))
@@ -761,19 +756,19 @@ def _builtin_entity_to_feature(builtin_entity_label, language):
         builtin_entity_label.lower(), language))
 
 
-def _normalize_stem(text, language, use_stemming):
+def _normalize_stem(text, language, resources, use_stemming):
     if use_stemming:
-        return stem(text, language)
+        return stem(text, language, resources)
     return normalize(text)
 
 
-def _get_word_cluster_features(query_tokens, clusters_name, language):
+def _get_word_cluster_features(query_tokens, clusters_name, resources):
     if not clusters_name:
         return []
     ngrams = get_all_ngrams(query_tokens)
     cluster_features = []
     for ngram in ngrams:
-        cluster = get_word_cluster(language, clusters_name).get(
+        cluster = get_word_cluster(resources, clusters_name).get(
             ngram[NGRAM].lower(), None)
         if cluster is not None:
             cluster_features.append(cluster)

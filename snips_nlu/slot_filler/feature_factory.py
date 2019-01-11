@@ -13,7 +13,8 @@ from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
-    START, STEMS, WORD_CLUSTERS)
+    START, STEMS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER, BUILTIN_ENTITY_PARSER,
+    RESOURCES)
 from snips_nlu.dataset import (
     extract_intent_entities, get_dataset_gazetteer_entities)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
@@ -21,7 +22,7 @@ from snips_nlu.entity_parser.custom_entity_parser import \
     CustomEntityParserUsage
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
-from snips_nlu.resources import get_gazetteer, get_word_clusters
+from snips_nlu.resources import get_gazetteer, get_word_cluster
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
@@ -43,11 +44,14 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
     In addition, a 'drop_out' to use at training time can be specified.
     """
 
-    def __init__(self, factory_config):
+    def __init__(self, factory_config, **shared):
         self.factory_config = factory_config
+        self.resources = shared.get(RESOURCES)
+        self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
+        self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
 
     @classmethod
-    def from_config(cls, factory_config):
+    def from_config(cls, factory_config, **shared):
         """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
         config
 
@@ -56,7 +60,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
         """
         factory_name = factory_config["factory_name"]
         factory = cls.by_name(factory_name)
-        return factory(factory_config)
+        return factory(factory_config, **shared)
 
     @classproperty
     def name(cls):  # pylint:disable=no-self-argument
@@ -80,7 +84,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
         return self
 
     @abstractmethod
-    def build_features(self, builtin_entity_parser, custom_entity_parser):
+    def build_features(self):
         """Build a list of :class:`.Feature`"""
         pass
 
@@ -100,8 +104,7 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     def compute_feature(self, tokens, token_index):
         pass
 
-    def build_features(self, builtin_entity_parser=None,
-                       custom_entity_parser=None):
+    def build_features(self):
         return [
             Feature(
                 base_name=self.feature_name,
@@ -203,8 +206,8 @@ class NgramFactory(SingleFeatureFactory):
 
     """
 
-    def __init__(self, factory_config):
-        super(NgramFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(NgramFactory, self).__init__(factory_config, **shared)
         self.n = self.args["n"]
         if self.n < 1:
             raise ValueError("n should be >= 1")
@@ -227,7 +230,7 @@ class NgramFactory(SingleFeatureFactory):
             self.args["language_code"] = self.language
             if self.common_words_gazetteer_name is not None:
                 self.gazetteer = get_gazetteer(
-                    self.language, self.common_words_gazetteer_name)
+                    self.resources, self.common_words_gazetteer_name)
 
     @property
     def feature_name(self):
@@ -242,7 +245,7 @@ class NgramFactory(SingleFeatureFactory):
         if 0 <= token_index < max_len and end <= max_len:
             if self.gazetteer is None:
                 if self.use_stemming:
-                    stems = (stem_token(t, self.language)
+                    stems = (stem_token(t, self.resources)
                              for t in tokens[token_index:end])
                     return get_default_sep(self.language).join(stems)
                 normalized_values = (normalize_token(t)
@@ -251,7 +254,7 @@ class NgramFactory(SingleFeatureFactory):
             words = []
             for t in tokens[token_index:end]:
                 if self.use_stemming:
-                    value = stem_token(t, self.language)
+                    value = stem_token(t, self.resources)
                 else:
                     value = normalize_token(t)
                 words.append(value if value in self.gazetteer else "rare_word")
@@ -283,8 +286,8 @@ class ShapeNgramFactory(SingleFeatureFactory):
         -   'xX' -> None of the above
     """
 
-    def __init__(self, factory_config):
-        super(ShapeNgramFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(ShapeNgramFactory, self).__init__(factory_config, **shared)
         self.n = self.args["n"]
         if self.n < 1:
             raise ValueError("n should be >= 1")
@@ -332,39 +335,28 @@ class WordClusterFactory(SingleFeatureFactory):
     See https://en.wikipedia.org/wiki/Brown_clustering
     """
 
-    def __init__(self, factory_config):
-        super(WordClusterFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(WordClusterFactory, self).__init__(factory_config, **shared)
         self.cluster_name = self.args["cluster_name"]
-        self.cluster = None
-        self._language = None
-        self.language = self.args.get("language_code")
         self.use_stemming = self.args["use_stemming"]
+        self._cluster = None
+
+    @property
+    def cluster(self):
+        if self._cluster is None:
+            self._cluster = get_word_cluster(self.resources, self.cluster_name)
+        return self._cluster
 
     @property
     def feature_name(self):
         return "word_cluster_%s" % self.cluster_name
 
-    @property
-    def language(self):
-        return self._language
-
-    @language.setter
-    def language(self, value):
-        if value is not None:
-            self._language = value
-            self.cluster = get_word_clusters(self.language)[self.cluster_name]
-            self.args["language_code"] = self.language
-
-    def fit(self, dataset, intent):
-        self.language = dataset[LANGUAGE]
-
     def compute_feature(self, tokens, token_index):
         if self.use_stemming:
-            value = stem_token(tokens[token_index], self.language)
+            value = stem_token(tokens[token_index], self.resources)
         else:
             value = normalize_token(tokens[token_index])
-        cluster = get_word_clusters(self.language)[self.cluster_name]
-        return cluster.get(value, None)
+        return self.cluster.get(value, None)
 
     def get_required_resources(self):
         return {
@@ -389,25 +381,14 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
         allows to give more information about the match.
     """
 
-    def __init__(self, factory_config):
-        super(CustomEntityMatchFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(CustomEntityMatchFactory, self).__init__(factory_config,
+                                                       **shared)
         self.use_stemming = self.args["use_stemming"]
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
-        self._language = None
-        self.language = self.args.get("language_code")
         self._entities = None
         self.entities = self.args.get("entities")
-
-    @property
-    def language(self):
-        return self._language
-
-    @language.setter
-    def language(self, value):
-        if value is not None:
-            self._language = value
-            self.args["language_code"] = value
 
     @property
     def entities(self):
@@ -420,7 +401,6 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["entities"] = value
 
     def fit(self, dataset, intent):
-        self.language = dataset[LANGUAGE]
         self.entities = extract_intent_entities(
             dataset, lambda e: not is_builtin_entity(e))[intent]
         self.entities = list(self.entities)
@@ -428,7 +408,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
 
     def _transform(self, tokens):
         if self.use_stemming:
-            light_tokens = (stem_token(t, self.language) for t in tokens)
+            light_tokens = (stem_token(t, self.resources) for t in tokens)
         else:
             light_tokens = (normalize_token(t) for t in tokens)
         current_index = 0
@@ -442,14 +422,12 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             current_index = transformed_token.end + 1
         return transformed_tokens
 
-    def build_features(self, builtin_entity_parser=None,
-                       custom_entity_parser=None):
+    def build_features(self):
         features = []
         for entity_name in self.entities:
             # We need to call this wrapper in order to properly capture
             # `entity_name`
-            entity_match = self._build_entity_match_fn(
-                entity_name, custom_entity_parser)
+            entity_match = self._build_entity_match_fn(entity_name)
 
             for offset in self.offsets:
                 feature = Feature("entity_match_%s" % entity_name,
@@ -457,14 +435,14 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
                 features.append(feature)
         return features
 
-    def _build_entity_match_fn(self, entity, custom_entity_parser):
+    def _build_entity_match_fn(self, entity):
 
         def entity_match(tokens, token_index):
             transformed_tokens = self._transform(tokens)
             text = initial_string_from_tokens(transformed_tokens)
             token_start = transformed_tokens[token_index].start
             token_end = transformed_tokens[token_index].end
-            custom_entities = custom_entity_parser.parse(
+            custom_entities = self.custom_entity_parser.parse(
                 text, scope=[entity], use_cache=True)
             # only keep builtin entities (of type `entity`) which overlap with
             # the current token
@@ -510,8 +488,9 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
     match.
     """
 
-    def __init__(self, factory_config):
-        super(BuiltinEntityMatchFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(BuiltinEntityMatchFactory, self).__init__(factory_config,
+                                                        **shared)
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
         self.builtin_entities = None
@@ -534,14 +513,13 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         self.builtin_entities = self._get_builtin_entity_scope(dataset, intent)
         self.args["entity_labels"] = self.builtin_entities
 
-    def build_features(self, builtin_entity_parser, custom_entity_parser=None):
+    def build_features(self):
         features = []
 
         for builtin_entity in self.builtin_entities:
             # We need to call this wrapper in order to properly capture
             # `builtin_entity`
-            builtin_entity_match = self._build_entity_match_fn(
-                builtin_entity, builtin_entity_parser)
+            builtin_entity_match = self._build_entity_match_fn(builtin_entity)
             for offset in self.offsets:
                 feature_name = "builtin_entity_match_%s" % builtin_entity
                 feature = Feature(feature_name, builtin_entity_match, offset,
@@ -550,14 +528,14 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
         return features
 
-    def _build_entity_match_fn(self, builtin_entity, builtin_entity_parser):
+    def _build_entity_match_fn(self, builtin_entity):
 
         def builtin_entity_match(tokens, token_index):
             text = initial_string_from_tokens(tokens)
             start = tokens[token_index].start
             end = tokens[token_index].end
 
-            builtin_entities = builtin_entity_parser.parse(
+            builtin_entities = self.builtin_entity_parser.parse(
                 text, scope=[builtin_entity], use_cache=True)
             # only keep builtin entities (of type `builtin_entity`) which
             # overlap with the current token
@@ -592,11 +570,11 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 @deprecated(deprecated_in="0.18.1", removed_in="0.19.0",
             current_version=__version__,
             details="Use CRFFeatureFactory.from_config instead")
-def get_feature_factory(factory_config):
+def get_feature_factory(factory_config, **shared):
     """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
     config
 
     Raises:
         NotRegisteredError: when the factory is not registered
     """
-    return CRFFeatureFactory.from_config(factory_config)
+    return CRFFeatureFactory.from_config(factory_config, **shared)

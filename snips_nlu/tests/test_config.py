@@ -238,7 +238,8 @@ utterances:
             self.assertIsNotNone(config, "Missing default config for '%s'"
                                  % language)
             dataset[LANGUAGE] = language
-            engine = SnipsNLUEngine(config).fit(dataset)
+            shared = self.get_shared_data(dataset)
+            engine = SnipsNLUEngine(config, **shared).fit(dataset)
             result = engine.parse("Please give me the weather in Paris")
 
             # Then

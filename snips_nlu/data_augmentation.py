@@ -16,15 +16,16 @@ from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.resources import get_stop_words
 
 
-def capitalize(text, language):
+def capitalize(text, language, resources):
     tokens = tokenize_light(text, language)
-    stop_words = get_stop_words(language)
+    stop_words = get_stop_words(resources)
     return get_default_sep(language).join(
         t.title() if t.lower() not in stop_words
         else t.lower() for t in tokens)
 
 
-def capitalize_utterances(utterances, entities, language, ratio, random_state):
+def capitalize_utterances(utterances, entities, language, ratio, resources,
+                          random_state):
     capitalized_utterances = []
     for utterance in utterances:
         capitalized_utterance = deepcopy(utterance)
@@ -40,7 +41,7 @@ def capitalize_utterances(utterances, entities, language, ratio, random_state):
             if random_state.rand() > ratio:
                 continue
             capitalized_utterance[DATA][i][TEXT] = capitalize(
-                chunk[TEXT], language)
+                chunk[TEXT], language, resources)
         capitalized_utterances.append(capitalized_utterance)
     return capitalized_utterances
 
@@ -97,7 +98,7 @@ def num_queries_to_generate(dataset, intent_name, min_utterances):
 
 def augment_utterances(dataset, intent_name, language, min_utterances,
                        capitalization_ratio, add_builtin_entities_examples,
-                       random_state):
+                       resources, random_state):
     contexts_it = get_contexts_iterator(dataset, intent_name, random_state)
     intent_entities = {e: dataset[ENTITIES][e]
                        for e in get_intent_entities(dataset, intent_name)}
@@ -114,6 +115,7 @@ def augment_utterances(dataset, intent_name, language, min_utterances,
 
     generated_utterances = capitalize_utterances(
         generated_utterances, dataset[ENTITIES], language,
-        ratio=capitalization_ratio, random_state=random_state)
+        ratio=capitalization_ratio, resources=resources,
+        random_state=random_state)
 
     return generated_utterances

@@ -9,9 +9,6 @@ from mock import patch
 from snips_nlu.constants import (
     INTENTS, LANGUAGE_EN, RES_INTENT_NAME, RES_PROBA, UTTERANCES)
 from snips_nlu.dataset import Dataset
-from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
-from snips_nlu.entity_parser.custom_entity_parser_usage import (
-    CustomEntityParserUsage)
 from snips_nlu.exceptions import NotTrained
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
@@ -26,7 +23,7 @@ from snips_nlu.tests.utils import (FixtureTest, get_empty_dataset)
 def get_mocked_augment_utterances(dataset, intent_name, language,
                                   min_utterances, capitalization_ratio,
                                   add_builtin_entities_examples,
-                                  random_state):
+                                  resources, random_state):
     return dataset[INTENTS][intent_name][UTTERANCES]
 
 
@@ -337,17 +334,13 @@ utterances:
 - brew two cups of coffee
 - can you prepare one cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(**shared).fit(dataset)
         classifier.persist(self.tmp_file_path)
 
         # When
-        builtin_entity_parser = BuiltinEntityParser.build(language="en")
-        custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
         loaded_classifier = LogRegIntentClassifier.from_path(
-            self.tmp_file_path,
-            builtin_entity_parser=builtin_entity_parser,
-            custom_entity_parser=custom_entity_parser)
+            self.tmp_file_path, **shared)
         result = loaded_classifier.get_intent("Make me two cups of tea")
 
         # Then
@@ -373,17 +366,13 @@ utterances:
 - brew two cups of coffee
 - can you prepare one cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        intent_classifier = LogRegIntentClassifier(**shared).fit(dataset)
 
         # When
         intent_classifier_bytes = intent_classifier.to_byte_array()
-        custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITHOUT_STEMS)
-        builtin_entity_parser = BuiltinEntityParser.build(language="en")
         loaded_classifier = LogRegIntentClassifier.from_byte_array(
-            intent_classifier_bytes,
-            builtin_entity_parser=builtin_entity_parser,
-            custom_entity_parser=custom_entity_parser)
+            intent_classifier_bytes, **shared)
         result = loaded_classifier.get_intent("make me two cups of tea")
 
         # Then

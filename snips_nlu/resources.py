@@ -1,28 +1,22 @@
 from __future__ import unicode_literals
 
 import json
-import shutil
 from collections import defaultdict
+from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
 
 from snips_nlu.common.utils import get_package_path, is_package, json_string
 from snips_nlu.constants import (
-    CUSTOM_ENTITY_PARSER_USAGE, DATA_PATH, GAZETTEERS, NOISE, RESOURCES_DIR,
-    STEMS, STOP_WORDS, WORD_CLUSTERS)
+    CUSTOM_ENTITY_PARSER_USAGE, DATA_PATH, GAZETTEERS, NOISE,
+    STEMS, STOP_WORDS, WORD_CLUSTERS, METADATA)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
-
-_RESOURCES = dict()
 
 
 class MissingResource(LookupError):
     pass
-
-
-def clear_resources():
-    _RESOURCES.clear()
 
 
 def load_resources(name):
@@ -36,16 +30,16 @@ def load_resources(name):
         Language resources must be loaded before fitting or parsing
     """
     if name in set(d.name for d in DATA_PATH.iterdir()):
-        load_resources_from_dir(DATA_PATH / name)
+        return load_resources_from_dir(DATA_PATH / name)
     elif is_package(name):
         package_path = get_package_path(name)
         resources_sub_dir = get_resources_sub_directory(package_path)
-        load_resources_from_dir(resources_sub_dir)
+        return load_resources_from_dir(resources_sub_dir)
     elif Path(name).exists():
         path = Path(name)
         if (path / "__init__.py").exists():
             path = get_resources_sub_directory(path)
-        load_resources_from_dir(path)
+        return load_resources_from_dir(path)
     else:
         raise MissingResource("Language resource '{r}' not found. This may be "
                               "solved by running "
@@ -57,8 +51,6 @@ def load_resources_from_dir(resources_dir):
     with (resources_dir / "metadata.json").open(encoding="utf8") as f:
         metadata = json.load(f)
     language = metadata["language"]
-    if language in _RESOURCES:
-        return
 
     try:
         gazetteer_names = metadata["gazetteers"]
@@ -78,13 +70,13 @@ def load_resources_from_dir(resources_dir):
     stop_words = _get_stop_words(resources_dir, stop_words_filename)
     noise = _get_noise(resources_dir, noise_filename)
 
-    _RESOURCES[language] = {
+    return {
+        METADATA: metadata,
         WORD_CLUSTERS: word_clusters,
         GAZETTEERS: gazetteers,
         STOP_WORDS: stop_words,
         NOISE: noise,
         STEMS: stems,
-        RESOURCES_DIR: str(resources_dir),
     }
 
 
@@ -109,40 +101,35 @@ def get_resources_sub_directory(resources_dir):
     return resources_dir / sub_dir_name
 
 
-def get_stop_words(language):
-    return _get_resource(language, STOP_WORDS)
+def get_stop_words(resources):
+    return _get_resource(resources, STOP_WORDS)
 
 
-def get_noise(language):
-    return _get_resource(language, NOISE)
+def get_noise(resources):
+    return _get_resource(resources, NOISE)
 
 
-def get_word_clusters(language):
-    return _get_resource(language, WORD_CLUSTERS)
+def get_word_clusters(resources):
+    return _get_resource(resources, WORD_CLUSTERS)
 
 
-def get_word_cluster(language, cluster_name):
-    word_clusters = get_word_clusters(language)
+def get_word_cluster(resources, cluster_name):
+    word_clusters = get_word_clusters(resources)
     if cluster_name not in word_clusters:
-        raise MissingResource("Word cluster '{}' not found for language '{}'"
-                              .format(cluster_name, language))
+        raise MissingResource("Word cluster '{}' not found" % cluster_name)
     return word_clusters[cluster_name]
 
 
-def get_gazetteer(language, gazetteer_name):
-    gazetteers = _get_resource(language, GAZETTEERS)
+def get_gazetteer(resources, gazetteer_name):
+    gazetteers = _get_resource(resources, GAZETTEERS)
     if gazetteer_name not in gazetteers:
-        raise MissingResource("Gazetteer '{}' not found for language '{}'"
-                              .format(gazetteer_name, language))
+        raise MissingResource("Gazetteer '%s' not found in resources"
+                              % gazetteer_name)
     return gazetteers[gazetteer_name]
 
 
-def get_stems(language):
-    return _get_resource(language, STEMS)
-
-
-def get_resources_dir(language):
-    return _get_resource(language, RESOURCES_DIR)
+def get_stems(resources):
+    return _get_resource(resources, STEMS)
 
 
 def merge_required_resources(lhs, rhs):
@@ -172,15 +159,12 @@ def merge_required_resources(lhs, rhs):
     return merged_resources
 
 
-def persist_resources(resources_dest_path, required_resources, language):
+def persist_resources(resources, resources_dest_path, required_resources):
     if not required_resources:
         return
 
     resources_dest_path.mkdir()
-
-    resources_src_path = Path(get_resources_dir(language))
-    with (resources_src_path / "metadata.json").open(encoding="utf8") as f:
-        metadata = json.load(f)
+    metadata = deepcopy(resources[METADATA])
 
     # Update metadata and keep only required resources
     if not required_resources.get(NOISE, False):
@@ -198,55 +182,41 @@ def persist_resources(resources_dest_path, required_resources, language):
         f.write(metadata_json)
 
     if metadata[NOISE] is not None:
-        noise_src = (resources_src_path / metadata[NOISE]).with_suffix(".txt")
-        noise_dest = (resources_dest_path / noise_src.name)
-        shutil.copy(str(noise_src), str(noise_dest))
+        noise_path = (resources_dest_path / metadata[NOISE]) \
+            .with_suffix(".txt")
+        _persist_noise(get_noise(resources), noise_path)
 
     if metadata[STOP_WORDS] is not None:
-        stop_words_src = (resources_src_path / metadata[STOP_WORDS]) \
+        stop_words_path = (resources_dest_path / metadata[STOP_WORDS]) \
             .with_suffix(".txt")
-        stop_words_dest = (resources_dest_path / stop_words_src.name)
-        shutil.copy(str(stop_words_src), str(stop_words_dest))
+        _persist_stop_words(get_stop_words(resources), stop_words_path)
 
     if metadata[STEMS] is not None:
-        stems_src = (resources_src_path / "stemming" / metadata["stems"]) \
-            .with_suffix(".txt")
         stemming_dir = resources_dest_path / "stemming"
         stemming_dir.mkdir()
-        stems_dest = stemming_dir / stems_src.name
-        shutil.copy(str(stems_src), str(stems_dest))
+        stems_path = (stemming_dir / metadata[STEMS]).with_suffix(".txt")
+        _persist_stems(get_stems(resources), stems_path)
 
     if metadata[GAZETTEERS]:
-        gazetteer_src_dir = resources_src_path / "gazetteers"
-        gazetteer_dest_dir = resources_dest_path / "gazetteers"
-        gazetteer_dest_dir.mkdir()
-        for gazetteer in metadata[GAZETTEERS]:
-            gazetteer_src = (gazetteer_src_dir / gazetteer) \
-                .with_suffix(".txt")
-            gazetteer_dest = gazetteer_dest_dir / gazetteer_src.name
-            shutil.copy(str(gazetteer_src), str(gazetteer_dest))
+        gazetteers_dir = resources_dest_path / "gazetteers"
+        gazetteers_dir.mkdir()
+        for name in metadata[GAZETTEERS]:
+            gazetteer_path = (gazetteers_dir / name).with_suffix(".txt")
+            _persist_gazetteer(get_gazetteer(resources, name), gazetteer_path)
 
     if metadata[WORD_CLUSTERS]:
-        clusters_src_dir = resources_src_path / "word_clusters"
-        clusters_dest_dir = resources_dest_path / "word_clusters"
-        clusters_dest_dir.mkdir()
-        for word_clusters in metadata["word_clusters"]:
-            clusters_src = (clusters_src_dir / word_clusters) \
-                .with_suffix(".txt")
-            clusters_dest = clusters_dest_dir / clusters_src.name
-            shutil.copy(str(clusters_src), str(clusters_dest))
+        clusters_dir = resources_dest_path / "word_clusters"
+        clusters_dir.mkdir()
+        for name in metadata[WORD_CLUSTERS]:
+            clusters_path = (clusters_dir / name).with_suffix(".txt")
+            _persist_word_clusters(get_word_cluster(resources, name),
+                                   clusters_path)
 
 
-def _get_resource(language, resource_name):
-    if language not in _RESOURCES:
-        raise MissingResource(
-            "Missing resources for language '%s', please load them with the "
-            "load_resources function" % language)
-    if resource_name not in _RESOURCES[language] \
-            or _RESOURCES[language][resource_name] is None:
-        raise MissingResource("Resource '{}' not found for language '{}'"
-                              .format(resource_name, language))
-    return _RESOURCES[language][resource_name]
+def _get_resource(resources, resource_name):
+    if resource_name not in resources or resources[resource_name] is None:
+        raise MissingResource("Resource '%s' not found" % resource_name)
+    return resources[resource_name]
 
 
 def _get_stop_words(resources_dir, stop_words_filename):

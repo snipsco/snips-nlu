@@ -10,8 +10,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
 
-from snips_nlu_ontology import get_all_languages
-
 from snips_nlu.common.utils import json_string, unicode_string
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.intent_classifier import IntentClassifier
@@ -27,10 +25,30 @@ PERFORMANCE_DATASET_PATH = TEST_RESOURCES_PATH / "performance_dataset.json"
 
 # pylint: disable=invalid-name
 class SnipsTest(TestCase):
+    _resources = dict()
 
-    def setUp(self):
-        for l in get_all_languages():
-            load_resources(l)
+    @classmethod
+    def get_resources(cls, language):
+        if language not in cls._resources:
+            cls._resources[language] = load_resources(language)
+        return cls._resources[language]
+
+    @classmethod
+    def get_shared_data(cls, dataset, parser_usage=None):
+        from snips_nlu.entity_parser import (
+            BuiltinEntityParser, CustomEntityParser, CustomEntityParserUsage)
+
+        if parser_usage is None:
+            parser_usage = CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS
+        resources = cls.get_resources(dataset["language"])
+        builtin_entity_parser = BuiltinEntityParser.build(dataset)
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, parser_usage, resources)
+        return {
+            "resources": resources,
+            "builtin_entity_parser": builtin_entity_parser,
+            "custom_entity_parser": custom_entity_parser
+        }
 
     @contextmanager
     def fail_if_exception(self, msg):

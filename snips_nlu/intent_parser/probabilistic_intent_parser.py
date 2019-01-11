@@ -12,7 +12,7 @@ from future.utils import iteritems, itervalues
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
 from snips_nlu.common.utils import (
     check_persisted_path, elapsed_since, fitted_required, json_string)
-from snips_nlu.constants import INTENTS, RES_INTENT_NAME
+from snips_nlu.constants import INTENTS, RES_INTENT_NAME, LANGUAGE
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_classifier import IntentClassifier
@@ -63,16 +63,13 @@ class ProbabilisticIntentParser(IntentParser):
         """
         logger.info("Fitting probabilistic intent parser...")
         dataset = validate_and_format_dataset(dataset)
-        self.fit_builtin_entity_parser_if_needed(dataset)
-        self.fit_custom_entity_parser_if_needed(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
             self.intent_classifier = IntentClassifier.from_config(
-                self.config.intent_classifier_config)
-        self.intent_classifier.builtin_entity_parser = \
-            self.builtin_entity_parser
-        self.intent_classifier.custom_entity_parser = \
-            self.custom_entity_parser
+                self.config.intent_classifier_config,
+                builtin_entity_parser=self.builtin_entity_parser,
+                custom_entity_parser=self.custom_entity_parser,
+                resources=self.resources)
 
         if force_retrain or not self.intent_classifier.fitted:
             self.intent_classifier.fit(dataset)
@@ -85,9 +82,10 @@ class ProbabilisticIntentParser(IntentParser):
             if self.slot_fillers.get(intent_name) is None:
                 slot_filler_config = deepcopy(self.config.slot_filler_config)
                 self.slot_fillers[intent_name] = SlotFiller.from_config(
-                    slot_filler_config)
-            self.slot_fillers[intent_name].builtin_entity_parser = \
-                self.builtin_entity_parser
+                    slot_filler_config,
+                    builtin_entity_parser=self.builtin_entity_parser,
+                    custom_entity_parser=self.custom_entity_parser,
+                    resources=self.resources)
             if force_retrain or not self.slot_fillers[intent_name].fitted:
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
         logger.debug("Fitted slot fillers in %s",

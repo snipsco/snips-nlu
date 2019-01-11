@@ -138,14 +138,39 @@ class redirect_stdout(_RedirectStream):
     _stream = "stdout"
 
 
-class MockIntentParser(IntentParser):
-    def fit(self, dataset, force_retrain):
-        self._fitted = True
-        return self
+class MockProcessingUnitMixin(object):
+    _fitted = False
 
     @property
     def fitted(self):
-        return hasattr(self, '_fitted') and self._fitted
+        return self._fitted
+
+    @fitted.setter
+    def fitted(self, value):
+        self._fitted = value
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            unit_dict = {"unit_name": self.unit_name, "fitted": self.fitted}
+            f.write(json_string(unit_dict))
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        with (path / "metadata.json").open(encoding="utf8") as f:
+            metadata = json.load(f)
+        fitted = metadata["fitted"]
+        cfg = cls.config_type()  # pylint:disable=no-value-for-parameter
+        unit = cls(cfg)
+        unit.fitted = fitted
+        return unit
+
+
+class MockIntentParser(MockProcessingUnitMixin, IntentParser):
+    def fit(self, dataset, force_retrain):
+        self.fitted = True
+        return self
 
     def parse(self, text, intents=None, top_n=None):
         return empty_result(text, 1.0)
@@ -156,27 +181,10 @@ class MockIntentParser(IntentParser):
     def get_slots(self, text, intent):
         return []
 
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
 
-    @classmethod
-    def from_path(cls, path, **shared):
-        cfg = cls.config_type()  # pylint:disable=no-value-for-parameter
-        return cls(cfg)
-
-
-class MockIntentClassifier(IntentClassifier):
-    _fitted = False
-
-    @property
-    def fitted(self):
-        return self._fitted
-
+class MockIntentClassifier(MockProcessingUnitMixin, IntentClassifier):
     def fit(self, dataset):
-        self._fitted = True
+        self.fitted = True
         return self
 
     def get_intent(self, text, intents_filter):
@@ -185,42 +193,14 @@ class MockIntentClassifier(IntentClassifier):
     def get_intents(self, text):
         return []
 
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
 
-    @classmethod
-    def from_path(cls, path, **shared):
-        config = cls.config_type()  # pylint:disable=no-value-for-parameter
-        return cls(config)
-
-
-class MockSlotFiller(SlotFiller):
-    _fitted = False
-
-    @property
-    def fitted(self):
-        return self._fitted
-
+class MockSlotFiller(MockProcessingUnitMixin, SlotFiller):
     def get_slots(self, text):
         return []
 
     def fit(self, dataset, intent):
-        self._fitted = True
+        self.fitted = True
         return self
-
-    def persist(self, path):
-        path = Path(path)
-        path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
-            f.write(json_string({"unit_name": self.unit_name}))
-
-    @classmethod
-    def from_path(cls, path, **shared):
-        config = cls.config_type()  # pylint:disable=no-value-for-parameter
-        return cls(config)
 
 
 class EntityParserMock(EntityParser):

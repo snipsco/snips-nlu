@@ -77,8 +77,7 @@ name: intent2
 utterances:
   - foo bar ban""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         text = "foo bar ban"
 
         # When
@@ -106,8 +105,7 @@ name: intent2
 utterances:
   - foo bar ban""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         text = "foo bar ban"
 
         # When
@@ -131,8 +129,7 @@ name: intent2
 utterances:
   - foo bar""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         text = "hello world"
 
         # When
@@ -151,8 +148,7 @@ utterances:
         mock_get_stop_words.return_value = {"a", "hey"}
         dataset = self.slots_dataset
         config = DeterministicIntentParserConfig(ignore_stop_words=True)
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(config, **shared).fit(dataset)
+        parser = DeterministicIntentParser(config).fit(dataset)
         text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -181,8 +177,7 @@ name: dummy_intent_2
 utterances:
   - Hello world""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         text = "Hello world"
 
         # When
@@ -223,8 +218,7 @@ utterances:
     def test_should_parse_slots(self):
         # Given
         dataset = self.slots_dataset
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -320,8 +314,7 @@ utterances:
   - Hi [name](Robert)""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
 
         # When
         top_intents = parser.get_intents("Hello John")
@@ -365,8 +358,7 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
 
         # When
         slots_greeting1 = parser.get_slots("Hello John", "greeting1")
@@ -392,8 +384,7 @@ name: greeting
 utterances:
   - Hello [name](John)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
 
         # When
         slots = parser.get_slots("Hello John", None)
@@ -416,8 +407,7 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -540,8 +530,7 @@ utterances:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = DeterministicIntentParser().fit(dataset)
 
         # Then
         for s in naughty_strings:
@@ -570,8 +559,7 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            shared = self.get_shared_data(naughty_dataset)
-            DeterministicIntentParser(**shared).fit(naughty_dataset)
+            DeterministicIntentParser().fit(naughty_dataset)
 
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
@@ -604,9 +592,7 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            shared = self.get_shared_data(naughty_dataset)
-            parser = DeterministicIntentParser(**shared)
-            parser.fit(naughty_dataset)
+            parser = DeterministicIntentParser().fit(naughty_dataset)
             parsing = parser.parse("string0")
 
             expected_slot = {
@@ -684,9 +670,7 @@ values:
         mock_get_stop_words.return_value = {"a", "me"}
         config = DeterministicIntentParserConfig(
             max_queries=42, max_pattern_length=100, ignore_stop_words=True)
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(config=config, **shared)
-        parser.fit(dataset)
+        parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # When
         parser.persist(self.tmp_file_path)
@@ -884,9 +868,7 @@ utterances:
                                                  max_pattern_length=1000)
 
         # When
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(config=config, **shared)
-        parser.fit(dataset)
+        parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
         self.assertEqual(len(parser.regexes_per_intent["my_first_intent"]), 2)
@@ -916,9 +898,7 @@ utterances:
                                                  ignore_stop_words=False)
 
         # When
-        shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(config=config, **shared)
-        parser.fit(dataset)
+        parser = DeterministicIntentParser(config=config).fit(dataset)
 
         # Then
         self.assertEqual(2, len(parser.regexes_per_intent["my_first_intent"]))

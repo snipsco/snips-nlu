@@ -276,10 +276,10 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
         return {
             STOP_WORDS: self.filter_stop_words,
             # We require the parser to be trained without stems because we
-            # don't normalized and stem when processing in the
+            # don't normalize and stem when processing in the
             # CooccurrenceVectorizer (in order to run the builtin and
             # custom parser on the same unormalized input).
-            # Requiring no stems ensure we'll be able to parse the unstemmed
+            # Requiring no stems ensures we'll be able to parse the unstemmed
             # input
             CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
         }

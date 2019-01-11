@@ -117,7 +117,10 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
 
     def load_resources_if_needed(self, language):
         if self.resources is None or self.fitted:
-            self.resources = load_resources(language)
+            required_resources = None
+            if self.config is not None:
+                required_resources = self.config.get_required_resources()
+            self.resources = load_resources(language, required_resources)
 
     def fit_builtin_entity_parser_if_needed(self, dataset):
         # We only fit a builtin entity parser when the unit has already been

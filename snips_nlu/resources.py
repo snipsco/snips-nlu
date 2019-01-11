@@ -19,27 +19,27 @@ class MissingResource(LookupError):
     pass
 
 
-def load_resources(name):
+def load_resources(name, required_resources=None):
     """Load language specific resources
 
     Args:
         name (str): Resource name as in ``snips-nlu download <name>``. Can also
             be the name of a python package or a directory path.
-
-    Note:
-        Language resources must be loaded before fitting or parsing
+        required_resources (dict, optional): Resources requirement
+            dict which, when provided, allows to limit the amount of resources
+            to load. By default, all existing resources are loaded.
     """
     if name in set(d.name for d in DATA_PATH.iterdir()):
-        return load_resources_from_dir(DATA_PATH / name)
+        return load_resources_from_dir(DATA_PATH / name, required_resources)
     elif is_package(name):
         package_path = get_package_path(name)
         resources_sub_dir = get_resources_sub_directory(package_path)
-        return load_resources_from_dir(resources_sub_dir)
+        return load_resources_from_dir(resources_sub_dir, required_resources)
     elif Path(name).exists():
         path = Path(name)
         if (path / "__init__.py").exists():
             path = get_resources_sub_directory(path)
-        return load_resources_from_dir(path)
+        return load_resources_from_dir(path, required_resources)
     else:
         raise MissingResource("Language resource '{r}' not found. This may be "
                               "solved by running "
@@ -47,28 +47,30 @@ def load_resources(name):
                               .format(r=name))
 
 
-def load_resources_from_dir(resources_dir):
+def load_resources_from_dir(resources_dir, required_resources=None):
     with (resources_dir / "metadata.json").open(encoding="utf8") as f:
         metadata = json.load(f)
-    language = metadata["language"]
+    metadata = _update_metadata(metadata, required_resources)
+    gazetteer_names = metadata["gazetteers"]
+    clusters_names = metadata["word_clusters"]
+    stop_words_filename = metadata["stop_words"]
+    stems_filename = metadata["stems"]
+    noise_filename = metadata["noise"]
 
-    try:
-        gazetteer_names = metadata["gazetteers"]
-        clusters_names = metadata["word_clusters"]
-        stop_words_filename = metadata["stop_words"]
-        stems_filename = metadata["stems"]
-        noise_filename = metadata["noise"]
-    except KeyError:
-        print_compatibility_error(language)
-        raise
-
-    gazetteers = _get_gazetteers(resources_dir / "gazetteers",
-                                 gazetteer_names)
-    stems = _get_stems(resources_dir / "stemming", stems_filename)
+    gazetteers = _get_gazetteers(resources_dir / "gazetteers", gazetteer_names)
     word_clusters = _get_word_clusters(resources_dir / "word_clusters",
                                        clusters_names)
-    stop_words = _get_stop_words(resources_dir, stop_words_filename)
-    noise = _get_noise(resources_dir, noise_filename)
+
+    stems = None
+    stop_words = None
+    noise = None
+
+    if stems_filename is not None:
+        stems = _get_stems(resources_dir / "stemming", stems_filename)
+    if stop_words_filename is not None:
+        stop_words = _get_stop_words(resources_dir, stop_words_filename)
+    if noise_filename is not None:
+        noise = _get_noise(resources_dir, noise_filename)
 
     return {
         METADATA: metadata,
@@ -78,6 +80,25 @@ def load_resources_from_dir(resources_dir):
         NOISE: noise,
         STEMS: stems,
     }
+
+
+def _update_metadata(metadata, required_resources):
+    if required_resources is None:
+        return metadata
+    metadata = deepcopy(metadata)
+    try:
+        metadata["gazetteers"] = required_resources.get(GAZETTEERS, [])
+        metadata["word_clusters"] = required_resources.get(WORD_CLUSTERS, [])
+        if not required_resources.get(STEMS, False):
+            metadata["stems"] = None
+        if not required_resources.get(NOISE, False):
+            metadata["noise"] = None
+        if not required_resources.get(STOP_WORDS, False):
+            metadata["stop_words"] = None
+        return metadata
+    except KeyError:
+        print_compatibility_error(metadata["language"])
+        raise
 
 
 def print_compatibility_error(language):

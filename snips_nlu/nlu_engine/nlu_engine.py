@@ -23,7 +23,7 @@ from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
-from snips_nlu.exceptions import InvalidInputError
+from snips_nlu.exceptions import InvalidInputError, IntentNotFoundError
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
@@ -235,6 +235,12 @@ class SnipsNLUEngine(ProcessingUnit):
             raise InvalidInputError("Expected unicode but received: %s"
                                     % type(text))
 
+        if intent is None:
+            return []
+
+        if intent not in self.dataset_metadata["slot_name_mappings"]:
+            raise IntentNotFoundError(intent)
+
         for parser in self.intent_parsers:
             slots = parser.get_slots(text, intent)
             if not slots:
@@ -299,12 +305,11 @@ class SnipsNLUEngine(ProcessingUnit):
 
         if self.fitted:
             required_resources = self.config.get_required_resources()
-            if required_resources:
-                language = self.dataset_metadata["language_code"]
-                resources_path = directory_path / "resources"
-                resources_path.mkdir()
-                persist_resources(self.resources, resources_path / language,
-                                  required_resources)
+            language = self.dataset_metadata["language_code"]
+            resources_path = directory_path / "resources"
+            resources_path.mkdir()
+            persist_resources(self.resources, resources_path / language,
+                              required_resources)
 
     @classmethod
     def from_path(cls, path, **shared):

@@ -14,8 +14,6 @@ def debug_training(dataset_path, config_path=None):
     with Path(dataset_path).open("r", encoding="utf8") as f:
         dataset = json.load(f)
 
-    load_resources(dataset["language"])
-
     config = None
     if config_path is not None:
         with Path(config_path).open("r", encoding="utf8") as f:

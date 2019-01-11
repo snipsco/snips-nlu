@@ -97,7 +97,8 @@ utterances:
 
         config = NLUEngineConfig(
             ["first_intent_parser", "second_intent_parser"])
-        nlu_engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        nlu_engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         results = nlu_engine.parse(text, top_n=3)
@@ -160,7 +161,8 @@ utterances:
         # pylint:enable=unused-variable
         config = NLUEngineConfig(["first_intent_parser",
                                   "second_intent_parser"])
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         res_intents = engine.get_intents(input_text)
@@ -205,7 +207,8 @@ utterances:
 
         config = NLUEngineConfig(
             ["first_intent_parser", "second_intent_parser"])
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         res_slots = engine.get_slots(input_text, greeting_intent)
@@ -229,7 +232,8 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        nlu_engine = SnipsNLUEngine().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        nlu_engine = SnipsNLUEngine(**shared).fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -268,7 +272,8 @@ utterances:
 
         config = NLUEngineConfig(["first_intent_parser",
                                   "second_intent_parser"])
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         parse = engine.parse(input_text)
@@ -317,7 +322,8 @@ utterances:
                        self.sub_unit_2["fitted"]
 
         nlu_engine_config = NLUEngineConfig(["test_intent_parser"])
-        nlu_engine = SnipsNLUEngine(nlu_engine_config)
+        resources = self.get_resources("en")
+        nlu_engine = SnipsNLUEngine(nlu_engine_config, resources=resources)
 
         intent_parser = TestIntentParser()
         intent_parser.sub_unit_1.update(dict(fitted=True, calls=0))
@@ -335,7 +341,8 @@ utterances:
     def test_should_handle_empty_dataset(self):
         # Given
         dataset = validate_and_format_dataset(get_empty_dataset(LANGUAGE_EN))
-        engine = SnipsNLUEngine().fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(resources=resources).fit(dataset)
 
         # When
         result = engine.parse("hello world")
@@ -391,7 +398,8 @@ utterances:
         }
         parsers_configs = [parser1_config, parser2_config]
         config = NLUEngineConfig(parsers_configs)
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         engine.persist(self.tmp_file_path)
@@ -474,7 +482,8 @@ utterances:
 
         parsers_configs = ["my_intent_parser", "my_intent_parser"]
         config = NLUEngineConfig(parsers_configs)
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         engine.persist(self.tmp_file_path)
@@ -679,13 +688,14 @@ utterances:
 - brew [number_of_cups] cups of coffee
 - can you prepare [number_of_cups] cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        engine = SnipsNLUEngine().fit(dataset)
-        input_ = "Give me 3 cups of hot tea please"
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
+        text = "Give me 3 cups of hot tea please"
 
         # When
         engine.persist(self.tmp_file_path)
         deserialized_engine = SnipsNLUEngine.from_path(self.tmp_file_path)
-        result = deserialized_engine.parse(input_)
+        result = deserialized_engine.parse(text)
 
         # Then
         expected_slots = [
@@ -696,7 +706,7 @@ utterances:
                 unresolved_slot({START: 18, END: 21}, "hot", "Temperature",
                                 "beverage_temperature"))
         ]
-        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INPUT], text)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeTea")
         self.assertListEqual(result[RES_SLOTS], expected_slots)
 
@@ -728,7 +738,8 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        engine = SnipsNLUEngine().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
 
         # When
         engine_bytes = engine.to_byte_array()
@@ -755,7 +766,8 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        engine = SnipsNLUEngine().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
         dir_temp_engine = self.fixture_dir / "temp_engine"
         engine.persist(dir_temp_engine)
 
@@ -849,7 +861,8 @@ utterances:
         mocked_crf_parse.return_value = parsing_result(
             text, mocked_crf_intent, mocked_crf_slots)
 
-        engine = SnipsNLUEngine()
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared)
 
         # When
         engine = engine.fit(dataset)
@@ -915,7 +928,8 @@ utterances:
             text, mocked_proba_parser_intent, mocked_proba_parser_slots)
 
         config = NLUEngineConfig([ProbabilisticIntentParserConfig()])
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         result = engine.parse(text)
@@ -998,7 +1012,8 @@ utterances:
         mocked_proba_parse.side_effect = mock_proba_parse
 
         config = NLUEngineConfig([ProbabilisticIntentParserConfig()])
-        engine = SnipsNLUEngine(config).fit(dataset)
+        resources = self.get_resources("en")
+        engine = SnipsNLUEngine(config, resources=resources).fit(dataset)
 
         # When
         result1 = engine.parse("favorite")
@@ -1065,7 +1080,9 @@ utterances:
         })
 
         # When / Then
-        SnipsNLUEngine().fit(dataset)  # This should not raise any error
+        shared = self.get_shared_data(dataset)
+        # This should not raise any error
+        SnipsNLUEngine(**shared).fit(dataset)
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given
@@ -1120,7 +1137,8 @@ utterances:
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         bytes_input = b"brew me an espresso"
-        engine = SnipsNLUEngine().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
 
         # When / Then
         with self.assertRaises(InvalidInputError) as cm:
@@ -1148,7 +1166,7 @@ utterances:
             "entities": dict()
         }
 
-        engine = SnipsNLUEngine()
+        engine = SnipsNLUEngine(resources=self.get_resources("en"))
 
         # When / Then
         engine.fit(dataset)

@@ -11,7 +11,6 @@ from snips_nlu.constants import (
     DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY, RES_INTENT, RES_INTENT_NAME,
     RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT)
 from snips_nlu.dataset import Dataset
-from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
@@ -78,7 +77,8 @@ name: intent2
 utterances:
   - foo bar ban""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         text = "foo bar ban"
 
         # When
@@ -106,7 +106,8 @@ name: intent2
 utterances:
   - foo bar ban""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         text = "foo bar ban"
 
         # When
@@ -130,7 +131,8 @@ name: intent2
 utterances:
   - foo bar""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         text = "hello world"
 
         # When
@@ -149,7 +151,8 @@ utterances:
         mock_get_stop_words.return_value = {"a", "hey"}
         dataset = self.slots_dataset
         config = DeterministicIntentParserConfig(ignore_stop_words=True)
-        parser = DeterministicIntentParser(config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(config, **shared).fit(dataset)
         text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -178,7 +181,8 @@ name: dummy_intent_2
 utterances:
   - Hello world""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         text = "Hello world"
 
         # When
@@ -199,13 +203,11 @@ utterances:
     def test_should_parse_intent_after_deserialization(self):
         # Given
         dataset = self.slots_dataset
-        parser = DeterministicIntentParser().fit(dataset)
-        custom_entity_parser = parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
-            custom_entity_parser=custom_entity_parser)
+            self.tmp_file_path, **shared)
         text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -221,7 +223,8 @@ utterances:
     def test_should_parse_slots(self):
         # Given
         dataset = self.slots_dataset
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -317,7 +320,8 @@ utterances:
   - Hi [name](Robert)""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # When
         top_intents = parser.get_intents("Hello John")
@@ -361,7 +365,8 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # When
         slots_greeting1 = parser.get_slots("Hello John", "greeting1")
@@ -387,7 +392,8 @@ name: greeting
 utterances:
   - Hello [name](John)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # When
         slots = parser.get_slots("Hello John", None)
@@ -410,7 +416,8 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -419,13 +426,11 @@ utterances:
     def test_should_parse_slots_after_deserialization(self):
         # Given
         dataset = self.slots_dataset
-        parser = DeterministicIntentParser().fit(dataset)
-        custom_entity_parser = parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
-            custom_entity_parser=custom_entity_parser)
+            self.tmp_file_path, **shared)
 
         texts = [
             (
@@ -508,16 +513,13 @@ utterances:
 - brew [number_of_cups] cups of coffee
 - can you prepare [number_of_cups] cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_parser = DeterministicIntentParser().fit(dataset)
-        custom_entity_parser = intent_parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        intent_parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = DeterministicIntentParser.from_byte_array(
-            intent_parser_bytes,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
-            custom_entity_parser=custom_entity_parser
-        )
+            intent_parser_bytes, **shared)
         result = loaded_intent_parser.parse("make me two cups of coffee")
 
         # Then
@@ -538,7 +540,8 @@ utterances:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
-        parser = DeterministicIntentParser().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # Then
         for s in naughty_strings:
@@ -567,7 +570,8 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            DeterministicIntentParser().fit(naughty_dataset)
+            shared = self.get_shared_data(naughty_dataset)
+            DeterministicIntentParser(**shared).fit(naughty_dataset)
 
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
@@ -600,7 +604,8 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            parser = DeterministicIntentParser()
+            shared = self.get_shared_data(naughty_dataset)
+            parser = DeterministicIntentParser(**shared)
             parser.fit(naughty_dataset)
             parsing = parser.parse("string0")
 
@@ -679,7 +684,9 @@ values:
         mock_get_stop_words.return_value = {"a", "me"}
         config = DeterministicIntentParserConfig(
             max_queries=42, max_pattern_length=100, ignore_stop_words=True)
-        parser = DeterministicIntentParser(config=config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(config=config, **shared)
+        parser.fit(dataset)
 
         # When
         parser.persist(self.tmp_file_path)
@@ -877,7 +884,9 @@ utterances:
                                                  max_pattern_length=1000)
 
         # When
-        parser = DeterministicIntentParser(config=config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(config=config, **shared)
+        parser.fit(dataset)
 
         # Then
         self.assertEqual(len(parser.regexes_per_intent["my_first_intent"]), 2)
@@ -907,7 +916,9 @@ utterances:
                                                  ignore_stop_words=False)
 
         # When
-        parser = DeterministicIntentParser(config=config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(config=config, **shared)
+        parser.fit(dataset)
 
         # Then
         self.assertEqual(2, len(parser.regexes_per_intent["my_first_intent"]))

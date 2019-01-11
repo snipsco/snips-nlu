@@ -16,7 +16,7 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.tests.utils import (FixtureTest, get_empty_dataset)
+from snips_nlu.tests.utils import FixtureTest, get_empty_dataset
 
 
 # pylint: disable=unused-argument
@@ -51,7 +51,8 @@ utterances:
 - will it rain tomorrow""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(config, **shared).fit(dataset)
         text = "hey how are you doing ?"
 
         # When
@@ -80,7 +81,8 @@ utterances:
 - does it rain
 - will it rain tomorrow""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(**shared).fit(dataset)
         text = ""
 
         # When
@@ -109,7 +111,8 @@ utterances:
 - can you prepare one cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(config, **shared).fit(dataset)
 
         # When
         text1 = "Make me two cups of tea"
@@ -138,7 +141,8 @@ utterances:
     def test_should_get_none_intent_when_empty_dataset(self):
         # Given
         dataset = get_empty_dataset(LANGUAGE_EN)
-        classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(**shared).fit(dataset)
         text = "this is a dummy query"
 
         # When
@@ -170,7 +174,8 @@ utterances:
   - yili yulu yele""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(config, **shared).fit(dataset)
         text = "yala yili yulu"
 
         # When
@@ -185,7 +190,8 @@ utterances:
     def test_should_get_intents_when_empty_dataset(self):
         # Given
         dataset = get_empty_dataset(LANGUAGE_EN)
-        classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(**shared).fit(dataset)
         text = "this is a dummy query"
 
         # When
@@ -210,7 +216,8 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        classifier = LogRegIntentClassifier(**shared).fit(dataset)
         text = ""
 
         # When
@@ -239,7 +246,8 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        intent_classifier = LogRegIntentClassifier(**shared).fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 
@@ -410,7 +418,8 @@ values:
         mocked_build_training.return_value = utterances, labels, intent_list
 
         # When / Then
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        intent_classifier = LogRegIntentClassifier(**shared).fit(dataset)
         intent = intent_classifier.get_intent("no intent there")
         self.assertEqual(intent_classification_result(None, 1.0), intent)
 
@@ -429,9 +438,11 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        shared = self.get_shared_data(dataset)
+        intent_classifier = LogRegIntentClassifier(**shared).fit(dataset)
+
         text = "yo"
         utterances = [text_to_utterance(text)]
-        intent_classifier = LogRegIntentClassifier()
         self.assertIsNone(intent_classifier.log_activation_weights(text, None))
 
         # When
@@ -445,7 +456,6 @@ utterances:
 
     def test_log_best_features(self):
         # Given
-        intent_classifier = LogRegIntentClassifier()
         dataset_stream = io.StringIO("""
 ---
 type: intent
@@ -459,7 +469,8 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier()
+        shared = self.get_shared_data(dataset)
+        intent_classifier = LogRegIntentClassifier(**shared)
 
         # When
         self.assertIsNone(intent_classifier.log_best_features(20))

@@ -46,7 +46,9 @@ utterances:
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(parser_config, resources=resources)
+        parser.fit(dataset)
         text = "foo bar baz"
 
         # When
@@ -84,7 +86,9 @@ utterances:
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(parser_config, resources=resources)
+        parser.fit(dataset)
         text = "foo bar baz"
 
         # When
@@ -123,7 +127,9 @@ utterances:
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(parser_config, resources=resources)
+        parser.fit(dataset)
         text = "foo bar baz"
 
         # When
@@ -161,7 +167,9 @@ utterances:
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         classifier_config = LogRegIntentClassifierConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(classifier_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(parser_config, resources=resources)
+        parser.fit(dataset)
         text = "yala yili yulu"
 
         # When
@@ -195,7 +203,8 @@ utterances:
   - Hello John""")
         dataset = Dataset.from_yaml_files("en",
                                           [slots_dataset_stream]).json
-        parser = ProbabilisticIntentParser().fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources).fit(dataset)
 
         # When
         slots_greeting1 = parser.get_slots("Hello John", "greeting1")
@@ -221,7 +230,8 @@ name: greeting
 utterances:
   - Hello [name](John)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = ProbabilisticIntentParser().fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources).fit(dataset)
 
         # When
         slots = parser.get_slots("Hello John", None)
@@ -244,7 +254,8 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = ProbabilisticIntentParser().fit(dataset)
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources).fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -267,8 +278,9 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = ProbabilisticIntentParser()
-        intent_classifier = LogRegIntentClassifier()
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources)
+        intent_classifier = LogRegIntentClassifier(resources=resources)
         intent_classifier.fit(dataset)
         parser.intent_classifier = intent_classifier
 
@@ -295,8 +307,9 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = ProbabilisticIntentParser()
-        intent_classifier = LogRegIntentClassifier()
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources)
+        intent_classifier = LogRegIntentClassifier(resources=resources)
         intent_classifier.fit(dataset)
         parser.intent_classifier = intent_classifier
 
@@ -323,8 +336,9 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = ProbabilisticIntentParser()
-        slot_filler = CRFSlotFiller()
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources)
+        slot_filler = CRFSlotFiller(resources=resources)
         slot_filler.fit(dataset, "MakeCoffee")
         parser.slot_fillers["MakeCoffee"] = slot_filler
 
@@ -351,8 +365,9 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = ProbabilisticIntentParser()
-        slot_filler = CRFSlotFiller()
+        resources = self.get_resources("en")
+        parser = ProbabilisticIntentParser(resources=resources)
+        slot_filler = CRFSlotFiller(resources=resources)
         slot_filler.fit(dataset, "MakeCoffee")
         parser.slot_fillers["MakeCoffee"] = slot_filler
 
@@ -449,7 +464,8 @@ utterances:
             intent_classifier_config="my_intent_classifier",
             slot_filler_config="my_slot_filler"
         )
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        parser = ProbabilisticIntentParser(parser_config)
+        parser.fit(dataset)
 
         # When
         parser.persist(self.tmp_file_path)
@@ -567,17 +583,14 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_parser = ProbabilisticIntentParser().fit(dataset)
-        builtin_entity_parser = intent_parser.builtin_entity_parser
-        custom_entity_parser = intent_parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        intent_parser = ProbabilisticIntentParser(**shared)
+        intent_parser.fit(dataset)
 
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = ProbabilisticIntentParser.from_byte_array(
-            intent_parser_bytes,
-            builtin_entity_parser=builtin_entity_parser,
-            custom_entity_parser=custom_entity_parser
-        )
+            intent_parser_bytes, **shared)
         result = loaded_intent_parser.parse("make me two cups of tea")
 
         # Then
@@ -608,15 +621,16 @@ utterances:
                 random_seed=seed1),
             slot_filler_config=CRFSlotFillerConfig(random_seed=seed2)
         )
-        parser = ProbabilisticIntentParser(config)
+        shared = self.get_shared_data(dataset)
+        parser = ProbabilisticIntentParser(config, **shared)
         parser.persist(self.tmp_file_path)
 
         # When
         fitted_parser_1 = ProbabilisticIntentParser.from_path(
-            self.tmp_file_path).fit(dataset)
+            self.tmp_file_path, **shared).fit(dataset)
 
         fitted_parser_2 = ProbabilisticIntentParser.from_path(
-            self.tmp_file_path).fit(dataset)
+            self.tmp_file_path, **shared).fit(dataset)
 
         # Then
         feature_weights_1 = fitted_parser_1.slot_fillers[

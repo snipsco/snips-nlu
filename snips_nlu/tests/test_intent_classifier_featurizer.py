@@ -24,7 +24,6 @@ from snips_nlu.pipeline.configs.intent_classifier import (
     CooccurrenceVectorizerConfig)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.tests.utils import FixtureTest
-from snips_nlu.common.utils import json_string
 
 
 def _stem(t):
@@ -93,7 +92,7 @@ utterances:
         self.assertTrue(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-            self.tmp_file_path / "cooccurrence_vectorizer")
+                self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertTrue(cooccurrence_vectorizer_path.exists())
 
     def test_should_be_serializable_before_fit(self):
@@ -128,7 +127,7 @@ utterances:
         self.assertFalse(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-            self.tmp_file_path / "cooccurrence_vectorizer")
+                self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertFalse(cooccurrence_vectorizer_path.exists())
 
     @patch("snips_nlu.intent_classifier.featurizer.TfidfVectorizer.from_path")
@@ -662,89 +661,20 @@ values:
         config = FeaturizerConfig(added_cooccurrence_feature_ratio=.75)
         featurizer = Featurizer(config=config)
 
-        self.assertDictEqual(dict(), featurizer.feature_index_to_feature_name)
-
-        dataset_stream = io.StringIO("""
----
-type: intent
-name: intent1
-utterances:
-    - dummy utterance
-
----
-type: entity
-name: entity_1
-automatically_extensible: false
-use_synononyms: false
-matching_strictness: 1.0
-values:
-  - [entity 1, alternative entity 1]
-  - [éntity 1, alternative entity 1]
-
----
-type: entity
-name: entity_2
-automatically_extensible: false
-use_synononyms: true
-matching_strictness: 1.0
-values:
-  - entity 1
-  - [Éntity 2, Éntity_2, Alternative entity 2]
-        """)
-        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
-
-        utterances = [
-            {
-                "data": [
-                    {
-                        "text": "hÉllo wOrld "
-                    },
-                    {
-                        "text": "Éntity_2",
-                        "entity": "entity_2"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "beauTiful World "
-                    },
-                    {
-                        "text": "entity 1",
-                        "entity": "entity_1"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "Bird bïrdy"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "Bird bïrdy"
-                    }
-                ]
-            }
-        ]
-
-        classes = [0, 0, 1, 1]
-
         # When
-        featurizer.fit(dataset, utterances, classes, max(classes))
+        mocked_cooccurrence_vectorizer = MagicMock()
+        mocked_cooccurrence_vectorizer.word_pairs = {("a", "b"): 0}
+
+        mocked_tfidf_vectorizer = MagicMock()
+        mocked_tfidf_vectorizer.vocabulary = {"a": 0}
+
+        featurizer.cooccurrence_vectorizer = mocked_cooccurrence_vectorizer
+        featurizer.tfidf_vectorizer = mocked_tfidf_vectorizer
 
         # Then
         expected = {
-            0: "ngram:bird",
-            1: "ngram:birdy",
-            2: "ngram:world",
-            3: "pair:world+ENTITY_1",
-            4: "pair:world+ENTITY_2"
+            0: "ngram:a",
+            1: "pair:a+b"
         }
         self.assertDictEqual(
             expected, featurizer.feature_index_to_feature_name)
@@ -758,7 +688,8 @@ values:
 
         utterances = [
             text_to_utterance("a b c d e"),
-            text_to_utterance("f g h i j")
+            text_to_utterance("f g h i j"),
+            text_to_utterance("none"),
         ]
 
         mocked_vectorizer = MagicMock()
@@ -770,14 +701,15 @@ values:
         preprocessed_utterances_texts = data[1]
         builtin_ents = data[2]
         custom_ents = data[3]
-        classes = [0]
+        classes = [0, 0, 1]
 
         # When
         mocked_chi2.return_value = (
             None, [0.0, 1.0, 0.0, 1.0, 0.0, 1.0] + [1.0 for _ in range(100)])
         featurizer._fit_cooccurrence_vectorizer(
             zip(preprocessed_utterances_texts, builtin_ents, custom_ents),
-            classes
+            classes,
+            1
         )
 
         # Then

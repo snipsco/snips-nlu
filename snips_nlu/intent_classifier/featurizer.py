@@ -111,12 +111,11 @@ class Featurizer(ProcessingUnit):
         if self.config.added_cooccurrence_feature_ratio:
             cooccurrence_data = list(
                 zip(preprocessed_utterances_texts, builtin_ents, custom_ents))
+
             # We fit the coocurrence matrix without noise
-            non_null_cooccurrence_data, non_null_cooccurrence_classes = zip(*(
-                (d, c) for d, c in zip(cooccurrence_data, classes)
-                if c != none_class))
             self._fit_cooccurrence_vectorizer(
-                non_null_cooccurrence_data, non_null_cooccurrence_classes)
+                cooccurrence_data, classes, none_class)
+
             # We fit transform all the data
             x_cooccurrence = self.cooccurrence_vectorizer.transform(
                 cooccurrence_data)
@@ -148,6 +147,10 @@ class Featurizer(ProcessingUnit):
         self.tfidf_vectorizer = TfidfVectorizer(
             self.config.tfidf_vectorizer_config)
         x_tfidf = self.tfidf_vectorizer.fit_transform(x, self.language)
+
+        if not self.tfidf_vectorizer.vocabulary:
+            raise DatasetFormatError(
+                "Dataset is empty or with empty utterances")
         _, tfidf_pval = chi2(x_tfidf, y)
         best_tfidf_features = [i for i, v in enumerate(tfidf_pval)
                                if v < self.config.pvalue_threshold]
@@ -166,12 +169,15 @@ class Featurizer(ProcessingUnit):
         # and fit(x, y).transform(x)
         return self.tfidf_vectorizer.transform(x)
 
-    def _fit_cooccurrence_vectorizer(self, x, y):
+    def _fit_cooccurrence_vectorizer(self, data, classes, none_class):
+        non_null_data = (d for d, c in zip(data, classes) if c != none_class)
         self.cooccurrence_vectorizer = CooccurrenceVectorizer(
             self.config.cooccurrence_vectorizer_config)
-        x_cooccurrence = self.cooccurrence_vectorizer.fit_transform(
-            x, self.language)
-        _, pval = chi2(x_cooccurrence, y)
+        x_cooccurrence = self.cooccurrence_vectorizer.fit(
+            non_null_data, self.language).transform(data)
+        if not self.cooccurrence_vectorizer.word_pairs:
+            return self
+        _, pval = chi2(x_cooccurrence, classes)
         top_k = int(self.config.added_cooccurrence_feature_ratio * len(
             self.tfidf_vectorizer.idf_diag))
         # Don't select more word pairs than we have
@@ -488,11 +494,6 @@ class TfidfVectorizer(ProcessingUnit):
 
         new_ngrams, new_index = zip(*sorted(
             (ng, self.vocabulary[ng]) for ng in ngrams))
-        if not new_ngrams:
-            raise ValueError(
-                "No feature remain after limiting the vocabulary, please use "
-                "different ngram"
-            )
 
         self._tfidf_vectorizer.vocabulary_ = {
             ng: new_i for new_i, ng in enumerate(new_ngrams)
@@ -738,12 +739,6 @@ class CooccurrenceVectorizer(ProcessingUnit):
         self._word_pairs = {
             ng: new_i for new_i, ng in enumerate(sorted(word_pairs))
         }
-
-        if not self.word_pairs:
-            raise ValueError(
-                "No feature remain after limiting the vocabulary, please use "
-                "different word_pairs"
-            )
         return self
 
     def _get_placeholder_fn(self):

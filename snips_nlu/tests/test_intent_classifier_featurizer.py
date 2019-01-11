@@ -2,10 +2,10 @@
 from __future__ import unicode_literals
 
 import io
-from builtins import str, zip
+from builtins import str, zip, range
 
 import numpy as np
-from mock import patch
+from mock import patch, MagicMock
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import LANGUAGE_EN
@@ -743,11 +743,51 @@ values:
             0: "ngram:bird",
             1: "ngram:birdy",
             2: "ngram:world",
-            3: u'pair:world+ENTITY_1',
+            3: "pair:world+ENTITY_1",
             4: "pair:world+ENTITY_2"
         }
         self.assertDictEqual(
             expected, featurizer.feature_index_to_feature_name)
+
+    @patch("snips_nlu.intent_classifier.featurizer.chi2")
+    def test_fit_cooccurrence_vectorizer_feature_selection(self, mocked_chi2):
+        # Given
+        config = FeaturizerConfig(added_cooccurrence_feature_ratio=.3)
+        featurizer = Featurizer(config)
+        featurizer.language = "fr"
+
+        utterances = [
+            text_to_utterance("a b c d e"),
+            text_to_utterance("f g h i j")
+        ]
+
+        mocked_vectorizer = MagicMock()
+        mocked_vectorizer.idf_diag = range(10)
+
+        featurizer.tfidf_vectorizer = mocked_vectorizer
+
+        data = featurizer._preprocess(utterances, training=True)
+        preprocessed_utterances_texts = data[1]
+        builtin_ents = data[2]
+        custom_ents = data[3]
+        classes = [0]
+
+        # When
+        mocked_chi2.return_value = (
+            None, [0.0, 1.0, 0.0, 1.0, 0.0, 1.0] + [1.0 for _ in range(100)])
+        featurizer._fit_cooccurrence_vectorizer(
+            zip(preprocessed_utterances_texts, builtin_ents, custom_ents),
+            classes
+        )
+
+        # Then
+        expected_pairs = {
+            ("a", "b"): 0,
+            ("a", "d"): 1,
+            ("b", "c"): 2
+        }
+        self.assertDictEqual(
+            expected_pairs, featurizer.cooccurrence_vectorizer.word_pairs)
 
 
 class CooccurrenceVectorizerTest(FixtureTest):

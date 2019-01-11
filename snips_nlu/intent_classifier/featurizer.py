@@ -167,7 +167,8 @@ class Featurizer(ProcessingUnit):
         return self.tfidf_vectorizer.transform(x)
 
     def _fit_cooccurrence_vectorizer(self, x, y):
-        self.cooccurrence_vectorizer = CooccurrenceVectorizer()
+        self.cooccurrence_vectorizer = CooccurrenceVectorizer(
+            self.config.cooccurrence_vectorizer_config)
         x_cooccurrence = self.cooccurrence_vectorizer.fit_transform(
             x, self.language)
         _, pval = chi2(x_cooccurrence, y)
@@ -175,8 +176,7 @@ class Featurizer(ProcessingUnit):
             self.tfidf_vectorizer.idf_diag))
         # Don't select more word pairs than we have
         top_k = min(len(self.cooccurrence_vectorizer.word_pairs), top_k)
-        top_k_cooccurrence_ix = np.argpartition(
-            pval, top_k, axis=None)[-top_k:]
+        top_k_cooccurrence_ix = np.argpartition(pval, top_k, axis=None)[:top_k]
         top_k_cooccurrence_ix = set(top_k_cooccurrence_ix)
 
         top_word_pairs = [

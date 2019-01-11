@@ -267,7 +267,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
         return intent_classifier
 
-    def log_best_features(self, top_n=20):
+    def log_best_features(self, top_n=50):
         if not hasattr(self.featurizer, "feature_index_to_feature_name"):
             return None
 

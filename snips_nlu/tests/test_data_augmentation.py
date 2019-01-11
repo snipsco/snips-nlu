@@ -5,7 +5,6 @@ from builtins import next, range
 import numpy as np
 from mock import patch
 
-from snips_nlu import load_resources
 from snips_nlu.constants import LANGUAGE_EN, STOP_WORDS
 from snips_nlu.data_augmentation import (
     capitalize, capitalize_utterances, generate_utterance,

@@ -6,7 +6,7 @@ import json
 from builtins import input, bytes
 from pathlib import Path
 
-from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu import SnipsNLUEngine
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
 

@@ -118,8 +118,12 @@ class TestBuiltinEntityParser(SnipsTest):
            "._build_builtin_parser")
     def test_should_share_parser(self, mocked_build_builtin_parser):
         # Given
+
+        # pylint:disable=unused-argument
         def mock_build_builtin_parser(language, gazetteer_entity_scope):
             return None
+
+        # pylint:enable=unused-argument
 
         mocked_build_builtin_parser.side_effect = mock_build_builtin_parser
 

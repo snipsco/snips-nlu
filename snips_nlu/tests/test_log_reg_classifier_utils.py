@@ -8,10 +8,9 @@ from itertools import cycle
 import numpy as np
 from future.utils import itervalues
 from mock import MagicMock, patch
-from numpy.random.mtrand import RandomState
 
-from snips_nlu.constants import INTENTS, LANGUAGE_EN, UTTERANCES, LANGUAGE, \
-    NOISE
+from snips_nlu.constants import (
+    INTENTS, LANGUAGE_EN, UTTERANCES, LANGUAGE, NOISE)
 from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     add_unknown_word_to_utterances, build_training_data,
@@ -565,11 +564,11 @@ utterances:
         replacement_string = "yo"
         unknown_word_prob = 1
         max_unknown_words = None
-        random_state = RandomState()
+        random_state = np.random.RandomState()
 
         # When / Then
-        with self.fail_if_exception(
-                "Failed to augment utterances with max_unknownword=None"):
+        with self.fail_if_exception("Failed to augment utterances with "
+                                    "max_unknownword=None"):
             add_unknown_word_to_utterances(
                 utterances, replacement_string, unknown_word_prob,
                 max_unknown_words, random_state
@@ -581,11 +580,11 @@ utterances:
         replacement_string = "yo"
         unknown_word_prob = 1
         max_unknown_words = 0
-        random_state = RandomState()
+        random_state = np.random.RandomState
 
         # When / Then
-        with self.fail_if_exception(
-                "Failed to augment utterances with unknown_word_prob=0"):
+        with self.fail_if_exception("Failed to augment utterances with "
+                                    "unknown_word_prob=0"):
             add_unknown_word_to_utterances(
                 utterances, replacement_string, unknown_word_prob,
                 max_unknown_words, random_state

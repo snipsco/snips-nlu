@@ -12,7 +12,7 @@ from future.utils import iteritems, itervalues
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
 from snips_nlu.common.utils import (
     check_persisted_path, elapsed_since, fitted_required, json_string)
-from snips_nlu.constants import INTENTS, RES_INTENT_NAME, LANGUAGE
+from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import IntentNotFoundError
 from snips_nlu.intent_classifier import IntentClassifier

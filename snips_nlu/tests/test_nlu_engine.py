@@ -13,7 +13,7 @@ from snips_nlu.constants import (
     END, LANGUAGE, LANGUAGE_EN, RES_ENTITY, RES_INPUT, RES_INTENT,
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
-from snips_nlu.dataset import Dataset, validate_and_format_dataset
+from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import (
     IntentNotFoundError, InvalidInputError, NotTrained)
 from snips_nlu.intent_parser import IntentParser

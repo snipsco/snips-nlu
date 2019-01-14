@@ -16,7 +16,7 @@ from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, LogRegIntentClassifierConfig,
     ProbabilisticIntentParserConfig)
 from snips_nlu.result import unresolved_slot, intent_classification_result
-from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
+from snips_nlu.slot_filler import SlotFiller
 from snips_nlu.tests.utils import (
     FixtureTest, MockIntentClassifier, MockSlotFiller)
 

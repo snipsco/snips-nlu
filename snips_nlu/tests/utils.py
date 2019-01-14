@@ -157,7 +157,7 @@ class MockProcessingUnitMixin(object):
             f.write(json_string(unit_dict))
 
     @classmethod
-    def from_path(cls, path, **shared):
+    def from_path(cls, path, **shared):  # pylint:disable=unused-argument
         with (path / "metadata.json").open(encoding="utf8") as f:
             metadata = json.load(f)
         fitted = metadata["fitted"]

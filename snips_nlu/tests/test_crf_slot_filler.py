@@ -41,8 +41,9 @@ utterances:
 - please I want [number_of_cups](two) cups of tea""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = CRFSlotFillerConfig(random_seed=42)
+        shared = self.get_shared_data(dataset)
+        slot_filler = CRFSlotFiller(config, **shared)
         intent = "MakeTea"
-        slot_filler = CRFSlotFiller(config, **self.get_shared_data(dataset))
         slot_filler.fit(dataset, intent)
 
         # When

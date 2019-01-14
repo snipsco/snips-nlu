@@ -348,7 +348,7 @@ utterances:
 
     def test_should_handle_empty_dataset(self):
         # Given
-        dataset = validate_and_format_dataset(get_empty_dataset(LANGUAGE_EN))
+        dataset = get_empty_dataset(LANGUAGE_EN)
         shared = self.get_shared_data(dataset)
         engine = SnipsNLUEngine(**shared).fit(dataset)
 
@@ -1057,7 +1057,7 @@ utterances:
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
-        dataset = validate_and_format_dataset({
+        dataset = {
             "intents": {
                 "dummy": {
                     "utterances": [
@@ -1077,7 +1077,7 @@ utterances:
                 "snips/datetime": {}
             },
             "language": "en",
-        })
+        }
 
         # When / Then
         # This should not raise any error

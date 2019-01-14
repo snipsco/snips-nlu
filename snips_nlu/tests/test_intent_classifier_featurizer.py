@@ -8,6 +8,7 @@ import numpy as np
 from mock import patch, MagicMock
 from snips_nlu_utils import normalize
 
+from snips_nlu.common.utils import json_string
 from snips_nlu.constants import LANGUAGE_EN
 from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser

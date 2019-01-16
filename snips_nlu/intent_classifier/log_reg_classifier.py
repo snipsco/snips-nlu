@@ -8,7 +8,11 @@ from pathlib import Path
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from snips_nlu.constants import LANGUAGE, RES_INTENT_NAME, RES_PROBA
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
+from snips_nlu.common.utils import (
+    check_persisted_path, check_random_state,
+    fitted_required, json_string)
+from snips_nlu.constants import LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import Featurizer
@@ -17,10 +21,6 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data, get_regularization_factor, text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
 from snips_nlu.result import intent_classification_result
-from snips_nlu.common.utils import (
-    check_persisted_path, check_random_state,
-    fitted_required, json_string)
-from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 
 logger = logging.getLogger(__name__)
 

@@ -77,8 +77,6 @@ class LogRegIntentClassifier(IntentClassifier):
 
         self.featurizer = Featurizer(
             config=self.config.featurizer_config,
-            unknown_words_replacement_string=\
-                data_augmentation_config.unknown_words_replacement_string,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser
         )
@@ -127,7 +125,7 @@ class LogRegIntentClassifier(IntentClassifier):
     @fitted_required
     def get_intents(self, text):
         """Performs intent classification on the provided *text* and returns
-            the list of intents ordered by decreasing probability
+        the list of intents ordered by decreasing probability
 
         The length of the returned list is exactly the number of intents in the
         dataset + 1 for the None intent

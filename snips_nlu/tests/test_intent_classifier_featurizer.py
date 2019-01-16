@@ -24,8 +24,8 @@ from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
     CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.preprocessing import tokenize_light
-from snips_nlu.tests.utils import FixtureTest, get_empty_dataset, \
-    EntityParserMock
+from snips_nlu.tests.utils import (
+    FixtureTest, get_empty_dataset, EntityParserMock)
 
 
 def _stem(t):

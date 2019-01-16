@@ -14,7 +14,7 @@ from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
-from snips_nlu.exceptions import DatasetFormatError
+from snips_nlu.exceptions import _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import (
     CooccurrenceVectorizer, Featurizer, TfidfVectorizer)
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -264,7 +264,7 @@ values:
         dataset = get_empty_dataset("en")
 
         # When/Then
-        with self.assertRaises(DatasetFormatError) as ctx:
+        with self.assertRaises(_EmptyDatasetUtterancesError) as ctx:
             Featurizer().fit_transform(dataset, utterances, classes, None)
 
         self.assertEqual("Tokenized utterances are empty", str(ctx.exception))

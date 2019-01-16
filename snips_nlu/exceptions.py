@@ -24,6 +24,11 @@ class DatasetFormatError(SnipsNLUError):
     format"""
 
 
+class _EmptyDatasetUtterancesError(SnipsNLUError):
+    """Raised when attempting to train a processing unit on a dataset having
+     only empty utterances"""
+
+
 class EntityFormatError(DatasetFormatError):
     """Raised when attempting to create a Snips NLU entity using a wrong
     format"""

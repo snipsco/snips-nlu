@@ -22,7 +22,7 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (
     is_builtin_entity)
-from snips_nlu.exceptions import (NotTrained, DatasetFormatError)
+from snips_nlu.exceptions import (NotTrained, _EmptyDatasetUtterancesError)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
@@ -85,7 +85,8 @@ class Featurizer(ProcessingUnit):
 
         utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
-            raise DatasetFormatError("Tokenized utterances are empty")
+            raise _EmptyDatasetUtterancesError(
+                "Tokenized utterances are empty")
 
         x_tfidf = self._fit_transform_tfidf_vectorizer(
             utterances, classes, dataset)
@@ -101,8 +102,7 @@ class Featurizer(ProcessingUnit):
     def transform(self, utterances):
         x = self.tfidf_vectorizer.transform(utterances)
         if self.cooccurrence_vectorizer:
-            x_cooccurrence = self.cooccurrence_vectorizer.transform(
-                utterances)
+            x_cooccurrence = self.cooccurrence_vectorizer.transform(utterances)
             x = hstack((x, x_cooccurrence))
         return x
 
@@ -112,8 +112,7 @@ class Featurizer(ProcessingUnit):
         x_tfidf = self.tfidf_vectorizer.fit_transform(x, dataset)
 
         if not self.tfidf_vectorizer.vocabulary:
-            # TODO: raise a custom error here
-            raise DatasetFormatError(
+            raise _EmptyDatasetUtterancesError(
                 "Dataset is empty or with empty utterances")
         _, tfidf_pval = chi2(x_tfidf, y)
         best_tfidf_features = [i for i, v in enumerate(tfidf_pval)

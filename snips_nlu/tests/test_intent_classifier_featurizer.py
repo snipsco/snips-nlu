@@ -321,7 +321,7 @@ values:
 
         # When
         mocked_chi2.return_value = (
-            None, [0.0, 1.0, 0.0, 1.0, 0.0, 1.0] + [1.0 for _ in range(100)])
+            None, [0.1, 1.0, 0.2, 1.0, 0.3, 1.0] + [1.0 for _ in range(100)])
         featurizer._fit_cooccurrence_vectorizer(
             utterances, classes, 1, mocked_dataset)
 
@@ -999,7 +999,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
         self.assertEqual("en", vectorizer.language)
         self.assertDictEqual(vectorizer.word_pairs, word_pairs)
         self.assertEqual(
-            set(["snips/datetime"]), vectorizer.builtin_entity_scope)
+            set(["snips/datetime"]  ), vectorizer.builtin_entity_scope)
 
     def test_enrich_utterance(self):
         # Given

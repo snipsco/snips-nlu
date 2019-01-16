@@ -143,12 +143,15 @@ class Featurizer(ProcessingUnit):
             return self
         _, pval = chi2(x_cooccurrence, classes)
 
-        # TODO: fix top k
         top_k = int(self.config.added_cooccurrence_feature_ratio * len(
             self.tfidf_vectorizer.idf_diag))
-        # Don't select more word pairs than we have
-        top_k = min(len(self.cooccurrence_vectorizer.word_pairs) - 1, top_k)
-        top_k_cooccurrence_ix = np.argpartition(pval, top_k, axis=None)[:top_k]
+
+        # No selection if k is greater or equal than the number of word pairs
+        if top_k >= len(self.cooccurrence_vectorizer.word_pairs):
+            return self
+
+        top_k_cooccurrence_ix = np.argpartition(
+            pval, top_k - 1, axis=None)[:top_k]
         top_k_cooccurrence_ix = set(top_k_cooccurrence_ix)
         top_word_pairs = [
             pair for pair, i in iteritems(

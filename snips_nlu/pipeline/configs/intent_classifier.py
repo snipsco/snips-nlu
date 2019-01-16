@@ -147,12 +147,10 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
     def __init__(self, tfidf_vectorizer_config=None,
                  cooccurrence_vectorizer_config=None,
                  pvalue_threshold=0.4,
-                 word_clusters_name=None,
-                 use_stemming=False,
                  added_cooccurrence_feature_ratio=0):
         """
         Args:
-            tfidf_vectorizer_config (:class:`.DefaultProcessingUnitConfig`):
+            tfidf_vectorizer_config (:class:`.TfidfVectorizerConfig`, optional):
                 empty configuration of the featurizer's
                 :attr:`tfidf_vectorizer`
             cooccurrence_vectorizer_config: (:class:`.CooccurrenceVectorizerConfig`, optional):
@@ -164,12 +162,6 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
                 test, under the null hypothesis that the each feature should be
                 equally present in each class. Only features having a p-value
                 lower that the threshold are kept
-            word_clusters_name (str, optional): if a word cluster name is
-                provided then the featurizer will use the word clusters IDs
-                detected in the utterances and add them to the utterance text
-                before computing the tfidf. Default to None
-            use_stemming (bool, optional): use stemming before computing the
-                tfdif. Defaults to False (no stemming used)
             added_cooccurrence_feature_ratio (float, optional): proportion of
                 cooccurrence features to add with respect of the number of
                 tfidf features. For instance with a ratio of 0.5, if 100 tfidf
@@ -177,17 +169,13 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
                 cooccurrence features will be added
         """
         self.pvalue_threshold = pvalue_threshold
-        self.word_clusters_name = word_clusters_name
-        self.use_stemming = use_stemming
         self.added_cooccurrence_feature_ratio = \
             added_cooccurrence_feature_ratio
 
         if tfidf_vectorizer_config is None:
-            from snips_nlu.intent_classifier import TfidfVectorizer
-            tfidf_vectorizer_config = DefaultProcessingUnitConfig()
-            tfidf_vectorizer_config.set_unit_name(TfidfVectorizer.unit_name)
+            tfidf_vectorizer_config = TfidfVectorizerConfig()
         elif isinstance(tfidf_vectorizer_config, dict):
-            tfidf_vectorizer_config = DefaultProcessingUnitConfig.from_dict(
+            tfidf_vectorizer_config = TfidfVectorizerConfig.from_dict(
                 tfidf_vectorizer_config)
         self.tfidf_vectorizer_config = tfidf_vectorizer_config
 
@@ -197,7 +185,6 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
             cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig \
                 .from_dict(cooccurrence_vectorizer_config)
         self.cooccurrence_vectorizer_config = cooccurrence_vectorizer_config
-        self.use_stemming = use_stemming
 
     @property
     def unit_name(self):
@@ -205,31 +192,56 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
         return Featurizer.unit_name
 
     def get_required_resources(self):
-        if self.use_stemming:
-            parser_usage = CustomEntityParserUsage.WITH_STEMS
-        else:
-            parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
-        if self.word_clusters_name is not None:
-            word_clusters = {self.word_clusters_name}
-        else:
-            word_clusters = set()
-        return {
-            WORD_CLUSTERS: word_clusters,
-            STEMS: self.use_stemming,
-            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
-        }
+        required_resources = self.tfidf_vectorizer_config \
+            .get_required_resources()
+        if self.cooccurrence_vectorizer_config:
+            required_resources = merge_required_resources(
+                required_resources,
+                self.cooccurrence_vectorizer_config.get_required_resources())
+        return required_resources
 
     def to_dict(self):
         return {
             "unit_name": self.unit_name,
             "pvalue_threshold": self.pvalue_threshold,
-            "word_clusters_name": self.word_clusters_name,
-            "use_stemming": self.use_stemming,
             "added_cooccurrence_feature_ratio":
                 self.added_cooccurrence_feature_ratio,
             "tfidf_vectorizer_config": self.tfidf_vectorizer_config.to_dict(),
             "cooccurrence_vectorizer_config":
                 self.cooccurrence_vectorizer_config.to_dict(),
+        }
+
+class TfidfVectorizerConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.TfidfVectorizerConfig` object"""
+
+    def __init__(self, word_clusters_name=None, use_stemming=False):
+        """
+        Args:
+            word_clusters_name (str, optional): if a word cluster name is
+                provided then the featurizer will use the word clusters IDs
+                detected in the utterances and add them to the utterance text
+                before computing the tfidf. Default to None
+            use_stemming (bool, optional): use stemming before computing the
+                tfdif. Defaults to False (no stemming used)
+        """
+        self.word_clusters_name = word_clusters_name
+        self.use_stemming = use_stemming
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import TfidfVectorizer
+        return TfidfVectorizer.unit_name
+
+    def get_required_resources(self):
+        resources = {STEMS: True if self.use_stemming else False}
+        if self.word_clusters_name:
+            resources[WORD_CLUSTERS] = self.word_clusters_name
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "word_clusters_name": self.word_clusters_name,
+            "use_stemming": self.use_stemming
         }
 
 
@@ -261,7 +273,16 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
         return CooccurrenceVectorizer.unit_name
 
     def get_required_resources(self):
-        return {STOP_WORDS: True}
+        return {
+            STOP_WORDS: self.filter_stop_words,
+            # We require the parser to be trained without stems because we
+            # don't normalized and stem when processing in the
+            # CooccurrenceVectorizer (in order to run the builtin and
+            # custom parser on the same unormalized input).
+            # Requiring no stems ensure we'll be able to parse the unstemmed
+            # input
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
+        }
 
     def to_dict(self):
         return {

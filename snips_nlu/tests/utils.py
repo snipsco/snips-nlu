@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import traceback as tb
+from builtins import object
 from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
@@ -12,6 +13,7 @@ from unittest import TestCase
 from snips_nlu_ontology import get_all_languages
 
 from snips_nlu.common.utils import json_string, unicode_string
+from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.resources import load_resources
@@ -201,3 +203,24 @@ class MockSlotFiller(SlotFiller):
     def from_path(cls, path, **shared):
         config = cls.config_type()  # pylint:disable=no-value-for-parameter
         return cls(config)
+
+
+class EntityParserMock(EntityParser):
+
+    def __init__(self, entities):
+        super(EntityParserMock, self).__init__()
+        self.entities = entities
+
+    def persist(self, path):
+        with path.open("r", encoding="utf-8") as f:
+            f.write(json_string(self.entities))
+
+    @classmethod
+    def from_path(cls, path):
+        path = Path(path)
+        with path.open("r", encoding="utf-8") as f:
+            entities = json.load(f)
+        return cls(entities)
+
+    def _parse(self, text, scope=None):
+        return self.entities.get(text)

@@ -45,7 +45,6 @@ class EntityParser(with_metaclass(ABCMeta, object)):
                     containing the string value, the resolved value, the
                     entity kind and the entity range
         """
-        text = text.lower()
         if not use_cache:
             return self._parse(text, scope)
         scope_key = tuple(sorted(scope)) if scope is not None else scope

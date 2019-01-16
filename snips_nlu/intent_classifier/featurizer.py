@@ -17,8 +17,8 @@ from sklearn.utils.validation import check_is_fitted
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
-    DATA, END, ENTITIES, ENTITY, ENTITY_KIND,
-    LANGUAGE, NGRAM, RES_MATCH_RANGE, RES_VALUE, START, TEXT)
+    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE, NGRAM, RES_MATCH_RANGE,
+    RES_VALUE, START, TEXT, ENTITIES)
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import (
     is_builtin_entity)
@@ -26,7 +26,7 @@ from snips_nlu.exceptions import (NotTrained, DatasetFormatError)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
-    CooccurrenceVectorizerConfig)
+    CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.preprocessing import stem, tokenize_light
 from snips_nlu.resources import (
@@ -47,7 +47,6 @@ class Featurizer(ProcessingUnit):
         self.language = None
         self.tfidf_vectorizer = None
         self.cooccurrence_vectorizer = None
-        self.builtin_entity_scope = None
 
     @property
     def fitted(self):
@@ -88,67 +87,32 @@ class Featurizer(ProcessingUnit):
         if not any(tokenize_light(q, self.language) for q in utterances_texts):
             raise DatasetFormatError("Tokenized utterances are empty")
 
-        self.fit_builtin_entity_parser_if_needed(dataset)
-        self.fit_custom_entity_parser_if_needed(dataset)
-
-        dataset_entities = set(dataset[ENTITIES])
-
-        self.builtin_entity_scope = set(
-            e for e in dataset_entities if is_builtin_entity(e))
-
-        preprocessed = self._preprocess(utterances, training=True)
-        preprocessed_utterances = preprocessed[0]
-        preprocessed_utterances_texts = preprocessed[1]
-        builtin_ents = preprocessed[2]
-        custom_ents = preprocessed[3]
-        w_clusters = preprocessed[4]
-
-        tfidf_data = list(zip(
-            preprocessed_utterances, builtin_ents, custom_ents, w_clusters))
-        x_tfidf = self._fit_transform_tfidf_vectorizer(tfidf_data, classes)
-
+        x_tfidf = self._fit_transform_tfidf_vectorizer(
+            utterances, classes, dataset)
         x = x_tfidf
         if self.config.added_cooccurrence_feature_ratio:
-            cooccurrence_data = list(
-                zip(preprocessed_utterances_texts, builtin_ents, custom_ents))
-
-            # We fit the coocurrence matrix without noise
             self._fit_cooccurrence_vectorizer(
-                cooccurrence_data, classes, none_class)
-
-            # We fit transform all the data
-            x_cooccurrence = self.cooccurrence_vectorizer.transform(
-                cooccurrence_data)
-
+                utterances, classes, none_class, dataset)
+            x_cooccurrence = self.cooccurrence_vectorizer.transform(utterances)
             x = hstack((x_tfidf, x_cooccurrence))
 
         return x
 
     def transform(self, utterances):
-        preprocessed = self._preprocess(utterances)
-        preprocessed_utterances = preprocessed[0]
-        preprocessed_utterances_texts = preprocessed[1]
-        builtin_ents = preprocessed[2]
-        custom_ents = preprocessed[3]
-        w_clusters = preprocessed[4]
-
-        tfidf_data = zip(
-            preprocessed_utterances, builtin_ents, custom_ents, w_clusters)
-        x = self.tfidf_vectorizer.transform(tfidf_data)
+        x = self.tfidf_vectorizer.transform(utterances)
         if self.cooccurrence_vectorizer:
-            cooccurrence_data = zip(
-                preprocessed_utterances_texts, builtin_ents, custom_ents)
             x_cooccurrence = self.cooccurrence_vectorizer.transform(
-                cooccurrence_data)
+                utterances)
             x = hstack((x, x_cooccurrence))
         return x
 
-    def _fit_transform_tfidf_vectorizer(self, x, y):
+    def _fit_transform_tfidf_vectorizer(self, x, y, dataset):
         self.tfidf_vectorizer = TfidfVectorizer(
             self.config.tfidf_vectorizer_config)
-        x_tfidf = self.tfidf_vectorizer.fit_transform(x, self.language)
+        x_tfidf = self.tfidf_vectorizer.fit_transform(x, dataset)
 
         if not self.tfidf_vectorizer.vocabulary:
+            # TODO: raise a custom error here
             raise DatasetFormatError(
                 "Dataset is empty or with empty utterances")
         _, tfidf_pval = chi2(x_tfidf, y)
@@ -164,27 +128,28 @@ class Featurizer(ProcessingUnit):
                        if i in best_tfidf_features]
         self.tfidf_vectorizer.limit_vocabulary(best_ngrams)
         # We can't return x_tfidf[:best_tfidf_features] because of the
-        # normalization in the tranform of the tfidf_vectorizer
+        # normalization in the transform of the tfidf_vectorizer
         # this would lead to inconsistent result between: fit_transform(x, y)
         # and fit(x, y).transform(x)
         return self.tfidf_vectorizer.transform(x)
 
-    def _fit_cooccurrence_vectorizer(self, data, classes, none_class):
-        non_null_data = (d for d, c in zip(data, classes) if c != none_class)
+    def _fit_cooccurrence_vectorizer(self, x, classes, none_class, dataset):
+        non_null_x = (d for d, c in zip(x, classes) if c != none_class)
         self.cooccurrence_vectorizer = CooccurrenceVectorizer(
             self.config.cooccurrence_vectorizer_config)
         x_cooccurrence = self.cooccurrence_vectorizer.fit(
-            non_null_data, self.language).transform(data)
+            non_null_x, dataset).transform(x)
         if not self.cooccurrence_vectorizer.word_pairs:
             return self
         _, pval = chi2(x_cooccurrence, classes)
+
+        # TODO: fix top k
         top_k = int(self.config.added_cooccurrence_feature_ratio * len(
             self.tfidf_vectorizer.idf_diag))
         # Don't select more word pairs than we have
         top_k = min(len(self.cooccurrence_vectorizer.word_pairs) - 1, top_k)
         top_k_cooccurrence_ix = np.argpartition(pval, top_k, axis=None)[:top_k]
         top_k_cooccurrence_ix = set(top_k_cooccurrence_ix)
-
         top_word_pairs = [
             pair for pair, i in iteritems(
                 self.cooccurrence_vectorizer.word_pairs)
@@ -193,50 +158,6 @@ class Featurizer(ProcessingUnit):
 
         self.cooccurrence_vectorizer.limit_word_pairs(top_word_pairs)
         return self
-
-    def _preprocess(self, utterances, training=False):
-        normalized_utterances = deepcopy(utterances)
-        normalized_utterances_texts = []
-        for u in normalized_utterances:
-            for chunk in u[DATA]:
-                chunk[TEXT] = _normalize_stem(chunk[TEXT], self.language,
-                                              self.config.use_stemming)
-            normalized_text = get_default_sep(self.language).join(
-                chunk[TEXT] for chunk in u[DATA])
-            normalized_utterances_texts.append(normalized_text)
-
-        if training:
-            builtin_ents, custom_ents = zip(*(
-                _entities_from_utterance(u, self.config.use_stemming,
-                                         self.language) for u in utterances))
-        else:
-            # Extract builtin entities
-            builtin_ents = [
-                self.builtin_entity_parser.parse(
-                    u, self.builtin_entity_scope, use_cache=True)
-                for u in normalized_utterances_texts
-            ]
-
-            custom_ents = [
-                self.custom_entity_parser.parse(u, use_cache=True)
-                for u in normalized_utterances_texts
-            ]
-
-        if self.config.word_clusters_name:
-            original_utterances_text = [get_text_from_chunks(u[DATA])
-                                        for u in utterances]
-            w_clusters = [
-                _get_word_cluster_features(
-                    tokenize_light(u.lower(), self.language),
-                    self.config.word_clusters_name,
-                    self.language)
-                for u in original_utterances_text
-            ]
-        else:
-            w_clusters = [None for _ in normalized_utterances]
-
-        return (normalized_utterances, normalized_utterances_texts,
-                builtin_ents, custom_ents, w_clusters)
 
     def persist(self, path):
         path = Path(path)
@@ -255,17 +176,12 @@ class Featurizer(ProcessingUnit):
             cooccurrence_vectorizer_path = path / cooccurrence_vectorizer
             self.cooccurrence_vectorizer.persist(cooccurrence_vectorizer_path)
 
-        builtin_scope = self.builtin_entity_scope
-        if builtin_scope is not None:
-            builtin_scope = list(builtin_scope)
-
         # Persist main object
         self_as_dict = {
             "language_code": self.language,
             "tfidf_vectorizer": tfidf_vectorizer,
             "cooccurrence_vectorizer": cooccurrence_vectorizer,
-            "config": self.config.to_dict(),
-            "builtin_entity_scope": builtin_scope
+            "config": self.config.to_dict()
         }
 
         featurizer_path = path / "featurizer.json"
@@ -302,58 +218,22 @@ class Featurizer(ProcessingUnit):
                 vectorizer_path, **shared)
         featurizer.cooccurrence_vectorizer = cooccurrence_vectorizer
 
-        builtin_scope = featurizer_dict["builtin_entity_scope"]
-        if builtin_scope is not None:
-            builtin_scope = set(builtin_scope)
-        featurizer.builtin_entity_scope = builtin_scope
-
         return featurizer
-
-
-def _get_tokens_clusters(tokens, language, cluster_name):
-    clusters = get_word_cluster(language, cluster_name)
-    return [clusters[t] for t in tokens if t in clusters]
-
-
-def _entity_name_to_feature(entity_name, language):
-    return "entityfeature%s" % "".join(tokenize_light(
-        entity_name.lower(), language))
-
-
-def _builtin_entity_to_feature(builtin_entity_label, language):
-    return "builtinentityfeature%s" % "".join(tokenize_light(
-        builtin_entity_label.lower(), language))
-
-
-def _normalize_stem(text, language, use_stemming):
-    if use_stemming:
-        return stem(text, language)
-    return normalize(text)
-
-
-def _get_word_cluster_features(query_tokens, clusters_name, language):
-    if not clusters_name:
-        return []
-    ngrams = get_all_ngrams(query_tokens)
-    cluster_features = []
-    for ngram in ngrams:
-        cluster = get_word_cluster(language, clusters_name).get(
-            ngram[NGRAM].lower(), None)
-        if cluster is not None:
-            cluster_features.append(cluster)
-    return cluster_features
 
 
 @ProcessingUnit.register("tfidf_vectorizer")
 class TfidfVectorizer(ProcessingUnit):
     """Wrapper of the scikit-learn TfidfVectorizer"""
 
+    config_type = TfidfVectorizerConfig
+
     def __init__(self, config=None, **shared):
         super(TfidfVectorizer, self).__init__(config, **shared)
         self._tfidf_vectorizer = None
         self._language = None
+        self.builtin_entity_scope = None
 
-    def fit(self, x, language):
+    def fit(self, x, dataset):
         """Fits the idf of the vectorizer on the given utterances after
         enriching them with builtin entities matches, custom entities matches
         and the potential word matches
@@ -367,16 +247,21 @@ class TfidfVectorizer(ProcessingUnit):
         Returns:
             :class:`.TfidfVectorizer`: The fitted vectorizer
         """
-        self._language = language
+        self._language = dataset[LANGUAGE]
         self._init_vectorizer()
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
+        self.builtin_entity_scope = set(
+            e for e in dataset[ENTITIES] if is_builtin_entity(e))
+        preprocessed_data = self._preprocess(x, training=True)
         utterances = [
-            self._enrich_utterance_for_tfidf(
-                u, builtin_ents, custom_ents, w_clusters)
-            for u, builtin_ents, custom_ents, w_clusters in x
+            self._enrich_utterance(u, builtin_ents, custom_ents, w_clusters)
+            for u, builtin_ents, custom_ents, w_clusters
+            in zip(*preprocessed_data)
         ]
         return self._tfidf_vectorizer.fit(utterances)
 
-    def fit_transform(self, x, language):
+    def fit_transform(self, x, dataset):
         """Fits the idf of the vectorizer on the given utterances after
         enriching them with builtin entities matches, custom entities matches
         and the potential word matches. Returns the featurized utterances
@@ -393,12 +278,17 @@ class TfidfVectorizer(ProcessingUnit):
             X[i, j] contains tfdif of the ngram of index j of the
             vocabulary in the utterance i
         """
-        self._language = language
+        self._language = dataset[LANGUAGE]
         self._init_vectorizer()
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
+        self.builtin_entity_scope = set(
+            e for e in dataset[ENTITIES] if is_builtin_entity(e))
+        preprocessed_data = self._preprocess(x, training=True)
         utterances = [
-            self._enrich_utterance_for_tfidf(
-                u, builtin_ents, custom_ents, w_clusters)
-            for u, builtin_ents, custom_ents, w_clusters in x
+            self._enrich_utterance(u, builtin_ents, custom_ents, w_clusters)
+            for u, builtin_ents, custom_ents, w_clusters
+            in zip(*preprocessed_data)
         ]
         return self._tfidf_vectorizer.fit_transform(utterances)
 
@@ -421,11 +311,52 @@ class TfidfVectorizer(ProcessingUnit):
             (len(x), len(self.vocabulary)) where X[i, j] contains tfdif of the
             ngram of index j of the vocabulary in the utterance i
         """
-        utterances = [self._enrich_utterance_for_tfidf(*data) for data in x]
+        utterances = [self._enrich_utterance(*data)
+                      for data in zip(*self._preprocess(x))]
         return self._tfidf_vectorizer.transform(utterances)
 
-    def _enrich_utterance_for_tfidf(self, utterance, builtin_entities,
-                                    custom_entities, word_clusters):
+    def _preprocess(self, utterances, training=False):
+        normalized_utterances = deepcopy(utterances)
+        for u in normalized_utterances:
+            for chunk in u[DATA]:
+                chunk[TEXT] = _normalize_stem(
+                    chunk[TEXT], self.language, self.config.use_stemming)
+
+        if training:
+            builtin_ents, custom_ents = zip(
+                *[_entities_from_utterance(u) for u in utterances])
+        else:
+            # Extract builtin entities on unormalized utterances
+            builtin_ents = [
+                self.builtin_entity_parser.parse(
+                    get_text_from_chunks(u[DATA]),
+                    self.builtin_entity_scope, use_cache=True)
+                for u in utterances
+            ]
+            # Extract builtin entities on normalized utterances
+            custom_ents = [
+                self.custom_entity_parser.parse(
+                    get_text_from_chunks(u[DATA]), use_cache=True)
+                for u in normalized_utterances
+            ]
+        if self.config.word_clusters_name:
+            # Extract world clusters on unormalized utterances
+            original_utterances_text = [get_text_from_chunks(u[DATA])
+                                        for u in utterances]
+            w_clusters = [
+                _get_word_cluster_features(
+                    tokenize_light(u.lower(), self.language),
+                    self.config.word_clusters_name,
+                    self.language)
+                for u in original_utterances_text
+            ]
+        else:
+            w_clusters = [None for _ in normalized_utterances]
+
+        return (normalized_utterances, builtin_ents, custom_ents, w_clusters)
+
+    def _enrich_utterance(self, utterance, builtin_entities, custom_entities,
+                          word_clusters):
         custom_entities_features = [
             _entity_name_to_feature(e[ENTITY_KIND], self.language)
             for e in custom_entities]
@@ -533,9 +464,14 @@ class TfidfVectorizer(ProcessingUnit):
                 "idf_diag": idf_diag
             }
 
+        builtin_entity_scope = None
+        if self.builtin_entity_scope is not None:
+            builtin_entity_scope = list(self.builtin_entity_scope)
+
         self_as_dict = {
             "vectorizer": vectorizer_,
             "language_code": self.language,
+            "builtin_entity_scope": builtin_entity_scope,
             "config": self.config.to_dict(),
         }
 
@@ -556,6 +492,11 @@ class TfidfVectorizer(ProcessingUnit):
 
         vectorizer = cls(vectorizer_dict["config"], **shared)
         vectorizer._language = vectorizer_dict["language_code"]
+
+        builtin_entity_scope = vectorizer_dict["builtin_entity_scope"]
+        if builtin_entity_scope is not None:
+            builtin_entity_scope = set(builtin_entity_scope)
+        vectorizer.builtin_entity_scope = builtin_entity_scope
 
         vectorizer_ = vectorizer_dict["vectorizer"]
         if vectorizer_:
@@ -593,8 +534,19 @@ class CooccurrenceVectorizer(ProcessingUnit):
         super(CooccurrenceVectorizer, self).__init__(config, **shared)
         self._word_pairs = None
         self._language = None
+        self.builtin_entity_scope = None
 
-    def fit(self, x, language):
+    @property
+    def language(self):
+        # Create this getter to prevent the language from being set elsewhere
+        # than in the fit
+        return self._language
+
+    @property
+    def word_pairs(self):
+        return self._word_pairs
+
+    def fit(self, x, dataset):
         """Fits the CooccurrenceVectorizer
 
         Given list of utterances the CooccurrenceVectorizer will extract word
@@ -611,16 +563,18 @@ class CooccurrenceVectorizer(ProcessingUnit):
         Returns:
             :class:`.CooccurrenceVectorizer`: The fitted vectorizer
         """
-        self._language = language
-        utterances = self._preprocess(list(x))
-        word_pairs = set()
-        for u in utterances:
-            for i, w1 in enumerate(u):
-                max_index = None
-                if self.config.window_size is not None:
-                    max_index = i + self.config.window_size + 1
-                for w2 in u[i + 1:max_index]:
-                    word_pairs.add((w1, w2))
+        self._language = dataset[LANGUAGE]
+        self.fit_builtin_entity_parser_if_needed(dataset)
+        self.fit_custom_entity_parser_if_needed(dataset)
+        self.builtin_entity_scope = set(
+            e for e in dataset[ENTITIES] if is_builtin_entity(e))
+
+        preprocessed = self._preprocess(list(x), training=True)
+        utterances = [
+            self._enrich_utterance(utterance, builtin_ents, custom_ent)
+            for utterance, builtin_ents, custom_ent in zip(*preprocessed)]
+        word_pairs = set(
+            p for u in utterances for p in self._extract_word_pairs(u))
         self._word_pairs = {
             pair: i for i, pair in enumerate(sorted(word_pairs))
         }
@@ -629,7 +583,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
     def fitted(self):
         return self.word_pairs is not None
 
-    def fit_transform(self, x, language):
+    def fit_transform(self, x, dataset):
         """Fits the vectorizer and returns the feature matrix
 
         Args:
@@ -643,31 +597,24 @@ class CooccurrenceVectorizer(ProcessingUnit):
             X[i, j] = 1.0 if x[i][0] contains the words cooccurrence
             (w1, w2) and if self.word_pairs[(w1, w2)] = j
         """
-        return self.fit(x, language).transform(x)
+        return self.fit(x, dataset).transform(x)
 
-    def _preprocess(self, x):
-        if not x:
-            return []
-        utterances, builtin_ents, custom_ents = zip(*x)
-
-        all_entities = (b + c for b, c in zip(builtin_ents, custom_ents))
+    def _enrich_utterance(self, x, builtin_ents, custom_ents):
+        utterance = get_text_from_chunks(x[DATA])
+        all_entities = builtin_ents + custom_ents
         placeholder_fn = self._get_placeholder_fn()
-        tokenized_utterances = [
-            replace_entities_with_placeholders(u, ents, placeholder_fn)[1]
-            for u, ents in zip(utterances, all_entities)
-        ]
-
-        tokenized_utterances = [tokenize_light(u, self.language)
-                                for u in tokenized_utterances]
-
+        # Replace entities with placeholders
+        enriched_utterance = replace_entities_with_placeholders(
+            utterance, all_entities, placeholder_fn)[1]
+        # Tokenize
+        enriched_utterance = tokenize_light(enriched_utterance, self.language)
+        # Remove the unknownword strings if needed
         if self.config.unknown_words_replacement_string:
-            tokenized_utterances = [
-                [t for t in u if
-                 t != self.config.unknown_words_replacement_string]
-                for u in tokenized_utterances
+            enriched_utterance = [
+                t for t in enriched_utterance
+                if t != self.config.unknown_words_replacement_string
             ]
-
-        return tokenized_utterances
+        return enriched_utterance
 
     def transform(self, x):
         """Computes the cooccurrence feature matrix.
@@ -682,33 +629,51 @@ class CooccurrenceVectorizer(ProcessingUnit):
         """
         if self.word_pairs is None:
             raise NotTrained("CooccurrenceVectorizer must be fitted")
-        x = list(x)
-        utterances = self._preprocess(x)
+        preprocessed = self._preprocess(x, training=False)
+        utterances = [
+            self._enrich_utterance(utterance, builtin_ents, custom_ent)
+            for utterance, builtin_ents, custom_ent in zip(*preprocessed)]
+
         x_coo = dok_matrix((len(x), len(self.word_pairs)), dtype=np.int32)
-        if self.config.filter_stop_words:
-            stop_words = get_stop_words(self.language)
-            utterances = ([t for t in u if t not in stop_words]
-                          for u in utterances)
         for i, u in enumerate(utterances):
-            for j, w1 in enumerate(u):
-                max_index = None
-                if self.config.window_size is not None:
-                    max_index = j + self.config.window_size + 1
-                for w2 in u[j + 1:max_index]:
-                    if (w1, w2) in self.word_pairs:
-                        x_coo[i, self.word_pairs[(w1, w2)]] = 1
+            for p in self._extract_word_pairs(u):
+                if p in self.word_pairs:
+                    x_coo[i, self.word_pairs[p]] = 1
 
         return x_coo.tocsr()
 
-    @property
-    def language(self):
-        # Create this getter to prevent the language from being set elsewhere
-        # than in the fit
-        return self._language
+    def _preprocess(self, x, training=False):
+        if training:
+            builtin_ents, custom_ents = zip(
+                *[_entities_from_utterance(u) for u in x])
+        else:
+            # Extract all entities on unnormalized data
+            builtin_ents = [
+                self.builtin_entity_parser.parse(
+                    get_text_from_chunks(u[DATA]),
+                    self.builtin_entity_scope,
+                    use_cache=True
+                ) for u in x
+            ]
+            custom_ents = [
+                self.custom_entity_parser.parse(
+                    get_text_from_chunks(u[DATA]), use_cache=True)
+                for u in x
+            ]
+        return x, builtin_ents, custom_ents
 
-    @property
-    def word_pairs(self):
-        return self._word_pairs
+    def _extract_word_pairs(self, utterance):
+        if self.config.filter_stop_words:
+            stop_words = get_stop_words(self.language)
+            utterance = [t for t in utterance if t not in stop_words]
+        pairs = set()
+        for j, w1 in enumerate(utterance):
+            max_index = None
+            if self.config.window_size is not None:
+                max_index = j + self.config.window_size + 1
+            for w2 in utterance[j + 1:max_index]:
+                pairs.add((w1, w2))
+        return pairs
 
     def limit_word_pairs(self, word_pairs):
         """Set the vectorizer word_pairs to be equal to the by limiting it to
@@ -756,11 +721,16 @@ class CooccurrenceVectorizer(ProcessingUnit):
         path = Path(path)
         path.mkdir()
 
+        builtin_entity_scope = None
+        if self.builtin_entity_scope is not None:
+            builtin_entity_scope = list(self.builtin_entity_scope)
+
         self_as_dict = {
             "language_code": self.language,
             "word_pairs": {
                 i: list(p) for p, i in iteritems(self.word_pairs)
             },
+            "builtin_entity_scope": builtin_entity_scope,
             "config": self.config.to_dict()
         }
         vectorizer_json = json_string(self_as_dict)
@@ -784,6 +754,12 @@ class CooccurrenceVectorizer(ProcessingUnit):
         self = cls(config, **shared)
         self._language = vectorizer_dict["language_code"]
         self._word_pairs = None
+
+        builtin_entity_scope = vectorizer_dict["builtin_entity_scope"]
+        if builtin_entity_scope is not None:
+            builtin_entity_scope = set(builtin_entity_scope)
+        self.builtin_entity_scope = builtin_entity_scope
+
         if vectorizer_dict["word_pairs"]:
             self._word_pairs = {
                 tuple(p): int(i)
@@ -792,14 +768,46 @@ class CooccurrenceVectorizer(ProcessingUnit):
         return self
 
 
-def _entities_from_utterance(utterance, use_stemming, language):
+def _get_tokens_clusters(tokens, language, cluster_name):
+    clusters = get_word_cluster(language, cluster_name)
+    return [clusters[t] for t in tokens if t in clusters]
+
+
+def _entity_name_to_feature(entity_name, language):
+    return "entityfeature%s" % "".join(tokenize_light(
+        entity_name.lower(), language))
+
+
+def _builtin_entity_to_feature(builtin_entity_label, language):
+    return "builtinentityfeature%s" % "".join(tokenize_light(
+        builtin_entity_label.lower(), language))
+
+
+def _normalize_stem(text, language, use_stemming):
+    if use_stemming:
+        return stem(text, language)
+    return normalize(text)
+
+
+def _get_word_cluster_features(query_tokens, clusters_name, language):
+    if not clusters_name:
+        return []
+    ngrams = get_all_ngrams(query_tokens)
+    cluster_features = []
+    for ngram in ngrams:
+        cluster = get_word_cluster(language, clusters_name).get(
+            ngram[NGRAM].lower(), None)
+        if cluster is not None:
+            cluster_features.append(cluster)
+    return cluster_features
+
+
+def _entities_from_utterance(utterance):
     builtin_ents = []
     custom_ents = []
     current_ix = 0
     for i, chunk in enumerate(utterance[DATA]):
-        text = _normalize_stem(chunk[TEXT], language, use_stemming)
-        if i != 0:
-            current_ix += 1  # normalized stemmed tokens are joined with a " "
+        text = chunk[TEXT]
         text_length = len(text)
         if ENTITY in chunk:
             ent = {

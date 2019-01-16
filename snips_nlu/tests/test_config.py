@@ -17,7 +17,7 @@ from snips_nlu.pipeline.configs import (
     SlotFillerDataAugmentationConfig)
 from snips_nlu.pipeline.configs.config import DefaultProcessingUnitConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
-    CooccurrenceVectorizerConfig)
+    CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -57,14 +57,11 @@ class TestConfig(SnipsTest):
 
     def test_featurizer_config(self):
         # Given
-        tfid_vectorizer_config = DefaultProcessingUnitConfig()
-        tfid_vectorizer_config.set_unit_name(TfidfVectorizer.unit_name)
+        tfid_vectorizer_config = TfidfVectorizerConfig()
         cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig()
         config_dict = {
             "unit_name": "featurizer",
             "pvalue_threshold": 0.2,
-            "word_clusters_name": "my_clusters",
-            "use_stemming": True,
             "added_cooccurrence_feature_ratio": 0.2,
             "tfidf_vectorizer_config": tfid_vectorizer_config.to_dict(),
             "cooccurrence_vectorizer_config":
@@ -73,6 +70,21 @@ class TestConfig(SnipsTest):
 
         # When
         config = FeaturizerConfig.from_dict(config_dict)
+        serialized_config = config.to_dict()
+
+        # Then
+        self.assertDictEqual(config_dict, serialized_config)
+
+    def test_tfidf_vectorizer_config(self):
+        # Given
+        config_dict = {
+            "unit_name": "tfidf_vectorizer",
+            "use_stemming": False,
+            "word_clusters_name": None
+        }
+
+        # When
+        config = TfidfVectorizerConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then

@@ -30,7 +30,7 @@ class BuiltinEntityParser(EntityParser):
         self._parser = parser
 
     def _parse(self, text, scope=None):
-        entities = self._parser.parse(text, scope=scope)
+        entities = self._parser.parse(text.lower(), scope=scope)
         result = []
         for entity in entities:
             ent = parsed_entity(

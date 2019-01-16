@@ -180,10 +180,11 @@ CONFIG = {
                 },
                 "featurizer_config": {
                     "pvalue_threshold": 0.4,
-                    "word_clusters_name": None,
-                    "use_stemming": False,
-                    "added_cooccurrence_feature_ratio": 0,
-                    "tfidf_vectorizer_config": {},
+                    "added_cooccurrence_feature_ratio": 0.0,
+                    "tfidf_vectorizer_config": {
+                        "use_stemming": False,
+                        "word_clusters_name": None
+                    },
                     "cooccurrence_vectorizer_config": {
                         "unknown_words_replacement_string": None,
                         "window_size": None,

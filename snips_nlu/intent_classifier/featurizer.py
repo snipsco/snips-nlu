@@ -691,7 +691,6 @@ class CooccurrenceVectorizer(ProcessingUnit):
         }
         return self
 
-    @fitted_required
     def _placeholder_fn(self, entity_name):
         return "".join(
             tokenize_light(str(entity_name), str(self.language))).upper()

@@ -998,7 +998,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
         self.assertDictEqual(config.to_dict(), vectorizer.config.to_dict())
         self.assertEqual("en", vectorizer.language)
         self.assertDictEqual(vectorizer.word_pairs, word_pairs)
-        self.assertEqual(set(["snips/datetime"]),
+        self.assertEqual({"snips/datetime"},
                          vectorizer.builtin_entity_scope)
 
     def test_enrich_utterance(self):
@@ -1313,7 +1313,7 @@ values:
         u_1 = text_to_utterance("beauTiful World entity 1")
         u_2 = text_to_utterance("Bird bïrdy")
         u_3 = text_to_utterance("Bird birdy")
-        utterances = [u_0, u_1, u_2, u_3, ]
+        utterances = [u_0, u_1, u_2, u_3]
 
         config = CooccurrenceVectorizerConfig()
         vectorizer = CooccurrenceVectorizer(

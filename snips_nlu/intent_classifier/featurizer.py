@@ -239,9 +239,7 @@ class TfidfVectorizer(ProcessingUnit):
         and the potential word matches
 
         Args:
-            x (list of 4-tuple): list of 4-tuple in the form: utterance in the
-                dictionary format: (utterance, builtin entities,
-                custom entities, potential word clusters)
+            x (list of dict): list dict utterances
             dataset (dict): dataset from which x was extracted (needed to
                 extract the language and the builtin entity scope)
 
@@ -268,9 +266,7 @@ class TfidfVectorizer(ProcessingUnit):
         and the potential word matches. Returns the featurized utterances
 
         Args:
-            x (list of 4-tuple): list of 4-tuple in the form: utterance in the
-                dictionary format: (utterance, builtin entities,
-                custom entities, potential word clusters)
+            x (list of dict): list dict utterances
             dataset (dict): dataset from which x was extracted (needed to
                 extract the language and the builtin entity scope)
 
@@ -303,9 +299,7 @@ class TfidfVectorizer(ProcessingUnit):
         matches
 
         Args:
-            x (list of 4-tuple): list of 4-tuple in the form: utterance in the
-                dictionary format: (utterance, builtin entities,
-                custom entities, potential word clusters)
+            x (list of dict): list dict utterances
 
         Returns:
             :class:`.scipy.sparse.csr_matrix`: A sparse matrix X of shape
@@ -552,8 +546,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
         self.config.window_size after each word.
 
         Args:
-            x (iterable): iterable of 3-tuples of the form
-                (tokenized_utterances, builtin_entities, custom_entities)
+            x (list of dict): list dict utterances
             dataset (dict): dataset from which x was extracted (needed to
                 extract the language and the builtin entity scope)
 
@@ -617,8 +610,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
     def transform(self, x):
         """Computes the cooccurrence feature matrix.
         Args:
-            x (iterable): iterable of 3-tuples of the form
-            (tokenized_utterances, builtin_entities, custom_entities)
+            x (list of dict): list dict utterances
 
         Returns:
             :class:`.scipy.sparse.csr_matrix`: A sparse matrix X of shape

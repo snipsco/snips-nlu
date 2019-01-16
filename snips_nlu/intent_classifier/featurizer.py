@@ -796,7 +796,7 @@ def _entities_from_utterance(utterance):
     builtin_ents = []
     custom_ents = []
     current_ix = 0
-    for i, chunk in enumerate(utterance[DATA]):
+    for chunk in utterance[DATA]:
         text = chunk[TEXT]
         text_length = len(text)
         if ENTITY in chunk:

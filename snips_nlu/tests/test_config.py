@@ -9,13 +9,12 @@ from snips_nlu import SnipsNLUEngine
 from snips_nlu.constants import LANGUAGE, RES_INTENT, RES_INTENT_NAME
 from snips_nlu.dataset import Dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
-from snips_nlu.intent_classifier import LogRegIntentClassifier, TfidfVectorizer
+from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, DeterministicIntentParserConfig, FeaturizerConfig,
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig,
     NLUEngineConfig, ProbabilisticIntentParserConfig,
     SlotFillerDataAugmentationConfig)
-from snips_nlu.pipeline.configs.config import DefaultProcessingUnitConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
     CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.tests.utils import SnipsTest

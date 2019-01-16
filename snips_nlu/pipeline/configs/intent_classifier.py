@@ -6,7 +6,6 @@ from snips_nlu.constants import (
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
-from snips_nlu.pipeline.configs.config import DefaultProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
 
 
@@ -210,6 +209,7 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
             "cooccurrence_vectorizer_config":
                 self.cooccurrence_vectorizer_config.to_dict(),
         }
+
 
 class TfidfVectorizerConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.TfidfVectorizerConfig` object"""

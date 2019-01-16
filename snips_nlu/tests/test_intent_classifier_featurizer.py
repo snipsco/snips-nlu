@@ -92,7 +92,7 @@ utterances:
         self.assertTrue(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-                self.tmp_file_path / "cooccurrence_vectorizer")
+            self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertTrue(cooccurrence_vectorizer_path.exists())
 
     def test_should_be_serializable_before_fit(self):
@@ -125,7 +125,7 @@ utterances:
         self.assertFalse(tfidf_vectorizer_path.exists())
 
         cooccurrence_vectorizer_path = (
-                self.tmp_file_path / "cooccurrence_vectorizer")
+            self.tmp_file_path / "cooccurrence_vectorizer")
         self.assertFalse(cooccurrence_vectorizer_path.exists())
 
     @patch("snips_nlu.intent_classifier.featurizer.TfidfVectorizer.from_path")
@@ -998,8 +998,8 @@ class CooccurrenceVectorizerTest(FixtureTest):
         self.assertDictEqual(config.to_dict(), vectorizer.config.to_dict())
         self.assertEqual("en", vectorizer.language)
         self.assertDictEqual(vectorizer.word_pairs, word_pairs)
-        self.assertEqual(
-            set(["snips/datetime"]  ), vectorizer.builtin_entity_scope)
+        self.assertEqual(set(["snips/datetime"]),
+                         vectorizer.builtin_entity_scope)
 
     def test_enrich_utterance(self):
         # Given

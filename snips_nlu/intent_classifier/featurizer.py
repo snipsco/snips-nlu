@@ -592,7 +592,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
     def _enrich_utterance(self, x, builtin_ents, custom_ents):
         utterance = get_text_from_chunks(x[DATA])
         all_entities = builtin_ents + custom_ents
-        placeholder_fn = self._get_placeholder_fn()
+        placeholder_fn = self._placeholder_fn
         # Replace entities with placeholders
         enriched_utterance = replace_entities_with_placeholders(
             utterance, all_entities, placeholder_fn)[1]
@@ -692,12 +692,9 @@ class CooccurrenceVectorizer(ProcessingUnit):
         return self
 
     @fitted_required
-    def _get_placeholder_fn(self):
-        def fn(entity_name):
-            return "".join(
-                tokenize_light(str(entity_name), str(self.language))).upper()
-
-        return fn
+    def _placeholder_fn(self, entity_name):
+        return "".join(
+            tokenize_light(str(entity_name), str(self.language))).upper()
 
     def persist(self, path):
         path = Path(path)

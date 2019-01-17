@@ -6,9 +6,11 @@ from future.builtins import object, str
 from future.utils import iteritems
 from mock import MagicMock
 
+from snips_nlu.constants import START, END
+from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.tests.utils import SnipsTest
 from snips_nlu.common.utils import (
-    ranges_overlap)
+    ranges_overlap, replace_entities_with_placeholders)
 from snips_nlu.common.log_utils import DifferedLoggingMessage
 from snips_nlu.common.dict_utils import LimitedSizeDict
 
@@ -108,3 +110,52 @@ class TestUtils(SnipsTest):
                 logger.log(l, "Level: %s -> %s", str(l),
                            DifferedLoggingMessage(mocked_fn, a_, b_, c=c_))
         self.assertEqual(2, mocked_fn.call_count)
+
+    def test_should_replace_entities(self):
+        # Given
+        text = "Be the first to be there at 9pm"
+
+        # When
+        entities = [
+            {
+                "entity_kind": "snips/ordinal",
+                "value": "the first",
+                "range": {
+                    "start": 3,
+                    "end": 12
+                }
+            },
+            {
+                "entity_kind": "my_custom_entity",
+                "value": "first",
+                "range": {
+                    "start": 7,
+                    "end": 12
+                }
+            },
+            {
+                "entity_kind": "snips/datetime",
+                "value": "at 9pm",
+                "range": {
+                    "start": 25,
+                    "end": 31
+                }
+            }
+        ]
+
+        def placeholder_fn(x):
+            return "%%%s%%" % "".join(tokenize_light(x, "en")).upper()
+
+        range_mapping, processed_text = replace_entities_with_placeholders(
+            text=text, entities=entities, placeholder_fn=placeholder_fn)
+
+        # Then
+        expected_mapping = {
+            (3, 17): {START: 3, END: 12},
+            (30, 45): {START: 25, END: 31}
+        }
+        expected_processed_text = \
+            "Be %SNIPSORDINAL% to be there %SNIPSDATETIME%"
+
+        self.assertDictEqual(expected_mapping, range_mapping)
+        self.assertEqual(expected_processed_text, processed_text)

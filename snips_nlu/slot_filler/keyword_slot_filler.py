@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import json
 
 from snips_nlu.common.utils import json_string

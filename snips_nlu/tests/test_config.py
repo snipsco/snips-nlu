@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 import io
-import unittest
 
 from snips_nlu_ontology import get_all_languages
 
@@ -16,6 +15,8 @@ from snips_nlu.pipeline.configs import (
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig,
     NLUEngineConfig, ProbabilisticIntentParserConfig,
     SlotFillerDataAugmentationConfig)
+from snips_nlu.pipeline.configs.intent_classifier import (
+    CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -55,15 +56,50 @@ class TestConfig(SnipsTest):
 
     def test_featurizer_config(self):
         # Given
+        tfid_vectorizer_config = TfidfVectorizerConfig()
+        cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig()
         config_dict = {
-            "sublinear_tf": True,
-            "pvalue_threshold": 0.4,
-            "word_clusters_name": None,
-            "use_stemming": False
+            "unit_name": "featurizer",
+            "pvalue_threshold": 0.2,
+            "added_cooccurrence_feature_ratio": 0.2,
+            "tfidf_vectorizer_config": tfid_vectorizer_config.to_dict(),
+            "cooccurrence_vectorizer_config":
+                cooccurrence_vectorizer_config.to_dict()
         }
 
         # When
         config = FeaturizerConfig.from_dict(config_dict)
+        serialized_config = config.to_dict()
+
+        # Then
+        self.assertDictEqual(config_dict, serialized_config)
+
+    def test_tfidf_vectorizer_config(self):
+        # Given
+        config_dict = {
+            "unit_name": "tfidf_vectorizer",
+            "use_stemming": False,
+            "word_clusters_name": None
+        }
+
+        # When
+        config = TfidfVectorizerConfig.from_dict(config_dict)
+        serialized_config = config.to_dict()
+
+        # Then
+        self.assertDictEqual(config_dict, serialized_config)
+
+    def test_cooccurrence_vectorizer_config(self):
+        # Given
+        config_dict = {
+            "unit_name": "cooccurrence_vectorizer",
+            "unknown_words_replacement_string": None,
+            "window_size": 5,
+            "filter_stop_words": True
+        }
+
+        # When
+        config = CooccurrenceVectorizerConfig.from_dict(config_dict)
         serialized_config = config.to_dict()
 
         # Then
@@ -209,7 +245,3 @@ utterances:
             self.assertIsNotNone(result[RES_INTENT])
             intent_name = result[RES_INTENT][RES_INTENT_NAME]
             self.assertEqual("GetWeather", intent_name)
-
-
-if __name__ == '__main__':
-    unittest.main()

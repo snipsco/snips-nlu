@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 from snips_nlu.constants import (
     RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
-    RES_PROBA, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
+    RES_PROBA, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE, ENTITY_KIND,
+    RESOLVED_VALUE, VALUE)
 
 
 def intent_classification_result(intent_name, probability):
@@ -285,9 +286,42 @@ def empty_result(input):  # pylint:disable=redefined-builtin
     Example:
 
         >>> res = empty_result("foo bar")
+        >>> print(res)
         {'input': 'foo bar', 'intent': None, 'slots': None}
     """
     return parsing_result(input=input, intent=None, slots=None)
+
+
+def parsed_entity(entity_kind, entity_value, entity_resolved_value,
+                  entity_range):
+    """Create the items in the output of
+        :meth:`snips_nlu.entity_parser.EntityParser.parse`
+
+    Example:
+        >>> resolved_value = dict(age=28, role="datascientist")
+        >>> range = dict(start=0, end=6)
+        >>> ent = parsed_entity("snipster", "adrien", resolved_value, range)
+        >>> import json
+        >>> print(json.dumps(ent, indent=4, sort_keys=True))
+        {
+            "entity_kind": "snipster",
+            "range": {
+                "end": 6,
+                "start": 0
+            },
+            "resolved_value": {
+                "age": 28,
+                "role": "datascientist"
+            },
+            "value": "adrien"
+        }
+    """
+    return {
+        VALUE: entity_value,
+        RESOLVED_VALUE: entity_resolved_value,
+        ENTITY_KIND: entity_kind,
+        RES_MATCH_RANGE: entity_range
+    }
 
 
 def _convert_range(rng):

@@ -36,18 +36,3 @@ class TestResult(SnipsTest):
                          RES_VALUE: 'slot_value'}],
             RES_INPUT: input_}
         self.assertDictEqual(expected_result, result)
-
-    def test_should_serialize_results_when_none_values(self):
-        # Given
-        input_ = "hello world"
-
-        # When
-        result = parsing_result(input=input_, intent=None, slots=None)
-
-        # Then
-        expected_result = {
-            RES_INTENT: None,
-            RES_SLOTS: None,
-            RES_INPUT: input_
-        }
-        self.assertDictEqual(expected_result, result)

@@ -130,7 +130,7 @@ class MockIntentParser(IntentParser):
         return hasattr(self, '_fitted') and self._fitted
 
     def parse(self, text, intents=None, top_n=None):
-        return empty_result(text)
+        return empty_result(text, 1.0)
 
     def get_intents(self, text):
         return []

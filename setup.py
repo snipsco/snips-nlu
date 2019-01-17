@@ -43,11 +43,11 @@ extras_require = {
         "sphinx-tabs>=1.1,<1.2"
     ],
     "metrics": [
-        "snips_nlu_metrics>=0.14,<0.15",
+        "snips_nlu_metrics>=0.14.1,<0.15",
     ],
     "test": [
         "mock>=2.0,<3.0",
-        "snips_nlu_metrics>=0.14,<0.15",
+        "snips_nlu_metrics>=0.14.1,<0.15",
         "pylint<2",
         "coverage>=4.4.2,<5.0"
     ]

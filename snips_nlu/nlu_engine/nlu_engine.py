@@ -160,14 +160,16 @@ class SnipsNLUEngine(ProcessingUnit):
             intents = set(intents)
 
         if top_n is None:
+            none_proba = 0.0
             for parser in self.intent_parsers:
                 res = parser.parse(text, intents)
                 if is_empty(res):
+                    none_proba = res[RES_INTENT][RES_PROBA]
                     continue
                 resolved_slots = self._resolve_slots(text, res[RES_SLOTS])
                 return parsing_result(text, intent=res[RES_INTENT],
                                       slots=resolved_slots)
-            return empty_result(text)
+            return empty_result(text, none_proba)
 
         intents_results = self.get_intents(text)
         if intents is not None:

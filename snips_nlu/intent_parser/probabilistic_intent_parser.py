@@ -50,7 +50,7 @@ class ProbabilisticIntentParser(IntentParser):
                       "Fitted probabilistic intent parser in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, force_retrain=True):
-        """Fit the slot filler
+        """Fits the probabilistic intent parser
 
         Args:
             dataset (dict): A valid Snips dataset
@@ -159,7 +159,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     @fitted_required
     def get_slots(self, text, intent):
-        """Extract slots from a text input, with the knowledge of the intent
+        """Extracts slots from a text input, with the knowledge of the intent
 
         Args:
             text (str): input
@@ -181,7 +181,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
         sorted_slot_fillers = sorted(iteritems(self.slot_fillers))
@@ -209,7 +209,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`ProbabilisticIntentParser` instance from a path
+        """Loads a :class:`ProbabilisticIntentParser` instance from a path
 
         The data at the given path must have been generated using
         :func:`~ProbabilisticIntentParser.persist`

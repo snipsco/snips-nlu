@@ -80,7 +80,7 @@ class SnipsNLUEngine(ProcessingUnit):
     @log_elapsed_time(
         logger, logging.INFO, "Fitted NLU engine in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
-        """Fit the NLU engine
+        """Fits the NLU engine
 
         Args:
             dataset (dict): A valid Snips dataset
@@ -217,7 +217,7 @@ class SnipsNLUEngine(ProcessingUnit):
     @log_elapsed_time(logger, logging.DEBUG, "Parsed slots in {elapsed_time}")
     @fitted_required
     def get_slots(self, text, intent):
-        """Extract slots from a text input, with the knowledge of the intent
+        """Extracts slots from a text input, with the knowledge of the intent
 
         Args:
             text (str): input
@@ -250,7 +250,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the NLU engine at the given directory path
+        """Persists the NLU engine at the given directory path
 
         Args:
             path (str): the location at which the nlu engine must be persisted.
@@ -313,7 +313,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`SnipsNLUEngine` instance from a directory path
+        """Loads a :class:`SnipsNLUEngine` instance from a directory path
 
         The data at the given path must have been generated using
         :func:`~SnipsNLUEngine.persist`

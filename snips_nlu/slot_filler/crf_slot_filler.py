@@ -100,7 +100,7 @@ class CRFSlotFiller(SlotFiller):
                       "Fitted CRFSlotFiller in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent):
-        """Fit the slot filler
+        """Fits the slot filler
 
         Args:
             dataset (dict): A valid Snips dataset
@@ -199,7 +199,7 @@ class CRFSlotFiller(SlotFiller):
         return self._augment_slots(text, tokens, tags, builtin_slots_names)
 
     def compute_features(self, tokens, drop_out=False):
-        """Compute features on the provided tokens
+        """Computes features on the provided tokens
 
         The *drop_out* parameters allows to activate drop out on features that
         have a positive drop out ratio. This should only be used during
@@ -254,7 +254,7 @@ class CRFSlotFiller(SlotFiller):
 
     @fitted_required
     def log_weights(self):
-        """Return a logs for both the label-to-label and label-to-features
+        """Returns a logs for both the label-to-label and label-to-features
          weights"""
         if not self.slot_name_mapping:
             return "No weights to display: intent '%s' has no slots" \
@@ -335,7 +335,7 @@ class CRFSlotFiller(SlotFiller):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
 
@@ -360,7 +360,7 @@ class CRFSlotFiller(SlotFiller):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`CRFSlotFiller` instance from a path
+        """Loads a :class:`CRFSlotFiller` instance from a path
 
         The data at the given path must have been generated using
         :func:`~CRFSlotFiller.persist`
@@ -523,14 +523,15 @@ def _crf_model_from_path(crf_model_path):
 
 # pylint: disable=invalid-name
 def _ensure_safe(X, Y):
-    """Ensure that Y has at least one not empty label, otherwise the CRF model
+    """Ensures that Y has at least one not empty label, otherwise the CRF model
     does not contain any label and crashes at
+
     Args:
         X: features
         Y: labels
 
-    Returns: (safe_X, safe_Y) a pair of safe features and labels
-
+    Returns:
+        (safe_X, safe_Y): a pair of safe features and labels
     """
     safe_X = list(X)
     safe_Y = list(Y)

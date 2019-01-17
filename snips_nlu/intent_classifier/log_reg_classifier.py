@@ -55,7 +55,7 @@ class LogRegIntentClassifier(IntentClassifier):
     @log_elapsed_time(logger, logging.DEBUG,
                       "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
-        """Fit the intent classifier with a valid Snips dataset
+        """Fits the intent classifier with a valid Snips dataset
 
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
@@ -191,7 +191,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
 
@@ -225,7 +225,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`LogRegIntentClassifier` instance from a path
+        """Loads a :class:`LogRegIntentClassifier` instance from a path
 
         The data at the given path must have been generated using
         :func:`~LogRegIntentClassifier.persist`

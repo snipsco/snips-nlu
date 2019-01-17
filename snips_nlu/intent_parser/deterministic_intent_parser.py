@@ -124,7 +124,7 @@ class DeterministicIntentParser(IntentParser):
     @log_elapsed_time(
         logger, logging.INFO, "Fitted deterministic parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
-        """Fit the intent parser with a valid Snips dataset"""
+        """Fits the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
         self.fit_builtin_entity_parser_if_needed(dataset)
@@ -262,7 +262,7 @@ class DeterministicIntentParser(IntentParser):
 
     @fitted_required
     def get_slots(self, text, intent):
-        """Extract slots from a text input, with the knowledge of the intent
+        """Extracts slots from a text input, with the knowledge of the intent
 
         Args:
             text (str): input
@@ -286,7 +286,7 @@ class DeterministicIntentParser(IntentParser):
         return slots
 
     def _preprocess_text(self, string):
-        """Replace stop words and characters that are tokenized out by
+        """Replaces stop words and characters that are tokenized out by
             whitespaces"""
         tokens = tokenize(string, self.language)
         current_idx = 0
@@ -373,7 +373,7 @@ class DeterministicIntentParser(IntentParser):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
         parser_json = json_string(self.to_dict())
@@ -385,7 +385,7 @@ class DeterministicIntentParser(IntentParser):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`DeterministicIntentParser` instance from a path
+        """Loads a :class:`DeterministicIntentParser` instance from a path
 
         The data at the given path must have been generated using
         :func:`~DeterministicIntentParser.persist`

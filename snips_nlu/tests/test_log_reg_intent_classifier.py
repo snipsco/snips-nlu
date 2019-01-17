@@ -429,7 +429,8 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        intent_classifier = LogRegIntentClassifier(**shared)
 
         text = "yo"
         utterances = [text_to_utterance(text)]

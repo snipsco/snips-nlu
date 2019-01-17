@@ -9,7 +9,7 @@ from mock import patch, MagicMock
 
 from snips_nlu.common.utils import json_string
 from snips_nlu.constants import LANGUAGE_EN, STEMS, WORD_CLUSTERS, STOP_WORDS
-from snips_nlu.dataset import validate_and_format_dataset, Dataset
+from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
@@ -29,12 +29,6 @@ from snips_nlu.tests.utils import (
 class TestIntentClassifierFeaturizer(FixtureTest):
     def test_should_be_serializable(self):
         # Given
-        pvalue_threshold = 0.42
-        config = FeaturizerConfig(pvalue_threshold=pvalue_threshold,
-                                  added_cooccurrence_feature_ratio=0.2)
-        featurizer = Featurizer(
-            config=config,
-            unknown_words_replacement_string=None)
 
         dataset_stream = io.StringIO("""
 ---
@@ -44,7 +38,11 @@ utterances:
   - this is the number [number:snips/number](one)
 """)
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
+        pvalue_threshold = 0.42
+        config = FeaturizerConfig(pvalue_threshold=pvalue_threshold,
+                                  added_cooccurrence_feature_ratio=0.2)
+        shared = self.get_shared_data(dataset)
+        featurizer = Featurizer(config=config, **shared)
         utterances = [text_to_utterance("this is the number"),
                       text_to_utterance("yo")]
         classes = np.array([0, 1])
@@ -70,9 +68,8 @@ utterances:
         tfidf_vectorizer_path = self.tmp_file_path / "tfidf_vectorizer"
         self.assertTrue(tfidf_vectorizer_path.exists())
 
-        cooccurrence_vectorizer_path = (
-                self.tmp_file_path / "cooccurrence_vectorizer")
-        self.assertTrue(cooccurrence_vectorizer_path.exists())
+        cooc_vectorizer_path = self.tmp_file_path / "cooccurrence_vectorizer"
+        self.assertTrue(cooc_vectorizer_path.exists())
 
     def test_should_be_serializable_before_fit(self):
         # Given
@@ -80,8 +77,7 @@ utterances:
         config = FeaturizerConfig(
             pvalue_threshold=pvalue_threshold,
             added_cooccurrence_feature_ratio=0.2)
-        featurizer = Featurizer(
-            config=config, unknown_words_replacement_string=None)
+        featurizer = Featurizer(config=config)
 
         # When
         featurizer.persist(self.tmp_file_path)
@@ -103,9 +99,8 @@ utterances:
         tfidf_vectorizer_path = self.tmp_file_path / "tfidf_vectorizer"
         self.assertFalse(tfidf_vectorizer_path.exists())
 
-        cooccurrence_vectorizer_path = (
-                self.tmp_file_path / "cooccurrence_vectorizer")
-        self.assertFalse(cooccurrence_vectorizer_path.exists())
+        cooc_vectorizer_path = self.tmp_file_path / "cooccurrence_vectorizer"
+        self.assertFalse(cooc_vectorizer_path.exists())
 
     @patch("snips_nlu.intent_classifier.featurizer.TfidfVectorizer.from_path")
     @patch("snips_nlu.intent_classifier.featurizer.CooccurrenceVectorizer"
@@ -144,6 +139,7 @@ utterances:
     def test_featurizer_should_be_serialized_when_not_fitted(self):
         # Given
         featurizer = Featurizer()
+
         # When/Then
         featurizer.persist(self.tmp_file_path)
 
@@ -154,9 +150,6 @@ utterances:
         # get mixed up after feature selection
 
         # Given
-        config = FeaturizerConfig(added_cooccurrence_feature_ratio=.5)
-        featurizer = Featurizer(config=config)
-
         dataset_stream = io.StringIO("""
 ---
 type: intent
@@ -185,7 +178,10 @@ values:
   - [Éntity 2, Éntity_2, Alternative entity 2]
         """)
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
+
+        config = FeaturizerConfig(added_cooccurrence_feature_ratio=.5)
+        shared = self.get_shared_data(dataset)
+        featurizer = Featurizer(config=config, **shared)
 
         utterances = [
             {
@@ -560,7 +556,6 @@ values:
   - [Éntity 2, Éntity_2, Alternative entity 2]""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
             dataset, CustomEntityParserUsage.WITH_STEMS, resources)
@@ -733,7 +728,6 @@ values:
   - entity 1
   - [Éntity 2, Éntity_2, Alternative entity 2]""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
             dataset, CustomEntityParserUsage.WITH_STEMS, resources)
@@ -927,7 +921,8 @@ class CooccurrenceVectorizerTest(FixtureTest):
         # Given
         x = [text_to_utterance("yoo yoo")]
         dataset = get_empty_dataset("en")
-        vectorizer = CooccurrenceVectorizer().fit(x, dataset)
+        shared = self.get_shared_data(dataset)
+        vectorizer = CooccurrenceVectorizer(**shared).fit(x, dataset)
         vectorizer.builtin_entity_scope = {"snips/entity"}
 
         # When
@@ -1036,6 +1031,10 @@ class CooccurrenceVectorizerTest(FixtureTest):
         u_0 = text_to_utterance(t_0)
         u_1 = text_to_utterance(t_1)
 
+        resources = {
+            STOP_WORDS: {"b"}
+        }
+
         builtin_ents = [
             {
                 "value": "e",
@@ -1066,7 +1065,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
 
         vectorizer = CooccurrenceVectorizer(
             config, builtin_entity_parser=builtin_parser,
-            custom_entity_parser=custom_parser)
+            custom_entity_parser=custom_parser, resources=resources)
 
         vectorizer._language = "en"
         vectorizer._word_pairs = {
@@ -1081,10 +1080,8 @@ class CooccurrenceVectorizerTest(FixtureTest):
         data = [u_0, u_1]
 
         # When
-        with patch("snips_nlu.intent_classifier.featurizer.get_stop_words") \
-                as mocked_stop_words:
-            mocked_stop_words.return_value = {"b"}
-            x = vectorizer.transform(data)
+        x = vectorizer.transform(data)
+
         # Then
         expected = [[1, 1, 1, 0, 0, 0], [0, 1, 1, 0, 0, 0]]
         self.assertEqual(expected, x.todense().tolist())
@@ -1125,6 +1122,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
             filter_stop_words=False
         )
         dataset = get_empty_dataset("en")
+        shared = self.get_shared_data(dataset)
 
         # When
         expected_pairs = {
@@ -1138,7 +1136,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
             ("d", "THE_SNIPS_E_ENTITY"): 7,
             ("d", "f"): 8,
         }
-        vectorizer = CooccurrenceVectorizer(config).fit(x, dataset)
+        vectorizer = CooccurrenceVectorizer(config, **shared).fit(x, dataset)
 
         # Then
         self.assertDictEqual(expected_pairs, vectorizer.word_pairs)
@@ -1183,9 +1181,10 @@ class CooccurrenceVectorizerTest(FixtureTest):
 
         builtin_parser = EntityParserMock({t: builtin_ents})
         custom_parser = EntityParserMock({t: custom_ents})
+        resources = {STOP_WORDS: set()}
         vectorizer = CooccurrenceVectorizer(
             config, builtin_entity_parser=builtin_parser,
-            custom_entity_parser=custom_parser)
+            custom_entity_parser=custom_parser, resources=resources)
 
         # When
         x_0 = vectorizer.fit(x, dataset).transform(x)
@@ -1291,7 +1290,6 @@ values:
   - [Éntity 2, Éntity_2, Alternative entity 2]
     """)
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
             dataset, CustomEntityParserUsage.WITHOUT_STEMS, resources)
@@ -1303,13 +1301,10 @@ values:
         u_3 = text_to_utterance("Bird birdy")
         utterances = [u_0, u_1, u_2, u_3]
 
-        config = CooccurrenceVectorizerConfig()
         vectorizer = CooccurrenceVectorizer(
-            config=config,
             custom_entity_parser=custom_entity_parser,
             builtin_entity_parser=builtin_entity_parser,
-            resources=resources
-        )
+            resources=resources)
 
         vectorizer._language = language
 
@@ -1427,7 +1422,6 @@ values:
   - [Éntity 2, Éntity_2, Alternative entity 2]
     """)
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
 
         custom_entity_parser = CustomEntityParser.build(
             dataset, CustomEntityParserUsage.WITHOUT_STEMS, resources)
@@ -1488,9 +1482,7 @@ values:
             }
         ]
 
-        config = CooccurrenceVectorizerConfig()
         vectorizer = CooccurrenceVectorizer(
-            config=config,
             custom_entity_parser=custom_entity_parser,
             builtin_entity_parser=builtin_entity_parser,
             resources=resources

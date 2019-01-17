@@ -5,10 +5,9 @@ from builtins import str, zip
 from copy import deepcopy
 from pathlib import Path
 
-from future.utils import iteritems
 import numpy as np
 import scipy.sparse as sp
-from scipy.sparse import dok_matrix, hstack
+from future.utils import iteritems
 from sklearn.feature_extraction.text import (
     TfidfTransformer, TfidfVectorizer as SklearnTfidfVectorizer)
 from sklearn.feature_selection import chi2
@@ -19,18 +18,17 @@ from snips_nlu.common.utils import (
 from snips_nlu.constants import (
     DATA, END, ENTITY, ENTITY_KIND, LANGUAGE, NGRAM, RES_MATCH_RANGE,
     RES_VALUE, START, TEXT, ENTITIES)
-from snips_nlu.dataset import get_text_from_chunks
+from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import (
     is_builtin_entity)
-from snips_nlu.exceptions import (NotTrained, _EmptyDatasetUtterancesError)
+from snips_nlu.exceptions import (_EmptyDatasetUtterancesError)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
     CooccurrenceVectorizerConfig, TfidfVectorizerConfig)
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.preprocessing import stem, tokenize_light
-from snips_nlu.resources import (
-    get_stop_words, get_word_cluster, load_resources)
+from snips_nlu.resources import get_stop_words, get_word_cluster
 from snips_nlu.slot_filler.features_utils import get_all_ngrams
 
 
@@ -79,6 +77,7 @@ class Featurizer(ProcessingUnit):
         return self
 
     def fit_transform(self, dataset, utterances, classes, none_class):
+        dataset = validate_and_format_dataset(dataset)
         self.language = dataset[LANGUAGE]
 
         utterances_texts = (get_text_from_chunks(u[DATA]) for u in utterances)
@@ -93,7 +92,7 @@ class Featurizer(ProcessingUnit):
             self._fit_cooccurrence_vectorizer(
                 utterances, classes, none_class, dataset)
             x_cooccurrence = self.cooccurrence_vectorizer.transform(utterances)
-            x = hstack((x_tfidf, x_cooccurrence))
+            x = sp.hstack((x_tfidf, x_cooccurrence))
 
         return x
 
@@ -101,12 +100,15 @@ class Featurizer(ProcessingUnit):
         x = self.tfidf_vectorizer.transform(utterances)
         if self.cooccurrence_vectorizer:
             x_cooccurrence = self.cooccurrence_vectorizer.transform(utterances)
-            x = hstack((x, x_cooccurrence))
+            x = sp.hstack((x, x_cooccurrence))
         return x
 
     def _fit_transform_tfidf_vectorizer(self, x, y, dataset):
         self.tfidf_vectorizer = TfidfVectorizer(
-            self.config.tfidf_vectorizer_config)
+            config=self.config.tfidf_vectorizer_config,
+            builtin_entity_parser=self.builtin_entity_parser,
+            custom_entity_parser=self.custom_entity_parser,
+            resources=self.resources)
         x_tfidf = self.tfidf_vectorizer.fit_transform(x, dataset)
 
         if not self.tfidf_vectorizer.vocabulary:
@@ -133,7 +135,10 @@ class Featurizer(ProcessingUnit):
     def _fit_cooccurrence_vectorizer(self, x, classes, none_class, dataset):
         non_null_x = (d for d, c in zip(x, classes) if c != none_class)
         self.cooccurrence_vectorizer = CooccurrenceVectorizer(
-            self.config.cooccurrence_vectorizer_config)
+            config=self.config.cooccurrence_vectorizer_config,
+            builtin_entity_parser=self.builtin_entity_parser,
+            custom_entity_parser=self.custom_entity_parser,
+            resources=self.resources)
         x_cooccurrence = self.cooccurrence_vectorizer.fit(
             non_null_x, dataset).transform(x)
         if not self.cooccurrence_vectorizer.word_pairs:
@@ -246,10 +251,12 @@ class TfidfVectorizer(ProcessingUnit):
         Returns:
             :class:`.TfidfVectorizer`: The fitted vectorizer
         """
-        self._language = dataset[LANGUAGE]
-        self._init_vectorizer()
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
+
+        self._language = dataset[LANGUAGE]
+        self._init_vectorizer(self._language)
         self.builtin_entity_scope = set(
             e for e in dataset[ENTITIES] if is_builtin_entity(e))
         preprocessed_data = self._preprocess(x, training=True)
@@ -275,10 +282,12 @@ class TfidfVectorizer(ProcessingUnit):
             (len(x), len(self.vocabulary)) where X[i, j] contains tfdif of
             the ngram of index j of the vocabulary in the utterance i
         """
-        self._language = dataset[LANGUAGE]
-        self._init_vectorizer()
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
+
+        self._language = dataset[LANGUAGE]
+        self._init_vectorizer(self._language)
         self.builtin_entity_scope = set(
             e for e in dataset[ENTITIES] if is_builtin_entity(e))
         preprocessed_data = self._preprocess(x, training=True)
@@ -315,7 +324,8 @@ class TfidfVectorizer(ProcessingUnit):
         for u in normalized_utterances:
             for chunk in u[DATA]:
                 chunk[TEXT] = _normalize_stem(
-                    chunk[TEXT], self.language, self.config.use_stemming)
+                    chunk[TEXT], self.language, self.resources,
+                    self.config.use_stemming)
 
         if training:
             builtin_ents, custom_ents = zip(
@@ -342,13 +352,13 @@ class TfidfVectorizer(ProcessingUnit):
                 _get_word_cluster_features(
                     tokenize_light(u.lower(), self.language),
                     self.config.word_clusters_name,
-                    self.language)
+                    self.resources)
                 for u in original_utterances_text
             ]
         else:
             w_clusters = [None for _ in normalized_utterances]
 
-        return (normalized_utterances, builtin_ents, custom_ents, w_clusters)
+        return normalized_utterances, builtin_ents, custom_ents, w_clusters
 
     def _enrich_utterance(self, utterance, builtin_entities, custom_entities,
                           word_clusters):
@@ -363,13 +373,12 @@ class TfidfVectorizer(ProcessingUnit):
 
         # We remove values of builtin slots from the utterance to avoid
         # learning specific samples such as '42' or 'tomorrow'
-        filtered_normalized_stemmed_tokens = [
+        filtered_tokens = [
             chunk[TEXT] for chunk in utterance[DATA]
             if ENTITY not in chunk or not is_builtin_entity(chunk[ENTITY])
         ]
 
-        features = get_default_sep(self.language).join(
-            filtered_normalized_stemmed_tokens)
+        features = get_default_sep(self.language).join(filtered_tokens)
 
         if builtin_entities_features:
             features += " " + " ".join(sorted(builtin_entities_features))
@@ -435,11 +444,9 @@ class TfidfVectorizer(ProcessingUnit):
             return self._tfidf_vectorizer.idf_
         return None
 
-    def _init_vectorizer(self):
-        if not self._language:
-            raise NotTrained("_language has not been set")
+    def _init_vectorizer(self, language):
         self._tfidf_vectorizer = SklearnTfidfVectorizer(
-            tokenizer=lambda x: tokenize_light(x, self._language))
+            tokenizer=lambda x: tokenize_light(x, language))
         return self
 
     def persist(self, path):
@@ -553,9 +560,11 @@ class CooccurrenceVectorizer(ProcessingUnit):
         Returns:
             :class:`.CooccurrenceVectorizer`: The fitted vectorizer
         """
-        self._language = dataset[LANGUAGE]
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
+
+        self._language = dataset[LANGUAGE]
         self.builtin_entity_scope = set(
             e for e in dataset[ENTITIES] if is_builtin_entity(e))
 
@@ -623,7 +632,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
             self._enrich_utterance(utterance, builtin_ents, custom_ent)
             for utterance, builtin_ents, custom_ent in zip(*preprocessed)]
 
-        x_coo = dok_matrix((len(x), len(self.word_pairs)), dtype=np.int32)
+        x_coo = sp.dok_matrix((len(x), len(self.word_pairs)), dtype=np.int32)
         for i, u in enumerate(utterances):
             for p in self._extract_word_pairs(u):
                 if p in self.word_pairs:
@@ -653,7 +662,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
 
     def _extract_word_pairs(self, utterance):
         if self.config.filter_stop_words:
-            stop_words = get_stop_words(self.language)
+            stop_words = get_stop_words(self.resources)
             utterance = [t for t in utterance if t not in stop_words]
         pairs = set()
         for j, w1 in enumerate(utterance):

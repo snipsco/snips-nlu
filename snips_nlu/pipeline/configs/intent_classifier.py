@@ -236,6 +236,7 @@ class TfidfVectorizerConfig(FromDict, ProcessingUnitConfig):
         resources = {STEMS: True if self.use_stemming else False}
         if self.word_clusters_name:
             resources[WORD_CLUSTERS] = self.word_clusters_name
+        return resources
 
     def to_dict(self):
         return {

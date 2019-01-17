@@ -289,12 +289,12 @@ def empty_result(input, probability):  # pylint:disable=redefined-builtin
         >>> from snips_nlu.common.utils import json_string
         >>> print(json_string(res, indent=4, sort_keys=True))
         {
-            'input': 'foo bar',
-            'intent': {
-                'intentName': None,
-                'probability': 0.8
+            "input": "foo bar",
+            "intent": {
+                "intentName": null,
+                "probability": 0.8
             },
-            'slots': []
+            "slots": []
         }
     """
     intent = intent_classification_result(None, probability)

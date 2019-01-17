@@ -9,13 +9,15 @@ from pathlib import Path
 
 from future.utils import with_metaclass
 
+from snips_nlu.resources import load_resources
 from snips_nlu.common.abc_utils import abstractclassmethod, classproperty
 from snips_nlu.common.io_utils import temp_dir, unzip_archive
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.common.utils import (
     json_string)
 from snips_nlu.constants import (
-    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE)
+    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE,
+    RESOURCES, LANGUAGE)
 from snips_nlu.entity_parser import (
     BuiltinEntityParser, CustomEntityParser, CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
@@ -45,6 +47,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
             self.config.set_unit_name(self.unit_name)
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
+        self.resources = shared.get(RESOURCES)
 
     @classproperty
     def config_type(cls):  # pylint:disable=no-self-argument
@@ -112,6 +115,13 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         """Whether or not the processing unit has already been trained"""
         pass
 
+    def load_resources_if_needed(self, language):
+        if self.resources is None or self.fitted:
+            required_resources = None
+            if self.config is not None:
+                required_resources = self.config.get_required_resources()
+            self.resources = load_resources(language, required_resources)
+
     def fit_builtin_entity_parser_if_needed(self, dataset):
         # We only fit a builtin entity parser when the unit has already been
         # fitted or if the parser is none.
@@ -135,8 +145,9 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
             parser_usage = required_resources[CUSTOM_ENTITY_PARSER_USAGE]
 
         if self.custom_entity_parser is None or self.fitted:
+            self.load_resources_if_needed(dataset[LANGUAGE])
             self.custom_entity_parser = CustomEntityParser.build(
-                dataset, parser_usage)
+                dataset, parser_usage, self.resources)
         return self
 
     def persist_metadata(self, path, **kwargs):

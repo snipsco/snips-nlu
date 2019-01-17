@@ -5,6 +5,7 @@ from pathlib import Path
 
 from mock import patch
 
+from snips_nlu.constants import STEMS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser import (
@@ -48,7 +49,7 @@ class TestCustomEntityParser(FixtureTest):
     def test_should_parse_without_stems(self):
         # Given
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITHOUT_STEMS)
+            DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
         text = "dummy_entity_1 dummy_1 dummy_entity_2 dummy_2"
 
         # When
@@ -96,12 +97,16 @@ class TestCustomEntityParser(FixtureTest):
         ]
         self.assertListEqual(expected_entities, result)
 
-    @patch("snips_nlu.entity_parser.custom_entity_parser.stem")
-    def test_should_parse_with_stems(self, mocked_stem):
+    def test_should_parse_with_stems(self):
         # Given
-        mocked_stem.side_effect = _stem
+        resources = {
+            STEMS: {
+                "dummy_entity_1": "dummy_entity_",
+                "dummy_1": "dummy_"
+            }
+        }
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITH_STEMS)
+            DATASET, CustomEntityParserUsage.WITH_STEMS, resources)
         text = "dummy_entity_ dummy_1"
         scope = ["dummy_entity_1"]
 
@@ -122,12 +127,11 @@ class TestCustomEntityParser(FixtureTest):
         ]
         self.assertListEqual(expected_entities, result)
 
-    @patch("snips_nlu.entity_parser.custom_entity_parser.stem")
-    def test_should_parse_with_and_without_stems(self, mocked_stem):
+    def test_should_parse_with_and_without_stems(self):
         # Given
-        mocked_stem.side_effect = _stem
+        resources = {STEMS: {"dummy_entity_1": "dummy_entity_"}}
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS)
+            DATASET, CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS, resources)
         scope = ["dummy_entity_1"]
         text = "dummy_entity_ dummy_1"
 
@@ -160,7 +164,7 @@ class TestCustomEntityParser(FixtureTest):
     def test_should_parse_with_proper_tokenization(self):
         # Given
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITHOUT_STEMS)
+            DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
         text = "  dummy_1?dummy_2"
 
         # When
@@ -193,7 +197,7 @@ class TestCustomEntityParser(FixtureTest):
     def test_should_respect_scope(self):
         # Given
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITHOUT_STEMS)
+            DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
         scope = ["dummy_entity_1"]
         text = "dummy_entity_2"
 
@@ -208,7 +212,7 @@ class TestCustomEntityParser(FixtureTest):
         # Given
         mocked_parse.return_value = []
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITHOUT_STEMS)
+            DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
 
         text = ""
 
@@ -222,7 +226,7 @@ class TestCustomEntityParser(FixtureTest):
     def test_should_be_serializable(self):
         # Given
         parser = CustomEntityParser.build(
-            DATASET, CustomEntityParserUsage.WITHOUT_STEMS)
+            DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
         self.tmp_file_path.mkdir()
         parser_path = self.tmp_file_path / "custom_entity_parser"
         parser.persist(parser_path)

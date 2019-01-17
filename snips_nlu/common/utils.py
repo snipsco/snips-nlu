@@ -3,13 +3,14 @@ from __future__ import unicode_literals
 import importlib
 import json
 import numbers
-from builtins import bytes
+from builtins import bytes as newbytes, str as newstr
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
 import numpy as np
 import pkg_resources
+from future.utils import PY3
 
 from snips_nlu.constants import (
     END, START, RES_MATCH_RANGE, ENTITY_KIND, RES_VALUE)
@@ -93,7 +94,21 @@ def json_string(json_object, indent=2, sort_keys=True):
 
 
 def unicode_string(string):
-    return bytes(string, encoding="utf8").decode("utf8")
+    if PY3:
+        unicode_type = str
+    else:
+        unicode_type = unicode
+
+    if isinstance(string, unicode_type):
+        return string
+    if isinstance(string, bytes):
+        return string.decode("utf8")
+    if isinstance(string, newstr):
+        return unicode_type(string)
+    if isinstance(string, newbytes):
+        string = bytes(string).decode("utf8")
+
+    raise TypeError("Cannot convert %s into unicode string" % type(string))
 
 
 def check_persisted_path(func):

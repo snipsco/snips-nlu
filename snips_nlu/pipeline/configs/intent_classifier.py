@@ -34,6 +34,8 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
         self.featurizer_config = featurizer_config
         self.random_seed = random_seed
 
+    # pylint: enable=line-too-long
+
     @property
     def data_augmentation_config(self):
         return self._data_augmentation_config
@@ -158,11 +160,11 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
             pvalue_threshold (float): after fitting the training set to
                 extract tfidf features, a univariate feature selection is
                 applied. Features are tested for independence using a Chi-2
-                test, under the null hypothesis that the each feature should be
+                test, under the null hypothesis that each feature should be
                 equally present in each class. Only features having a p-value
-                lower that the threshold are kept
+                lower than the threshold are kept
             added_cooccurrence_feature_ratio (float, optional): proportion of
-                cooccurrence features to add with respect of the number of
+                cooccurrence features to add with respect to the number of
                 tfidf features. For instance with a ratio of 0.5, if 100 tfidf
                 features are remaining after feature selection, a maximum of 50
                 cooccurrence features will be added
@@ -184,6 +186,8 @@ class FeaturizerConfig(FromDict, ProcessingUnitConfig):
             cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig \
                 .from_dict(cooccurrence_vectorizer_config)
         self.cooccurrence_vectorizer_config = cooccurrence_vectorizer_config
+
+    # pylint: enable=line-too-long
 
     @property
     def unit_name(self):
@@ -236,6 +240,7 @@ class TfidfVectorizerConfig(FromDict, ProcessingUnitConfig):
         resources = {STEMS: True if self.use_stemming else False}
         if self.word_clusters_name:
             resources[WORD_CLUSTERS] = self.word_clusters_name
+        return resources
 
     def to_dict(self):
         return {
@@ -252,14 +257,14 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
                  filter_stop_words=True):
         """
         Args:
-            window_size (int, optional): if provided word cooccurrences will be
-                taken into account only in a context window of size
+            window_size (int, optional): if provided, word cooccurrences will
+                be taken into account only in a context window of size
                 :attr:`window_size`. If the window size is 3 then given a word
                 w[i], the vectorizer will only extract the following pairs:
                 (w[i], w[i + 1]), (w[i], w[i + 2]) and (w[i], w[i + 3]).
                 Defaults to None, which means that we consider all words
             unknown_words_replacement_string (str, optional)
-            filter_stop_words (bool, optional): if True, stop words are ignore
+            filter_stop_words (bool, optional): if True, stop words are ignored
                 when computing cooccurrences
         """
         self.window_size = window_size
@@ -276,10 +281,10 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
         return {
             STOP_WORDS: self.filter_stop_words,
             # We require the parser to be trained without stems because we
-            # don't normalized and stem when processing in the
+            # don't normalize and stem when processing in the
             # CooccurrenceVectorizer (in order to run the builtin and
             # custom parser on the same unormalized input).
-            # Requiring no stems ensure we'll be able to parse the unstemmed
+            # Requiring no stems ensures we'll be able to parse the unstemmed
             # input
             CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
         }

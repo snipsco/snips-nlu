@@ -10,8 +10,14 @@ from pathlib import Path
 from future.utils import iteritems, iterkeys, itervalues
 from snips_nlu_utils import normalize
 
+from snips_nlu.common.dataset_utils import get_slot_name_mappings
+from snips_nlu.common.log_utils import log_elapsed_time, log_result
+from snips_nlu.common.utils import (
+    check_persisted_path, deduplicate_overlapping_items, fitted_required,
+    json_string, ranges_overlap, regex_escape,
+    replace_entities_with_placeholders)
 from snips_nlu.constants import (
-    BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, DATA, END, ENTITIES, ENTITY,
+    DATA, END, ENTITIES, ENTITY,
     INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
@@ -24,12 +30,7 @@ from snips_nlu.resources import get_stop_words
 from snips_nlu.result import (empty_result, extraction_result,
                               intent_classification_result, parsing_result,
                               unresolved_slot)
-from snips_nlu.common.utils import (
-    check_persisted_path, deduplicate_overlapping_items, fitted_required,
-    json_string, ranges_overlap, regex_escape,
-    replace_entities_with_placeholders)
-from snips_nlu.common.dataset_utils import get_slot_name_mappings
-from snips_nlu.common.log_utils import log_elapsed_time, log_result
+
 WHITESPACE_PATTERN = r"\s*"
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,7 @@ class DeterministicIntentParser(IntentParser):
             self.stop_words = None
         else:
             if self.config.ignore_stop_words:
-                self.stop_words = get_stop_words(self.language)
+                self.stop_words = get_stop_words(self.resources)
             else:
                 self.stop_words = set()
 
@@ -123,7 +124,7 @@ class DeterministicIntentParser(IntentParser):
     @log_elapsed_time(
         logger, logging.INFO, "Fitted deterministic parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
-        """Fit the intent parser with a valid Snips dataset"""
+        """Fits the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
         self.fit_builtin_entity_parser_if_needed(dataset)
@@ -261,7 +262,7 @@ class DeterministicIntentParser(IntentParser):
 
     @fitted_required
     def get_slots(self, text, intent):
-        """Extract slots from a text input, with the knowledge of the intent
+        """Extracts slots from a text input, with the knowledge of the intent
 
         Args:
             text (str): input
@@ -285,7 +286,7 @@ class DeterministicIntentParser(IntentParser):
         return slots
 
     def _preprocess_text(self, string):
-        """Replace stop words and characters that are tokenized out by
+        """Replaces stop words and characters that are tokenized out by
             whitespaces"""
         tokens = tokenize(string, self.language)
         current_idx = 0
@@ -372,7 +373,7 @@ class DeterministicIntentParser(IntentParser):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
         parser_json = json_string(self.to_dict())
@@ -384,7 +385,7 @@ class DeterministicIntentParser(IntentParser):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`DeterministicIntentParser` instance from a path
+        """Loads a :class:`DeterministicIntentParser` instance from a path
 
         The data at the given path must have been generated using
         :func:`~DeterministicIntentParser.persist`
@@ -417,11 +418,7 @@ class DeterministicIntentParser(IntentParser):
         :func:`~DeterministicIntentParser.to_dict`
         """
         config = cls.config_type.from_dict(unit_dict["config"])
-        parser = cls(
-            config=config,
-            builtin_entity_parser=shared.get(BUILTIN_ENTITY_PARSER),
-            custom_entity_parser=shared.get(CUSTOM_ENTITY_PARSER),
-        )
+        parser = cls(config=config, **shared)
         parser.patterns = unit_dict["patterns"]
         parser.language = unit_dict["language_code"]
         parser.group_names_to_slot_names = unit_dict[

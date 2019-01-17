@@ -55,13 +55,14 @@ class LogRegIntentClassifier(IntentClassifier):
     @log_elapsed_time(logger, logging.DEBUG,
                       "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
-        """Fit the intent classifier with a valid Snips dataset
+        """Fits the intent classifier with a valid Snips dataset
 
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
         logger.debug("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
         language = dataset[LANGUAGE]
@@ -69,7 +70,8 @@ class LogRegIntentClassifier(IntentClassifier):
 
         data_augmentation_config = self.config.data_augmentation_config
         utterances, classes, intent_list = build_training_data(
-            dataset, language, data_augmentation_config, random_state)
+            dataset, language, data_augmentation_config, self.resources,
+            random_state)
 
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
@@ -78,7 +80,8 @@ class LogRegIntentClassifier(IntentClassifier):
         self.featurizer = Featurizer(
             config=self.config.featurizer_config,
             builtin_entity_parser=self.builtin_entity_parser,
-            custom_entity_parser=self.custom_entity_parser
+            custom_entity_parser=self.custom_entity_parser,
+            resources=self.resources
         )
         self.featurizer.language = language
 
@@ -188,7 +191,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
 
@@ -222,7 +225,7 @@ class LogRegIntentClassifier(IntentClassifier):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`LogRegIntentClassifier` instance from a path
+        """Loads a :class:`LogRegIntentClassifier` instance from a path
 
         The data at the given path must have been generated using
         :func:`~LogRegIntentClassifier.persist`

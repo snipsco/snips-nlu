@@ -77,16 +77,11 @@ def _download_and_link(resource_alias, resource_fullname, compatibility,
             resources_path=package_path)
         if verbose:
             pretty_print("%s --> %s" % (str(resources_dir), str(link_path)),
-                         "You can now load the resources via "
-                         "snips_nlu.load_resources('%s')" % resource_alias,
                          title="Linking successful",
                          level=PrettyPrintLevel.SUCCESS)
     except:  # pylint:disable=bare-except
         pretty_print(
-            "Creating a shortcut link for '{r}' didn't work.\nYou can "
-            "still load the resources using the full package name: "
-            "snips_nlu.load_resources('{n}')".format(r=resource_alias,
-                                                     n=resource_fullname),
+            "Creating a shortcut link for '%s' didn't work." % resource_alias,
             title="The language resources were successfully downloaded, "
                   "however linking failed.",
             level=PrettyPrintLevel.WARNING)

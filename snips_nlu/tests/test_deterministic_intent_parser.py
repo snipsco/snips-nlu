@@ -11,7 +11,6 @@ from snips_nlu.constants import (
     DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY, RES_INTENT, RES_INTENT_NAME,
     RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT)
 from snips_nlu.dataset import Dataset
-from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     DeterministicIntentParser, _deduplicate_overlapping_slots,
@@ -199,13 +198,11 @@ utterances:
     def test_should_parse_intent_after_deserialization(self):
         # Given
         dataset = self.slots_dataset
-        parser = DeterministicIntentParser().fit(dataset)
-        custom_entity_parser = parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
-            custom_entity_parser=custom_entity_parser)
+            self.tmp_file_path, **shared)
         text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
@@ -419,13 +416,11 @@ utterances:
     def test_should_parse_slots_after_deserialization(self):
         # Given
         dataset = self.slots_dataset
-        parser = DeterministicIntentParser().fit(dataset)
-        custom_entity_parser = parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        parser = DeterministicIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = DeterministicIntentParser.from_path(
-            self.tmp_file_path,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
-            custom_entity_parser=custom_entity_parser)
+            self.tmp_file_path, **shared)
 
         texts = [
             (
@@ -508,16 +503,13 @@ utterances:
 - brew [number_of_cups] cups of coffee
 - can you prepare [number_of_cups] cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_parser = DeterministicIntentParser().fit(dataset)
-        custom_entity_parser = intent_parser.custom_entity_parser
+        shared = self.get_shared_data(dataset)
+        intent_parser = DeterministicIntentParser(**shared).fit(dataset)
 
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = DeterministicIntentParser.from_byte_array(
-            intent_parser_bytes,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"),
-            custom_entity_parser=custom_entity_parser
-        )
+            intent_parser_bytes, **shared)
         result = loaded_intent_parser.parse("make me two cups of coffee")
 
         # Then
@@ -600,8 +592,7 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            parser = DeterministicIntentParser()
-            parser.fit(naughty_dataset)
+            parser = DeterministicIntentParser().fit(naughty_dataset)
             parsing = parser.parse("string0")
 
             expected_slot = {

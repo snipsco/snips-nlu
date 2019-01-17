@@ -15,8 +15,8 @@ from snips_nlu.intent_parser import ProbabilisticIntentParser
 from snips_nlu.pipeline.configs import (
     CRFSlotFillerConfig, LogRegIntentClassifierConfig,
     ProbabilisticIntentParserConfig)
-from snips_nlu.result import unresolved_slot
-from snips_nlu.slot_filler import CRFSlotFiller, SlotFiller
+from snips_nlu.result import unresolved_slot, intent_classification_result
+from snips_nlu.slot_filler import SlotFiller
 from snips_nlu.tests.utils import (
     FixtureTest, MockIntentClassifier, MockSlotFiller)
 
@@ -46,7 +46,8 @@ utterances:
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        parser = ProbabilisticIntentParser(parser_config)
+        parser.fit(dataset)
         text = "foo bar baz"
 
         # When
@@ -84,7 +85,8 @@ utterances:
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        parser = ProbabilisticIntentParser(parser_config)
+        parser.fit(dataset)
         text = "foo bar baz"
 
         # When
@@ -123,7 +125,8 @@ utterances:
         slot_filler_config = CRFSlotFillerConfig(random_seed=42)
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        parser = ProbabilisticIntentParser(parser_config)
+        parser.fit(dataset)
         text = "foo bar baz"
 
         # When
@@ -244,7 +247,21 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = ProbabilisticIntentParser().fit(dataset)
+
+        # pylint:disable=unused-variable
+        @IntentClassifier.register("my_intent_classifier", True)
+        class MyIntentClassifier(MockIntentClassifier):
+            pass
+
+        @SlotFiller.register("my_slot_filler", True)
+        class MySlotFiller(MockSlotFiller):
+            pass
+
+        # pylint:enable=unused-variable
+        config = ProbabilisticIntentParserConfig(
+            intent_classifier_config="my_intent_classifier",
+            slot_filler_config="my_slot_filler")
+        parser = ProbabilisticIntentParser(config).fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -323,16 +340,34 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = ProbabilisticIntentParser()
-        slot_filler = CRFSlotFiller()
+
+        # pylint:disable=unused-variable
+        @IntentClassifier.register("my_intent_classifier", True)
+        class MyIntentClassifier(MockIntentClassifier):
+            pass
+
+        @SlotFiller.register("my_slot_filler", True)
+        class MySlotFiller(MockSlotFiller):
+            fit_call_count = 0
+
+            def fit(self, dataset, intent):
+                MySlotFiller.fit_call_count += 1
+                return super(MySlotFiller, self).fit(dataset, intent)
+
+        # pylint:enable=unused-variable
+
+        parser_config = ProbabilisticIntentParserConfig(
+            intent_classifier_config="my_intent_classifier",
+            slot_filler_config="my_slot_filler"
+        )
+        parser = ProbabilisticIntentParser(parser_config)
+        slot_filler = MySlotFiller(None)
         slot_filler.fit(dataset, "MakeCoffee")
         parser.slot_fillers["MakeCoffee"] = slot_filler
 
         # When / Then
-        with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
-                as mock_fit:
-            parser.fit(dataset, force_retrain=True)
-            self.assertEqual(2, mock_fit.call_count)
+        parser.fit(dataset, force_retrain=True)
+        self.assertEqual(3, MySlotFiller.fit_call_count)
 
     def test_should_not_retrain_slot_filler_when_no_force_retrain(self):
         # Given
@@ -351,16 +386,34 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = ProbabilisticIntentParser()
-        slot_filler = CRFSlotFiller()
+
+        # pylint:disable=unused-variable
+        @IntentClassifier.register("my_intent_classifier", True)
+        class MyIntentClassifier(MockIntentClassifier):
+            pass
+
+        @SlotFiller.register("my_slot_filler", True)
+        class MySlotFiller(MockSlotFiller):
+            fit_call_count = 0
+
+            def fit(self, dataset, intent):
+                MySlotFiller.fit_call_count += 1
+                return super(MySlotFiller, self).fit(dataset, intent)
+
+        # pylint:enable=unused-variable
+
+        parser_config = ProbabilisticIntentParserConfig(
+            intent_classifier_config="my_intent_classifier",
+            slot_filler_config="my_slot_filler"
+        )
+        parser = ProbabilisticIntentParser(parser_config)
+        slot_filler = MySlotFiller(None)
         slot_filler.fit(dataset, "MakeCoffee")
         parser.slot_fillers["MakeCoffee"] = slot_filler
 
         # When / Then
-        with patch("snips_nlu.slot_filler.crf_slot_filler.CRFSlotFiller.fit") \
-                as mock_fit:
-            parser.fit(dataset, force_retrain=False)
-            self.assertEqual(1, mock_fit.call_count)
+        parser.fit(dataset, force_retrain=False)
+        self.assertEqual(2, MySlotFiller.fit_call_count)
 
     def test_should_not_parse_when_not_fitted(self):
         # Given
@@ -473,9 +526,17 @@ utterances:
                 }
             ]
         }
-        metadata = {"unit_name": "probabilistic_intent_parser"}
-        metadata_slot_filler = {"unit_name": "my_slot_filler"}
-        metadata_intent_classifier = {"unit_name": "my_intent_classifier"}
+        metadata = {
+            "unit_name": "probabilistic_intent_parser",
+        }
+        metadata_slot_filler = {
+            "unit_name": "my_slot_filler",
+            "fitted": True
+        }
+        metadata_intent_classifier = {
+            "unit_name": "my_intent_classifier",
+            "fitted": True
+        }
 
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
         self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
@@ -531,13 +592,13 @@ utterances:
                               parser_dict)
         self.writeJsonContent(
             self.tmp_file_path / "intent_classifier" / "metadata.json",
-            {"unit_name": "my_intent_classifier"})
+            {"unit_name": "my_intent_classifier", "fitted": True})
         self.writeJsonContent(
             self.tmp_file_path / "slot_filler_MakeCoffee" / "metadata.json",
-            {"unit_name": "my_slot_filler"})
+            {"unit_name": "my_slot_filler", "fitted": True})
         self.writeJsonContent(
             self.tmp_file_path / "slot_filler_MakeTea" / "metadata.json",
-            {"unit_name": "my_slot_filler"})
+            {"unit_name": "my_slot_filler", "fitted": True})
 
         # When
         parser = ProbabilisticIntentParser.from_path(self.tmp_file_path)
@@ -567,17 +628,33 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_parser = ProbabilisticIntentParser().fit(dataset)
-        builtin_entity_parser = intent_parser.builtin_entity_parser
-        custom_entity_parser = intent_parser.custom_entity_parser
+
+        # pylint:disable=unused-variable
+        @IntentClassifier.register("my_intent_classifier", True)
+        class MyIntentClassifier(MockIntentClassifier):
+            def get_intent(self, text, intents_filter):
+                if "tea" in text:
+                    return intent_classification_result("MakeTea", 1.0)
+                elif "coffee" in text:
+                    return intent_classification_result("MakeCoffee", 1.0)
+                return intent_classification_result(None, 1.0)
+
+        @SlotFiller.register("my_slot_filler", True)
+        class MySlotFiller(MockSlotFiller):
+            pass
+
+        # pylint:enable=unused-variable
+
+        parser_config = ProbabilisticIntentParserConfig(
+            intent_classifier_config="my_intent_classifier",
+            slot_filler_config="my_slot_filler"
+        )
+        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
 
         # When
-        intent_parser_bytes = intent_parser.to_byte_array()
+        intent_parser_bytes = parser.to_byte_array()
         loaded_intent_parser = ProbabilisticIntentParser.from_byte_array(
-            intent_parser_bytes,
-            builtin_entity_parser=builtin_entity_parser,
-            custom_entity_parser=custom_entity_parser
-        )
+            intent_parser_bytes)
         result = loaded_intent_parser.parse("make me two cups of tea")
 
         # Then
@@ -608,15 +685,16 @@ utterances:
                 random_seed=seed1),
             slot_filler_config=CRFSlotFillerConfig(random_seed=seed2)
         )
-        parser = ProbabilisticIntentParser(config)
+        shared = self.get_shared_data(dataset)
+        parser = ProbabilisticIntentParser(config, **shared)
         parser.persist(self.tmp_file_path)
 
         # When
         fitted_parser_1 = ProbabilisticIntentParser.from_path(
-            self.tmp_file_path).fit(dataset)
+            self.tmp_file_path, **shared).fit(dataset)
 
         fitted_parser_2 = ProbabilisticIntentParser.from_path(
-            self.tmp_file_path).fit(dataset)
+            self.tmp_file_path, **shared).fit(dataset)
 
         # Then
         feature_weights_1 = fitted_parser_1.slot_fillers[

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import io
+import shutil
 from builtins import str
 
 from mock import MagicMock, patch
@@ -12,16 +13,13 @@ from snips_nlu.constants import (
     END, LANGUAGE, LANGUAGE_EN, RES_ENTITY, RES_INPUT, RES_INTENT,
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
-from snips_nlu.dataset import Dataset, validate_and_format_dataset
-from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser
-from snips_nlu.entity_parser.custom_entity_parser_usage import \
-    CustomEntityParserUsage
+from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import (
     IntentNotFoundError, InvalidInputError, NotTrained)
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
-    NLUEngineConfig, ProbabilisticIntentParserConfig)
+    NLUEngineConfig)
 from snips_nlu.result import (
     custom_slot, empty_result, intent_classification_result, parsing_result,
     resolved_slot, unresolved_slot, extraction_result)
@@ -180,7 +178,7 @@ utterances:
         dataset_stream = io.StringIO("""
 ---
 type: intent
-name: greeting1
+name: greeting
 utterances:
 - hello [greeted:name](john)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
@@ -231,7 +229,21 @@ name: goodbye
 utterances:
   - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        nlu_engine = SnipsNLUEngine().fit(dataset)
+
+        # pylint:disable=unused-variable
+        @IntentParser.register("first_intent_parser", True)
+        class FirstIntentParser(MockIntentParser):
+            pass
+
+        @IntentParser.register("second_intent_parser", True)
+        class SecondIntentParser(MockIntentParser):
+            pass
+
+        # pylint:enable=unused-variable
+
+        config = NLUEngineConfig(
+            ["first_intent_parser", "second_intent_parser"])
+        nlu_engine = SnipsNLUEngine(config).fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -336,8 +348,9 @@ utterances:
 
     def test_should_handle_empty_dataset(self):
         # Given
-        dataset = validate_and_format_dataset(get_empty_dataset(LANGUAGE_EN))
-        engine = SnipsNLUEngine().fit(dataset)
+        dataset = get_empty_dataset(LANGUAGE_EN)
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
 
         # When
         result = engine.parse("hello world")
@@ -444,10 +457,10 @@ utterances:
                                expected_engine_dict)
         self.assertJsonContent(
             self.tmp_file_path / "test_intent_parser1" / "metadata.json",
-            {"unit_name": "test_intent_parser1"})
+            {"unit_name": "test_intent_parser1", "fitted": True})
         self.assertJsonContent(
             self.tmp_file_path / "test_intent_parser2" / "metadata.json",
-            {"unit_name": "test_intent_parser2"})
+            {"unit_name": "test_intent_parser2", "fitted": True})
 
     def test_should_serialize_duplicated_intent_parsers(self):
         # Given
@@ -525,10 +538,10 @@ utterances:
                                expected_engine_dict)
         self.assertJsonContent(
             self.tmp_file_path / "my_intent_parser" / "metadata.json",
-            {"unit_name": "my_intent_parser"})
+            {"unit_name": "my_intent_parser", "fitted": True})
         self.assertJsonContent(
             self.tmp_file_path / "my_intent_parser_2" / "metadata.json",
-            {"unit_name": "my_intent_parser"})
+            {"unit_name": "my_intent_parser", "fitted": True})
 
     @patch("snips_nlu.nlu_engine.nlu_engine.CustomEntityParser")
     @patch("snips_nlu.nlu_engine.nlu_engine.BuiltinEntityParser")
@@ -600,10 +613,12 @@ utterances:
         (self.tmp_file_path / "resources").mkdir()
         self.writeJsonContent(self.tmp_file_path / "nlu_engine.json",
                               engine_dict)
-        self.writeJsonContent(parser1_path / "metadata.json",
-                              {"unit_name": "test_intent_parser1"})
-        self.writeJsonContent(parser2_path / "metadata.json",
-                              {"unit_name": "test_intent_parser2"})
+        self.writeJsonContent(
+            parser1_path / "metadata.json",
+            {"unit_name": "test_intent_parser1", "fitted": True})
+        self.writeJsonContent(
+            parser2_path / "metadata.json",
+            {"unit_name": "test_intent_parser2", "fitted": True})
 
         # When
         engine = SnipsNLUEngine.from_path(self.tmp_file_path)
@@ -620,9 +635,7 @@ utterances:
                 }
             ]
         }
-        # pylint:disable=protected-access
-        self.assertDictEqual(dataset_metadata, engine._dataset_metadata)
-        # pylint:enable=protected-access
+        self.assertDictEqual(dataset_metadata, engine.dataset_metadata)
         self.assertDictEqual(expected_engine_config, engine.config.to_dict())
         self.assertIsInstance(engine.intent_parsers[0], TestIntentParser1)
         self.assertIsInstance(engine.intent_parsers[1], TestIntentParser2)
@@ -683,13 +696,14 @@ utterances:
 - brew [number_of_cups] cups of coffee
 - can you prepare [number_of_cups] cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        engine = SnipsNLUEngine().fit(dataset)
-        input_ = "Give me 3 cups of hot tea please"
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
+        text = "Give me 3 cups of hot tea please"
 
         # When
         engine.persist(self.tmp_file_path)
         deserialized_engine = SnipsNLUEngine.from_path(self.tmp_file_path)
-        result = deserialized_engine.parse(input_)
+        result = deserialized_engine.parse(text)
 
         # Then
         expected_slots = [
@@ -700,7 +714,7 @@ utterances:
                 unresolved_slot({START: 18, END: 21}, "hot", "Temperature",
                                 "beverage_temperature"))
         ]
-        self.assertEqual(result[RES_INPUT], input_)
+        self.assertEqual(result[RES_INPUT], text)
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeTea")
         self.assertListEqual(result[RES_SLOTS], expected_slots)
 
@@ -732,20 +746,45 @@ utterances:
 - make me [number_of_cups:snips/number](one) cup of coffee please
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        engine = SnipsNLUEngine().fit(dataset)
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
 
         # When
         engine_bytes = engine.to_byte_array()
-        builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
-        custom_entity_parser = CustomEntityParser.build(
-            dataset, parser_usage=CustomEntityParserUsage.WITHOUT_STEMS)
-        loaded_engine = SnipsNLUEngine.from_byte_array(
-            engine_bytes, builtin_entity_parser=builtin_entity_parser,
-            custom_entity_parser=custom_entity_parser)
+        loaded_engine = SnipsNLUEngine.from_byte_array(engine_bytes)
         result = loaded_engine.parse("Make me two cups of coffee")
 
         # Then
         self.assertEqual(result[RES_INTENT][RES_INTENT_NAME], "MakeCoffee")
+
+    def test_should_persist_resources_from_memory(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared).fit(dataset)
+        dir_temp_engine = self.fixture_dir / "temp_engine"
+        engine.persist(dir_temp_engine)
+
+        # When
+        loaded_engine = SnipsNLUEngine.from_path(dir_temp_engine)
+        shutil.rmtree(str(dir_temp_engine))
+
+        # Then
+        loaded_engine.to_byte_array()
 
     @patch(
         "snips_nlu.intent_parser.probabilistic_intent_parser"
@@ -830,7 +869,8 @@ utterances:
         mocked_crf_parse.return_value = parsing_result(
             text, mocked_crf_intent, mocked_crf_slots)
 
-        engine = SnipsNLUEngine()
+        shared = self.get_shared_data(dataset)
+        engine = SnipsNLUEngine(**shared)
 
         # When
         engine = engine.fit(dataset)
@@ -844,10 +884,7 @@ utterances:
                                          slots=[expected_slot])
         self.assertEqual(expected_result, result)
 
-    @patch(
-        "snips_nlu.intent_parser.probabilistic_intent_parser"
-        ".ProbabilisticIntentParser.parse")
-    def test_synonyms_should_point_to_base_value(self, mocked_proba_parse):
+    def test_synonyms_should_point_to_base_value(self):
         # Given
         dataset = {
             "intents": {
@@ -883,23 +920,26 @@ utterances:
             },
             "language": "en"
         }
-
-        text = "dummy1_bis"
-        mocked_proba_parser_intent = intent_classification_result(
-            "dummy_intent_1", 1.0)
-        mocked_proba_parser_slots = [
+        mocked_intent = intent_classification_result("dummy_intent_1", 1.0)
+        mocked_slots = [
             unresolved_slot(match_range=(0, 10), value="dummy1_bis",
                             entity="dummy_entity_1",
                             slot_name="dummy_slot_name")]
 
-        mocked_proba_parse.return_value = parsing_result(
-            text, mocked_proba_parser_intent, mocked_proba_parser_slots)
+        # pylint:disable=unused-variable
+        @IntentParser.register("my_intent_parser", True)
+        class MyIntentParser(MockIntentParser):
+            def parse(self, text, intents=None, top_n=None):
+                return parsing_result(text, mocked_intent, mocked_slots)
 
-        config = NLUEngineConfig([ProbabilisticIntentParserConfig()])
+        # pylint:enable=unused-variable
+
+        input_ = "dummy1_bis"
+        config = NLUEngineConfig(["my_intent_parser"])
         engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
-        result = engine.parse(text)
+        result = engine.parse(input_)
 
         # Then
         expected_slot = {
@@ -916,15 +956,10 @@ utterances:
             RES_SLOT_NAME: "dummy_slot_name"
         }
         expected_result = parsing_result(
-            text, intent=mocked_proba_parser_intent, slots=[expected_slot])
+            input_, mocked_intent, slots=[expected_slot])
         self.assertEqual(expected_result, result)
 
-    @patch(
-        "snips_nlu.intent_parser.probabilistic_intent_parser"
-        ".ProbabilisticIntentParser.parse")
-    def test_synonyms_should_not_collide_when_remapped_to_base_value(
-            self, mocked_proba_parse):
-        # Given
+    def test_synonyms_should_not_collide_when_remapped_to_base_value(self):
         # Given
         dataset = {
             "intents": {
@@ -966,19 +1001,20 @@ utterances:
             "language": "en",
         }
 
-        mocked_proba_parser_intent = intent_classification_result(
-            "intent1", 1.0)
+        mocked_intent = intent_classification_result("intent1", 1.0)
 
-        # pylint: disable=unused-argument
-        def mock_proba_parse(text, intents):
-            slots = [unresolved_slot(match_range=(0, len(text)), value=text,
-                                     entity="entity1", slot_name="slot1")]
-            return parsing_result(
-                text, mocked_proba_parser_intent, slots)
+        # pylint:disable=unused-variable
+        @IntentParser.register("my_intent_parser", True)
+        class MyIntentParser(MockIntentParser):
+            def parse(self, text, intents=None, top_n=None):
+                slots = [
+                    unresolved_slot(match_range=(0, len(text)), value=text,
+                                    entity="entity1", slot_name="slot1")]
+                return parsing_result(text, mocked_intent, slots)
 
-        mocked_proba_parse.side_effect = mock_proba_parse
+        # pylint:enable=unused-variable
 
-        config = NLUEngineConfig([ProbabilisticIntentParserConfig()])
+        config = NLUEngineConfig(["my_intent_parser"])
         engine = SnipsNLUEngine(config).fit(dataset)
 
         # When
@@ -1012,18 +1048,16 @@ utterances:
             RES_ENTITY: "entity1",
             RES_SLOT_NAME: "slot1"
         }
-        expected_result1 = parsing_result(
-            "favorite", intent=mocked_proba_parser_intent,
-            slots=[expected_slot1])
-        expected_result2 = parsing_result(
-            "favorïte", intent=mocked_proba_parser_intent,
-            slots=[expected_slot2])
+        expected_result1 = parsing_result("favorite", intent=mocked_intent,
+                                          slots=[expected_slot1])
+        expected_result2 = parsing_result("favorïte", intent=mocked_intent,
+                                          slots=[expected_slot2])
         self.assertEqual(expected_result1, result1)
         self.assertEqual(expected_result2, result2)
 
     def test_engine_should_fit_with_builtins_entities(self):
         # Given
-        dataset = validate_and_format_dataset({
+        dataset = {
             "intents": {
                 "dummy": {
                     "utterances": [
@@ -1043,10 +1077,11 @@ utterances:
                 "snips/datetime": {}
             },
             "language": "en",
-        })
+        }
 
         # When / Then
-        SnipsNLUEngine().fit(dataset)  # This should not raise any error
+        # This should not raise any error
+        SnipsNLUEngine().fit(dataset)
 
     def test_nlu_engine_should_train_and_parse_in_all_languages(self):
         # Given
@@ -1101,7 +1136,15 @@ utterances:
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         bytes_input = b"brew me an espresso"
-        engine = SnipsNLUEngine().fit(dataset)
+
+        # pylint:disable=unused-variable
+        @IntentParser.register("my_intent_parser", True)
+        class MyIntentParser(MockIntentParser):
+            pass
+
+        # pylint:enable=unused-variable
+        config = NLUEngineConfig(["my_intent_parser"])
+        engine = SnipsNLUEngine(config).fit(dataset)
 
         # When / Then
         with self.assertRaises(InvalidInputError) as cm:
@@ -1129,7 +1172,7 @@ utterances:
             "entities": dict()
         }
 
-        engine = SnipsNLUEngine()
+        engine = SnipsNLUEngine(resources=self.get_resources("en"))
 
         # When / Then
         engine.fit(dataset)

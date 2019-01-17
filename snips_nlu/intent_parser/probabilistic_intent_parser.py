@@ -50,7 +50,7 @@ class ProbabilisticIntentParser(IntentParser):
                       "Fitted probabilistic intent parser in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, force_retrain=True):
-        """Fit the slot filler
+        """Fits the probabilistic intent parser
 
         Args:
             dataset (dict): A valid Snips dataset
@@ -63,16 +63,13 @@ class ProbabilisticIntentParser(IntentParser):
         """
         logger.info("Fitting probabilistic intent parser...")
         dataset = validate_and_format_dataset(dataset)
-        self.fit_builtin_entity_parser_if_needed(dataset)
-        self.fit_custom_entity_parser_if_needed(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
             self.intent_classifier = IntentClassifier.from_config(
-                self.config.intent_classifier_config)
-        self.intent_classifier.builtin_entity_parser = \
-            self.builtin_entity_parser
-        self.intent_classifier.custom_entity_parser = \
-            self.custom_entity_parser
+                self.config.intent_classifier_config,
+                builtin_entity_parser=self.builtin_entity_parser,
+                custom_entity_parser=self.custom_entity_parser,
+                resources=self.resources)
 
         if force_retrain or not self.intent_classifier.fitted:
             self.intent_classifier.fit(dataset)
@@ -85,9 +82,10 @@ class ProbabilisticIntentParser(IntentParser):
             if self.slot_fillers.get(intent_name) is None:
                 slot_filler_config = deepcopy(self.config.slot_filler_config)
                 self.slot_fillers[intent_name] = SlotFiller.from_config(
-                    slot_filler_config)
-            self.slot_fillers[intent_name].builtin_entity_parser = \
-                self.builtin_entity_parser
+                    slot_filler_config,
+                    builtin_entity_parser=self.builtin_entity_parser,
+                    custom_entity_parser=self.custom_entity_parser,
+                    resources=self.resources)
             if force_retrain or not self.slot_fillers[intent_name].fitted:
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
         logger.debug("Fitted slot fillers in %s",
@@ -161,7 +159,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     @fitted_required
     def get_slots(self, text, intent):
-        """Extract slots from a text input, with the knowledge of the intent
+        """Extracts slots from a text input, with the knowledge of the intent
 
         Args:
             text (str): input
@@ -183,7 +181,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
+        """Persists the object at the given path"""
         path = Path(path)
         path.mkdir()
         sorted_slot_fillers = sorted(iteritems(self.slot_fillers))
@@ -211,7 +209,7 @@ class ProbabilisticIntentParser(IntentParser):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`ProbabilisticIntentParser` instance from a path
+        """Loads a :class:`ProbabilisticIntentParser` instance from a path
 
         The data at the given path must have been generated using
         :func:`~ProbabilisticIntentParser.persist`

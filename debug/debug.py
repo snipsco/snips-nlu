@@ -6,15 +6,13 @@ import json
 from builtins import input, bytes
 from pathlib import Path
 
-from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu import SnipsNLUEngine
 from snips_nlu.pipeline.configs.nlu_engine import NLUEngineConfig
 
 
 def debug_training(dataset_path, config_path=None):
     with Path(dataset_path).open("r", encoding="utf8") as f:
         dataset = json.load(f)
-
-    load_resources(dataset["language"])
 
     config = None
     if config_path is not None:

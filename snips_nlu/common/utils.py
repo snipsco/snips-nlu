@@ -14,7 +14,7 @@ from future.utils import PY3
 
 from snips_nlu.constants import (
     END, START, RES_MATCH_RANGE, ENTITY_KIND, RES_VALUE)
-from snips_nlu.exceptions import NotTrained
+from snips_nlu.exceptions import NotTrained, PersistingError
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
                '^', '$', '#', '&', '-', '~'}
@@ -114,8 +114,9 @@ def unicode_string(string):
 def check_persisted_path(func):
     @wraps(func)
     def func_wrapper(self, path, *args, **kwargs):
-        if Path(path).exists():
-            raise OSError("Persisting directory %s already exists" % path)
+        path = Path(path)
+        if path.exists():
+            raise PersistingError(path)
         return func(self, path, *args, **kwargs)
 
     return func_wrapper

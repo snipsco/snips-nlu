@@ -14,14 +14,15 @@ from sklearn.feature_selection import chi2
 from snips_nlu_utils import normalize
 
 from snips_nlu.common.utils import (
-    json_string, fitted_required, replace_entities_with_placeholders)
+    json_string, fitted_required, replace_entities_with_placeholders,
+    check_persisted_path)
 from snips_nlu.constants import (
     DATA, END, ENTITY, ENTITY_KIND, LANGUAGE, NGRAM, RES_MATCH_RANGE,
     RES_VALUE, START, TEXT, ENTITIES)
 from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import (
     is_builtin_entity)
-from snips_nlu.exceptions import (_EmptyDatasetUtterancesError)
+from snips_nlu.exceptions import (_EmptyDatasetUtterancesError, LoadingError)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.pipeline.configs import FeaturizerConfig
 from snips_nlu.pipeline.configs.intent_classifier import (
@@ -165,8 +166,8 @@ class Featurizer(ProcessingUnit):
         self.cooccurrence_vectorizer.limit_word_pairs(top_word_pairs)
         return self
 
+    @check_persisted_path
     def persist(self, path):
-        path = Path(path)
         path.mkdir()
 
         # Persist the vectorizers
@@ -201,8 +202,11 @@ class Featurizer(ProcessingUnit):
     def from_path(cls, path, **shared):
         path = Path(path)
 
-        featurizer_path = path / "featurizer.json"
-        with featurizer_path.open("r", encoding="utf-8") as f:
+        model_path = path / "featurizer.json"
+        if not model_path.exists():
+            raise LoadingError("Missing featurizer model file: %s"
+                               % model_path.name)
+        with model_path.open("r", encoding="utf-8") as f:
             featurizer_dict = json.load(f)
 
         featurizer_config = featurizer_dict["config"]
@@ -455,8 +459,9 @@ class TfidfVectorizer(ProcessingUnit):
             tokenizer=lambda x: tokenize_light(x, language))
         return self
 
+    @check_persisted_path
     def persist(self, path):
-        path = Path(path)
+        path.mkdir()
 
         vectorizer_ = None
         if self._tfidf_vectorizer is not None:
@@ -478,7 +483,6 @@ class TfidfVectorizer(ProcessingUnit):
             "config": self.config.to_dict(),
         }
 
-        path.mkdir()
         vectorizer_path = path / "vectorizer.json"
         with vectorizer_path.open("w", encoding="utf-8") as f:
             f.write(json_string(self_as_dict))
@@ -489,8 +493,11 @@ class TfidfVectorizer(ProcessingUnit):
     def from_path(cls, path, **shared):
         path = Path(path)
 
-        vectorizer_path = path / "vectorizer.json"
-        with vectorizer_path.open("r", encoding="utf-8") as f:
+        model_path = path / "vectorizer.json"
+        if not model_path.exists():
+            raise LoadingError("Missing vectorizer model file: %s"
+                               % model_path.name)
+        with model_path.open("r", encoding="utf-8") as f:
             vectorizer_dict = json.load(f)
 
         vectorizer = cls(vectorizer_dict["config"], **shared)
@@ -714,8 +721,8 @@ class CooccurrenceVectorizer(ProcessingUnit):
         return "".join(
             tokenize_light(str(entity_name), str(self.language))).upper()
 
+    @check_persisted_path
     def persist(self, path):
-        path = Path(path)
         path.mkdir()
 
         builtin_entity_scope = None
@@ -740,11 +747,12 @@ class CooccurrenceVectorizer(ProcessingUnit):
     # pylint: disable=protected-access
     def from_path(cls, path, **shared):
         path = Path(path)
-        vectorizer_path = path / "vectorizer.json"
-        if not vectorizer_path.exists():
-            raise OSError("Missing vectorizer file: %s" % vectorizer_path.name)
+        model_path = path / "vectorizer.json"
+        if not model_path.exists():
+            raise LoadingError("Missing vectorizer model file: %s"
+                               % model_path.name)
 
-        with vectorizer_path.open(encoding="utf8") as f:
+        with model_path.open(encoding="utf8") as f:
             vectorizer_dict = json.load(f)
         config = vectorizer_dict.pop("config")
 

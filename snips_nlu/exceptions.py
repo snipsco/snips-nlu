@@ -1,5 +1,21 @@
+from snips_nlu.__about__ import __model_version__
+
+
 class SnipsNLUError(Exception):
     """Base class for exceptions raised in the snips-nlu library"""
+
+
+class IncompatibleModelError(Exception):
+    """Raised when trying to load an incompatible NLU engine
+
+    This happens when the engine data was persisted with a previous version of
+    the library which is not compatible with the one used to load the model.
+    """
+
+    def __init__(self, persisted_version):
+        super(IncompatibleModelError, self).__init__(
+            "Incompatible data model: persisted model=%s, python lib model=%s"
+            % (persisted_version, __model_version__))
 
 
 class InvalidInputError(Exception):
@@ -62,3 +78,17 @@ class NotRegisteredError(SnipsNLUError):
                   % (registered_cls, registrable_cls)
         msg += "Use @BaseClass.register('my_component') to register a subclass"
         super(NotRegisteredError, self).__init__(msg)
+
+
+class PersistingError(SnipsNLUError):
+    """Raised when trying to persist a processing unit to a path which already
+    exists"""
+
+    def __init__(self, path):
+        super(PersistingError, self).__init__("Path already exists: %s"
+                                              % str(path))
+
+
+class LoadingError(SnipsNLUError):
+    """Raised when trying to load a processing unit while some files are
+    missing"""

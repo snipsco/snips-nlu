@@ -14,7 +14,7 @@ from snips_nlu.common.utils import (
     fitted_required, json_string)
 from snips_nlu.constants import LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import _EmptyDatasetUtterancesError
+from snips_nlu.exceptions import _EmptyDatasetUtterancesError, LoadingError
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -192,7 +192,6 @@ class LogRegIntentClassifier(IntentClassifier):
     @check_persisted_path
     def persist(self, path):
         """Persists the object at the given path"""
-        path = Path(path)
         path.mkdir()
 
         featurizer = None
@@ -233,8 +232,8 @@ class LogRegIntentClassifier(IntentClassifier):
         path = Path(path)
         model_path = path / "intent_classifier.json"
         if not model_path.exists():
-            raise OSError("Missing intent classifier model file: %s"
-                          % model_path.name)
+            raise LoadingError("Missing intent classifier model file: %s"
+                               % model_path.name)
 
         with model_path.open(encoding="utf8") as f:
             model_dict = json.load(f)

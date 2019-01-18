@@ -15,7 +15,8 @@ from snips_nlu.constants import (
     RES_VALUE, START)
 from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import (
-    IntentNotFoundError, InvalidInputError, NotTrained)
+    IntentNotFoundError, InvalidInputError, NotTrained, IncompatibleModelError,
+    PersistingError, LoadingError)
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
@@ -367,7 +368,7 @@ utterances:
         with self.assertRaises(NotTrained):
             engine.parse("foobar")
 
-    def test_should_be_serializable_into_dir(self):
+    def test_should_be_serializable(self):
         # Given
         dataset_stream = io.StringIO("""
 ---
@@ -545,7 +546,7 @@ utterances:
 
     @patch("snips_nlu.nlu_engine.nlu_engine.CustomEntityParser")
     @patch("snips_nlu.nlu_engine.nlu_engine.BuiltinEntityParser")
-    def test_should_be_deserializable_from_dir(
+    def test_should_be_deserializable(
             self, mocked_builtin_entity_parser, mocked_custom_entity_parser):
         # Given
         mocked_builtin_entity_parser.from_path = MagicMock()
@@ -675,6 +676,35 @@ utterances:
 
         # Then
         self.assertFalse(engine.fitted)
+
+    def test_should_raise_with_incompatible_model(self):
+        # Given
+        self.tmp_file_path.mkdir()
+        engine_model_path = self.tmp_file_path / "nlu_engine.json"
+        self.writeJsonContent(engine_model_path, {"model_version": "0.1.0"})
+
+        # When / Then
+        with self.assertRaises(IncompatibleModelError):
+            SnipsNLUEngine.from_path(self.tmp_file_path)
+
+    def test_should_raise_when_persisting_at_existing_path(self):
+        # Given
+        self.tmp_file_path.mkdir()
+
+        # When
+        engine = SnipsNLUEngine()
+
+        # Then
+        with self.assertRaises(PersistingError):
+            engine.persist(self.tmp_file_path)
+
+    def test_should_raise_when_missing_model_file(self):
+        # Given
+        self.tmp_file_path.mkdir()
+
+        # When / Then
+        with self.assertRaises(LoadingError):
+            SnipsNLUEngine.from_path(self.tmp_file_path)
 
     def test_should_parse_after_deserialization_from_dir(self):
         # Given

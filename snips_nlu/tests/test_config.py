@@ -95,7 +95,8 @@ class TestConfig(SnipsTest):
             "unit_name": "cooccurrence_vectorizer",
             "unknown_words_replacement_string": None,
             "window_size": 5,
-            "filter_stop_words": True
+            "filter_stop_words": True,
+            "keep_order": True,
         }
 
         # When

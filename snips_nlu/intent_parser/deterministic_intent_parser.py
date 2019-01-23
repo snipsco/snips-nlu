@@ -22,7 +22,7 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
-from snips_nlu.exceptions import IntentNotFoundError
+from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.preprocessing import normalize_token, tokenize, tokenize_light
@@ -374,7 +374,6 @@ class DeterministicIntentParser(IntentParser):
     @check_persisted_path
     def persist(self, path):
         """Persists the object at the given path"""
-        path = Path(path)
         path.mkdir()
         parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"
@@ -391,12 +390,13 @@ class DeterministicIntentParser(IntentParser):
         :func:`~DeterministicIntentParser.persist`
         """
         path = Path(path)
-        metadata_path = path / "intent_parser.json"
-        if not metadata_path.exists():
-            raise OSError("Missing deterministic intent parser metadata file: "
-                          "%s" % metadata_path.name)
+        model_path = path / "intent_parser.json"
+        if not model_path.exists():
+            raise LoadingError(
+                "Missing deterministic intent parser metadata file: %s"
+                % model_path.name)
 
-        with metadata_path.open(encoding="utf8") as f:
+        with model_path.open(encoding="utf8") as f:
             metadata = json.load(f)
         return cls.from_dict(metadata, **shared)
 

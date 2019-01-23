@@ -9,7 +9,6 @@ from pathlib import Path
 
 from future.utils import with_metaclass
 
-from snips_nlu.resources import load_resources
 from snips_nlu.common.abc_utils import abstractclassmethod, classproperty
 from snips_nlu.common.io_utils import temp_dir, unzip_archive
 from snips_nlu.common.registrable import Registrable
@@ -20,8 +19,10 @@ from snips_nlu.constants import (
     RESOURCES, LANGUAGE)
 from snips_nlu.entity_parser import (
     BuiltinEntityParser, CustomEntityParser, CustomEntityParserUsage)
+from snips_nlu.exceptions import LoadingError
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.pipeline.configs.config import DefaultProcessingUnitConfig
+from snips_nlu.resources import load_resources
 
 
 class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
@@ -80,10 +81,19 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
             unit_name (str, optional): Name of the processing unit to load.
                 By default, the unit name is assumed to be stored in a
                 "metadata.json" file located in the directory at unit_path.
+
+        Raises:
+            LoadingError: when unit_name is None and no metadata file is found
+                in the processing unit directory
         """
         unit_path = Path(unit_path)
         if unit_name is None:
-            with (unit_path / "metadata.json").open(encoding="utf8") as f:
+            metadata_path = unit_path / "metadata.json"
+            if not metadata_path.exists():
+                raise LoadingError(
+                    "Missing metadata for processing unit at path %s"
+                    % str(unit_path))
+            with metadata_path.open(encoding="utf8") as f:
                 metadata = json.load(f)
             unit_name = metadata["unit_name"]
         unit = cls.by_name(unit_name)

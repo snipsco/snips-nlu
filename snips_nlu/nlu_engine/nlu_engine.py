@@ -23,7 +23,8 @@ from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
-from snips_nlu.exceptions import InvalidInputError, IntentNotFoundError
+from snips_nlu.exceptions import InvalidInputError, IntentNotFoundError, \
+    LoadingError, IncompatibleModelError
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
@@ -253,11 +254,14 @@ class SnipsNLUEngine(ProcessingUnit):
         """Persists the NLU engine at the given directory path
 
         Args:
-            path (str): the location at which the nlu engine must be persisted.
-                This path must not exist when calling this function.
+            path (str or pathlib.Path): the location at which the nlu engine
+                must be persisted. This path must not exist when calling this
+                function.
+
+        Raises:
+            PersistingError: when persisting to a path which already exists
         """
-        directory_path = Path(path)
-        directory_path.mkdir()
+        path.mkdir()
 
         parsers_count = defaultdict(int)
         intent_parsers = []
@@ -267,7 +271,7 @@ class SnipsNLUEngine(ProcessingUnit):
             count = parsers_count[parser_name]
             if count > 1:
                 parser_name = "{n}_{c}".format(n=parser_name, c=count)
-            parser_path = directory_path / parser_name
+            parser_path = path / parser_name
             parser.persist(parser_path)
             intent_parsers.append(parser_name)
 
@@ -278,13 +282,13 @@ class SnipsNLUEngine(ProcessingUnit):
         builtin_entity_parser = None
         if self.builtin_entity_parser is not None:
             builtin_entity_parser = "builtin_entity_parser"
-            builtin_entity_parser_path = directory_path / builtin_entity_parser
+            builtin_entity_parser_path = path / builtin_entity_parser
             self.builtin_entity_parser.persist(builtin_entity_parser_path)
 
         custom_entity_parser = None
         if self.custom_entity_parser is not None:
             custom_entity_parser = "custom_entity_parser"
-            custom_entity_parser_path = directory_path / custom_entity_parser
+            custom_entity_parser_path = path / custom_entity_parser
             self.custom_entity_parser.persist(custom_entity_parser_path)
 
         model = {
@@ -299,14 +303,14 @@ class SnipsNLUEngine(ProcessingUnit):
         }
 
         model_json = json_string(model)
-        model_path = directory_path / "nlu_engine.json"
+        model_path = path / "nlu_engine.json"
         with model_path.open(mode="w") as f:
             f.write(model_json)
 
         if self.fitted:
             required_resources = self.config.get_required_resources()
             language = self.dataset_metadata["language_code"]
-            resources_path = directory_path / "resources"
+            resources_path = path / "resources"
             resources_path.mkdir()
             persist_resources(self.resources, resources_path / language,
                               required_resources)
@@ -320,20 +324,23 @@ class SnipsNLUEngine(ProcessingUnit):
 
         Args:
             path (str): The path where the nlu engine is stored
+
+        Raises:
+            LoadingError: when some files are missing
+            IncompatibleModelError: when trying to load an engine model which
+                is not compatible with the current version of the lib
         """
         directory_path = Path(path)
         model_path = directory_path / "nlu_engine.json"
         if not model_path.exists():
-            raise OSError("Missing nlu engine model file: %s"
-                          % model_path.name)
+            raise LoadingError("Missing nlu engine model file: %s"
+                               % model_path.name)
 
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)
         model_version = model.get("model_version")
         if model_version is None or model_version != __model_version__:
-            raise ValueError(
-                "Incompatible data model: persisted object=%s, python lib=%s"
-                % (model_version, __model_version__))
+            raise IncompatibleModelError(model_version)
 
         dataset_metadata = model["dataset_metadata"]
         if shared.get(RESOURCES) is None and dataset_metadata is not None:

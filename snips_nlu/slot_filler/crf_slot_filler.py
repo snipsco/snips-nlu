@@ -28,6 +28,7 @@ from snips_nlu.constants import (
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.exceptions import LoadingError
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (
@@ -336,7 +337,6 @@ class CRFSlotFiller(SlotFiller):
     @check_persisted_path
     def persist(self, path):
         """Persists the object at the given path"""
-        path = Path(path)
         path.mkdir()
 
         crf_model_file = None
@@ -368,8 +368,8 @@ class CRFSlotFiller(SlotFiller):
         path = Path(path)
         model_path = path / "slot_filler.json"
         if not model_path.exists():
-            raise OSError("Missing slot filler model file: %s"
-                          % model_path.name)
+            raise LoadingError(
+                "Missing slot filler model file: %s" % model_path.name)
 
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)

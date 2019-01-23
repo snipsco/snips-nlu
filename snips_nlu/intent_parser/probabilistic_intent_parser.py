@@ -14,7 +14,7 @@ from snips_nlu.common.utils import (
     check_persisted_path, elapsed_since, fitted_required, json_string)
 from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import IntentNotFoundError
+from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_classifier import IntentClassifier
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
@@ -182,7 +182,6 @@ class ProbabilisticIntentParser(IntentParser):
     @check_persisted_path
     def persist(self, path):
         """Persists the object at the given path"""
-        path = Path(path)
         path.mkdir()
         sorted_slot_fillers = sorted(iteritems(self.slot_fillers))
         slot_fillers = []
@@ -217,8 +216,9 @@ class ProbabilisticIntentParser(IntentParser):
         path = Path(path)
         model_path = path / "intent_parser.json"
         if not model_path.exists():
-            raise OSError("Missing probabilistic intent parser model file: "
-                          "%s" % model_path.name)
+            raise LoadingError(
+                "Missing probabilistic intent parser model file: %s"
+                % model_path.name)
 
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)

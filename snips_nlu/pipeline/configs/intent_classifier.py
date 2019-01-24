@@ -254,7 +254,7 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.CooccurrenceVectorizer` object"""
 
     def __init__(self, window_size=None, unknown_words_replacement_string=None,
-                 filter_stop_words=True):
+                 filter_stop_words=True, keep_order=True):
         """
         Args:
             window_size (int, optional): if provided, word cooccurrences will
@@ -266,11 +266,16 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
             unknown_words_replacement_string (str, optional)
             filter_stop_words (bool, optional): if True, stop words are ignored
                 when computing cooccurrences
+            keep_order (bool, optional): if True then cooccurrence are computed
+                taking the words order into account, which means the pairs
+                (w1, w2) and (w2, w1) will count as two separate features.
+                Defaults to `True`.
         """
         self.window_size = window_size
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
         self.filter_stop_words = filter_stop_words
+        self.keep_order = keep_order
 
     @property
     def unit_name(self):
@@ -295,5 +300,6 @@ class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
             "unknown_words_replacement_string":
                 self.unknown_words_replacement_string,
             "window_size": self.window_size,
-            "filter_stop_words": self.filter_stop_words
+            "filter_stop_words": self.filter_stop_words,
+            "keep_order": self.keep_order
         }

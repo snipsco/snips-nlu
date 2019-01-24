@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 CONFIG = {
     "unit_name": "nlu_engine",
     "intent_parsers_configs": [
@@ -167,7 +169,8 @@ CONFIG = {
                     "cooccurrence_vectorizer_config": {
                         "unknown_words_replacement_string": None,
                         "window_size": None,
-                        "filter_stop_words": True
+                        "filter_stop_words": True,
+                        "keep_order": True,
                     }
                 },
                 "random_seed": None

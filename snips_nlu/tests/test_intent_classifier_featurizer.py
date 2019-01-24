@@ -1142,6 +1142,62 @@ class CooccurrenceVectorizerTest(FixtureTest):
         self.assertDictEqual(expected_pairs, vectorizer.word_pairs)
 
     @patch("snips_nlu.intent_classifier.featurizer._entities_from_utterance")
+    def test_fit_unordered(self, mocked_entities_from_utterance):
+        t = "a b c d e f"
+        u = text_to_utterance(t)
+        builtin_ents = [
+            {
+                "value": "e",
+                "resolved_value": "e",
+                "range": {
+                    "start": 8,
+                    "end": 9
+                },
+                "entity_kind": "the_snips_e_entity"
+            }
+        ]
+        custom_ents = [
+            {
+                "value": "c",
+                "resolved_value": "c",
+                "range": {
+                    "start": 4,
+                    "end": 5
+                },
+                "entity_kind": "the_c_entity"
+            }
+        ]
+        mocked_entities_from_utterance.return_value = builtin_ents, custom_ents
+
+        x = [u]
+
+        config = CooccurrenceVectorizerConfig(
+            window_size=3,
+            unknown_words_replacement_string="b",
+            filter_stop_words=False,
+            keep_order=False,
+        )
+        dataset = get_empty_dataset("en")
+        shared = self.get_shared_data(dataset)
+
+        # When
+        expected_pairs = {
+            ("THE_C_ENTITY", "THE_SNIPS_E_ENTITY"): 0,
+            ("THE_C_ENTITY", "a"): 1,
+            ("THE_C_ENTITY", "d"): 2,
+            ("THE_C_ENTITY", "f"): 3,
+            ("THE_SNIPS_E_ENTITY", "a"): 4,
+            ("THE_SNIPS_E_ENTITY", "d"): 5,
+            ("THE_SNIPS_E_ENTITY", "f"): 6,
+            ("a", "d"): 7,
+            ("d", "f"): 8,
+        }
+        vectorizer = CooccurrenceVectorizer(config, **shared).fit(x, dataset)
+
+        # Then
+        self.assertDictEqual(expected_pairs, vectorizer.word_pairs)
+
+    @patch("snips_nlu.intent_classifier.featurizer._entities_from_utterance")
     def test_fit_transform(self, mocked_entities_from_utterance):
         t = "a b c d e f"
         u = text_to_utterance(t)

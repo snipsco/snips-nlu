@@ -689,7 +689,10 @@ class CooccurrenceVectorizer(ProcessingUnit):
             if self.config.window_size is not None:
                 max_index = j + self.config.window_size + 1
             for w2 in utterance[j + 1:max_index]:
-                pairs.add((w1, w2))
+                key = (w1, w2)
+                if not self.config.keep_order:
+                    key = tuple(sorted(key))
+                pairs.add(key)
         return pairs
 
     @fitted_required

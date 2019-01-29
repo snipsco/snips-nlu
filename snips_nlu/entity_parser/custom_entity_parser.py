@@ -7,8 +7,9 @@ from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems, viewvalues
-from snips_nlu_ontology import GazetteerEntityParser
+from snips_nlu_parsers import GazetteerEntityParser
 
+from snips_nlu.common.utils import json_string
 from snips_nlu.constants import (
     END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, START, UTTERANCES)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
@@ -17,7 +18,6 @@ from snips_nlu.entity_parser.custom_entity_parser_usage import (
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.preprocessing import stem, tokenize
 from snips_nlu.result import parsed_entity
-from snips_nlu.common.utils import json_string
 
 
 class CustomEntityParser(EntityParser):
@@ -38,7 +38,7 @@ class CustomEntityParser(EntityParser):
             start = entity["range"]["start"]
             start -= shifts[start]
             end = entity["range"]["end"]
-            end -= shifts[end -1]
+            end -= shifts[end - 1]
             entity_range = {START: start, END: end}
             ent = parsed_entity(
                 entity_kind=entity["entity_identifier"],

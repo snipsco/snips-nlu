@@ -207,7 +207,7 @@ class TestCustomEntityParser(FixtureTest):
         # Then
         self.assertListEqual([], result)
 
-    @patch("snips_nlu_ontology.GazetteerEntityParser.parse")
+    @patch("snips_nlu_parsers.GazetteerEntityParser.parse")
     def test_should_use_cache(self, mocked_parse):
         # Given
         mocked_parse.return_value = []

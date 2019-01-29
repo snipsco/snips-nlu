@@ -5,7 +5,7 @@ import sys
 import plac
 
 from future.builtins import str
-from snips_nlu_ontology import (
+from snips_nlu_parsers import (
     get_builtin_entity_shortname, get_supported_gazetteer_entities)
 
 from snips_nlu import __about__

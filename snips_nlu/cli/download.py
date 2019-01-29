@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals
 import sys
 
 import plac
-from snips_nlu_ontology import get_all_languages
+from snips_nlu_parsers import get_all_languages
 
 from snips_nlu import __about__
 from snips_nlu.cli.link import link_resources

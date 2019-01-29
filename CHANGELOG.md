@@ -1,6 +1,47 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- `get_intents(text)` API in `SnipsNLUEngine` to get the probabilities of all the intents
+- `get_slots(text, intent)` API in `SnipsNLUEngine` to extract slots when the intent is known
+- The `DeterministicIntentParser` can now ignore stop words through the new `ignore_stop_words` configuration parameter
+- Co-occurrence features can now be used in the `LogRegIntentClassifier`
+
+### Changed
+- The `None` intent is now handled as a regular intent in the parsing output, which means that:
+```python
+{
+    "input": "foo bar",
+    "intent": None,
+    "slots": None
+}
+```
+
+is replaced with:
+ 
+```python
+{
+    "input": "foo bar",
+    "intent": {
+        "intentName": None,
+        "probability": 0.552122
+    },
+    "slots": []
+}
+```
+- Patterns of the `DeterministicIntentParser` are now deduplicated across intents in order to reduce ambiguity
+- Improve the use of custom `ProcessingUnit` through the use of `Registrable` pattern
+- Improve the use of default processing unit configurations 
+- Improve logging
+- Replace `snips-nlu-ontology` with `snips-nlu-parsers`
+
+### Fixed
+- Issue when persisting resources
+- Issue when resolving custom entities
+- Issue with whitespaces when generating dataset from YAML and text files
+- Issue with unicode when using the CLI (Python 2)
+
 ## [0.18.0] - 2018-11-26
 ### Added
 - New YAML format to create dataset
@@ -184,6 +225,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.18.0...HEAD
 [0.18.0]: https://github.com/snipsco/snips-nlu/compare/0.17.4...0.18.0
 [0.17.4]: https://github.com/snipsco/snips-nlu/compare/0.17.3...0.17.4
 [0.17.3]: https://github.com/snipsco/snips-nlu/compare/0.17.2...0.17.3

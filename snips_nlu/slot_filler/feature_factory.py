@@ -5,7 +5,7 @@ from builtins import str
 
 from deprecation import deprecated
 from future.utils import with_metaclass
-from snips_nlu_ontology import get_supported_grammar_entities
+from snips_nlu_parsers import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
 from snips_nlu.__about__ import __version__

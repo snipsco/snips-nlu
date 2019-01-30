@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 from deprecation import deprecated
-from snips_nlu_ontology import get_builtin_entity_examples
+from snips_nlu_parsers import get_builtin_entity_examples
 
 from snips_nlu.__about__ import __version__
 from snips_nlu.common.utils import unicode_string

@@ -5,7 +5,7 @@ from copy import deepcopy
 from itertools import cycle
 
 from future.utils import iteritems
-from snips_nlu_ontology import get_builtin_entity_examples
+from snips_nlu_parsers import get_builtin_entity_examples
 
 
 from snips_nlu.constants import (

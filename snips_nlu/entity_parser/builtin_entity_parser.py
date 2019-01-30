@@ -4,16 +4,15 @@ import json
 import shutil
 
 from future.builtins import str
-
-from snips_nlu_ontology import (
+from snips_nlu_parsers import (
     BuiltinEntityParser as _BuiltinEntityParser, get_all_builtin_entities,
     get_all_gazetteer_entities, get_all_grammar_entities,
     get_builtin_entity_shortname, get_supported_gazetteer_entities)
 
+from snips_nlu.common.io_utils import temp_dir
+from snips_nlu.common.utils import json_string
 from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
 from snips_nlu.entity_parser.entity_parser import EntityParser
-from snips_nlu.common.utils import json_string
-from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.result import parsed_entity
 
 _BUILTIN_ENTITY_PARSERS = dict()

@@ -6,7 +6,7 @@ from collections import Counter
 from copy import deepcopy
 
 from future.utils import iteritems, itervalues
-from snips_nlu_ontology import get_all_languages
+from snips_nlu_parsers import get_all_languages
 
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,

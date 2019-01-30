@@ -1,4 +1,4 @@
-from snips_nlu_ontology import get_ontology_version
+from snips_nlu_parsers import get_ontology_version
 
 from snips_nlu.__about__ import __model_version__, __version__
 from snips_nlu.nlu_engine import SnipsNLUEngine

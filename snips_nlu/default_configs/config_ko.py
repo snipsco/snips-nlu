@@ -5,7 +5,7 @@ CONFIG = {
     "intent_parsers_configs": [
         {
             "unit_name": "deterministic_intent_parser",
-            "max_queries": 100,
+            "max_queries": 500,
             "max_pattern_length": 1000,
             "ignore_stop_words": False
         },

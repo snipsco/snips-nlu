@@ -177,23 +177,26 @@ CONFIG = {
                 "data_augmentation_config": {
                     "min_utterances": 20,
                     "noise_factor": 5,
-                    "add_builtin_entities_examples": True,
+                    "add_builtin_entities_examples": False,
                     "max_unknown_words": None,
                     "unknown_word_prob": 0.0,
                     "unknown_words_replacement_string": None
                 },
                 "featurizer_config": {
+                    "unit_name": "featurizer",
                     "pvalue_threshold": 0.4,
                     "added_cooccurrence_feature_ratio": 0.0,
                     "tfidf_vectorizer_config": {
+                        "unit_name": "tfidf_vectorizer",
                         "use_stemming": True,
                         "word_clusters_name": None
                     },
                     "cooccurrence_vectorizer_config": {
-                        "unknown_words_replacement_string": None,
+                        "unit_name": "cooccurrence_vectorizer",
                         "window_size": None,
                         "filter_stop_words": True,
-                        "keep_order": True,
+                        "unknown_words_replacement_string": None,
+                        "keep_order": True
                     }
                 },
                 "random_seed": None

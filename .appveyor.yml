@@ -4,6 +4,8 @@ environment:
       TARGET: x86_64-pc-windows-msvc
     - PYTHON: "C:\\Python36-x64"
       TARGET: x86_64-pc-windows-msvc
+    - PYTHON: "C:\\Python37-x64"
+      TARGET: x86_64-pc-windows-msvc
 
 branches:
   only:
@@ -16,7 +18,6 @@ cache:
   - '%LocalAppData%\pip\Cache\wheels'
 
 install:
-  - git submodule update --init --recursive
   - "%PYTHON%\\python.exe -m pip install wheel"
   - "%PYTHON%\\python.exe -m pip install -e .[test] --verbose"
 

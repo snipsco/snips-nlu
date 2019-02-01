@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- Support for Python3.7
 - `get_intents(text)` API in `SnipsNLUEngine` to get the probabilities of all the intents
 - `get_slots(text, intent)` API in `SnipsNLUEngine` to extract slots when the intent is known
 - The `DeterministicIntentParser` can now ignore stop words through the new `ignore_stop_words` configuration parameter

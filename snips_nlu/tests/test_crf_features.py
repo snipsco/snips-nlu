@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import io
 
-from deprecation import fail_if_not_removed
 from mock import MagicMock
 
 from snips_nlu.constants import LANGUAGE, LANGUAGE_EN, SNIPS_DATETIME, \
@@ -21,7 +20,7 @@ from snips_nlu.slot_filler.feature_factory import (
     BuiltinEntityMatchFactory, CustomEntityMatchFactory, IsDigitFactory,
     IsFirstFactory, IsLastFactory, LengthFactory, NgramFactory, PrefixFactory,
     ShapeNgramFactory, SingleFeatureFactory, SuffixFactory, WordClusterFactory,
-    get_feature_factory, CRFFeatureFactory)
+    CRFFeatureFactory)
 from snips_nlu.tests.utils import SnipsTest
 
 
@@ -630,35 +629,3 @@ utterances:
         # When / Then
         with self.assertRaises(NotRegisteredError):
             CRFFeatureFactory.from_config(config)
-
-    @fail_if_not_removed
-    def test_get_feature_factory(self):
-        # Given
-        @CRFFeatureFactory.register("my_custom_feature_2")
-        class MyCustomFeatureFactory(SingleFeatureFactory):
-            def compute_feature(self, tokens, token_index):
-                return "(%s)[my_custom_feature]" % tokens[token_index].value
-
-        config = {
-            "factory_name": "my_custom_feature_2",
-            "args": {},
-            "offsets": [0]
-        }
-
-        # When
-        factory = get_feature_factory(config)
-
-        # Then
-        self.assertIsInstance(factory, MyCustomFeatureFactory)
-
-    @fail_if_not_removed
-    def test_should_fail_getting_unregistered_factory(self):
-        config = {
-            "factory_name": "my_unknown_feature",
-            "args": {},
-            "offsets": [0]
-        }
-
-        # When / Then
-        with self.assertRaises(NotRegisteredError):
-            get_feature_factory(config)

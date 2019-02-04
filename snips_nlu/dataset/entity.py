@@ -1,24 +1,16 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import csv
-import re
 from builtins import str
 from io import IOBase
-from pathlib import Path
 
-import six
 import yaml
-from deprecation import deprecated
 from snips_nlu_parsers import get_all_builtin_entities
 
-from snips_nlu.__about__ import __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, DATA, MATCHING_STRICTNESS, SYNONYMS,
     USE_SYNONYMS, VALUE)
 from snips_nlu.exceptions import EntityFormatError
-
-AUTO_EXT_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
 
 
 class Entity(object):
@@ -140,46 +132,6 @@ class Entity(object):
                    automatically_extensible=auto_extensible,
                    use_synonyms=use_synonyms,
                    matching_strictness=matching_strictness)
-
-    @classmethod
-    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
-                current_version=__version__, details="Use from_yaml instead")
-    def from_file(cls, filepath):
-        """Build an :class:`.Entity` from a text file"""
-        filepath = Path(filepath)
-        stem = filepath.stem
-        if not stem.startswith("entity_"):
-            raise EntityFormatError(
-                "Entity filename should start with 'entity_' but found: %s"
-                % stem)
-        entity_name = stem[7:]
-        if not entity_name:
-            raise EntityFormatError("Entity name must not be empty")
-        utterances = []
-        with filepath.open(encoding="utf-8") as f:
-            it = f
-            if six.PY2:
-                it = list(utf_8_encoder(it))
-            reader = csv.reader(list(it))
-            autoextent = True
-            for row in reader:
-                if not row or not row[0].strip():
-                    continue
-                if six.PY2:
-                    row = [cell.decode("utf-8") for cell in row]
-                value = row[0]
-                if reader.line_num == 1:
-                    m = AUTO_EXT_REGEX.match(row[0])
-                    if m:
-                        autoextent = not m.group(1).lower() == 'false'
-                        continue
-                if len(row) > 1:
-                    synonyms = row[1:]
-                else:
-                    synonyms = []
-                utterances.append(EntityUtterance(value, synonyms))
-        return cls(entity_name, utterances,
-                   automatically_extensible=autoextent, use_synonyms=True)
 
     @property
     def json(self):

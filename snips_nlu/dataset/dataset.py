@@ -3,13 +3,10 @@ from __future__ import print_function, unicode_literals
 
 import io
 from itertools import cycle
-from pathlib import Path
 
 import yaml
-from deprecation import deprecated
 from snips_nlu_parsers import get_builtin_entity_examples
 
-from snips_nlu.__about__ import __version__
 from snips_nlu.common.utils import unicode_string
 from snips_nlu.dataset.entity import Entity
 from snips_nlu.dataset.intent import Intent
@@ -183,42 +180,6 @@ class Dataset(object):
                     "Invalid 'type' value in YAML file '%s': '%s'"
                     % (stream_description, doc_type))
         return intents, entities
-
-    @classmethod
-    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
-                current_version=__version__,
-                details="Use from_yaml_files instead")
-    def from_files(cls, language, filenames):
-        """Creates a :class:`.Dataset` from a language and a list of intent and
-        entity files
-
-        Args:
-            language (str): language of the assistant
-            filenames (list of str): Intent and entity files.
-                The assistant will associate each intent file to an intent,
-                and each entity file to an entity. For instance, the intent
-                file 'intent_setTemperature.txt' will correspond to the intent
-                'setTemperature', and the entity file 'entity_room.txt' will
-                correspond to the entity 'room'.
-        """
-        intent_filepaths = set()
-        entity_filepaths = set()
-        for filename in filenames:
-            filepath = Path(filename)
-            stem = filepath.stem
-            if stem.startswith("intent_"):
-                intent_filepaths.add(filepath)
-            elif stem.startswith("entity_"):
-                entity_filepaths.add(filepath)
-            else:
-                raise AssertionError("Filename should start either with "
-                                     "'intent_' or 'entity_' but found: %s"
-                                     % stem)
-
-        intents = [Intent.from_file(f) for f in intent_filepaths]
-
-        entities = [Entity.from_file(f) for f in entity_filepaths]
-        return cls(language, intents, entities)
 
     def _add_missing_entities(self):
         entity_names = set(e.name for e in self.entities)

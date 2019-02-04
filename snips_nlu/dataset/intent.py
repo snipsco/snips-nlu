@@ -3,13 +3,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 from abc import ABCMeta, abstractmethod
 from builtins import object
 from io import IOBase
-from pathlib import Path
 
 import yaml
-from deprecation import deprecated
 from future.utils import with_metaclass
 
-from snips_nlu.__about__ import __version__
 from snips_nlu.constants import DATA, ENTITY, SLOT_NAME, TEXT, UTTERANCES
 from snips_nlu.exceptions import IntentFormatError
 
@@ -124,25 +121,6 @@ class Intent(object):
             raise IntentFormatError(
                 "Intent must contain at least one utterance")
         return cls(intent_name, utterances, slot_mapping)
-
-    @classmethod
-    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
-                current_version=__version__, details="Use from_yaml instead")
-    def from_file(cls, filepath):
-        """Build an :class:`.Intent` from a text file"""
-        filepath = Path(filepath)
-        stem = filepath.stem
-        if not stem.startswith("intent_"):
-            raise IntentFormatError(
-                "Intent filename should start with 'intent_' but found: %s"
-                % stem)
-        intent_name = stem[7:]
-        if not intent_name:
-            raise IntentFormatError("Intent name must not be empty")
-        with filepath.open(encoding="utf-8") as f:
-            lines = iter(l.strip() for l in f if l.strip())
-            utterances = [IntentUtterance.parse(sample) for sample in lines]
-        return cls(intent_name, utterances)
 
     def _complete_slot_name_mapping(self):
         for utterance in self.utterances:

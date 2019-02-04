@@ -3,9 +3,6 @@ from __future__ import unicode_literals
 import io
 from unittest import TestCase
 
-from deprecation import fail_if_not_removed
-from mock import patch
-
 from snips_nlu.dataset import Dataset, validate_and_format_dataset
 
 EXPECTED_DATASET_DICT = {
@@ -217,51 +214,5 @@ values:
         dataset_dict = dataset.json
 
         # Then
-        validate_and_format_dataset(dataset_dict)
-        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
-
-    @fail_if_not_removed
-    def test_should_generate_dataset_from_files(self):
-        # Given
-        intent_file_1 = "intent_whoIsGame.txt"
-        intent_file_2 = "intent_getWeather.txt"
-        entity_file_1 = "entity_location.txt"
-
-        who_is_game_txt = """
-who is the [role:role](president) of [country:country](France)
-who is the [role:role](CEO) of [company:company](Google) please
-"""
-
-        get_weather_txt = """
-what is the weather in [weatherLocation:location](Paris)?
-is it raining in [weatherLocation] [weatherDate:snips/datetime]
-"""
-
-        location_txt = """
-new york,big apple
-london
-        """
-
-        # pylint:disable=unused-argument
-        def mock_open(self_, *args, **kwargs):
-            if str(self_) == intent_file_1:
-                return io.StringIO(who_is_game_txt)
-            if str(self_) == intent_file_2:
-                return io.StringIO(get_weather_txt)
-            if str(self_) == entity_file_1:
-                return io.StringIO(location_txt)
-            return None
-
-        # pylint:enable=unused-argument
-
-        dataset_files = [intent_file_1, intent_file_2, entity_file_1]
-
-        # When
-        with patch("pathlib.io") as mock_io:
-            mock_io.open.side_effect = mock_open
-            dataset = Dataset.from_files("en", dataset_files)
-        dataset_dict = dataset.json
-
-        # When / Then
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)

@@ -3,12 +3,10 @@ from __future__ import unicode_literals
 from abc import abstractmethod, ABCMeta
 from builtins import str
 
-from deprecation import deprecated
 from future.utils import with_metaclass
 from snips_nlu_parsers import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
-from snips_nlu.__about__ import __version__
 from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.constants import (
@@ -565,16 +563,3 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         gazetteer_entities = list(
             get_dataset_gazetteer_entities(dataset, intent))
         return grammar_entities + gazetteer_entities
-
-
-@deprecated(deprecated_in="0.18.1", removed_in="0.19.0",
-            current_version=__version__,
-            details="Use CRFFeatureFactory.from_config instead")
-def get_feature_factory(factory_config, **shared):
-    """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
-    config
-
-    Raises:
-        NotRegisteredError: when the factory is not registered
-    """
-    return CRFFeatureFactory.from_config(factory_config, **shared)

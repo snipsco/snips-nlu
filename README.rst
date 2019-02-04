@@ -96,7 +96,7 @@ Getting Started
 System requirements
 -------------------
 
-- Python 2.7 or Python >= 3.4
+- Python 2.7 or Python >= 3.5
 - RAM: Snips NLU will typically use between 100MB and 200MB of RAM, depending on the language and the size of the dataset.
 
 

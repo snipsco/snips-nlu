@@ -36,6 +36,7 @@ is replaced with:
 - Improve the use of default processing unit configurations 
 - Improve logging
 - Replace `snips-nlu-ontology` with `snips-nlu-parsers`
+- Drop support for Python3.4
 
 ### Fixed
 - Issue when persisting resources

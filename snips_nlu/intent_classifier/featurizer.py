@@ -304,6 +304,7 @@ class TfidfVectorizer(ProcessingUnit):
         ]
         return self._tfidf_vectorizer.fit_transform(utterances)
 
+    @property
     def fitted(self):
         return self._tfidf_vectorizer is not None and hasattr(
             self._tfidf_vectorizer, "vocabulary_")
@@ -592,8 +593,9 @@ class CooccurrenceVectorizer(ProcessingUnit):
         }
         return self
 
+    @property
     def fitted(self):
-        """Wether or not the vectorizer is fitted"""
+        """Whether or not the vectorizer is fitted"""
         return self.word_pairs is not None
 
     def fit_transform(self, x, dataset):

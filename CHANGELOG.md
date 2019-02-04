@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.19.1] - 2019-02-04
+### Fixed
+- Bug causing an unnecessary reloading of shared resources
+
 ## [0.19.0] - 2019-02-04
 ### Added
 - Support for Python3.7
@@ -228,6 +232,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.1]: https://github.com/snipsco/snips-nlu/compare/0.19.0...0.19.1
 [0.19.0]: https://github.com/snipsco/snips-nlu/compare/0.18.0...0.19.0
 [0.18.0]: https://github.com/snipsco/snips-nlu/compare/0.17.4...0.18.0
 [0.17.4]: https://github.com/snipsco/snips-nlu/compare/0.17.3...0.17.4

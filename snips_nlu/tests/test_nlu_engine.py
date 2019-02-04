@@ -9,11 +9,14 @@ from mock import MagicMock, patch
 from snips_nlu_parsers import get_all_languages
 
 import snips_nlu
+from snips_nlu import load_resources
 from snips_nlu.constants import (
     END, LANGUAGE, LANGUAGE_EN, RES_ENTITY, RES_INPUT, RES_INTENT,
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
     RES_VALUE, START)
-from snips_nlu.dataset import Dataset
+from snips_nlu.dataset import Dataset, validate_and_format_dataset
+from snips_nlu.entity_parser import BuiltinEntityParser, CustomEntityParser, \
+    CustomEntityParserUsage
 from snips_nlu.exceptions import (
     IntentNotFoundError, InvalidInputError, NotTrained, IncompatibleModelError,
     PersistingError, LoadingError)
@@ -1207,3 +1210,92 @@ utterances:
         # When / Then
         engine.fit(dataset)
         engine.parse("ya", intents=["dummy_intent"])
+
+    @patch("snips_nlu.pipeline.processing_unit.load_resources")
+    def test_should_not_load_resources_when_provided(
+            self, mocked_load_resources):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        resources = load_resources("en")
+
+        # When
+        engine = SnipsNLUEngine(resources=resources)
+        engine.fit(dataset)
+
+        # Then
+        mocked_load_resources.assert_not_called()
+
+    def test_should_not_build_builtin_parser_when_provided(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        dataset = validate_and_format_dataset(dataset)
+        builtin_entity_parser = BuiltinEntityParser.build(language="en")
+
+        # When
+        with patch("snips_nlu.entity_parser.builtin_entity_parser"
+                   ".BuiltinEntityParser.build") as mocked_build_parser:
+            engine = SnipsNLUEngine(
+                builtin_entity_parser=builtin_entity_parser)
+            engine.fit(dataset)
+
+        # Then
+        mocked_build_parser.assert_not_called()
+
+    def test_should_not_build_custom_parser_when_provided(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        resources = load_resources("en")
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS, resources)
+
+        # When
+        with patch("snips_nlu.entity_parser.custom_entity_parser"
+                   ".CustomEntityParser.build") as mocked_build_parser:
+            engine = SnipsNLUEngine(
+                custom_entity_parser=custom_entity_parser)
+            engine.fit(dataset)
+
+        # Then
+        mocked_build_parser.assert_not_called()

@@ -1238,16 +1238,19 @@ class CooccurrenceVectorizerTest(FixtureTest):
         builtin_parser = EntityParserMock({t: builtin_ents})
         custom_parser = EntityParserMock({t: custom_ents})
         resources = {STOP_WORDS: set()}
-        vectorizer = CooccurrenceVectorizer(
+        vectorizer1 = CooccurrenceVectorizer(
+            config, builtin_entity_parser=builtin_parser,
+            custom_entity_parser=custom_parser, resources=resources)
+        vectorizer2 = CooccurrenceVectorizer(
             config, builtin_entity_parser=builtin_parser,
             custom_entity_parser=custom_parser, resources=resources)
 
         # When
-        x_0 = vectorizer.fit(x, dataset).transform(x)
-        x_1 = vectorizer.fit_transform(x, dataset)
+        x_0 = vectorizer1.fit(x, dataset).transform(x).todense().tolist()
+        x_1 = vectorizer2.fit_transform(x, dataset).todense().tolist()
 
         # Then
-        self.assertListEqual(x_0.todense().tolist(), x_1.todense().tolist())
+        self.assertListEqual(x_0, x_1)
 
     def test_limit_vocabulary(self):
         # Given

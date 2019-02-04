@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.19.0] - 2019-02-04
 ### Added
 - Support for Python3.7
 - `get_intents(text)` API in `SnipsNLUEngine` to get the probabilities of all the intents
@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Co-occurrence features can now be used in the `LogRegIntentClassifier`
 
 ### Changed
+- Remove the deprecated text file format for intents and entities in favor YAML format
 - The `None` intent is now handled as a regular intent in the parsing output, which means that:
 ```python
 {
@@ -227,7 +228,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.18.0...HEAD
+[0.19.0]: https://github.com/snipsco/snips-nlu/compare/0.18.0...0.19.0
 [0.18.0]: https://github.com/snipsco/snips-nlu/compare/0.17.4...0.18.0
 [0.17.4]: https://github.com/snipsco/snips-nlu/compare/0.17.3...0.17.4
 [0.17.3]: https://github.com/snipsco/snips-nlu/compare/0.17.2...0.17.3

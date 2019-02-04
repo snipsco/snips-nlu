@@ -1,10 +1,13 @@
+from __future__ import unicode_literals
+
 CONFIG = {
     "unit_name": "nlu_engine",
     "intent_parsers_configs": [
         {
             "unit_name": "deterministic_intent_parser",
-            "max_queries": 100,
-            "max_pattern_length": 1000
+            "max_queries": 500,
+            "max_pattern_length": 1000,
+            "ignore_stop_words": True
         },
         {
             "unit_name": "probabilistic_intent_parser",
@@ -151,16 +154,27 @@ CONFIG = {
                 "data_augmentation_config": {
                     "min_utterances": 20,
                     "noise_factor": 5,
-                    "add_builtin_entities_examples": True,
-                    "max_unknown_words": 0,
-                    "unknown_word_prob": 0,
+                    "add_builtin_entities_examples": False,
+                    "max_unknown_words": None,
+                    "unknown_word_prob": 0.0,
                     "unknown_words_replacement_string": None
                 },
                 "featurizer_config": {
-                    "sublinear_tf": False,
+                    "unit_name": "featurizer",
                     "pvalue_threshold": 0.4,
-                    "word_clusters_name": None,
-                    "use_stemming": False
+                    "added_cooccurrence_feature_ratio": 0.0,
+                    "tfidf_vectorizer_config": {
+                        "unit_name": "tfidf_vectorizer",
+                        "use_stemming": False,
+                        "word_clusters_name": None
+                    },
+                    "cooccurrence_vectorizer_config": {
+                        "unit_name": "cooccurrence_vectorizer",
+                        "window_size": None,
+                        "filter_stop_words": True,
+                        "unknown_words_replacement_string": None,
+                        "keep_order": True
+                    }
                 },
                 "random_seed": None
             }

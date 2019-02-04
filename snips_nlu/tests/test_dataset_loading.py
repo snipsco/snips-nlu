@@ -3,9 +3,6 @@ from __future__ import unicode_literals
 import io
 from unittest import TestCase
 
-from deprecation import fail_if_not_removed
-from mock import patch
-
 from snips_nlu.dataset import Dataset, validate_and_format_dataset
 
 EXPECTED_DATASET_DICT = {
@@ -76,6 +73,9 @@ EXPECTED_DATASET_DICT = {
                             "text": "new york"
                         },
                         {
+                            "text": " "
+                        },
+                        {
                             "entity": "snips/datetime",
                             "slot_name": "weatherDate",
                             "text": "Today"
@@ -137,14 +137,9 @@ EXPECTED_DATASET_DICT = {
 
 
 class TestDatasetLoading(TestCase):
-    @patch("snips_nlu.dataset.dataset.io")
-    def test_should_generate_dataset_from_yaml_files(self, mock_io):
+    def test_should_generate_dataset_from_yaml_files(self):
         # Given
-        intent_file_1 = "whoIsGame.yaml"
-        intent_file_2 = "getWeather.yaml"
-        entity_file_1 = "location.yaml"
-
-        who_is_game_yaml = """
+        who_is_game_yaml = io.StringIO("""
 # whoIsGame Intent
 ---
 type: intent
@@ -152,9 +147,9 @@ name: whoIsGame
 utterances:
   - who is the [role](president) of [country](France)
   - who is the [role](CEO) of [company](Google) please
-        """
+        """)
 
-        get_weather_yaml = """
+        get_weather_yaml = io.StringIO("""
 # getWeather Intent
 ---
 type: intent
@@ -162,9 +157,9 @@ name: getWeather
 utterances:
   - what is the weather in [weatherLocation:location](Paris)?
   - is it raining in [weatherLocation] [weatherDate:snips/datetime]
-        """
+        """)
 
-        location_yaml = """
+        location_yaml = io.StringIO("""
 # Location Entity
 ---
 type: entity
@@ -173,22 +168,9 @@ automatically_extensible: true
 values:
 - [new york, big apple]
 - london
-        """
+        """)
 
-        # pylint:disable=unused-argument
-        def mock_open(filename, **kwargs):
-            if filename == intent_file_1:
-                return io.StringIO(who_is_game_yaml)
-            if filename == intent_file_2:
-                return io.StringIO(get_weather_yaml)
-            if filename == entity_file_1:
-                return io.StringIO(location_yaml)
-            return None
-
-        # pylint:enable=unused-argument
-
-        mock_io.open.side_effect = mock_open
-        dataset_files = [intent_file_1, intent_file_2, entity_file_1]
+        dataset_files = [who_is_game_yaml, get_weather_yaml, location_yaml]
 
         # When
         dataset = Dataset.from_yaml_files("en", dataset_files)
@@ -198,11 +180,9 @@ values:
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
 
-    @patch("snips_nlu.dataset.dataset.io")
-    def test_should_generate_dataset_from_merged_yaml_file(self, mock_io):
+    def test_should_generate_dataset_from_merged_yaml_file(self):
         # Given
-        dataset_file = "dataset.yaml"
-        dataset_yaml = """
+        dataset_stream = io.StringIO("""
 # whoIsGame Intent
 ---
 type: intent
@@ -227,68 +207,12 @@ automatically_extensible: true
 values:
 - [new york, big apple]
 - london
-        """
-
-        # pylint:disable=unused-argument
-        def mock_open(filename, **kwargs):
-            if filename == dataset_file:
-                return io.StringIO(dataset_yaml)
-            return None
-
-        # pylint:enable=unused-argument
-
-        mock_io.open.side_effect = mock_open
+        """)
 
         # When
-        dataset = Dataset.from_yaml_files("en", [dataset_file])
+        dataset = Dataset.from_yaml_files("en", [dataset_stream])
         dataset_dict = dataset.json
 
         # Then
-        validate_and_format_dataset(dataset_dict)
-        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
-
-    @fail_if_not_removed
-    def test_should_generate_dataset_from_files(self):
-        # Given
-        intent_file_1 = "intent_whoIsGame.txt"
-        intent_file_2 = "intent_getWeather.txt"
-        entity_file_1 = "entity_location.txt"
-
-        who_is_game_txt = """
-who is the [role:role](president) of [country:country](France)
-who is the [role:role](CEO) of [company:company](Google) please
-"""
-
-        get_weather_txt = """
-what is the weather in [weatherLocation:location](Paris)?
-is it raining in [weatherLocation] [weatherDate:snips/datetime]
-"""
-
-        location_txt = """
-new york,big apple
-london
-        """
-
-        # pylint:disable=unused-argument
-        def mock_open(self_, *args, **kwargs):
-            if str(self_) == intent_file_1:
-                return io.StringIO(who_is_game_txt)
-            if str(self_) == intent_file_2:
-                return io.StringIO(get_weather_txt)
-            if str(self_) == entity_file_1:
-                return io.StringIO(location_txt)
-            return None
-
-        # pylint:enable=unused-argument
-
-        dataset_files = [intent_file_1, intent_file_2, entity_file_1]
-
-        # When
-        with patch("pathlib.io") as mock_io:
-            mock_io.open.side_effect = mock_open
-            dataset = Dataset.from_files("en", dataset_files)
-        dataset_dict = dataset.json
-
-        # When / Then
         validate_and_format_dataset(dataset_dict)
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)

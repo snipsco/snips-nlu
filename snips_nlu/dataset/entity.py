@@ -1,25 +1,16 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import csv
-import re
 from builtins import str
-from pathlib import Path
+from io import IOBase
 
-import six
-from deprecation import deprecated
-from snips_nlu_ontology import get_all_builtin_entities
+import yaml
+from snips_nlu_parsers import get_all_builtin_entities
 
-from snips_nlu.__about__ import __version__
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, DATA, MATCHING_STRICTNESS, SYNONYMS,
     USE_SYNONYMS, VALUE)
-
-AUTO_EXT_REGEX = re.compile(r'^#\sautomatically_extensible=(true|false)\s*$')
-
-
-class EntityFormatError(TypeError):
-    pass
+from snips_nlu.exceptions import EntityFormatError
 
 
 class Entity(object):
@@ -57,29 +48,64 @@ class Entity(object):
 
     @classmethod
     def from_yaml(cls, yaml_dict):
-        """Build an :class:`.Entity` from its YAML definition dict
+        """Build an :class:`.Entity` from its YAML definition object
 
-        An entity can be defined with a YAML document following the schema
-        illustrated in the example below:
+        Args:
+            yaml_dict (dict or :class:`.IOBase`): object containing the YAML
+                definition of the entity. It can be either a stream, or the
+                corresponding python dict.
 
-        .. code-block:: yaml
+        Examples:
+            An entity can be defined with a YAML document following the schema
+            illustrated in the example below:
 
-            # City Entity
-            ---
-            type: entity
-            name: city
-            automatically_extensible: false # default value is true
-            use_synonyms: false # default value is true
-            matching_strictness: 0.8 # default value is 1.0
-            values:
-              - london
-              - [new york, big apple]
-              - [paris, city of lights]
+            >>> import io
+            >>> from snips_nlu.common.utils import json_string
+            >>> entity_yaml = io.StringIO('''
+            ... # City Entity
+            ... ---
+            ... type: entity
+            ... name: city
+            ... automatically_extensible: false # default value is true
+            ... use_synonyms: false # default value is true
+            ... matching_strictness: 0.8 # default value is 1.0
+            ... values:
+            ...   - london
+            ...   - [new york, big apple]
+            ...   - [paris, city of lights]''')
+            >>> entity = Entity.from_yaml(entity_yaml)
+            >>> print(json_string(entity.json, indent=4, sort_keys=True))
+            {
+                "automatically_extensible": false,
+                "data": [
+                    {
+                        "synonyms": [],
+                        "value": "london"
+                    },
+                    {
+                        "synonyms": [
+                            "big apple"
+                        ],
+                        "value": "new york"
+                    },
+                    {
+                        "synonyms": [
+                            "city of lights"
+                        ],
+                        "value": "paris"
+                    }
+                ],
+                "matching_strictness": 0.8,
+                "use_synonyms": false
+            }
 
         Raises:
             EntityFormatError: When the YAML dict does not correspond to the
                 :ref:`expected entity format <yaml_entity_format>`
         """
+        if isinstance(yaml_dict, IOBase):
+            yaml_dict = yaml.safe_load(yaml_dict)
+
         object_type = yaml_dict.get("type")
         if object_type and object_type != "entity":
             raise EntityFormatError("Wrong type: '%s'" % object_type)
@@ -106,46 +132,6 @@ class Entity(object):
                    automatically_extensible=auto_extensible,
                    use_synonyms=use_synonyms,
                    matching_strictness=matching_strictness)
-
-    @classmethod
-    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
-                current_version=__version__, details="Use from_yaml instead")
-    def from_file(cls, filepath):
-        """Build an :class:`.Entity` from a text file"""
-        filepath = Path(filepath)
-        stem = filepath.stem
-        if not stem.startswith("entity_"):
-            raise EntityFormatError(
-                "Entity filename should start with 'entity_' but found: %s"
-                % stem)
-        entity_name = stem[7:]
-        if not entity_name:
-            raise EntityFormatError("Entity name must not be empty")
-        utterances = []
-        with filepath.open(encoding="utf-8") as f:
-            it = f
-            if six.PY2:
-                it = list(utf_8_encoder(it))
-            reader = csv.reader(list(it))
-            autoextent = True
-            for row in reader:
-                if not row or not row[0].strip():
-                    continue
-                if six.PY2:
-                    row = [cell.decode("utf-8") for cell in row]
-                value = row[0]
-                if reader.line_num == 1:
-                    m = AUTO_EXT_REGEX.match(row[0])
-                    if m:
-                        autoextent = not m.group(1).lower() == 'false'
-                        continue
-                if len(row) > 1:
-                    synonyms = row[1:]
-                else:
-                    synonyms = []
-                utterances.append(EntityUtterance(value, synonyms))
-        return cls(entity_name, utterances,
-                   automatically_extensible=autoextent, use_synonyms=True)
 
     @property
     def json(self):

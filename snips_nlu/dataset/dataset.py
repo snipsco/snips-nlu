@@ -3,19 +3,14 @@ from __future__ import print_function, unicode_literals
 
 import io
 from itertools import cycle
-from pathlib import Path
 
 import yaml
-from deprecation import deprecated
-from snips_nlu_ontology import get_builtin_entity_examples
+from snips_nlu_parsers import get_builtin_entity_examples
 
-from snips_nlu.__about__ import __version__
+from snips_nlu.common.utils import unicode_string
 from snips_nlu.dataset.entity import Entity
 from snips_nlu.dataset.intent import Intent
-
-
-class DatasetFormatError(TypeError):
-    pass
+from snips_nlu.exceptions import DatasetFormatError
 
 
 class Dataset(object):
@@ -40,105 +35,151 @@ class Dataset(object):
 
     @classmethod
     def from_yaml_files(cls, language, filenames):
-        # pylint:disable=line-too-long
         """Creates a :class:`.Dataset` from a language and a list of YAML files
-        containing intents and entities data
+        or streams containing intents and entities data
 
         Each file need not correspond to a single entity nor intent. They can
         consist in several entities and intents merged together in a single
         file.
 
-        A dataset can be defined with a YAML document following the schema
-        illustrated in the example below:
+        Args:
+            language (str): language of the dataset (ISO639-1)
+            filenames (iterable): filenames or stream objects corresponding to
+                intents and entities data.
 
-        .. code-block:: yaml
+        Example:
 
-            # searchFlight Intent
-            ---
-            type: intent
-            name: searchFlight
-            slots:
-              - name: origin
-                entity: city
-              - name: destination
-                entity: city
-              - name: date
-                entity: snips/datetime
-            utterances:
-              - find me a flight from [origin](Paris) to [destination](New York)
-              - I need a flight leaving [date](this weekend) to [destination](Berlin)
-              - show me flights to go to [destination](new york) leaving [date](this evening)
+            A dataset can be defined with a YAML document following the schema
+            illustrated in the example below:
 
-            # City Entity
-            ---
-            type: entity
-            name: city
-            values:
-              - london
-              - [new york, big apple]
-              - [paris, city of lights]
+            >>> import io
+            >>> from snips_nlu.common.utils import json_string
+            >>> dataset_yaml = io.StringIO('''
+            ... # searchFlight Intent
+            ... ---
+            ... type: intent
+            ... name: searchFlight
+            ... slots:
+            ...   - name: origin
+            ...     entity: city
+            ...   - name: destination
+            ...     entity: city
+            ...   - name: date
+            ...     entity: snips/datetime
+            ... utterances:
+            ...   - find me a flight from [origin](Oslo) to [destination](Lima)
+            ...   - I need a flight leaving to [destination](Berlin)
+            ...
+            ... # City Entity
+            ... ---
+            ... type: entity
+            ... name: city
+            ... values:
+            ...   - london
+            ...   - [paris, city of lights]''')
+            >>> dataset = Dataset.from_yaml_files("en", [dataset_yaml])
+            >>> print(json_string(dataset.json, indent=4, sort_keys=True))
+            {
+                "entities": {
+                    "city": {
+                        "automatically_extensible": true,
+                        "data": [
+                            {
+                                "synonyms": [],
+                                "value": "london"
+                            },
+                            {
+                                "synonyms": [
+                                    "city of lights"
+                                ],
+                                "value": "paris"
+                            }
+                        ],
+                        "matching_strictness": 1.0,
+                        "use_synonyms": true
+                    }
+                },
+                "intents": {
+                    "searchFlight": {
+                        "utterances": [
+                            {
+                                "data": [
+                                    {
+                                        "text": "find me a flight from "
+                                    },
+                                    {
+                                        "entity": "city",
+                                        "slot_name": "origin",
+                                        "text": "Oslo"
+                                    },
+                                    {
+                                        "text": " to "
+                                    },
+                                    {
+                                        "entity": "city",
+                                        "slot_name": "destination",
+                                        "text": "Lima"
+                                    }
+                                ]
+                            },
+                            {
+                                "data": [
+                                    {
+                                        "text": "I need a flight leaving to "
+                                    },
+                                    {
+                                        "entity": "city",
+                                        "slot_name": "destination",
+                                        "text": "Berlin"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "language": "en"
+            }
 
         Raises:
             DatasetFormatError: When one of the documents present in the YAML
                 files has a wrong 'type' attribute, which is not 'entity' nor
                 'intent'
             IntentFormatError: When the YAML document of an intent does not
-                correspond to the :ref:`expected intent format <yaml_intent_format>`
+                correspond to the
+                :ref:`expected intent format <yaml_intent_format>`
             EntityFormatError: When the YAML document of an entity does not
-                correspond to the :ref:`expected entity format <yaml_entity_format>`
+                correspond to the
+                :ref:`expected entity format <yaml_entity_format>`
         """
-        # pylint:enable=line-too-long
+        language = unicode_string(language)
         entities = []
         intents = []
         for filename in filenames:
-            with io.open(filename, encoding="utf8") as f:
-                for doc in yaml.safe_load_all(f):
-                    doc_type = doc.get("type")
-                    if doc_type == "entity":
-                        entities.append(Entity.from_yaml(doc))
-                    elif doc_type == "intent":
-                        intents.append(Intent.from_yaml(doc))
-                    else:
-                        raise DatasetFormatError(
-                            "Invalid 'type' value in YAML file '%s': '%s'"
-                            % (filename, doc_type))
+            if isinstance(filename, io.IOBase):
+                intents_, entities_ = cls._load_dataset_parts(
+                    filename, "stream object")
+            else:
+                with io.open(filename, encoding="utf8") as f:
+                    intents_, entities_ = cls._load_dataset_parts(f, filename)
+            intents += intents_
+            entities += entities_
         return cls(language, intents, entities)
 
     @classmethod
-    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
-                current_version=__version__,
-                details="Use from_yaml_files instead")
-    def from_files(cls, language, filenames):
-        """Creates a :class:`.Dataset` from a language and a list of intent and
-        entity files
-
-        Args:
-            language (str): language of the assistant
-            filenames (list of str): Intent and entity files.
-                The assistant will associate each intent file to an intent,
-                and each entity file to an entity. For instance, the intent
-                file 'intent_setTemperature.txt' will correspond to the intent
-                'setTemperature', and the entity file 'entity_room.txt' will
-                correspond to the entity 'room'.
-        """
-        intent_filepaths = set()
-        entity_filepaths = set()
-        for filename in filenames:
-            filepath = Path(filename)
-            stem = filepath.stem
-            if stem.startswith("intent_"):
-                intent_filepaths.add(filepath)
-            elif stem.startswith("entity_"):
-                entity_filepaths.add(filepath)
+    def _load_dataset_parts(cls, stream, stream_description):
+        intents = []
+        entities = []
+        for doc in yaml.safe_load_all(stream):
+            doc_type = doc.get("type")
+            if doc_type == "entity":
+                entities.append(Entity.from_yaml(doc))
+            elif doc_type == "intent":
+                intents.append(Intent.from_yaml(doc))
             else:
-                raise AssertionError("Filename should start either with "
-                                     "'intent_' or 'entity_' but found: %s"
-                                     % stem)
-
-        intents = [Intent.from_file(f) for f in intent_filepaths]
-
-        entities = [Entity.from_file(f) for f in entity_filepaths]
-        return cls(language, intents, entities)
+                raise DatasetFormatError(
+                    "Invalid 'type' value in YAML file '%s': '%s'"
+                    % (stream_description, doc_type))
+        return intents, entities
 
     def _add_missing_entities(self):
         entity_names = set(e.name for e in self.entities)

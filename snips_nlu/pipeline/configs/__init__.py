@@ -2,7 +2,7 @@ from .config import Config, ProcessingUnitConfig
 from .features import default_features_factories
 from .intent_classifier import (
     LogRegIntentClassifierConfig, IntentClassifierDataAugmentationConfig,
-    FeaturizerConfig)
+    FeaturizerConfig, CooccurrenceVectorizerConfig)
 from .intent_parser import (DeterministicIntentParserConfig,
                             ProbabilisticIntentParserConfig)
 from .nlu_engine import NLUEngineConfig

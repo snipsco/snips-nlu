@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 from snips_nlu.constants import (
     RES_ENTITY, RES_INPUT, RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE,
-    RES_PROBABILITY, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE)
+    RES_PROBA, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME, RES_VALUE, ENTITY_KIND,
+    RESOLVED_VALUE, VALUE)
 
 
 def intent_classification_result(intent_name, probability):
@@ -16,7 +17,7 @@ def intent_classification_result(intent_name, probability):
     """
     return {
         RES_INTENT_NAME: intent_name,
-        RES_PROBABILITY: probability
+        RES_PROBA: probability
     }
 
 
@@ -25,10 +26,10 @@ def unresolved_slot(match_range, value, entity, slot_name):
 
     Example:
 
-        >>> import json
+        >>> from snips_nlu.common.utils import json_string
         >>> slot = unresolved_slot([0, 8], "tomorrow", "snips/datetime", \
             "startDate")
-        >>> print(json.dumps(slot, indent=4, sort_keys=True))
+        >>> print(json_string(slot, indent=4, sort_keys=True))
         {
             "entity": "snips/datetime",
             "range": {
@@ -54,8 +55,8 @@ def custom_slot(internal_slot, resolved_value=None):
     Example:
 
         >>> s = unresolved_slot([10, 19], "earl grey", "beverage", "beverage")
-        >>> import json
-        >>> print(json.dumps(custom_slot(s, "tea"), indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(custom_slot(s, "tea"), indent=4, sort_keys=True))
         {
             "entity": "beverage",
             "range": {
@@ -101,21 +102,21 @@ def builtin_slot(internal_slot, resolved_value):
         ...     "value": 20,
         ...     "unit": "celsius"
         ... }
-        >>> import json
-        >>> print(json.dumps(builtin_slot(s, resolved), indent=4))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(builtin_slot(s, resolved), indent=4))
         {
+            "entity": "snips/temperature",
             "range": {
-                "start": 10,
-                "end": 32
+                "end": 32,
+                "start": 10
             },
             "rawValue": "twenty degrees celsius",
+            "slotName": "beverageTemperature",
             "value": {
                 "kind": "Temperature",
-                "value": 20,
-                "unit": "celsius"
-            },
-            "entity": "snips/temperature",
-            "slotName": "beverageTemperature"
+                "unit": "celsius",
+                "value": 20
+            }
         }
     """
     return {
@@ -150,8 +151,8 @@ def resolved_slot(match_range, raw_value, resolved_value, entity, slot_name):
         ... }
         >>> slot = resolved_slot({"start": 10, "end": 19}, "earl grey",
         ... resolved_value, "beverage", "beverage")
-        >>> import json
-        >>> print(json.dumps(slot, indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(slot, indent=4, sort_keys=True))
         {
             "entity": "beverage",
             "range": {
@@ -188,8 +189,8 @@ def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
         ... "greetee")
         >>> slots = [custom_slot(internal_slot, "William")]
         >>> res = parsing_result(text, intent_result, slots)
-        >>> import json
-        >>> print(json.dumps(res, indent=4, sort_keys=True))
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(res, indent=4, sort_keys=True))
         {
             "input": "Hello Bill!",
             "intent": {
@@ -220,19 +221,62 @@ def parsing_result(input, intent, slots):  # pylint:disable=redefined-builtin
     }
 
 
+def extraction_result(intent, slots):
+    """Create the items in the output of :meth:`.SnipsNLUEngine.parse` or
+    :meth:`.IntentParser.parse` when called with a defined ``top_n`` value
+
+    This differs from :func:`.parsing_result` in that the input is omitted.
+
+    Example:
+
+        >>> intent_result = intent_classification_result("Greeting", 0.95)
+        >>> internal_slot = unresolved_slot([6, 10], "Bill", "name",
+        ... "greetee")
+        >>> slots = [custom_slot(internal_slot, "William")]
+        >>> res = extraction_result(intent_result, slots)
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(res, indent=4, sort_keys=True))
+        {
+            "intent": {
+                "intentName": "Greeting",
+                "probability": 0.95
+            },
+            "slots": [
+                {
+                    "entity": "name",
+                    "range": {
+                        "end": 10,
+                        "start": 6
+                    },
+                    "rawValue": "Bill",
+                    "slotName": "greetee",
+                    "value": {
+                        "kind": "Custom",
+                        "value": "William"
+                    }
+                }
+            ]
+        }
+    """
+    return {
+        RES_INTENT: intent,
+        RES_SLOTS: slots
+    }
+
+
 def is_empty(result):
     """Check if a result is empty
 
     Example:
 
-        >>> res = empty_result("foo bar")
+        >>> res = empty_result("foo bar", 1.0)
         >>> is_empty(res)
         True
     """
-    return result[RES_INTENT] is None and result[RES_SLOTS] is None
+    return result[RES_INTENT][RES_INTENT_NAME] is None
 
 
-def empty_result(input):  # pylint:disable=redefined-builtin
+def empty_result(input, probability):  # pylint:disable=redefined-builtin
     """Creates an empty parsing result of the same format as the one of
     :func:`parsing_result`
 
@@ -241,14 +285,52 @@ def empty_result(input):  # pylint:disable=redefined-builtin
 
     Example:
 
-        >>> empty_result("foo bar")
+        >>> res = empty_result("foo bar", 0.8)
+        >>> from snips_nlu.common.utils import json_string
+        >>> print(json_string(res, indent=4, sort_keys=True))
         {
             "input": "foo bar",
-            "intent": None,
-            "slots": None
+            "intent": {
+                "intentName": null,
+                "probability": 0.8
+            },
+            "slots": []
         }
     """
-    return parsing_result(input=input, intent=None, slots=None)
+    intent = intent_classification_result(None, probability)
+    return parsing_result(input=input, intent=intent, slots=[])
+
+
+def parsed_entity(entity_kind, entity_value, entity_resolved_value,
+                  entity_range):
+    """Create the items in the output of
+        :meth:`snips_nlu.entity_parser.EntityParser.parse`
+
+    Example:
+        >>> resolved_value = dict(age=28, role="datascientist")
+        >>> range = dict(start=0, end=6)
+        >>> ent = parsed_entity("snipster", "adrien", resolved_value, range)
+        >>> import json
+        >>> print(json.dumps(ent, indent=4, sort_keys=True))
+        {
+            "entity_kind": "snipster",
+            "range": {
+                "end": 6,
+                "start": 0
+            },
+            "resolved_value": {
+                "age": 28,
+                "role": "datascientist"
+            },
+            "value": "adrien"
+        }
+    """
+    return {
+        VALUE: entity_value,
+        RESOLVED_VALUE: entity_resolved_value,
+        ENTITY_KIND: entity_kind,
+        RES_MATCH_RANGE: entity_range
+    }
 
 
 def _convert_range(rng):

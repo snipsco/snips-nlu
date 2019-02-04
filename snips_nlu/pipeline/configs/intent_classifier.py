@@ -1,33 +1,29 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
+from snips_nlu.common.from_dict import FromDict
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
-from snips_nlu.entity_parser.custom_entity_parser import CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import (
+    CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.utils import classproperty
 
 
-class LogRegIntentClassifierConfig(ProcessingUnitConfig):
+class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.LogRegIntentClassifier`"""
+
     # pylint: disable=line-too-long
-    """Configuration of a :class:`.LogRegIntentClassifier`
-
-    Args:
-        data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
-            Defines the strategy of the underlying data augmentation
-        featurizer_config (:class:`FeaturizerConfig`): Configuration of the
-            :class:`.Featurizer` used underneath
-        random_seed (int, optional): Allows to fix the seed ot have
-            reproducible trainings
-    """
-
-    # pylint: enable=line-too-long
-
-    # pylint: disable=super-init-not-called
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
                  random_seed=None):
+        """
+        Args:
+            data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
+                    Defines the strategy of the underlying data augmentation
+            featurizer_config (:class:`FeaturizerConfig`): Configuration of the
+                :class:`.Featurizer` used underneath
+            random_seed (int, optional): Allows to fix the seed ot have
+                reproducible trainings
+        """
         if data_augmentation_config is None:
             data_augmentation_config = IntentClassifierDataAugmentationConfig()
         if featurizer_config is None:
@@ -38,7 +34,7 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
         self.featurizer_config = featurizer_config
         self.random_seed = random_seed
 
-    # pylint: enable=super-init-not-called
+    # pylint: enable=line-too-long
 
     @property
     def data_augmentation_config(self):
@@ -71,8 +67,8 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
             raise TypeError("Expected instance of FeaturizerConfig or dict"
                             "but received: %s" % type(value))
 
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
+    @property
+    def unit_name(self):
         from snips_nlu.intent_classifier import LogRegIntentClassifier
         return LogRegIntentClassifier.unit_name
 
@@ -91,41 +87,35 @@ class LogRegIntentClassifierConfig(ProcessingUnitConfig):
             "random_seed": self.random_seed
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)
 
-
-class IntentClassifierDataAugmentationConfig(Config):
+class IntentClassifierDataAugmentationConfig(FromDict, Config):
     """Configuration used by a :class:`.LogRegIntentClassifier` which defines
-        how to augment data to improve the training of the classifier
-
-    Args:
-        min_utterances (int, optional): The minimum number of utterances to
-            automatically generate for each intent, based on the existing
-            utterances. Default is 20.
-        noise_factor (int, optional): Defines the size of the noise to
-            generate to train the implicit *None* intent, as a multiplier of
-            the average size of the other intents. Default is 5.
-        add_builtin_entities_examples (bool, optional): If True, some builtin
-            entity examples will be automatically added to the training data.
-            Default is True.
-    """
+        how to augment data to improve the training of the classifier"""
 
     def __init__(self, min_utterances=20, noise_factor=5,
                  add_builtin_entities_examples=True, unknown_word_prob=0,
                  unknown_words_replacement_string=None,
                  max_unknown_words=None):
+        """
+        Args:
+            min_utterances (int, optional): The minimum number of utterances to
+                automatically generate for each intent, based on the existing
+                utterances. Default is 20.
+            noise_factor (int, optional): Defines the size of the noise to
+                generate to train the implicit *None* intent, as a multiplier
+                of the average size of the other intents. Default is 5.
+            add_builtin_entities_examples (bool, optional): If True, some
+                builtin entity examples will be automatically added to the
+                training data. Default is True.
+        """
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
         self.add_builtin_entities_examples = add_builtin_entities_examples
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
             unknown_words_replacement_string
+        if max_unknown_words is not None and max_unknown_words < 0:
+            raise ValueError("max_unknown_words must be None or >= 0")
         self.max_unknown_words = max_unknown_words
         if unknown_word_prob > 0 and unknown_words_replacement_string is None:
             raise ValueError("unknown_word_prob is positive (%s) but the "
@@ -150,51 +140,166 @@ class IntentClassifierDataAugmentationConfig(Config):
             "max_unknown_words": self.max_unknown_words
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
 
+class FeaturizerConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.Featurizer` object"""
 
-class FeaturizerConfig(Config):
-    """Configuration of a :class:`.Featurizer` object
-
-    Args:
-        sublinear_tf (bool, optional): Whether or not to use sublinear
-            (vs linear) term frequencies, default is *False*.
-        pvalue_threshold (float, optional): max pvalue for a feature to be
-        kept in the feature selection
-    """
-
-    def __init__(self, sublinear_tf=False, pvalue_threshold=0.4,
-                 word_clusters_name=None, use_stemming=False):
-        self.sublinear_tf = sublinear_tf
+    # pylint: disable=line-too-long
+    def __init__(self, tfidf_vectorizer_config=None,
+                 cooccurrence_vectorizer_config=None,
+                 pvalue_threshold=0.4,
+                 added_cooccurrence_feature_ratio=0):
+        """
+        Args:
+            tfidf_vectorizer_config (:class:`.TfidfVectorizerConfig`, optional):
+                empty configuration of the featurizer's
+                :attr:`tfidf_vectorizer`
+            cooccurrence_vectorizer_config: (:class:`.CooccurrenceVectorizerConfig`, optional):
+                configuration of the featurizer's
+                :attr:`cooccurrence_vectorizer`
+            pvalue_threshold (float): after fitting the training set to
+                extract tfidf features, a univariate feature selection is
+                applied. Features are tested for independence using a Chi-2
+                test, under the null hypothesis that each feature should be
+                equally present in each class. Only features having a p-value
+                lower than the threshold are kept
+            added_cooccurrence_feature_ratio (float, optional): proportion of
+                cooccurrence features to add with respect to the number of
+                tfidf features. For instance with a ratio of 0.5, if 100 tfidf
+                features are remaining after feature selection, a maximum of 50
+                cooccurrence features will be added
+        """
         self.pvalue_threshold = pvalue_threshold
-        self.word_clusters_name = word_clusters_name
-        self.use_stemming = use_stemming
+        self.added_cooccurrence_feature_ratio = \
+            added_cooccurrence_feature_ratio
+
+        if tfidf_vectorizer_config is None:
+            tfidf_vectorizer_config = TfidfVectorizerConfig()
+        elif isinstance(tfidf_vectorizer_config, dict):
+            tfidf_vectorizer_config = TfidfVectorizerConfig.from_dict(
+                tfidf_vectorizer_config)
+        self.tfidf_vectorizer_config = tfidf_vectorizer_config
+
+        if cooccurrence_vectorizer_config is None:
+            cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig()
+        elif isinstance(cooccurrence_vectorizer_config, dict):
+            cooccurrence_vectorizer_config = CooccurrenceVectorizerConfig \
+                .from_dict(cooccurrence_vectorizer_config)
+        self.cooccurrence_vectorizer_config = cooccurrence_vectorizer_config
+
+    # pylint: enable=line-too-long
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import Featurizer
+        return Featurizer.unit_name
 
     def get_required_resources(self):
-        if self.use_stemming:
-            parser_usage = CustomEntityParserUsage.WITH_STEMS
-        else:
-            parser_usage = CustomEntityParserUsage.WITHOUT_STEMS
-        if self.word_clusters_name is not None:
-            word_clusters = {self.word_clusters_name}
-        else:
-            word_clusters = set()
-        return {
-            WORD_CLUSTERS: word_clusters,
-            STEMS: self.use_stemming,
-            CUSTOM_ENTITY_PARSER_USAGE: parser_usage
-        }
+        required_resources = self.tfidf_vectorizer_config \
+            .get_required_resources()
+        if self.cooccurrence_vectorizer_config:
+            required_resources = merge_required_resources(
+                required_resources,
+                self.cooccurrence_vectorizer_config.get_required_resources())
+        return required_resources
 
     def to_dict(self):
         return {
-            "sublinear_tf": self.sublinear_tf,
+            "unit_name": self.unit_name,
             "pvalue_threshold": self.pvalue_threshold,
+            "added_cooccurrence_feature_ratio":
+                self.added_cooccurrence_feature_ratio,
+            "tfidf_vectorizer_config": self.tfidf_vectorizer_config.to_dict(),
+            "cooccurrence_vectorizer_config":
+                self.cooccurrence_vectorizer_config.to_dict(),
+        }
+
+
+class TfidfVectorizerConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.TfidfVectorizerConfig` object"""
+
+    def __init__(self, word_clusters_name=None, use_stemming=False):
+        """
+        Args:
+            word_clusters_name (str, optional): if a word cluster name is
+                provided then the featurizer will use the word clusters IDs
+                detected in the utterances and add them to the utterance text
+                before computing the tfidf. Default to None
+            use_stemming (bool, optional): use stemming before computing the
+                tfdif. Defaults to False (no stemming used)
+        """
+        self.word_clusters_name = word_clusters_name
+        self.use_stemming = use_stemming
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import TfidfVectorizer
+        return TfidfVectorizer.unit_name
+
+    def get_required_resources(self):
+        resources = {STEMS: True if self.use_stemming else False}
+        if self.word_clusters_name:
+            resources[WORD_CLUSTERS] = {self.word_clusters_name}
+        return resources
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
             "word_clusters_name": self.word_clusters_name,
             "use_stemming": self.use_stemming
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        return cls(**obj_dict)
+
+class CooccurrenceVectorizerConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.CooccurrenceVectorizer` object"""
+
+    def __init__(self, window_size=None, unknown_words_replacement_string=None,
+                 filter_stop_words=True, keep_order=True):
+        """
+        Args:
+            window_size (int, optional): if provided, word cooccurrences will
+                be taken into account only in a context window of size
+                :attr:`window_size`. If the window size is 3 then given a word
+                w[i], the vectorizer will only extract the following pairs:
+                (w[i], w[i + 1]), (w[i], w[i + 2]) and (w[i], w[i + 3]).
+                Defaults to None, which means that we consider all words
+            unknown_words_replacement_string (str, optional)
+            filter_stop_words (bool, optional): if True, stop words are ignored
+                when computing cooccurrences
+            keep_order (bool, optional): if True then cooccurrence are computed
+                taking the words order into account, which means the pairs
+                (w1, w2) and (w2, w1) will count as two separate features.
+                Defaults to `True`.
+        """
+        self.window_size = window_size
+        self.unknown_words_replacement_string = \
+            unknown_words_replacement_string
+        self.filter_stop_words = filter_stop_words
+        self.keep_order = keep_order
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import CooccurrenceVectorizer
+        return CooccurrenceVectorizer.unit_name
+
+    def get_required_resources(self):
+        return {
+            STOP_WORDS: self.filter_stop_words,
+            # We require the parser to be trained without stems because we
+            # don't normalize and stem when processing in the
+            # CooccurrenceVectorizer (in order to run the builtin and
+            # custom parser on the same unormalized input).
+            # Requiring no stems ensures we'll be able to parse the unstemmed
+            # input
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
+        }
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "unknown_words_replacement_string":
+                self.unknown_words_replacement_string,
+            "window_size": self.window_size,
+            "filter_stop_words": self.filter_stop_words,
+            "keep_order": self.keep_order
+        }

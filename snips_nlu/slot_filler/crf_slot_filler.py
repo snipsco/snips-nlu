@@ -14,29 +14,34 @@ from pathlib import Path
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
 
+from snips_nlu.common.dataset_utils import get_slot_name_mapping
+from snips_nlu.common.dict_utils import UnupdatableDict
+from snips_nlu.common.io_utils import mkdir_p
+from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
+from snips_nlu.common.utils import (
+    check_persisted_path,
+    check_random_state, fitted_required, json_string,
+    ranges_overlap)
 from snips_nlu.constants import (
     DATA, END, ENTITY_KIND, LANGUAGE, RES_ENTITY,
     RES_MATCH_RANGE, RES_VALUE, START)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
+from snips_nlu.exceptions import LoadingError
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, TAGS, TOKENS, positive_tagging, tag_name_to_slot_name,
     tags_to_preslots, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
-from snips_nlu.slot_filler.feature_factory import get_feature_factory
+from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
-from snips_nlu.utils import (
-    DifferedLoggingMessage, UnupdatableDict, check_persisted_path,
-    check_random_state, fitted_required, get_slot_name_mapping, json_string,
-    log_elapsed_time,
-    mkdir_p, ranges_overlap)
 
 logger = logging.getLogger(__name__)
 
 
+@SlotFiller.register("crf_slot_filler")
 class CRFSlotFiller(SlotFiller):
     """Slot filler which uses Linear-Chain Conditional Random Fields underneath
 
@@ -44,19 +49,16 @@ class CRFSlotFiller(SlotFiller):
     more about CRFs
     """
 
-    unit_name = "crf_slot_filler"
     config_type = CRFSlotFillerConfig
 
     def __init__(self, config=None, **shared):
         """The CRF slot filler can be configured by passing a
         :class:`.CRFSlotFillerConfig`"""
-
-        if config is None:
-            config = self.config_type()
         super(CRFSlotFiller, self).__init__(config, **shared)
         self.crf_model = None
-        self.features_factories = [get_feature_factory(conf) for conf in
-                                   self.config.feature_factory_configs]
+        self.features_factories = [
+            CRFFeatureFactory.from_config(conf, **shared)
+            for conf in self.config.feature_factory_configs]
         self._features = None
         self.language = None
         self.intent = None
@@ -69,8 +71,7 @@ class CRFSlotFiller(SlotFiller):
             self._features = []
             feature_names = set()
             for factory in self.features_factories:
-                for feature in factory.build_features(
-                        self.builtin_entity_parser, self.custom_entity_parser):
+                for feature in factory.build_features():
                     if feature.name in feature_names:
                         raise KeyError("Duplicated feature: %s" % feature.name)
                     feature_names.add(feature.name)
@@ -100,7 +101,7 @@ class CRFSlotFiller(SlotFiller):
                       "Fitted CRFSlotFiller in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent):
-        """Fit the slot filler
+        """Fits the slot filler
 
         Args:
             dataset (dict): A valid Snips dataset
@@ -112,8 +113,15 @@ class CRFSlotFiller(SlotFiller):
         """
         logger.debug("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
+
+        for factory in self.features_factories:
+            factory.custom_entity_parser = self.custom_entity_parser
+            factory.builtin_entity_parser = self.builtin_entity_parser
+            factory.resources = self.resources
+
         self.language = dataset[LANGUAGE]
         self.intent = intent
         self.slot_name_mapping = get_slot_name_mapping(dataset, intent)
@@ -125,7 +133,7 @@ class CRFSlotFiller(SlotFiller):
         random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
             dataset, self.intent, language=self.language,
-            random_state=random_state,
+            resources=self.resources, random_state=random_state,
             **self.config.data_augmentation_config.to_dict())
 
         crf_samples = [
@@ -192,7 +200,7 @@ class CRFSlotFiller(SlotFiller):
         return self._augment_slots(text, tokens, tags, builtin_slots_names)
 
     def compute_features(self, tokens, drop_out=False):
-        """Compute features on the provided tokens
+        """Computes features on the provided tokens
 
         The *drop_out* parameters allows to activate drop out on features that
         have a positive drop out ratio. This should only be used during
@@ -247,7 +255,7 @@ class CRFSlotFiller(SlotFiller):
 
     @fitted_required
     def log_weights(self):
-        """Return a logs for both the label-to-label and label-to-features
+        """Returns a logs for both the label-to-label and label-to-features
          weights"""
         if not self.slot_name_mapping:
             return "No weights to display: intent '%s' has no slots" \
@@ -328,8 +336,7 @@ class CRFSlotFiller(SlotFiller):
 
     @check_persisted_path
     def persist(self, path):
-        """Persist the object at the given path"""
-        path = Path(path)
+        """Persists the object at the given path"""
         path.mkdir()
 
         crf_model_file = None
@@ -353,7 +360,7 @@ class CRFSlotFiller(SlotFiller):
 
     @classmethod
     def from_path(cls, path, **shared):
-        """Load a :class:`CRFSlotFiller` instance from a path
+        """Loads a :class:`CRFSlotFiller` instance from a path
 
         The data at the given path must have been generated using
         :func:`~CRFSlotFiller.persist`
@@ -361,8 +368,8 @@ class CRFSlotFiller(SlotFiller):
         path = Path(path)
         model_path = path / "slot_filler.json"
         if not model_path.exists():
-            raise OSError("Missing slot filler model file: %s"
-                          % model_path.name)
+            raise LoadingError(
+                "Missing slot filler model file: %s" % model_path.name)
 
         with model_path.open(encoding="utf8") as f:
             model = json.load(f)
@@ -516,14 +523,15 @@ def _crf_model_from_path(crf_model_path):
 
 # pylint: disable=invalid-name
 def _ensure_safe(X, Y):
-    """Ensure that Y has at least one not empty label, otherwise the CRF model
+    """Ensures that Y has at least one not empty label, otherwise the CRF model
     does not contain any label and crashes at
+
     Args:
         X: features
         Y: labels
 
-    Returns: (safe_X, safe_Y) a pair of safe features and labels
-
+    Returns:
+        (safe_X, safe_Y): a pair of safe features and labels
     """
     safe_X = list(X)
     safe_Y = list(Y)

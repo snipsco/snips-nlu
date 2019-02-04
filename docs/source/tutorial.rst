@@ -139,18 +139,13 @@ We have built a list of `default configurations`_, one per supported language,
 that have some language specific enhancements. In this tutorial we will use the
 `english one`_.
 
-Before training the engine, note that you need to load language specific
-resources used to improve performance with the :func:`.load_resources` function.
-
 .. code-block:: python
 
     import io
     import json
 
-    from snips_nlu import SnipsNLUEngine, load_resources
+    from snips_nlu import SnipsNLUEngine
     from snips_nlu.default_configs import CONFIG_EN
-
-    load_resources(u"en")
 
     engine = SnipsNLUEngine(config=CONFIG_EN)
 
@@ -221,6 +216,76 @@ value):
 Notice that the ``lounge`` slot value points to ``living room`` as defined
 earlier in the entity synonyms of the dataset.
 
+Now, let's say the intent is already known and provided by the context of the
+application, but the slots must still be extracted. A second parsing API allows
+to extract the slots while providing the intent:
+
+.. code-block:: python
+
+   parsing = engine.get_slots(u"Hey, lights on in the lounge !", "turnLightOn")
+   print(json.dumps(parsing, indent=2))
+
+This will give you only the extracted slots:
+
+.. code-block:: json
+
+   [
+     {
+       "range": {
+         "start": 22,
+         "end": 28
+       },
+       "rawValue": "lounge",
+       "value": {
+         "kind": "Custom",
+         "value": "living room"
+       },
+       "entity": "room",
+       "slotName": "room"
+     }
+   ]
+
+Finally, there is another method that allows to run only the intent
+classification and get the list of intents along with their score:
+
+.. code-block:: python
+
+    intents = engine.get_intents(u"Hey, lights on in the lounge !")
+    print(json.dumps(intents, indent=2))
+
+This should give you something like below:
+
+.. code-block:: json
+
+   [
+     {
+       "intentName": "turnLightOn",
+       "probability": 0.6363648460343694
+     },
+     {
+       "intentName": null,
+       "probability": 0.2580088944934134
+     },
+     {
+       "intentName": "turnLightOff",
+       "probability": 0.22791834836267366
+     },
+     {
+       "intentName": "setTemperature",
+       "probability": 0.181781583254962
+     }
+   ]
+
+You will notice that the second intent is ``null``. This intent is what we
+call the :ref:`None intent <none_intent>` and is explained in the next
+section.
+
+.. important::
+
+    Even though the term ``"probability"`` is used here, the values should
+    rather be considered as confidence scores as they do not sum to 1.0.
+
+
 .. _none_intent:
 
 ---------------
@@ -232,16 +297,39 @@ generates an implicit intent to cover utterances that does not correspond to
 any of your intents. We refer to it as the **None** intent.
 
 The NLU engine is trained to recognize when the input corresponds to the None
-intent. Here is what you should get if you try parsing ``"foo bar"`` with the
-engine we previously created:
+intent. Here is the kind of output you should get if you try parsing
+``"foo bar"`` with the engine we previously created:
 
-.. code-block:: json
+.. tabs::
 
-    {
-      "input": "foo bar",
-      "intent": null,
-      "slots": null
-    }
+   .. tab:: Python
+
+      .. code-block:: python
+
+          {
+            "input": "foo bar",
+            "intent": {
+              "intentName": None,
+              "probability": 0.552122
+            },
+            "slots": []
+          }
+
+   .. tab:: JSON
+
+      .. code-block:: json
+
+          {
+            "input": "foo bar",
+            "intent": {
+              "intentName": null,
+              "probability": 0.552122
+            },
+            "slots": []
+          }
+
+The **None** intent is represented by a ``None`` value in python which
+translates in JSON into a ``null`` value.
 
 Persisting
 ----------

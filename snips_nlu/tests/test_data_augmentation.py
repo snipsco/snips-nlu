@@ -5,7 +5,7 @@ from builtins import next, range
 import numpy as np
 from mock import patch
 
-from snips_nlu.constants import LANGUAGE_EN
+from snips_nlu.constants import LANGUAGE_EN, STOP_WORDS
 from snips_nlu.data_augmentation import (
     capitalize, capitalize_utterances, generate_utterance,
     get_contexts_iterator, get_entities_iterators)
@@ -188,14 +188,19 @@ class TestDataAugmentation(SnipsTest):
     def test_capitalize(self):
         # Given
         language = LANGUAGE_EN
+        resources = {
+            STOP_WORDS: {"the", "and", "you"}
+        }
+
         texts = [
-            ("university of new york", "University of New York"),
-            ("JOHN'S SMITH", "John s Smith"),
-            ("is that it", "is that it")
+            ("the new yorker", "the New Yorker"),
+            ("JOHN AND SMITH", "John and Smith"),
+            ("you and me", "you and Me")
         ]
 
         # When
-        capitalized_texts = [capitalize(text[0], language) for text in texts]
+        capitalized_texts = [capitalize(text[0], language, resources)
+                             for text in texts]
 
         # Then
         expected_capitalized_texts = [text[1] for text in texts]
@@ -204,12 +209,16 @@ class TestDataAugmentation(SnipsTest):
     def test_should_capitalize_only_right_entities(self):
         # Given
         language = LANGUAGE_EN
+        resources = {
+            STOP_WORDS: {"the", "and", "you"}
+        }
+
         ratio = 1
         entities = {
-            "someOneHouse": {
+            "person": {
                 "capitalize": False
             },
-            "university": {
+            "magazine": {
                 "capitalize": True
             }
         }
@@ -217,29 +226,29 @@ class TestDataAugmentation(SnipsTest):
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "i love "
                     },
                     {
-                        "text": "university of new york",
-                        "entity": "university"
+                        "text": "the new yorker",
+                        "entity": "magazine"
                     },
                     {
-                        "text": " right now or "
+                        "text": " and "
                     },
                     {
-                        "text": "university of London",
-                        "entity": "university"
+                        "text": "rock and rolla",
+                        "entity": "magazine"
                     }
                 ]
             },
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "let's visit"
                     },
                     {
-                        "text": "john's smith house",
-                        "entity": "someOneHouse"
+                        "text": "andrew and smith",
+                        "entity": "person"
                     },
                     {
                         "text": " right now"
@@ -251,36 +260,36 @@ class TestDataAugmentation(SnipsTest):
 
         # When
         capitalized_utterances = capitalize_utterances(
-            utterances, entities, language, ratio, random_state)
+            utterances, entities, language, ratio, resources, random_state)
 
         # Then
         expected_utterances = [
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "i love "
                     },
                     {
-                        "text": "University of New York",
-                        "entity": "university"
+                        "text": "the New Yorker",
+                        "entity": "magazine"
                     },
                     {
-                        "text": " right now or "
+                        "text": " and "
                     },
                     {
-                        "text": "University of London",
-                        "entity": "university"
+                        "text": "Rock and Rolla",
+                        "entity": "magazine"
                     }
                 ]
             },
             {
                 "data": [
                     {
-                        "text": "let's go the "
+                        "text": "let's visit"
                     },
                     {
-                        "text": "john's smith house",
-                        "entity": "someOneHouse"
+                        "text": "andrew and smith",
+                        "entity": "person"
                     },
                     {
                         "text": " right now"

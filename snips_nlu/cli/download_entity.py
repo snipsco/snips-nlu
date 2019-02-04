@@ -5,7 +5,7 @@ import sys
 import plac
 
 from future.builtins import str
-from snips_nlu_ontology import (
+from snips_nlu_parsers import (
     get_builtin_entity_shortname, get_supported_gazetteer_entities)
 
 from snips_nlu import __about__
@@ -14,7 +14,7 @@ from snips_nlu.cli.link import link_resources
 from snips_nlu.cli.utils import (
     PrettyPrintLevel, check_resources_alias, get_compatibility, get_json,
     get_resources_version, install_remote_package, pretty_print)
-from snips_nlu.utils import get_package_path
+from snips_nlu.common.utils import get_package_path
 
 
 # inspired from

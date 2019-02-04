@@ -1,16 +1,13 @@
 from __future__ import unicode_literals
 
-from copy import deepcopy
-
+from snips_nlu.common.from_dict import FromDict
 from snips_nlu.constants import CUSTOM_ENTITY_PARSER_USAGE
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
-from snips_nlu.pipeline.processing_unit import get_processing_unit_config
 from snips_nlu.resources import merge_required_resources
-from snips_nlu.utils import classproperty
 
 
-class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
+class ProbabilisticIntentParserConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.ProbabilisticIntentParser` object
 
     Args:
@@ -22,23 +19,22 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
             uses a :class:`.CRFSlotFillerConfig`
     """
 
-    # pylint: disable=super-init-not-called
     def __init__(self, intent_classifier_config=None, slot_filler_config=None):
+        from snips_nlu.intent_classifier import IntentClassifier
+        from snips_nlu.slot_filler import SlotFiller
+
         if intent_classifier_config is None:
             from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
             intent_classifier_config = LogRegIntentClassifierConfig()
         if slot_filler_config is None:
             from snips_nlu.pipeline.configs import CRFSlotFillerConfig
             slot_filler_config = CRFSlotFillerConfig()
-        self.intent_classifier_config = get_processing_unit_config(
+        self.intent_classifier_config = IntentClassifier.get_config(
             intent_classifier_config)
-        self.slot_filler_config = get_processing_unit_config(
-            slot_filler_config)
+        self.slot_filler_config = SlotFiller.get_config(slot_filler_config)
 
-    # pylint: enable=super-init-not-called
-
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
+    @property
+    def unit_name(self):
         from snips_nlu.intent_parser import ProbabilisticIntentParser
         return ProbabilisticIntentParser.unit_name
 
@@ -55,22 +51,16 @@ class ProbabilisticIntentParserConfig(ProcessingUnitConfig):
             "intent_classifier_config": self.intent_classifier_config.to_dict()
         }
 
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)
 
-
-class DeterministicIntentParserConfig(ProcessingUnitConfig):
+class DeterministicIntentParserConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.DeterministicIntentParser`
 
     Args:
         max_queries (int, optional): Maximum number of regex patterns per
             intent. 50 by default.
         max_pattern_length (int, optional): Maximum length of regex patterns.
+        ignore_stop_words (bool, optional): If True, stop words will be
+            removed before building patterns.
 
 
     This allows to deactivate the usage of regular expression when they are
@@ -81,17 +71,15 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         for all this
     """
 
-    # pylint: disable=super-init-not-called
-    def __init__(self, max_queries=100, max_pattern_length=1000):
+    def __init__(self, max_queries=100, max_pattern_length=1000,
+                 ignore_stop_words=False):
         self.max_queries = max_queries
         self.max_pattern_length = max_pattern_length
+        self.ignore_stop_words = ignore_stop_words
 
-    # pylint: enable=super-init-not-called
-
-    @classproperty
-    def unit_name(cls):  # pylint:disable=no-self-argument
-        from snips_nlu.intent_parser.deterministic_intent_parser import \
-            DeterministicIntentParser
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_parser import DeterministicIntentParser
         return DeterministicIntentParser.unit_name
 
     def get_required_resources(self):
@@ -103,13 +91,6 @@ class DeterministicIntentParserConfig(ProcessingUnitConfig):
         return {
             "unit_name": self.unit_name,
             "max_queries": self.max_queries,
-            "max_pattern_length": self.max_pattern_length
+            "max_pattern_length": self.max_pattern_length,
+            "ignore_stop_words": self.ignore_stop_words
         }
-
-    @classmethod
-    def from_dict(cls, obj_dict):
-        d = obj_dict
-        if "unit_name" in obj_dict:
-            d = deepcopy(obj_dict)
-            d.pop("unit_name")
-        return cls(**d)

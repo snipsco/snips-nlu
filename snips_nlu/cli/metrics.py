@@ -2,14 +2,13 @@ from __future__ import print_function, unicode_literals
 
 import json
 import logging
-
 from pathlib import Path
 
 import plac
 
-from snips_nlu import SnipsNLUEngine, load_resources
+from snips_nlu import SnipsNLUEngine
 from snips_nlu.cli.utils import set_nlu_logger
-from snips_nlu.utils import json_string
+from snips_nlu.common.utils import json_string
 
 
 def make_engine_cls(config):
@@ -69,9 +68,6 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
         include_slot_metrics=not exclude_slot_metrics,
     )
 
-    with Path(dataset_path).open("r", encoding="utf8") as f:
-        load_resources(json.load(f)["language"])
-
     from snips_nlu_metrics import compute_cross_val_metrics
 
     metrics = compute_cross_val_metrics(**metrics_args)
@@ -114,9 +110,6 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
         engine_class=engine_cls,
         include_slot_metrics=not exclude_slot_metrics
     )
-
-    with Path(train_dataset_path).open("r", encoding="utf8") as f:
-        load_resources(json.load(f)["language"])
 
     from snips_nlu_metrics import compute_train_test_metrics
 

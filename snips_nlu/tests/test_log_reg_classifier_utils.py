@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from copy import deepcopy
 from itertools import cycle
 
@@ -8,8 +9,9 @@ import numpy as np
 from future.utils import itervalues
 from mock import MagicMock, patch
 
-from snips_nlu.constants import INTENTS, LANGUAGE_EN, UTTERANCES
-from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.constants import (
+    INTENTS, LANGUAGE_EN, UTTERANCES, LANGUAGE, NOISE)
+from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     add_unknown_word_to_utterances, build_training_data,
     generate_noise_utterances, generate_smart_noise, get_noise_it,
@@ -18,17 +20,33 @@ from snips_nlu.pipeline.configs import (
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig)
 from snips_nlu.tests.test_log_reg_intent_classifier import (
     get_mocked_augment_utterances)
-from snips_nlu.tests.utils import (SAMPLE_DATASET, SnipsTest,
-                                   get_empty_dataset)
+from snips_nlu.tests.utils import SnipsTest, get_empty_dataset
 
 
 class TestLogRegClassifierUtils(SnipsTest):
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
-    def test_should_build_training_data_with_no_stemming_no_noise(
+    def test_should_build_training_data_with_no_noise(
             self, mocked_augment_utterances):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_first_intent
+utterances:
+- how are you
+- hello how are you?
+- what's up
+
+---
+type: intent
+name: my_second_intent
+utterances:
+- what is the weather today ?
+- does it rain
+- will it rain tomorrow""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        resources = self.get_resources(dataset[LANGUAGE])
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
         random_state = np.random.RandomState(1)
 
@@ -36,24 +54,26 @@ class TestLogRegClassifierUtils(SnipsTest):
         data_augmentation_config = IntentClassifierDataAugmentationConfig(
             noise_factor=0)
         utterances, _, intent_mapping = build_training_data(
-            dataset, LANGUAGE_EN, data_augmentation_config, random_state)
+            dataset, LANGUAGE_EN, data_augmentation_config, resources,
+            random_state)
 
         # Then
         expected_utterances = [utterance for intent
                                in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
-        expected_intent_mapping = [u'dummy_intent_1', u'dummy_intent_2']
+        expected_intent_mapping = ["my_first_intent", "my_second_intent"]
         self.assertListEqual(expected_utterances, utterances)
         self.assertListEqual(expected_intent_mapping, intent_mapping)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_noise(
-            self, mocked_augment_utterances, mocked_get_noise):
+            self, mocked_augment_utterances):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
-        mocked_get_noise.return_value = mocked_noises
+        resources = {
+            NOISE: mocked_noises
+        }
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -81,16 +101,16 @@ class TestLogRegClassifierUtils(SnipsTest):
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=None)
         utterances, _, intent_mapping = build_training_data(
-            dataset, LANGUAGE_EN, data_augmentation_config, random_state)
+            dataset, LANGUAGE_EN, data_augmentation_config, resources,
+            random_state)
 
         # Then
         expected_utterances = [utterance
                                for intent in itervalues(dataset[INTENTS])
                                for utterance in intent[UTTERANCES]]
         np.random.seed(42)
-        noise = list(mocked_noises)
         noise_size = int(min(noise_factor * num_queries_per_intent,
-                             len(noise)))
+                             len(mocked_noises)))
         noise_it = get_noise_it(mocked_noises, utterances_length, 0,
                                 random_state)
         noisy_utterances = [text_to_utterance(next(noise_it))
@@ -317,14 +337,15 @@ class TestLogRegClassifierUtils(SnipsTest):
                           replacement_string]
         self.assertEqual(noise, expected_noise)
 
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
     @patch("snips_nlu.intent_classifier.log_reg_classifier_utils"
            ".augment_utterances")
     def test_should_build_training_data_with_unknown_noise(
-            self, mocked_augment_utterances, mocked_get_noise):
+            self, mocked_augment_utterances):
         # Given
         mocked_noises = ["mocked_noise_%s" % i for i in range(100)]
-        mocked_get_noise.return_value = mocked_noises
+        resources = {
+            NOISE: mocked_noises
+        }
         mocked_augment_utterances.side_effect = get_mocked_augment_utterances
 
         num_intents = 3
@@ -353,7 +374,8 @@ class TestLogRegClassifierUtils(SnipsTest):
             noise_factor=noise_factor, unknown_word_prob=0,
             unknown_words_replacement_string=replacement_string)
         utterances, _, intent_mapping = build_training_data(
-            dataset, LANGUAGE_EN, data_augmentation_config, random_state)
+            dataset, LANGUAGE_EN, data_augmentation_config, resources,
+            random_state)
 
         # Then
         expected_utterances = [utterance
@@ -374,6 +396,8 @@ class TestLogRegClassifierUtils(SnipsTest):
     def test_should_build_training_data_with_no_data(self):
         # Given
         language = LANGUAGE_EN
+        resources = self.get_resources(language)
+
         dataset = validate_and_format_dataset(get_empty_dataset(language))
         random_state = np.random.RandomState(1)
 
@@ -381,7 +405,8 @@ class TestLogRegClassifierUtils(SnipsTest):
         data_augmentation_config = LogRegIntentClassifierConfig() \
             .data_augmentation_config
         utterances, _, intent_mapping = build_training_data(
-            dataset, language, data_augmentation_config, random_state)
+            dataset, language, data_augmentation_config, resources,
+            random_state)
 
         # Then
         expected_utterances = []
@@ -511,17 +536,56 @@ class TestLogRegClassifierUtils(SnipsTest):
 
         self.assertDictEqual(expected_dataset, filtered_dataset)
 
-
-    @patch("snips_nlu.intent_classifier.log_reg_classifier_utils.get_noise")
-    def test_get_dataset_specific_noise(self, mocked_noise):
+    def test_get_dataset_specific_noise(self):
         # Given
-        dataset = validate_and_format_dataset(SAMPLE_DATASET)
-        language = "en"
-        mocked_noise.return_value = ["dummy_a", "yo"]
-
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- what is the weather in [city](paris)
+- give me the weather in [city](london) 
+- does it rain in [city](tokyo)?""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        dataset = validate_and_format_dataset(dataset)
+        resources = {
+            NOISE: ["paris", "tokyo", "yo"]
+        }
 
         # When
-        noise = get_dataset_specific_noise(dataset, language)
+        noise = get_dataset_specific_noise(dataset, resources)
 
         # Then
         self.assertEqual(["yo"], noise)
+
+    def test_add_unknown_word_to_utterances_with_none_max_unknownword(self):
+        # Given
+        utterances = [text_to_utterance("yo")]
+        replacement_string = "yo"
+        unknown_word_prob = 1
+        max_unknown_words = None
+        random_state = np.random.RandomState()
+
+        # When / Then
+        with self.fail_if_exception("Failed to augment utterances with "
+                                    "max_unknownword=None"):
+            add_unknown_word_to_utterances(
+                utterances, replacement_string, unknown_word_prob,
+                max_unknown_words, random_state
+            )
+
+    def test_add_unknown_word_to_utterances_with_zero_max_unknownword(self):
+        # Given
+        utterances = [text_to_utterance("yo")]
+        replacement_string = "yo"
+        unknown_word_prob = 1
+        max_unknown_words = 0
+        random_state = np.random.RandomState
+
+        # When / Then
+        with self.fail_if_exception("Failed to augment utterances with "
+                                    "unknown_word_prob=0"):
+            add_unknown_word_to_utterances(
+                utterances, replacement_string, unknown_word_prob,
+                max_unknown_words, random_state
+            )

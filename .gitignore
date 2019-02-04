@@ -10,6 +10,7 @@
 /venv3
 /venv35
 /venv36
+/venv37
 /.tox
 .coverage
 pylint.log

@@ -10,8 +10,8 @@ from num2words import num2words
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
-    END, ENTITY, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR,
-    RES_MATCH_RANGE, SNIPS_NUMBER, START, VALUE)
+    END, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR, RES_MATCH_RANGE,
+    SNIPS_NUMBER, START, VALUE, RESOLVED_VALUE)
 from snips_nlu.languages import (
     get_default_sep, get_punctuation_regex, supports_num2words)
 from snips_nlu.preprocessing import tokenize_light
@@ -97,7 +97,7 @@ def punctuation_variations(string, language):
 
 
 def digit_value(number_entity):
-    value = number_entity[ENTITY][VALUE]
+    value = number_entity[RESOLVED_VALUE][VALUE]
     if value == int(value):
         # Convert 24.0 into "24" instead of "24.0"
         value = int(value)
@@ -105,7 +105,7 @@ def digit_value(number_entity):
 
 
 def alphabetic_value(number_entity, language):
-    value = number_entity[ENTITY][VALUE]
+    value = number_entity[RESOLVED_VALUE][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
         return None
     return num2words(int(value), lang=language)

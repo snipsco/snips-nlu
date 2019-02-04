@@ -83,6 +83,7 @@ the :ref:`api` documentation or alternatively check the `github repository`_.
    tutorial
    data_model
    dataset
+   custom_processing_units
    languages
    cli
    api

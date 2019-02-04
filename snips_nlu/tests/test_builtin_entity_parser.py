@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 from mock import patch
-from snips_nlu_ontology import get_all_languages
+from snips_nlu_parsers import get_all_languages
 
-from snips_nlu.constants import ENTITIES, ENTITY_KIND, LANGUAGE
+from snips_nlu.constants import ENTITIES, LANGUAGE
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, _BUILTIN_ENTITY_PARSERS)
 from snips_nlu.tests.utils import SnipsTest
@@ -25,7 +25,7 @@ class TestBuiltinEntityParser(SnipsTest):
 
         expected_parse = [
             {
-                "entity": {
+                "resolved_value": {
                     "kind": "Number",
                     "value": 2.0
                 },
@@ -50,7 +50,7 @@ class TestBuiltinEntityParser(SnipsTest):
 
         expected_parse = [
             {
-                "entity": {
+                "resolved_value": {
                     "kind": "MusicArtist",
                     "value": "Daft Punk"
                 },
@@ -75,64 +75,6 @@ class TestBuiltinEntityParser(SnipsTest):
                 # When / Then
                 parser.parse(text)
 
-    def test_should_respect_scope(self):
-        # Given
-        text = "meet me at 10 p.m."
-
-        # When
-        scope = ["snips/number"]
-        parser = BuiltinEntityParser.build(language="en")
-        parse = parser.parse(text, scope=scope)
-
-        # Then
-        self.assertEqual(len(parse), 1)
-        self.assertEqual(parse[0][ENTITY_KIND], "snips/number")
-
-    def test_should_respect_scope_with_gazetteer_entity(self):
-        # Given
-        text = "je veux écouter metallica"
-
-        # When
-        gazetteer_entities = ["snips/musicArtist", "snips/musicAlbum"]
-        parser = BuiltinEntityParser.build(
-            language="fr", gazetteer_entity_scope=gazetteer_entities)
-        scope1 = ["snips/musicArtist"]
-        parse1 = parser.parse(text, scope=scope1)
-        scope2 = ["snips/musicAlbum"]
-        parse2 = parser.parse(text, scope=scope2)
-
-        # Then
-        expected_parse1 = [
-            {
-                "entity": {
-                    "kind": "MusicArtist",
-                    "value": "Metallica"
-                },
-                "entity_kind": "snips/musicArtist",
-                "range": {
-                    "end": 25,
-                    "start": 16
-                },
-                "value": "metallica"
-            }
-        ]
-        expected_parse2 = [
-            {
-                "entity": {
-                    "kind": "MusicAlbum",
-                    "value": "Metallica"
-                },
-                "entity_kind": "snips/musicAlbum",
-                "range": {
-                    "end": 25,
-                    "start": 16
-                },
-                "value": "metallica"
-            }
-        ]
-        self.assertEqual(expected_parse1, parse1)
-        self.assertEqual(expected_parse2, parse2)
-
     def test_should_not_disambiguate_grammar_and_gazetteer_entities(self):
         # Given
         text = "trois nuits par semaine"
@@ -151,7 +93,7 @@ class TestBuiltinEntityParser(SnipsTest):
                     "start": 0,
                     "end": 5
                 },
-                "entity": {
+                "resolved_value": {
                     "kind": "Number",
                     "value": 3.0
                 },
@@ -163,7 +105,7 @@ class TestBuiltinEntityParser(SnipsTest):
                     "start": 0,
                     "end": 23
                 },
-                "entity": {
+                "resolved_value": {
                     "kind": "MusicTrack",
                     "value": "3 nuits par semaine"
                 },
@@ -173,9 +115,18 @@ class TestBuiltinEntityParser(SnipsTest):
         self.assertListEqual(expected_result, result)
 
     @patch("snips_nlu.entity_parser.builtin_entity_parser"
-           ".BuiltinEntityParser")
-    def test_should_share_parser(self, mocked_parser):
+           "._build_builtin_parser")
+    def test_should_share_parser(self, mocked_build_builtin_parser):
         # Given
+
+        # pylint:disable=unused-argument
+        def mock_build_builtin_parser(language, gazetteer_entity_scope):
+            return None
+
+        # pylint:enable=unused-argument
+
+        mocked_build_builtin_parser.side_effect = mock_build_builtin_parser
+
         dataset1 = {
             LANGUAGE: "fr",
             ENTITIES: {
@@ -208,4 +159,4 @@ class TestBuiltinEntityParser(SnipsTest):
         BuiltinEntityParser.build(dataset=dataset3)
 
         # Then
-        self.assertEqual(2, mocked_parser.call_count)
+        self.assertEqual(2, mocked_build_builtin_parser.call_count)

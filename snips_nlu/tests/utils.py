@@ -2,31 +2,53 @@ from __future__ import unicode_literals
 
 import json
 import shutil
+import sys
 import tempfile
 import traceback as tb
+from builtins import object
 from contextlib import contextmanager
 from pathlib import Path
 from unittest import TestCase
 
-from snips_nlu_ontology import get_all_languages
-
+from snips_nlu.common.utils import json_string, unicode_string
+from snips_nlu.entity_parser.entity_parser import EntityParser
+from snips_nlu.intent_classifier import IntentClassifier
+from snips_nlu.intent_parser import IntentParser
 from snips_nlu.resources import load_resources
-from snips_nlu.utils import json_string, unicode_string
+from snips_nlu.result import empty_result
+from snips_nlu.slot_filler import SlotFiller
 
 TEST_PATH = Path(__file__).parent
 TEST_RESOURCES_PATH = TEST_PATH / "resources"
-SAMPLE_DATASET_PATH = TEST_RESOURCES_PATH / "sample_dataset.json"
-BEVERAGE_DATASET_PATH = TEST_RESOURCES_PATH / "beverage_dataset.json"
-WEATHER_DATASET_PATH = TEST_RESOURCES_PATH / "weather_dataset.json"
 PERFORMANCE_DATASET_PATH = TEST_RESOURCES_PATH / "performance_dataset.json"
 
 
 # pylint: disable=invalid-name
 class SnipsTest(TestCase):
+    _resources = dict()
 
-    def setUp(self):
-        for l in get_all_languages():
-            load_resources(l)
+    @classmethod
+    def get_resources(cls, language):
+        if language not in cls._resources:
+            cls._resources[language] = load_resources(language)
+        return cls._resources[language]
+
+    @classmethod
+    def get_shared_data(cls, dataset, parser_usage=None):
+        from snips_nlu.entity_parser import (
+            BuiltinEntityParser, CustomEntityParser, CustomEntityParserUsage)
+
+        if parser_usage is None:
+            parser_usage = CustomEntityParserUsage.WITH_AND_WITHOUT_STEMS
+        resources = cls.get_resources(dataset["language"])
+        builtin_entity_parser = BuiltinEntityParser.build(dataset)
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, parser_usage, resources)
+        return {
+            "resources": resources,
+            "builtin_entity_parser": builtin_entity_parser,
+            "custom_entity_parser": custom_entity_parser
+        }
 
     @contextmanager
     def fail_if_exception(self, msg):
@@ -89,14 +111,114 @@ def get_empty_dataset(language):
     }
 
 
-with SAMPLE_DATASET_PATH.open(encoding='utf8') as dataset_file:
-    SAMPLE_DATASET = json.load(dataset_file)
-
-with BEVERAGE_DATASET_PATH.open(encoding='utf8') as dataset_file:
-    BEVERAGE_DATASET = json.load(dataset_file)
-
-with WEATHER_DATASET_PATH.open(encoding='utf8') as dataset_file:
-    WEATHER_DATASET = json.load(dataset_file)
-
 with PERFORMANCE_DATASET_PATH.open(encoding='utf8') as dataset_file:
     PERFORMANCE_DATASET = json.load(dataset_file)
+
+
+class _RedirectStream(object):
+    _stream = None
+
+    def __init__(self, new_target):
+        self._new_target = new_target
+        # We use a list of old targets to make this CM re-entrant
+        self._old_targets = []
+
+    def __enter__(self):
+        self._old_targets.append(getattr(sys, self._stream))
+        setattr(sys, self._stream, self._new_target)
+        return self._new_target
+
+    def __exit__(self, exctype, excinst, exctb):
+        setattr(sys, self._stream, self._old_targets.pop())
+
+
+class redirect_stdout(_RedirectStream):
+    """Context manager for temporarily redirecting stdout to another file"""
+
+    _stream = "stdout"
+
+
+class MockProcessingUnitMixin(object):
+    _fitted = False
+
+    @property
+    def fitted(self):
+        return self._fitted
+
+    @fitted.setter
+    def fitted(self, value):
+        self._fitted = value
+
+    def persist(self, path):
+        path = Path(path)
+        path.mkdir()
+        with (path / "metadata.json").open(mode="w") as f:
+            unit_dict = {"unit_name": self.unit_name, "fitted": self.fitted}
+            f.write(json_string(unit_dict))
+
+    @classmethod
+    def from_path(cls, path, **shared):  # pylint:disable=unused-argument
+        with (path / "metadata.json").open(encoding="utf8") as f:
+            metadata = json.load(f)
+        fitted = metadata["fitted"]
+        cfg = cls.config_type()  # pylint:disable=no-value-for-parameter
+        unit = cls(cfg)
+        unit.fitted = fitted
+        return unit
+
+
+class MockIntentParser(MockProcessingUnitMixin, IntentParser):
+    def fit(self, dataset, force_retrain):
+        self.fitted = True
+        return self
+
+    def parse(self, text, intents=None, top_n=None):
+        return empty_result(text, 1.0)
+
+    def get_intents(self, text):
+        return []
+
+    def get_slots(self, text, intent):
+        return []
+
+
+class MockIntentClassifier(MockProcessingUnitMixin, IntentClassifier):
+    def fit(self, dataset):
+        self.fitted = True
+        return self
+
+    def get_intent(self, text, intents_filter):
+        return None
+
+    def get_intents(self, text):
+        return []
+
+
+class MockSlotFiller(MockProcessingUnitMixin, SlotFiller):
+    def get_slots(self, text):
+        return []
+
+    def fit(self, dataset, intent):
+        self.fitted = True
+        return self
+
+
+class EntityParserMock(EntityParser):
+
+    def __init__(self, entities):
+        super(EntityParserMock, self).__init__()
+        self.entities = entities
+
+    def persist(self, path):
+        with path.open("r", encoding="utf-8") as f:
+            f.write(json_string(self.entities))
+
+    @classmethod
+    def from_path(cls, path):
+        path = Path(path)
+        with path.open("r", encoding="utf-8") as f:
+            entities = json.load(f)
+        return cls(entities)
+
+    def _parse(self, text, scope=None):
+        return self.entities.get(text)

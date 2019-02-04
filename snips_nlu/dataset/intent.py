@@ -1,18 +1,14 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 from abc import ABCMeta, abstractmethod
 from builtins import object
-from pathlib import Path
+from io import IOBase
 
-from deprecation import deprecated
+import yaml
 from future.utils import with_metaclass
 
-from snips_nlu.__about__ import __version__
 from snips_nlu.constants import DATA, ENTITY, SLOT_NAME, TEXT, UTTERANCES
-
-
-class IntentFormatError(TypeError):
-    pass
+from snips_nlu.exceptions import IntentFormatError
 
 
 class Intent(object):
@@ -36,35 +32,80 @@ class Intent(object):
 
     @classmethod
     def from_yaml(cls, yaml_dict):
-        # pylint:disable=line-too-long
-        """Build an :class:`.Intent` from its YAML definition dict
+        """Build an :class:`.Intent` from its YAML definition object
 
-        An intent can be defined with a YAML document following the schema
-        illustrated in the example below:
+        Args:
+            yaml_dict (dict or :class:`.IOBase`): object containing the YAML
+                definition of the intent. It can be either a stream, or the
+                corresponding python dict.
 
-        .. code-block:: yaml
+        Examples:
+            An intent can be defined with a YAML document following the schema
+            illustrated in the example below:
 
-            # searchFlight Intent
-            ---
-            type: intent
-            name: searchFlight
-            slots:
-              - name: origin
-                entity: city
-              - name: destination
-                entity: city
-              - name: date
-                entity: snips/datetime
-            utterances:
-              - find me a flight from [origin](Paris) to [destination](New York)
-              - I need a flight leaving [date](this weekend) to [destination](Berlin)
-              - show me flights to go to [destination](new york) leaving [date](this evening)
+            >>> import io
+            >>> from snips_nlu.common.utils import json_string
+            >>> intent_yaml = io.StringIO('''
+            ... # searchFlight Intent
+            ... ---
+            ... type: intent
+            ... name: searchFlight
+            ... slots:
+            ...   - name: origin
+            ...     entity: city
+            ...   - name: destination
+            ...     entity: city
+            ...   - name: date
+            ...     entity: snips/datetime
+            ... utterances:
+            ...   - find me a flight from [origin](Oslo) to [destination](Lima)
+            ...   - I need a flight leaving to [destination](Berlin)''')
+            >>> intent = Intent.from_yaml(intent_yaml)
+            >>> print(json_string(intent.json, indent=4, sort_keys=True))
+            {
+                "utterances": [
+                    {
+                        "data": [
+                            {
+                                "text": "find me a flight from "
+                            },
+                            {
+                                "entity": "city",
+                                "slot_name": "origin",
+                                "text": "Oslo"
+                            },
+                            {
+                                "text": " to "
+                            },
+                            {
+                                "entity": "city",
+                                "slot_name": "destination",
+                                "text": "Lima"
+                            }
+                        ]
+                    },
+                    {
+                        "data": [
+                            {
+                                "text": "I need a flight leaving to "
+                            },
+                            {
+                                "entity": "city",
+                                "slot_name": "destination",
+                                "text": "Berlin"
+                            }
+                        ]
+                    }
+                ]
+            }
 
         Raises:
             IntentFormatError: When the YAML dict does not correspond to the
                 :ref:`expected intent format <yaml_intent_format>`
         """
-        # pylint:enable=line-too-long
+        if isinstance(yaml_dict, IOBase):
+            yaml_dict = yaml.safe_load(yaml_dict)
+
         object_type = yaml_dict.get("type")
         if object_type and object_type != "intent":
             raise IntentFormatError("Wrong type: '%s'" % object_type)
@@ -80,25 +121,6 @@ class Intent(object):
             raise IntentFormatError(
                 "Intent must contain at least one utterance")
         return cls(intent_name, utterances, slot_mapping)
-
-    @classmethod
-    @deprecated(deprecated_in="0.18.0", removed_in="0.19.0",
-                current_version=__version__, details="Use from_yaml instead")
-    def from_file(cls, filepath):
-        """Build an :class:`.Intent` from a text file"""
-        filepath = Path(filepath)
-        stem = filepath.stem
-        if not stem.startswith("intent_"):
-            raise IntentFormatError(
-                "Intent filename should start with 'intent_' but found: %s"
-                % stem)
-        intent_name = stem[7:]
-        if not intent_name:
-            raise IntentFormatError("Intent name must not be empty")
-        with filepath.open(encoding="utf-8") as f:
-            lines = iter(l.strip() for l in f if l.strip())
-            utterances = [IntentUtterance.parse(sample) for sample in lines]
-        return cls(intent_name, utterances)
 
     def _complete_slot_name_mapping(self):
         for utterance in self.utterances:
@@ -273,7 +295,7 @@ class SM(object):
 def capture_text(state):
     next_pos = state.find('[')
     sub = state[:] if next_pos < 0 else state[:next_pos]
-    if sub.strip():
+    if sub:
         state.add_text(sub)
     if next_pos >= 0:
         state.move(next_pos)

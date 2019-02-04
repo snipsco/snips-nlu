@@ -90,6 +90,9 @@ def generate_noise_utterances(augmented_utterances, noise, num_intents,
 def add_unknown_word_to_utterances(utterances, replacement_string,
                                    unknown_word_prob, max_unknown_words,
                                    random_state):
+    if not max_unknown_words:
+        return utterances
+
     new_utterances = deepcopy(utterances)
     for u in new_utterances:
         if random_state.rand() < unknown_word_prob:
@@ -105,7 +108,7 @@ def add_unknown_word_to_utterances(utterances, replacement_string,
     return new_utterances
 
 
-def get_dataset_specific_noise(dataset, language):
+def get_dataset_specific_noise(dataset, resources):
     """Return a noise list that excludes the dataset entity values"""
     entities_values = set()
     for ent_name, ent in iteritems(dataset[ENTITIES]):
@@ -114,14 +117,14 @@ def get_dataset_specific_noise(dataset, language):
         for k, v in iteritems(ent[UTTERANCES]):
             entities_values.add(k)
             entities_values.add(v)
-    original_noise = get_noise(language)
+    original_noise = get_noise(resources)
     specific_noise = [n for n in original_noise if n not in entities_values]
     if not specific_noise:  # Avoid returning an empty noise
         return original_noise
     return specific_noise
 
 
-def build_training_data(dataset, language, data_augmentation_config,
+def build_training_data(dataset, language, data_augmentation_config, resources,
                         random_state):
     # Create class mapping
     intents = dataset[INTENTS]
@@ -147,7 +150,7 @@ def build_training_data(dataset, language, data_augmentation_config,
             capitalization_ratio=0.0,
             add_builtin_entities_examples=
             data_augmentation_config.add_builtin_entities_examples,
-            random_state=random_state)
+            resources=resources, random_state=random_state)
         augmented_utterances += utterances
         utterance_classes += [classes_mapping[intent_name] for _ in
                               range(len(utterances))]
@@ -161,7 +164,7 @@ def build_training_data(dataset, language, data_augmentation_config,
         )
 
     # Adding noise
-    noise = get_dataset_specific_noise(dataset, language)
+    noise = get_dataset_specific_noise(dataset, resources)
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, noise, len(intents), data_augmentation_config,
         language, random_state)

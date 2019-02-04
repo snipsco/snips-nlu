@@ -1,15 +1,18 @@
 from __future__ import unicode_literals
 
-from abc import ABCMeta, abstractmethod
-from builtins import object, str
+from abc import abstractmethod, ABCMeta
+from builtins import str
 
 from future.utils import with_metaclass
-from snips_nlu_ontology import get_supported_grammar_entities
+from snips_nlu_parsers import get_supported_grammar_entities
 from snips_nlu_utils import get_shape
 
+from snips_nlu.common.abc_utils import classproperty
+from snips_nlu.common.registrable import Registrable
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
-    START, STEMS, WORD_CLUSTERS)
+    START, STEMS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER, BUILTIN_ENTITY_PARSER,
+    RESOURCES)
 from snips_nlu.dataset import (
     extract_intent_entities, get_dataset_gazetteer_entities)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
@@ -17,14 +20,14 @@ from snips_nlu.entity_parser.custom_entity_parser import \
     CustomEntityParserUsage
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
-from snips_nlu.resources import get_gazetteer, get_word_clusters
+from snips_nlu.resources import get_gazetteer, get_word_cluster
 from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
 
 
-class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
+class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
     """Abstraction to implement to build CRF features
 
     A :class:`CRFFeatureFactory` is initialized with a dict which describes
@@ -36,15 +39,30 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         An empty list corresponds to no feature.
 
 
-    In addition, a 'drop_out' to use during train time can be specified.
+    In addition, a 'drop_out' to use at training time can be specified.
     """
 
-    def __init__(self, factory_config):
+    def __init__(self, factory_config, **shared):
         self.factory_config = factory_config
+        self.resources = shared.get(RESOURCES)
+        self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
+        self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
 
-    @property
-    def factory_name(self):
-        return self.factory_config["factory_name"]
+    @classmethod
+    def from_config(cls, factory_config, **shared):
+        """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
+        config
+
+        Raises:
+            NotRegisteredError: when the factory is not registered
+        """
+        factory_name = factory_config["factory_name"]
+        factory = cls.by_name(factory_name)
+        return factory(factory_config, **shared)
+
+    @classproperty
+    def name(cls):  # pylint:disable=no-self-argument
+        return CRFFeatureFactory.registered_name(cls)
 
     @property
     def args(self):
@@ -64,7 +82,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, object)):
         return self
 
     @abstractmethod
-    def build_features(self, builtin_entity_parser, custom_entity_parser):
+    def build_features(self):
         """Build a list of :class:`.Feature`"""
         pass
 
@@ -78,14 +96,13 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
     @property
     def feature_name(self):
         # by default, use the factory name
-        return self.factory_name
+        return self.name
 
     @abstractmethod
     def compute_feature(self, tokens, token_index):
         pass
 
-    def build_features(self, builtin_entity_parser=None,
-                       custom_entity_parser=None):
+    def build_features(self):
         return [
             Feature(
                 base_name=self.feature_name,
@@ -95,41 +112,37 @@ class SingleFeatureFactory(with_metaclass(ABCMeta, CRFFeatureFactory)):
         ]
 
 
+@CRFFeatureFactory.register("is_digit")
 class IsDigitFactory(SingleFeatureFactory):
     """Feature: is the considered token a digit?"""
-
-    name = "is_digit"
 
     def compute_feature(self, tokens, token_index):
         return "1" if tokens[token_index].value.isdigit() else None
 
 
+@CRFFeatureFactory.register("is_first")
 class IsFirstFactory(SingleFeatureFactory):
     """Feature: is the considered token the first in the input?"""
-
-    name = "is_first"
 
     def compute_feature(self, tokens, token_index):
         return "1" if token_index == 0 else None
 
 
+@CRFFeatureFactory.register("is_last")
 class IsLastFactory(SingleFeatureFactory):
     """Feature: is the considered token the last in the input?"""
-
-    name = "is_last"
 
     def compute_feature(self, tokens, token_index):
         return "1" if token_index == len(tokens) - 1 else None
 
 
+@CRFFeatureFactory.register("prefix")
 class PrefixFactory(SingleFeatureFactory):
     """Feature: a prefix of the considered token
 
     This feature has one parameter, *prefix_size*, which specifies the size of
     the prefix
     """
-
-    name = "prefix"
 
     @property
     def feature_name(self):
@@ -144,14 +157,13 @@ class PrefixFactory(SingleFeatureFactory):
                               self.prefix_size, 0)
 
 
+@CRFFeatureFactory.register("suffix")
 class SuffixFactory(SingleFeatureFactory):
     """Feature: a suffix of the considered token
 
     This feature has one parameter, *suffix_size*, which specifies the size of
     the suffix
     """
-
-    name = "suffix"
 
     @property
     def feature_name(self):
@@ -167,15 +179,15 @@ class SuffixFactory(SingleFeatureFactory):
                               reverse=True)
 
 
+@CRFFeatureFactory.register("length")
 class LengthFactory(SingleFeatureFactory):
     """Feature: the length (characters) of the considered token"""
-
-    name = "length"
 
     def compute_feature(self, tokens, token_index):
         return str(len(tokens[token_index].value))
 
 
+@CRFFeatureFactory.register("ngram")
 class NgramFactory(SingleFeatureFactory):
     """Feature: the n-gram consisting of the considered token and potentially
     the following ones
@@ -192,10 +204,8 @@ class NgramFactory(SingleFeatureFactory):
 
     """
 
-    name = "ngram"
-
-    def __init__(self, factory_config):
-        super(NgramFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(NgramFactory, self).__init__(factory_config, **shared)
         self.n = self.args["n"]
         if self.n < 1:
             raise ValueError("n should be >= 1")
@@ -218,7 +228,7 @@ class NgramFactory(SingleFeatureFactory):
             self.args["language_code"] = self.language
             if self.common_words_gazetteer_name is not None:
                 self.gazetteer = get_gazetteer(
-                    self.language, self.common_words_gazetteer_name)
+                    self.resources, self.common_words_gazetteer_name)
 
     @property
     def feature_name(self):
@@ -233,7 +243,7 @@ class NgramFactory(SingleFeatureFactory):
         if 0 <= token_index < max_len and end <= max_len:
             if self.gazetteer is None:
                 if self.use_stemming:
-                    stems = (stem_token(t, self.language)
+                    stems = (stem_token(t, self.resources)
                              for t in tokens[token_index:end])
                     return get_default_sep(self.language).join(stems)
                 normalized_values = (normalize_token(t)
@@ -242,7 +252,7 @@ class NgramFactory(SingleFeatureFactory):
             words = []
             for t in tokens[token_index:end]:
                 if self.use_stemming:
-                    value = stem_token(t, self.language)
+                    value = stem_token(t, self.resources)
                 else:
                     value = normalize_token(t)
                 words.append(value if value in self.gazetteer else "rare_word")
@@ -258,6 +268,7 @@ class NgramFactory(SingleFeatureFactory):
         return resources
 
 
+@CRFFeatureFactory.register("shape_ngram")
 class ShapeNgramFactory(SingleFeatureFactory):
     """Feature: the shape of the n-gram consisting of the considered token and
     potentially the following ones
@@ -273,10 +284,8 @@ class ShapeNgramFactory(SingleFeatureFactory):
         -   'xX' -> None of the above
     """
 
-    name = "shape_ngram"
-
-    def __init__(self, factory_config):
-        super(ShapeNgramFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(ShapeNgramFactory, self).__init__(factory_config, **shared)
         self.n = self.args["n"]
         if self.n < 1:
             raise ValueError("n should be >= 1")
@@ -309,6 +318,7 @@ class ShapeNgramFactory(SingleFeatureFactory):
         return None
 
 
+@CRFFeatureFactory.register("word_cluster")
 class WordClusterFactory(SingleFeatureFactory):
     """Feature: The cluster which the considered token belongs to, if any
 
@@ -323,41 +333,28 @@ class WordClusterFactory(SingleFeatureFactory):
     See https://en.wikipedia.org/wiki/Brown_clustering
     """
 
-    name = "word_cluster"
-
-    def __init__(self, factory_config):
-        super(WordClusterFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(WordClusterFactory, self).__init__(factory_config, **shared)
         self.cluster_name = self.args["cluster_name"]
-        self.cluster = None
-        self._language = None
-        self.language = self.args.get("language_code")
         self.use_stemming = self.args["use_stemming"]
+        self._cluster = None
+
+    @property
+    def cluster(self):
+        if self._cluster is None:
+            self._cluster = get_word_cluster(self.resources, self.cluster_name)
+        return self._cluster
 
     @property
     def feature_name(self):
         return "word_cluster_%s" % self.cluster_name
 
-    @property
-    def language(self):
-        return self._language
-
-    @language.setter
-    def language(self, value):
-        if value is not None:
-            self._language = value
-            self.cluster = get_word_clusters(self.language)[self.cluster_name]
-            self.args["language_code"] = self.language
-
-    def fit(self, dataset, intent):
-        self.language = dataset[LANGUAGE]
-
     def compute_feature(self, tokens, token_index):
         if self.use_stemming:
-            value = stem_token(tokens[token_index], self.language)
+            value = stem_token(tokens[token_index], self.resources)
         else:
             value = normalize_token(tokens[token_index])
-        cluster = get_word_clusters(self.language)[self.cluster_name]
-        return cluster.get(value, None)
+        return self.cluster.get(value, None)
 
     def get_required_resources(self):
         return {
@@ -366,6 +363,7 @@ class WordClusterFactory(SingleFeatureFactory):
         }
 
 
+@CRFFeatureFactory.register("entity_match")
 class CustomEntityMatchFactory(CRFFeatureFactory):
     """Features: does the considered token belongs to the values of one of the
     entities in the training dataset
@@ -381,27 +379,14 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
         allows to give more information about the match.
     """
 
-    name = "entity_match"
-
-    def __init__(self, factory_config):
-        super(CustomEntityMatchFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(CustomEntityMatchFactory, self).__init__(factory_config,
+                                                       **shared)
         self.use_stemming = self.args["use_stemming"]
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
-        self._language = None
-        self.language = self.args.get("language_code")
         self._entities = None
         self.entities = self.args.get("entities")
-
-    @property
-    def language(self):
-        return self._language
-
-    @language.setter
-    def language(self, value):
-        if value is not None:
-            self._language = value
-            self.args["language_code"] = value
 
     @property
     def entities(self):
@@ -414,7 +399,6 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["entities"] = value
 
     def fit(self, dataset, intent):
-        self.language = dataset[LANGUAGE]
         self.entities = extract_intent_entities(
             dataset, lambda e: not is_builtin_entity(e))[intent]
         self.entities = list(self.entities)
@@ -422,7 +406,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
 
     def _transform(self, tokens):
         if self.use_stemming:
-            light_tokens = (stem_token(t, self.language) for t in tokens)
+            light_tokens = (stem_token(t, self.resources) for t in tokens)
         else:
             light_tokens = (normalize_token(t) for t in tokens)
         current_index = 0
@@ -436,14 +420,12 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             current_index = transformed_token.end + 1
         return transformed_tokens
 
-    def build_features(self, builtin_entity_parser=None,
-                       custom_entity_parser=None):
+    def build_features(self):
         features = []
         for entity_name in self.entities:
             # We need to call this wrapper in order to properly capture
             # `entity_name`
-            entity_match = self._build_entity_match_fn(
-                entity_name, custom_entity_parser)
+            entity_match = self._build_entity_match_fn(entity_name)
 
             for offset in self.offsets:
                 feature = Feature("entity_match_%s" % entity_name,
@@ -451,24 +433,30 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
                 features.append(feature)
         return features
 
-    def _build_entity_match_fn(self, entity, custom_entity_parser):
+    def _build_entity_match_fn(self, entity):
 
         def entity_match(tokens, token_index):
             transformed_tokens = self._transform(tokens)
             text = initial_string_from_tokens(transformed_tokens)
             token_start = transformed_tokens[token_index].start
             token_end = transformed_tokens[token_index].end
-            custom_entities = custom_entity_parser.parse(
+            custom_entities = self.custom_entity_parser.parse(
                 text, scope=[entity], use_cache=True)
+            # only keep builtin entities (of type `entity`) which overlap with
+            # the current token
             custom_entities = [ent for ent in custom_entities
                                if entity_filter(ent, token_start, token_end)]
-            for ent in custom_entities:
+            if custom_entities:
+                # In most cases, 0 or 1 entity will be found. We fall back to
+                # the first entity if 2 or more were found
+                ent = custom_entities[0]
                 indexes = []
                 for index, token in enumerate(transformed_tokens):
                     if entity_filter(ent, token.start, token.end):
                         indexes.append(index)
                 return get_scheme_prefix(token_index, indexes,
                                          self.tagging_scheme)
+            return None
 
         return entity_match
 
@@ -485,6 +473,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
         }
 
 
+@CRFFeatureFactory.register("builtin_entity_match")
 class BuiltinEntityMatchFactory(CRFFeatureFactory):
     """Features: is the considered token part of a builtin entity such as a
     date, a temperature etc
@@ -497,10 +486,9 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
     match.
     """
 
-    name = "builtin_entity_match"
-
-    def __init__(self, factory_config):
-        super(BuiltinEntityMatchFactory, self).__init__(factory_config)
+    def __init__(self, factory_config, **shared):
+        super(BuiltinEntityMatchFactory, self).__init__(factory_config,
+                                                        **shared)
         self.tagging_scheme = TaggingScheme(
             self.args["tagging_scheme_code"])
         self.builtin_entities = None
@@ -523,14 +511,13 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         self.builtin_entities = self._get_builtin_entity_scope(dataset, intent)
         self.args["entity_labels"] = self.builtin_entities
 
-    def build_features(self, builtin_entity_parser, custom_entity_parser=None):
+    def build_features(self):
         features = []
 
         for builtin_entity in self.builtin_entities:
             # We need to call this wrapper in order to properly capture
             # `builtin_entity`
-            builtin_entity_match = self._build_entity_match_fn(
-                builtin_entity, builtin_entity_parser)
+            builtin_entity_match = self._build_entity_match_fn(builtin_entity)
             for offset in self.offsets:
                 feature_name = "builtin_entity_match_%s" % builtin_entity
                 feature = Feature(feature_name, builtin_entity_match, offset,
@@ -539,18 +526,23 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
         return features
 
-    def _build_entity_match_fn(self, builtin_entity, builtin_entity_parser):
+    def _build_entity_match_fn(self, builtin_entity):
 
         def builtin_entity_match(tokens, token_index):
             text = initial_string_from_tokens(tokens)
             start = tokens[token_index].start
             end = tokens[token_index].end
 
-            builtin_entities = builtin_entity_parser.parse(
+            builtin_entities = self.builtin_entity_parser.parse(
                 text, scope=[builtin_entity], use_cache=True)
+            # only keep builtin entities (of type `builtin_entity`) which
+            # overlap with the current token
             builtin_entities = [ent for ent in builtin_entities
                                 if entity_filter(ent, start, end)]
-            for ent in builtin_entities:
+            if builtin_entities:
+                # In most cases, 0 or 1 entity will be found. We fall back to
+                # the first entity if 2 or more were found
+                ent = builtin_entities[0]
                 entity_start = ent[RES_MATCH_RANGE][START]
                 entity_end = ent[RES_MATCH_RANGE][END]
                 indexes = []
@@ -560,6 +552,7 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
                         indexes.append(index)
                 return get_scheme_prefix(token_index, indexes,
                                          self.tagging_scheme)
+            return None
 
         return builtin_entity_match
 
@@ -570,19 +563,3 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
         gazetteer_entities = list(
             get_dataset_gazetteer_entities(dataset, intent))
         return grammar_entities + gazetteer_entities
-
-
-FACTORIES = [IsDigitFactory, IsFirstFactory, IsLastFactory, PrefixFactory,
-             SuffixFactory, LengthFactory, NgramFactory, ShapeNgramFactory,
-             WordClusterFactory, CustomEntityMatchFactory,
-             BuiltinEntityMatchFactory]
-
-
-def get_feature_factory(factory_config):
-    """Retrieve the :class:`CRFFeatureFactory` corresponding the provided
-    config"""
-    factory_name = factory_config["factory_name"]
-    for factory in FACTORIES:
-        if factory_name == factory.name:
-            return factory(factory_config)
-    raise ValueError("Unknown feature factory: %s" % factory_name)

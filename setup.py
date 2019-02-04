@@ -25,28 +25,30 @@ required = [
     "sklearn-crfsuite>=0.3.6,<0.4",
     "semantic_version>=2.6,<3.0",
     "snips_nlu_utils>=0.7,<0.8",
-    "snips_nlu_ontology>=0.62.0,<0.63",
+    "snips_nlu_parsers>=0.1,<0.2",
     "num2words>=0.5.6,<0.6",
     "plac>=0.9.6,<1.0",
     "requests>=2.0,<3.0",
     "pathlib==1.0.1; python_version < '3.4'",
     "pyaml>=17,<18",
-    "deprecation>=2,<3"
+    "deprecation>=2,<3",
+    "funcsigs>=1.0,<2.0; python_version < '3.4'"
 ]
 
 extras_require = {
     "doc": [
         "sphinx>=1.8,<1.9",
         "sphinxcontrib-napoleon>=0.6.1,<0.7",
-        "sphinx-rtd-theme>=0.2.4,<0.3"
+        "sphinx-rtd-theme>=0.2.4,<0.3",
+        "sphinx-tabs>=1.1,<1.2"
     ],
     "metrics": [
-        "snips_nlu_metrics>=0.13,<0.14",
+        "snips_nlu_metrics>=0.14.1,<0.15",
     ],
     "test": [
         "mock>=2.0,<3.0",
-        "snips_nlu_metrics>=0.13,<0.14",
-        "pylint>=1.8,<2.0",
+        "snips_nlu_metrics>=0.14.1,<0.15",
+        "pylint<2",
         "coverage>=4.4.2,<5.0"
     ]
 }
@@ -65,9 +67,9 @@ setup(name=about["__title__"],
           "Programming Language :: Python :: 2",
           "Programming Language :: Python :: 2.7",
           "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: 3.7",
       ],
       packages=packages,
       include_package_data=True,

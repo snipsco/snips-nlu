@@ -38,7 +38,8 @@ Summary
 - `Sample datasets`_
 - `Benchmarks`_
 - `Documentation`_
-- `FAQ`_
+- `Citing Snips NLU`_
+- `FAQ & Community`_
 - `Related content`_
 - `How do I contribute ?`_
 - `Licence`_
@@ -95,7 +96,7 @@ Getting Started
 System requirements
 -------------------
 
-- Python 2.7 or Python >= 3.4, < 3.7
+- Python 2.7 or Python >= 3.5
 - RAM: Snips NLU will typically use between 100MB and 200MB of RAM, depending on the language and the size of the dataset.
 
 
@@ -133,13 +134,6 @@ Or simply:
 
     snips-nlu download en
 
-Once the resources have been fetched, they can be loaded in Python using:
-
-.. code-block:: python
-
-    from snips_nlu import load_resources
-
-    load_resources("en")
 
 The list of supported languages is available at 
 `this address <https://snips-nlu.readthedocs.io/en/latest/languages.html>`_.
@@ -179,24 +173,20 @@ installed `snips-nlu`, fetched the english resources and downloaded one of the `
 
 .. code-block:: python
 
-    from __future__ import unicode_literals, print_function
+    >>> from __future__ import unicode_literals, print_function
+    >>> import io
+    >>> import json
+    >>> from snips_nlu import SnipsNLUEngine
+    >>> from snips_nlu.default_configs import CONFIG_EN
+    >>> with io.open("sample_datasets/lights_dataset.json") as f:
+    ...     sample_dataset = json.load(f)
+    >>> nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
+    >>> nlu_engine = nlu_engine.fit(sample_dataset)
+    >>> text = "Please turn the light on in the kitchen"
+    >>> parsing = nlu_engine.parse(text)
+    >>> parsing["intent"]["intentName"]
+    'turnLightOn'
 
-    import io
-    import json
-
-    from snips_nlu import SnipsNLUEngine, load_resources
-    from snips_nlu.default_configs import CONFIG_EN
-
-    with io.open("sample_dataset.json") as f:
-        sample_dataset = json.load(f)
-
-    load_resources("en")
-    nlu_engine = SnipsNLUEngine(config=CONFIG_EN)
-    nlu_engine.fit(sample_dataset)
-
-    text = "What will be the weather in San Francisco next week?"
-    parsing = nlu_engine.parse(text)
-    print(json.dumps(parsing, indent=2))
 
 What it does is training an NLU engine on a sample weather dataset and parsing
 a weather query.
@@ -225,9 +215,25 @@ Documentation
 
 To find out how to use Snips NLU please refer to the `package documentation <https://snips-nlu.readthedocs.io>`_, it will provide you with a step-by-step guide on how to setup and use this library.
 
-FAQ
----
-Please join Snips `Discord channel`_ to ask your questions and get feedback from the community.
+Citing Snips NLU
+----------------
+
+Please cite the following paper when using Snips NLU:
+
+.. code-block:: bibtex
+
+   @article{coucke2018snips,
+     title   = {Snips Voice Platform: an embedded Spoken Language Understanding system for private-by-design voice interfaces},
+     author  = {Coucke, Alice and Saade, Alaa and Ball, Adrien and Bluche, Th{\'e}odore and Caulier, Alexandre and Leroy, David and Doumouro, Cl{\'e}ment and Gisselbrecht, Thibault and Caltagirone, Francesco and Lavril, Thibaut and others},
+     journal = {arXiv preprint arXiv:1805.10190},
+     pages   = {12--16},
+     year    = {2018}
+   }
+
+FAQ & Community
+---------------
+
+Please join the `forum`_ to ask your questions and get feedback from the community.
 
 Related content
 ---------------
@@ -251,7 +257,7 @@ Licence
 This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.
 
 .. _external language resources: https://github.com/snipsco/snips-nlu-language-resources
-.. _Discord channel: https://discordapp.com/invite/3939Kqx
+.. _forum: https://forum.snips.ai/
 .. _blog post: https://medium.com/snips-ai/an-introduction-to-snips-nlu-the-open-source-library-behind-snips-embedded-voice-platform-b12b1a60a41a
 .. _paper on arxiv: https://arxiv.org/abs/1805.10190
 .. _academic benchmark: http://workshop.colips.org/wochat/@sigdial2017/documents/SIGDIAL22.pdf

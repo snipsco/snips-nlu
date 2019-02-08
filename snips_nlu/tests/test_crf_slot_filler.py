@@ -9,21 +9,15 @@ from mock import MagicMock
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
-    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE_EN, RES_MATCH_RANGE, SLOT_NAME,
-    SNIPS_DATETIME, START, TEXT, VALUE)
+    DATA, END, ENTITY, LANGUAGE_EN, SLOT_NAME, START, TEXT)
 from snips_nlu.dataset import Dataset
-from snips_nlu.entity_parser import BuiltinEntityParser, \
-    CustomEntityParserUsage
+from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.exceptions import NotTrained
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
-from snips_nlu.preprocessing import Token, tokenize
+from snips_nlu.preprocessing import tokenize
 from snips_nlu.result import unresolved_slot
-from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, _disambiguate_builtin_entities, _ensure_safe,
-    _filter_overlapping_builtins, _get_slots_permutations,
-    _spans_to_tokens_indexes)
-from snips_nlu.slot_filler.crf_utils import (
-    BEGINNING_PREFIX, INSIDE_PREFIX, TaggingScheme)
+from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, _ensure_safe
+from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
 from snips_nlu.tests.utils import FixtureTest, TEST_PATH
@@ -76,18 +70,54 @@ utterances:
         slot_filler.fit(dataset, intent)
 
         # When
-        slots = slot_filler.get_slots("Give me the weather at 9p.m. in Paris")
+        slots = slot_filler.get_slots("Give me the weather at 9pm in Paris")
 
         # Then
         expected_slots = [
-            unresolved_slot(match_range={START: 20, END: 28},
-                            value='at 9p.m.',
+            unresolved_slot(match_range={START: 20, END: 26},
+                            value='at 9pm',
                             entity='snips/datetime',
                             slot_name='datetime'),
-            unresolved_slot(match_range={START: 32, END: 37},
+            unresolved_slot(match_range={START: 30, END: 35},
                             value='Paris',
                             entity='weather_location',
                             slot_name='location')
+        ]
+        self.assertListEqual(expected_slots, slots)
+
+    def test_should_get_sub_builtin_slots(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: PlanBreak
+utterances:
+- 'I want to leave from [start:snips/datetime](tomorrow) until 
+  [end:snips/datetime](next thursday)'
+- find me something from [start](9am) to [end](12pm)
+- I need a break from [start](2pm) until [end](4pm)
+- Can you suggest something from [start](april 4th) until [end](april 6th) ?
+- Book me a trip from [start](this friday) to [end](next tuesday)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        config = CRFSlotFillerConfig(random_seed=42)
+        intent = "PlanBreak"
+        slot_filler = CRFSlotFiller(config,
+                                    **self.get_shared_data(dataset))
+        slot_filler.fit(dataset, intent)
+
+        # When
+        slots = slot_filler.get_slots("Find me a plan from 5pm to 6pm")
+
+        # Then
+        expected_slots = [
+            unresolved_slot(match_range={START: 20, END: 23},
+                            value="5pm",
+                            entity="snips/datetime",
+                            slot_name="start"),
+            unresolved_slot(match_range={START: 27, END: 30},
+                            value="6pm",
+                            entity="snips/datetime",
+                            slot_name="end")
         ]
         self.assertListEqual(expected_slots, slots)
 
@@ -697,269 +727,6 @@ utterances:
             {},
         ]
         self.assertListEqual(expected_features, features_with_drop_out)
-
-    def test_spans_to_tokens_indexes(self):
-        # Given
-        spans = [
-            {START: 0, END: 1},
-            {START: 2, END: 6},
-            {START: 5, END: 6},
-            {START: 9, END: 15}
-        ]
-        tokens = [
-            Token(value="abc", start=0, end=3),
-            Token(value="def", start=4, end=7),
-            Token(value="ghi", start=10, end=13)
-        ]
-
-        # When
-        indexes = _spans_to_tokens_indexes(spans, tokens)
-
-        # Then
-        expected_indexes = [[0], [0, 1], [1], [2]]
-        self.assertListEqual(indexes, expected_indexes)
-
-    def test_augment_slots(self):
-        # Given
-        language = LANGUAGE_EN
-        text = "Find me a flight before 10pm and after 8pm"
-        tokens = tokenize(text, language)
-        missing_slots = {"start_date", "end_date"}
-
-        tags = ['O' for _ in tokens]
-
-        def mocked_sequence_probability(_, tags_):
-            tags_1 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      '%sstart_date' % BEGINNING_PREFIX,
-                      '%sstart_date' % INSIDE_PREFIX,
-                      'O',
-                      '%send_date' % BEGINNING_PREFIX,
-                      '%send_date' % INSIDE_PREFIX]
-
-            tags_2 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      '%send_date' % BEGINNING_PREFIX,
-                      '%send_date' % INSIDE_PREFIX,
-                      'O',
-                      '%sstart_date' % BEGINNING_PREFIX,
-                      '%sstart_date' % INSIDE_PREFIX]
-
-            tags_3 = ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O']
-
-            tags_4 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      'O',
-                      'O',
-                      'O',
-                      '%sstart_date' % BEGINNING_PREFIX,
-                      '%sstart_date' % INSIDE_PREFIX]
-
-            tags_5 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      'O',
-                      'O',
-                      'O',
-                      '%send_date' % BEGINNING_PREFIX,
-                      '%send_date' % INSIDE_PREFIX]
-
-            tags_6 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      '%sstart_date' % BEGINNING_PREFIX,
-                      '%sstart_date' % INSIDE_PREFIX,
-                      'O',
-                      'O',
-                      'O']
-
-            tags_7 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      '%send_date' % BEGINNING_PREFIX,
-                      '%send_date' % INSIDE_PREFIX,
-                      'O',
-                      'O',
-                      'O']
-
-            tags_8 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      '%sstart_date' % BEGINNING_PREFIX,
-                      '%sstart_date' % INSIDE_PREFIX,
-                      'O',
-                      '%sstart_date' % BEGINNING_PREFIX,
-                      '%sstart_date' % INSIDE_PREFIX]
-
-            tags_9 = ['O',
-                      'O',
-                      'O',
-                      'O',
-                      '%send_date' % BEGINNING_PREFIX,
-                      '%send_date' % INSIDE_PREFIX,
-                      'O',
-                      '%send_date' % BEGINNING_PREFIX,
-                      '%send_date' % INSIDE_PREFIX]
-
-            if tags_ == tags_1:
-                return 0.6
-            elif tags_ == tags_2:
-                return 0.8
-            elif tags_ == tags_3:
-                return 0.2
-            elif tags_ == tags_4:
-                return 0.2
-            elif tags_ == tags_5:
-                return 0.99
-            elif tags_ == tags_6:
-                return 0.0
-            elif tags_ == tags_7:
-                return 0.0
-            elif tags_ == tags_8:
-                return 0.5
-            elif tags_ == tags_9:
-                return 0.5
-            else:
-                raise ValueError("Unexpected tag sequence: %s" % tags_)
-
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
-        slot_filler = CRFSlotFiller(
-            config=slot_filler_config,
-            builtin_entity_parser=BuiltinEntityParser.build(language="en"))
-        slot_filler.language = LANGUAGE_EN
-        slot_filler.intent = "intent1"
-        slot_filler.slot_name_mapping = {
-            "start_date": "snips/datetime",
-            "end_date": "snips/datetime",
-        }
-
-        # pylint:disable=protected-access
-        slot_filler._get_sequence_probability = MagicMock(
-            side_effect=mocked_sequence_probability)
-        # pylint:enable=protected-access
-
-        slot_filler.compute_features = MagicMock(return_value=None)
-
-        # When
-        # pylint: disable=protected-access
-        augmented_slots = slot_filler._augment_slots(text, tokens, tags,
-                                                     missing_slots)
-        # pylint: enable=protected-access
-
-        # Then
-        expected_slots = [
-            unresolved_slot(value='after 8pm',
-                            match_range={START: 33, END: 42},
-                            entity='snips/datetime', slot_name='end_date')
-        ]
-        self.assertListEqual(augmented_slots, expected_slots)
-
-    def test_filter_overlapping_builtins(self):
-        # Given
-        language = LANGUAGE_EN
-        text = "Find me a flight before 10pm and after 8pm"
-        tokens = tokenize(text, language)
-        tags = ['O' for _ in range(5)] + ['B-flight'] + ['O' for _ in range(3)]
-        tagging_scheme = TaggingScheme.BIO
-        builtin_entities = [
-            {
-                RES_MATCH_RANGE: {START: 17, END: 28},
-                VALUE: "before 10pm",
-                ENTITY_KIND: SNIPS_DATETIME
-            },
-            {
-                RES_MATCH_RANGE: {START: 33, END: 42},
-                VALUE: "after 8pm",
-                ENTITY_KIND: SNIPS_DATETIME
-            }
-        ]
-
-        # When
-        entities = _filter_overlapping_builtins(builtin_entities, tokens, tags,
-                                                tagging_scheme)
-
-        # Then
-        expected_entities = [
-            {
-                RES_MATCH_RANGE: {START: 33, END: 42},
-                VALUE: "after 8pm",
-                ENTITY_KIND: SNIPS_DATETIME
-            }
-        ]
-        self.assertEqual(entities, expected_entities)
-
-    def test_should_disambiguate_builtin_entities(self):
-        # Given
-        builtin_entities = [
-            {RES_MATCH_RANGE: {START: 7, END: 10}},
-            {RES_MATCH_RANGE: {START: 9, END: 15}},
-            {RES_MATCH_RANGE: {START: 10, END: 17}},
-            {RES_MATCH_RANGE: {START: 12, END: 19}},
-            {RES_MATCH_RANGE: {START: 9, END: 15}},
-            {RES_MATCH_RANGE: {START: 0, END: 5}},
-            {RES_MATCH_RANGE: {START: 0, END: 5}},
-            {RES_MATCH_RANGE: {START: 0, END: 8}},
-            {RES_MATCH_RANGE: {START: 2, END: 5}},
-            {RES_MATCH_RANGE: {START: 0, END: 8}},
-        ]
-
-        # When
-        disambiguated_entities = _disambiguate_builtin_entities(
-            builtin_entities)
-
-        # Then
-        expected_entities = [
-            {RES_MATCH_RANGE: {START: 0, END: 8}},
-            {RES_MATCH_RANGE: {START: 0, END: 8}},
-            {RES_MATCH_RANGE: {START: 10, END: 17}},
-        ]
-
-        self.assertListEqual(expected_entities, disambiguated_entities)
-
-    def test_generate_slots_permutations(self):
-        # Given
-        slot_name_mapping = {
-            "start_date": "snips/datetime",
-            "end_date": "snips/datetime",
-            "temperature": "snips/temperature"
-        }
-        grouped_entities = [
-            [
-                {ENTITY_KIND: "snips/datetime"},
-                {ENTITY_KIND: "snips/temperature"}
-            ],
-            [
-                {ENTITY_KIND: "snips/temperature"}
-            ]
-        ]
-
-        # When
-        slots_permutations = set(
-            "||".join(perm) for perm in
-            _get_slots_permutations(grouped_entities, slot_name_mapping))
-
-        # Then
-        expected_permutations = {
-            "start_date||temperature",
-            "end_date||temperature",
-            "temperature||temperature",
-            "O||temperature",
-            "start_date||O",
-            "end_date||O",
-            "temperature||O",
-            "O||O",
-        }
-        self.assertSetEqual(expected_permutations, slots_permutations)
 
     def test_should_fit_and_parse_empty_intent(self):
         # Given

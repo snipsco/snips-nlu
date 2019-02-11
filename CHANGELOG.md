@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.19.2] - 2019-02-11
+### Fixed
+- Fix an issue regarding the way builtin entities were handled by the `CRFSlotFiller`
+
 ## [0.19.1] - 2019-02-04
 ### Fixed
 - Bug causing an unnecessary reloading of shared resources
@@ -232,6 +236,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.2]: https://github.com/snipsco/snips-nlu/compare/0.19.1...0.19.2
 [0.19.1]: https://github.com/snipsco/snips-nlu/compare/0.19.0...0.19.1
 [0.19.0]: https://github.com/snipsco/snips-nlu/compare/0.18.0...0.19.0
 [0.18.0]: https://github.com/snipsco/snips-nlu/compare/0.17.4...0.18.0

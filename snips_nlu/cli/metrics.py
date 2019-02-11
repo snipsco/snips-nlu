@@ -66,6 +66,7 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
         nb_folds=nb_folds,
         train_size_ratio=train_size_ratio,
         include_slot_metrics=not exclude_slot_metrics,
+        slot_matching_lambda=_match_trimmed_values
     )
 
     from snips_nlu_metrics import compute_cross_val_metrics
@@ -108,7 +109,8 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
         train_dataset=train_dataset_path,
         test_dataset=test_dataset_path,
         engine_class=engine_cls,
-        include_slot_metrics=not exclude_slot_metrics
+        include_slot_metrics=not exclude_slot_metrics,
+        slot_matching_lambda=_match_trimmed_values
     )
 
     from snips_nlu_metrics import compute_train_test_metrics
@@ -119,3 +121,9 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
 
     with Path(output_path).open(mode="w", encoding="utf8") as f:
         f.write(json_string(metrics))
+
+
+def _match_trimmed_values(lhs_slot, rhs_slot):
+    lhs_value = lhs_slot["text"].strip()
+    rhs_value = rhs_slot["rawValue"].strip()
+    return lhs_value == rhs_value

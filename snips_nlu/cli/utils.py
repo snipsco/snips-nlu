@@ -7,6 +7,7 @@ import sys
 from enum import Enum, unique
 
 import requests
+from semantic_version import Version
 
 import snips_nlu
 from snips_nlu import __about__
@@ -71,13 +72,16 @@ def get_json(url, desc):
 
 def get_compatibility():
     version = __about__.__version__
+    semver_version = Version(version)
+    minor_version = "%d.%d" % (semver_version.major, semver_version.minor)
     table = get_json(__about__.__compatibility__, "Compatibility table")
-    compatibility = table["snips-nlu"]
-    if version not in compatibility:
+    nlu_table = table["snips-nlu"]
+    compatibility = nlu_table.get(version, nlu_table.get(minor_version))
+    if compatibility is None:
         pretty_print("No compatible resources found for version %s" % version,
                      title="Resources compatibility error", exits=1,
                      level=PrettyPrintLevel.ERROR)
-    return compatibility[version]
+    return compatibility
 
 
 def get_resources_version(resource_fullname, resource_alias, compatibility):

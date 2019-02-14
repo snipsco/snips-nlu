@@ -93,6 +93,35 @@ class TestDatasetValidation(SnipsTest):
         self.assertEqual("Expected custom entity to have key: 'use_synonyms'",
                          str(ctx.exception.args[0]))
 
+    def test_should_support_int_or_float_for_matching_strictness(self):
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {
+                "entity1": {
+                    "data": [],
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "matching_strictness": 0.5
+                },
+                "entity2": {
+                    "data": [],
+                    "automatically_extensible": False,
+                    "use_synonyms": True,
+                    "matching_strictness": 1
+                }
+            },
+            "language": "en",
+        }
+
+        # When/Then
+        dataset = validate_and_format_dataset(dataset)
+
+        self.assertEqual(
+            0.5, dataset["entities"]["entity1"].get("matching_strictness"))
+        self.assertEqual(
+            1, dataset["entities"]["entity2"].get("matching_strictness"))
+
     def test_missing_matching_strictness_should_be_handled(self):
         # TODO: This test is temporary, and must be removed once the backward
         # compatibility with the previous dataset format, without

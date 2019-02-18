@@ -127,6 +127,7 @@ class DeterministicIntentParser(IntentParser):
         """Fits the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]

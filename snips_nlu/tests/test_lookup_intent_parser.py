@@ -77,7 +77,8 @@ automatically_extensible: no
 values:
 - [dummy_c, 3p.m., dummy_cc, dummy c]"""
         )
-        self.slots_dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        self.slots_dataset = Dataset.from_yaml_files("en", [
+            slots_dataset_stream]).json
 
     def test_should_parse_intent(self):
         # Given
@@ -173,7 +174,8 @@ utterances:
         dataset = self.slots_dataset
         config = DeterministicIntentParserConfig(ignore_stop_words=True)
         parser = DeterministicIntentParser(config).fit(dataset)
-        text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " "at 12p.m."
+        text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         parsing = parser.parse(text)
@@ -230,7 +232,8 @@ utterances:
         deserialized_parser = DeterministicIntentParser.from_path(
             self.tmp_file_path, **shared
         )
-        text = "this is a dummy_a query with another dummy_c at 10p.m. or " "at 12p.m."
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+               "at 12p.m."
 
         # When
         parsing = deserialized_parser.parse(text)
@@ -651,7 +654,8 @@ utterances:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         utterances = [
-            {DATA: [{TEXT: naughty_string}]} for naughty_string in naughty_strings
+            {DATA: [{TEXT: naughty_string}]} for naughty_string in
+            naughty_strings
         ]
 
         # When
@@ -732,7 +736,8 @@ utterances:
 
         metadata = {"unit_name": "lookup_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
-        self.assertJsonContent(self.tmp_file_path / "intent_parser.json", expected_dict)
+        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
+                               expected_dict)
 
     @patch("snips_nlu.intent_parser.lookup_intent_parser.get_stop_words")
     def test_should_be_serializable(self, mock_get_stop_words):
@@ -786,7 +791,8 @@ values:
         }
         metadata = {"unit_name": "lookup_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
-        self.assertJsonContent(self.tmp_file_path / "intent_parser.json", expected_dict)
+        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
+                               expected_dict)
 
     def test_should_be_deserializable(self):
         # Given
@@ -799,20 +805,23 @@ values:
         }
         self.tmp_file_path.mkdir()
         metadata = {"unit_name": "deterministic_intent_parser"}
-        self.writeJsonContent(self.tmp_file_path / "intent_parser.json", parser_dict)
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When
         parser = DeterministicIntentParser.from_path(self.tmp_file_path)
 
         # Then
-        patterns = {"my_intent": ["(?P<hello_group>hello?)", "(?P<world_group>world$)"]}
+        patterns = {
+            "my_intent": ["(?P<hello_group>hello?)", "(?P<world_group>world$)"]}
         group_names_to_slot_names = {
             "hello_group": "hello_slot",
             "world_group": "world_slot",
         }
         slot_names_to_entities = {
-            "my_intent": {"hello_slot": "hello_entity", "world_slot": "world_entity"}
+            "my_intent": {"hello_slot": "hello_entity",
+                          "world_slot": "world_entity"}
         }
         config = DeterministicIntentParserConfig()
         expected_parser = DeterministicIntentParser(config=config)
@@ -834,7 +843,8 @@ values:
         }
         self.tmp_file_path.mkdir()
         metadata = {"unit_name": "dict_deterministic_intent_parser"}
-        self.writeJsonContent(self.tmp_file_path / "intent_parser.json", parser_dict)
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When

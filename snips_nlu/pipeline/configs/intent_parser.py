@@ -95,3 +95,33 @@ class DeterministicIntentParserConfig(FromDict, ProcessingUnitConfig):
             "max_pattern_length": self.max_pattern_length,
             "ignore_stop_words": self.ignore_stop_words
         }
+
+
+class LookupIntentParserConfig(FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.LookupIntentParser`
+
+    Args:
+        ignore_stop_words (bool, optional): If True, stop words will be
+            removed before building patterns.
+    """
+
+    def __init__(self, ignore_stop_words=False):
+        self.ignore_stop_words = ignore_stop_words
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_parser.lookup_intent_parser import \
+            LookupIntentParser
+        return LookupIntentParser.unit_name
+
+    def get_required_resources(self):
+        return {
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS,
+            STOP_WORDS: self.ignore_stop_words
+        }
+
+    def to_dict(self):
+        return {
+            "unit_name": self.unit_name,
+            "ignore_stop_words": self.ignore_stop_words
+        }

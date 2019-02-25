@@ -63,7 +63,6 @@ class LookupIntentParser(IntentParser):
         :class:`.DeterministicIntentParserConfig`"""
         super(LookupIntentParser, self).__init__(config, **shared)
         self._language = None
-        self.builtin_scope = None
         self.stop_words = None
         self.map = None
         self.intents_names = []

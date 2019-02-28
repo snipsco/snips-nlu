@@ -286,7 +286,7 @@ class LookupIntentParser(IntentParser):
         """Replaces stop words and characters that are tokenized out by
             whitespaces"""
         tokens = tokenize_light(txt, self.language)
-        cleaned_string = "".join(
+        cleaned_string = " ".join(
             [tkn for tkn in tokens if normalize(tkn) not in self.stop_words]
         )
         return cleaned_string.lower()

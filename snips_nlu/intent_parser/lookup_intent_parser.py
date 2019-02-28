@@ -2,10 +2,11 @@ from __future__ import unicode_literals
 
 import json
 import logging
-
 from builtins import str
-from future.utils import iteritems
 from pathlib import Path
+
+from future.utils import iteritems
+
 from snips_nlu_utils import normalize
 
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
@@ -51,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 @IntentParser.register("lookup_intent_parser")
 class LookupIntentParser(IntentParser):
-    """A Deterministic Intent parser implementation based on a hashmap/dictionary
+    """A Deterministic Intent parser implementation based on a dictionary
 
     This intent parser is very strict by nature, and tends to have a very good
     precision but a low recall. For this reason, it is interesting to use it
@@ -108,7 +109,7 @@ class LookupIntentParser(IntentParser):
 
         ambiguous_keys = set()
         for (key, val) in self.generate_io_mapping(
-            dataset[INTENTS], entity_placeholders
+                dataset[INTENTS], entity_placeholders
         ):
             # handle key collisions -*- remove ambiguous entries -*-
             if key in self.map and self.map[key] != val:

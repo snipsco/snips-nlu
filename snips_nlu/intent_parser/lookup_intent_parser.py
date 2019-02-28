@@ -75,6 +75,7 @@ class LookupIntentParser(IntentParser):
 
     @property
     def language(self):
+        """get parser's language"""
         return self._language
 
     @language.setter
@@ -266,6 +267,15 @@ class LookupIntentParser(IntentParser):
         return slots
 
     def get_intent_id(self, intent_name):
+        """generate a numeric id for an intent
+
+        Args:
+            intent_name (str): intent name
+
+        Returns:
+            int: numeric id
+
+        """
         intent_id = self._intents_mapping.get(intent_name)
         if intent_id is None:
             intent_id = len(self.intents_names)
@@ -275,6 +285,15 @@ class LookupIntentParser(IntentParser):
         return intent_id
 
     def get_slot_id(self, slot_name):
+        """generate a numeric id for a slot
+
+        Args:
+            slot_name (str): intent name
+
+        Returns:
+            int: numeric id
+
+        """
         slot_id = self._slots_mapping.get(slot_name)
         if slot_id is None:
             slot_id = len(self.slots_names)
@@ -347,8 +366,8 @@ class LookupIntentParser(IntentParser):
         parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"
 
-        with parser_path.open(mode="w") as f:
-            f.write(parser_json)
+        with parser_path.open(mode="w") as pfile:
+            pfile.write(parser_json)
         self.persist_metadata(path)
 
     @classmethod
@@ -366,8 +385,8 @@ class LookupIntentParser(IntentParser):
                 % model_path.name
             )
 
-        with model_path.open(encoding="utf8") as f:
-            metadata = json.load(f)
+        with model_path.open(encoding="utf8") as pfile:
+            metadata = json.load(pfile)
         return cls.from_dict(metadata, **shared)
 
     def to_dict(self):

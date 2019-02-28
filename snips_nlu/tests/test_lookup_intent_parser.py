@@ -782,8 +782,8 @@ values:
             "intents_names": ["searchFlight"],
             "language_code": "en",
             "map": {
-                "findflightfrom%city%to%city%": [0, [0, 1]],
-                "ineedflightto%city%": [0, [1]],
+                "find flight from % city % to % city %": [0, [0, 1]],
+                "i need flight to % city %": [0, [1]],
             },
             "slots_names": ["origin", "destination"],
         }

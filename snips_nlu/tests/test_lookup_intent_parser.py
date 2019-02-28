@@ -20,15 +20,11 @@ from snips_nlu.constants import (
 )
 from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
-from snips_nlu.intent_parser import (
-    LookupIntentParser as DeterministicIntentParser
-)
+from snips_nlu.intent_parser import LookupIntentParser
 from snips_nlu.intent_parser.deterministic_intent_parser import (
     _deduplicate_overlapping_slots
 )
-from snips_nlu.pipeline.configs import (
-    LookupIntentParserConfig as DeterministicIntentParserConfig
-)
+from snips_nlu.pipeline.configs import LookupIntentParserConfig
 from snips_nlu.result import (
     empty_result,
     extraction_result,
@@ -38,9 +34,9 @@ from snips_nlu.result import (
 from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
-class TestDeterministicIntentParser(FixtureTest):
+class TestLookupIntentParser(FixtureTest):
     def setUp(self):
-        super(TestDeterministicIntentParser, self).setUp()
+        super(TestLookupIntentParser, self).setUp()
         slots_dataset_stream = io.StringIO(
             """
 ---
@@ -77,8 +73,9 @@ automatically_extensible: no
 values:
 - [dummy_c, 3p.m., dummy_cc, dummy c]"""
         )
-        self.slots_dataset = Dataset.from_yaml_files("en", [
-            slots_dataset_stream]).json
+        self.slots_dataset = Dataset.from_yaml_files(
+            "en", [slots_dataset_stream]
+        ).json
 
     def test_should_parse_intent(self):
         # Given
@@ -97,7 +94,7 @@ utterances:
   - foo bar ban"""
         )
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
         text = "foo bar ban"
 
         # When
@@ -128,7 +125,7 @@ utterances:
   - foo bar ban"""
         )
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
         text = "foo bar ban"
 
         # When
@@ -154,7 +151,7 @@ utterances:
   - foo bar"""
         )
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
         text = "hello world"
 
         # When
@@ -172,10 +169,10 @@ utterances:
         # Given
         mock_get_stop_words.return_value = {"a", "hey"}
         dataset = self.slots_dataset
-        config = DeterministicIntentParserConfig(ignore_stop_words=True)
-        parser = DeterministicIntentParser(config).fit(dataset)
-        text = "Hey this is dummy_a query with another dummy_c at 10p.m. or " \
-               "at 12p.m."
+        config = LookupIntentParserConfig(ignore_stop_words=True)
+        parser = LookupIntentParser(config).fit(dataset)
+        text = "Hey this is dummy_a query with another dummy_c at 10p.m. " \
+               "or at 12p.m."
 
         # When
         parsing = parser.parse(text)
@@ -205,7 +202,7 @@ utterances:
   - Hello world"""
         )
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
         text = "Hello world"
 
         # When
@@ -216,7 +213,7 @@ utterances:
 
     def test_should_not_parse_when_not_fitted(self):
         # Given
-        parser = DeterministicIntentParser()
+        parser = LookupIntentParser()
 
         # When / Then
         self.assertFalse(parser.fitted)
@@ -227,12 +224,12 @@ utterances:
         # Given
         dataset = self.slots_dataset
         shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = LookupIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
-        deserialized_parser = DeterministicIntentParser.from_path(
+        deserialized_parser = LookupIntentParser.from_path(
             self.tmp_file_path, **shared
         )
-        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or "\
                "at 12p.m."
 
         # When
@@ -248,7 +245,7 @@ utterances:
     def test_should_parse_slots(self):
         # Given
         dataset = self.slots_dataset
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
         texts = [
             (
                 "this is a dummy a query with another dummy_c at 10p.m. or at"
@@ -382,7 +379,7 @@ utterances:
         )
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
 
         # When
         top_intents = parser.get_intents("Hello John")
@@ -428,7 +425,7 @@ utterances:
   - Goodbye [name](Eric)"""
         )
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
 
         # When
         slots_greeting1 = parser.get_slots("Hello John", "greeting1")
@@ -456,7 +453,7 @@ utterances:
   - Hello [name](John)"""
         )
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
 
         # When
         slots = parser.get_slots("Hello John", None)
@@ -481,7 +478,7 @@ utterances:
   - Goodbye [name](Eric)"""
         )
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
 
         # When / Then
         with self.assertRaises(IntentNotFoundError):
@@ -491,9 +488,9 @@ utterances:
         # Given
         dataset = self.slots_dataset
         shared = self.get_shared_data(dataset)
-        parser = DeterministicIntentParser(**shared).fit(dataset)
+        parser = LookupIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
-        deserialized_parser = DeterministicIntentParser.from_path(
+        deserialized_parser = LookupIntentParser.from_path(
             self.tmp_file_path, **shared
         )
 
@@ -611,11 +608,11 @@ utterances:
         )
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         shared = self.get_shared_data(dataset)
-        intent_parser = DeterministicIntentParser(**shared).fit(dataset)
+        intent_parser = LookupIntentParser(**shared).fit(dataset)
 
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
-        loaded_intent_parser = DeterministicIntentParser.from_byte_array(
+        loaded_intent_parser = LookupIntentParser.from_byte_array(
             intent_parser_bytes, **shared
         )
         result = loaded_intent_parser.parse("make me two cups of coffee")
@@ -640,7 +637,7 @@ utterances:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
-        parser = DeterministicIntentParser().fit(dataset)
+        parser = LookupIntentParser().fit(dataset)
 
         # Then
         for s in naughty_strings:
@@ -654,8 +651,8 @@ utterances:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         utterances = [
-            {DATA: [{TEXT: naughty_string}]} for naughty_string in
-            naughty_strings
+            {DATA: [{TEXT: naughty_string}]}
+            for naughty_string in naughty_strings
         ]
 
         # When
@@ -667,7 +664,7 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            DeterministicIntentParser().fit(naughty_dataset)
+            LookupIntentParser().fit(naughty_dataset)
 
     def test_should_fit_and_parse_with_non_ascii_tags(self):
         # Given
@@ -701,7 +698,7 @@ utterances:
 
         # Then
         with self.fail_if_exception("Exception raised"):
-            parser = DeterministicIntentParser().fit(naughty_dataset)
+            parser = LookupIntentParser().fit(naughty_dataset)
             parsing = parser.parse("string0")
 
             expected_slot = {
@@ -716,8 +713,8 @@ utterances:
 
     def test_should_be_serializable_before_fitting(self):
         # Given
-        config = DeterministicIntentParserConfig(ignore_stop_words=True)
-        parser = DeterministicIntentParser(config=config)
+        config = LookupIntentParserConfig(ignore_stop_words=True)
+        parser = LookupIntentParser(config=config)
 
         # When
         parser.persist(self.tmp_file_path)
@@ -736,8 +733,9 @@ utterances:
 
         metadata = {"unit_name": "lookup_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
-        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
-                               expected_dict)
+        self.assertJsonContent(
+            self.tmp_file_path / "intent_parser.json", expected_dict
+        )
 
     @patch("snips_nlu.intent_parser.lookup_intent_parser.get_stop_words")
     def test_should_be_serializable(self, mock_get_stop_words):
@@ -769,8 +767,8 @@ values:
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
         mock_get_stop_words.return_value = {"a", "me"}
-        config = DeterministicIntentParserConfig(ignore_stop_words=True)
-        parser = DeterministicIntentParser(config=config).fit(dataset)
+        config = LookupIntentParserConfig(ignore_stop_words=True)
+        parser = LookupIntentParser(config=config).fit(dataset)
 
         # When
         parser.persist(self.tmp_file_path)
@@ -791,8 +789,9 @@ values:
         }
         metadata = {"unit_name": "lookup_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
-        self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
-                               expected_dict)
+        self.assertJsonContent(
+            self.tmp_file_path / "intent_parser.json", expected_dict
+        )
 
     def test_should_be_deserializable(self):
         # Given
@@ -805,30 +804,16 @@ values:
         }
         self.tmp_file_path.mkdir()
         metadata = {"unit_name": "deterministic_intent_parser"}
-        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
-                              parser_dict)
+        self.writeJsonContent(
+            self.tmp_file_path / "intent_parser.json", parser_dict
+        )
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When
-        parser = DeterministicIntentParser.from_path(self.tmp_file_path)
-
-        # Then
-        patterns = {
-            "my_intent": ["(?P<hello_group>hello?)", "(?P<world_group>world$)"]}
-        group_names_to_slot_names = {
-            "hello_group": "hello_slot",
-            "world_group": "world_slot",
-        }
-        slot_names_to_entities = {
-            "my_intent": {"hello_slot": "hello_entity",
-                          "world_slot": "world_entity"}
-        }
-        config = DeterministicIntentParserConfig()
-        expected_parser = DeterministicIntentParser(config=config)
+        parser = LookupIntentParser.from_path(self.tmp_file_path)
+        config = LookupIntentParserConfig()
+        expected_parser = LookupIntentParser(config=config)
         expected_parser.language = LANGUAGE_EN
-        expected_parser.group_names_to_slot_names = group_names_to_slot_names
-        expected_parser.slot_names_to_entities = slot_names_to_entities
-        expected_parser.patterns = patterns
 
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
@@ -843,16 +828,17 @@ values:
         }
         self.tmp_file_path.mkdir()
         metadata = {"unit_name": "dict_deterministic_intent_parser"}
-        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
-                              parser_dict)
+        self.writeJsonContent(
+            self.tmp_file_path / "intent_parser.json", parser_dict
+        )
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When
-        parser = DeterministicIntentParser.from_path(self.tmp_file_path)
+        parser = LookupIntentParser.from_path(self.tmp_file_path)
 
         # Then
-        config = DeterministicIntentParserConfig()
-        expected_parser = DeterministicIntentParser(config=config)
+        config = LookupIntentParserConfig()
+        expected_parser = LookupIntentParser(config=config)
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
     def test_should_deduplicate_overlapping_slots(self):

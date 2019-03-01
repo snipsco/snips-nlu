@@ -14,7 +14,7 @@ from snips_nlu.common.utils import (
     fitted_required, json_string)
 from snips_nlu.constants import LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import _EmptyDatasetUtterancesError, LoadingError
+from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -218,7 +218,8 @@ class LogRegIntentClassifier(IntentClassifier):
         }
 
         classifier_json = json_string(self_as_dict)
-        with (path / "intent_classifier.json").open(mode="w", encoding="utf8") as f:
+        with (path / "intent_classifier.json").open(mode="w",
+                                                    encoding="utf8") as f:
             f.write(classifier_json)
         self.persist_metadata(path)
 

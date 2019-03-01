@@ -288,7 +288,7 @@ class CRFSlotFiller(SlotFiller):
         }
         model_json = json_string(model)
         model_path = path / "slot_filler.json"
-        with model_path.open(mode="w") as f:
+        with model_path.open(mode="w", encoding="utf8") as f:
             f.write(model_json)
         self.persist_metadata(path)
 

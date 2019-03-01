@@ -82,12 +82,12 @@ naive keyword matching logic:
                "slots_keywords": self.slots_keywords,
                "config": self.config.to_dict()
            }
-           with path.open(mode="w") as f:
+           with path.open(mode="w", encoding="utf8") as f:
                f.write(json_string(model))
 
        @classmethod
        def from_path(cls, path, **shared):
-           with path.open() as f:
+           with path.open(encoding="utf8") as f:
                model = json.load(f)
            slot_filler = cls()
            slot_filler.language = model["language"]
@@ -188,12 +188,12 @@ this:
                "slots_keywords": self.slots_keywords,
                "config": self.config.to_dict()
            }
-           with path.open(mode="w") as f:
+           with path.open(mode="w", encoding="utf8") as f:
                f.write(json_string(model))
 
        @classmethod
        def from_path(cls, path, **shared):
-           with path.open() as f:
+           with path.open(encoding="utf8") as f:
                model = json.load(f)
            slot_filler = cls()
            slot_filler.language = model["language"]

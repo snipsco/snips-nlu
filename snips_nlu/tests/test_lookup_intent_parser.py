@@ -21,9 +21,6 @@ from snips_nlu.constants import (
 from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser import LookupIntentParser
-from snips_nlu.intent_parser.deterministic_intent_parser import (
-    _deduplicate_overlapping_slots
-)
 from snips_nlu.pipeline.configs import LookupIntentParserConfig
 from snips_nlu.result import (
     empty_result,
@@ -840,23 +837,3 @@ values:
         config = LookupIntentParserConfig()
         expected_parser = LookupIntentParser(config=config)
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
-
-    def test_should_deduplicate_overlapping_slots(self):
-        # Given
-        language = LANGUAGE_EN
-        slots = [
-            unresolved_slot([0, 3], "kid", "e", "s1"),
-            unresolved_slot([4, 8], "loco", "e1", "s2"),
-            unresolved_slot([0, 8], "kid loco", "e1", "s3"),
-            unresolved_slot([9, 13], "song", "e2", "s4"),
-        ]
-
-        # When
-        deduplicated_slots = _deduplicate_overlapping_slots(slots, language)
-
-        # Then
-        expected_slots = [
-            unresolved_slot([0, 8], "kid loco", "e1", "s3"),
-            unresolved_slot([9, 13], "song", "e2", "s4"),
-        ]
-        self.assertSequenceEqual(deduplicated_slots, expected_slots)

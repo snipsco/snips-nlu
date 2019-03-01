@@ -56,7 +56,7 @@ class KeywordSlotFiller(SlotFiller):
             "slots_keywords": self.slots_keywords,
             "config": self.config.to_dict()
         }
-        with path.open(mode="w") as f:
+        with path.open(mode="w", encoding="utf8") as f:
             f.write(json_string(model))
 
     @classmethod

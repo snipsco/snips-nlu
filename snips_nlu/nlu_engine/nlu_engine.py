@@ -304,7 +304,7 @@ class SnipsNLUEngine(ProcessingUnit):
 
         model_json = json_string(model)
         model_path = path / "nlu_engine.json"
-        with model_path.open(mode="w") as f:
+        with model_path.open(mode="w", encoding="utf8") as f:
             f.write(model_json)
 
         if self.fitted:

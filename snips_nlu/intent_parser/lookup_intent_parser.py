@@ -203,7 +203,7 @@ class LookupIntentParser(IntentParser):
         for slot_id, entity in zip(slot_ids, entities):
             slot_name = self.slots_names[slot_id]
             slot_value = text[
-                entity[RES_MATCH_RANGE][START] : entity[RES_MATCH_RANGE][END]
+                entity[RES_MATCH_RANGE][START]: entity[RES_MATCH_RANGE][END]
             ]
             entity_name = entity[ENTITY_KIND]
             start_end = [
@@ -330,7 +330,7 @@ class LookupIntentParser(IntentParser):
                 slot_id = self.get_slot_id(slot_name)
                 entity_name = chunk[ENTITY]
                 placeholder = entity_placeholders[entity_name]
-                input_.append(placeholder.lower())
+                input_.append(placeholder)
                 slots.append(slot_id)
             else:
                 input_.append(chunk[TEXT])
@@ -366,7 +366,7 @@ class LookupIntentParser(IntentParser):
         parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"
 
-        with parser_path.open(mode="w") as pfile:
+        with parser_path.open(mode="w", encoding="utf8") as pfile:
             pfile.write(parser_json)
         self.persist_metadata(path)
 

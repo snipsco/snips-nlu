@@ -379,7 +379,7 @@ class DeterministicIntentParser(IntentParser):
         parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"
 
-        with parser_path.open(mode="w") as f:
+        with parser_path.open(mode="w", encoding="utf8") as f:
             f.write(parser_json)
         self.persist_metadata(path)
 

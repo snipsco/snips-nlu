@@ -744,7 +744,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
         }
         vectorizer_json = json_string(self_as_dict)
         vectorizer_path = path / "vectorizer.json"
-        with vectorizer_path.open(mode="w") as f:
+        with vectorizer_path.open(mode="w", encoding="utf8") as f:
             f.write(vectorizer_json)
         self.persist_metadata(path)
 

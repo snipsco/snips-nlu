@@ -168,7 +168,7 @@ class LookupIntentParser(IntentParser):
         )
 
         cleaned_processed_text = self._preprocess_text(processed_text)
-        cleaned_text = self._preprocess_text(text).lower()
+        cleaned_text = self._preprocess_text(text)
 
         val = self.map.get(cleaned_processed_text)
 

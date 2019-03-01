@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 import io
-
 from builtins import range
 
 from mock import patch
@@ -161,6 +160,46 @@ utterances:
             intent_name="dummy_intent_1", probability=probability)
 
         self.assertEqual(expected_intent, parsing[RES_INTENT])
+
+    def test_should_parse_intent_with_duplicated_slot_names(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: math_operation
+slots:
+  - name: number
+    entity: snips/number
+utterances:
+  - what is [number](one) plus [number](one)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "what is one plus one"
+
+        # When
+        parsing = parser.parse(text)
+
+        # Then
+        probability = 1.0
+        expected_intent = intent_classification_result(
+            intent_name="math_operation", probability=probability)
+        expected_slots = [
+            {
+                "entity": "snips/number",
+                "range": {"end": 11, "start": 8},
+                "slotName": "number",
+                "value": "one"
+            },
+            {
+                "entity": "snips/number",
+                "range": {"end": 20, "start": 17},
+                "slotName": "number",
+                "value": "one"
+            }
+        ]
+
+        self.assertDictEqual(expected_intent, parsing[RES_INTENT])
+        self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
     def test_should_ignore_ambiguous_utterances(self):
         # Given

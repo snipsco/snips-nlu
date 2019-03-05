@@ -538,9 +538,6 @@ utterances:
 ---
 type: entity
 name: entity_1
-automatically_extensible: false
-use_synononyms: false
-matching_strictness: 1.0
 values:
   - [entity 1, alternative entity 1]
   - [éntity 1, alternative entity 1]
@@ -548,9 +545,6 @@ values:
 ---
 type: entity
 name: entity_2
-automatically_extensible: false
-use_synononyms: true
-matching_strictness: 1.0
 values:
   - entity 1
   - [Éntity 2, Éntity_2, Alternative entity 2]""")
@@ -579,8 +573,7 @@ values:
         vectorizer.builtin_entity_scope = {"snips/number"}
 
         # When
-        processed_data = vectorizer._preprocess(
-            utterances, training=False)
+        processed_data = vectorizer._preprocess(utterances)
         processed_data = list(zip(*processed_data))
 
         # Then
@@ -674,238 +667,6 @@ values:
             ),
             (
                 u_3,
-                [],
-                [],
-                ["cluster_2"]
-            )
-        ]
-
-        self.assertSequenceEqual(expected_data, processed_data)
-
-    def test_preprocess_for_training(self):
-        # Given
-        language = LANGUAGE_EN
-        resources = {
-            STEMS: {
-                "beautiful": "beauty",
-                "birdy": "bird",
-                "entity": "ent"
-            },
-            WORD_CLUSTERS: {
-                "my_word_clusters": {
-                    "beautiful": "cluster_1",
-                    "birdy": "cluster_2",
-                    "entity": "cluster_3"
-                }
-            },
-            STOP_WORDS: set()
-        }
-
-        dataset_stream = io.StringIO("""
----
-type: intent
-name: intent1
-utterances:
-    - dummy utterance
-
----
-type: entity
-name: entity_1
-automatically_extensible: false
-use_synononyms: false
-matching_strictness: 1.0
-values:
-  - [entity 1, alternative entity 1]
-  - [éntity 1, alternative entity 1]
-
----
-type: entity
-name: entity_2
-automatically_extensible: false
-use_synononyms: true
-matching_strictness: 1.0
-values:
-  - entity 1
-  - [Éntity 2, Éntity_2, Alternative entity 2]""")
-        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-
-        custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITH_STEMS, resources)
-
-        builtin_entity_parser = BuiltinEntityParser.build(dataset, language)
-        utterances = [
-            {
-                "data": [
-                    {
-                        "text": "hÉllo wOrld "
-                    },
-                    {
-                        "text": " yo "
-                    },
-                    {
-                        "text": " yo "
-                    },
-                    {
-                        "text": "yo "
-                    },
-                    {
-                        "text": "Éntity_2",
-                        "entity": "entity_2"
-                    },
-                    {
-                        "text": " "
-                    },
-                    {
-                        "text": "Éntity_2",
-                        "entity": "entity_2"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "beauTiful World "
-                    },
-                    {
-                        "text": "entity 1",
-                        "entity": "entity_1"
-                    },
-                    {
-                        "text": " "
-                    },
-                    {
-                        "text": "2",
-                        "entity": "snips/number"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "Bird bïrdy"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "Bird birdy"
-                    }
-                ]
-            }
-        ]
-
-        config = TfidfVectorizerConfig(
-            use_stemming=True, word_clusters_name="my_word_clusters")
-        vectorizer = TfidfVectorizer(
-            config=config,
-            custom_entity_parser=custom_entity_parser,
-            builtin_entity_parser=builtin_entity_parser,
-            resources=resources
-        )
-        vectorizer._language = language
-
-        # When
-        processed_data = vectorizer._preprocess(utterances, training=True)
-        processed_data = list(zip(*processed_data))
-
-        # Then
-        u_0 = {
-            "data": [
-                {
-                    "text": "hello world"
-                },
-                {
-                    "text": "yo"
-                },
-                {
-                    "text": "yo"
-                },
-                {
-                    "text": "yo"
-                },
-                {
-                    "text": "entity_2",
-                    "entity": "entity_2"
-                },
-                {
-                    "text": ""
-                },
-                {
-                    "text": "entity_2",
-                    "entity": "entity_2"
-                }
-            ]
-        }
-        u_1 = {
-            "data": [
-                {
-                    "text": "beauty world"
-                },
-                {
-                    "text": "ent 1",
-                    "entity": "entity_1"
-                },
-                {
-                    "text": ""
-                },
-                {
-                    "text": "2",
-                    "entity": "snips/number"
-                }
-            ]
-        }
-        u_2 = {
-            "data": [
-                {
-                    "text": "bird bird"
-                }
-            ]
-        }
-
-        ent_00 = {
-            "entity_kind": "entity_2",
-            "value": "Éntity_2",
-            "range": {"start": 23, "end": 31}
-        }
-        ent_01 = {
-            "entity_kind": "entity_2",
-            "value": "Éntity_2",
-            "range": {"start": 32, "end": 40}
-        }
-
-        ent_1 = {
-            "entity_kind": "entity_1",
-            "value": "entity 1",
-            "range": {"start": 16, "end": 24}
-        }
-        num_1 = {
-            "entity_kind": "snips/number",
-            "value": "2",
-            "range": {"start": 25, "end": 26}
-        }
-
-        expected_data = [
-            (
-                u_0,
-                [],
-                [ent_00, ent_01],
-                []
-            ),
-            (
-                u_1,
-                [num_1],
-                [ent_1],
-                ["cluster_1", "cluster_3"]
-            ),
-            (
-                u_2,
-                [],
-                [],
-                []
-            ),
-            (
-                u_2,
                 [],
                 [],
                 ["cluster_2"]
@@ -1086,8 +847,9 @@ class CooccurrenceVectorizerTest(FixtureTest):
         expected = [[1, 1, 1, 0, 0, 0], [0, 1, 1, 0, 0, 0]]
         self.assertEqual(expected, x.todense().tolist())
 
-    @patch("snips_nlu.intent_classifier.featurizer._entities_from_utterance")
-    def test_fit(self, mocked_entities_from_utterance):
+    @patch("snips_nlu.intent_classifier.featurizer.CooccurrenceVectorizer."
+           "_preprocess")
+    def test_fit(self, mocked_preprocess):
         t = "a b c d e f"
         u = text_to_utterance(t)
         builtin_ents = [
@@ -1112,9 +874,8 @@ class CooccurrenceVectorizerTest(FixtureTest):
                 "entity_kind": "the_c_entity"
             }
         ]
-        mocked_entities_from_utterance.return_value = builtin_ents, custom_ents
 
-        x = [u]
+        mocked_preprocess.return_value = [u], [builtin_ents], [custom_ents]
 
         config = CooccurrenceVectorizerConfig(
             window_size=3,
@@ -1136,13 +897,14 @@ class CooccurrenceVectorizerTest(FixtureTest):
             ("d", "THE_SNIPS_E_ENTITY"): 7,
             ("d", "f"): 8,
         }
-        vectorizer = CooccurrenceVectorizer(config, **shared).fit(x, dataset)
+        vectorizer = CooccurrenceVectorizer(config, **shared).fit([u], dataset)
 
         # Then
         self.assertDictEqual(expected_pairs, vectorizer.word_pairs)
 
-    @patch("snips_nlu.intent_classifier.featurizer._entities_from_utterance")
-    def test_fit_unordered(self, mocked_entities_from_utterance):
+    @patch("snips_nlu.intent_classifier.featurizer.CooccurrenceVectorizer."
+           "_preprocess")
+    def test_fit_unordered(self, mocked_preprocess):
         t = "a b c d e f"
         u = text_to_utterance(t)
         builtin_ents = [
@@ -1167,9 +929,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
                 "entity_kind": "the_c_entity"
             }
         ]
-        mocked_entities_from_utterance.return_value = builtin_ents, custom_ents
-
-        x = [u]
+        mocked_preprocess.return_value = [u], [builtin_ents], [custom_ents]
 
         config = CooccurrenceVectorizerConfig(
             window_size=3,
@@ -1192,13 +952,14 @@ class CooccurrenceVectorizerTest(FixtureTest):
             ("a", "d"): 7,
             ("d", "f"): 8,
         }
-        vectorizer = CooccurrenceVectorizer(config, **shared).fit(x, dataset)
+        vectorizer = CooccurrenceVectorizer(config, **shared).fit([u], dataset)
 
         # Then
         self.assertDictEqual(expected_pairs, vectorizer.word_pairs)
 
-    @patch("snips_nlu.intent_classifier.featurizer._entities_from_utterance")
-    def test_fit_transform(self, mocked_entities_from_utterance):
+    @patch("snips_nlu.intent_classifier.featurizer.CooccurrenceVectorizer."
+           "_preprocess")
+    def test_fit_transform(self, mocked_preprocess):
         t = "a b c d e f"
         u = text_to_utterance(t)
         builtin_ents = [
@@ -1223,9 +984,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
                 "entity_kind": "the_c_entity"
             }
         ]
-        mocked_entities_from_utterance.return_value = builtin_ents, custom_ents
-
-        x = [u]
+        mocked_preprocess.return_value = [u], [builtin_ents], [custom_ents]
 
         config = CooccurrenceVectorizerConfig(
             window_size=3,
@@ -1246,6 +1005,7 @@ class CooccurrenceVectorizerTest(FixtureTest):
             custom_entity_parser=custom_parser, resources=resources)
 
         # When
+        x = [u]
         x_0 = vectorizer1.fit(x, dataset).transform(x).todense().tolist()
         x_1 = vectorizer2.fit_transform(x, dataset).todense().tolist()
 
@@ -1368,7 +1128,7 @@ values:
         vectorizer._language = language
 
         # When
-        processed_data = vectorizer._preprocess(utterances, training=False)
+        processed_data = vectorizer._preprocess(utterances)
         processed_data = list(zip(*processed_data))
 
         # Then
@@ -1427,166 +1187,6 @@ values:
             ),
             (
                 u_3,
-                [],
-                []
-            )
-        ]
-
-        self.assertSequenceEqual(expected_data, processed_data)
-
-    def test_preprocess_for_training(self):
-        # Given
-        language = LANGUAGE_EN
-        resources = {
-            STEMS: {
-                "beautiful": "beauty",
-                "birdy": "bird",
-                "entity": "ent"
-            },
-            WORD_CLUSTERS: {
-                "my_word_clusters": {
-                    "beautiful": "cluster_1",
-                    "birdy": "cluster_2",
-                    "entity": "cluster_3"
-                }
-            },
-            STOP_WORDS: set()
-        }
-
-        dataset_stream = io.StringIO("""
----
-type: intent
-name: intent1
-utterances:
-    - dummy utterance
-
----
-type: entity
-name: entity_1
-automatically_extensible: false
-use_synononyms: false
-matching_strictness: 1.0
-values:
-  - [entity 1, alternative entity 1]
-  - [éntity 1, alternative entity 1]
-
----
-type: entity
-name: entity_2
-automatically_extensible: false
-use_synononyms: true
-matching_strictness: 1.0
-values:
-  - entity 1
-  - [Éntity 2, Éntity_2, Alternative entity 2]
-    """)
-        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-
-        custom_entity_parser = CustomEntityParser.build(
-            dataset, CustomEntityParserUsage.WITHOUT_STEMS, resources)
-
-        builtin_entity_parser = BuiltinEntityParser.build(dataset, language)
-        utterances = [
-            {
-                "data": [
-                    {
-                        "text": "hÉllo wOrld "
-                    },
-                    {
-                        "text": " yo "
-                    },
-                    {
-                        "text": " yo "
-                    },
-                    {
-                        "text": "yo "
-                    },
-                    {
-                        "text": "Éntity_2",
-                        "entity": "entity_2"
-                    },
-                    {
-                        "text": " "
-                    },
-                    {
-                        "text": "Éntity_2",
-                        "entity": "entity_2"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "beauTiful World "
-                    },
-                    {
-                        "text": "entity 1",
-                        "entity": "entity_1"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "Bird bïrdy"
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "Bird birdy"
-                    }
-                ]
-            }
-        ]
-
-        vectorizer = CooccurrenceVectorizer(
-            custom_entity_parser=custom_entity_parser,
-            builtin_entity_parser=builtin_entity_parser,
-            resources=resources
-        )
-        vectorizer._language = language
-
-        # When
-        processed_data = vectorizer._preprocess(utterances, training=True)
-        processed_data = list(zip(*processed_data))
-
-        # Then
-        ent_00 = {
-            "entity_kind": "entity_2",
-            "value": "Éntity_2",
-            "range": {"start": 23, "end": 31}
-        }
-        ent_01 = {
-            "entity_kind": "entity_2",
-            "value": "Éntity_2",
-            "range": {"start": 32, "end": 40}
-        }
-        ent_1 = {
-            "entity_kind": "entity_1",
-            "value": "entity 1",
-            "range": {"start": 16, "end": 24}
-        }
-
-        expected_data = [
-            (
-                utterances[0],
-                [],
-                [ent_00, ent_01]
-            ),
-            (
-                utterances[1],
-                [],
-                [ent_1]
-            ),
-            (
-                utterances[2],
-                [],
-                []
-            ),
-            (
-                utterances[3],
                 [],
                 []
             )

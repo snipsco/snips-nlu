@@ -9,7 +9,7 @@ from uuid import uuid4
 import numpy as np
 from future.utils import iteritems, itervalues
 
-from snips_nlu.constants import (DATA, ENTITIES, ENTITY, INTENTS, TEXT,
+from snips_nlu.constants import (DATA, ENTITY, INTENTS, TEXT,
                                  UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks

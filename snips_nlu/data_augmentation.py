@@ -88,7 +88,7 @@ def get_intent_entities(dataset, intent_name):
         for chunk in utterance[DATA]:
             if ENTITY in chunk:
                 intent_entities.add(chunk[ENTITY])
-    return intent_entities
+    return sorted(intent_entities)
 
 
 def num_queries_to_generate(dataset, intent_name, min_utterances):

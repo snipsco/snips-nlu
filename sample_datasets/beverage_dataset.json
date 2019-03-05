@@ -67,6 +67,9 @@
               "text": "one"
             },
             {
+              "text": " "
+            },
+            {
               "entity": "beverage_type",
               "slot_name": "beverage_type",
               "text": "strong latte"

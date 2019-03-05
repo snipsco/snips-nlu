@@ -127,6 +127,7 @@ class DeterministicIntentParser(IntentParser):
         """Fits the intent parser with a valid Snips dataset"""
         logger.info("Fitting deterministic parser...")
         dataset = validate_and_format_dataset(dataset)
+        self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]
@@ -313,7 +314,7 @@ class DeterministicIntentParser(IntentParser):
         for group_name in found_result.groupdict():
             ref_group_name = group_name
             if "_" in group_name:
-                ref_group_name = group_name[:(len(group_name) - 2)]
+                ref_group_name = group_name.split("_")[0]
             slot_name = self.group_names_to_slot_names[ref_group_name]
             entity = self.slot_names_to_entities[intent][slot_name]
             rng = (found_result.start(group_name),

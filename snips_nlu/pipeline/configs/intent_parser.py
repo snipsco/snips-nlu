@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from snips_nlu.common.from_dict import FromDict
-from snips_nlu.constants import CUSTOM_ENTITY_PARSER_USAGE
+from snips_nlu.constants import CUSTOM_ENTITY_PARSER_USAGE, STOP_WORDS
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.pipeline.configs import ProcessingUnitConfig
 from snips_nlu.resources import merge_required_resources
@@ -84,7 +84,8 @@ class DeterministicIntentParserConfig(FromDict, ProcessingUnitConfig):
 
     def get_required_resources(self):
         return {
-            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS,
+            STOP_WORDS: self.ignore_stop_words
         }
 
     def to_dict(self):

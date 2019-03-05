@@ -9,7 +9,7 @@ from uuid import uuid4
 import numpy as np
 from future.utils import iteritems, itervalues
 
-from snips_nlu.constants import (DATA, ENTITIES, ENTITY, INTENTS, TEXT,
+from snips_nlu.constants import (DATA, ENTITY, INTENTS, TEXT,
                                  UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
@@ -108,22 +108,6 @@ def add_unknown_word_to_utterances(utterances, replacement_string,
     return new_utterances
 
 
-def get_dataset_specific_noise(dataset, resources):
-    """Return a noise list that excludes the dataset entity values"""
-    entities_values = set()
-    for ent_name, ent in iteritems(dataset[ENTITIES]):
-        if is_builtin_entity(ent_name):
-            continue
-        for k, v in iteritems(ent[UTTERANCES]):
-            entities_values.add(k)
-            entities_values.add(v)
-    original_noise = get_noise(resources)
-    specific_noise = [n for n in original_noise if n not in entities_values]
-    if not specific_noise:  # Avoid returning an empty noise
-        return original_noise
-    return specific_noise
-
-
 def build_training_data(dataset, language, data_augmentation_config, resources,
                         random_state):
     # Create class mapping
@@ -164,7 +148,7 @@ def build_training_data(dataset, language, data_augmentation_config, resources,
         )
 
     # Adding noise
-    noise = get_dataset_specific_noise(dataset, resources)
+    noise = get_noise(resources)
     noisy_utterances = generate_noise_utterances(
         augmented_utterances, noise, len(intents), data_augmentation_config,
         language, random_state)

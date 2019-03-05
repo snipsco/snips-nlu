@@ -7,6 +7,7 @@ import math
 import shutil
 import tempfile
 from builtins import range
+from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
@@ -48,6 +49,9 @@ class CRFSlotFiller(SlotFiller):
     def __init__(self, config=None, **shared):
         """The CRF slot filler can be configured by passing a
         :class:`.CRFSlotFillerConfig`"""
+        # The CRFSlotFillerConfig must be deep-copied as it is mutated when
+        # fitting the feature factories
+        config = deepcopy(config)
         super(CRFSlotFiller, self).__init__(config, **shared)
         self.crf_model = None
         self.features_factories = [

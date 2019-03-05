@@ -97,6 +97,7 @@ utterances:
 - find me something from [start](9am) to [end](12pm)
 - I need a break from [start](2pm) until [end](4pm)
 - Can you suggest something from [start](april 4th) until [end](april 6th) ?
+- find an activity from [start](6pm) to [end](8pm)
 - Book me a trip from [start](this friday) to [end](next tuesday)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         config = CRFSlotFillerConfig(random_seed=42)

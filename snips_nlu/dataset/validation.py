@@ -128,7 +128,7 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
     validate_type(entity[AUTOMATICALLY_EXTENSIBLE], bool,
                   object_label="automatically_extensible")
     validate_type(entity[DATA], list, object_label="entity data")
-    validate_type(entity[MATCHING_STRICTNESS], float,
+    validate_type(entity[MATCHING_STRICTNESS], (float, int),
                   object_label="matching_strictness")
 
     formatted_entity = dict()

@@ -15,7 +15,7 @@ from snips_nlu.dataset import validate_and_format_dataset, Dataset
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     add_unknown_word_to_utterances, build_training_data,
     generate_noise_utterances, generate_smart_noise, get_noise_it,
-    remove_builtin_slots, text_to_utterance, get_dataset_specific_noise)
+    remove_builtin_slots, text_to_utterance)
 from snips_nlu.pipeline.configs import (
     IntentClassifierDataAugmentationConfig, LogRegIntentClassifierConfig)
 from snips_nlu.tests.test_log_reg_intent_classifier import (
@@ -535,28 +535,6 @@ utterances:
         }
 
         self.assertDictEqual(expected_dataset, filtered_dataset)
-
-    def test_get_dataset_specific_noise(self):
-        # Given
-        dataset_stream = io.StringIO("""
----
-type: intent
-name: my_intent
-utterances:
-- what is the weather in [city](paris)
-- give me the weather in [city](london) 
-- does it rain in [city](tokyo)?""")
-        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset = validate_and_format_dataset(dataset)
-        resources = {
-            NOISE: ["paris", "tokyo", "yo"]
-        }
-
-        # When
-        noise = get_dataset_specific_noise(dataset, resources)
-
-        # Then
-        self.assertEqual(["yo"], noise)
 
     def test_add_unknown_word_to_utterances_with_none_max_unknownword(self):
         # Given

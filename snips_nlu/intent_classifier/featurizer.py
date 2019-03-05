@@ -17,8 +17,7 @@ from snips_nlu.common.utils import (
     json_string, fitted_required, replace_entities_with_placeholders,
     check_persisted_path)
 from snips_nlu.constants import (
-    DATA, END, ENTITY, ENTITY_KIND, LANGUAGE, NGRAM, RES_MATCH_RANGE,
-    RES_VALUE, START, TEXT, ENTITIES)
+    DATA, ENTITY, ENTITY_KIND, LANGUAGE, NGRAM, TEXT, ENTITIES)
 from snips_nlu.dataset import get_text_from_chunks, validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import (
     is_builtin_entity)
@@ -264,7 +263,7 @@ class TfidfVectorizer(ProcessingUnit):
         self._init_vectorizer(self._language)
         self.builtin_entity_scope = set(
             e for e in dataset[ENTITIES] if is_builtin_entity(e))
-        preprocessed_data = self._preprocess(x, training=True)
+        preprocessed_data = self._preprocess(x)
         utterances = [
             self._enrich_utterance(u, builtin_ents, custom_ents, w_clusters)
             for u, builtin_ents, custom_ents, w_clusters
@@ -296,7 +295,7 @@ class TfidfVectorizer(ProcessingUnit):
         self._init_vectorizer(self._language)
         self.builtin_entity_scope = set(
             e for e in dataset[ENTITIES] if is_builtin_entity(e))
-        preprocessed_data = self._preprocess(x, training=True)
+        preprocessed_data = self._preprocess(x)
         utterances = [
             self._enrich_utterance(u, builtin_ents, custom_ents, w_clusters)
             for u, builtin_ents, custom_ents, w_clusters
@@ -330,31 +329,30 @@ class TfidfVectorizer(ProcessingUnit):
                       for data in zip(*self._preprocess(x))]
         return self._tfidf_vectorizer.transform(utterances)
 
-    def _preprocess(self, utterances, training=False):
+    def _preprocess(self, utterances):
         normalized_utterances = deepcopy(utterances)
         for u in normalized_utterances:
-            for chunk in u[DATA]:
+            nb_chunks = len(u[DATA])
+            for i, chunk in enumerate(u[DATA]):
                 chunk[TEXT] = _normalize_stem(
                     chunk[TEXT], self.language, self.resources,
                     self.config.use_stemming)
+                if i < nb_chunks - 1:
+                    chunk[TEXT] += " "
 
-        if training:
-            builtin_ents, custom_ents = zip(
-                *[_entities_from_utterance(u) for u in utterances])
-        else:
-            # Extract builtin entities on unormalized utterances
-            builtin_ents = [
-                self.builtin_entity_parser.parse(
-                    get_text_from_chunks(u[DATA]),
-                    self.builtin_entity_scope, use_cache=True)
-                for u in utterances
-            ]
-            # Extract builtin entities on normalized utterances
-            custom_ents = [
-                self.custom_entity_parser.parse(
-                    get_text_from_chunks(u[DATA]), use_cache=True)
-                for u in normalized_utterances
-            ]
+        # Extract builtin entities on unormalized utterances
+        builtin_ents = [
+            self.builtin_entity_parser.parse(
+                get_text_from_chunks(u[DATA]),
+                self.builtin_entity_scope, use_cache=True)
+            for u in utterances
+        ]
+        # Extract builtin entities on normalized utterances
+        custom_ents = [
+            self.custom_entity_parser.parse(
+                get_text_from_chunks(u[DATA]), use_cache=True)
+            for u in normalized_utterances
+        ]
         if self.config.word_clusters_name:
             # Extract world clusters on unormalized utterances
             original_utterances_text = [get_text_from_chunks(u[DATA])
@@ -582,7 +580,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
         self.builtin_entity_scope = set(
             e for e in dataset[ENTITIES] if is_builtin_entity(e))
 
-        preprocessed = self._preprocess(list(x), training=True)
+        preprocessed = self._preprocess(list(x))
         utterances = [
             self._enrich_utterance(utterance, builtin_ents, custom_ent)
             for utterance, builtin_ents, custom_ent in zip(*preprocessed)]
@@ -648,7 +646,7 @@ class CooccurrenceVectorizer(ProcessingUnit):
         Raises:
             NotTrained: when the vectorizer is not fitted
         """
-        preprocessed = self._preprocess(x, training=False)
+        preprocessed = self._preprocess(x)
         utterances = [
             self._enrich_utterance(utterance, builtin_ents, custom_ent)
             for utterance, builtin_ents, custom_ent in zip(*preprocessed)]
@@ -661,24 +659,20 @@ class CooccurrenceVectorizer(ProcessingUnit):
 
         return x_coo.tocsr()
 
-    def _preprocess(self, x, training=False):
-        if training:
-            builtin_ents, custom_ents = zip(
-                *[_entities_from_utterance(u) for u in x])
-        else:
-            # Extract all entities on unnormalized data
-            builtin_ents = [
-                self.builtin_entity_parser.parse(
-                    get_text_from_chunks(u[DATA]),
-                    self.builtin_entity_scope,
-                    use_cache=True
-                ) for u in x
-            ]
-            custom_ents = [
-                self.custom_entity_parser.parse(
-                    get_text_from_chunks(u[DATA]), use_cache=True)
-                for u in x
-            ]
+    def _preprocess(self, x):
+        # Extract all entities on unnormalized data
+        builtin_ents = [
+            self.builtin_entity_parser.parse(
+                get_text_from_chunks(u[DATA]),
+                self.builtin_entity_scope,
+                use_cache=True
+            ) for u in x
+        ]
+        custom_ents = [
+            self.custom_entity_parser.parse(
+                get_text_from_chunks(u[DATA]), use_cache=True)
+            for u in x
+        ]
         return x, builtin_ents, custom_ents
 
     def _extract_word_pairs(self, utterance):
@@ -805,27 +799,3 @@ def _get_word_cluster_features(query_tokens, clusters_name, resources):
         if cluster is not None:
             cluster_features.append(cluster)
     return cluster_features
-
-
-def _entities_from_utterance(utterance):
-    builtin_ents = []
-    custom_ents = []
-    current_ix = 0
-    for chunk in utterance[DATA]:
-        text = chunk[TEXT]
-        text_length = len(text)
-        if ENTITY in chunk:
-            ent = {
-                ENTITY_KIND: chunk[ENTITY],
-                RES_VALUE: text,
-                RES_MATCH_RANGE: {
-                    START: current_ix,
-                    END: current_ix + text_length
-                }
-            }
-            if is_builtin_entity(ent[ENTITY_KIND]):
-                builtin_ents.append(ent)
-            else:
-                custom_ents.append(ent)
-        current_ix += text_length
-    return builtin_ents, custom_ents

@@ -87,13 +87,12 @@ class LogRegIntentClassifier(IntentClassifier):
 
         none_class = max(classes)
         try:
-            self.featurizer = self.featurizer.fit(
+            x = self.featurizer.fit_transform(
                 dataset, utterances, classes, none_class)
         except _EmptyDatasetUtterancesError:
             self.featurizer = None
             return self
 
-        x = self.featurizer.transform(utterances)
         alpha = get_regularization_factor(dataset)
         self.classifier = SGDClassifier(random_state=random_state,
                                         alpha=alpha, **LOG_REG_ARGS)

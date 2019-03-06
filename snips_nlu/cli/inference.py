@@ -18,6 +18,7 @@ from snips_nlu.common.utils import unicode_string, json_string
 )
 def parse(training_path, query, verbose=False):
     """Load a trained NLU engine and play with its parsing API interactively"""
+    from builtins import str
     if verbose:
         set_nlu_logger(logging.DEBUG)
 
@@ -29,6 +30,8 @@ def parse(training_path, query, verbose=False):
 
     while True:
         query = input("Enter a query (type 'q' to quit): ").strip()
+        if not isinstance(query, str):
+            query = query.decode("utf-8")
         if query == "q":
             break
         print_parsing_result(engine, query)

@@ -508,7 +508,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
     def fit(self, dataset, intent):
         self.language = dataset[LANGUAGE]
-        self.builtin_entities = self._get_builtin_entity_scope(dataset, intent)
+        self.builtin_entities = sorted(
+            self._get_builtin_entity_scope(dataset, intent))
         self.args["entity_labels"] = self.builtin_entities
 
     def build_features(self):

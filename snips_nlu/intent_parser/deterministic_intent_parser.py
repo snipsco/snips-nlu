@@ -56,7 +56,7 @@ class DeterministicIntentParser(IntentParser):
         self._group_names_to_slot_names = None
         self.slot_names_to_group_names = None
         self.regexes_per_intent = None
-        self.builtin_scope = None
+        self.entity_scopes = None
         self.stop_words = None
 
     @property
@@ -82,11 +82,16 @@ class DeterministicIntentParser(IntentParser):
     def slot_names_to_entities(self, value):
         self._slot_names_to_entities = value
         if value is None:
-            self.builtin_scope = None
+            self.entity_scopes = None
         else:
-            self.builtin_scope = {
-                ent for slot_mapping in itervalues(value)
-                for ent in itervalues(slot_mapping) if is_builtin_entity(ent)}
+            self.entity_scopes = {
+                intent: {
+                    "builtin": {ent for ent in itervalues(slot_mapping)
+                                if is_builtin_entity(ent)},
+                    "custom": {ent for ent in itervalues(slot_mapping)
+                               if not is_builtin_entity(ent)}
+                }
+                for intent, slot_mapping in iteritems(value)}
 
     @property
     def group_names_to_slot_names(self):
@@ -208,30 +213,27 @@ class DeterministicIntentParser(IntentParser):
                 "top_n argument must be greater or equal to 1, but got: %s"
                 % top_n)
 
-        builtin_entities = self.builtin_entity_parser.parse(
-            text, scope=self.builtin_scope, use_cache=True)
-        custom_entities = self.custom_entity_parser.parse(
-            text, use_cache=True)
-        all_entities = builtin_entities + custom_entities
-        placeholder_fn = lambda entity_name: _get_entity_name_placeholder(
-            entity_name, self.language)
-        ranges_mapping, processed_text = replace_entities_with_placeholders(
-            text, all_entities, placeholder_fn=placeholder_fn)
-
-        # We try to match both the input text and the preprocessed text to
-        # cover inconsistencies between labeled data and builtin entity parsing
-        cleaned_text = self._preprocess_text(text)
-        cleaned_processed_text = self._preprocess_text(processed_text)
+        def placeholder_fn(entity_name):
+            return _get_entity_name_placeholder(entity_name, self.language)
 
         results = []
+        cleaned_text = self._preprocess_text(text)
 
-        for intent, regexes in iteritems(self.regexes_per_intent):
+        for intent, entity_scope in iteritems(self.entity_scopes):
             if intents is not None and intent not in intents:
                 continue
-            for regex in regexes:
+            builtin_entities = self.builtin_entity_parser.parse(
+                text, scope=entity_scope["builtin"], use_cache=True)
+            custom_entities = self.custom_entity_parser.parse(
+                text, scope=entity_scope["custom"], use_cache=True)
+            all_entities = builtin_entities + custom_entities
+            mapping, processed_text = replace_entities_with_placeholders(
+                text, all_entities, placeholder_fn=placeholder_fn)
+            cleaned_processed_text = self._preprocess_text(processed_text)
+            for regex in self.regexes_per_intent[intent]:
                 res = self._get_matching_result(text, cleaned_processed_text,
-                                                regex, intent, ranges_mapping)
-                if res is None:
+                                                regex, intent, mapping)
+                if res is None and cleaned_text != cleaned_processed_text:
                     res = self._get_matching_result(text, cleaned_text, regex,
                                                     intent)
                 if res is not None:
@@ -239,6 +241,7 @@ class DeterministicIntentParser(IntentParser):
                     break
             if len(results) == top_n:
                 return results
+
         return results
 
     @fitted_required

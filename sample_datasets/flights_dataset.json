@@ -43,6 +43,9 @@
               "text": "London"
             },
             {
+              "text": " "
+            },
+            {
               "entity": "snips/datetime",
               "slot_name": "flight_time",
               "text": "this weekend"
@@ -88,6 +91,9 @@
               "text": "istanbul"
             },
             {
+              "text": " "
+            },
+            {
               "entity": "snips/datetime",
               "slot_name": "flight_time",
               "text": "in five days"
@@ -111,6 +117,9 @@
               "entity": "locality",
               "slot_name": "destination",
               "text": "chicago"
+            },
+            {
+              "text": " "
             },
             {
               "entity": "snips/datetime",
@@ -144,6 +153,9 @@
               "entity": "snips/datetime",
               "slot_name": "flight_time",
               "text": "this weekend"
+            },
+            {
+              "text": " "
             },
             {
               "text": " ?"

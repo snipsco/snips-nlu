@@ -10,8 +10,7 @@ from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
-    check_persisted_path, check_random_state,
-    fitted_required, json_string)
+    check_persisted_path, fitted_required, json_string)
 from snips_nlu.constants import LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import _EmptyDatasetUtterancesError, LoadingError
@@ -66,12 +65,11 @@ class LogRegIntentClassifier(IntentClassifier):
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
         language = dataset[LANGUAGE]
-        random_state = check_random_state(self.config.random_seed)
 
         data_augmentation_config = self.config.data_augmentation_config
         utterances, classes, intent_list = build_training_data(
             dataset, language, data_augmentation_config, self.resources,
-            random_state)
+            self.random_state)
 
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
@@ -81,7 +79,8 @@ class LogRegIntentClassifier(IntentClassifier):
             config=self.config.featurizer_config,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser,
-            resources=self.resources
+            resources=self.resources,
+            random_state=self.random_state,
         )
         self.featurizer.language = language
 
@@ -94,8 +93,8 @@ class LogRegIntentClassifier(IntentClassifier):
             return self
 
         alpha = get_regularization_factor(dataset)
-        self.classifier = SGDClassifier(random_state=random_state,
-                                        alpha=alpha, **LOG_REG_ARGS)
+        self.classifier = SGDClassifier(
+            random_state=self.random_state, alpha=alpha, **LOG_REG_ARGS)
         self.classifier.fit(x, classes)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self

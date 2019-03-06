@@ -6,7 +6,8 @@ from future.utils import itervalues
 from mock import patch
 
 from snips_nlu.constants import (
-    RES_ENTITY, RES_INTENT, RES_INTENT_NAME, RES_SLOTS, RES_VALUE)
+    RES_ENTITY, RES_INTENT, RES_INTENT_NAME, RES_SLOTS, RES_VALUE,
+    RANDOM_STATE)
 from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_classifier import (
@@ -42,11 +43,13 @@ name: intent3
 utterances:
   - foz for [slot3:entity3](baz)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        classifier_config = LogRegIntentClassifierConfig()
+        slot_filler_config = CRFSlotFillerConfig()
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config)
+        shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = 42
+        parser = ProbabilisticIntentParser(parser_config, **shared)
         parser.fit(dataset)
         text = "foo bar baz"
 
@@ -81,11 +84,13 @@ name: intent3
 utterances:
   - foz for [slot3:entity3](baz)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        classifier_config = LogRegIntentClassifierConfig()
+        slot_filler_config = CRFSlotFillerConfig()
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config)
+        shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = 42
+        parser = ProbabilisticIntentParser(parser_config, **shared)
         parser.fit(dataset)
         text = "foo bar baz"
 
@@ -121,11 +126,13 @@ name: intent3
 utterances:
   - foz for [entity3](baz)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
-        slot_filler_config = CRFSlotFillerConfig(random_seed=42)
+        classifier_config = LogRegIntentClassifierConfig()
+        slot_filler_config = CRFSlotFillerConfig()
         parser_config = ProbabilisticIntentParserConfig(
             classifier_config, slot_filler_config)
-        parser = ProbabilisticIntentParser(parser_config)
+        shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = 42
+        parser = ProbabilisticIntentParser(parser_config, **shared)
         parser.fit(dataset)
         text = "foo bar baz"
 
@@ -162,9 +169,12 @@ name: intent3
 utterances:
   - yili yulu yele""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig(random_seed=42)
+        classifier_config = LogRegIntentClassifierConfig()
         parser_config = ProbabilisticIntentParserConfig(classifier_config)
-        parser = ProbabilisticIntentParser(parser_config).fit(dataset)
+        shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = 42
+        parser = ProbabilisticIntentParser(
+            parser_config, **shared).fit(dataset)
         text = "yala yili yulu"
 
         # When
@@ -678,14 +688,13 @@ utterances:
 - brew [number_of_cups] cups of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
-        seed1 = 666
-        seed2 = 42
+        seed = 666
         config = ProbabilisticIntentParserConfig(
-            intent_classifier_config=LogRegIntentClassifierConfig(
-                random_seed=seed1),
-            slot_filler_config=CRFSlotFillerConfig(random_seed=seed2)
+            intent_classifier_config=LogRegIntentClassifierConfig(),
+            slot_filler_config=CRFSlotFillerConfig()
         )
         shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = seed
         parser = ProbabilisticIntentParser(config, **shared)
         parser.persist(self.tmp_file_path)
 

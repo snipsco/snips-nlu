@@ -50,8 +50,9 @@ utterances:
 - does it rain
 - will it rain tomorrow""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        config = LogRegIntentClassifierConfig()
+        classifier = LogRegIntentClassifier(
+            config, random_state=42).fit(dataset)
         text = "hey how are you doing ?"
 
         # When
@@ -108,8 +109,9 @@ utterances:
 - brew two cups of coffee
 - can you prepare one cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        config = LogRegIntentClassifierConfig()
+        classifier = LogRegIntentClassifier(
+            config, random_state=42).fit(dataset)
 
         # When
         text1 = "Make me two cups of tea"
@@ -169,8 +171,9 @@ name: intent3
 utterances:
   - yili yulu yele""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        config = LogRegIntentClassifierConfig()
+        classifier = LogRegIntentClassifier(
+            config, random_state=42).fit(dataset)
         text = "yala yili yulu"
 
         # When

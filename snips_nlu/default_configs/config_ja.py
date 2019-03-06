@@ -190,7 +190,7 @@ CONFIG = {
                     "capitalization_ratio": 0.2,
                     "add_builtin_entities_examples": True
                 },
-                "random_seed": None
+
             },
             "intent_classifier_config": {
                 "unit_name": "log_reg_intent_classifier",
@@ -218,8 +218,7 @@ CONFIG = {
                         "unknown_words_replacement_string": None,
                         "keep_order": True
                     }
-                },
-                "random_seed": None
+                }
             }
         }
     ]

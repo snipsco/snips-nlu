@@ -7,7 +7,7 @@ from pathlib import Path
 
 from future.utils import iteritems
 
-from snips_nlu_utils import normalize
+from snips_nlu_utils import normalize, hash_str
 
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
 from snips_nlu.common.utils import (
@@ -112,7 +112,8 @@ class LookupIntentParser(IntentParser):
         for (key, val) in self.generate_io_mapping(
                 dataset[INTENTS], entity_placeholders
         ):
-            # handle key collisions -*- remove ambiguous entries -*-
+            key = hash_str(key)
+            # handle key collisions -*- flag ambiguous entries -*-
             if key in self.map and self.map[key] != val:
                 ambiguous_keys.add(key)
             else:
@@ -170,10 +171,10 @@ class LookupIntentParser(IntentParser):
         cleaned_processed_text = self._preprocess_text(processed_text)
         cleaned_text = self._preprocess_text(text)
 
-        val = self.map.get(cleaned_processed_text)
+        val = self.map.get(hash_str(cleaned_processed_text))
 
         if val is None:
-            val = self.map.get(cleaned_text)
+            val = self.map.get(hash_str(cleaned_text))
             all_entities = []
 
         # conform to api
@@ -409,7 +410,7 @@ class LookupIntentParser(IntentParser):
         config = cls.config_type.from_dict(unit_dict["config"])
         parser = cls(config=config, **shared)
         parser.language = unit_dict["language_code"]
-        parser.map = unit_dict["map"]
+        parser.map = _convert_dict_keys_to_int(unit_dict["map"])
         parser.slots_names = unit_dict["slots_names"]
         parser.intents_names = unit_dict["intents_names"]
 
@@ -424,3 +425,9 @@ def _get_entity_placeholders(dataset, language):
 
 def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(tokenize_light(entity_label, language)).upper()
+
+
+def _convert_dict_keys_to_int(dct):
+    if isinstance(dct, dict):
+        return {int(k): v for k, v in iteritems(dct)}
+    return dct

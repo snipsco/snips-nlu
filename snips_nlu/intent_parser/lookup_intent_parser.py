@@ -429,5 +429,5 @@ def _get_entity_name_placeholder(entity_label, language):
 
 def _convert_dict_keys_to_int(dct):
     if isinstance(dct, dict):
-        return {int(k): v for (k, v) in dct.items()}
+        return {int(k): v for k, v in iteritems(dct)}
     return dct

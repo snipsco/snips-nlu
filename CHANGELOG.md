@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.19.4] - 2019-03-06
+### Added
+- Support for Portuguese: "pt_pt" and "pt_br"
+
+### Changed
+- Enhancement: leverage entity scopes of each intent in deterministic intent parser
+
 ## [0.19.3] - 2019-03-05
 ### Fixed
 - Issue with intent classification reducing classification accuracy
@@ -243,6 +250,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4
 [0.19.3]: https://github.com/snipsco/snips-nlu/compare/0.19.2...0.19.3
 [0.19.2]: https://github.com/snipsco/snips-nlu/compare/0.19.1...0.19.2
 [0.19.1]: https://github.com/snipsco/snips-nlu/compare/0.19.0...0.19.1

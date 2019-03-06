@@ -254,6 +254,7 @@ def _load_stop_words(stop_words_path):
 
 
 def _persist_stop_words(stop_words, path):
+    stop_words = sorted(stop_words)
     with path.open(encoding="utf8", mode="w") as f:
         for stop_word in stop_words:
             f.write("%s\n" % stop_word)
@@ -305,7 +306,7 @@ def _load_word_clusters(path):
 
 def _persist_word_clusters(word_clusters, path):
     with path.open(encoding="utf8", mode="w") as f:
-        for word, cluster in iteritems(word_clusters):
+        for word, cluster in sorted(iteritems(word_clusters)):
             f.write("%s\t%s\n" % (word, cluster))
 
 
@@ -327,6 +328,8 @@ def _load_gazetteer(path):
 
 
 def _persist_gazetteer(gazetteer, path):
+    # Sort gazetteer to avoid serialization diffs
+    gazetteer = sorted(gazetteer)
     with path.open(encoding="utf8", mode="w") as f:
         for word in gazetteer:
             f.write("%s\n" % word)
@@ -355,7 +358,7 @@ def _persist_stems(stems, path):
     for value, stem in iteritems(stems):
         reversed_stems[stem].append(value)
     with path.open(encoding="utf8", mode="w") as f:
-        for stem, values in iteritems(reversed_stems):
-            elements = [stem] + values
+        for stem, values in sorted(iteritems(reversed_stems)):
+            elements = [stem] + sorted(values)
             line = ",".join(elements)
             f.write("%s\n" % line)

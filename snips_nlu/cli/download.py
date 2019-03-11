@@ -28,7 +28,11 @@ def download(resource_name, direct=False,
              *pip_args):  # pylint:disable=keyword-arg-before-vararg
     """Download compatible language resources"""
     if direct:
-        url_tail = '{r}/{r}.tar.gz#egg={r}'.format(r=resource_name)
+        components = resource_name.split("-")
+        name = "".join(components[:-1])
+        version = components[-1]
+        url_tail = '{n}-{v}/{n}-{v}.tar.gz#egg={n}=={v}'.format(
+            n=name, v=version)
         download_url = __about__.__download_url__ + '/' + url_tail
         dl = install_remote_package(download_url, pip_args)
         if dl != 0:

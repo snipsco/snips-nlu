@@ -32,7 +32,8 @@ required = [
     "pathlib==1.0.1; python_version < '3.4'",
     "pyaml>=17,<18",
     "deprecation>=2,<3",
-    "funcsigs>=1.0,<2.0; python_version < '3.4'"
+    "funcsigs>=1.0,<2.0; python_version < '3.4'",
+    "joblib>=0.13,<0.14"
 ]
 
 extras_require = {

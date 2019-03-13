@@ -17,9 +17,12 @@ class ProbabilisticIntentParserConfig(FromDict, ProcessingUnitConfig):
         slot_filler_config (:class:`.ProcessingUnitConfig`): The configuration
             that will be used for the underlying slot fillers, by default it
             uses a :class:`.CRFSlotFillerConfig`
+        parallel_jobs (int): The maximum number of concurrently running jobs.
+            If None is passed (default), then multi-processing is disabled.
     """
 
-    def __init__(self, intent_classifier_config=None, slot_filler_config=None):
+    def __init__(self, intent_classifier_config=None, slot_filler_config=None,
+                 parallel_jobs=None):
         from snips_nlu.intent_classifier import IntentClassifier
         from snips_nlu.slot_filler import SlotFiller
 
@@ -32,6 +35,7 @@ class ProbabilisticIntentParserConfig(FromDict, ProcessingUnitConfig):
         self.intent_classifier_config = IntentClassifier.get_config(
             intent_classifier_config)
         self.slot_filler_config = SlotFiller.get_config(slot_filler_config)
+        self.parallel_jobs = parallel_jobs
 
     @property
     def unit_name(self):
@@ -48,7 +52,9 @@ class ProbabilisticIntentParserConfig(FromDict, ProcessingUnitConfig):
         return {
             "unit_name": self.unit_name,
             "slot_filler_config": self.slot_filler_config.to_dict(),
-            "intent_classifier_config": self.intent_classifier_config.to_dict()
+            "intent_classifier_config":
+                self.intent_classifier_config.to_dict(),
+            "parallel_jobs": self.parallel_jobs
         }
 
 

@@ -169,6 +169,7 @@ class TestConfig(SnipsTest):
             "intent_classifier_config":
                 LogRegIntentClassifierConfig().to_dict(),
             "slot_filler_config": CRFSlotFillerConfig().to_dict(),
+            "parallel_jobs": 2
         }
 
         # When

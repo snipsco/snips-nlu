@@ -7,7 +7,9 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+import joblib
 from future.utils import iteritems, itervalues
+from joblib import delayed
 
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
 from snips_nlu.common.utils import (
@@ -76,18 +78,47 @@ class ProbabilisticIntentParser(IntentParser):
 
         if self.slot_fillers is None:
             self.slot_fillers = dict()
+
         slot_fillers_start = datetime.now()
+
+        jobs = []
+        slot_filler_config = self.config.slot_filler_config
         for intent_name in intents:
-            # We need to copy the slot filler config as it may be mutated
             if self.slot_fillers.get(intent_name) is None:
-                slot_filler_config = deepcopy(self.config.slot_filler_config)
+                # We need to copy the slot filler config as it may be mutated
                 self.slot_fillers[intent_name] = SlotFiller.from_config(
-                    slot_filler_config,
+                    deepcopy(slot_filler_config),
                     builtin_entity_parser=self.builtin_entity_parser,
                     custom_entity_parser=self.custom_entity_parser,
                     resources=self.resources)
             if force_retrain or not self.slot_fillers[intent_name].fitted:
-                self.slot_fillers[intent_name].fit(dataset, intent_name)
+                if self.config.parallel_jobs:
+                    reduced_dataset = deepcopy(dataset)
+                    reduced_dataset[INTENTS] = {
+                        intent_name: reduced_dataset[INTENTS][intent_name]
+                    }
+                    jobs.append((intent_name, reduced_dataset))
+                else:
+                    self.slot_fillers[intent_name].fit(dataset, intent_name)
+
+        if self.config.parallel_jobs:
+            def train_slot_filler(intent_, dataset_):
+                slot_filler = SlotFiller.from_config(slot_filler_config)
+                slot_filler.fit(dataset_, intent_)
+                return intent_, slot_filler.to_byte_array()
+
+            job_results = joblib.Parallel(self.config.parallel_jobs)(
+                delayed(train_slot_filler)(intent_name, dataset) for
+                intent_name, dataset in jobs)
+
+            for intent, slot_filler_bytes in job_results:
+                self.slot_fillers[intent] = SlotFiller.load_from_byte_array(
+                    slot_filler_bytes,
+                    slot_filler_config.unit_name,
+                    builtin_entity_parser=self.builtin_entity_parser,
+                    custom_entity_parser=self.custom_entity_parser,
+                    resources=self.resources)
+
         logger.debug("Fitted slot fillers in %s",
                      elapsed_since(slot_fillers_start))
         return self

@@ -100,6 +100,19 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         return unit.from_path(unit_path, **shared)
 
     @classmethod
+    def load_from_byte_array(cls, unit_bytes, unit_name, **shared):
+        """Load a :class:`ProcessingUnit` from a persisted processing unit
+        directory
+
+        Args:
+            unit_bytes (bytearray): A bytearray representing a zipped
+                processing unit.
+            unit_name (str): Name of the processing unit to load.
+        """
+        unit = cls.by_name(unit_name)
+        return unit.from_byte_array(unit_bytes, **shared)
+
+    @classmethod
     def get_config(cls, unit_config):
         """Returns the :class:`.ProcessingUnitConfig` corresponding to
         *unit_config*"""

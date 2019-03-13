@@ -437,7 +437,8 @@ utterances:
                 "unit_name": "probabilistic_intent_parser",
                 "slot_filler_config": CRFSlotFillerConfig().to_dict(),
                 "intent_classifier_config":
-                    LogRegIntentClassifierConfig().to_dict()
+                    LogRegIntentClassifierConfig().to_dict(),
+                "parallel_jobs": None
             },
             "slot_fillers": []
         }
@@ -500,7 +501,7 @@ utterances:
 
         parser_config = ProbabilisticIntentParserConfig(
             intent_classifier_config="my_intent_classifier",
-            slot_filler_config="my_slot_filler"
+            slot_filler_config="my_slot_filler",
         )
         parser = ProbabilisticIntentParser(parser_config).fit(dataset)
 
@@ -511,7 +512,8 @@ utterances:
         expected_parser_config = {
             "unit_name": "probabilistic_intent_parser",
             "slot_filler_config": {"unit_name": "my_slot_filler"},
-            "intent_classifier_config": {"unit_name": "my_intent_classifier"}
+            "intent_classifier_config": {"unit_name": "my_intent_classifier"},
+            "parallel_jobs": None
         }
         expected_parser_dict = {
             "config": expected_parser_config,
@@ -568,7 +570,8 @@ utterances:
             },
             "slot_filler_config": {
                 "unit_name": "my_slot_filler"
-            }
+            },
+            "parallel_jobs": 3
         }
         parser_dict = {
             "unit_name": "probabilistic_intent_parser",

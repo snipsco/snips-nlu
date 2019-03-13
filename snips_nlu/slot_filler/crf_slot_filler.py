@@ -12,6 +12,7 @@ from pathlib import Path
 
 from future.utils import iteritems
 from sklearn_crfsuite import CRF
+from snips_nlu_utils import hash_str
 
 from snips_nlu.common.dataset_utils import get_slot_name_mapping
 from snips_nlu.common.dict_utils import UnupdatableDict
@@ -21,7 +22,7 @@ from snips_nlu.common.utils import (
     check_persisted_path,
     check_random_state, fitted_required, json_string)
 from snips_nlu.constants import (
-    DATA, LANGUAGE)
+    DATA, LANGUAGE, INTENTS, UTTERANCES, ENTITY, ENTITIES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError
@@ -61,6 +62,7 @@ class CRFSlotFiller(SlotFiller):
         self.language = None
         self.intent = None
         self.slot_name_mapping = None
+        self.training_data_footprint = None
 
     @property
     def features(self):
@@ -110,6 +112,11 @@ class CRFSlotFiller(SlotFiller):
             :class:`CRFSlotFiller`: The same instance, trained
         """
         logger.debug("Fitting %s slot filler...", intent)
+        footprint = get_training_data_footprint(dataset, intent)
+        if footprint == self.training_data_footprint:
+            logger.debug("Same data footprint for intent %s, skipping", intent)
+            return self
+        self.training_data_footprint = footprint
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
@@ -284,6 +291,7 @@ class CRFSlotFiller(SlotFiller):
             "intent": self.intent,
             "crf_model_file": crf_model_file,
             "slot_name_mapping": self.slot_name_mapping,
+            "training_data_footprint": self.training_data_footprint,
             "config": self.config.to_dict(),
         }
         model_json = json_string(model)
@@ -313,6 +321,7 @@ class CRFSlotFiller(SlotFiller):
         slot_filler.language = model["language_code"]
         slot_filler.intent = model["intent"]
         slot_filler.slot_name_mapping = model["slot_name_mapping"]
+        slot_filler.training_data_footprint = model["training_data_footprint"]
         crf_model_file = model["crf_model_file"]
         if crf_model_file is not None:
             crf = _crf_model_from_path(path / crf_model_file)
@@ -375,3 +384,14 @@ def _ensure_safe(X, Y):
         safe_X.append([""])  # empty feature
         safe_Y.append([OUTSIDE])  # outside label
     return safe_X, safe_Y
+
+
+def get_training_data_footprint(dataset, intent):
+    dataset = validate_and_format_dataset(dataset)
+    intent_data = dataset[INTENTS][intent]
+    intent_entities = {chunk[ENTITY] for u in intent_data[UTTERANCES]
+                       for chunk in u[DATA] if ENTITY in chunk}
+    entity_data = [dataset[ENTITIES][e] for e in sorted(intent_entities)]
+    stringified_data = json_string([intent_data, entity_data], indent=None,
+                                   sort_keys=True)
+    return hash_str(stringified_data)

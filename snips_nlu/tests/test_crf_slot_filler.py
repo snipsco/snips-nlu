@@ -409,6 +409,7 @@ utterances:
             "config": config.to_dict(),
             "intent": None,
             "slot_name_mapping": None,
+            "training_data_footprint": None
         }
         slot_filler_path = self.tmp_file_path / "slot_filler.json"
         self.assertJsonContent(slot_filler_path, expected_slot_filler_dict)
@@ -435,7 +436,8 @@ utterances:
             "language_code": None,
             "intent": None,
             "slot_name_mapping": None,
-            "config": slot_filler_config.to_dict()
+            "config": slot_filler_config.to_dict(),
+            "training_data_footprint": None
         }
         metadata = {"unit_name": "crf_slot_filler"}
         self.tmp_file_path.mkdir()
@@ -537,7 +539,8 @@ utterances:
             "slot_name_mapping": {
                 "slot1": "entity1",
                 "slot2": "entity2",
-            }
+            },
+            "training_data_footprint": -1523454264
         }
         slot_filler_path = self.tmp_file_path / "slot_filler.json"
         self.assertJsonContent(slot_filler_path, expected_slot_filler_dict)
@@ -569,6 +572,7 @@ utterances:
                     "dummy_slot_name": "dummy_entity_1",
                 }
             },
+            "training_data_footprint": None,
             "config": slot_filler_config.to_dict()
         }
         metadata = {"unit_name": "crf_slot_filler"}

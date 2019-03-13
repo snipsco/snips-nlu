@@ -213,4 +213,4 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
 
 def _validate_and_format_builtin_entity(entity, queries_entities):
     validate_type(entity, dict, object_label="builtin entity")
-    return {UTTERANCES: set(queries_entities)}
+    return {UTTERANCES: list(set(queries_entities))}

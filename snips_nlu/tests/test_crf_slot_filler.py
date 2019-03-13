@@ -235,6 +235,44 @@ utterances:
         with self.assertRaises(NotTrained):
             slot_filler.log_weights()
 
+    def test_refit(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [entity1](my first entity)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        updated_dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [entity1](my first entity)
+- this is [entity1](my first entity) again""")
+        updated_dataset = Dataset.from_yaml_files(
+            "en", [updated_dataset_stream]).json
+
+        config = CRFSlotFillerConfig(feature_factory_configs=[
+            {
+                "args": {
+                    "common_words_gazetteer_name": "top_10000_words_stemmed",
+                    "use_stemming": True,
+                    "n": 1
+                },
+                "factory_name": "ngram",
+                "offsets": [-2, -1, 0, 1, 2]
+            },
+        ])
+
+        # When
+        slot_filler = CRFSlotFiller(config).fit(dataset, "my_intent")
+
+        # Then
+        slot_filler.fit(updated_dataset, "my_intent")
+
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
@@ -755,7 +793,7 @@ utterances:
         slot_filler.fit(dataset, "dummy_intent")
         slot_filler.get_slots("ya")
 
-    def test___ensure_safe(self):
+    def test_ensure_safe(self):
         unsafe_examples = [
             ([[]], [[]]),
             ([[], []], [[], []]),

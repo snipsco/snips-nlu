@@ -147,8 +147,7 @@ utterances:
             extraction_result(intent_classification_result(
                 intent_name="intent2", probability=0.5), [slot])
         ]
-        expected_results = sorted(expected_results,
-                                  key=lambda r: r[RES_INTENT][RES_INTENT_NAME])
+        results = sorted(results, key=lambda r: r[RES_INTENT][RES_INTENT_NAME])
         self.assertEqual(expected_results, results)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"

@@ -135,15 +135,17 @@ utterances:
         results = parser.parse(text, top_n=3)
 
         # Then
+        slot = {
+            "entity": "snips/datetime",
+            "range": {"end": 16, "start": 8},
+            "slotName": "time",
+            "value": "tomorrow"
+        }
         expected_results = [
             extraction_result(intent_classification_result(
                 intent_name="intent1", probability=0.5), []),
             extraction_result(intent_classification_result(
-                intent_name="intent2", probability=0.5),
-                [{"entity": "snips/datetime",
-                  "range": {"end": 16, "start": 8},
-                  "slotName": "time",
-                  "value": "tomorrow"}])
+                intent_name="intent2", probability=0.5), [slot])
         ]
         expected_results = sorted(expected_results,
                                   key=lambda r: r[RES_INTENT][RES_INTENT_NAME])

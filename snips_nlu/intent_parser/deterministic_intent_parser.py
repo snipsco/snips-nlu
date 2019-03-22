@@ -19,7 +19,8 @@ from snips_nlu.common.utils import (
 from snips_nlu.constants import (
     DATA, END, ENTITIES, ENTITY,
     INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
-    RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES)
+    RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES,
+    RES_PROBA)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
@@ -198,6 +199,9 @@ class DeterministicIntentParser(IntentParser):
             if top_intents:
                 intent = top_intents[0][RES_INTENT]
                 slots = top_intents[0][RES_SLOTS]
+                if intent[RES_PROBA] < 1.0:
+                    # return None in case of ambiguity
+                    return empty_result(text, probability=1.0)
                 return parsing_result(text, intent, slots)
             return empty_result(text, probability=1.0)
         return self._parse_top_intents(text, top_n=top_n, intents=intents)
@@ -239,8 +243,15 @@ class DeterministicIntentParser(IntentParser):
                 if res is not None:
                     results.append(res)
                     break
-            if len(results) == top_n:
-                return results
+
+        confidence_score = 1.
+        if results:
+            confidence_score = 1. / float(len(results))
+
+        results = results[:top_n]
+
+        for res in results:
+            res[RES_INTENT][RES_PROBA] = confidence_score
 
         return results
 

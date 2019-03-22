@@ -88,4 +88,5 @@ def _download_and_link(resource_alias, resource_fullname, compatibility,
             "Creating a shortcut link for '%s' didn't work." % resource_alias,
             title="The language resources were successfully downloaded, "
                   "however linking failed.",
-            level=PrettyPrintLevel.WARNING)
+            level=PrettyPrintLevel.ERROR)
+        raise

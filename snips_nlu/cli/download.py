@@ -83,10 +83,10 @@ def _download_and_link(resource_alias, resource_fullname, compatibility,
             pretty_print("%s --> %s" % (str(resources_dir), str(link_path)),
                          title="Linking successful",
                          level=PrettyPrintLevel.SUCCESS)
-    except:  # pylint:disable=bare-except
+    except OSError as e:  # pylint:disable=bare-except
         pretty_print(
-            "Creating a shortcut link for '%s' didn't work." % resource_alias,
+            "Creating a shortcut link for '%s' didn't work: %s"
+            % (resource_alias, repr(e)),
             title="The language resources were successfully downloaded, "
                   "however linking failed.",
             level=PrettyPrintLevel.ERROR)
-        raise

@@ -120,24 +120,34 @@ utterances:
 type: intent
 name: intent1
 utterances:
-  - hello world
+  - meeting tomorrow
   
 ---
 type: intent
 name: intent2
 utterances:
-  - foo bar""")
+  - meeting [time:snips/datetime](today)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
-        text = "hello world"
+        text = "meeting tomorrow"
 
         # When
         results = parser.parse(text, top_n=3)
 
         # Then
-        expected_intent = intent_classification_result(
-            intent_name="intent1", probability=1.0)
-        expected_results = [extraction_result(expected_intent, [])]
+        slot = {
+            "entity": "snips/datetime",
+            "range": {"end": 16, "start": 8},
+            "slotName": "time",
+            "value": "tomorrow"
+        }
+        expected_results = [
+            extraction_result(intent_classification_result(
+                intent_name="intent1", probability=0.5), []),
+            extraction_result(intent_classification_result(
+                intent_name="intent2", probability=0.5), [slot])
+        ]
+        results = sorted(results, key=lambda r: r[RES_INTENT][RES_INTENT_NAME])
         self.assertEqual(expected_results, results)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
@@ -218,6 +228,30 @@ utterances:
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
         text = "Hello world"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_ignore_subtly_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - meeting tomorrow
+
+---
+type: intent
+name: intent_2
+utterances:
+  - meeting [time:snips/datetime](today)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "meeting tomorrow"
 
         # When
         res = parser.parse(text)
@@ -565,7 +599,7 @@ utterances:
 - this is [slot2:entity2](second_entity)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
-        with naughty_strings_path.open(encoding='utf8') as f:
+        with naughty_strings_path.open(encoding="utf8") as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
@@ -579,7 +613,7 @@ utterances:
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
-        with naughty_strings_path.open(encoding='utf8') as f:
+        with naughty_strings_path.open(encoding="utf8") as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
@@ -635,13 +669,13 @@ utterances:
             parsing = parser.parse("string0")
 
             expected_slot = {
-                'entity': 'non_ascìi_entïty',
-                'range': {
+                "entity": "non_ascìi_entïty",
+                "range": {
                     "start": 0,
                     "end": 7
                 },
-                'slotName': u'non_ascìi_slöt',
-                'value': u'string0'
+                "slotName": u"non_ascìi_slöt",
+                "value": u"string0"
             }
             intent_name = parsing[RES_INTENT][RES_INTENT_NAME]
             self.assertEqual("naughty_intent", intent_name)

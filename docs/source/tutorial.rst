@@ -174,6 +174,12 @@ the dataset we generated earlier:
 
     engine.fit(dataset)
 
+Note that the training of the engine is not deterministic by default. This
+means that if you train your NLU twice on the same data you'll end up
+the output of the NLU can be different.
+
+To
+
 
 Parsing
 -------

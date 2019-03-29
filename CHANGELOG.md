@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- Advanced inference logging in the `CRFSlotFiller` [#776](https://github.com/snipsco/snips-nlu/pull/776)
+- Improved failed linking error message after download of resources [#774](https://github.com/snipsco/snips-nlu/pull/774)
+- Improve handling of ambiguous utterances in DeterministicIntentParser [#773](https://github.com/snipsco/snips-nlu/pull/773)
+
+### Fixed
+- Fixed a crash due to missing resources when refitting the `CRFSlotFiller` [#771](https://github.com/snipsco/snips-nlu/pull/771)
+- Fixed issue with egg fragments in download cli [#769](https://github.com/snipsco/snips-nlu/pull/769)
+
 ## [0.19.4] - 2019-03-06
 ### Added
 - Support for Portuguese: "pt_pt" and "pt_br"
@@ -250,6 +260,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.19.4...HEAD
 [0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4
 [0.19.3]: https://github.com/snipsco/snips-nlu/compare/0.19.2...0.19.3
 [0.19.2]: https://github.com/snipsco/snips-nlu/compare/0.19.1...0.19.2

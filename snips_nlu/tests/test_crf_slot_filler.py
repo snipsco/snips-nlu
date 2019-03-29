@@ -5,7 +5,7 @@ import io
 from builtins import range
 from pathlib import Path
 
-from mock import MagicMock
+from mock import MagicMock, PropertyMock
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
@@ -14,9 +14,10 @@ from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.exceptions import NotTrained
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
-from snips_nlu.preprocessing import tokenize
+from snips_nlu.preprocessing import tokenize, Token
 from snips_nlu.result import unresolved_slot
-from snips_nlu.slot_filler.crf_slot_filler import CRFSlotFiller, _ensure_safe
+from snips_nlu.slot_filler.crf_slot_filler import (
+    CRFSlotFiller, _ensure_safe, _encode_tag)
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
@@ -804,3 +805,185 @@ utterances:
             x, y = _ensure_safe(x, y)
             model = CRF().fit(x, y)
             model.predict_single([""])
+
+    def test_log_inference_weights(self):
+        # Given
+        self.maxDiff = None  # pylint: disable=invalid-name
+        text = "this is a slot in a text"
+        tokens = [
+            Token("this", 0, 0),
+            Token("is", 0, 0),
+            Token("a", 0, 0),
+            Token("slot", 0, 0),
+            Token("in", 0, 0),
+            Token("a", 0, 0),
+            Token("text", 0, 0),
+        ]
+        features = [
+            {
+                "ngram_1": "this",
+                "is_first": "1",
+            },
+            {
+                "ngram_1": "is",
+                "common": "1",
+            },
+            {
+                "ngram_1": "a"
+            },
+            {
+                "ngram_1": "slot",
+            },
+            {
+                "ngram_1": "in",
+            },
+            {
+                "ngram_1": "a",
+            },
+            {
+                "ngram_1": "text",
+            },
+        ]
+        tags = ["O", "O", "B-slot", "I-slot", "O", "O", "O"]
+        tags = [_encode_tag(t) for t in tags]
+
+        transitions_weights = {
+            (_encode_tag("O"), _encode_tag("O")): 2,
+            (_encode_tag("O"), _encode_tag("B-slot")): 1,
+            (_encode_tag("B-slot"), _encode_tag("I-slot")): 2,
+            (_encode_tag("B-slot"), _encode_tag("O")): 1.5,
+        }
+
+        states_weights = {
+            ("ngram_1:this", _encode_tag("O")): 5,
+            ("ngram_1:this", _encode_tag("B-slot")): -2,
+            ("ngram_1:slot", _encode_tag("B-slot")): 5,
+            ("ngram_1:slot", _encode_tag("I-slot")): -3,
+            ("ngram_1:slot", _encode_tag("O")): -1
+        }
+
+        # pylint: disable=super-init-not-called
+        class MockedSlotFiller(CRFSlotFiller):
+            def __init__(self, transition_features, state_features):
+                mocked_model = MagicMock()
+                type(mocked_model).transition_features_ = PropertyMock(
+                    return_value=transition_features)
+                type(mocked_model).state_features_ = PropertyMock(
+                    return_value=state_features)
+                self.crf_model = mocked_model
+                self.slot_name_mapping = 1
+
+            def __del__(self):
+                pass
+
+        slot_filler = MockedSlotFiller(transitions_weights, states_weights)
+
+        # When
+        log = slot_filler.log_inference_weights(
+            text=text, tokens=tokens, features=features, tags=tags)
+
+        # Then
+        expected_log = """Feature weights for "this is a slot in a text":
+
+# Token "this" (tagged as O):
+
+Transition weights to next tag:
+- (O, O) -> 2
+- (B-slot, O) -> 1.5
+
+Feature weights:
+- (ngram_1:this, O) -> 5
+- (ngram_1:this, B-slot) -> -2
+
+Features not seen at train time:
+- is_first:1
+
+
+# Token "is" (tagged as O):
+
+Transition weights from previous tag:
+- (O, O) -> 2
+- (O, B-slot) -> 1
+
+Transition weights to next tag:
+- (O, B-slot) -> 1
+
+No feature weights !
+
+Features not seen at train time:
+- common:1
+- ngram_1:is
+
+
+# Token "a" (tagged as B-slot):
+
+Transition weights from previous tag:
+- (O, O) -> 2
+- (O, B-slot) -> 1
+
+Transition weights to next tag:
+- (B-slot, I-slot) -> 2
+
+No feature weights !
+
+Features not seen at train time:
+- ngram_1:a
+
+
+# Token "slot" (tagged as I-slot):
+
+Transition weights from previous tag:
+- (B-slot, I-slot) -> 2
+- (B-slot, O) -> 1.5
+
+Transition weights to next tag:
+- (O, O) -> 2
+- (B-slot, O) -> 1.5
+
+Feature weights:
+- (ngram_1:slot, B-slot) -> 5
+- (ngram_1:slot, I-slot) -> -3
+- (ngram_1:slot, O) -> -1
+
+
+# Token "in" (tagged as O):
+
+No transition from previous tag seen at train time !
+
+Transition weights to next tag:
+- (O, O) -> 2
+- (B-slot, O) -> 1.5
+
+No feature weights !
+
+Features not seen at train time:
+- ngram_1:in
+
+
+# Token "a" (tagged as O):
+
+Transition weights from previous tag:
+- (O, O) -> 2
+- (O, B-slot) -> 1
+
+Transition weights to next tag:
+- (O, O) -> 2
+- (B-slot, O) -> 1.5
+
+No feature weights !
+
+Features not seen at train time:
+- ngram_1:a
+
+
+# Token "text" (tagged as O):
+
+Transition weights from previous tag:
+- (O, O) -> 2
+- (O, B-slot) -> 1
+
+No feature weights !
+
+Features not seen at train time:
+- ngram_1:text"""
+        self.assertEqual(expected_log, log)

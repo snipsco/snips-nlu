@@ -178,7 +178,8 @@ class SnipsNLUEngine(ProcessingUnit):
         intents_results = self.get_intents(text)
         if intents is not None:
             intents_results = [res for res in intents_results
-                               if res[RES_INTENT_NAME] in intents]
+                               if res[RES_INTENT_NAME] is None
+                               or res[RES_INTENT_NAME] in intents]
         intents_results = intents_results[:top_n]
         results = []
         for intent_res in intents_results:

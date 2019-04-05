@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Fixed a crash due to missing resources when refitting the `CRFSlotFiller` [#771](https://github.com/snipsco/snips-nlu/pull/771)
 - Fixed issue with egg fragments in download cli [#769](https://github.com/snipsco/snips-nlu/pull/769)
+- Fixed an issue causing the `None` intent to be ignored when using the `parse` API in conjunction with `intents` and `top_n` [#781](https://github.com/snipsco/snips-nlu/pull/781)
 
 ## [0.19.4] - 2019-03-06
 ### Added

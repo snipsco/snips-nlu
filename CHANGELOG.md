@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 - Improved failed linking error message after download of resources [#774](https://github.com/snipsco/snips-nlu/pull/774)
 - Improve handling of ambiguous utterances in DeterministicIntentParser [#773](https://github.com/snipsco/snips-nlu/pull/773)
 
+### Changed
+- Remove normalization of confidence scores in intent classification [#782](https://github.com/snipsco/snips-nlu/pull/782)
+
 ### Fixed
 - Fixed a crash due to missing resources when refitting the `CRFSlotFiller` [#771](https://github.com/snipsco/snips-nlu/pull/771)
 - Fixed issue with egg fragments in download cli [#769](https://github.com/snipsco/snips-nlu/pull/769)

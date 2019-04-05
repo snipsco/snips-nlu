@@ -105,6 +105,8 @@ utterances:
 
         # When
         results = nlu_engine.parse(text, top_n=3)
+        results_with_filter = nlu_engine.parse(
+            text, intents=["intent1", "intent3"], top_n=3)
 
         # Then
         expected_results = [
@@ -123,7 +125,23 @@ utterances:
                 []
             ),
         ]
+        expected_results_with_filter = [
+            extraction_result(
+                intent_classification_result("intent1", 0.5),
+                [custom_slot(
+                    unresolved_slot((0, 3), "foo", "entity1", "slot1"))]
+            ),
+            extraction_result(
+                intent_classification_result(None, 0.15),
+                []
+            ),
+            extraction_result(
+                intent_classification_result("intent3", 0.05),
+                []
+            ),
+        ]
         self.assertListEqual(expected_results, results)
+        self.assertListEqual(expected_results_with_filter, results_with_filter)
 
     def test_should_get_intents(self):
         # Given

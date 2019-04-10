@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.19.5]
 ### Added
 - Advanced inference logging in the `CRFSlotFiller` [#776](https://github.com/snipsco/snips-nlu/pull/776)
 - Improved failed linking error message after download of resources [#774](https://github.com/snipsco/snips-nlu/pull/774)
@@ -264,7 +264,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.19.4...HEAD
+[0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5
 [0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4
 [0.19.3]: https://github.com/snipsco/snips-nlu/compare/0.19.2...0.19.3
 [0.19.2]: https://github.com/snipsco/snips-nlu/compare/0.19.1...0.19.2

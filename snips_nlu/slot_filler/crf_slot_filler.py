@@ -182,9 +182,13 @@ class CRFSlotFiller(SlotFiller):
         if not tokens:
             return []
         features = self.compute_features(tokens)
-        tags = [_decode_tag(tag) for tag in
-                self.crf_model.predict_single(features)]
-        return tags_to_slots(text, tokens, tags, self.config.tagging_scheme,
+        tags = self.crf_model.predict_single(features)
+        logger.debug(DifferedLoggingMessage(
+            self.log_inference_weights, text, tokens=tokens, features=features,
+            tags=tags))
+        decoded_tags = [_decode_tag(t) for t in tags]
+        return tags_to_slots(text, tokens, decoded_tags,
+                             self.config.tagging_scheme,
                              self.slot_name_mapping)
 
     def compute_features(self, tokens, drop_out=False):
@@ -251,8 +255,7 @@ class CRFSlotFiller(SlotFiller):
         log = ""
         transition_features = self.crf_model.transition_features_
         transition_features = sorted(
-            iteritems(transition_features),
-            key=lambda transition_weight: math.fabs(transition_weight[1]),
+            iteritems(transition_features), key=_weight_absolute_value,
             reverse=True)
         log += "\nTransition weights: \n\n"
         for (state_1, state_2), weight in transition_features:
@@ -260,13 +263,90 @@ class CRFSlotFiller(SlotFiller):
                 _decode_tag(state_1), _decode_tag(state_2), weight)
         feature_weights = self.crf_model.state_features_
         feature_weights = sorted(
-            iteritems(feature_weights),
-            key=lambda feature_weight: math.fabs(feature_weight[1]),
+            iteritems(feature_weights), key=_weight_absolute_value,
             reverse=True)
         log += "\n\nFeature weights: \n\n"
         for (feat, tag), weight in feature_weights:
             log += "\n%s %s: %s" % (feat, _decode_tag(tag), weight)
         return log
+
+    def log_inference_weights(self, text, tokens, features, tags):
+        model_features = set(
+            f for (f, _), w in iteritems(self.crf_model.state_features_))
+        log = "Feature weights for \"%s\":\n\n" % text
+        max_index = len(tokens) - 1
+        tokens_logs = []
+        for i, (token, feats, tag) in enumerate(zip(tokens, features, tags)):
+            token_log = "# Token \"%s\" (tagged as %s):" \
+                        % (token.value, _decode_tag(tag))
+            if i != 0:
+                weights = sorted(self._get_outgoing_weights(tags[i - 1]),
+                                 key=_weight_absolute_value, reverse=True)
+                if weights:
+                    token_log += "\n\nTransition weights from previous tag:"
+                    weight_lines = (
+                        "- (%s, %s) -> %s"
+                        % (_decode_tag(a), _decode_tag(b), w)
+                        for (a, b), w in weights
+                    )
+                    token_log += "\n" + "\n".join(weight_lines)
+                else:
+                    token_log += \
+                        "\n\nNo transition from previous tag seen at" \
+                        " train time !"
+
+            if i != max_index:
+                weights = sorted(self._get_incoming_weights(tags[i + 1]),
+                                 key=_weight_absolute_value, reverse=True)
+                if weights:
+                    token_log += "\n\nTransition weights to next tag:"
+                    weight_lines = (
+                        "- (%s, %s) -> %s"
+                        % (_decode_tag(a), _decode_tag(b), w)
+                        for (a, b), w in weights
+                    )
+                    token_log += "\n" + "\n".join(weight_lines)
+                else:
+                    token_log += \
+                        "\n\nNo transition to next tag seen at train time !"
+            feats = [":".join(f) for f in iteritems(feats)]
+            weights = (w for f in feats for w in self._get_feature_weight(f))
+            weights = sorted(weights, key=_weight_absolute_value, reverse=True)
+            if weights:
+                token_log += "\n\nFeature weights:\n"
+                token_log += "\n".join(
+                    "- (%s, %s) -> %s"
+                    % (f, _decode_tag(t), w) for (f, t), w in weights
+                )
+            else:
+                token_log += "\n\nNo feature weights !"
+
+            unseen_features = sorted(
+                set(f for f in feats if f not in model_features))
+            if unseen_features:
+                token_log += "\n\nFeatures not seen at train time:\n%s" % \
+                             "\n".join("- %s" % f for f in unseen_features)
+            tokens_logs.append(token_log)
+
+        log += "\n\n\n".join(tokens_logs)
+        return log
+
+    @fitted_required
+    def _get_incoming_weights(self, tag):
+        return [((first, second), w) for (first, second), w
+                in iteritems(self.crf_model.transition_features_)
+                if second == tag]
+
+    @fitted_required
+    def _get_outgoing_weights(self, tag):
+        return [((first, second), w) for (first, second), w
+                in iteritems(self.crf_model.transition_features_)
+                if first == tag]
+
+    @fitted_required
+    def _get_feature_weight(self, feature):
+        return [((f, tag), w) for (f, tag), w
+                in iteritems(self.crf_model.state_features_) if f == feature]
 
     @check_persisted_path
     def persist(self, path):
@@ -375,3 +455,7 @@ def _ensure_safe(X, Y):
         safe_X.append([""])  # empty feature
         safe_Y.append([OUTSIDE])  # outside label
     return safe_X, safe_Y
+
+
+def _weight_absolute_value(x):
+    return math.fabs(x[1])

@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.19.5]
+### Added
+- Advanced inference logging in the `CRFSlotFiller` [#776](https://github.com/snipsco/snips-nlu/pull/776)
+- Improved failed linking error message after download of resources [#774](https://github.com/snipsco/snips-nlu/pull/774)
+- Improve handling of ambiguous utterances in DeterministicIntentParser [#773](https://github.com/snipsco/snips-nlu/pull/773)
+
+### Changed
+- Remove normalization of confidence scores in intent classification [#782](https://github.com/snipsco/snips-nlu/pull/782)
+
+### Fixed
+- Fixed a crash due to missing resources when refitting the `CRFSlotFiller` [#771](https://github.com/snipsco/snips-nlu/pull/771)
+- Fixed issue with egg fragments in download cli [#769](https://github.com/snipsco/snips-nlu/pull/769)
+- Fixed an issue causing the `None` intent to be ignored when using the `parse` API in conjunction with `intents` and `top_n` [#781](https://github.com/snipsco/snips-nlu/pull/781)
+
 ## [0.19.4] - 2019-03-06
 ### Added
 - Support for Portuguese: "pt_pt" and "pt_br"
@@ -250,6 +264,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5
 [0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4
 [0.19.3]: https://github.com/snipsco/snips-nlu/compare/0.19.2...0.19.3
 [0.19.2]: https://github.com/snipsco/snips-nlu/compare/0.19.1...0.19.2

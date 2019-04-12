@@ -8,18 +8,18 @@ from copy import deepcopy
 from future.utils import iteritems, itervalues
 from snips_nlu_parsers import get_all_languages
 
+from snips_nlu.common.dataset_utils import validate_type, validate_key, \
+    validate_keys
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
-    UTTERANCES, VALIDATED, VALUE)
+    UTTERANCES, VALIDATED, VALUE, EXTENDED_UTTERANCES)
 from snips_nlu.dataset import extract_utterance_entities
 from snips_nlu.entity_parser.builtin_entity_parser import (
-    BuiltinEntityParser, is_builtin_entity)
+    BuiltinEntityParser, is_builtin_entity, is_gazetteer_entity)
 from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.common.dataset_utils import validate_type, validate_key, \
-    validate_keys
 
 
 def validate_and_format_dataset(dataset):
@@ -51,14 +51,16 @@ def validate_and_format_dataset(dataset):
     builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
-        uterrance_entities = utterance_entities_values[entity_name]
+        utterance_entities = utterance_entities_values[entity_name]
         if is_builtin_entity(entity_name):
             dataset[ENTITIES][entity_name] = \
-                _validate_and_format_builtin_entity(entity, uterrance_entities)
+                _validate_and_format_builtin_entity(
+                    entity_name, entity, utterance_entities, language,
+                    builtin_entity_parser)
         else:
             dataset[ENTITIES][entity_name] = \
                 _validate_and_format_custom_entity(
-                    entity, uterrance_entities, language,
+                    entity, utterance_entities, language,
                     builtin_entity_parser)
     dataset[VALIDATED] = True
     return dataset
@@ -106,7 +108,7 @@ def _extract_entity_values(entity):
     values = set()
     for ent in entity[DATA]:
         values.add(ent[VALUE])
-        if entity[USE_SYNONYMS]:
+        if USE_SYNONYMS not in entity or entity[USE_SYNONYMS]:
             values.update(set(ent[SYNONYMS]))
     return values
 
@@ -146,8 +148,7 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
         if not entry[VALUE]:
             continue
         validate_type(entry[SYNONYMS], list, object_label="entity synonyms")
-        entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS]
-                           if len(s.strip()) > 0]
+        entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS] if s.strip()]
         valid_entity_data.append(entry)
     entity[DATA] = valid_entity_data
 
@@ -181,7 +182,7 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
             for v in get_string_variations(value, language,
                                            builtin_entity_parser))
     variation_counter = Counter(
-        [v for vars in itervalues(variations) for v in vars])
+        [v for values in itervalues(variations) for v in values])
     non_colliding_variations = {
         value: [
             v for v in variations if
@@ -211,6 +212,62 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
     return formatted_entity
 
 
-def _validate_and_format_builtin_entity(entity, queries_entities):
+def _validate_and_format_builtin_entity(entity_name, entity, queries_entities,
+                                        language, builtin_entity_parser):
     validate_type(entity, dict, object_label="builtin entity")
-    return {UTTERANCES: set(queries_entities)}
+    formatted_entity = {UTTERANCES: list(queries_entities)}
+    if not is_gazetteer_entity(entity_name) or DATA not in entity:
+        return formatted_entity
+
+    validate_type(entity[DATA], list, object_label="gazetteer entity data")
+
+    # Validate format and filter out unused data
+    valid_entity_data = []
+    for entry in entity[DATA]:
+        validate_type(entry, dict, object_label="entity entry")
+        validate_keys(entry, [VALUE, SYNONYMS], object_label="entity entry")
+        entry[VALUE] = entry[VALUE].strip()
+        if not entry[VALUE]:
+            continue
+        validate_type(entry[SYNONYMS], list, object_label="entity synonyms")
+        entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS] if s.strip()]
+        valid_entity_data.append(entry)
+    entity[DATA] = valid_entity_data
+
+    validated_utterances = dict()
+    # Map original values an synonyms
+    for data in entity[DATA]:
+        ent_value = data[VALUE]
+        validated_utterances[ent_value] = ent_value
+        for s in data[SYNONYMS]:
+            if s not in validated_utterances:
+                validated_utterances[s] = ent_value
+
+    # Add variations if not colliding
+    all_original_values = _extract_entity_values(entity)
+    variations = dict()
+    for data in entity[DATA]:
+        ent_value = data[VALUE]
+        values_to_variate = {ent_value}
+        values_to_variate.update(set(data[SYNONYMS]))
+        variations[ent_value] = set(
+            v for value in values_to_variate
+            for v in get_string_variations(value, language,
+                                           builtin_entity_parser))
+    variation_counter = Counter(
+        [v for values in itervalues(variations) for v in values])
+    non_colliding_variations = {
+        value: [
+            v for v in variations if
+            v not in all_original_values and variation_counter[v] == 1
+        ]
+        for value, variations in iteritems(variations)
+    }
+
+    for entry in entity[DATA]:
+        entry_value = entry[VALUE]
+        validated_utterances = _add_entity_variations(
+            validated_utterances, non_colliding_variations, entry_value)
+
+    formatted_entity[EXTENDED_UTTERANCES] = validated_utterances
+    return formatted_entity

@@ -965,3 +965,135 @@ class TestDatasetValidation(SnipsTest):
             "favorïte": "a"
         }
         self.assertDictEqual(expected_utterances, entity["utterances"])
+
+    @mock.patch("snips_nlu.dataset.validation.BuiltinEntityParser.build")
+    def test_should_validate_dataset_with_extended_gazetteer_entities(self, _):
+        # Given
+        dataset = {
+            "intents": {
+                "play_music": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "I want to listen to "
+                                },
+                                {
+                                    "text": "discovery",
+                                    "entity": "snips/musicAlbum",
+                                    "slot_name": "album"
+                                },
+                                {
+                                    "text": " by "
+                                },
+                                {
+                                    "text": "daft punk",
+                                    "entity": "snips/musicArtist",
+                                    "slot_name": "artist"
+                                },
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "my_entity": {
+                    "data": [
+                        {
+                            "value": "a",
+                            "synonyms": ["a bis"]
+                        },
+                        {
+                            "value": "b",
+                            "synonyms": []
+                        }
+                    ],
+                    "use_synonyms": True,
+                    "automatically_extensible": False,
+                    "matching_strictness": 1.0
+                },
+                "snips/musicAlbum": {},
+                "snips/musicArtist": {
+                    "data": [
+                        {
+                            "value": "the red hot chili peppers",
+                            "synonyms": ["the red hot"]
+                        },
+                        {
+                            "value": "the rolling stones",
+                            "synonyms": ["the stones"]
+                        }
+                    ]
+                }
+            },
+            "language": "en",
+        }
+
+        # When
+        validated_dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        expected_dataset = {
+            "intents": {
+                "play_music": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "I want to listen to "
+                                },
+                                {
+                                    "text": "discovery",
+                                    "entity": "snips/musicAlbum",
+                                    "slot_name": "album"
+                                },
+                                {
+                                    "text": " by "
+                                },
+                                {
+                                    "text": "daft punk",
+                                    "entity": "snips/musicArtist",
+                                    "slot_name": "artist"
+                                },
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "my_entity": {
+                    "automatically_extensible": False,
+                    "matching_strictness": 1.0,
+                    "capitalize": False,
+                    "utterances": {
+                        "a": "a",
+                        "a bis": "a",
+                        "b": "b",
+                        "A": "a",
+                        "A Bis": "a",
+                        "B": "b"
+                    }
+                },
+                "snips/musicAlbum": {
+                    "utterances": ["discovery"]
+                },
+                "snips/musicArtist": {
+                    "utterances": ["daft punk"],
+                    "extended_utterances": {
+                        "the red hot": "the red hot chili peppers",
+                        "the rolling stones": "the rolling stones",
+                        "the stones": "the rolling stones",
+                        "the red hot chili peppers":
+                            "the red hot chili peppers",
+                        "The Red Hot Chili Peppers":
+                            "the red hot chili peppers",
+                        "The Red Hot": "the red hot chili peppers",
+                        "The Rolling Stones": "the rolling stones",
+                        "The Stones": "the rolling stones"
+                    }
+                }
+            },
+            "language": "en",
+            "validated": True
+        }
+        self.assertDictEqual(expected_dataset, validated_dataset)

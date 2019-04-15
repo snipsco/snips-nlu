@@ -68,6 +68,10 @@ SNIPS_ORDINAL = "snips/ordinal"
 SNIPS_PERCENTAGE = "snips/percentage"
 SNIPS_TEMPERATURE = "snips/temperature"
 
+# gazetteer entities
+GAZETTEER_RAW_VALUE = "raw_value"
+GAZETTEER_RESOLVED_VALUE = "resolved_value"
+
 # languages
 LANGUAGE_DE = "de"
 LANGUAGE_EN = "en"

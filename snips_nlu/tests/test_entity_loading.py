@@ -96,6 +96,36 @@ values:
         }
         self.assertDictEqual(expected_entity_dict, entity_dict)
 
+    def test_from_yaml_file_with_extended_gazetteer_values(self):
+        # Given
+        yaml_stream = io.StringIO("""
+# Music Artist
+---
+name: snips/musicArtist
+values:
+- this artist is ignored
+extended_values:
+- [my first custom artist, my first custom artist alias]
+- my second custom artist""")
+
+        # When
+        entity = Entity.from_yaml(yaml_stream)
+
+        # Then
+        expected_entity_dict = {
+            "data": [
+                {
+                    "value": "my first custom artist",
+                    "synonyms": ["my first custom artist alias"],
+                },
+                {
+                    "value": "my second custom artist",
+                    "synonyms": [],
+                },
+            ],
+        }
+        self.assertDictEqual(expected_entity_dict, entity.json)
+
     def test_fail_from_yaml_file_when_wrong_type(self):
         # Given
         yaml_stream = io.StringIO("""

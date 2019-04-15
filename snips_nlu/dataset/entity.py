@@ -32,12 +32,16 @@ class Entity(object):
             entity (only for custom entities). Must be between 0.0 and 1.0.
     """
 
-    def __init__(self, name, utterances=None, automatically_extensible=True,
-                 use_synonyms=True, matching_strictness=1.0):
+    def __init__(self, name, utterances=None, extended_utterances=None,
+                 automatically_extensible=True, use_synonyms=True,
+                 matching_strictness=1.0):
         if utterances is None:
             utterances = []
+        if extended_utterances is None:
+            extended_utterances = []
         self.name = name
         self.utterances = utterances
+        self.extended_utterances = extended_utterances
         self.automatically_extensible = automatically_extensible
         self.use_synonyms = use_synonyms
         self.matching_strictness = matching_strictness
@@ -127,8 +131,21 @@ class Entity(object):
                     "found: %s" % type(entity_value))
             utterances.append(utterance)
 
+        extended_utterances = []
+        for entity_value in yaml_dict.get("extended_values", []):
+            if isinstance(entity_value, list):
+                utterance = EntityUtterance(entity_value[0], entity_value[1:])
+            elif isinstance(entity_value, str):
+                utterance = EntityUtterance(entity_value)
+            else:
+                raise EntityFormatError(
+                    "YAML entity values must be either strings or lists, but "
+                    "found: %s" % type(entity_value))
+            extended_utterances.append(utterance)
+
         return cls(name=entity_name,
                    utterances=utterances,
+                   extended_utterances=extended_utterances,
                    automatically_extensible=auto_extensible,
                    use_synonyms=use_synonyms,
                    matching_strictness=matching_strictness)
@@ -137,6 +154,8 @@ class Entity(object):
     def json(self):
         """Returns the entity in json format"""
         if self.is_builtin:
+            if self.extended_utterances:
+                return {DATA: [u.json for u in self.extended_utterances]}
             return dict()
         return {
             AUTOMATICALLY_EXTENSIBLE: self.automatically_extensible,

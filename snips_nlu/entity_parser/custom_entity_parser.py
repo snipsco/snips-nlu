@@ -11,7 +11,8 @@ from snips_nlu_parsers import GazetteerEntityParser
 
 from snips_nlu.common.utils import json_string
 from snips_nlu.constants import (
-    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, START, UTTERANCES)
+    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, START, UTTERANCES,
+    GAZETTEER_RAW_VALUE, GAZETTEER_RESOLVED_VALUE)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
@@ -132,8 +133,8 @@ def _create_custom_entity_parser_configuration(entities):
                     "threshold": entity[MATCHING_STRICTNESS],
                     "gazetteer": [
                         {
-                            "raw_value": k,
-                            "resolved_value": v
+                            GAZETTEER_RAW_VALUE: k,
+                            GAZETTEER_RESOLVED_VALUE: v
                         } for k, v in sorted(iteritems(entity[UTTERANCES]))
                     ]
                 }

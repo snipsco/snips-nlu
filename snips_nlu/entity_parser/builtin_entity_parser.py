@@ -4,6 +4,7 @@ import json
 import shutil
 
 from future.builtins import str
+from future.utils import iteritems
 from snips_nlu_parsers import (
     BuiltinEntityParser as _BuiltinEntityParser, get_all_builtin_entities,
     get_all_gazetteer_entities, get_all_grammar_entities,
@@ -11,11 +12,10 @@ from snips_nlu_parsers import (
 
 from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.common.utils import json_string
-from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
+from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE, \
+    EXTENDED_UTTERANCES, GAZETTEER_RAW_VALUE, GAZETTEER_RESOLVED_VALUE
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.result import parsed_entity
-
-_BUILTIN_ENTITY_PARSERS = dict()
 
 try:
     FileNotFoundError
@@ -51,29 +51,37 @@ class BuiltinEntityParser(EntityParser):
 
     @classmethod
     def build(cls, dataset=None, language=None, gazetteer_entity_scope=None):
-        global _BUILTIN_ENTITY_PARSERS
+        if gazetteer_entity_scope is None:
+            gazetteer_entity_scope = []
+        gazetteer_entities = {ent: [] for ent in gazetteer_entity_scope}
 
         if dataset is not None:
+            from snips_nlu.dataset import validate_and_format_dataset
+
+            dataset = validate_and_format_dataset(dataset)
             language = dataset[LANGUAGE]
-            gazetteer_entity_scope = [entity for entity in dataset[ENTITIES]
-                                      if is_gazetteer_entity(entity)]
+            for entity, data in iteritems(dataset[ENTITIES]):
+                if not is_gazetteer_entity(entity):
+                    continue
+                extended_utterances = data.get(EXTENDED_UTTERANCES, dict())
+                entity_values = [
+                    {
+                        GAZETTEER_RAW_VALUE: raw,
+                        GAZETTEER_RESOLVED_VALUE: resolved
+                    } for raw, resolved in iteritems(extended_utterances)
+                ]
+                gazetteer_entities[entity] = entity_values
 
         if language is None:
             raise ValueError("Either a dataset or a language must be provided "
                              "in order to build a BuiltinEntityParser")
 
-        if gazetteer_entity_scope is None:
-            gazetteer_entity_scope = []
-        caching_key = _get_caching_key(language, gazetteer_entity_scope)
-        if caching_key not in _BUILTIN_ENTITY_PARSERS:
-            for entity in gazetteer_entity_scope:
-                if entity not in get_supported_gazetteer_entities(language):
-                    raise ValueError(
-                        "Gazetteer entity '%s' is not supported in "
-                        "language '%s'" % (entity, language))
-            _BUILTIN_ENTITY_PARSERS[caching_key] = _build_builtin_parser(
-                language, gazetteer_entity_scope)
-        return _BUILTIN_ENTITY_PARSERS[caching_key]
+        for entity in gazetteer_entities:
+            if entity not in get_supported_gazetteer_entities(language):
+                raise ValueError(
+                    "Gazetteer entity '%s' is not supported in "
+                    "language '%s'" % (entity, language))
+        return _build_builtin_parser(language, gazetteer_entities)
 
 
 def _build_builtin_parser(language, gazetteer_entities):
@@ -81,7 +89,7 @@ def _build_builtin_parser(language, gazetteer_entities):
         gazetteer_entity_parser = None
         if gazetteer_entities:
             gazetteer_entity_parser = _build_gazetteer_parser(
-                serialization_dir, gazetteer_entities, language)
+                serialization_dir, list(gazetteer_entities), language)
 
         metadata = {
             "language": language.upper(),
@@ -91,6 +99,8 @@ def _build_builtin_parser(language, gazetteer_entities):
         with metadata_path.open("w", encoding="utf-8") as f:
             f.write(json_string(metadata))
         parser = _BuiltinEntityParser.from_path(serialization_dir)
+        for entity, extended_utterances in iteritems(gazetteer_entities):
+            parser.extend_gazetteer_entity(entity, extended_utterances)
         return BuiltinEntityParser(parser)
 
 
@@ -157,9 +167,3 @@ def _get_gazetteer_entity_configurations(language, gazetteer_entity_scope):
         "resource_path": str(find_gazetteer_entity_data_path(
             language, entity_name))
     } for entity_name in gazetteer_entity_scope]
-
-
-def _get_caching_key(language, entity_scope):
-    tuple_key = (language,)
-    tuple_key += tuple(entity for entity in sorted(entity_scope))
-    return tuple_key

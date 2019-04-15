@@ -48,7 +48,7 @@ def validate_and_format_dataset(dataset):
         _validate_and_format_intent(intent, dataset[ENTITIES])
 
     utterance_entities_values = extract_utterance_entities(dataset)
-    builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
+    builtin_entity_parser = BuiltinEntityParser.build(language=language)
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
         utterance_entities = utterance_entities_values[entity_name]

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import pkg_resources
-from future.utils import PY3
+from future.utils import text_type
 
 from snips_nlu.constants import (
     END, START, RES_MATCH_RANGE, ENTITY_KIND, RES_VALUE)
@@ -94,17 +94,12 @@ def json_string(json_object, indent=2, sort_keys=True):
 
 
 def unicode_string(string):
-    if PY3:
-        unicode_type = str
-    else:
-        unicode_type = unicode
-
-    if isinstance(string, unicode_type):
+    if isinstance(string, text_type):
         return string
     if isinstance(string, bytes):
         return string.decode("utf8")
     if isinstance(string, newstr):
-        return unicode_type(string)
+        return text_type(string)
     if isinstance(string, newbytes):
         string = bytes(string).decode("utf8")
 

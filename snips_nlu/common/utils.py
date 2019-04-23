@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import pkg_resources
-from future.utils import PY3, text_type
+from future.utils import text_type
 
 from snips_nlu.constants import (
     END, START, RES_MATCH_RANGE, ENTITY_KIND, RES_VALUE)

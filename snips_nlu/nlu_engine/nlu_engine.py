@@ -163,6 +163,11 @@ class SnipsNLUEngine(ProcessingUnit):
         elif isinstance(intents, list):
             intents = set(intents)
 
+        if intents is not None:
+            for intent in intents:
+                if intent not in self.dataset_metadata["slot_name_mappings"]:
+                    raise IntentNotFoundError(intent)
+
         if top_n is None:
             none_proba = 0.0
             for parser in self.intent_parsers:

@@ -888,7 +888,9 @@ values:
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
         expected_parser.slot_names_to_entities = slot_names_to_entities
         expected_parser.patterns = patterns
+        # pylint:disable=protected-access
         expected_parser._stop_words_whitelist = dict()
+        # pylint:enable=protected-access
 
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
@@ -954,7 +956,9 @@ values:
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
         expected_parser.slot_names_to_entities = slot_names_to_entities
         expected_parser.patterns = patterns
+        # pylint:disable=protected-access
         expected_parser._stop_words_whitelist = stop_words_whitelist
+        # pylint:enable=protected-access
 
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 

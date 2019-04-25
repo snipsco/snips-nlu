@@ -460,8 +460,10 @@ class DeterministicIntentParser(IntentParser):
         parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
         if parser.fitted:
             whitelist = unit_dict.get("stop_words_whitelist", dict())
+            # pylint:disable=protected-access
             parser._stop_words_whitelist = {
                 intent: set(values) for intent, values in iteritems(whitelist)}
+            # pylint:enable=protected-access
         return parser
 
 

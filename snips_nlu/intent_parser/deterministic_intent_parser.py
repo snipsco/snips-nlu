@@ -22,6 +22,7 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES,
     RES_PROBA)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset.utils import extract_entity_values
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_parser.intent_parser import IntentParser
@@ -55,10 +56,11 @@ class DeterministicIntentParser(IntentParser):
         self._language = None
         self._slot_names_to_entities = None
         self._group_names_to_slot_names = None
+        self._stop_words = None
+        self._stop_words_whitelist = None
         self.slot_names_to_group_names = None
         self.regexes_per_intent = None
         self.entity_scopes = None
-        self.stop_words = None
 
     @property
     def language(self):
@@ -68,12 +70,12 @@ class DeterministicIntentParser(IntentParser):
     def language(self, value):
         self._language = value
         if value is None:
-            self.stop_words = None
+            self._stop_words = None
         else:
             if self.config.ignore_stop_words:
-                self.stop_words = get_stop_words(self.resources)
+                self._stop_words = get_stop_words(self.resources)
             else:
-                self.stop_words = set()
+                self._stop_words = set()
 
     @property
     def slot_names_to_entities(self):
@@ -142,13 +144,15 @@ class DeterministicIntentParser(IntentParser):
         self.slot_names_to_entities = get_slot_name_mappings(dataset)
         self.group_names_to_slot_names = _get_group_names_to_slot_names(
             self.slot_names_to_entities)
+        self._stop_words_whitelist = _get_stop_words_whitelist(
+            dataset, self._stop_words)
 
         # Do not use ambiguous patterns that appear in more than one intent
         all_patterns = set()
         ambiguous_patterns = set()
         intent_patterns = dict()
         for intent_name, intent in iteritems(dataset[INTENTS]):
-            patterns = self._generate_patterns(intent[UTTERANCES],
+            patterns = self._generate_patterns(intent_name, intent[UTTERANCES],
                                                entity_placeholders)
             patterns = [p for p in patterns
                         if len(p) < self.config.max_pattern_length]
@@ -221,7 +225,6 @@ class DeterministicIntentParser(IntentParser):
             return _get_entity_name_placeholder(entity_name, self.language)
 
         results = []
-        cleaned_text = self._preprocess_text(text)
 
         for intent, entity_scope in iteritems(self.entity_scopes):
             if intents is not None and intent not in intents:
@@ -233,7 +236,9 @@ class DeterministicIntentParser(IntentParser):
             all_entities = builtin_entities + custom_entities
             mapping, processed_text = replace_entities_with_placeholders(
                 text, all_entities, placeholder_fn=placeholder_fn)
-            cleaned_processed_text = self._preprocess_text(processed_text)
+            cleaned_text = self._preprocess_text(text, intent)
+            cleaned_processed_text = self._preprocess_text(processed_text,
+                                                           intent)
             for regex in self.regexes_per_intent[intent]:
                 res = self._get_matching_result(text, cleaned_processed_text,
                                                 regex, intent, mapping)
@@ -300,14 +305,19 @@ class DeterministicIntentParser(IntentParser):
             slots = []
         return slots
 
-    def _preprocess_text(self, string):
+    def _get_intent_stop_words(self, intent):
+        whitelist = self._stop_words_whitelist.get(intent, set())
+        return self._stop_words.difference(whitelist)
+
+    def _preprocess_text(self, string, intent):
         """Replaces stop words and characters that are tokenized out by
             whitespaces"""
         tokens = tokenize(string, self.language)
         current_idx = 0
         cleaned_string = ""
+        stop_words = self._get_intent_stop_words(intent)
         for token in tokens:
-            if self.stop_words and normalize_token(token) in self.stop_words:
+            if stop_words and normalize_token(token) in stop_words:
                 token.value = "".join(" " for _ in range(len(token.value)))
             prefix_length = token.start - current_idx
             cleaned_string += "".join((" " for _ in range(prefix_length)))
@@ -352,18 +362,21 @@ class DeterministicIntentParser(IntentParser):
                               key=lambda s: s[RES_MATCH_RANGE][START])
         return extraction_result(parsed_intent, parsed_slots)
 
-    def _generate_patterns(self, intent_utterances, entity_placeholders):
+    def _generate_patterns(self, intent, intent_utterances,
+                           entity_placeholders):
         unique_patterns = set()
         patterns = []
+        stop_words = self._get_intent_stop_words(intent)
         for utterance in intent_utterances:
             pattern = self._utterance_to_pattern(
-                utterance, entity_placeholders)
+                utterance, stop_words, entity_placeholders)
             if pattern not in unique_patterns:
                 unique_patterns.add(pattern)
                 patterns.append(pattern)
         return patterns
 
-    def _utterance_to_pattern(self, utterance, entity_placeholders):
+    def _utterance_to_pattern(self, utterance, stop_words,
+                              entity_placeholders):
         slot_names_count = defaultdict(int)
         pattern = []
         for chunk in utterance[DATA]:
@@ -379,7 +392,7 @@ class DeterministicIntentParser(IntentParser):
             else:
                 tokens = tokenize_light(chunk[TEXT], self.language)
                 pattern += [regex_escape(t.lower()) for t in tokens
-                            if normalize(t) not in self.stop_words]
+                            if normalize(t) not in stop_words]
 
         pattern = r"^%s%s%s$" % (WHITESPACE_PATTERN,
                                  WHITESPACE_PATTERN.join(pattern),
@@ -417,12 +430,18 @@ class DeterministicIntentParser(IntentParser):
 
     def to_dict(self):
         """Returns a json-serializable dict"""
+        stop_words_whitelist = None
+        if self._stop_words_whitelist is not None:
+            stop_words_whitelist = {
+                intent: sorted(values)
+                for intent, values in iteritems(self._stop_words_whitelist)}
         return {
             "config": self.config.to_dict(),
             "language_code": self.language,
             "patterns": self.patterns,
             "group_names_to_slot_names": self.group_names_to_slot_names,
-            "slot_names_to_entities": self.slot_names_to_entities
+            "slot_names_to_entities": self.slot_names_to_entities,
+            "stop_words_whitelist": stop_words_whitelist
         }
 
     @classmethod
@@ -439,6 +458,10 @@ class DeterministicIntentParser(IntentParser):
         parser.group_names_to_slot_names = unit_dict[
             "group_names_to_slot_names"]
         parser.slot_names_to_entities = unit_dict["slot_names_to_entities"]
+        if parser.fitted:
+            whitelist = unit_dict.get("stop_words_whitelist", dict())
+            parser._stop_words_whitelist = {
+                intent: set(values) for intent, values in iteritems(whitelist)}
         return parser
 
 
@@ -487,3 +510,14 @@ def _deduplicate_overlapping_slots(slots, language):
 def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(
         tokenize_light(entity_label, language)).upper()
+
+
+def _get_stop_words_whitelist(dataset, stop_words):
+    entity_values_per_intent = extract_entity_values(
+        dataset, apply_normalization=True)
+    stop_words_whitelist = dict()
+    for intent, entity_values in iteritems(entity_values_per_intent):
+        whitelist = stop_words.intersection(entity_values)
+        if whitelist:
+            stop_words_whitelist[intent] = whitelist
+    return stop_words_whitelist

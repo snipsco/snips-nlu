@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from future.utils import iteritems, itervalues
+from snips_nlu_utils import normalize
 from yaml import Loader, SafeLoader
 
 from snips_nlu.constants import (
@@ -39,6 +40,18 @@ def extract_intent_entities(dataset, entity_filter=None):
                         continue
                     intent_entities[intent_name].add(chunk[ENTITY])
     return intent_entities
+
+
+def extract_entity_values(dataset, apply_normalization):
+    entities_per_intent = {intent: set() for intent in dataset[INTENTS]}
+    intent_entities = extract_intent_entities(dataset)
+    for intent, entities in iteritems(intent_entities):
+        for entity in entities:
+            entity_values = set(dataset[ENTITIES][entity][UTTERANCES])
+            if apply_normalization:
+                entity_values = {normalize(v) for v in entity_values}
+            entities_per_intent[intent].update(entity_values)
+    return entities_per_intent
 
 
 def get_text_from_chunks(chunks):

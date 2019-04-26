@@ -271,6 +271,39 @@ utterances:
         with self.assertRaises(IntentNotFoundError):
             nlu_engine.get_slots("Hello John", "greeting3")
 
+    def test_parse_should_raise_with_unknown_intent_in_filter(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: goodbye
+utterances:
+  - Goodbye [name](Eric)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # pylint:disable=unused-variable
+        @IntentParser.register("my_intent_parser", True)
+        class FirstIntentParser(MockIntentParser):
+            pass
+
+        # pylint:enable=unused-variable
+
+        config = NLUEngineConfig(["my_intent_parser"])
+        nlu_engine = SnipsNLUEngine(config).fit(dataset)
+
+        # When / Then
+        with self.assertRaises(IntentNotFoundError):
+            nlu_engine.parse("Hello John", intents="greeting3")
+
+        with self.assertRaises(IntentNotFoundError):
+            nlu_engine.parse("Hello John", intents=["greeting3"])
+
     def test_should_use_parsers_sequentially(self):
         # Given
         dataset_stream = io.StringIO("""

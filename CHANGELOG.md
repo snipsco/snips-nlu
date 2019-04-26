@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.19.6]
+### Fixed
+- Raise an error when using unknown intents in intents filter [#788](https://github.com/snipsco/snips-nlu/pull/788)
+- Fix issue with stop words in `DeterministicIntentParser` [#789](https://github.com/snipsco/snips-nlu/pull/789)
+
 ## [0.19.5]
 ### Added
 - Advanced inference logging in the `CRFSlotFiller` [#776](https://github.com/snipsco/snips-nlu/pull/776)
@@ -264,6 +269,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.6]: https://github.com/snipsco/snips-nlu/compare/0.19.5...0.19.6
 [0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5
 [0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4
 [0.19.3]: https://github.com/snipsco/snips-nlu/compare/0.19.2...0.19.3

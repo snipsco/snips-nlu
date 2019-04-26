@@ -45,21 +45,12 @@ def extract_intent_entities(dataset, entity_filter=None):
 def extract_entity_values(dataset, apply_normalization):
     entities_per_intent = {intent: set() for intent in dataset[INTENTS]}
     intent_entities = extract_intent_entities(dataset)
-    utterance_entity_values = extract_utterance_entities(dataset)
-    declared_entity_values = {
-        ent: set(ent_data[UTTERANCES])
-        for ent, ent_data in iteritems(dataset[ENTITIES])}
-    all_entity_values = {
-        ent: set(utterance_entity_values[ent]).union(
-            declared_entity_values[ent]) for ent in dataset[ENTITIES]}
     for intent, entities in iteritems(intent_entities):
         for entity in entities:
-            entities_per_intent[intent].update(all_entity_values[entity])
-    if apply_normalization:
-        entities_per_intent = {
-            intent: {normalize(v) for v in values}
-            for intent, values in iteritems(entities_per_intent)
-        }
+            entity_values = set(dataset[ENTITIES][entity][UTTERANCES])
+            if apply_normalization:
+                entity_values = {normalize(v) for v in entity_values}
+            entities_per_intent[intent].update(entity_values)
     return entities_per_intent
 
 

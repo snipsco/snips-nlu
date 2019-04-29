@@ -249,16 +249,17 @@ class DeterministicIntentParser(IntentParser):
                     results.append(res)
                     break
 
-        confidence_score = 1.
-        if results:
-            confidence_score = 1. / float(len(results))
+        # In some rare cases there can be multiple ambiguous intents
+        # In such cases, priority is given to results containing fewer slots
+        weights = [1.0 / (1.0 + len(res[RES_SLOTS])) for res in results]
+        total_weight = sum(weights)
 
-        results = results[:top_n]
+        for res, weight in zip(results, weights):
+            res[RES_INTENT][RES_PROBA] = weight / total_weight
 
-        for res in results:
-            res[RES_INTENT][RES_PROBA] = confidence_score
+        results = sorted(results, key=lambda r: -r[RES_INTENT][RES_PROBA])
 
-        return results
+        return results[:top_n]
 
     @fitted_required
     def get_intents(self, text):

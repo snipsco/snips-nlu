@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Changed
+- Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
+
 ## [0.19.6]
 ### Fixed
 - Raise an error when using unknown intents in intents filter [#788](https://github.com/snipsco/snips-nlu/pull/788)

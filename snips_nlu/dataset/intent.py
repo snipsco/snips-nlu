@@ -306,7 +306,8 @@ def capture_slot(state):
     next_colon_pos = state.find(':')
     next_square_bracket_pos = state.find(']')
     if next_square_bracket_pos < 0:
-        raise IntentFormatError("Missing ending ']' in annotated utterance")
+        raise IntentFormatError(
+            "Missing ending ']' in annotated utterance \"%s\"" % state.input)
     if next_colon_pos < 0 or next_square_bracket_pos < next_colon_pos:
         slot_name = state[:next_square_bracket_pos]
         state.move(next_square_bracket_pos)
@@ -327,7 +328,8 @@ def capture_slot(state):
 def capture_tagged(state):
     next_pos = state.find(')')
     if next_pos < 1:
-        raise IntentFormatError("Missing ending ')' in annotated utterance")
+        raise IntentFormatError(
+            "Missing ending ')' in annotated utterance \"%s\"" % state.input)
     else:
         tagged_text = state[:next_pos]
         state.add_tagged(tagged_text)

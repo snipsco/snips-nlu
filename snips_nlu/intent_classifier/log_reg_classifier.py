@@ -52,7 +52,7 @@ class LogRegIntentClassifier(IntentClassifier):
         """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
-    @log_elapsed_time(logger, logging.DEBUG,
+    @log_elapsed_time(logger, logging.INFO,
                       "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
         """Fits the intent classifier with a valid Snips dataset
@@ -60,7 +60,7 @@ class LogRegIntentClassifier(IntentClassifier):
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
-        logger.debug("Fitting LogRegIntentClassifier...")
+        logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)

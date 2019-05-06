@@ -203,7 +203,7 @@ class DeterministicIntentParser(IntentParser):
             if top_intents:
                 intent = top_intents[0][RES_INTENT]
                 slots = top_intents[0][RES_SLOTS]
-                if intent[RES_PROBA] < 1.0:
+                if intent[RES_PROBA] <= 0.5:
                     # return None in case of ambiguity
                     return empty_result(text, probability=1.0)
                 return parsing_result(text, intent, slots)

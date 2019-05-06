@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Changed
 - Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
+- Accept ambiguous results from `DeterministicIntentParser` when confidence score is above 0.5 [#797](https://github.com/snipsco/snips-nlu/pull/797)
 
 ## [0.19.6]
 ### Fixed

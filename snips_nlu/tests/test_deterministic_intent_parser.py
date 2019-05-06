@@ -17,7 +17,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (
     extraction_result, intent_classification_result, unresolved_slot,
-    empty_result)
+    empty_result, parsing_result)
 from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
@@ -244,7 +244,7 @@ utterances:
         self.assertDictEqual(expected_intent, parsing[RES_INTENT])
         self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
-    def test_should_ignore_ambiguous_utterances(self):
+    def test_should_ignore_completely_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO("""
 ---
@@ -268,29 +268,63 @@ utterances:
         # Then
         self.assertEqual(empty_result(text, 1.0), res)
 
-    def test_should_ignore_subtly_ambiguous_utterances(self):
+    def test_should_ignore_very_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO("""
 ---
 type: intent
 name: intent_1
 utterances:
-  - meeting tomorrow
+  - "[event_type](meeting) tomorrow"
 
 ---
 type: intent
 name: intent_2
 utterances:
-  - meeting [time:snips/datetime](today)""")
+  - call [time:snips/datetime](today)
+
+---
+type: entity
+name: event_type
+values:
+  - call
+  - diner""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
-        text = "meeting tomorrow"
+        text = "call tomorrow"
 
         # When
         res = parser.parse(text)
 
         # Then
         self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_parse_slightly_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - call tomorrow
+
+---
+type: intent
+name: intent_2
+utterances:
+  - call [time:snips/datetime](today)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "call tomorrow"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="intent_1", probability=2. / 3.)
+        expected_result = parsing_result(text, expected_intent, [])
+        self.assertEqual(expected_result, res)
 
     def test_should_not_parse_when_not_fitted(self):
         # Given

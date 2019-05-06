@@ -133,7 +133,7 @@ class DeterministicIntentParser(IntentParser):
         logger, logging.INFO, "Fitted deterministic parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
         """Fits the intent parser with a valid Snips dataset"""
-        logger.info("Fitting deterministic parser...")
+        logger.info("Fitting deterministic intent parser...")
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)

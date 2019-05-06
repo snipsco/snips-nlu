@@ -95,7 +95,7 @@ class CRFSlotFiller(SlotFiller):
         """Whether or not the slot filler has already been fitted"""
         return self.slot_name_mapping is not None
 
-    @log_elapsed_time(logger, logging.DEBUG,
+    @log_elapsed_time(logger, logging.INFO,
                       "Fitted CRFSlotFiller in {elapsed_time}")
     # pylint:disable=arguments-differ
     def fit(self, dataset, intent):
@@ -109,7 +109,7 @@ class CRFSlotFiller(SlotFiller):
         Returns:
             :class:`CRFSlotFiller`: The same instance, trained
         """
-        logger.debug("Fitting %s slot filler...", intent)
+        logger.info("Fitting %s slot filler...", intent)
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)

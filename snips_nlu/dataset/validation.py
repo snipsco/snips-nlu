@@ -18,8 +18,10 @@ from snips_nlu.entity_parser.builtin_entity_parser import (
 from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.common.dataset_utils import validate_type, validate_key, \
-    validate_keys
+from snips_nlu.common.dataset_utils import (
+    validate_type, validate_key, validate_keys)
+
+NUMBER_VARIATIONS_THRESHOLD = 1e3
 
 
 def validate_and_format_dataset(dataset):
@@ -168,6 +170,12 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
                 if s and s not in validated_utterances:
                     validated_utterances[s] = ent_value
 
+    # Number variations in entities values are expensive since each entity
+    # value is parsed with the builtin entity parser before creating the
+    # variations. We avoid generating these variations if there's enough entity
+    # values
+    number_variations = len(entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD
+
     # Add variations if not colliding
     all_original_values = _extract_entity_values(entity)
     variations = dict()
@@ -178,10 +186,13 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
             values_to_variate.update(set(data[SYNONYMS]))
         variations[ent_value] = set(
             v for value in values_to_variate
-            for v in get_string_variations(value, language,
-                                           builtin_entity_parser))
+            for v in get_string_variations(
+                value, language, builtin_entity_parser,
+                number_variations=number_variations
+            )
+        )
     variation_counter = Counter(
-        [v for vars in itervalues(variations) for v in vars])
+        [v for variations_ in itervalues(variations) for v in variations_])
     non_colliding_variations = {
         value: [
             v for v in variations if
@@ -197,7 +208,10 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
 
     # Merge queries entities
     queries_entities_variations = {
-        ent: get_string_variations(ent, language, builtin_entity_parser)
+        ent: get_string_variations(
+            ent, language, builtin_entity_parser,
+            number_variations=number_variations
+        )
         for ent in queries_entities
     }
     for original_ent, variations in iteritems(queries_entities_variations):

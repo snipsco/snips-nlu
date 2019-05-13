@@ -102,6 +102,7 @@ def _extract_log_reg(engine):
     log_reg["intent_list"] = intent_classifier.intent_list
     log_reg["coef"] = intent_classifier.classifier.coef_.tolist()
     log_reg["intercept"] = intent_classifier.classifier.intercept_.tolist()
+    log_reg["t_"] = intent_classifier.classifier.t_
     return log_reg
 
 

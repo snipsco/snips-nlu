@@ -242,7 +242,8 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        intent_classifier = LogRegIntentClassifier(
+            random_state=42).fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
 
@@ -255,7 +256,7 @@ utterances:
             "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
-            "t_": 701.0,
+            "t_": 3781.0,
             "intent_list": intent_list,
             "featurizer": "featurizer"
         }

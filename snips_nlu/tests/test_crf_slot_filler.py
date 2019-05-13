@@ -9,7 +9,7 @@ from mock import MagicMock, PropertyMock
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
-    DATA, END, ENTITY, LANGUAGE_EN, SLOT_NAME, START, TEXT)
+    DATA, END, ENTITY, LANGUAGE_EN, SLOT_NAME, START, TEXT, RANDOM_STATE)
 from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.exceptions import NotTrained

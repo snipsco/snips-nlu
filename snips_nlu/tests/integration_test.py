@@ -1,11 +1,15 @@
 # coding=utf-8
 from __future__ import print_function, unicode_literals
 
+import json
+from builtins import range, str
+
 from future.utils import iteritems
 from snips_nlu_metrics import compute_cross_val_metrics
 
 from snips_nlu.constants import LANGUAGE_EN
-from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
+from snips_nlu.nlu_engine.nlu_engine import (
+    SnipsNLUEngine, SnipsNLUEngine as TrainingEngine)
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH, SnipsTest
 
@@ -48,6 +52,31 @@ class IntegrationTestSnipsNLUEngine(SnipsTest):
                     "Slot f1 score is too low (%.3f) for slot '%s' of intent "
                     "'%s'" % (slot_f1, slot_name, intent_name))
 
+    def test_nlu_engine_training_is_deterministic(self):
+        # We can't write a test to ensure the NLU training is always the same
+        # instead we train the NLU 10 times and check the learnt parameters.
+        # It does not bring any guarantee but it might alert us once in a while
+
+        # Given
+        num_runs = 10
+        random_state = 42
+
+        with PERFORMANCE_DATASET_PATH.open("r") as f:
+            dataset = json.load(f)
+
+        ref_log_reg, ref_crfs = None, None
+        for _ in range(num_runs):
+            engine = SnipsNLUEngine(random_state=random_state).fit(dataset)
+            log_reg = _extract_log_reg(engine)
+            crfs = _extract_crfs(engine)
+
+            if ref_log_reg is None:
+                ref_log_reg = log_reg
+                ref_crfs = crfs
+            else:
+                self.assertDictEqual(ref_log_reg, log_reg)
+                self.assertDictEqual(ref_crfs, crfs)
+
 
 def _slot_matching_lambda(lhs_slot, rhs_slot):
     lhs_value = lhs_slot["text"]
@@ -63,3 +92,23 @@ def _slot_matching_lambda(lhs_slot, rhs_slot):
         if rhs_tokens and rhs_tokens[0].lower() in SKIPPED_DATE_PREFIXES:
             rhs_tokens = rhs_tokens[1:]
         return lhs_tokens == rhs_tokens
+
+
+def _extract_log_reg(engine):
+    log_reg = dict()
+    intent_classifier = engine.intent_parsers[1].intent_classifier
+    log_reg["intent_list"] = intent_classifier.intent_list
+    log_reg["coef"] = intent_classifier.classifier.coef_.tolist()
+    log_reg["intercept"] = intent_classifier.classifier.intercept_.tolist()
+    return log_reg
+
+
+def _extract_crfs(engine):
+    crfs = dict()
+    slot_fillers = engine.intent_parsers[1].slot_fillers
+    for intent, slot_filler in iteritems(slot_fillers):
+        crfs[intent] = {
+            "state_features": slot_filler.crf_model.state_features_,
+            "transition_features": slot_filler.crf_model.transition_features_
+        }
+    return crfs

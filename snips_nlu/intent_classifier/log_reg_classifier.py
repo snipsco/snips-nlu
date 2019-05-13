@@ -27,7 +27,7 @@ LOG_REG_ARGS = {
     "loss": "log",
     "penalty": "l2",
     "class_weight": "balanced",
-    "max_iter": 5,
+    "max_iter": 1000,
     "n_jobs": -1
 }
 

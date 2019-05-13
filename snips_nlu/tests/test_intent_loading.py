@@ -4,6 +4,7 @@ import io
 from unittest import TestCase
 
 from snips_nlu.dataset import Intent
+from snips_nlu.exceptions import IntentFormatError
 
 
 class TestIntentLoading(TestCase):
@@ -177,3 +178,47 @@ utterances:
             ]
         }
         self.assertDictEqual(expected_intent_dict, intent_dict)
+
+    def test_should_raise_when_missing_bracket_in_utterance(self):
+        # Given
+        intent_io = io.StringIO("""
+# getWeather Intent
+---
+type: intent
+name: getWeather
+utterances:
+  - what is the weather in [location] ?
+  - give me the weather forecast in [location tomorrow please
+  - what's the weather in [location] this weekend ?
+        """)
+
+        # When / Then
+        with self.assertRaises(IntentFormatError) as cm:
+            Intent.from_yaml(intent_io)
+
+        faulty_utterance = "give me the weather forecast in [location " \
+                           "tomorrow please"
+
+        self.assertTrue(faulty_utterance in str(cm.exception))
+
+    def test_should_raise_when_missing_parenthesis_in_utterance(self):
+        # Given
+        intent_io = io.StringIO("""
+# getWeather Intent
+---
+type: intent
+name: getWeather
+utterances:
+  - what is the weather in [location] ?
+  - give me the weather forecast in [location] tomorrow please
+  - what's the weather in [location](Paris this weekend ?
+        """)
+
+        # When / Then
+        with self.assertRaises(IntentFormatError) as cm:
+            Intent.from_yaml(intent_io)
+
+        faulty_utterance = "what's the weather in [location](Paris this " \
+                           "weekend ?"
+
+        self.assertTrue(faulty_utterance in str(cm.exception))

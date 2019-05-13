@@ -28,7 +28,11 @@ def download(resource_name, direct=False,
              *pip_args):  # pylint:disable=keyword-arg-before-vararg
     """Download compatible language resources"""
     if direct:
-        url_tail = '{r}/{r}.tar.gz#egg={r}'.format(r=resource_name)
+        components = resource_name.split("-")
+        name = "".join(components[:-1])
+        version = components[-1]
+        url_tail = '{n}-{v}/{n}-{v}.tar.gz#egg={n}=={v}'.format(
+            n=name, v=version)
         download_url = __about__.__download_url__ + '/' + url_tail
         dl = install_remote_package(download_url, pip_args)
         if dl != 0:
@@ -79,9 +83,10 @@ def _download_and_link(resource_alias, resource_fullname, compatibility,
             pretty_print("%s --> %s" % (str(resources_dir), str(link_path)),
                          title="Linking successful",
                          level=PrettyPrintLevel.SUCCESS)
-    except:  # pylint:disable=bare-except
+    except OSError as e:  # pylint:disable=bare-except
         pretty_print(
-            "Creating a shortcut link for '%s' didn't work." % resource_alias,
+            "Creating a shortcut link for '%s' didn't work: %s"
+            % (resource_alias, repr(e)),
             title="The language resources were successfully downloaded, "
                   "however linking failed.",
-            level=PrettyPrintLevel.WARNING)
+            level=PrettyPrintLevel.ERROR)

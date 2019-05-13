@@ -6,12 +6,14 @@
 
 __title__ = "snips_nlu"
 __summary__ = "Snips Natural Language Understanding library"
-__uri__ = "https://snips-nlu.readthedocs.io"
+__github_url__ = "https://github.com/snipsco/snips-nlu"
+__doc_url__ = "https://snips-nlu.readthedocs.io"
+__tracker_url__ = "https://github.com/snipsco/snips-nlu/issues"
 __author__ = "Clement Doumouro, Adrien Ball"
 __email__ = "clement.doumouro@snips.ai, adrien.ball@snips.ai"
 __license__ = "Apache License, Version 2.0"
 
-__version__ = "0.19.3"
+__version__ = "0.19.6"
 __model_version__ = "0.19.0"
 
 __download_url__ = "https://github.com/snipsco/snips-nlu-language-resources/releases/download"

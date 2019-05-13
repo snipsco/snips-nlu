@@ -8,7 +8,7 @@ from mock import patch
 
 from snips_nlu.constants import (
     DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY, RES_INTENT, RES_INTENT_NAME,
-    RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT)
+    RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, STOP_WORDS)
 from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser.deterministic_intent_parser import (
@@ -17,7 +17,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (
     extraction_result, intent_classification_result, unresolved_slot,
-    empty_result)
+    empty_result, parsing_result)
 from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
@@ -120,24 +120,67 @@ utterances:
 type: intent
 name: intent1
 utterances:
-  - hello world
-  
+  - meeting [time:snips/datetime](today)
+
 ---
 type: intent
 name: intent2
 utterances:
-  - foo bar""")
+  - meeting tomorrow
+  
+---
+type: intent
+name: intent3
+utterances:
+  - "[event_type](call) [time:snips/datetime](at 9pm)"
+
+---
+type: entity
+name: event_type
+values:
+  - meeting
+  - feedback session""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
-        text = "hello world"
+        text = "meeting tomorrow"
 
         # When
         results = parser.parse(text, top_n=3)
 
         # Then
-        expected_intent = intent_classification_result(
-            intent_name="intent1", probability=1.0)
-        expected_results = [extraction_result(expected_intent, [])]
+        time_slot = {
+            "entity": "snips/datetime",
+            "range": {"end": 16, "start": 8},
+            "slotName": "time",
+            "value": "tomorrow"
+        }
+        event_slot = {
+            "entity": "event_type",
+            "range": {"end": 7, "start": 0},
+            "slotName": "event_type",
+            "value": "meeting"
+        }
+        weight_intent_1 = 1. / 2.
+        weight_intent_2 = 1.
+        weight_intent_3 = 1. / 3.
+        total_weight = weight_intent_1 + weight_intent_2 + weight_intent_3
+        proba_intent2 = weight_intent_2 / total_weight
+        proba_intent1 = weight_intent_1 / total_weight
+        proba_intent3 = weight_intent_3 / total_weight
+        expected_results = [
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent2", probability=proba_intent2),
+                slots=[]),
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent1", probability=proba_intent1),
+                slots=[time_slot]),
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent3", probability=proba_intent3),
+                slots=[event_slot, time_slot])
+        ]
         self.assertEqual(expected_results, results)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
@@ -201,7 +244,7 @@ utterances:
         self.assertDictEqual(expected_intent, parsing[RES_INTENT])
         self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
-    def test_should_ignore_ambiguous_utterances(self):
+    def test_should_ignore_completely_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO("""
 ---
@@ -224,6 +267,64 @@ utterances:
 
         # Then
         self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_ignore_very_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - "[event_type](meeting) tomorrow"
+
+---
+type: intent
+name: intent_2
+utterances:
+  - call [time:snips/datetime](today)
+
+---
+type: entity
+name: event_type
+values:
+  - call
+  - diner""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "call tomorrow"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_parse_slightly_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - call tomorrow
+
+---
+type: intent
+name: intent_2
+utterances:
+  - call [time:snips/datetime](today)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "call tomorrow"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="intent_1", probability=2. / 3.)
+        expected_result = parsing_result(text, expected_intent, [])
+        self.assertEqual(expected_result, res)
 
     def test_should_not_parse_when_not_fitted(self):
         # Given
@@ -330,6 +431,52 @@ utterances:
 
             # Then
             self.assertListEqual(expected_slots, parsing[RES_SLOTS])
+
+    def test_should_parse_stop_words_slots(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: search
+utterances:
+  - search
+  - search [search_object](this)
+  - search [search_object](a cat)
+  
+---
+type: entity
+name: search_object
+values:
+  - [this thing, that]
+  """)
+
+        resources = self.get_resources("en")
+        resources[STOP_WORDS] = {"a", "this", "that"}
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser_config = DeterministicIntentParserConfig(ignore_stop_words=True)
+        parser = DeterministicIntentParser(
+            config=parser_config, resources=resources)
+        parser.fit(dataset)
+
+        # When
+        res_1 = parser.parse("search this")
+        res_2 = parser.parse("search that")
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="search", probability=1.0)
+        expected_slots_1 = [
+            unresolved_slot(match_range=(7, 11), value="this",
+                            entity="search_object", slot_name="search_object")
+        ]
+        expected_slots_2 = [
+            unresolved_slot(match_range=(7, 11), value="that",
+                            entity="search_object", slot_name="search_object")
+        ]
+        self.assertEqual(expected_intent, res_1[RES_INTENT])
+        self.assertEqual(expected_intent, res_2[RES_INTENT])
+        self.assertListEqual(expected_slots_1, res_1[RES_SLOTS])
+        self.assertListEqual(expected_slots_2, res_2[RES_SLOTS])
 
     def test_should_get_intents(self):
         # Given
@@ -565,7 +712,7 @@ utterances:
 - this is [slot2:entity2](second_entity)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
-        with naughty_strings_path.open(encoding='utf8') as f:
+        with naughty_strings_path.open(encoding="utf8") as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         # When
@@ -579,7 +726,7 @@ utterances:
     def test_should_fit_with_naughty_strings_no_tags(self):
         # Given
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
-        with naughty_strings_path.open(encoding='utf8') as f:
+        with naughty_strings_path.open(encoding="utf8") as f:
             naughty_strings = [line.strip("\n") for line in f.readlines()]
 
         utterances = [{DATA: [{TEXT: naughty_string}]} for naughty_string in
@@ -635,13 +782,13 @@ utterances:
             parsing = parser.parse("string0")
 
             expected_slot = {
-                'entity': 'non_ascìi_entïty',
-                'range': {
+                "entity": "non_ascìi_entïty",
+                "range": {
                     "start": 0,
                     "end": 7
                 },
-                'slotName': u'non_ascìi_slöt',
-                'value': u'string0'
+                "slotName": u"non_ascìi_slöt",
+                "value": u"string0"
             }
             intent_name = parsing[RES_INTENT][RES_INTENT_NAME]
             self.assertEqual("naughty_intent", intent_name)
@@ -667,7 +814,8 @@ utterances:
             "language_code": None,
             "group_names_to_slot_names": None,
             "patterns": None,
-            "slot_names_to_entities": None
+            "slot_names_to_entities": None,
+            "stop_words_whitelist": None
         }
 
         metadata = {"unit_name": "deterministic_intent_parser"}
@@ -740,7 +888,8 @@ values:
                     "destination": "city",
                     "origin": "city",
                 }
-            }
+            },
+            "stop_words_whitelist": dict()
         }
         metadata = {"unit_name": "deterministic_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json",
@@ -748,7 +897,7 @@ values:
         self.assertJsonContent(self.tmp_file_path / "intent_parser.json",
                                expected_dict)
 
-    def test_should_be_deserializable(self):
+    def test_should_be_deserializable_without_stop_words(self):
         # Given
         parser_dict = {
             "config": {
@@ -806,10 +955,81 @@ values:
         expected_parser.group_names_to_slot_names = group_names_to_slot_names
         expected_parser.slot_names_to_entities = slot_names_to_entities
         expected_parser.patterns = patterns
+        # pylint:disable=protected-access
+        expected_parser._stop_words_whitelist = dict()
+        # pylint:enable=protected-access
 
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
 
-    def test_should_be_deserializable_before_fitting(self):
+    def test_should_be_deserializable_with_stop_words(self):
+        # Given
+        parser_dict = {
+            "config": {
+                "max_queries": 42,
+                "max_pattern_length": 43
+            },
+            "language_code": "en",
+            "group_names_to_slot_names": {
+                "hello_group": "hello_slot",
+                "world_group": "world_slot"
+            },
+            "patterns": {
+                "my_intent": [
+                    "(?P<hello_group>hello?)",
+                    "(?P<world_group>world$)"
+                ]
+            },
+            "slot_names_to_entities": {
+                "my_intent": {
+                    "hello_slot": "hello_entity",
+                    "world_slot": "world_entity"
+                }
+            },
+            "stop_words_whitelist": {
+                "my_intent": ["this", "that"],
+            }
+        }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "deterministic_intent_parser"}
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+
+        # When
+        parser = DeterministicIntentParser.from_path(self.tmp_file_path)
+
+        # Then
+        patterns = {
+            "my_intent": [
+                "(?P<hello_group>hello?)",
+                "(?P<world_group>world$)"
+            ]
+        }
+        group_names_to_slot_names = {
+            "hello_group": "hello_slot",
+            "world_group": "world_slot"
+        }
+        slot_names_to_entities = {
+            "my_intent": {
+                "hello_slot": "hello_entity",
+                "world_slot": "world_entity"
+            }
+        }
+        stop_words_whitelist = {"my_intent": {"this", "that"}}
+        config = DeterministicIntentParserConfig(max_queries=42,
+                                                 max_pattern_length=43)
+        expected_parser = DeterministicIntentParser(config=config)
+        expected_parser.language = LANGUAGE_EN
+        expected_parser.group_names_to_slot_names = group_names_to_slot_names
+        expected_parser.slot_names_to_entities = slot_names_to_entities
+        expected_parser.patterns = patterns
+        # pylint:disable=protected-access
+        expected_parser._stop_words_whitelist = stop_words_whitelist
+        # pylint:enable=protected-access
+
+        self.assertEqual(parser.to_dict(), expected_parser.to_dict())
+
+    def test_should_be_deserializable_before_fitting_without_whitelist(self):
         # Given
         parser_dict = {
             "config": {
@@ -819,7 +1039,35 @@ values:
             "language_code": None,
             "group_names_to_slot_names": None,
             "patterns": None,
-            "slot_names_to_entities": None
+            "slot_names_to_entities": None,
+        }
+        self.tmp_file_path.mkdir()
+        metadata = {"unit_name": "deterministic_intent_parser"}
+        self.writeJsonContent(self.tmp_file_path / "intent_parser.json",
+                              parser_dict)
+        self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+
+        # When
+        parser = DeterministicIntentParser.from_path(self.tmp_file_path)
+
+        # Then
+        config = DeterministicIntentParserConfig(max_queries=42,
+                                                 max_pattern_length=43)
+        expected_parser = DeterministicIntentParser(config=config)
+        self.assertEqual(parser.to_dict(), expected_parser.to_dict())
+
+    def test_should_be_deserializable_before_fitting_with_whitelist(self):
+        # Given
+        parser_dict = {
+            "config": {
+                "max_queries": 42,
+                "max_pattern_length": 43
+            },
+            "language_code": None,
+            "group_names_to_slot_names": None,
+            "patterns": None,
+            "slot_names_to_entities": None,
+            "stop_words_whitelist": None
         }
         self.tmp_file_path.mkdir()
         metadata = {"unit_name": "deterministic_intent_parser"}

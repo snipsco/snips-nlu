@@ -21,13 +21,7 @@ CONFIG = {
                             "n": 1
                         },
                         "factory_name": "ngram",
-                        "offsets": [
-                            -2,
-                            -1,
-                            0,
-                            1,
-                            2
-                        ]
+                        "offsets": [-2, -1, 0, 1, 2]
                     },
                     {
                         "args": {
@@ -36,107 +30,57 @@ CONFIG = {
                             "n": 2
                         },
                         "factory_name": "ngram",
-                        "offsets": [
-                            -2,
-                            0,
-                            1,
-                            2
-                        ]
+                        "offsets": [-2, 0, 1, 2]
                     },
                     {
-                        "args": {
-                            "prefix_size": 1
-                        },
+                        "args": {"prefix_size": 1},
                         "factory_name": "prefix",
-                        "offsets": [
-                            0,
-                            1
-                        ]
+                        "offsets": [0, 1]
                     },
                     {
-                        "args": {
-                            "prefix_size": 2
-                        },
+                        "args": {"prefix_size": 2},
                         "factory_name": "prefix",
-                        "offsets": [
-                            0,
-                            1
-                        ]
+                        "offsets": [0, 1]
                     },
                     {
-                        "args": {
-                            "suffix_size": 1
-                        },
+                        "args": {"suffix_size": 1},
                         "factory_name": "suffix",
-                        "offsets": [
-                            0,
-                            1
-                        ]
+                        "offsets": [0, 1]
                     },
                     {
-                        "args": {
-                            "suffix_size": 2
-                        },
+                        "args": {"suffix_size": 2},
                         "factory_name": "suffix",
-                        "offsets": [
-                            0,
-                            1
-                        ]
+                        "offsets": [0, 1]
                     },
                     {
                         "args": {},
                         "factory_name": "is_digit",
-                        "offsets": [
-                            -1,
-                            0,
-                            1
-                        ]
+                        "offsets": [-1, 0, 1]
                     },
                     {
                         "args": {},
                         "factory_name": "is_first",
-                        "offsets": [
-                            -2,
-                            -1,
-                            0
-                        ]
+                        "offsets": [-2, -1, 0]
                     },
                     {
                         "args": {},
                         "factory_name": "is_last",
-                        "offsets": [
-                            0,
-                            1,
-                            2
-                        ]
+                        "offsets": [0, 1, 2]
                     },
                     {
-                        "args": {
-                            "n": 1
-                        },
+                        "args": {"n": 1},
                         "factory_name": "shape_ngram",
-                        "offsets": [
-                            0
-                        ]
+                        "offsets": [0]
                     },
                     {
-                        "args": {
-                            "n": 2
-                        },
+                        "args": {"n": 2},
                         "factory_name": "shape_ngram",
-                        "offsets": [
-                            -1,
-                            0
-                        ]
+                        "offsets": [-1, 0]
                     },
                     {
-                        "args": {
-                            "n": 3
-                        },
+                        "args": {"n": 3},
                         "factory_name": "shape_ngram",
-                        "offsets": [
-                            -1
-                        ]
+                        "offsets": [-1]
                     },
                     {
                         "args": {
@@ -144,25 +88,13 @@ CONFIG = {
                             "tagging_scheme_code": 2
                         },
                         "factory_name": "entity_match",
-                        "offsets": [
-                            -1,
-                            0,
-                            1,
-                            2
-                        ],
+                        "offsets": [-1, 0, 1, 2],
                         "drop_out": 0.5
                     },
                     {
-                        "args": {
-                            "tagging_scheme_code": 1
-                        },
+                        "args": {"tagging_scheme_code": 1},
                         "factory_name": "builtin_entity_match",
-                        "offsets": [
-                            -1,
-                            0,
-                            1,
-                            2
-                        ]
+                        "offsets": [-1, 0, 1, 2]
                     },
                     {
                         "args": {
@@ -170,13 +102,7 @@ CONFIG = {
                             "use_stemming": False
                         },
                         "factory_name": "word_cluster",
-                        "offsets": [
-                            -2,
-                            -1,
-                            0,
-                            1,
-                            2
-                        ]
+                        "offsets": [-2, -1, 0, 1, 2]
                     }
                 ],
                 "crf_args": {

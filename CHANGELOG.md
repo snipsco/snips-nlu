@@ -1,6 +1,37 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Changed
+- Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
+- Accept ambiguous results from `DeterministicIntentParser` when confidence score is above 0.5 [#797](https://github.com/snipsco/snips-nlu/pull/797)
+
+## [0.19.6]
+### Fixed
+- Raise an error when using unknown intents in intents filter [#788](https://github.com/snipsco/snips-nlu/pull/788)
+- Fix issue with stop words in `DeterministicIntentParser` [#789](https://github.com/snipsco/snips-nlu/pull/789)
+
+## [0.19.5]
+### Added
+- Advanced inference logging in the `CRFSlotFiller` [#776](https://github.com/snipsco/snips-nlu/pull/776)
+- Improved failed linking error message after download of resources [#774](https://github.com/snipsco/snips-nlu/pull/774)
+- Improve handling of ambiguous utterances in DeterministicIntentParser [#773](https://github.com/snipsco/snips-nlu/pull/773)
+
+### Changed
+- Remove normalization of confidence scores in intent classification [#782](https://github.com/snipsco/snips-nlu/pull/782)
+
+### Fixed
+- Fixed a crash due to missing resources when refitting the `CRFSlotFiller` [#771](https://github.com/snipsco/snips-nlu/pull/771)
+- Fixed issue with egg fragments in download cli [#769](https://github.com/snipsco/snips-nlu/pull/769)
+- Fixed an issue causing the `None` intent to be ignored when using the `parse` API in conjunction with `intents` and `top_n` [#781](https://github.com/snipsco/snips-nlu/pull/781)
+
+## [0.19.4] - 2019-03-06
+### Added
+- Support for Portuguese: "pt_pt" and "pt_br"
+
+### Changed
+- Enhancement: leverage entity scopes of each intent in deterministic intent parser
+
 ## [0.19.3] - 2019-03-05
 ### Fixed
 - Issue with intent classification reducing classification accuracy
@@ -243,6 +274,9 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.6]: https://github.com/snipsco/snips-nlu/compare/0.19.5...0.19.6
+[0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5
+[0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4
 [0.19.3]: https://github.com/snipsco/snips-nlu/compare/0.19.2...0.19.3
 [0.19.2]: https://github.com/snipsco/snips-nlu/compare/0.19.1...0.19.2
 [0.19.1]: https://github.com/snipsco/snips-nlu/compare/0.19.0...0.19.1

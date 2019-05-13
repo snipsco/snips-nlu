@@ -66,6 +66,7 @@ class IntegrationTestSnipsNLUEngine(SnipsTest):
 
         ref_log_reg, ref_crfs = None, None
         for _ in range(num_runs):
+            # When
             engine = SnipsNLUEngine(random_state=random_state).fit(dataset)
             log_reg = _extract_log_reg(engine)
             crfs = _extract_crfs(engine)
@@ -74,6 +75,7 @@ class IntegrationTestSnipsNLUEngine(SnipsTest):
                 ref_log_reg = log_reg
                 ref_crfs = crfs
             else:
+                # Then
                 self.assertDictEqual(ref_log_reg, log_reg)
                 self.assertDictEqual(ref_crfs, crfs)
 

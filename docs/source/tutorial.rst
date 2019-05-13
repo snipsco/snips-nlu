@@ -174,11 +174,18 @@ the dataset we generated earlier:
 
     engine.fit(dataset)
 
-Note that the training of the engine is not deterministic by default. This
-means that if you train your NLU twice on the same data you'll end up
-the output of the NLU can be different.
+Note that by default, the training of the engine is non-deterministic: if you
+train your NLU twice on the same data and test it on the same input, you'll get
+different outputs.
 
-To
+If you want to run training in a reproducible way you can pass a random seed to
+your engine:
+
+.. code-block:: python
+
+    seed = 42
+    engine = SnipsNLUEngine(config=CONFIG_EN, random_state=seed)
+    engine.fit(dataset)
 
 
 Parsing

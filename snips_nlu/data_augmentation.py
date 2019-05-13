@@ -71,8 +71,8 @@ def get_entities_iterators(intent_entities, language,
     for entity_name, entity in iteritems(intent_entities):
         utterance_values = random_state.permutation(sorted(entity[UTTERANCES]))
         if add_builtin_entities_examples and is_builtin_entity(entity_name):
-            entity_examples = get_builtin_entity_examples(entity_name,
-                                                              language)
+            entity_examples = get_builtin_entity_examples(
+                entity_name, language)
             # Builtin entity examples must be kept first in the iterator to
             # ensure that they are used when augmenting data
             iterator_values = entity_examples + list(utterance_values)

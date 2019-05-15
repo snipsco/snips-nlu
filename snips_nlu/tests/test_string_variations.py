@@ -1,6 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+from mock import MagicMock
+
 from snips_nlu.constants import (LANGUAGE_EN, LANGUAGE_FR, RES_MATCH_RANGE,
                                  SNIPS_NUMBER, START)
 from snips_nlu.entity_parser import BuiltinEntityParser
@@ -164,3 +166,17 @@ class TestStringVariations(SnipsTest):
             "7.62 mm caliber two and 6",
         }
         self.assertSetEqual(variations, expected_variations)
+
+    def test_get_string_variations_should_not_generate_number_variations(self):
+        # Given
+        builtin_entity_parser = MagicMock()
+        mocked_parse = MagicMock(return_value=[])
+        builtin_entity_parser.parse = mocked_parse
+
+        # When/Then
+        get_string_variations("", "en", builtin_entity_parser,
+                              number_variations=False)
+        mocked_parse.assert_not_called()
+        get_string_variations(
+            "", "en", builtin_entity_parser, number_variations=True)
+        self.assertGreater(mocked_parse.call_count, 0)

@@ -221,4 +221,4 @@ class EntityParserMock(EntityParser):
         return cls(entities)
 
     def _parse(self, text, scope=None):
-        return self.entities.get(text)
+        return self.entities.get(text, [])

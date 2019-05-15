@@ -105,6 +105,8 @@ utterances:
 
         # When
         results = nlu_engine.parse(text, top_n=3)
+        results_with_filter = nlu_engine.parse(
+            text, intents=["intent1", "intent3"], top_n=3)
 
         # Then
         expected_results = [
@@ -123,7 +125,23 @@ utterances:
                 []
             ),
         ]
+        expected_results_with_filter = [
+            extraction_result(
+                intent_classification_result("intent1", 0.5),
+                [custom_slot(
+                    unresolved_slot((0, 3), "foo", "entity1", "slot1"))]
+            ),
+            extraction_result(
+                intent_classification_result(None, 0.15),
+                []
+            ),
+            extraction_result(
+                intent_classification_result("intent3", 0.05),
+                []
+            ),
+        ]
         self.assertListEqual(expected_results, results)
+        self.assertListEqual(expected_results_with_filter, results_with_filter)
 
     def test_should_get_intents(self):
         # Given
@@ -252,6 +270,39 @@ utterances:
         # When / Then
         with self.assertRaises(IntentNotFoundError):
             nlu_engine.get_slots("Hello John", "greeting3")
+
+    def test_parse_should_raise_with_unknown_intent_in_filter(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: greeting1
+utterances:
+  - Hello [name1](John)
+
+---
+type: intent
+name: goodbye
+utterances:
+  - Goodbye [name](Eric)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # pylint:disable=unused-variable
+        @IntentParser.register("my_intent_parser", True)
+        class FirstIntentParser(MockIntentParser):
+            pass
+
+        # pylint:enable=unused-variable
+
+        config = NLUEngineConfig(["my_intent_parser"])
+        nlu_engine = SnipsNLUEngine(config).fit(dataset)
+
+        # When / Then
+        with self.assertRaises(IntentNotFoundError):
+            nlu_engine.parse("Hello John", intents="greeting3")
+
+        with self.assertRaises(IntentNotFoundError):
+            nlu_engine.parse("Hello John", intents=["greeting3"])
 
     def test_should_use_parsers_sequentially(self):
         # Given

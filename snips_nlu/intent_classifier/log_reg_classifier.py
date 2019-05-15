@@ -52,7 +52,7 @@ class LogRegIntentClassifier(IntentClassifier):
         """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
-    @log_elapsed_time(logger, logging.DEBUG,
+    @log_elapsed_time(logger, logging.INFO,
                       "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
         """Fits the intent classifier with a valid Snips dataset
@@ -60,7 +60,7 @@ class LogRegIntentClassifier(IntentClassifier):
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
-        logger.debug("Fitting LogRegIntentClassifier...")
+        logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
@@ -153,7 +153,7 @@ class LogRegIntentClassifier(IntentClassifier):
         # pylint: disable=C0103
         X = self.featurizer.transform([text_to_utterance(text)])
         # pylint: enable=C0103
-        proba_vec = self._predict_proba(X, intents_filter=intents_filter)
+        proba_vec = self._predict_proba(X)
         logger.debug(
             "%s", DifferedLoggingMessage(self.log_activation_weights, text, X))
         results = [
@@ -163,14 +163,8 @@ class LogRegIntentClassifier(IntentClassifier):
 
         return sorted(results, key=lambda res: -res[RES_PROBA])
 
-    def _predict_proba(self, X, intents_filter):  # pylint: disable=C0103
+    def _predict_proba(self, X):  # pylint: disable=C0103
         self.classifier._check_proba()  # pylint: disable=W0212
-
-        filtered_out_indexes = None
-        if intents_filter is not None:
-            filtered_out_indexes = [
-                i for i, intent in enumerate(self.intent_list)
-                if intent not in intents_filter and intent is not None]
 
         prob = self.classifier.decision_function(X)
         prob *= -1
@@ -179,14 +173,7 @@ class LogRegIntentClassifier(IntentClassifier):
         np.reciprocal(prob, prob)
         if prob.ndim == 1:
             return np.vstack([1 - prob, prob]).T
-        else:
-            if filtered_out_indexes:  # not None and not empty
-                prob[:, filtered_out_indexes] = 0.
-                # OvR normalization, like LibLinear's predict_probability
-                prob /= prob.sum(axis=1).reshape((prob.shape[0], -1))
-            # We do not normalize when there is no intents filter, to keep the
-            # probabilities calibrated
-            return prob
+        return prob
 
     @check_persisted_path
     def persist(self, path):

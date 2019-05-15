@@ -6,7 +6,7 @@ import operator
 from copy import deepcopy
 from pathlib import Path
 
-from future.utils import iteritems, viewvalues
+from future.utils import iteritems, itervalues, viewvalues
 from snips_nlu_parsers import GazetteerEntityParser
 
 from snips_nlu.common.utils import json_string
@@ -16,7 +16,7 @@ from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
 from snips_nlu.entity_parser.entity_parser import EntityParser
-from snips_nlu.preprocessing import stem, tokenize
+from snips_nlu.preprocessing import stem, tokenize, tokenize_light
 from snips_nlu.result import parsed_entity
 
 
@@ -123,23 +123,53 @@ def _merge_entity_utterances(raw_utterances, stemmed_utterances):
     return raw_utterances
 
 
-def _create_custom_entity_parser_configuration(entities):
-    return {
-        "entity_parsers": [
-            {
-                "entity_identifier": entity_name,
-                "entity_parser": {
-                    "threshold": entity[MATCHING_STRICTNESS],
-                    "gazetteer": [
-                        {
-                            "raw_value": k,
-                            "resolved_value": v
-                        } for k, v in sorted(iteritems(entity[UTTERANCES]))
-                    ]
-                }
-            } for entity_name, entity in sorted(iteritems(entities))
-        ]
+def _create_custom_entity_parser_configuration(
+        entities, stopwords_fraction, language):
+    """Dynamically creates the gazetteer parser configuration.
+
+    Args:
+        entities (dict): entity for the dataset
+        stopwords_fraction (float): fraction of the vocabulary of
+            the entity values that will be considered as stop words (
+            the top n_vocabulary * stopwords_fraction most frequent words will
+            be considered stop words)
+        language (str): language of the entities
+
+    Returns: the parser configuration as dictionary
+    """
+
+    if not 0 < stopwords_fraction < 1:
+        raise ValueError("stopwords_fraction must be in ]0.0, 1.0[")
+
+    parser_configurations = []
+    for entity_name, entity in sorted(iteritems(entities)):
+        vocabulary = set()
+        entity_tokens = set(
+            t for raw_value in itervalues(entity[UTTERANCES])
+            for t in tokenize_light(raw_value, language)
+        )
+        vocabulary.update(entity_tokens)
+        num_stopwords = int(stopwords_fraction * len(vocabulary))
+        config = {
+            "entity_identifier": entity_name,
+            "entity_parser": {
+                "threshold": entity[MATCHING_STRICTNESS],
+                "n_gazetteer_stop_words": num_stopwords,
+                "gazetteer": [
+                    {
+                        "raw_value": k,
+                        "resolved_value": v
+                    } for k, v in sorted(iteritems(entity[UTTERANCES]))
+                ]
+            }
+        }
+        parser_configurations.append(config)
+
+    configuration = {
+        "entity_parsers": parser_configurations
     }
+
+    return configuration
 
 
 def _compute_char_shifts(tokens):
@@ -163,8 +193,8 @@ def _compute_char_shifts(tokens):
         else:
             previous_token_end = tokens[token_index - 1].end
             previous_space_len = 1
-        current_shift -= (token.start - previous_token_end) - \
-                         previous_space_len
+        current_shift -= (token.start - previous_token_end
+                          ) - previous_space_len
         token_len = token.end - token.start
         index_shift = token_len + previous_space_len
         characters_shifts += [current_shift for _ in range(index_shift)]

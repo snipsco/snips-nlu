@@ -9,7 +9,8 @@ from snips_nlu.constants import STEMS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.custom_entity_parser import (
-    CustomEntityParserUsage, _compute_char_shifts)
+    CustomEntityParserUsage, _compute_char_shifts,
+    _create_custom_entity_parser_configuration)
 from snips_nlu.preprocessing import tokenize
 from snips_nlu.tests.utils import FixtureTest
 
@@ -272,6 +273,70 @@ class TestCustomEntityParser(FixtureTest):
         expected_shifts = [-2, -2, -2, -2, -2, -1, -1, -3, -3, -3, -3, -3, -3]
         self.assertListEqual(expected_shifts, shifts)
 
+    def test_create_custom_entity_parser_configuration(self):
+        # Given
+        entities = {
+            "a": {
+                "utterances":
+                    {
+                        "a a": "a",
+                        "aa": "a",
+                        "c": "c"
+                    },
+                "matching_strictness": 1.0
+            },
+            "b": {
+                "utterances":{
+                    "b": "b"
+                },
+                "matching_strictness": 1.0
+            },
+        }
+
+        # When
+        config = _create_custom_entity_parser_configuration(
+            entities, stopwords_fraction=.5, language="en")
+
+        # Then
+        expected_dict = {
+            "entity_parsers": [
+                {
+                    "entity_identifier": "a",
+                    "entity_parser": {
+                        "threshold": 1.0,
+                        "n_gazetteer_stop_words": 1,
+                        "gazetteer": [
+                            {
+                                "raw_value": "a a",
+                                "resolved_value": "a",
+                            },
+                            {
+                                "raw_value": "aa",
+                                "resolved_value": "a",
+                            },
+                            {
+                                "raw_value": "c",
+                                "resolved_value": "c",
+                            },
+                        ]
+                    }
+                },
+                {
+                    "entity_identifier": "b",
+                    "entity_parser": {
+                        "threshold": 1.0,
+                        "n_gazetteer_stop_words": 0,
+                        "gazetteer": [
+                            {
+                                "raw_value": "b",
+                                "resolved_value": "b",
+                            },
+                        ]
+                    }
+                }
+            ]
+        }
+        self.assertDictEqual(expected_dict, config)
 
 # pylint: disable=unused-argument
 def _persist_parser(path):

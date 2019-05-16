@@ -155,7 +155,8 @@ def flatten(results):
     return set(i for r in results for i in r)
 
 
-def get_string_variations(string, language, builtin_entity_parser):
+def get_string_variations(string, language, builtin_entity_parser,
+                          number_variations=True):
     variations = {string}
     variations.update(flatten(case_variations(v) for v in variations))
     variations.update(flatten(normalization_variations(v) for v in variations))
@@ -165,9 +166,14 @@ def get_string_variations(string, language, builtin_entity_parser):
     variations.update(flatten(and_variations(v, language) for v in variations))
     variations.update(
         flatten(punctuation_variations(v, language) for v in variations))
-    variations.update(
-        flatten(numbers_variations(v, language, builtin_entity_parser)
-                for v in variations))
+
+    # Special case of number variation which are long to generate due to the
+    # BuilinEntityParser running on each variation
+    if number_variations:
+        variations.update(
+            flatten(numbers_variations(v, language, builtin_entity_parser)
+                    for v in variations)
+        )
     # Add single space variations
     single_space_variations = set(" ".join(v.split()) for v in variations)
     variations.update(single_space_variations)

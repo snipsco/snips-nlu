@@ -8,9 +8,9 @@ import shutil
 import tempfile
 from builtins import range
 from copy import deepcopy
+from pathlib import Path
 
 from future.utils import iteritems
-from pathlib import Path
 from sklearn_crfsuite import CRF
 
 from snips_nlu.common.dataset_utils import get_slot_name_mapping

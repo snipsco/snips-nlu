@@ -8,8 +8,7 @@ from future.utils import iteritems
 from snips_nlu_metrics import compute_cross_val_metrics
 
 from snips_nlu.constants import LANGUAGE_EN
-from snips_nlu.nlu_engine.nlu_engine import (
-    SnipsNLUEngine, SnipsNLUEngine as TrainingEngine)
+from snips_nlu.nlu_engine.nlu_engine import SnipsNLUEngine as TrainingEngine
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.tests.utils import PERFORMANCE_DATASET_PATH, SnipsTest
 
@@ -67,7 +66,7 @@ class IntegrationTestSnipsNLUEngine(SnipsTest):
         ref_log_reg, ref_crfs = None, None
         for _ in range(num_runs):
             # When
-            engine = SnipsNLUEngine(random_state=random_state).fit(dataset)
+            engine = TrainingEngine(random_state=random_state).fit(dataset)
             log_reg = _extract_log_reg(engine)
             crfs = _extract_crfs(engine)
 

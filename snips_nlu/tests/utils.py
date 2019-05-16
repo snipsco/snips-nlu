@@ -205,8 +205,10 @@ class MockSlotFiller(MockProcessingUnitMixin, SlotFiller):
 
 class EntityParserMock(EntityParser):
 
-    def __init__(self, entities):
+    def __init__(self, entities=None):
         super(EntityParserMock, self).__init__()
+        if entities is None:
+            entities = dict()
         self.entities = entities
 
     def persist(self, path):
@@ -221,4 +223,4 @@ class EntityParserMock(EntityParser):
         return cls(entities)
 
     def _parse(self, text, scope=None):
-        return self.entities.get(text)
+        return self.entities.get(text, [])

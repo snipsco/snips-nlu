@@ -2,33 +2,24 @@
 from __future__ import unicode_literals
 
 import io
+from copy import deepcopy
 
 from mock import patch
+from snips_nlu_utils import hash_str
 
 from snips_nlu.constants import (
-    DATA,
-    ENTITY,
-    LANGUAGE_EN,
-    RES_ENTITY,
-    RES_INTENT,
-    RES_INTENT_NAME,
-    RES_PROBA,
-    RES_SLOTS,
-    RES_VALUE,
-    SLOT_NAME,
-    TEXT,
-)
+    DATA, ENTITY, RES_ENTITY, RES_INTENT, RES_INTENT_NAME,
+    RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, TEXT, STOP_WORDS)
 from snips_nlu.dataset import Dataset
+from snips_nlu.entity_parser import BuiltinEntityParser
 from snips_nlu.exceptions import IntentNotFoundError, NotTrained
 from snips_nlu.intent_parser import LookupIntentParser
+from snips_nlu.intent_parser.lookup_intent_parser import _get_entity_scopes
 from snips_nlu.pipeline.configs import LookupIntentParserConfig
 from snips_nlu.result import (
-    empty_result,
-    extraction_result,
-    intent_classification_result,
-    unresolved_slot,
-)
-from snips_nlu.tests.utils import FixtureTest, TEST_PATH
+    empty_result, extraction_result, intent_classification_result,
+    unresolved_slot, parsing_result)
+from snips_nlu.tests.utils import FixtureTest, TEST_PATH, EntityParserMock
 
 
 class TestLookupIntentParser(FixtureTest):
@@ -68,11 +59,9 @@ type: entity
 name: dummy_entity_2
 automatically_extensible: no
 values:
-- [dummy_c, 3p.m., dummy_cc, dummy c]"""
-        )
+- [dummy_c, 3p.m., dummy_cc, dummy c]""")
         self.slots_dataset = Dataset.from_yaml_files(
-            "en", [slots_dataset_stream]
-        ).json
+            "en", [slots_dataset_stream]).json
 
     def test_should_parse_intent(self):
         # Given
@@ -88,8 +77,7 @@ utterances:
 type: intent
 name: intent2
 utterances:
-  - foo bar ban"""
-        )
+  - foo bar ban""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
         text = "foo bar ban"
@@ -100,8 +88,7 @@ utterances:
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
-            intent_name="intent2", probability=probability
-        )
+            intent_name="intent2", probability=probability)
 
         self.assertEqual(expected_intent, parsing[RES_INTENT])
 
@@ -119,8 +106,7 @@ utterances:
 type: intent
 name: intent2
 utterances:
-  - foo bar ban"""
-        )
+  - foo bar ban""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
         text = "foo bar ban"
@@ -133,32 +119,72 @@ utterances:
 
     def test_should_parse_top_intents(self):
         # Given
-        dataset_stream = io.StringIO(
-            """
+        dataset_stream = io.StringIO("""
 ---
 type: intent
 name: intent1
 utterances:
-  - hello world
+  - meeting [time:snips/datetime](today)
 
 ---
 type: intent
 name: intent2
 utterances:
-  - foo bar"""
-        )
+  - meeting tomorrow
+
+---
+type: intent
+name: intent3
+utterances:
+  - "[event_type](call) [time:snips/datetime](at 9pm)"
+
+---
+type: entity
+name: event_type
+values:
+  - meeting
+  - feedback session""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
-        text = "hello world"
+        text = "meeting tomorrow"
 
         # When
         results = parser.parse(text, top_n=3)
 
         # Then
-        expected_intent = intent_classification_result(
-            intent_name="intent1", probability=1.0
-        )
-        expected_results = [extraction_result(expected_intent, [])]
+        time_slot = {
+            "entity": "snips/datetime",
+            "range": {"end": 16, "start": 8},
+            "slotName": "time",
+            "value": "tomorrow"
+        }
+        event_slot = {
+            "entity": "event_type",
+            "range": {"end": 7, "start": 0},
+            "slotName": "event_type",
+            "value": "meeting"
+        }
+        weight_intent_1 = 1. / 2.
+        weight_intent_2 = 1.
+        weight_intent_3 = 1. / 3.
+        total_weight = weight_intent_1 + weight_intent_2 + weight_intent_3
+        proba_intent2 = weight_intent_2 / total_weight
+        proba_intent1 = weight_intent_1 / total_weight
+        proba_intent3 = weight_intent_3 / total_weight
+        expected_results = [
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent2", probability=proba_intent2),
+                slots=[]),
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent1", probability=proba_intent1),
+                slots=[time_slot]),
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent3", probability=proba_intent3),
+                slots=[event_slot, time_slot])
+        ]
         self.assertEqual(expected_results, results)
 
     @patch("snips_nlu.intent_parser.lookup_intent_parser" ".get_stop_words")
@@ -177,12 +203,51 @@ utterances:
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
-            intent_name="dummy_intent_1", probability=probability
-        )
+            intent_name="dummy_intent_1", probability=probability)
 
         self.assertEqual(expected_intent, parsing[RES_INTENT])
 
-    def test_should_ignore_ambiguous_utterances(self):
+    def test_should_parse_intent_with_duplicated_slot_names(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: math_operation
+slots:
+  - name: number
+    entity: snips/number
+utterances:
+  - what is [number](one) plus [number](one)""")
+        dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
+        parser = LookupIntentParser().fit(dataset)
+        text = "what is one plus one"
+
+        # When
+        parsing = parser.parse(text)
+
+        # Then
+        probability = 1.0
+        expected_intent = intent_classification_result(
+            intent_name="math_operation", probability=probability)
+        expected_slots = [
+            {
+                "entity": "snips/number",
+                "range": {"end": 11, "start": 8},
+                "slotName": "number",
+                "value": "one"
+            },
+            {
+                "entity": "snips/number",
+                "range": {"end": 20, "start": 17},
+                "slotName": "number",
+                "value": "one"
+            }
+        ]
+
+        self.assertDictEqual(expected_intent, parsing[RES_INTENT])
+        self.assertListEqual(expected_slots, parsing[RES_SLOTS])
+
+    def test_should_ignore_completely_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO(
             """
@@ -196,8 +261,7 @@ utterances:
 type: intent
 name: dummy_intent_2
 utterances:
-  - Hello world"""
-        )
+  - Hello world""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
         text = "Hello world"
@@ -207,6 +271,64 @@ utterances:
 
         # Then
         self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_ignore_very_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - "[event_type](meeting) tomorrow"
+
+---
+type: intent
+name: intent_2
+utterances:
+  - call [time:snips/datetime](today)
+
+---
+type: entity
+name: event_type
+values:
+  - call
+  - diner""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = LookupIntentParser().fit(dataset)
+        text = "call tomorrow"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_parse_slightly_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - call tomorrow
+
+---
+type: intent
+name: intent_2
+utterances:
+  - call [time:snips/datetime](today)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = LookupIntentParser().fit(dataset)
+        text = "call tomorrow"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="intent_1", probability=2. / 3.)
+        expected_result = parsing_result(text, expected_intent, [])
+        self.assertEqual(expected_result, res)
 
     def test_should_not_parse_when_not_fitted(self):
         # Given
@@ -224,9 +346,8 @@ utterances:
         parser = LookupIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = LookupIntentParser.from_path(
-            self.tmp_file_path, **shared
-        )
-        text = "this is a dummy_a query with another dummy_c at 10p.m. or "\
+            self.tmp_file_path, **shared)
+        text = "this is a dummy_a query with another dummy_c at 10p.m. or " \
                "at 12p.m."
 
         # When
@@ -235,8 +356,7 @@ utterances:
         # Then
         probability = 1.0
         expected_intent = intent_classification_result(
-            intent_name="dummy_intent_1", probability=probability
-        )
+            intent_name="dummy_intent_1", probability=probability)
         self.assertEqual(expected_intent, parsing[RES_INTENT])
 
     def test_should_parse_slots(self):
@@ -352,6 +472,53 @@ utterances:
             # Then
             self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
+    def test_should_parse_stop_words_slots(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: search
+utterances:
+  - search
+  - search [search_object](this)
+  - search [search_object](a cat)
+
+---
+type: entity
+name: search_object
+values:
+  - [this thing, that]
+  """)
+
+        resources = deepcopy(self.get_resources("en"))
+        resources[STOP_WORDS] = {"a", "this", "that"}
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser_config = LookupIntentParserConfig(ignore_stop_words=True)
+        parser = LookupIntentParser(config=parser_config, resources=resources)
+        parser.fit(dataset)
+
+        # When
+        res_1 = parser.parse("search this")
+        res_2 = parser.parse("search that")
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="search", probability=1.0)
+        expected_slots_1 = [
+            unresolved_slot(match_range=(7, 11), value="this",
+                            entity="search_object",
+                            slot_name="search_object")
+        ]
+        expected_slots_2 = [
+            unresolved_slot(match_range=(7, 11), value="that",
+                            entity="search_object",
+                            slot_name="search_object")
+        ]
+        self.assertEqual(expected_intent, res_1[RES_INTENT])
+        self.assertEqual(expected_intent, res_2[RES_INTENT])
+        self.assertListEqual(expected_slots_1, res_1[RES_SLOTS])
+        self.assertListEqual(expected_slots_2, res_2[RES_SLOTS])
+
     def test_should_get_intents(self):
         # Given
         dataset_stream = io.StringIO(
@@ -372,8 +539,7 @@ utterances:
 type: intent
 name: greeting3
 utterances:
-  - Hi [name](Robert)"""
-        )
+  - Hi [name](Robert)""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
@@ -419,8 +585,7 @@ utterances:
 type: intent
 name: goodbye
 utterances:
-  - Goodbye [name](Eric)"""
-        )
+  - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
 
@@ -447,8 +612,7 @@ utterances:
 type: intent
 name: greeting
 utterances:
-  - Hello [name](John)"""
-        )
+  - Hello [name](John)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
 
@@ -472,8 +636,7 @@ utterances:
 type: intent
 name: goodbye
 utterances:
-  - Goodbye [name](Eric)"""
-        )
+  - Goodbye [name](Eric)""")
         dataset = Dataset.from_yaml_files("en", [slots_dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
 
@@ -488,8 +651,7 @@ utterances:
         parser = LookupIntentParser(**shared).fit(dataset)
         parser.persist(self.tmp_file_path)
         deserialized_parser = LookupIntentParser.from_path(
-            self.tmp_file_path, **shared
-        )
+            self.tmp_file_path, **shared)
 
         texts = [
             (
@@ -601,8 +763,7 @@ name: MakeCoffee
 utterances:
 - make me [number_of_cups:snips/number](two) cups of coffee
 - brew [number_of_cups] cups of coffee
-- can you prepare [number_of_cups] cup of coffee"""
-        )
+- can you prepare [number_of_cups] cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         shared = self.get_shared_data(dataset)
         intent_parser = LookupIntentParser(**shared).fit(dataset)
@@ -610,8 +771,7 @@ utterances:
         # When
         intent_parser_bytes = intent_parser.to_byte_array()
         loaded_intent_parser = LookupIntentParser.from_byte_array(
-            intent_parser_bytes, **shared
-        )
+            intent_parser_bytes, **shared)
         result = loaded_intent_parser.parse("make me two cups of coffee")
 
         # Then
@@ -626,8 +786,7 @@ type: intent
 name: my_intent
 utterances:
 - this is [slot1:entity1](my first entity)
-- this is [slot2:entity2](second_entity)"""
-        )
+- this is [slot2:entity2](second_entity)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         naughty_strings_path = TEST_PATH / "resources" / "naughty_strings.txt"
         with naughty_strings_path.open(encoding="utf8") as f:
@@ -726,13 +885,14 @@ utterances:
             "intents_names": [],
             "map": None,
             "slots_names": [],
+            "entity_scopes": None,
+            "stop_words_whitelist": None
         }
 
         metadata = {"unit_name": "lookup_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
         self.assertJsonContent(
-            self.tmp_file_path / "intent_parser.json", expected_dict
-        )
+            self.tmp_file_path / "intent_parser.json", expected_dict)
 
     @patch("snips_nlu.intent_parser.lookup_intent_parser.get_stop_words")
     def test_should_be_serializable(self, mock_get_stop_words):
@@ -757,9 +917,7 @@ name: city
 values:
   - london
   - [new york, big apple]
-  - [paris, city of lights]
-            """
-        )
+  - [paris, city of lights]""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
@@ -783,36 +941,95 @@ values:
                 "-1558674456": [0, [1]],
             },
             "slots_names": ["origin", "destination"],
+            "entity_scopes": [
+                {
+                    "entity_scope": {"builtin": [], "custom": ["city"]},
+                    "intent_group": ["searchFlight"]
+                }
+            ],
+            "stop_words_whitelist": dict()
         }
         metadata = {"unit_name": "lookup_intent_parser"}
         self.assertJsonContent(self.tmp_file_path / "metadata.json", metadata)
         self.assertJsonContent(
-            self.tmp_file_path / "intent_parser.json", expected_dict
-        )
+            self.tmp_file_path / "intent_parser.json", expected_dict)
 
     def test_should_be_deserializable(self):
         # Given
         parser_dict = {
-            "config": {},
+            "config": {
+                "unit_name": "lookup_intent_parser",
+                "ignore_stop_words": True
+            },
             "language_code": "en",
-            "map": None,
-            "slots_names": [],
-            "intents_names": [],
+            "map": {
+                hash_str("make coffee"): [0, []],
+                hash_str("prepare % snipsnumber % coffees"): [0, [0]],
+                hash_str("% snipsnumber % teas at % snipstemperature %"):
+                    [1, [0, 1]],
+            },
+            "slots_names": ["nb_cups", "tea_temperature"],
+            "intents_names": ["MakeCoffee", "MakeTea"],
+            "entity_scopes": [
+                {
+                    "entity_scope": {
+                        "builtin": ["snips/number"],
+                        "custom": [],
+                    },
+                    "intent_group": ["MakeCoffee"]
+                },
+                {
+                    "entity_scope": {
+                        "builtin": ["snips/number", "snips/temperature"],
+                        "custom": [],
+                    },
+                    "intent_group": ["MakeTea"]
+                },
+            ],
+            "stop_words_whitelist": dict()
         }
         self.tmp_file_path.mkdir()
-        metadata = {"unit_name": "deterministic_intent_parser"}
+        metadata = {"unit_name": "lookup_intent_parser"}
         self.writeJsonContent(
-            self.tmp_file_path / "intent_parser.json", parser_dict
-        )
+            self.tmp_file_path / "intent_parser.json", parser_dict)
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
+        resources = self.get_resources("en")
+        print("STOP WORDS = %s" % resources[STOP_WORDS])
+        builtin_entity_parser = BuiltinEntityParser.build(language="en")
+        custom_entity_parser = EntityParserMock()
 
         # When
-        parser = LookupIntentParser.from_path(self.tmp_file_path)
-        config = LookupIntentParserConfig()
-        expected_parser = LookupIntentParser(config=config)
-        expected_parser.language = LANGUAGE_EN
+        parser = LookupIntentParser.from_path(
+            self.tmp_file_path, custom_entity_parser=custom_entity_parser,
+            builtin_entity_parser=builtin_entity_parser,
+            resources=resources)
+        res_make_coffee = parser.parse("make me a coffee")
+        res_make_tea = parser.parse("two teas at 90°C please")
 
-        self.assertEqual(parser.to_dict(), expected_parser.to_dict())
+        # Then
+        expected_result_coffee = parsing_result(
+            input="make me a coffee",
+            intent=intent_classification_result("MakeCoffee", 1.0),
+            slots=[])
+        expected_result_tea = parsing_result(
+            input="two teas at 90°C please",
+            intent=intent_classification_result("MakeTea", 1.0),
+            slots=[
+                {
+                    "entity": "snips/number",
+                    "range": {"end": 3, "start": 0},
+                    "slotName": "nb_cups",
+                    "value": "two"
+                },
+                {
+                    "entity": "snips/temperature",
+                    "range": {"end": 16, "start": 12},
+                    "slotName": "tea_temperature",
+                    "value": "90°C"
+                }
+            ])
+        self.assertEqual(expected_result_coffee, res_make_coffee)
+        self.assertEqual(expected_result_tea, res_make_tea)
 
     def test_should_be_deserializable_before_fitting(self):
         # Given
@@ -822,12 +1039,12 @@ values:
             "map": None,
             "slots_names": [],
             "intents_names": [],
+            "entity_scopes": None
         }
         self.tmp_file_path.mkdir()
         metadata = {"unit_name": "dict_deterministic_intent_parser"}
         self.writeJsonContent(
-            self.tmp_file_path / "intent_parser.json", parser_dict
-        )
+            self.tmp_file_path / "intent_parser.json", parser_dict)
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
 
         # When
@@ -837,3 +1054,60 @@ values:
         config = LookupIntentParserConfig()
         expected_parser = LookupIntentParser(config=config)
         self.assertEqual(parser.to_dict(), expected_parser.to_dict())
+
+    def test_get_entity_scopes(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent1
+utterances:
+  - meeting [schedule_time:snips/datetime](today)
+
+---
+type: intent
+name: intent2
+utterances:
+  - hello world
+
+---
+type: intent
+name: intent3
+utterances:
+  - what will be the weather [weather_time:snips/datetime](tomorrow)
+  
+---
+type: intent
+name: intent4
+utterances:
+  - find a flight for [city](Paris) [flight_time:snips/datetime](tomorrow)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        entity_scopes = _get_entity_scopes(dataset)
+
+        # Then
+        expected_scopes = [
+            {
+                "entity_scope": {
+                    "builtin": ["snips/datetime"],
+                    "custom": []
+                },
+                "intent_group": ["intent1", "intent3"]
+            },
+            {
+                "entity_scope": {
+                    "builtin": [],
+                    "custom": []
+                },
+                "intent_group": ["intent2"]
+            },
+            {
+                "entity_scope": {
+                    "builtin": ["snips/datetime"],
+                    "custom": ["city"]
+                },
+                "intent_group": ["intent4"]
+            }
+        ]
+        self.assertListEqual(expected_scopes, entity_scopes)

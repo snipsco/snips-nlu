@@ -3,56 +3,39 @@ from __future__ import unicode_literals
 import json
 import logging
 from builtins import str
+from collections import defaultdict
 from pathlib import Path
 
-from future.utils import iteritems
-
+from future.utils import iteritems, itervalues
 from snips_nlu_utils import normalize, hash_str
 
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
 from snips_nlu.common.utils import (
-    check_persisted_path,
-    deduplicate_overlapping_entities,
-    fitted_required,
-    json_string,
-)
+    check_persisted_path, deduplicate_overlapping_entities, fitted_required,
+    json_string)
 from snips_nlu.constants import (
-    DATA,
-    END,
-    ENTITIES,
-    ENTITY,
-    ENTITY_KIND,
-    INTENTS,
-    LANGUAGE,
-    RES_INPUT,
-    RES_INTENT,
-    RES_INTENT_NAME,
-    RES_MATCH_RANGE,
-    RES_SLOTS,
-    SLOT_NAME,
-    START,
-    TEXT,
-    UTTERANCES,
-)
-from snips_nlu.dataset import validate_and_format_dataset
+    DATA, END, ENTITIES, ENTITY, ENTITY_KIND, INTENTS, LANGUAGE, RES_INTENT,
+    RES_INTENT_NAME, RES_MATCH_RANGE, RES_SLOTS, SLOT_NAME, START, TEXT,
+    UTTERANCES, RES_PROBA)
+from snips_nlu.dataset import (
+    validate_and_format_dataset, extract_intent_entities)
+from snips_nlu.dataset.utils import get_stop_words_whitelist
+from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import LookupIntentParserConfig
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.resources import get_stop_words
 from snips_nlu.result import (
-    empty_result,
-    intent_classification_result,
-    parsing_result,
-    unresolved_slot,
-)
+    empty_result, intent_classification_result, parsing_result,
+    unresolved_slot, extraction_result)
 
 logger = logging.getLogger(__name__)
 
 
 @IntentParser.register("lookup_intent_parser")
 class LookupIntentParser(IntentParser):
-    """A Deterministic Intent parser implementation based on a dictionary
+    """A deterministic Intent parser implementation based on a dictionary
 
     This intent parser is very strict by nature, and tends to have a very good
     precision but a low recall. For this reason, it is interesting to use it
@@ -66,37 +49,37 @@ class LookupIntentParser(IntentParser):
         :class:`.LookupIntentParserConfig`"""
         super(LookupIntentParser, self).__init__(config, **shared)
         self._language = None
-        self.stop_words = None
-        self.map = None
-        self.intents_names = []
-        self.slots_names = []
+        self._stop_words = None
+        self._stop_words_whitelist = None
+        self._map = None
+        self._intents_names = []
+        self._slots_names = []
         self._intents_mapping = dict()
         self._slots_mapping = dict()
+        self._entity_scopes = None
 
     @property
     def language(self):
-        """get parser's language"""
         return self._language
 
     @language.setter
     def language(self, value):
         self._language = value
         if value is None:
-            self.stop_words = None
+            self._stop_words = None
         else:
             if self.config.ignore_stop_words:
-                self.stop_words = get_stop_words(self.resources)
+                self._stop_words = get_stop_words(self.resources)
             else:
-                self.stop_words = set()
+                self._stop_words = set()
 
     @property
     def fitted(self):
         """Whether or not the intent parser has already been trained"""
-        return self.map is not None
+        return self._map is not None
 
     @log_elapsed_time(
-        logger, logging.INFO, "Fitted lookup intent parser in {elapsed_time}"
-    )
+        logger, logging.INFO, "Fitted lookup intent parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
         """Fits the intent parser with a valid Snips dataset"""
         logger.info("Fitting lookup intent parser...")
@@ -105,23 +88,25 @@ class LookupIntentParser(IntentParser):
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
         self.language = dataset[LANGUAGE]
-        self.map = dict()
+        self._entity_scopes = _get_entity_scopes(dataset)
+        self._map = dict()
+        self._stop_words_whitelist = get_stop_words_whitelist(
+            dataset, self._stop_words)
         entity_placeholders = _get_entity_placeholders(dataset, self.language)
 
         ambiguous_keys = set()
-        for (key, val) in self.generate_io_mapping(
-                dataset[INTENTS], entity_placeholders
-        ):
+        for (key, val) in self.generate_io_mapping(dataset[INTENTS],
+                                                   entity_placeholders):
             key = hash_str(key)
             # handle key collisions -*- flag ambiguous entries -*-
-            if key in self.map and self.map[key] != val:
+            if key in self._map and self._map[key] != val:
                 ambiguous_keys.add(key)
             else:
-                self.map[key] = val
+                self._map[key] = val
 
         # delete ambiguous keys
         for key in ambiguous_keys:
-            self.map.pop(key)
+            self._map.pop(key)
 
         return self
 
@@ -153,70 +138,112 @@ class LookupIntentParser(IntentParser):
         Raises:
             NotTrained: when the intent parser is not fitted
         """
+        if top_n is None:
+            top_intents = self._parse_top_intents(text, top_n=1,
+                                                  intents=intents)
+            if top_intents:
+                intent = top_intents[0][RES_INTENT]
+                slots = top_intents[0][RES_SLOTS]
+                if intent[RES_PROBA] <= 0.5:
+                    # return None in case of ambiguity
+                    return empty_result(text, probability=1.0)
+                return parsing_result(text, intent, slots)
+            return empty_result(text, probability=1.0)
+        return self._parse_top_intents(text, top_n=top_n, intents=intents)
+
+    def _parse_top_intents(self, text, top_n, intents=None):
         if isinstance(intents, str):
-            intents = [intents]
+            intents = {intents}
+        elif isinstance(intents, list):
+            intents = set(intents)
 
-        builtin_entities = self.builtin_entity_parser.parse(
-            text, use_cache=True
-        )
-        custom_entities = self.custom_entity_parser.parse(text, use_cache=True)
-        all_entities = builtin_entities + custom_entities
+        if top_n < 1:
+            raise ValueError(
+                "top_n argument must be greater or equal to 1, but got: %s"
+                % top_n)
 
-        all_entities = deduplicate_overlapping_entities(all_entities)
+        results_per_intent = defaultdict(list)
+        for text_candidate, entities in self._get_candidates(text, intents):
+            val = self._map.get(hash_str(text_candidate))
+            if val is not None:
+                result = self._parse_map_output(text, val, entities, intents)
+                if result:
+                    intent_name = result[RES_INTENT][RES_INTENT_NAME]
+                    results_per_intent[intent_name].append(result)
 
-        processed_text = self._replace_entities_with_placeholders(
-            text, all_entities
-        )
+        results = []
+        for intent_results in itervalues(results_per_intent):
+            sorted_results = sorted(intent_results,
+                                    key=lambda res: len(res[RES_SLOTS]))
+            results.append(sorted_results[0])
 
-        cleaned_processed_text = self._preprocess_text(processed_text)
-        cleaned_text = self._preprocess_text(text)
+        # In some rare cases there can be multiple ambiguous intents
+        # In such cases, priority is given to results containing fewer slots
+        weights = [1.0 / (1.0 + len(res[RES_SLOTS])) for res in results]
+        total_weight = sum(weights)
 
-        val = self.map.get(hash_str(cleaned_processed_text))
+        for res, weight in zip(results, weights):
+            res[RES_INTENT][RES_PROBA] = weight / total_weight
 
-        if val is None:
-            val = self.map.get(hash_str(cleaned_text))
-            all_entities = []
+        results = sorted(results, key=lambda r: -r[RES_INTENT][RES_PROBA])
+        return results[:top_n]
 
-        # conform to api
-        result = self.parse_map_output(text, val, all_entities, intents)
-        if top_n is not None:
-            # convert parsing_result to extraction_result and return a list
-            result.pop(RES_INPUT)
-            result = [result]
+    def _get_candidates(self, text, intents):
+        candidates = defaultdict(list)
+        for grouped_entity_scope in self._entity_scopes:
+            entity_scope = grouped_entity_scope["entity_scope"]
+            intent_group = grouped_entity_scope["intent_group"]
+            intent_group = [intent_ for intent_ in intent_group
+                            if intents is None or intent_ in intents]
+            if not intent_group:
+                continue
 
-        return result
+            builtin_entities = self.builtin_entity_parser.parse(
+                text, scope=entity_scope["builtin"], use_cache=True)
+            custom_entities = self.custom_entity_parser.parse(
+                text, scope=entity_scope["custom"], use_cache=True)
+            all_entities = builtin_entities + custom_entities
+            all_entities = deduplicate_overlapping_entities(all_entities)
+            processed_text = self._replace_entities_with_placeholders(
+                text, all_entities)
 
-    def parse_map_output(self, text, output, entities, intents):
-        """Parse the trie output to the parser's result format"""
-        if not output:
-            return empty_result(text, 1.0)
+            for intent in intent_group:
+                cleaned_text = self._preprocess_text(text, intent)
+                cleaned_processed_text = self._preprocess_text(
+                    processed_text, intent)
+
+                raw_candidate = cleaned_text, []
+                placeholder_candidate = cleaned_processed_text, all_entities
+                intent_candidates = [raw_candidate, placeholder_candidate]
+                for text_input, entities in intent_candidates:
+                    if text_input not in candidates \
+                            or entities not in candidates[text_input]:
+                        candidates[text_input].append(entities)
+                        yield text_input, entities
+
+    def _parse_map_output(self, text, output, entities, intents):
+        """Parse the map output to the parser's result format"""
         intent_id, slot_ids = output
-        intent_name = self.intents_names[intent_id]
+        intent_name = self._intents_names[intent_id]
         if intents is not None and intent_name not in intents:
-            return empty_result(text, 1.0)
+            return None
 
         parsed_intent = intent_classification_result(
-            intent_name=intent_name, probability=1.0
-        )
+            intent_name=intent_name, probability=1.0)
         slots = []
         # assert invariant
         assert len(slot_ids) == len(entities)
         for slot_id, entity in zip(slot_ids, entities):
-            slot_name = self.slots_names[slot_id]
-            slot_value = text[
-                entity[RES_MATCH_RANGE][START]: entity[RES_MATCH_RANGE][END]
-            ]
+            slot_name = self._slots_names[slot_id]
+            rng_start = entity[RES_MATCH_RANGE][START]
+            rng_end = entity[RES_MATCH_RANGE][END]
+            slot_value = text[rng_start:rng_end]
             entity_name = entity[ENTITY_KIND]
-            start_end = [
-                entity[RES_MATCH_RANGE][START],
-                entity[RES_MATCH_RANGE][END],
-            ]
             slot = unresolved_slot(
-                start_end, slot_value, entity_name, slot_name
-            )
+                [rng_start, rng_end], slot_value, entity_name, slot_name)
             slots.append(slot)
 
-        return parsing_result(text, parsed_intent, slots)
+        return extraction_result(parsed_intent, slots)
 
     @fitted_required
     def get_intents(self, text):
@@ -231,7 +258,7 @@ class LookupIntentParser(IntentParser):
         matched_intent = res[RES_INTENT]
         intent_name = matched_intent[RES_INTENT_NAME]
         intents.append(matched_intent)
-        others = [x for x in self.intents_names if x != intent_name]
+        others = [x for x in self._intents_names if x != intent_name]
 
         for intent in others:
             intents.append(intent_classification_result(intent, 0.0))
@@ -259,13 +286,17 @@ class LookupIntentParser(IntentParser):
         if intent is None:
             return []
 
-        if intent not in self.intents_names:
+        if intent not in self._intents_names:
             raise IntentNotFoundError(intent)
 
         slots = self.parse(text, intents=[intent])[RES_SLOTS]
         if slots is None:
             slots = []
         return slots
+
+    def _get_intent_stop_words(self, intent):
+        whitelist = self._stop_words_whitelist.get(intent, set())
+        return self._stop_words.difference(whitelist)
 
     def get_intent_id(self, intent_name):
         """generate a numeric id for an intent
@@ -279,8 +310,8 @@ class LookupIntentParser(IntentParser):
         """
         intent_id = self._intents_mapping.get(intent_name)
         if intent_id is None:
-            intent_id = len(self.intents_names)
-            self.intents_names.append(intent_name)
+            intent_id = len(self._intents_names)
+            self._intents_names.append(intent_name)
             self._intents_mapping[intent_name] = intent_id
 
         return intent_id
@@ -297,19 +328,19 @@ class LookupIntentParser(IntentParser):
         """
         slot_id = self._slots_mapping.get(slot_name)
         if slot_id is None:
-            slot_id = len(self.slots_names)
-            self.slots_names.append(slot_name)
+            slot_id = len(self._slots_names)
+            self._slots_names.append(slot_name)
             self._slots_mapping[slot_name] = slot_id
 
         return slot_id
 
-    def _preprocess_text(self, txt):
+    def _preprocess_text(self, txt, intent):
         """Replaces stop words and characters that are tokenized out by
             whitespaces"""
+        stop_words = self._get_intent_stop_words(intent)
         tokens = tokenize_light(txt, self.language)
         cleaned_string = " ".join(
-            [tkn for tkn in tokens if normalize(tkn) not in self.stop_words]
-        )
+            [tkn for tkn in tokens if normalize(tkn) not in stop_words])
         return cleaned_string.lower()
 
     def generate_io_mapping(self, intents, entity_placeholders):
@@ -318,8 +349,7 @@ class LookupIntentParser(IntentParser):
             intent_id = self.get_intent_id(intent_name)
             for entry in intent[UTTERANCES]:
                 yield self._build_io_mapping(
-                    intent_id, entry, entity_placeholders
-                )
+                    intent_id, entry, entity_placeholders)
 
     def _build_io_mapping(self, intent_id, utterance, entity_placeholders):
         input_ = []
@@ -337,7 +367,8 @@ class LookupIntentParser(IntentParser):
                 input_.append(chunk[TEXT])
         output.append(slots)
 
-        key = self._preprocess_text(" ".join(input_))
+        intent = self._intents_names[intent_id]
+        key = self._preprocess_text(" ".join(input_), intent)
 
         return key, output
 
@@ -352,8 +383,7 @@ class LookupIntentParser(IntentParser):
             end = ent[RES_MATCH_RANGE][END]
             processed_text += text[current_idx:start]
             place_holder = _get_entity_name_placeholder(
-                ent[ENTITY_KIND], self.language
-            )
+                ent[ENTITY_KIND], self.language)
             processed_text += place_holder
             current_idx = end
         processed_text += text[current_idx:]
@@ -383,8 +413,7 @@ class LookupIntentParser(IntentParser):
         if not model_path.exists():
             raise LoadingError(
                 "Missing lookup intent parser metadata file: %s"
-                % model_path.name
-            )
+                % model_path.name)
 
         with model_path.open(encoding="utf8") as pfile:
             metadata = json.load(pfile)
@@ -392,12 +421,19 @@ class LookupIntentParser(IntentParser):
 
     def to_dict(self):
         """Returns a json-serializable dict"""
+        stop_words_whitelist = None
+        if self._stop_words_whitelist is not None:
+            stop_words_whitelist = {
+                intent: sorted(values)
+                for intent, values in iteritems(self._stop_words_whitelist)}
         return {
             "config": self.config.to_dict(),
             "language_code": self.language,
-            "map": self.map,
-            "slots_names": self.slots_names,
-            "intents_names": self.intents_names,
+            "map": self._map,
+            "slots_names": self._slots_names,
+            "intents_names": self._intents_names,
+            "entity_scopes": self._entity_scopes,
+            "stop_words_whitelist": stop_words_whitelist,
         }
 
     @classmethod
@@ -410,11 +446,42 @@ class LookupIntentParser(IntentParser):
         config = cls.config_type.from_dict(unit_dict["config"])
         parser = cls(config=config, **shared)
         parser.language = unit_dict["language_code"]
-        parser.map = _convert_dict_keys_to_int(unit_dict["map"])
-        parser.slots_names = unit_dict["slots_names"]
-        parser.intents_names = unit_dict["intents_names"]
-
+        # pylint:disable=protected-access
+        parser._map = _convert_dict_keys_to_int(unit_dict["map"])
+        parser._slots_names = unit_dict["slots_names"]
+        parser._intents_names = unit_dict["intents_names"]
+        parser._entity_scopes = unit_dict["entity_scopes"]
+        if parser.fitted:
+            whitelist = unit_dict["stop_words_whitelist"]
+            parser._stop_words_whitelist = {
+                intent: set(values) for intent, values in iteritems(whitelist)}
+        # pylint:enable=protected-access
         return parser
+
+
+def _get_entity_scopes(dataset):
+    intent_entities = extract_intent_entities(dataset)
+    intent_groups = []
+    entity_scopes = []
+    for intent, entities in iteritems(intent_entities):
+        scope = {
+            "builtin": list(
+                {ent for ent in entities if is_builtin_entity(ent)}),
+            "custom": list(
+                {ent for ent in entities if not is_builtin_entity(ent)})
+        }
+        if scope in entity_scopes:
+            group_idx = entity_scopes.index(scope)
+            intent_groups[group_idx].append(intent)
+        else:
+            entity_scopes.append(scope)
+            intent_groups.append([intent])
+    return [
+        {
+            "intent_group": intent_group,
+            "entity_scope": entity_scope
+        } for intent_group, entity_scope in zip(intent_groups, entity_scopes)
+    ]
 
 
 def _get_entity_placeholders(dataset, language):

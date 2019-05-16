@@ -16,13 +16,13 @@ from snips_nlu.common.utils import (
     check_persisted_path, deduplicate_overlapping_items, fitted_required,
     json_string, ranges_overlap, regex_escape,
     replace_entities_with_placeholders)
+from snips_nlu.dataset.utils import get_stop_words_whitelist
 from snips_nlu.constants import (
     DATA, END, ENTITIES, ENTITY,
     INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES,
     RES_PROBA)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.dataset.utils import extract_entity_values
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_parser.intent_parser import IntentParser
@@ -144,7 +144,7 @@ class DeterministicIntentParser(IntentParser):
         self.slot_names_to_entities = get_slot_name_mappings(dataset)
         self.group_names_to_slot_names = _get_group_names_to_slot_names(
             self.slot_names_to_entities)
-        self._stop_words_whitelist = _get_stop_words_whitelist(
+        self._stop_words_whitelist = get_stop_words_whitelist(
             dataset, self._stop_words)
 
         # Do not use ambiguous patterns that appear in more than one intent
@@ -513,14 +513,3 @@ def _deduplicate_overlapping_slots(slots, language):
 def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(
         tokenize_light(entity_label, language)).upper()
-
-
-def _get_stop_words_whitelist(dataset, stop_words):
-    entity_values_per_intent = extract_entity_values(
-        dataset, apply_normalization=True)
-    stop_words_whitelist = dict()
-    for intent, entity_values in iteritems(entity_values_per_intent):
-        whitelist = stop_words.intersection(entity_values)
-        if whitelist:
-            stop_words_whitelist[intent] = whitelist
-    return stop_words_whitelist

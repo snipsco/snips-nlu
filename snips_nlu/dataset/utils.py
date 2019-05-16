@@ -62,3 +62,16 @@ def get_dataset_gazetteer_entities(dataset, intent=None):
     if intent is not None:
         return extract_intent_entities(dataset, is_gazetteer_entity)[intent]
     return {e for e in dataset[ENTITIES] if is_gazetteer_entity(e)}
+
+
+def get_stop_words_whitelist(dataset, stop_words):
+    """Extracts stop words whitelists per intent consisting of entity values
+    that appear in the stop_words list"""
+    entity_values_per_intent = extract_entity_values(
+        dataset, apply_normalization=True)
+    stop_words_whitelist = dict()
+    for intent, entity_values in iteritems(entity_values_per_intent):
+        whitelist = stop_words.intersection(entity_values)
+        if whitelist:
+            stop_words_whitelist[intent] = whitelist
+    return stop_words_whitelist

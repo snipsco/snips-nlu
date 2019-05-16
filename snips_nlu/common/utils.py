@@ -160,6 +160,10 @@ def get_package_path(name):
 
 
 def deduplicate_overlapping_items(items, overlap_fn, sort_key_fn):
+    """Deduplicates the items by looping over the items, sorted using
+    sort_key_fn, and checking overlaps with previously seen items using
+    overlap_fn
+    """
     sorted_items = sorted(items, key=sort_key_fn)
     deduplicated_items = []
     for item in sorted_items:
@@ -170,6 +174,9 @@ def deduplicate_overlapping_items(items, overlap_fn, sort_key_fn):
 
 
 def replace_entities_with_placeholders(text, entities, placeholder_fn):
+    """Processes the text in order to replace entity values with placeholders
+    as defined by the placeholder function
+    """
     if not entities:
         return dict(), text
 
@@ -204,6 +211,8 @@ def replace_entities_with_placeholders(text, entities, placeholder_fn):
 
 
 def deduplicate_overlapping_entities(entities):
+    """Deduplicates entities based on overlapping ranges"""
+
     def overlap(lhs_entity, rhs_entity):
         return ranges_overlap(lhs_entity[RES_MATCH_RANGE],
                               rhs_entity[RES_MATCH_RANGE])

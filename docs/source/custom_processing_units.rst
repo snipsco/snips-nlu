@@ -4,7 +4,7 @@ Custom Processing Units
 =======================
 
 The Snips NLU library provides a default NLU pipeline containing built-in
-processing units such as the :class:`.DeterministicIntentParser` or the
+processing units such as the :class:`.LookupIntentParser` or the
 :class:`.ProbabilisticIntentParser`.
 
 However, it is possible to define custom processing units and use them in a
@@ -14,7 +14,7 @@ The main processing unit of the Snips NLU processing pipeline is the
 :class:`.SnipsNLUEngine`. This engine relies on a list of :class:`.IntentParser`
 that are called successively until one of them manages to extract an intent.
 By default, two parsers are used by the engine: a
-:class:`.DeterministicIntentParser` and a :class:`.ProbabilisticIntentParser`.
+:class:`.LookupParser` and a :class:`.ProbabilisticIntentParser`.
 
 Let's focus on the probabilistic intent parser. This parser parses text using
 two steps: first it classifies the intent using an

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import io
 from builtins import range
+from copy import deepcopy
 
 from mock import patch
 
@@ -450,7 +451,7 @@ values:
   - [this thing, that]
   """)
 
-        resources = self.get_resources("en")
+        resources = deepcopy(self.get_resources("en"))
         resources[STOP_WORDS] = {"a", "this", "that"}
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser_config = DeterministicIntentParserConfig(ignore_stop_words=True)

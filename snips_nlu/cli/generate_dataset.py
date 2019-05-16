@@ -8,13 +8,21 @@ from snips_nlu.common.utils import unicode_string, json_string
 
 @plac.annotations(
     language=("Language of the assistant", "positional", None, str),
-    files=("List of intent and entity files", "positional", None, str, None,
-           "filename"))
-def generate_dataset(language, *files):
-    """Create a Snips NLU dataset from text friendly files"""
+    yaml_files=("List of intent and entity yaml files", "positional", None,
+                str, None, "filename"))
+def generate_dataset(language, *yaml_files):
+    """Creates a Snips NLU dataset from YAML definition files
+
+    Check :meth:`.Intent.from_yaml` and :meth:`.Entity.from_yaml` for the
+    format of the YAML files.
+
+    Args:
+        language (str): language of the dataset (iso code)
+        *yaml_files: list of intent and entity definition files in YAML format.
+
+    Returns:
+        None. The json dataset output is printed out on stdout.
+    """
     language = unicode_string(language)
-    if any(f.endswith(".yml") or f.endswith(".yaml") for f in files):
-        dataset = Dataset.from_yaml_files(language, list(files))
-    else:
-        dataset = Dataset.from_files(language, list(files))
+    dataset = Dataset.from_yaml_files(language, list(yaml_files))
     print(json_string(dataset.json, indent=2, sort_keys=True))

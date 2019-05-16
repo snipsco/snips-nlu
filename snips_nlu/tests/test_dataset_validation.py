@@ -1,14 +1,15 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from builtins import str
+from builtins import range, str
 
-from mock import mock
+from mock import mock, patch
 
 from snips_nlu.constants import ENTITIES, SNIPS_DATETIME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset.validation import _validate_and_format_custom_entity
 from snips_nlu.exceptions import DatasetFormatError
-from snips_nlu.tests.utils import SnipsTest
+from snips_nlu.tests.utils import SnipsTest, EntityParserMock
 
 
 class TestDatasetValidation(SnipsTest):
@@ -189,8 +190,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation.lower(), variation.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -242,8 +245,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation, variation.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -355,8 +360,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -496,8 +503,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation, variation.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -610,8 +619,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation, variation.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -786,8 +797,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation.lower(), variation.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -861,8 +874,10 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
+        def mock_get_string_variations(
+                variation, language, builtin_entity_parser,
+                number_variations
+        ):
             return {variation.lower(), variation.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
@@ -965,3 +980,53 @@ class TestDatasetValidation(SnipsTest):
             "favorïte": "a"
         }
         self.assertDictEqual(expected_utterances, entity["utterances"])
+
+    def test_should_create_number_variation(self):
+        # Given
+        num_values = 1
+        entity = {
+            "matching_strictness": 1.0,
+            "use_synonyms": False,
+            "automatically_extensible": False,
+            "data": [
+                {"value": str(i), "synonyms": []}
+                for i in range(num_values)]
+        }
+        builtin_entity_parser = EntityParserMock(dict())
+
+        # When
+        with patch("snips_nlu.dataset.validation"
+                   ".get_string_variations") as mocked_string_variations:
+            mocked_string_variations.return_value = []
+            _validate_and_format_custom_entity(
+                entity, [], "en", builtin_entity_parser)
+            # Then
+            self.assertGreater(mocked_string_variations.call_count, 0)
+            for call in mocked_string_variations.mock_calls:
+                kwargs = call[2]
+                self.assertTrue(kwargs["number_variations"])
+
+    def test_should_not_create_number_variation(self):
+        # Given
+        num_values = 1001
+        entity = {
+            "matching_strictness": 1.0,
+            "use_synonyms": False,
+            "automatically_extensible": False,
+            "data": [
+                {"value": str(i), "synonyms": []}
+                for i in range(num_values)]
+        }
+        builtin_entity_parser = EntityParserMock(dict())
+
+        # When
+        with patch("snips_nlu.dataset.validation"
+                   ".get_string_variations") as mocked_string_variations:
+            mocked_string_variations.return_value = []
+            _validate_and_format_custom_entity(
+                entity, [], "en", builtin_entity_parser)
+            # Then
+            self.assertGreater(mocked_string_variations.call_count, 0)
+            for call in mocked_string_variations.mock_calls:
+                kwargs = call[2]
+                self.assertFalse(kwargs["number_variations"])

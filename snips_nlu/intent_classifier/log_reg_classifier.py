@@ -13,7 +13,7 @@ from snips_nlu.common.utils import (
     check_persisted_path, fitted_required, json_string)
 from snips_nlu.constants import LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import _EmptyDatasetUtterancesError, LoadingError
+from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -23,11 +23,20 @@ from snips_nlu.result import intent_classification_result
 
 logger = logging.getLogger(__name__)
 
+# We set tol to 1e-3 to silence the following warning with Python 2 (
+# scikit-learn 0.20):
+#
+# FutureWarning: max_iter and tol parameters have been added in SGDClassifier
+# in 0.19. If max_iter is set but tol is left unset, the default value for tol
+# in 0.19 and 0.20 will be None (which is equivalent to -infinity, so it has no
+# effect) but will change in 0.21 to 1e-3. Specify tol to silence this warning.
+
 LOG_REG_ARGS = {
     "loss": "log",
     "penalty": "l2",
     "class_weight": "balanced",
     "max_iter": 1000,
+    "tol": 1e-3,
     "n_jobs": -1
 }
 

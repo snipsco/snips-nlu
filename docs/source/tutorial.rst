@@ -188,6 +188,13 @@ your engine:
     engine.fit(dataset)
 
 
+.. note::
+
+    Due to a ``scikit-learn`` bug fixed in version ``0.21`` we can't guarantee
+    any deterministic behavior if you're using a Python version ``<3.5`` since
+    ``scikit-learn>=0.21`` is only available starting from Python ``>=3.5``
+
+
 Parsing
 -------
 

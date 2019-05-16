@@ -246,6 +246,7 @@ utterances:
             random_state=42).fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
+        t_ = intent_classifier.classifier.t_
 
         # When
         intent_classifier.persist(self.tmp_file_path)
@@ -256,7 +257,7 @@ utterances:
             "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
-            "t_": 3781.0,
+            "t_": t_,
             "intent_list": intent_list,
             "featurizer": "featurizer"
         }

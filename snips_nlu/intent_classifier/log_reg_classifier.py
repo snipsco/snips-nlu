@@ -267,7 +267,7 @@ class LogRegIntentClassifier(IntentClassifier):
                 log += "\n{} -> {}".format(feature_name, feature_weight)
         return log
 
-    def log_activation_weights(self, text, x, top_n=50):
+    def log_activation_weights(self, text, x, top_n=400):
         if not hasattr(self.featurizer, "feature_index_to_feature_name"):
             return None
 

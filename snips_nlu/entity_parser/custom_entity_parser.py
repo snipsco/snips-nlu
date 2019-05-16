@@ -19,6 +19,8 @@ from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.preprocessing import stem, tokenize, tokenize_light
 from snips_nlu.result import parsed_entity
 
+STOPWORDS_FRACTION = 0.01
+
 
 class CustomEntityParser(EntityParser):
     def __init__(self, parser, language, parser_usage):
@@ -98,7 +100,10 @@ class CustomEntityParser(EntityParser):
             raise ValueError("A parser usage must be defined in order to fit "
                              "a CustomEntityParser")
         configuration = _create_custom_entity_parser_configuration(
-            custom_entities)
+            custom_entities,
+            language=dataset[LANGUAGE],
+            stopwords_fraction=STOPWORDS_FRACTION,
+        )
         parser = GazetteerEntityParser.build(configuration)
         return cls(parser, language, parser_usage)
 

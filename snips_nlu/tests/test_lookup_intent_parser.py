@@ -1144,4 +1144,9 @@ utterances:
                 "intent_group": ["intent4"]
             }
         ]
-        self.assertListEqual(expected_scopes, entity_scopes)
+
+        def sort_key(group_scope):
+            return " ".join(group_scope["intent_group"])
+
+        self.assertListEqual(sorted(expected_scopes, key=sort_key),
+                             sorted(entity_scopes, key=sort_key))

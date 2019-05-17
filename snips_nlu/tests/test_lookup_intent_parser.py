@@ -247,6 +247,40 @@ utterances:
         self.assertDictEqual(expected_intent, parsing[RES_INTENT])
         self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
+    def test_should_parse_intent_with_ambivalent_words(self):
+        # Given
+        slots_dataset_stream = io.StringIO("""
+---
+type: intent
+name: give_flower
+utterances:
+  - give a rose to [name](emily)
+  - give a daisy to [name](tom)
+  - give a tulip to [name](daisy)
+  """)
+        dataset = Dataset.from_yaml_files("en",
+                                          [slots_dataset_stream]).json
+        parser = LookupIntentParser().fit(dataset)
+        text = "give a daisy to emily"
+
+        # When
+        parsing = parser.parse(text)
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="give_flower", probability=1.0)
+        expected_slots = [
+            {
+                "entity": "name",
+                "range": {"end": 21, "start": 16},
+                "slotName": "name",
+                "value": "emily"
+            }
+        ]
+
+        self.assertDictEqual(expected_intent, parsing[RES_INTENT])
+        self.assertListEqual(expected_slots, parsing[RES_SLOTS])
+
     def test_should_ignore_completely_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO(

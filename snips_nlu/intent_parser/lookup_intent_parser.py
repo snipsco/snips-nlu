@@ -4,6 +4,7 @@ import json
 import logging
 from builtins import str
 from collections import defaultdict
+from itertools import combinations
 from pathlib import Path
 
 from future.utils import iteritems, itervalues
@@ -204,22 +205,26 @@ class LookupIntentParser(IntentParser):
                 text, scope=entity_scope["custom"], use_cache=True)
             all_entities = builtin_entities + custom_entities
             all_entities = deduplicate_overlapping_entities(all_entities)
-            processed_text = self._replace_entities_with_placeholders(
-                text, all_entities)
 
-            for intent in intent_group:
-                cleaned_text = self._preprocess_text(text, intent)
-                cleaned_processed_text = self._preprocess_text(
-                    processed_text, intent)
+            # We generate all subsets of entities to match utterances
+            # containing ambivalent words which can be both entity values or
+            # random words
+            for entities in _get_entities_combinations(all_entities):
+                processed_text = self._replace_entities_with_placeholders(
+                    text, entities)
+                for intent in intent_group:
+                    cleaned_text = self._preprocess_text(text, intent)
+                    cleaned_processed_text = self._preprocess_text(
+                        processed_text, intent)
 
-                raw_candidate = cleaned_text, []
-                placeholder_candidate = cleaned_processed_text, all_entities
-                intent_candidates = [raw_candidate, placeholder_candidate]
-                for text_input, entities in intent_candidates:
-                    if text_input not in candidates \
-                            or entities not in candidates[text_input]:
-                        candidates[text_input].append(entities)
-                        yield text_input, entities
+                    raw_candidate = cleaned_text, []
+                    placeholder_candidate = cleaned_processed_text, entities
+                    intent_candidates = [raw_candidate, placeholder_candidate]
+                    for text_input, text_entities in intent_candidates:
+                        if text_input not in candidates \
+                                or text_entities not in candidates[text_input]:
+                            candidates[text_input].append(text_entities)
+                            yield text_input, text_entities
 
     def _parse_map_output(self, text, output, entities, intents):
         """Parse the map output to the parser's result format"""
@@ -375,7 +380,7 @@ class LookupIntentParser(IntentParser):
     def _replace_entities_with_placeholders(self, text, entities):
         if not entities:
             return text
-        entities.sort(key=lambda e: e[RES_MATCH_RANGE][START])
+        entities = sorted(entities, key=lambda e: e[RES_MATCH_RANGE][START])
         processed_text = ""
         current_idx = 0
         for ent in entities:
@@ -498,3 +503,10 @@ def _convert_dict_keys_to_int(dct):
     if isinstance(dct, dict):
         return {int(k): v for k, v in iteritems(dct)}
     return dct
+
+
+def _get_entities_combinations(entities):
+    yield ()
+    for nb_entities in reversed(range(1, len(entities) + 1)):
+        for combination in combinations(entities, nb_entities):
+            yield combination

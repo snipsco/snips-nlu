@@ -198,8 +198,8 @@ def _compute_char_shifts(tokens):
         else:
             previous_token_end = tokens[token_index - 1].end
             previous_space_len = 1
-        current_shift -= (token.start - previous_token_end
-                          ) - previous_space_len
+        offset = (token.start - previous_token_end) - previous_space_len
+        current_shift -= offset
         token_len = token.end - token.start
         index_shift = token_len + previous_space_len
         characters_shifts += [current_shift for _ in range(index_shift)]

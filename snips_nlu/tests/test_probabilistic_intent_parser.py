@@ -43,13 +43,9 @@ name: intent3
 utterances:
   - foz for [slot3:entity3](baz)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig()
-        slot_filler_config = CRFSlotFillerConfig()
-        parser_config = ProbabilisticIntentParserConfig(
-            classifier_config, slot_filler_config)
         shared = self.get_shared_data(dataset)
         shared[RANDOM_STATE] = 42
-        parser = ProbabilisticIntentParser(parser_config, **shared)
+        parser = ProbabilisticIntentParser(**shared)
         parser.fit(dataset)
         text = "foo bar baz"
 
@@ -84,13 +80,9 @@ name: intent3
 utterances:
   - foz for [slot3:entity3](baz)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig()
-        slot_filler_config = CRFSlotFillerConfig()
-        parser_config = ProbabilisticIntentParserConfig(
-            classifier_config, slot_filler_config)
         shared = self.get_shared_data(dataset)
         shared[RANDOM_STATE] = 42
-        parser = ProbabilisticIntentParser(parser_config, **shared)
+        parser = ProbabilisticIntentParser(**shared)
         parser.fit(dataset)
         text = "foo bar baz"
 
@@ -126,13 +118,9 @@ name: intent3
 utterances:
   - foz for [entity3](baz)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig()
-        slot_filler_config = CRFSlotFillerConfig()
-        parser_config = ProbabilisticIntentParserConfig(
-            classifier_config, slot_filler_config)
         shared = self.get_shared_data(dataset)
         shared[RANDOM_STATE] = 42
-        parser = ProbabilisticIntentParser(parser_config, **shared)
+        parser = ProbabilisticIntentParser(**shared)
         parser.fit(dataset)
         text = "foo bar baz"
 
@@ -169,12 +157,9 @@ name: intent3
 utterances:
   - yili yulu yele""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        classifier_config = LogRegIntentClassifierConfig()
-        parser_config = ProbabilisticIntentParserConfig(classifier_config)
         shared = self.get_shared_data(dataset)
         shared[RANDOM_STATE] = 42
-        parser = ProbabilisticIntentParser(
-            parser_config, **shared).fit(dataset)
+        parser = ProbabilisticIntentParser(**shared).fit(dataset)
         text = "yala yili yulu"
 
         # When
@@ -689,13 +674,9 @@ utterances:
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
 
         seed = 666
-        config = ProbabilisticIntentParserConfig(
-            intent_classifier_config=LogRegIntentClassifierConfig(),
-            slot_filler_config=CRFSlotFillerConfig()
-        )
         shared = self.get_shared_data(dataset)
         shared[RANDOM_STATE] = seed
-        parser = ProbabilisticIntentParser(config, **shared)
+        parser = ProbabilisticIntentParser(**shared)
         parser.persist(self.tmp_file_path)
 
         # When

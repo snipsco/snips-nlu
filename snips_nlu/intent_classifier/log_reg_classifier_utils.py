@@ -43,10 +43,8 @@ def get_regularization_factor(dataset):
 
 def get_noise_it(noise, mean_length, std_length, random_state):
     it = itertools.cycle(noise)
-    i = 0
     while True:
         noise_length = int(random_state.normal(mean_length, std_length))
-        i += 1
         # pylint: disable=stop-iteration-return
         yield " ".join(next(it) for _ in range(noise_length))
         # pylint: enable=stop-iteration-return

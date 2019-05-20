@@ -174,12 +174,12 @@ the dataset we generated earlier:
 
     engine.fit(dataset)
 
-Note that by default, the training of the engine is non-deterministic: if you
-train your NLU twice on the same data and test it on the same input, you'll get
-different outputs.
+Note that, by default, training of the NLU engine is non-deterministic:
+training and testing multiple times on the same data may produce different
+outputs.
 
-If you want to run training in a reproducible way you can pass a random seed to
-your engine:
+Reproducible trainings can be achieved by passing a **random seed** to the
+engine:
 
 .. code-block:: python
 

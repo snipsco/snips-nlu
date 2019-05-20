@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from builtins import range, str
 
+from future.utils import iteritems
 from mock import mock, patch
 
 from snips_nlu.constants import ENTITIES, SNIPS_DATETIME
@@ -990,50 +991,45 @@ class TestDatasetValidation(SnipsTest):
 
     def test_should_create_number_variation(self):
         # Given
-        num_values = 1
-        entity = {
-            "matching_strictness": 1.0,
-            "use_synonyms": False,
-            "automatically_extensible": False,
-            "data": [
-                {"value": str(i), "synonyms": []}
-                for i in range(num_values)]
+        args = {
+            1: {
+                "numbers": True,
+                "and_": True,
+                "case": True,
+                "punctuation": True,
+            },
+            1001: {
+                "numbers": False,
+                "and_": True,
+                "case": True,
+                "punctuation": True,
+            },
+            10001: {
+                "numbers": False,
+                "and_": False,
+                "case": False,
+                "punctuation": False,
+            }
         }
-        builtin_entity_parser = EntityParserMock(dict())
 
-        # When
-        with patch("snips_nlu.dataset.validation"
-                   ".get_string_variations") as mocked_string_variations:
-            mocked_string_variations.return_value = []
-            _validate_and_format_custom_entity(
-                entity, [], "en", builtin_entity_parser)
-            # Then
-            self.assertGreater(mocked_string_variations.call_count, 0)
-            for call in mocked_string_variations.mock_calls:
-                kwargs = call[2]
-                self.assertTrue(kwargs["numbers"])
-
-    def test_should_not_create_number_variation(self):
-        # Given
-        num_values = 1001
-        entity = {
-            "matching_strictness": 1.0,
-            "use_synonyms": False,
-            "automatically_extensible": False,
-            "data": [
-                {"value": str(i), "synonyms": []}
-                for i in range(num_values)]
-        }
-        builtin_entity_parser = EntityParserMock(dict())
-
-        # When
-        with patch("snips_nlu.dataset.validation"
-                   ".get_string_variations") as mocked_string_variations:
-            mocked_string_variations.return_value = []
-            _validate_and_format_custom_entity(
-                entity, [], "en", builtin_entity_parser)
-            # Then
-            self.assertGreater(mocked_string_variations.call_count, 0)
-            for call in mocked_string_variations.mock_calls:
-                kwargs = call[2]
-                self.assertFalse(kwargs["numbers"])
+        for num_ents, expected_args in iteritems(args):
+            entity = {
+                "matching_strictness": 1.0,
+                "use_synonyms": False,
+                "automatically_extensible": False,
+                "data": [
+                    {"value": str(i), "synonyms": []}
+                    for i in range(num_ents)]
+            }
+            builtin_entity_parser = EntityParserMock(dict())
+            with patch("snips_nlu.dataset.validation"
+                       ".get_string_variations") as mocked_string_variations:
+                mocked_string_variations.return_value = []
+                # When
+                _validate_and_format_custom_entity(
+                    entity, [], "en", builtin_entity_parser)
+                # Then
+                for call in mocked_string_variations.mock_calls:
+                    kwargs = call[2]
+                    for k in expected_args:
+                        self.assertEqual(expected_args[k], kwargs[k])

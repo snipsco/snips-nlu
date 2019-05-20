@@ -9,9 +9,9 @@ from future.utils import iteritems
 from num2words import num2words
 from snips_nlu_utils import normalize
 
-from snips_nlu.constants import (END, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES,
-                                 LANGUAGE_FR, RESOLVED_VALUE, RES_MATCH_RANGE,
-                                 SNIPS_NUMBER, START, VALUE)
+from snips_nlu.constants import (
+    END, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR, RESOLVED_VALUE,
+    RES_MATCH_RANGE, SNIPS_NUMBER, START, VALUE)
 from snips_nlu.languages import (
     get_default_sep, get_punctuation_regex, supports_num2words)
 from snips_nlu.preprocessing import tokenize_light

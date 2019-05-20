@@ -6,7 +6,7 @@ import operator
 from copy import deepcopy
 from pathlib import Path
 
-from future.utils import iteritems, itervalues, viewvalues
+from future.utils import iteritems, viewvalues
 from snips_nlu_parsers import GazetteerEntityParser
 
 from snips_nlu.common.utils import json_string
@@ -148,12 +148,10 @@ def _create_custom_entity_parser_configuration(
 
     parser_configurations = []
     for entity_name, entity in sorted(iteritems(entities)):
-        vocabulary = set()
-        entity_tokens = set(
-            t for raw_value in itervalues(entity[UTTERANCES])
+        vocabulary = set(
+            t for raw_value in entity[UTTERANCES]
             for t in tokenize_light(raw_value, language)
         )
-        vocabulary.update(entity_tokens)
         num_stopwords = int(stopwords_fraction * len(vocabulary))
         config = {
             "entity_identifier": entity_name,

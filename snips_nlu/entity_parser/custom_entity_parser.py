@@ -19,7 +19,7 @@ from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.preprocessing import stem, tokenize, tokenize_light
 from snips_nlu.result import parsed_entity
 
-STOPWORDS_FRACTION = 0.01
+STOPWORDS_FRACTION = 1e-3
 
 
 class CustomEntityParser(EntityParser):

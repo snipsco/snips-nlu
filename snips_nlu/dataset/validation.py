@@ -8,6 +8,8 @@ from copy import deepcopy
 from future.utils import iteritems, itervalues
 from snips_nlu_parsers import get_all_languages
 
+from snips_nlu.common.dataset_utils import (validate_key, validate_keys,
+                                            validate_type)
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
@@ -18,10 +20,9 @@ from snips_nlu.entity_parser.builtin_entity_parser import (
 from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.common.dataset_utils import (
-    validate_type, validate_key, validate_keys)
 
 NUMBER_VARIATIONS_THRESHOLD = 1e3
+VARIATIONS_GENERATION_THRESHOLD = 1e4
 
 
 def validate_and_format_dataset(dataset):
@@ -174,10 +175,25 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
     # value is parsed with the builtin entity parser before creating the
     # variations. We avoid generating these variations if there's enough entity
     # values
-    number_variations = len(entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD
 
     # Add variations if not colliding
     all_original_values = _extract_entity_values(entity)
+    if len(entity[DATA]) < VARIATIONS_GENERATION_THRESHOLD:
+        variations_args = {
+            "case": True,
+            "and_": True,
+            "punctuation": True
+        }
+    else:
+        variations_args = {
+            "case": False,
+            "and_": False,
+            "punctuation": False
+        }
+
+    variations_args["numbers"] = (
+            len(entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD)
+
     variations = dict()
     for data in entity[DATA]:
         ent_value = data[VALUE]
@@ -187,9 +203,7 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
         variations[ent_value] = set(
             v for value in values_to_variate
             for v in get_string_variations(
-                value, language, builtin_entity_parser,
-                number_variations=number_variations
-            )
+                value, language, builtin_entity_parser, **variations_args)
         )
     variation_counter = Counter(
         [v for variations_ in itervalues(variations) for v in variations_])
@@ -209,11 +223,10 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
     # Merge queries entities
     queries_entities_variations = {
         ent: get_string_variations(
-            ent, language, builtin_entity_parser,
-            number_variations=number_variations
-        )
+            ent, language, builtin_entity_parser, **variations_args)
         for ent in queries_entities
     }
+
     for original_ent, variations in iteritems(queries_entities_variations):
         if not original_ent or original_ent in validated_utterances:
             continue

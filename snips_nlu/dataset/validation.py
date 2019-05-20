@@ -192,7 +192,7 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
         }
 
     variations_args["numbers"] = (
-            len(entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD)
+        len(entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD)
 
     variations = dict()
     for data in entity[DATA]:

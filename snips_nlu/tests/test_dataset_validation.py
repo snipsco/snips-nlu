@@ -191,10 +191,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation.lower(), variation.title()}
+            return {string.lower(), string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -246,10 +247,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation, variation.title()}
+            return {string, string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -361,10 +363,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation}
+            return {string}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -504,10 +507,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation, variation.title()}
+            return {string, string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -620,10 +624,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation, variation.title()}
+            return {string, string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -798,10 +803,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation.lower(), variation.title()}
+            return {string.lower(), string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -875,10 +881,11 @@ class TestDatasetValidation(SnipsTest):
         # Given
         # pylint: disable=unused-argument
         def mock_get_string_variations(
-                variation, language, builtin_entity_parser,
-                number_variations
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
         ):
-            return {variation.lower(), variation.title()}
+            return {string.lower(), string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -1004,7 +1011,7 @@ class TestDatasetValidation(SnipsTest):
             self.assertGreater(mocked_string_variations.call_count, 0)
             for call in mocked_string_variations.mock_calls:
                 kwargs = call[2]
-                self.assertTrue(kwargs["number_variations"])
+                self.assertTrue(kwargs["numbers"])
 
     def test_should_not_create_number_variation(self):
         # Given
@@ -1029,4 +1036,4 @@ class TestDatasetValidation(SnipsTest):
             self.assertGreater(mocked_string_variations.call_count, 0)
             for call in mocked_string_variations.mock_calls:
                 kwargs = call[2]
-                self.assertFalse(kwargs["number_variations"])
+                self.assertFalse(kwargs["numbers"])

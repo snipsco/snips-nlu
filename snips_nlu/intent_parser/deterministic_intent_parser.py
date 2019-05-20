@@ -16,13 +16,13 @@ from snips_nlu.common.utils import (
     check_persisted_path, deduplicate_overlapping_items, fitted_required,
     json_string, ranges_overlap, regex_escape,
     replace_entities_with_placeholders)
-from snips_nlu.dataset.utils import get_stop_words_whitelist
 from snips_nlu.constants import (
     DATA, END, ENTITIES, ENTITY,
     INTENTS, LANGUAGE, RES_INTENT, RES_INTENT_NAME,
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES,
     RES_PROBA)
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset.utils import get_stop_words_whitelist
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_parser.intent_parser import IntentParser
@@ -240,11 +240,12 @@ class DeterministicIntentParser(IntentParser):
             cleaned_processed_text = self._preprocess_text(processed_text,
                                                            intent)
             for regex in self.regexes_per_intent[intent]:
-                res = self._get_matching_result(text, cleaned_processed_text,
-                                                regex, intent, mapping)
+                res = self._get_matching_result(text, cleaned_text, regex,
+                                                intent)
                 if res is None and cleaned_text != cleaned_processed_text:
-                    res = self._get_matching_result(text, cleaned_text, regex,
-                                                    intent)
+                    res = self._get_matching_result(
+                        text, cleaned_processed_text, regex, intent, mapping)
+
                 if res is not None:
                     results.append(res)
                     break

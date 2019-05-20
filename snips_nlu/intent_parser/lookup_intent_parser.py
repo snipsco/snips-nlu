@@ -265,8 +265,8 @@ class LookupIntentParser(IntentParser):
             if intent not in matched_intents:
                 top_intents.append(intent_classification_result(intent, 0.0))
 
-        # The None intent is not included in the regex patterns and is thus
-        # never matched by the deterministic parser
+        # The None intent is not included in the lookup table and is thus
+        # never matched by the lookup parser
         top_intents.append(intent_classification_result(None, 0.0))
         return top_intents
 

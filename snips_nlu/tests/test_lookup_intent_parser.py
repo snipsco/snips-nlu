@@ -561,19 +561,20 @@ values:
 type: intent
 name: greeting1
 utterances:
-  - Hello [name](John)
+  - Hello John
 
 ---
 type: intent
 name: greeting2
 utterances:
-  - How are you [name](Thomas)
+  - Hello [name](John)
 
 ---
 type: intent
 name: greeting3
 utterances:
-  - Hi [name](Robert)""")
+  - "[greeting](Hello) [name](John)"
+        """)
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = LookupIntentParser().fit(dataset)
@@ -583,10 +584,22 @@ utterances:
 
         # Then
         expected_intents = [
-            {RES_INTENT_NAME: "greeting1", RES_PROBA: 1.0},
-            {RES_INTENT_NAME: "greeting2", RES_PROBA: 0.0},
-            {RES_INTENT_NAME: "greeting3", RES_PROBA: 0.0},
-            {RES_INTENT_NAME: None, RES_PROBA: 0.0},
+            {
+                RES_INTENT_NAME: "greeting1",
+                RES_PROBA: 1. / (1. + 1 / 2 + 1 / 3)
+            },
+            {
+                RES_INTENT_NAME: "greeting2",
+                RES_PROBA: (1. / 2.) / (1. + 1 / 2 + 1 / 3)
+            },
+            {
+                RES_INTENT_NAME: "greeting3",
+                RES_PROBA: (1. / 3.) / (1. + 1 / 2 + 1 / 3)
+            },
+            {
+                RES_INTENT_NAME: None,
+                RES_PROBA: 0.0
+            },
         ]
 
         def sorting_key(intent_res):

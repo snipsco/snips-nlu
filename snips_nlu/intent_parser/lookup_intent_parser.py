@@ -96,8 +96,8 @@ class LookupIntentParser(IntentParser):
         entity_placeholders = _get_entity_placeholders(dataset, self.language)
 
         ambiguous_keys = set()
-        for (key, val) in self.generate_io_mapping(dataset[INTENTS],
-                                                   entity_placeholders):
+        for (key, val) in self._generate_io_mapping(dataset[INTENTS],
+                                                    entity_placeholders):
             key = hash_str(key)
             # handle key collisions -*- flag ambiguous entries -*-
             if key in self._map and self._map[key] != val:
@@ -257,21 +257,18 @@ class LookupIntentParser(IntentParser):
         The length of the returned list is exactly the number of intents in the
         dataset + 1 for the None intent
         """
-        intents = []
-        res = self.parse(text)
+        nb_intents = len(self._intents_names)
+        top_intents = [intent_result[RES_INTENT] for intent_result in
+                       self._parse_top_intents(text, top_n=nb_intents)]
+        matched_intents = {res[RES_INTENT_NAME] for res in top_intents}
+        for intent in self._intents_names:
+            if intent not in matched_intents:
+                top_intents.append(intent_classification_result(intent, 0.0))
 
-        matched_intent = res[RES_INTENT]
-        intent_name = matched_intent[RES_INTENT_NAME]
-        intents.append(matched_intent)
-        others = [x for x in self._intents_names if x != intent_name]
-
-        for intent in others:
-            intents.append(intent_classification_result(intent, 0.0))
-
-        if intent_name is not None:
-            intents.append(intent_classification_result(None, 0.0))
-
-        return intents
+        # The None intent is not included in the regex patterns and is thus
+        # never matched by the deterministic parser
+        top_intents.append(intent_classification_result(None, 0.0))
+        return top_intents
 
     @fitted_required
     def get_slots(self, text, intent):
@@ -303,7 +300,7 @@ class LookupIntentParser(IntentParser):
         whitelist = self._stop_words_whitelist.get(intent, set())
         return self._stop_words.difference(whitelist)
 
-    def get_intent_id(self, intent_name):
+    def _get_intent_id(self, intent_name):
         """generate a numeric id for an intent
 
         Args:
@@ -321,7 +318,7 @@ class LookupIntentParser(IntentParser):
 
         return intent_id
 
-    def get_slot_id(self, slot_name):
+    def _get_slot_id(self, slot_name):
         """generate a numeric id for a slot
 
         Args:
@@ -348,10 +345,10 @@ class LookupIntentParser(IntentParser):
             [tkn for tkn in tokens if normalize(tkn) not in stop_words])
         return cleaned_string.lower()
 
-    def generate_io_mapping(self, intents, entity_placeholders):
+    def _generate_io_mapping(self, intents, entity_placeholders):
         """Generate input-output pairs"""
         for intent_name, intent in iteritems(intents):
-            intent_id = self.get_intent_id(intent_name)
+            intent_id = self._get_intent_id(intent_name)
             for entry in intent[UTTERANCES]:
                 yield self._build_io_mapping(
                     intent_id, entry, entity_placeholders)
@@ -363,7 +360,7 @@ class LookupIntentParser(IntentParser):
         for chunk in utterance[DATA]:
             if SLOT_NAME in chunk:
                 slot_name = chunk[SLOT_NAME]
-                slot_id = self.get_slot_id(slot_name)
+                slot_id = self._get_slot_id(slot_name)
                 entity_name = chunk[ENTITY]
                 placeholder = entity_placeholders[entity_name]
                 input_.append(placeholder)

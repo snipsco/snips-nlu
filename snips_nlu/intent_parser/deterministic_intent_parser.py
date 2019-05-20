@@ -301,6 +301,7 @@ class DeterministicIntentParser(IntentParser):
 
         if intent not in self.regexes_per_intent:
             raise IntentNotFoundError(intent)
+
         slots = self.parse(text, intents=[intent])[RES_SLOTS]
         if slots is None:
             slots = []

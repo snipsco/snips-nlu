@@ -109,7 +109,9 @@ class Featurizer(ProcessingUnit):
             config=self.config.tfidf_vectorizer_config,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser,
-            resources=self.resources)
+            resources=self.resources,
+            random_state=self.random_state,
+        )
         x_tfidf = self.tfidf_vectorizer.fit_transform(x, dataset)
 
         if not self.tfidf_vectorizer.vocabulary:
@@ -139,7 +141,9 @@ class Featurizer(ProcessingUnit):
             config=self.config.cooccurrence_vectorizer_config,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser,
-            resources=self.resources)
+            resources=self.resources,
+            random_state=self.random_state,
+        )
         x_cooccurrence = self.cooccurrence_vectorizer.fit(
             non_null_x, dataset).transform(x)
         if not self.cooccurrence_vectorizer.word_pairs:

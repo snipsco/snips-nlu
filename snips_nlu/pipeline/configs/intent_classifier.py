@@ -13,16 +13,13 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.LogRegIntentClassifier`"""
 
     # pylint: disable=line-too-long
-    def __init__(self, data_augmentation_config=None, featurizer_config=None,
-                 random_seed=None):
+    def __init__(self, data_augmentation_config=None, featurizer_config=None):
         """
         Args:
             data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
                     Defines the strategy of the underlying data augmentation
             featurizer_config (:class:`FeaturizerConfig`): Configuration of the
                 :class:`.Featurizer` used underneath
-            random_seed (int, optional): Allows to fix the seed ot have
-                reproducible trainings
         """
         if data_augmentation_config is None:
             data_augmentation_config = IntentClassifierDataAugmentationConfig()
@@ -32,7 +29,6 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
         self.data_augmentation_config = data_augmentation_config
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
-        self.random_seed = random_seed
 
     # pylint: enable=line-too-long
 
@@ -83,8 +79,7 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
             "unit_name": self.unit_name,
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
-            "featurizer_config": self.featurizer_config.to_dict(),
-            "random_seed": self.random_seed
+            "featurizer_config": self.featurizer_config.to_dict()
         }
 
 

@@ -69,7 +69,9 @@ class ProbabilisticIntentParser(IntentParser):
                 self.config.intent_classifier_config,
                 builtin_entity_parser=self.builtin_entity_parser,
                 custom_entity_parser=self.custom_entity_parser,
-                resources=self.resources)
+                resources=self.resources,
+                random_state=self.random_state,
+            )
 
         if force_retrain or not self.intent_classifier.fitted:
             self.intent_classifier.fit(dataset)
@@ -85,7 +87,9 @@ class ProbabilisticIntentParser(IntentParser):
                     slot_filler_config,
                     builtin_entity_parser=self.builtin_entity_parser,
                     custom_entity_parser=self.custom_entity_parser,
-                    resources=self.resources)
+                    resources=self.resources,
+                    random_state=self.random_state,
+                )
             if force_retrain or not self.slot_fillers[intent_name].fitted:
                 self.slot_fillers[intent_name].fit(dataset, intent_name)
         logger.debug("Fitted slot fillers in %s",

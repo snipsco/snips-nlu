@@ -50,8 +50,7 @@ utterances:
 - does it rain
 - will it rain tomorrow""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        classifier = LogRegIntentClassifier(random_state=42).fit(dataset)
         text = "hey how are you doing ?"
 
         # When
@@ -108,8 +107,7 @@ utterances:
 - brew two cups of coffee
 - can you prepare one cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        classifier = LogRegIntentClassifier(random_state=42).fit(dataset)
 
         # When
         text1 = "Make me two cups of tea"
@@ -169,8 +167,7 @@ name: intent3
 utterances:
   - yili yulu yele""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        classifier = LogRegIntentClassifier(random_state=42).fit(dataset)
         text = "yala yili yulu"
 
         # When
@@ -239,9 +236,11 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        intent_classifier = LogRegIntentClassifier(
+            random_state=42).fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
+        t_ = intent_classifier.classifier.t_
 
         # When
         intent_classifier.persist(self.tmp_file_path)
@@ -252,7 +251,7 @@ utterances:
             "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
-            "t_": 701.0,
+            "t_": t_,
             "intent_list": intent_list,
             "featurizer": "featurizer"
         }

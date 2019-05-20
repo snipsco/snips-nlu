@@ -18,15 +18,14 @@ from snips_nlu.common.dict_utils import UnupdatableDict
 from snips_nlu.common.io_utils import mkdir_p
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
-    check_persisted_path,
-    check_random_state, fitted_required, json_string)
-from snips_nlu.constants import (
-    DATA, LANGUAGE)
+    check_persisted_path, fitted_required, json_string)
+from snips_nlu.constants import DATA, LANGUAGE
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
+
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, TAGS, TOKENS, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
@@ -128,10 +127,9 @@ class CRFSlotFiller(SlotFiller):
             # No need to train the CRF if the intent has no slots
             return self
 
-        random_state = check_random_state(self.config.random_seed)
         augmented_intent_utterances = augment_utterances(
             dataset, self.intent, language=self.language,
-            resources=self.resources, random_state=random_state,
+            resources=self.resources, random_state=self.random_state,
             **self.config.data_augmentation_config.to_dict())
 
         crf_samples = [
@@ -201,12 +199,11 @@ class CRFSlotFiller(SlotFiller):
 
         cache = [{TOKEN_NAME: token} for token in tokens]
         features = []
-        random_state = check_random_state(self.config.random_seed)
         for i in range(len(tokens)):
             token_features = UnupdatableDict()
             for feature in self.features:
                 f_drop_out = feature.drop_out
-                if drop_out and random_state.rand() < f_drop_out:
+                if drop_out and self.random_state.rand() < f_drop_out:
                     continue
                 value = feature.compute(i, cache)
                 if value is not None:

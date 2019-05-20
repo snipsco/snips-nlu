@@ -9,15 +9,16 @@ from snips_nlu_utils import get_shape
 
 from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.registrable import Registrable
+from snips_nlu.common.utils import check_random_state
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
     START, STEMS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER, BUILTIN_ENTITY_PARSER,
-    RESOURCES)
+    RESOURCES, RANDOM_STATE)
 from snips_nlu.dataset import (
     extract_intent_entities, get_dataset_gazetteer_entities)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
-from snips_nlu.entity_parser.custom_entity_parser import \
-    CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import (
+    CustomEntityParserUsage)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_cluster
@@ -47,6 +48,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
         self.resources = shared.get(RESOURCES)
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
+        self.random_state = check_random_state(shared.get(RANDOM_STATE))
 
     @classmethod
     def from_config(cls, factory_config, **shared):

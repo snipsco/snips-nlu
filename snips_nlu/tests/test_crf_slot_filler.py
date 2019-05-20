@@ -9,7 +9,7 @@ from mock import MagicMock, PropertyMock
 from sklearn_crfsuite import CRF
 
 from snips_nlu.constants import (
-    DATA, END, ENTITY, LANGUAGE_EN, SLOT_NAME, START, TEXT)
+    DATA, END, ENTITY, LANGUAGE_EN, SLOT_NAME, START, TEXT, RANDOM_STATE)
 from snips_nlu.dataset import Dataset
 from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.exceptions import NotTrained
@@ -35,9 +35,9 @@ utterances:
 - make me [number_of_cups:snips/number](five) cups of tea
 - please I want [number_of_cups](two) cups of tea""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = CRFSlotFillerConfig(random_seed=42)
         shared = self.get_shared_data(dataset)
-        slot_filler = CRFSlotFiller(config, **shared)
+        shared[RANDOM_STATE] = 42
+        slot_filler = CRFSlotFiller(**shared)
         intent = "MakeTea"
         slot_filler.fit(dataset, intent)
 
@@ -65,9 +65,10 @@ utterances:
 - Can you tell me the weather [datetime] please ?
 - what is the weather forecast [datetime] in [location](paris)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = CRFSlotFillerConfig(random_seed=42)
         intent = "GetWeather"
-        slot_filler = CRFSlotFiller(config, **self.get_shared_data(dataset))
+        shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = 42
+        slot_filler = CRFSlotFiller(**shared)
         slot_filler.fit(dataset, intent)
 
         # When
@@ -101,10 +102,10 @@ utterances:
 - find an activity from [start](6pm) to [end](8pm)
 - Book me a trip from [start](this friday) to [end](next tuesday)""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = CRFSlotFillerConfig(random_seed=42)
         intent = "PlanBreak"
-        slot_filler = CRFSlotFiller(config,
-                                    **self.get_shared_data(dataset))
+        shared = self.get_shared_data(dataset)
+        shared[RANDOM_STATE] = 42
+        slot_filler = CRFSlotFiller(**shared)
         slot_filler.fit(dataset, intent)
 
         # When
@@ -356,10 +357,10 @@ utterances:
 - i want [number_of_cups] cups of tea please
 - can you prepare [number_of_cups] cups of tea ?""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = CRFSlotFillerConfig(random_seed=42)
         intent = "MakeTea"
         shared = self.get_shared_data(dataset)
-        slot_filler = CRFSlotFiller(config, **shared)
+        shared[RANDOM_STATE] = 42
+        slot_filler = CRFSlotFiller(**shared)
         slot_filler.fit(dataset, intent)
         slot_filler.persist(self.tmp_file_path)
 
@@ -740,7 +741,7 @@ utterances:
             },
         ]
         slot_filler_config = CRFSlotFillerConfig(
-            feature_factory_configs=features_factories, random_seed=40)
+            feature_factory_configs=features_factories)
 
         tokens = tokenize("foo hello world bar", LANGUAGE_EN)
         dataset_stream = io.StringIO("""
@@ -761,11 +762,12 @@ utterances:
 
         # Then
         expected_features = [
-            {"ngram_1": "foo"},
             {},
+            {"ngram_1": "hello"},
             {"ngram_1": "world"},
-            {},
+            {"ngram_1": "bar"}
         ]
+
         self.assertListEqual(expected_features, features_with_drop_out)
 
     def test_should_fit_and_parse_empty_intent(self):

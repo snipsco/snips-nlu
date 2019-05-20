@@ -47,7 +47,8 @@ class SnipsTest(TestCase):
         return {
             "resources": resources,
             "builtin_entity_parser": builtin_entity_parser,
-            "custom_entity_parser": custom_entity_parser
+            "custom_entity_parser": custom_entity_parser,
+            "random_state": 1
         }
 
     @contextmanager

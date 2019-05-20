@@ -13,10 +13,10 @@ from snips_nlu.common.abc_utils import abstractclassmethod, classproperty
 from snips_nlu.common.io_utils import temp_dir, unzip_archive
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.common.utils import (
-    json_string)
+    json_string, check_random_state)
 from snips_nlu.constants import (
     BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER, CUSTOM_ENTITY_PARSER_USAGE,
-    RESOURCES, LANGUAGE)
+    RESOURCES, LANGUAGE, RANDOM_STATE)
 from snips_nlu.entity_parser import (
     BuiltinEntityParser, CustomEntityParser, CustomEntityParserUsage)
 from snips_nlu.exceptions import LoadingError
@@ -49,6 +49,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
         self.resources = shared.get(RESOURCES)
+        self.random_state = check_random_state(shared.get(RANDOM_STATE))
 
     @classproperty
     def config_type(cls):  # pylint:disable=no-self-argument

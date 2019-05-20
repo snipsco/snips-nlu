@@ -30,7 +30,7 @@ class CRFSlotFillerConfig(FromDict, ProcessingUnitConfig):
 
     def __init__(self, feature_factory_configs=None,
                  tagging_scheme=None, crf_args=None,
-                 data_augmentation_config=None, random_seed=None):
+                 data_augmentation_config=None):
         if tagging_scheme is None:
             from snips_nlu.slot_filler.crf_utils import TaggingScheme
             tagging_scheme = TaggingScheme.BIO
@@ -46,7 +46,6 @@ class CRFSlotFillerConfig(FromDict, ProcessingUnitConfig):
         self.crf_args = crf_args
         self._data_augmentation_config = None
         self.data_augmentation_config = data_augmentation_config
-        self.random_seed = random_seed
 
     @property
     def tagging_scheme(self):
@@ -102,8 +101,7 @@ class CRFSlotFillerConfig(FromDict, ProcessingUnitConfig):
             "crf_args": self.crf_args,
             "tagging_scheme": self.tagging_scheme.value,
             "data_augmentation_config":
-                self.data_augmentation_config.to_dict(),
-            "random_seed": self.random_seed
+                self.data_augmentation_config.to_dict()
         }
 
 

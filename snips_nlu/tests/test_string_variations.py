@@ -174,9 +174,8 @@ class TestStringVariations(SnipsTest):
         builtin_entity_parser.parse = mocked_parse
 
         # When/Then
-        get_string_variations("", "en", builtin_entity_parser,
-                              number_variations=False)
+        get_string_variations("", "en", builtin_entity_parser, numbers=False)
         mocked_parse.assert_not_called()
         get_string_variations(
-            "", "en", builtin_entity_parser, number_variations=True)
+            "", "en", builtin_entity_parser, numbers=True)
         self.assertGreater(mocked_parse.call_count, 0)

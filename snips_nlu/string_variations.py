@@ -10,8 +10,8 @@ from num2words import num2words
 from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
-    END, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR, RES_MATCH_RANGE,
-    SNIPS_NUMBER, START, VALUE, RESOLVED_VALUE)
+    END, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR, RESOLVED_VALUE,
+    RES_MATCH_RANGE, SNIPS_NUMBER, START, VALUE)
 from snips_nlu.languages import (
     get_default_sep, get_punctuation_regex, supports_num2words)
 from snips_nlu.preprocessing import tokenize_light
@@ -156,24 +156,32 @@ def flatten(results):
 
 
 def get_string_variations(string, language, builtin_entity_parser,
-                          number_variations=True):
+                          numbers=True, case=True, and_=True,
+                          punctuation=True):
     variations = {string}
-    variations.update(flatten(case_variations(v) for v in variations))
+    if case:
+        variations.update(flatten(case_variations(v) for v in variations))
+
     variations.update(flatten(normalization_variations(v) for v in variations))
     # We re-generate case variations as normalization can produce new
     # variations
-    variations.update(flatten(case_variations(v) for v in variations))
-    variations.update(flatten(and_variations(v, language) for v in variations))
-    variations.update(
-        flatten(punctuation_variations(v, language) for v in variations))
+    if case:
+        variations.update(flatten(case_variations(v) for v in variations))
+    if and_:
+        variations.update(
+            flatten(and_variations(v, language) for v in variations))
+    if punctuation:
+        variations.update(
+            flatten(punctuation_variations(v, language) for v in variations))
 
     # Special case of number variation which are long to generate due to the
     # BuilinEntityParser running on each variation
-    if number_variations:
+    if numbers:
         variations.update(
             flatten(numbers_variations(v, language, builtin_entity_parser)
                     for v in variations)
         )
+
     # Add single space variations
     single_space_variations = set(" ".join(v.split()) for v in variations)
     variations.update(single_space_variations)

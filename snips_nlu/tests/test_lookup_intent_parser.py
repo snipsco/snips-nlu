@@ -602,15 +602,7 @@ utterances:
             },
         ]
 
-        def sorting_key(intent_res):
-            if intent_res[RES_INTENT_NAME] is None:
-                return "null"
-            return intent_res[RES_INTENT_NAME]
-
-        sorted_expected_intents = sorted(expected_intents, key=sorting_key)
-        sorted_intents = sorted(top_intents, key=sorting_key)
-        self.assertEqual(expected_intents[0], top_intents[0])
-        self.assertListEqual(sorted_expected_intents, sorted_intents)
+        self.assertListEqual(expected_intents, top_intents)
 
     def test_should_get_slots(self):
         # Given

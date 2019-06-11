@@ -188,8 +188,8 @@ def _validate_and_format_custom_entity(entity, utterance_entities, language,
             "punctuation": False
         }
 
-    variations_args["numbers"] = (
-            len(entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD)
+    variations_args["numbers"] = len(
+        entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD
 
     variations = dict()
     for data in entity[DATA]:

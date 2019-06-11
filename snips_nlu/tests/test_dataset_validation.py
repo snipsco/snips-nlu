@@ -1033,3 +1033,99 @@ class TestDatasetValidation(SnipsTest):
                     kwargs = call[2]
                     for k in expected_args:
                         self.assertEqual(expected_args[k], kwargs[k])
+
+    def test_should_not_collapse_utterance_entity_variations(self):
+        # Given
+        dataset = {
+            "language": "en",
+            "intents": {
+                "verify_length": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "9",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "nine",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "expected": {
+                    "automatically_extensible": True,
+                    "use_synonyms": True,
+                    "data": [],
+                    "matching_strictness": 1.0
+                }
+            }
+        }
+
+        # When
+        validated_dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        expected_dataset = {
+            "language": "en",
+            "intents": {
+                "verify_length": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "9",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "nine",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "expected": {
+                    "automatically_extensible": True,
+                    "matching_strictness": 1.0,
+                    "capitalize": False,
+                    "utterances": {
+                        "nine": "nine",
+                        "Nine": "nine",
+                        "9": "9"
+                    }
+                }
+            },
+            "validated": True
+        }
+        self.assertDictEqual(expected_dataset, validated_dataset)

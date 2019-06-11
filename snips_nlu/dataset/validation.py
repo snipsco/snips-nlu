@@ -232,7 +232,8 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
             continue
         validated_utterances[original_ent] = original_ent
         for variation in variations:
-            if variation and variation not in validated_utterances:
+            if variation and variation not in validated_utterances \
+                    and variation not in queries_entities:
                 validated_utterances[variation] = original_ent
     formatted_entity[UTTERANCES] = validated_utterances
     return formatted_entity

@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Fixed a couple of bugs in the data augmentation which were making the NLU training non-deterministic [#801](https://github.com/snipsco/snips-nlu/pull/801)
+- Fix possible override of entity values when generating variations [#808](https://github.com/snipsco/snips-nlu/pull/808)
 
 ## [0.19.6]
 ### Fixed

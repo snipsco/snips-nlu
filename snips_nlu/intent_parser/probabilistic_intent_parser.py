@@ -5,9 +5,9 @@ import logging
 from builtins import str
 from copy import deepcopy
 from datetime import datetime
-from pathlib import Path
 
 from future.utils import iteritems, itervalues
+from pathlib import Path
 
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
 from snips_nlu.common.utils import (
@@ -16,9 +16,10 @@ from snips_nlu.constants import INTENTS, RES_INTENT_NAME
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_classifier import IntentClassifier
+from snips_nlu.intent_classifier.ood_detector import OODDetector
 from snips_nlu.intent_parser.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import ProbabilisticIntentParserConfig
-from snips_nlu.result import parsing_result, extraction_result
+from snips_nlu.result import parsing_result, extraction_result, empty_result
 from snips_nlu.slot_filler import SlotFiller
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ class ProbabilisticIntentParser(IntentParser):
         """The probabilistic intent parser can be configured by passing a
         :class:`.ProbabilisticIntentParserConfig`"""
         super(ProbabilisticIntentParser, self).__init__(config, **shared)
+        self.ood_detector = None
         self.intent_classifier = None
         self.slot_fillers = dict()
 
@@ -63,6 +65,11 @@ class ProbabilisticIntentParser(IntentParser):
         """
         logger.info("Fitting probabilistic intent parser...")
         dataset = validate_and_format_dataset(dataset)
+        self.ood_detector = OODDetector(
+            builtin_entity_parser=self.builtin_entity_parser,
+            custom_entity_parser=self.custom_entity_parser,
+            resources=self.resources,
+            random_state=self.random_state).fit(dataset)
         intents = list(dataset[INTENTS])
         if self.intent_classifier is None:
             self.intent_classifier = IntentClassifier.from_config(
@@ -133,6 +140,8 @@ class ProbabilisticIntentParser(IntentParser):
             intents = list(intents)
 
         if top_n is None:
+            if self.ood_detector.is_ood(text):
+                return empty_result(text, 0.8)
             intent_result = self.intent_classifier.get_intent(text, intents)
             intent_name = intent_result[RES_INTENT_NAME]
             if intent_name is not None:

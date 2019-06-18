@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 - Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
 - Accept ambiguous results from `DeterministicIntentParser` when confidence score is above 0.5 [#797](https://github.com/snipsco/snips-nlu/pull/797)
 - Moved the NLU random state from the config to the shared resources [#801](https://github.com/snipsco/snips-nlu/pull/801)
-- Bumped `scikit-learn` to `>=0.21,<0.22` for `python>=3.5` and `>=0.20<0.21` for `python<3.5` [#801](https://github.com/snipsco/snips-nlu/pull/801) 
+- Bumped `scikit-learn` to `>=0.21,<0.22` for `python>=3.5` and `>=0.20<0.21` for `python<3.5` [#801](https://github.com/snipsco/snips-nlu/pull/801)
+- Update dependencies [#811](https://github.com/snipsco/snips-nlu/pull/811) 
 
 ### Fixed
 - Fixed a couple of bugs in the data augmentation which were making the NLU training non-deterministic [#801](https://github.com/snipsco/snips-nlu/pull/801)

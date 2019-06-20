@@ -24,5 +24,3 @@ script: tox
 after_success:
   - tox -e coverage-report
   - codecov
-
-cache: pip

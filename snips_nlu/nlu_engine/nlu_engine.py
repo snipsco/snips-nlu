@@ -23,8 +23,9 @@ from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
-from snips_nlu.exceptions import InvalidInputError, IntentNotFoundError, \
-    LoadingError, IncompatibleModelError
+from snips_nlu.exceptions import (
+    InvalidInputError, IntentNotFoundError, LoadingError,
+    IncompatibleModelError)
 from snips_nlu.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
@@ -117,7 +118,9 @@ class SnipsNLUEngine(ProcessingUnit):
                     parser_config,
                     builtin_entity_parser=self.builtin_entity_parser,
                     custom_entity_parser=self.custom_entity_parser,
-                    resources=self.resources)
+                    resources=self.resources,
+                    random_state=self.random_state,
+                )
 
             if force_retrain or not recycled_parser.fitted:
                 recycled_parser.fit(dataset, force_retrain)

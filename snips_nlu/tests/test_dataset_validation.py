@@ -1,14 +1,16 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-from builtins import str
+from builtins import range, str
 
-from mock import mock
+from future.utils import iteritems
+from mock import mock, patch
 
 from snips_nlu.constants import ENTITIES, SNIPS_DATETIME
 from snips_nlu.dataset import validate_and_format_dataset
+from snips_nlu.dataset.validation import _validate_and_format_custom_entity
 from snips_nlu.exceptions import DatasetFormatError
-from snips_nlu.tests.utils import SnipsTest
+from snips_nlu.tests.utils import SnipsTest, EntityParserMock
 
 
 class TestDatasetValidation(SnipsTest):
@@ -189,9 +191,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation.lower(), variation.title()}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string.lower(), string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -242,9 +247,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation, variation.title()}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string, string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -355,9 +363,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -496,9 +507,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation, variation.title()}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string, string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -610,9 +624,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation, variation.title()}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string, string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -786,9 +803,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation.lower(), variation.title()}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string.lower(), string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -861,9 +881,12 @@ class TestDatasetValidation(SnipsTest):
             self, mocked_get_string_variations):
         # Given
         # pylint: disable=unused-argument
-        def mock_get_string_variations(variation, language,
-                                       builtin_entity_parser):
-            return {variation.lower(), variation.title()}
+        def mock_get_string_variations(
+                string, language, builtin_entity_parser,
+                numbers=True, case=True, and_=True,
+                punctuation=True
+        ):
+            return {string.lower(), string.title()}
 
         mocked_get_string_variations.side_effect = mock_get_string_variations
         dataset = {
@@ -965,3 +988,144 @@ class TestDatasetValidation(SnipsTest):
             "favorïte": "a"
         }
         self.assertDictEqual(expected_utterances, entity["utterances"])
+
+    def test_should_create_number_variation(self):
+        # Given
+        args = {
+            1: {
+                "numbers": True,
+                "and_": True,
+                "case": True,
+                "punctuation": True,
+            },
+            1001: {
+                "numbers": False,
+                "and_": True,
+                "case": True,
+                "punctuation": True,
+            },
+            10001: {
+                "numbers": False,
+                "and_": False,
+                "case": False,
+                "punctuation": False,
+            }
+        }
+
+        for num_ents, expected_args in iteritems(args):
+            entity = {
+                "matching_strictness": 1.0,
+                "use_synonyms": False,
+                "automatically_extensible": False,
+                "data": [
+                    {"value": str(i), "synonyms": []}
+                    for i in range(num_ents)]
+            }
+            builtin_entity_parser = EntityParserMock(dict())
+            with patch("snips_nlu.dataset.validation"
+                       ".get_string_variations") as mocked_string_variations:
+                mocked_string_variations.return_value = []
+                # When
+                _validate_and_format_custom_entity(
+                    entity, [], "en", builtin_entity_parser)
+                # Then
+                for call in mocked_string_variations.mock_calls:
+                    kwargs = call[2]
+                    for k in expected_args:
+                        self.assertEqual(expected_args[k], kwargs[k])
+
+    def test_should_not_collapse_utterance_entity_variations(self):
+        # Given
+        dataset = {
+            "language": "en",
+            "intents": {
+                "verify_length": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "9",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "nine",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "expected": {
+                    "automatically_extensible": True,
+                    "use_synonyms": True,
+                    "data": [],
+                    "matching_strictness": 1.0
+                }
+            }
+        }
+
+        # When
+        validated_dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        expected_dataset = {
+            "language": "en",
+            "intents": {
+                "verify_length": {
+                    "utterances": [
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "9",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        },
+                        {
+                            "data": [
+                                {
+                                    "text": "hello "
+                                },
+                                {
+                                    "text": "nine",
+                                    "slot_name": "expected",
+                                    "entity": "expected"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "entities": {
+                "expected": {
+                    "automatically_extensible": True,
+                    "matching_strictness": 1.0,
+                    "capitalize": False,
+                    "utterances": {
+                        "nine": "nine",
+                        "Nine": "nine",
+                        "9": "9"
+                    }
+                }
+            },
+            "validated": True
+        }
+        self.assertDictEqual(expected_dataset, validated_dataset)

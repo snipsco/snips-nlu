@@ -17,7 +17,7 @@ from snips_nlu.intent_parser.deterministic_intent_parser import (
 from snips_nlu.pipeline.configs import DeterministicIntentParserConfig
 from snips_nlu.result import (
     extraction_result, intent_classification_result, unresolved_slot,
-    empty_result)
+    empty_result, parsing_result)
 from snips_nlu.tests.utils import FixtureTest, TEST_PATH
 
 
@@ -120,13 +120,26 @@ utterances:
 type: intent
 name: intent1
 utterances:
-  - meeting tomorrow
-  
+  - meeting [time:snips/datetime](today)
+
 ---
 type: intent
 name: intent2
 utterances:
-  - meeting [time:snips/datetime](today)""")
+  - meeting tomorrow
+  
+---
+type: intent
+name: intent3
+utterances:
+  - "[event_type](call) [time:snips/datetime](at 9pm)"
+
+---
+type: entity
+name: event_type
+values:
+  - meeting
+  - feedback session""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
         text = "meeting tomorrow"
@@ -135,19 +148,39 @@ utterances:
         results = parser.parse(text, top_n=3)
 
         # Then
-        slot = {
+        time_slot = {
             "entity": "snips/datetime",
             "range": {"end": 16, "start": 8},
             "slotName": "time",
             "value": "tomorrow"
         }
+        event_slot = {
+            "entity": "event_type",
+            "range": {"end": 7, "start": 0},
+            "slotName": "event_type",
+            "value": "meeting"
+        }
+        weight_intent_1 = 1. / 2.
+        weight_intent_2 = 1.
+        weight_intent_3 = 1. / 3.
+        total_weight = weight_intent_1 + weight_intent_2 + weight_intent_3
+        proba_intent2 = weight_intent_2 / total_weight
+        proba_intent1 = weight_intent_1 / total_weight
+        proba_intent3 = weight_intent_3 / total_weight
         expected_results = [
-            extraction_result(intent_classification_result(
-                intent_name="intent1", probability=0.5), []),
-            extraction_result(intent_classification_result(
-                intent_name="intent2", probability=0.5), [slot])
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent2", probability=proba_intent2),
+                slots=[]),
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent1", probability=proba_intent1),
+                slots=[time_slot]),
+            extraction_result(
+                intent_classification_result(
+                    intent_name="intent3", probability=proba_intent3),
+                slots=[event_slot, time_slot])
         ]
-        results = sorted(results, key=lambda r: r[RES_INTENT][RES_INTENT_NAME])
         self.assertEqual(expected_results, results)
 
     @patch("snips_nlu.intent_parser.deterministic_intent_parser"
@@ -211,7 +244,7 @@ utterances:
         self.assertDictEqual(expected_intent, parsing[RES_INTENT])
         self.assertListEqual(expected_slots, parsing[RES_SLOTS])
 
-    def test_should_ignore_ambiguous_utterances(self):
+    def test_should_ignore_completely_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO("""
 ---
@@ -235,29 +268,63 @@ utterances:
         # Then
         self.assertEqual(empty_result(text, 1.0), res)
 
-    def test_should_ignore_subtly_ambiguous_utterances(self):
+    def test_should_ignore_very_ambiguous_utterances(self):
         # Given
         dataset_stream = io.StringIO("""
 ---
 type: intent
 name: intent_1
 utterances:
-  - meeting tomorrow
+  - "[event_type](meeting) tomorrow"
 
 ---
 type: intent
 name: intent_2
 utterances:
-  - meeting [time:snips/datetime](today)""")
+  - call [time:snips/datetime](today)
+
+---
+type: entity
+name: event_type
+values:
+  - call
+  - diner""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
-        text = "meeting tomorrow"
+        text = "call tomorrow"
 
         # When
         res = parser.parse(text)
 
         # Then
         self.assertEqual(empty_result(text, 1.0), res)
+
+    def test_should_parse_slightly_ambiguous_utterances(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: intent_1
+utterances:
+  - call tomorrow
+
+---
+type: intent
+name: intent_2
+utterances:
+  - call [time:snips/datetime](today)""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        parser = DeterministicIntentParser().fit(dataset)
+        text = "call tomorrow"
+
+        # When
+        res = parser.parse(text)
+
+        # Then
+        expected_intent = intent_classification_result(
+            intent_name="intent_1", probability=2. / 3.)
+        expected_result = parsing_result(text, expected_intent, [])
+        self.assertEqual(expected_result, res)
 
     def test_should_not_parse_when_not_fitted(self):
         # Given

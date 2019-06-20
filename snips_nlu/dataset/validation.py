@@ -8,6 +8,8 @@ from copy import deepcopy
 from future.utils import iteritems, itervalues
 from snips_nlu_parsers import get_all_languages
 
+from snips_nlu.common.dataset_utils import (validate_key, validate_keys,
+                                            validate_type)
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
@@ -18,8 +20,9 @@ from snips_nlu.entity_parser.builtin_entity_parser import (
 from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.preprocessing import tokenize_light
 from snips_nlu.string_variations import get_string_variations
-from snips_nlu.common.dataset_utils import validate_type, validate_key, \
-    validate_keys
+
+NUMBER_VARIATIONS_THRESHOLD = 1e3
+VARIATIONS_GENERATION_THRESHOLD = 1e4
 
 
 def validate_and_format_dataset(dataset):
@@ -111,7 +114,7 @@ def _extract_entity_values(entity):
     return values
 
 
-def _validate_and_format_custom_entity(entity, queries_entities, language,
+def _validate_and_format_custom_entity(entity, utterance_entities, language,
                                        builtin_entity_parser):
     validate_type(entity, dict, object_label="entity")
 
@@ -146,30 +149,48 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
         if not entry[VALUE]:
             continue
         validate_type(entry[SYNONYMS], list, object_label="entity synonyms")
-        entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS]
-                           if len(s.strip()) > 0]
+        entry[SYNONYMS] = [s.strip() for s in entry[SYNONYMS] if s.strip()]
         valid_entity_data.append(entry)
     entity[DATA] = valid_entity_data
 
     # Compute capitalization before normalizing
     # Normalization lowercase and hence lead to bad capitalization calculation
-    formatted_entity[CAPITALIZE] = _has_any_capitalization(queries_entities,
+    formatted_entity[CAPITALIZE] = _has_any_capitalization(utterance_entities,
                                                            language)
 
     validated_utterances = dict()
     # Map original values an synonyms
     for data in entity[DATA]:
         ent_value = data[VALUE]
-        if not ent_value:
-            continue
         validated_utterances[ent_value] = ent_value
         if use_synonyms:
             for s in data[SYNONYMS]:
-                if s and s not in validated_utterances:
+                if s not in validated_utterances:
                     validated_utterances[s] = ent_value
+
+    # Number variations in entities values are expensive since each entity
+    # value is parsed with the builtin entity parser before creating the
+    # variations. We avoid generating these variations if there's enough entity
+    # values
 
     # Add variations if not colliding
     all_original_values = _extract_entity_values(entity)
+    if len(entity[DATA]) < VARIATIONS_GENERATION_THRESHOLD:
+        variations_args = {
+            "case": True,
+            "and_": True,
+            "punctuation": True
+        }
+    else:
+        variations_args = {
+            "case": False,
+            "and_": False,
+            "punctuation": False
+        }
+
+    variations_args["numbers"] = len(
+        entity[DATA]) < NUMBER_VARIATIONS_THRESHOLD
+
     variations = dict()
     for data in entity[DATA]:
         ent_value = data[VALUE]
@@ -178,10 +199,11 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
             values_to_variate.update(set(data[SYNONYMS]))
         variations[ent_value] = set(
             v for value in values_to_variate
-            for v in get_string_variations(value, language,
-                                           builtin_entity_parser))
+            for v in get_string_variations(
+                value, language, builtin_entity_parser, **variations_args)
+        )
     variation_counter = Counter(
-        [v for vars in itervalues(variations) for v in vars])
+        [v for variations_ in itervalues(variations) for v in variations_])
     non_colliding_variations = {
         value: [
             v for v in variations if
@@ -195,22 +217,25 @@ def _validate_and_format_custom_entity(entity, queries_entities, language,
         validated_utterances = _add_entity_variations(
             validated_utterances, non_colliding_variations, entry_value)
 
-    # Merge queries entities
-    queries_entities_variations = {
-        ent: get_string_variations(ent, language, builtin_entity_parser)
-        for ent in queries_entities
+    # Merge utterances entities
+    utterance_entities_variations = {
+        ent: get_string_variations(
+            ent, language, builtin_entity_parser, **variations_args)
+        for ent in utterance_entities
     }
-    for original_ent, variations in iteritems(queries_entities_variations):
+
+    for original_ent, variations in iteritems(utterance_entities_variations):
         if not original_ent or original_ent in validated_utterances:
             continue
         validated_utterances[original_ent] = original_ent
         for variation in variations:
-            if variation and variation not in validated_utterances:
+            if variation and variation not in validated_utterances \
+                    and variation not in utterance_entities:
                 validated_utterances[variation] = original_ent
     formatted_entity[UTTERANCES] = validated_utterances
     return formatted_entity
 
 
-def _validate_and_format_builtin_entity(entity, queries_entities):
+def _validate_and_format_builtin_entity(entity, utterance_entities):
     validate_type(entity, dict, object_label="builtin entity")
-    return {UTTERANCES: set(queries_entities)}
+    return {UTTERANCES: set(utterance_entities)}

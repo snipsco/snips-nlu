@@ -47,7 +47,8 @@ class SnipsTest(TestCase):
         return {
             "resources": resources,
             "builtin_entity_parser": builtin_entity_parser,
-            "custom_entity_parser": custom_entity_parser
+            "custom_entity_parser": custom_entity_parser,
+            "random_state": 1
         }
 
     @contextmanager
@@ -221,4 +222,4 @@ class EntityParserMock(EntityParser):
         return cls(entities)
 
     def _parse(self, text, scope=None):
-        return self.entities.get(text)
+        return self.entities.get(text, [])

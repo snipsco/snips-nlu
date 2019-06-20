@@ -10,11 +10,10 @@ from sklearn.linear_model import SGDClassifier
 
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
-    check_persisted_path, check_random_state,
-    fitted_required, json_string)
+    check_persisted_path, fitted_required, json_string)
 from snips_nlu.constants import LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import _EmptyDatasetUtterancesError, LoadingError
+from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import Featurizer
 from snips_nlu.intent_classifier.intent_classifier import IntentClassifier
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
@@ -24,11 +23,20 @@ from snips_nlu.result import intent_classification_result
 
 logger = logging.getLogger(__name__)
 
+# We set tol to 1e-3 to silence the following warning with Python 2 (
+# scikit-learn 0.20):
+#
+# FutureWarning: max_iter and tol parameters have been added in SGDClassifier
+# in 0.19. If max_iter is set but tol is left unset, the default value for tol
+# in 0.19 and 0.20 will be None (which is equivalent to -infinity, so it has no
+# effect) but will change in 0.21 to 1e-3. Specify tol to silence this warning.
+
 LOG_REG_ARGS = {
     "loss": "log",
     "penalty": "l2",
     "class_weight": "balanced",
-    "max_iter": 5,
+    "max_iter": 1000,
+    "tol": 1e-3,
     "n_jobs": -1
 }
 
@@ -52,7 +60,7 @@ class LogRegIntentClassifier(IntentClassifier):
         """Whether or not the intent classifier has already been fitted"""
         return self.intent_list is not None
 
-    @log_elapsed_time(logger, logging.DEBUG,
+    @log_elapsed_time(logger, logging.INFO,
                       "LogRegIntentClassifier in {elapsed_time}")
     def fit(self, dataset):
         """Fits the intent classifier with a valid Snips dataset
@@ -60,18 +68,17 @@ class LogRegIntentClassifier(IntentClassifier):
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
-        logger.debug("Fitting LogRegIntentClassifier...")
+        logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
         language = dataset[LANGUAGE]
-        random_state = check_random_state(self.config.random_seed)
 
         data_augmentation_config = self.config.data_augmentation_config
         utterances, classes, intent_list = build_training_data(
             dataset, language, data_augmentation_config, self.resources,
-            random_state)
+            self.random_state)
 
         self.intent_list = intent_list
         if len(self.intent_list) <= 1:
@@ -81,7 +88,8 @@ class LogRegIntentClassifier(IntentClassifier):
             config=self.config.featurizer_config,
             builtin_entity_parser=self.builtin_entity_parser,
             custom_entity_parser=self.custom_entity_parser,
-            resources=self.resources
+            resources=self.resources,
+            random_state=self.random_state,
         )
         self.featurizer.language = language
 
@@ -94,8 +102,8 @@ class LogRegIntentClassifier(IntentClassifier):
             return self
 
         alpha = get_regularization_factor(dataset)
-        self.classifier = SGDClassifier(random_state=random_state,
-                                        alpha=alpha, **LOG_REG_ARGS)
+        self.classifier = SGDClassifier(
+            random_state=self.random_state, alpha=alpha, **LOG_REG_ARGS)
         self.classifier.fit(x, classes)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self

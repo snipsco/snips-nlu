@@ -133,7 +133,7 @@ class DeterministicIntentParser(IntentParser):
         logger, logging.INFO, "Fitted deterministic parser in {elapsed_time}")
     def fit(self, dataset, force_retrain=True):
         """Fits the intent parser with a valid Snips dataset"""
-        logger.info("Fitting deterministic parser...")
+        logger.info("Fitting deterministic intent parser...")
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
@@ -203,7 +203,7 @@ class DeterministicIntentParser(IntentParser):
             if top_intents:
                 intent = top_intents[0][RES_INTENT]
                 slots = top_intents[0][RES_SLOTS]
-                if intent[RES_PROBA] < 1.0:
+                if intent[RES_PROBA] <= 0.5:
                     # return None in case of ambiguity
                     return empty_result(text, probability=1.0)
                 return parsing_result(text, intent, slots)
@@ -249,16 +249,17 @@ class DeterministicIntentParser(IntentParser):
                     results.append(res)
                     break
 
-        confidence_score = 1.
-        if results:
-            confidence_score = 1. / float(len(results))
+        # In some rare cases there can be multiple ambiguous intents
+        # In such cases, priority is given to results containing fewer slots
+        weights = [1.0 / (1.0 + len(res[RES_SLOTS])) for res in results]
+        total_weight = sum(weights)
 
-        results = results[:top_n]
+        for res, weight in zip(results, weights):
+            res[RES_INTENT][RES_PROBA] = weight / total_weight
 
-        for res in results:
-            res[RES_INTENT][RES_PROBA] = confidence_score
+        results = sorted(results, key=lambda r: -r[RES_INTENT][RES_PROBA])
 
-        return results
+        return results[:top_n]
 
     @fitted_required
     def get_intents(self, text):

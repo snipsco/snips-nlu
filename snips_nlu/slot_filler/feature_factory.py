@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
-from abc import abstractmethod, ABCMeta
+import logging
+
+from abc import ABCMeta, abstractmethod
 from builtins import str
 
 from future.utils import with_metaclass
@@ -13,7 +15,7 @@ from snips_nlu.common.utils import check_random_state
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
     START, STEMS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER, BUILTIN_ENTITY_PARSER,
-    RESOURCES, RANDOM_STATE)
+    RESOURCES, RANDOM_STATE, AUTOMATICALLY_EXTENSIBLE, ENTITIES)
 from snips_nlu.dataset import (
     extract_intent_entities, get_dataset_gazetteer_entities)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
@@ -26,6 +28,22 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
+
+logger = logging.getLogger(__name__)
+
+class _InvalidCustomEntityFilter(ValueError):
+    pass
+
+
+CUSTOM_ENTITIES_FILTER_KEYS = {"automatically_extensible"}
+
+
+def _check_custom_entity_filter(entity_filter):
+    for k in entity_filter:
+        if k not in CUSTOM_ENTITIES_FILTER_KEYS:
+            msg = "Invalid custom entity filter key '%s'. Accepted filter " \
+                  "keys are %s" % (k, list(CUSTOM_ENTITIES_FILTER_KEYS))
+            raise _InvalidCustomEntityFilter(msg)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
@@ -386,6 +404,12 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
         for it among the (stemmed) entity values
     -   'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
         allows to give more information about the match.
+    -   'entity_filter' (dict): a filter applied to select the custom entities
+        for which the custom match feature should be applied. Available
+        filters:
+            - 'automatically_extensible': if True, selects automatically
+             extensible entities only, if False selects non automatically
+             extensible entities only
     """
 
     def __init__(self, factory_config, **shared):
@@ -396,6 +420,16 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["tagging_scheme_code"])
         self._entities = None
         self.entities = self.args.get("entities")
+        entity_filter = self.args.get("entity_filter")
+        if entity_filter:
+            try:
+                _check_custom_entity_filter(entity_filter)
+            except _InvalidCustomEntityFilter as e:
+                logger.warning(
+                    "Invalid filter '%s', invalid arguments have been ignored:"
+                    " %s", entity_filter, e,
+                )
+        self.entity_filter = entity_filter
 
     @property
     def entities(self):
@@ -408,9 +442,15 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["entities"] = value
 
     def fit(self, dataset, intent):
-        self.entities = extract_intent_entities(
+        entities_names = extract_intent_entities(
             dataset, lambda e: not is_builtin_entity(e))[intent]
-        self.entities = list(self.entities)
+        extensible = self.entity_filter.get(AUTOMATICALLY_EXTENSIBLE)
+        if extensible is not None:
+            entities_names = [
+                e for e in entities_names
+                if dataset[ENTITIES][e][AUTOMATICALLY_EXTENSIBLE] == extensible
+            ]
+        self.entities = entities_names
         return self
 
     def _transform(self, tokens):

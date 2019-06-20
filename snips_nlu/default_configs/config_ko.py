@@ -84,8 +84,22 @@ CONFIG = {
                     },
                     {
                         "args": {
-                            "use_stemming": False,
-                            "tagging_scheme_code": 2
+                            "use_stemming": True,
+                            "tagging_scheme_code": 2,
+                            "filter": {
+                                "automatically_extensible": False
+                            }
+                        },
+                        "factory_name": "entity_match",
+                        "offsets": [-2, -1, 0]
+                    },
+                    {
+                        "args": {
+                            "use_stemming": True,
+                            "tagging_scheme_code": 2,
+                            "filter": {
+                                "automatically_extensible": True
+                            }
                         },
                         "factory_name": "entity_match",
                         "offsets": [-2, -1, 0],

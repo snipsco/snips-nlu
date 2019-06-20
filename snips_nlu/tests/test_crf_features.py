@@ -406,20 +406,26 @@ type: intent
 name: my_intent
 utterances:
 - this is [entity1](my first entity)
-- this is [entity2](second_entity)""")
+- this is [entity2](second_entity)
+- this is [entity3](third_entity)""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        dataset["entities"]["entity3"]["automatically_extensible"] = False
 
         config = {
             "factory_name": "entity_match",
             "args": {
                 "tagging_scheme_code": TaggingScheme.BILOU.value,
-                "use_stemming": True
+                "use_stemming": True,
+                "entity_filter": {
+                    "automatically_extensible": True,
+                }
             },
             "offsets": [0]
         }
 
-        tokens = tokenize("my first entity and second_entity", LANGUAGE_EN)
+        tokens = tokenize(
+            "my first entity and second_entity and third_entity", LANGUAGE_EN)
         cache = [{TOKEN_NAME: token} for token in tokens]
         resources = {STEMS: dict()}
         custom_entity_parser = CustomEntityParser.build(

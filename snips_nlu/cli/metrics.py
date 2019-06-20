@@ -42,12 +42,15 @@ def make_engine_cls(config):
                           "flag", "s", bool),
     include_errors=("Include parsing errors in the output", "flag", "i", bool),
     verbose=("Print logs", "flag", "v"),
+    out_of_domain_path=("Path to out of domain utterances", "option", "o",
+                        str)
 )
 def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
                       train_size_ratio=1.0, exclude_slot_metrics=False,
-                      include_errors=False, verbose=False):
+                      include_errors=False, verbose=False,
+                      out_of_domain_path=None):
     if verbose:
-        set_nlu_logger(logging.DEBUG)
+        set_nlu_logger(logging.INFO)
 
     def progression_handler(progress):
         print("%d%%" % int(progress * 100))
@@ -59,6 +62,11 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
     else:
         engine_cls = SnipsNLUEngine
 
+    ood_utterances = None
+    if out_of_domain_path is not None:
+        with Path(out_of_domain_path).open(encoding="utf8") as f:
+            ood_utterances = f.readlines()
+
     metrics_args = dict(
         dataset=dataset_path,
         engine_class=engine_cls,
@@ -66,7 +74,8 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
         nb_folds=nb_folds,
         train_size_ratio=train_size_ratio,
         include_slot_metrics=not exclude_slot_metrics,
-        slot_matching_lambda=_match_trimmed_values
+        slot_matching_lambda=_match_trimmed_values,
+        out_of_domain_utterances=ood_utterances,
     )
 
     from snips_nlu_metrics import compute_cross_val_metrics
@@ -96,7 +105,7 @@ def train_test_metrics(train_dataset_path, test_dataset_path, output_path,
                        config_path=None, exclude_slot_metrics=False,
                        include_errors=False, verbose=False):
     if verbose:
-        set_nlu_logger(logging.DEBUG)
+        set_nlu_logger(logging.INFO)
 
     if config_path is not None:
         with Path(config_path).open("r", encoding="utf-8") as f:

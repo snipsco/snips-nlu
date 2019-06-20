@@ -1,0 +1,247 @@
+{
+  "config": {
+    "intent_classifier_config": {
+      "data_augmentation_config": {
+        "add_builtin_entities_examples": false,
+        "max_unknown_words": null,
+        "min_utterances": 20,
+        "noise_factor": 5,
+        "unknown_word_prob": 0.0,
+        "unknown_words_replacement_string": null,
+        "use_bigrams_noise": false
+      },
+      "featurizer_config": {
+        "added_cooccurrence_feature_ratio": 0.0,
+        "cooccurrence_vectorizer_config": {
+          "filter_stop_words": true,
+          "keep_order": true,
+          "unit_name": "cooccurrence_vectorizer",
+          "unknown_words_replacement_string": null,
+          "window_size": null
+        },
+        "pvalue_threshold": 0.4,
+        "tfidf_vectorizer_config": {
+          "unit_name": "tfidf_vectorizer",
+          "use_stemming": false,
+          "word_clusters_name": null
+        },
+        "unit_name": "featurizer"
+      },
+      "unit_name": "log_reg_intent_classifier"
+    },
+    "slot_filler_config": {
+      "crf_args": {
+        "algorithm": "lbfgs",
+        "c1": 0.1,
+        "c2": 0.1
+      },
+      "data_augmentation_config": {
+        "add_builtin_entities_examples": true,
+        "capitalization_ratio": 0.2,
+        "min_utterances": 200
+      },
+      "feature_factory_configs": [
+        {
+          "args": {
+            "common_words_gazetteer_name": "top_10000_words_stemmed",
+            "n": 1,
+            "use_stemming": true
+          },
+          "factory_name": "ngram",
+          "offsets": [
+            -2,
+            -1,
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "args": {
+            "common_words_gazetteer_name": "top_10000_words_stemmed",
+            "n": 2,
+            "use_stemming": true
+          },
+          "factory_name": "ngram",
+          "offsets": [
+            -2,
+            1
+          ]
+        },
+        {
+          "args": {},
+          "factory_name": "is_digit",
+          "offsets": [
+            -1,
+            0,
+            1
+          ]
+        },
+        {
+          "args": {},
+          "factory_name": "is_first",
+          "offsets": [
+            -2,
+            -1,
+            0
+          ]
+        },
+        {
+          "args": {},
+          "factory_name": "is_last",
+          "offsets": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "args": {
+            "n": 1
+          },
+          "factory_name": "shape_ngram",
+          "offsets": [
+            0
+          ]
+        },
+        {
+          "args": {
+            "n": 2
+          },
+          "factory_name": "shape_ngram",
+          "offsets": [
+            -1,
+            0
+          ]
+        },
+        {
+          "args": {
+            "n": 3
+          },
+          "factory_name": "shape_ngram",
+          "offsets": [
+            -1
+          ]
+        },
+        {
+          "args": {
+            "tagging_scheme_code": 2,
+            "use_stemming": true
+          },
+          "drop_out": 0.5,
+          "factory_name": "entity_match",
+          "offsets": [
+            -2,
+            -1,
+            0
+          ]
+        },
+        {
+          "args": {
+            "tagging_scheme_code": 1
+          },
+          "factory_name": "builtin_entity_match",
+          "offsets": [
+            -2,
+            -1,
+            0
+          ]
+        },
+        {
+          "args": {
+            "cluster_name": "brown_clusters",
+            "use_stemming": false
+          },
+          "factory_name": "word_cluster",
+          "offsets": [
+            -2,
+            -1,
+            0,
+            1
+          ]
+        }
+      ],
+      "tagging_scheme": 1,
+      "unit_name": "crf_slot_filler"
+    },
+    "unit_name": "probabilistic_intent_parser"
+  },
+  "slot_fillers": [
+    {
+      "intent": "addSong",
+      "slot_filler_name": "slot_filler_0"
+    },
+    {
+      "intent": "getInfos",
+      "slot_filler_name": "slot_filler_1"
+    },
+    {
+      "intent": "lightsSet",
+      "slot_filler_name": "slot_filler_2"
+    },
+    {
+      "intent": "lightsShift",
+      "slot_filler_name": "slot_filler_3"
+    },
+    {
+      "intent": "lightsTurnOff",
+      "slot_filler_name": "slot_filler_4"
+    },
+    {
+      "intent": "nextSong",
+      "slot_filler_name": "slot_filler_5"
+    },
+    {
+      "intent": "playAlbum",
+      "slot_filler_name": "slot_filler_6"
+    },
+    {
+      "intent": "playArtist",
+      "slot_filler_name": "slot_filler_7"
+    },
+    {
+      "intent": "playPlaylist",
+      "slot_filler_name": "slot_filler_8"
+    },
+    {
+      "intent": "playSong",
+      "slot_filler_name": "slot_filler_9"
+    },
+    {
+      "intent": "previousSong",
+      "slot_filler_name": "slot_filler_10"
+    },
+    {
+      "intent": "radioOn",
+      "slot_filler_name": "slot_filler_11"
+    },
+    {
+      "intent": "resumeMusic",
+      "slot_filler_name": "slot_filler_12"
+    },
+    {
+      "intent": "speakerInterrupt",
+      "slot_filler_name": "slot_filler_13"
+    },
+    {
+      "intent": "thermostatSet",
+      "slot_filler_name": "slot_filler_14"
+    },
+    {
+      "intent": "thermostatShift",
+      "slot_filler_name": "slot_filler_15"
+    },
+    {
+      "intent": "thermostatTurnOff",
+      "slot_filler_name": "slot_filler_16"
+    },
+    {
+      "intent": "volumeDown",
+      "slot_filler_name": "slot_filler_17"
+    },
+    {
+      "intent": "volumeUp",
+      "slot_filler_name": "slot_filler_18"
+    }
+  ]
+}

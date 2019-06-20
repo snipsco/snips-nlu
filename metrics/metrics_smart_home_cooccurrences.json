@@ -1,0 +1,7183 @@
+{
+  "average_metrics": {
+    "intent": {
+      "f1": 0.9436086076275664,
+      "precision": 0.9468007649938104,
+      "recall": 0.9418099900183204
+    }
+  },
+  "confusion_matrix": {
+    "intents": [
+      "addSong",
+      "getInfos",
+      "lightsSet",
+      "lightsShift",
+      "lightsTurnOff",
+      "nextSong",
+      "playAlbum",
+      "playArtist",
+      "playPlaylist",
+      "playSong",
+      "previousSong",
+      "radioOn",
+      "resumeMusic",
+      "speakerInterrupt",
+      "thermostatSet",
+      "thermostatShift",
+      "thermostatTurnOff",
+      "volumeDown",
+      "volumeUp",
+      "null"
+    ],
+    "matrix": [
+      [
+        191,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4
+      ],
+      [
+        2,
+        189,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4
+      ],
+      [
+        0,
+        0,
+        227,
+        9,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        0,
+        34,
+        399,
+        3,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        3,
+        0
+      ],
+      [
+        0,
+        0,
+        12,
+        5,
+        155,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        192,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        386,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        265,
+        1,
+        2,
+        0,
+        0,
+        13,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        13
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        389,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6
+      ],
+      [
+        1,
+        1,
+        0,
+        0,
+        0,
+        2,
+        4,
+        6,
+        0,
+        374,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        190,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        5
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        200,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        2,
+        1,
+        0,
+        186,
+        2,
+        0,
+        0,
+        0,
+        0,
+        1,
+        3
+      ],
+      [
+        0,
+        2,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        190,
+        0,
+        0,
+        0,
+        0,
+        1,
+        3
+      ],
+      [
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        999,
+        45,
+        12,
+        0,
+        1,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        63,
+        775,
+        19,
+        3,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        6,
+        151,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        209,
+        0,
+        4
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        4,
+        265,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "metrics": {
+    "addSong": {
+      "exact_parsings": 191,
+      "intent": {
+        "f1": 0.9622166246851385,
+        "false_negative": 9,
+        "false_positive": 6,
+        "precision": 0.9695431472081218,
+        "recall": 0.955,
+        "true_positive": 191
+      },
+      "intent_utterances": 200
+    },
+    "getInfos": {
+      "exact_parsings": 189,
+      "intent": {
+        "f1": 0.9618320610687022,
+        "false_negative": 10,
+        "false_positive": 5,
+        "precision": 0.9742268041237113,
+        "recall": 0.949748743718593,
+        "true_positive": 189
+      },
+      "intent_utterances": 199
+    },
+    "lightsSet": {
+      "exact_parsings": 227,
+      "intent": {
+        "f1": 0.8747591522157996,
+        "false_negative": 16,
+        "false_positive": 49,
+        "precision": 0.822463768115942,
+        "recall": 0.934156378600823,
+        "true_positive": 227
+      },
+      "intent_utterances": 243
+    },
+    "lightsShift": {
+      "exact_parsings": 399,
+      "intent": {
+        "f1": 0.926829268292683,
+        "false_negative": 44,
+        "false_positive": 19,
+        "precision": 0.9545454545454546,
+        "recall": 0.9006772009029346,
+        "true_positive": 399
+      },
+      "intent_utterances": 443
+    },
+    "lightsTurnOff": {
+      "exact_parsings": 155,
+      "intent": {
+        "f1": 0.9365558912386708,
+        "false_negative": 18,
+        "false_positive": 3,
+        "precision": 0.9810126582278481,
+        "recall": 0.8959537572254336,
+        "true_positive": 155
+      },
+      "intent_utterances": 173
+    },
+    "nextSong": {
+      "exact_parsings": 192,
+      "intent": {
+        "f1": 0.9672544080604534,
+        "false_negative": 8,
+        "false_positive": 5,
+        "precision": 0.9746192893401016,
+        "recall": 0.96,
+        "true_positive": 192
+      },
+      "intent_utterances": 200
+    },
+    "null": {
+      "exact_parsings": 0,
+      "intent": {
+        "f1": 0.0,
+        "false_negative": 0,
+        "false_positive": 71,
+        "precision": 0.0,
+        "recall": 0.0,
+        "true_positive": 0
+      },
+      "intent_utterances": 0
+    },
+    "playAlbum": {
+      "exact_parsings": 386,
+      "intent": {
+        "f1": 0.9735182849936947,
+        "false_negative": 14,
+        "false_positive": 7,
+        "precision": 0.9821882951653944,
+        "recall": 0.965,
+        "true_positive": 386
+      },
+      "intent_utterances": 400
+    },
+    "playArtist": {
+      "exact_parsings": 265,
+      "intent": {
+        "f1": 0.9106529209621992,
+        "false_negative": 34,
+        "false_positive": 18,
+        "precision": 0.9363957597173145,
+        "recall": 0.8862876254180602,
+        "true_positive": 265
+      },
+      "intent_utterances": 299
+    },
+    "playPlaylist": {
+      "exact_parsings": 389,
+      "intent": {
+        "f1": 0.9848101265822785,
+        "false_negative": 11,
+        "false_positive": 1,
+        "precision": 0.9974358974358974,
+        "recall": 0.9725,
+        "true_positive": 389
+      },
+      "intent_utterances": 400
+    },
+    "playSong": {
+      "exact_parsings": 374,
+      "intent": {
+        "f1": 0.9540816326530612,
+        "false_negative": 26,
+        "false_positive": 10,
+        "precision": 0.9739583333333334,
+        "recall": 0.935,
+        "true_positive": 374
+      },
+      "intent_utterances": 400
+    },
+    "previousSong": {
+      "exact_parsings": 190,
+      "intent": {
+        "f1": 0.9718670076726342,
+        "false_negative": 10,
+        "false_positive": 1,
+        "precision": 0.9947643979057592,
+        "recall": 0.95,
+        "true_positive": 190
+      },
+      "intent_utterances": 200
+    },
+    "radioOn": {
+      "exact_parsings": 200,
+      "intent": {
+        "f1": 1.0,
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positive": 200
+      },
+      "intent_utterances": 200
+    },
+    "resumeMusic": {
+      "exact_parsings": 186,
+      "intent": {
+        "f1": 0.8942307692307692,
+        "false_negative": 14,
+        "false_positive": 30,
+        "precision": 0.8611111111111112,
+        "recall": 0.93,
+        "true_positive": 186
+      },
+      "intent_utterances": 200
+    },
+    "speakerInterrupt": {
+      "exact_parsings": 190,
+      "intent": {
+        "f1": 0.9429280397022333,
+        "false_negative": 10,
+        "false_positive": 13,
+        "precision": 0.9359605911330049,
+        "recall": 0.95,
+        "true_positive": 190
+      },
+      "intent_utterances": 200
+    },
+    "thermostatSet": {
+      "exact_parsings": 999,
+      "intent": {
+        "f1": 0.9375879868606287,
+        "false_negative": 67,
+        "false_positive": 66,
+        "precision": 0.9380281690140845,
+        "recall": 0.9371482176360225,
+        "true_positive": 999
+      },
+      "intent_utterances": 1066
+    },
+    "thermostatShift": {
+      "exact_parsings": 775,
+      "intent": {
+        "f1": 0.9177027827116637,
+        "false_negative": 88,
+        "false_positive": 51,
+        "precision": 0.9382566585956417,
+        "recall": 0.8980301274623407,
+        "true_positive": 775
+      },
+      "intent_utterances": 863
+    },
+    "thermostatTurnOff": {
+      "exact_parsings": 151,
+      "intent": {
+        "f1": 0.8779069767441862,
+        "false_negative": 11,
+        "false_positive": 31,
+        "precision": 0.8296703296703297,
+        "recall": 0.9320987654320988,
+        "true_positive": 151
+      },
+      "intent_utterances": 162
+    },
+    "volumeDown": {
+      "exact_parsings": 209,
+      "intent": {
+        "f1": 0.9631336405529953,
+        "false_negative": 6,
+        "false_positive": 10,
+        "precision": 0.954337899543379,
+        "recall": 0.9720930232558139,
+        "true_positive": 209
+      },
+      "intent_utterances": 215
+    },
+    "volumeUp": {
+      "exact_parsings": 265,
+      "intent": {
+        "f1": 0.9706959706959707,
+        "false_negative": 8,
+        "false_positive": 8,
+        "precision": 0.9706959706959707,
+        "recall": 0.9706959706959707,
+        "true_positive": 265
+      },
+      "intent_utterances": 273
+    }
+  },
+  "parsing_errors": [
+    {
+      "expected_output": {
+        "input": "Dim the studio lighting",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Dim the studio lighting",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.4251406956275048
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn down the lamps",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn down the lamps",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.5146477573161644
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please turn the lights down to a lower setting in the living room",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please turn the lights down to a lower setting in the living room",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 0.727489220947653
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the light intensity turned up in this room",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the light intensity turned up in this room",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.46133130919186116
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "lower kids room lights ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "lower kids room lights ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The house lights should be up twenty percent\n",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The house lights should be up twenty percent\n",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.8510726633834339
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the lights fifteen percent lower in the bathroom",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the lights fifteen percent lower in the bathroom",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.3917052118015825
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Will you lower the parking light to about ten percent?",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Will you lower the parking light to about ten percent?",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6802285710385021
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Let's save this to play again.",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Let's save this to play again.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.14728615510861
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn down the heater in the toilet room all the way",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn down the heater in the toilet room all the way",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.5532499208295992
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "put an end to the heater",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "put an end to the heater",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2661904015473382
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you darken the bedroom to forty",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you darken the bedroom to forty",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.31898691425593567
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn on the spotlight in the cupboard",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn on the spotlight in the cupboard",
+        "intent": {
+          "intentName": null,
+          "probability": 0.499165879052523
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Not this move on",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Not this move on",
+        "intent": {
+          "intentName": null,
+          "probability": 0.775479175022303
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "play the following song",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "play the following song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.8976935711483873
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Let's hear the next piece of music",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Let's hear the next piece of music",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.11833085702429996
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Stop and play the one after this",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Stop and play the one after this",
+        "intent": {
+          "intentName": null,
+          "probability": 0.136147945469364
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "crank up super girl ",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "crank up super girl ",
+        "intent": {
+          "intentName": null,
+          "probability": 0.24756471631089683
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Put on running music.",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Put on running music.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.09954852411268585
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "go to chill on my spotify account",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "go to chill on my spotify account",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2482130711552689
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the volume to be decreased by three",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the volume to be decreased by three",
+        "intent": {
+          "intentName": null,
+          "probability": 0.14869590405562744
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want it to be twenty eight degree in the changing room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want it to be twenty eight degree in the changing room",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.1893700827357494
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I would like it to be twenty seven degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I would like it to be twenty seven degrees",
+        "intent": {
+          "intentName": null,
+          "probability": 0.17247694743294018
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Raise electric heater temperature everywhere to twenty eight degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Raise electric heater temperature everywhere to twenty eight degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.42945194351477073
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "it would be great if the temps raised to twenty two",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "it would be great if the temps raised to twenty two",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3083350265578074
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Decrease the heater to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Decrease the heater to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Decrease the air conditioning to seventeen degrees now",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Decrease the air conditioning to seventeen degrees now",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need the basement heater lowered to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need the basement heater lowered to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.10961728735790853
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you please turn down the air conditioning down to seventeen degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you please turn down the air conditioning down to seventeen degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.5336799531462869
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Raise the heater temperature to twenty one degrees in the laundry room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Raise the heater temperature to twenty one degrees in the laundry room",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.7507953360801732
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Increase the heater temperature to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Increase the heater temperature to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.4212487748873601
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set the air conditioning up to twenty one degrees everywhere",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set the air conditioning up to twenty one degrees everywhere",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.19492005205577326
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "it's too hot in here turn the air conditioning on",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "it's too hot in here turn the air conditioning on",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.9823751241938566
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "](temperature)",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "](temperature)",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.8163169809915685
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "launch the heater",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "launch the heater",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.5202705611416645
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Back it up",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Back it up",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.28376618766170675
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "skip backwards",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "skip backwards",
+        "intent": {
+          "intentName": null,
+          "probability": 0.33940803291086885
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the temp four degrees down",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the temp four degrees down",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.45669262985003145
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "raise the electric heating five degrees please.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "raise the electric heating five degrees please.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please change the temperature, six degrees lower",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please change the temperature, six degrees lower",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.8207670967570759
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please increase temperature one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please increase temperature one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please up one degree of the fan heather in the cubicle",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please up one degree of the fan heather in the cubicle",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.3232898449316027
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please up one degree of the fan heather in the cubicle",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please up one degree of the fan heather in the cubicle",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.3232898449316027
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please turn the electric heating up three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please turn the electric heating up three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you make my electric heater in the meeting room go up two degrees?",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you make my electric heater in the meeting room go up two degrees?",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.21165819413396056
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the parking room heater up three degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the parking room heater up three degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5555555555555556
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the electric heater up three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the electric heater up three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the basement fan heating up to five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the basement fan heating up to five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5555555555555556
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the air conditioner in the bedroom to one degree higher.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the air conditioner in the bedroom to one degree higher.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.08645866417884866
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the heat now",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the heat now",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the temparature",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the temparature",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.5587065832923109
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn down the temp",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn down the temp",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.24394883736481157
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn off all sound",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn off all sound",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.16565186499725149
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd need your help resuming",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd need your help resuming",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2784954203800442
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Replay",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Replay",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3955989270976176
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "get this track going",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "get this track going",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 0.506504612206269
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "find charlie puth in my libary",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "find charlie puth in my libary",
+        "intent": {
+          "intentName": null,
+          "probability": 0.22704139421558542
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "calvin harris track play",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "calvin harris track play",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.5689404047311588
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Locate lord huron and play",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Locate lord huron and play",
+        "intent": {
+          "intentName": null,
+          "probability": 0.5373429779719815
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play miley cyrus latest song",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play miley cyrus latest song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.4925753582553105
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play kendrick lamar latest song",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play kendrick lamar latest song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.4925753582553105
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play demi lovato newest single",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play demi lovato newest single",
+        "intent": {
+          "intentName": null,
+          "probability": 0.1819725654925454
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play that song about a cellphone from drake",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play that song about a cellphone from drake",
+        "intent": {
+          "intentName": null,
+          "probability": 0.28287965488228906
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "sam smith would be nice to hear",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "sam smith would be nice to hear",
+        "intent": {
+          "intentName": null,
+          "probability": 0.32907078871177753
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you start cardi b?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you start cardi b?",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.14284710166652714
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "switch to unknown pleasure",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "switch to unknown pleasure",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2478719691747272
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "switch to the warning",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "switch to the warning",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3094441538870962
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play side b of madvillainy. ",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play side b of madvillainy. ",
+        "intent": {
+          "intentName": null,
+          "probability": 0.6766388245086498
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "odessey and oracle is what you should play next",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "odessey and oracle is what you should play next",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2840565690738921
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Begin playing moon safari",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Begin playing moon safari",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.16725199841031543
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Dim the lighting completely in the waiting room",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Dim the lighting completely in the waiting room",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.7144663919068208
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want the lights on in the cella anymore",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want the lights on in the cella anymore",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.8969965869210602
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want the lights on anymore",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want the lights on anymore",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.2166460902458734
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like the lights to be shutdown",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like the lights to be shutdown",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.3295753080556151
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "change to love galore",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "change to love galore",
+        "intent": {
+          "intentName": null,
+          "probability": 0.40984154777286286
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "place slow hands for next song.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "place slow hands for next song.",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 0.9671506632444576
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "would you play horses?",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "would you play horses?",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.9801496269635069
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "we would like to hear horses",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "we would like to hear horses",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.837339476367143
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Put on my favorite song titled crew.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Put on my favorite song titled crew.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.3307693718442409
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "rockstar to list please",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "rockstar to list please",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 0.12649966084347414
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "eighteen is the title of the song I want to hear",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "eighteen is the title of the song I want to hear",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 0.06862484131665521
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to see the title of this music selection",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to see the title of this music selection",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.1545340641649583
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "raise the volume by 4 notches",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "raise the volume by 4 notches",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.7574020585609161
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Reduce lights ten percent in dining room",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Reduce lights ten percent in dining room",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.587822562214318
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn all lights up ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn all lights up ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.581953516118417
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make it down ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make it down ten percent",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.13784531555670113
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please bring up the lights fifteen percent.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please bring up the lights fifteen percent.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.7566819857453465
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make kids room lights up five ",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make kids room lights up five ",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.5678816449820512
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Do you have this song available for my libary?",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Do you have this song available for my libary?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.7429974699305629
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Include this tune to the top of my library.",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Include this tune to the top of my library.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4158658362239129
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Keep song",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Keep song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.7475910825955656
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn down the air conditioning all the way",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn down the air conditioning all the way",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.5053781111307117
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower lights to two percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower lights to two percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Brighten the lights in the waiting room to twenty two percent please",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Brighten the lights in the waiting room to twenty two percent please",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set the entrance lights to a brighter setting to twenty two percent please",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set the entrance lights to a brighter setting to twenty two percent please",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.8469531109443246
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "can you gimme some light please",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "can you gimme some light please",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want to hear this track, skip it. ",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want to hear this track, skip it. ",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 0.3777511456644516
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Don't like this song, change it.",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Don't like this song, change it.",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 0.6178534460291005
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Open party list and start",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Open party list and start",
+        "intent": {
+          "intentName": null,
+          "probability": 0.22831278316242046
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "could you change it to i love the eighties",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "could you change it to i love the eighties",
+        "intent": {
+          "intentName": null,
+          "probability": 0.33047163434835314
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Do I have a soul list?",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Do I have a soul list?",
+        "intent": {
+          "intentName": null,
+          "probability": 0.26119288289274883
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "less volume in the tv please",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "less volume in the tv please",
+        "intent": {
+          "intentName": null,
+          "probability": 0.24206782220100032
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "less volume",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "less volume",
+        "intent": {
+          "intentName": null,
+          "probability": 0.20804317641257625
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you turn it down by two.",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you turn it down by two.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please put the volume by three, this is much too noisy!",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please put the volume by three, this is much too noisy!",
+        "intent": {
+          "intentName": null,
+          "probability": 0.06755737235624278
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Raise the temperature by the toilet to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Raise the temperature by the toilet to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.6892419532492291
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Reduce heater temperature to twenty eight degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Reduce heater temperature to twenty eight degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.2585727640240931
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower the heater to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower the heater to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "lower the heater to seventeen degrees so that it's cooler in the vestibule",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "lower the heater to seventeen degrees so that it's cooler in the vestibule",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.16972997395917366
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "decrease the toilet air conditioning to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "decrease the toilet air conditioning to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "remember to keep the room warm by raising the temperature to twenty one degrees ok",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "remember to keep the room warm by raising the temperature to twenty one degrees ok",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.9501978914152821
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The entire appartment is way too cold. Turn the electric heating up to twenty eight degrees please.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The entire appartment is way too cold. Turn the electric heating up to twenty eight degrees please.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.42556022997544524
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start up the air conditioning please",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start up the air conditioning please",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.2624171868740519
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "launch the heater in the living room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "launch the heater in the living room",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.7224467987183604
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "heat up the dining room please",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "heat up the dining room please",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.8797864040077394
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I just heard this great song, can you play it over?",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I just heard this great song, can you play it over?",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.174219546242428
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please play Another One Bites the Dust again.",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please play Another One Bites the Dust again.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.43994327129336647
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "skip backward one song",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "skip backward one song",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 0.9796468810750409
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "cool the house five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "cool the house five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.2104220044310376
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Raise heat one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Raise heat one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "toilet room temp should be lowered",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "toilet room temp should be lowered",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.7510707391574907
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "boost heat in appartment two degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "boost heat in appartment two degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.6068203397274992
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i want the temps lower",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i want the temps lower",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.30678240848331295
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "raise electric heating one degree please",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "raise electric heating one degree please",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up the heater",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up the heater",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want all the house down one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want all the house down one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5806019824120259
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The air needs to go down five degrees in here.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The air needs to go down five degrees in here.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.3490696423299884
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the air conditioning to a lower temperature of seventeen degrees in the waiting room",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the air conditioning to a lower temperature of seventeen degrees in the waiting room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.37510642286559503
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Power up the heater.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Power up the heater.",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.337645462532126
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please set the temperature a few degrees lower.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please set the temperature a few degrees lower.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.6050532482760714
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the music paused now.",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the music paused now.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.5775445822502114
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start it up",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start it up",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.30171508447404366
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you please continue playing what I was just listening to?",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you please continue playing what I was just listening to?",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 0.18238753633958213
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please play the song I was just listening to.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please play the song I was just listening to.",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 0.31939001869303124
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play music from the rolling stones",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play music from the rolling stones",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.14377957194595875
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "look up latest chris brown music",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "look up latest chris brown music",
+        "intent": {
+          "intentName": null,
+          "probability": 0.10206232304534804
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "showcase the travis scott music",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "showcase the travis scott music",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.5208406176943806
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "selena gomez tracks please.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "selena gomez tracks please.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.23033451902800509
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Begin playing selena gomez.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Begin playing selena gomez.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.07923284310957987
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn on some of the rolling stones.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn on some of the rolling stones.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.35989307530269493
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "chicago is the band I want to listen to",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "chicago is the band I want to listen to",
+        "intent": {
+          "intentName": null,
+          "probability": 0.219779519036914
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Put what's going on on my Ipad",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Put what's going on on my Ipad",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.12092614049617134
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Do I have any songs from the here comes the warm jets or can you find any?",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Do I have any songs from the here comes the warm jets or can you find any?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.6257893068319559
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn down the light power all the way",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn down the light power all the way",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.1084105828155158
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want the lights to shine in the living room",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want the lights to shine in the living room",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6671541199194368
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make certain no lights are on in the bathroom",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make certain no lights are on in the bathroom",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9042643472799996
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn down the light power in the pantry all the way",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn down the light power in the pantry all the way",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.22964820179575327
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please turn off the lighting",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please turn off the lighting",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.5530113477967512
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "no more light in here",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "no more light in here",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.5526678458164382
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play horses.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play horses.",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.34964968477771646
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "begin playback of drowning",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "begin playback of drowning",
+        "intent": {
+          "intentName": null,
+          "probability": 0.38909491893919035
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "start playing revenge",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "start playing revenge",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.4676164500007586
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "what meant to be",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "what meant to be",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4796671029354587
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please play the song there's nothing holdin' me back.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please play the song there's nothing holdin' me back.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.3204963511640103
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you play the song horses?",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you play the song horses?",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.994532943260067
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What is the name of this",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What is the name of this",
+        "intent": {
+          "intentName": null,
+          "probability": 0.7370185666787116
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i want to be able to hear the music better",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i want to be able to hear the music better",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.1996661916169426
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn it up by six.",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn it up by six.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Boost volume.",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Boost volume.",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.48887313762771073
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like the light to increase in the pantry",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like the light to increase in the pantry",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 0.2801400649874185
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the light in the kitchen down ten percent.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the light in the kitchen down ten percent.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9957042677928061
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Hey up the volume twenty percent in the cubicle",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Hey up the volume twenty percent in the cubicle",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.13755352343345875
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn it down five",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn it down five",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.7935103930673612
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want you to turn the cellar  lights down twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want you to turn the cellar  lights down twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9403223132678223
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn cubicle brightness up twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn cubicle brightness up twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6198872729656387
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The bedroom light needs turned down ten percent.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The bedroom light needs turned down ten percent.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.7667878815151756
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Will you turn the dining room lights up ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Will you turn the dining room lights up ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9448816188092086
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you bring up the lights by 3?",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you bring up the lights by 3?",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.10091529002299844
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "could you increase the brightness of the entire house twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "could you increase the brightness of the entire house twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.5281655961552987
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Adjust the bedroom lights to increase fifteen percent.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Adjust the bedroom lights to increase fifteen percent.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6930329252525037
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower the room lights ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower the room lights ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Dim the patio fifteen percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Dim the patio fifteen percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.8949531121481772
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn it down by ten",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn it down by ten",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "lights up twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "lights up twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6115256234695461
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Terminate aircon",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Terminate aircon",
+        "intent": {
+          "intentName": null,
+          "probability": 0.20942131338774606
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "reduce the brightness to seventy in the living room",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "reduce the brightness to seventy in the living room",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.31978166924713564
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Increase the brightness at the entrance at ten",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Increase the brightness at the entrance at ten",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.4337475895934918
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Increase the studio brightness to thirty nine",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Increase the studio brightness to thirty nine",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.339366648669158
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play songs I liked from radio",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play songs I liked from radio",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.07585385193396184
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "play me latin music.",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "play me latin music.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.5338213652804206
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "change the fan heather temperature to twenty eight degrees please",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "change the fan heather temperature to twenty eight degrees please",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.17975719400191215
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the heater to a lesser temperature to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the heater to a lesser temperature to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.2414667272312966
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "decrease the heater temperature in bedroom  to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "decrease the heater temperature in bedroom  to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.6456584111019603
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "cool down the vestibule's to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "cool down the vestibule's to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "regulate the heater in the pantry by elevating the heat to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "regulate the heater in the pantry by elevating the heat to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.9993538489651483
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "dining room air conditioning should go up to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "dining room air conditioning should go up to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.07822467374223485
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Will you turn up the air conditioning to twenty one degrees in the toilets",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Will you turn up the air conditioning to twenty one degrees in the toilets",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.15133956755485412
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up fan heating until the temperature is twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up fan heating until the temperature is twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.3760890232551811
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn electric heater temperature to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn electric heater temperature to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set the heating up to twenty one degrees in the dining room.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set the heating up to twenty one degrees in the dining room.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.19934175153017764
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make the bathroom aircon temp up to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make the bathroom aircon temp up to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.16249785259628466
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up the AC temperature to twenty one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up the AC temperature to twenty one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.1638751986974794
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Warm the facilities to twenty one degrees with the electric heater",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Warm the facilities to twenty one degrees with the electric heater",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.12446656909289336
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The temp ought to be twenty two in the large meeting room.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The temp ought to be twenty two in the large meeting room.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.643041297046163
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "start heater in kitchen",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "start heater in kitchen",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.3447507923800922
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I would like the temperature in my cubicle turned up to nineteen",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I would like the temperature in my cubicle turned up to nineteen",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.28462063030188633
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "begin air conditioning in bedroom",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "begin air conditioning in bedroom",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.40472355424100515
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Repeat last",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Repeat last",
+        "intent": {
+          "intentName": null,
+          "probability": 0.26310729387993614
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to raise the electric heater one degree for the entire flat",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to raise the electric heater one degree for the entire flat",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.3990493631497216
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i want to make the temperature six degrees higher",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i want to make the temperature six degrees higher",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5925301122711648
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Reduce the electric heater one degree in the large meeting room.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Reduce the electric heater one degree in the large meeting room.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.21088609116098903
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the electric heating up to a five degrees increase",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the electric heating up to a five degrees increase",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.06407593443028281
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please decrease the temps one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please decrease the temps one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.42253077496551517
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower heat four degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower heat four degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up the air conditioner",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up the air conditioner",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "raise the temperature five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "raise the temperature five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you turn the thermostat up two degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you turn the thermostat up two degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn the temperature down five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn the temperature down five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.6004662498501938
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Crank the air conditioner up four degrees please; I'm chilly.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Crank the air conditioner up four degrees please; I'm chilly.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.06818717180417551
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the electric heating up one degree please",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the electric heating up one degree please",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the fan heating up two degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the fan heating up two degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need the electric heater up three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need the electric heater up three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.12137621382022253
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the electric heating up five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the electric heating up five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set the aircon on the patio up four degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set the aircon on the patio up four degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.20374720124874524
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the meeting room fan heater up one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the meeting room fan heater up one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5555555555555556
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the heat now",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the heat now",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to turn off the air conditioning to make my appartment warmer.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to turn off the air conditioning to make my appartment warmer.",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.7073948894154348
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "slow down the air conditioning near the patio",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "slow down the air conditioning near the patio",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.4754858599499413
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn down the air",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn down the air",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.28234718310681806
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Music, take a break.",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Music, take a break.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.31123268534071596
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "All done with music",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "All done with music",
+        "intent": {
+          "intentName": null,
+          "probability": 0.23403966599174153
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need you to end the playlist after this song is finished.",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need you to end the playlist after this song is finished.",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 0.1549782833866839
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "play this song again",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "play this song again",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Would you please press play?",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Would you please press play?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.1825773549812575
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Do you have any maroon five",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Do you have any maroon five",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4523673759481109
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Select kesha track and play",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Select kesha track and play",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.42018194617470117
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "start selena gomez song",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "start selena gomez song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.45882685259212486
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "play my travis scott playlist",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "play my travis scott playlist",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 0.2532640981513346
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start playing fresh",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start playing fresh",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.1849235302198839
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "the coral should be played",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "the coral should be played",
+        "intent": {
+          "intentName": null,
+          "probability": 0.44516062892254527
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want the office light on anymore.",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want the office light on anymore.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.7318496074448622
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "lower lights all the way down in the lounge",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "lower lights all the way down in the lounge",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.5231289854561895
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want lights on in the cella",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want lights on in the cella",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.8688295727086105
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play there's nothing holdin' me back",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play there's nothing holdin' me back",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.1993461137995446
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "really feeling no limit today, are you able to play that?",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "really feeling no limit today, are you able to play that?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.18770043346083087
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "meant to be, can you play that?",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "meant to be, can you play that?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.42436481992966135
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play the musical number called everyday we lit.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play the musical number called everyday we lit.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.36943150507589745
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I like the song crew, can you play this for me?",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I like the song crew, can you play this for me?",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.1586431526305117
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "easy love should be the next song",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "easy love should be the next song",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 0.6747646298310751
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "List the other songs of this singer.",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "List the other songs of this singer.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.14903352965905003
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Whats this song",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Whats this song",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 0.7366322958978064
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "show me the words to this song",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "show me the words to this song",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 0.43772659028503436
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Take the music up a notch",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Take the music up a notch",
+        "intent": {
+          "intentName": null,
+          "probability": 0.15784052722728253
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I can't hear the music.",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I can't hear the music.",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.35101677871218195
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like the lights to be lowered in the cella",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like the lights to be lowered in the cella",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 0.4976628072934054
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn lights up ten percent in basement",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn lights up ten percent in basement",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.954134135307695
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set lights down fifteen percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set lights down fifteen percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.8361074283582239
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Will you decrease the bathroom lights ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Will you decrease the bathroom lights ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6254819321429017
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up lounge lights twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up lounge lights twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9132941237996934
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the pantry lights down twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the pantry lights down twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9146429717722517
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "increase lights in studio twenty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "increase lights in studio twenty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need you to turn the lights down twenty percent in the toilet",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need you to turn the lights down twenty percent in the toilet",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9773258668290287
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "bring the backyard lights up ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "bring the backyard lights up ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.49617921588168074
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Power down the heater",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Power down the heater",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm warm can we deactivate the heater in the backyard",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm warm can we deactivate the heater in the backyard",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.7196848840288509
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower basement lights to two percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower basement lights to two percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Dim the lights to forty",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Dim the lights to forty",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.224987677494372
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please give me some light",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please give me some light",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Illuminate the entrance",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Illuminate the entrance",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4266584662329498
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i don't want this song anymore, let's hear another",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i don't want this song anymore, let's hear another",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.9403715782324403
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to hear what's next.",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to hear what's next.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.059122162177683714
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please verify that the temperature in the cellar is at twenty two.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please verify that the temperature in the cellar is at twenty two.",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.2956560824699645
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the heating in vestibule down to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the heating in vestibule down to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up the aircon by the entrance to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up the aircon by the entrance to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.922414845734232
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn it up to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn it up to twenty one degrees",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.20793897562936917
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Let's use the air conditioning",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Let's use the air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.16301407126715337
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "It's freezing in the cellar. Turn the heating up to twenty seven degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "It's freezing in the cellar. Turn the heating up to twenty seven degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.5299542016428398
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the heating on in the living room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the heating on in the living room",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.41444394439652077
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "air conditioning on",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "air conditioning on",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.24350772723059247
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "launch the heater in the bedroom",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "launch the heater in the bedroom",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6520224165546884
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "need some heat in here",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "need some heat in here",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.14751524634773328
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "we need some heat in the bedroom",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "we need some heat in the bedroom",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.37472309836158246
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Against The Wind needs to be played again.",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Against The Wind needs to be played again.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.30106535276301044
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you play what was just playing?",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you play what was just playing?",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.37191428489100564
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "It's freezing in the large meeting room turn up the air conditioning two degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "It's freezing in the large meeting room turn up the air conditioning two degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.8531783975143375
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please decrease the temps one degree higher",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please decrease the temps one degree higher",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.3888695147343203
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "raise the parking heate four degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "raise the parking heate four degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.9407068067857364
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the temperature increased six degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the temperature increased six degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5216057777785591
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "can you raise the temps in the toilets",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "can you raise the temps in the toilets",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.5234072433434944
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower temperature in vestibule by three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower temperature in vestibule by three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.3217860799328199
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up the heater",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up the heater",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the aircon in the small meeting room down one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the aircon in the small meeting room down one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.7826783335303595
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The bed room's fan heating should be turned down four degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The bed room's fan heating should be turned down four degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.8242481954585923
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The electric heating in the toilet needs to go down three degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The electric heating in the toilet needs to go down three degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.4630657869002163
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "My basement electric heating needs to go up five degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "My basement electric heating needs to go up five degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.31828237749794286
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the AC up one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the AC up one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the backyard fan heater up one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the backyard fan heater up one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5555555555555556
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the fan heating",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the fan heating",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the air conditioner",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the air conditioner",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Raise the temperature a few degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Raise the temperature a few degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the heater",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the heater",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "slow down the heating",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "slow down the heating",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6489696060334907
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower the air conditioning a few degrees in the studio",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower the air conditioning a few degrees in the studio",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5555555555555556
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Quit playing music",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Quit playing music",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.7918007386492129
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need quiet",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need quiet",
+        "intent": {
+          "intentName": null,
+          "probability": 0.17564459202022278
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i want to hear the song that's been paused",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i want to hear the song that's been paused",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.9276650400613243
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Go ahead and resume.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Go ahead and resume.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.37228592439918146
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play next track",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play next track",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm looking for the rolling stones\n",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm looking for the rolling stones\n",
+        "intent": {
+          "intentName": null,
+          "probability": 0.8584213554516033
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play calvin harris song",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play calvin harris song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.5413320253414269
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play random charlie puth song",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play random charlie puth song",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.5413320253414269
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "would like to listen to french montana",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "would like to listen to french montana",
+        "intent": {
+          "intentName": null,
+          "probability": 0.28325286716303955
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Pull up for me ayo and teo",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Pull up for me ayo and teo",
+        "intent": {
+          "intentName": null,
+          "probability": 0.412920593958158
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start playing horses.",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start playing horses.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.3435517808414659
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "what's the story morning glory - play it",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "what's the story morning glory - play it",
+        "intent": {
+          "intentName": null,
+          "probability": 0.06940853345829459
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play drukqs from the begining. ",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play drukqs from the begining. ",
+        "intent": {
+          "intentName": null,
+          "probability": 0.21266463379895525
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn the lights out in the entire flat",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn the lights out in the entire flat",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.7836021763062238
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Get rid of the lights in the bathroom",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Get rid of the lights in the bathroom",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.3482836349703945
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Stop the lighting in the cubicle",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Stop the lighting in the cubicle",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.20260683349580513
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Go with perplexing pegasus",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Go with perplexing pegasus",
+        "intent": {
+          "intentName": null,
+          "probability": 0.7504556953204625
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Hello, please play again.",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Hello, please play again.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.6666666666666666
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want you to play the song crew",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want you to play the song crew",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.7977598709073213
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I would like track information please",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I would like track information please",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.23621929057556226
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Whats playing right now",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Whats playing right now",
+        "intent": {
+          "intentName": null,
+          "probability": 0.19857597321323814
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "lets set the music higher by two levels",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "lets set the music higher by two levels",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.3126010706282358
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "more light in bed room to level five",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "more light in bed room to level five",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.1827472999054331
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower lights fifteen percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower lights fifteen percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn it up ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn it up ten percent",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.30736079197920085
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the lights in the waiting room down ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the lights in the waiting room down ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.9697711922494169
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like less brightness in here, turn it down ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like less brightness in here, turn it down ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.5012226098570037
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Rise the lighting up by five.",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Rise the lighting up by five.",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 0.1831250914496134
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the lights up ten percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the lights up ten percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.6000000000000001
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want that to be added to my library.",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want that to be added to my library.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4559665469460828
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "remember that i like it",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "remember that i like it",
+        "intent": {
+          "intentName": null,
+          "probability": 0.5240665896339991
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Book mark this",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Book mark this",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3990378095037721
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Add what is currently playing to my list. ",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Add what is currently playing to my list. ",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 0.7463967362592984
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Put this song on my saved list",
+        "intent": {
+          "intentName": "addSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Put this song on my saved list",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.8150753182717506
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the air conditioner please.",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the air conditioner please.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Stop heating",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Stop heating",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.7704824144632917
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "no more heater in the office",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "no more heater in the office",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.7063231518339287
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make heater stop running",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make heater stop running",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.19803669789176184
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i don't want the heater on anymore",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i don't want the heater on anymore",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.3776476221474564
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make the lights less bright in the cellar to two percent now",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make the lights less bright in the cellar to two percent now",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.5708913927900422
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please increase the lights in the office to eighty percent",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please increase the lights in the office to eighty percent",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make the lights brighter to twenty two percent please",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make the lights brighter to twenty two percent please",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.6372584026535347
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start playing love songs",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start playing love songs",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.29468921948253074
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Begin playing songs to make you happy",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Begin playing songs to make you happy",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.07280313014795615
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "rainy day songs play now please",
+        "intent": {
+          "intentName": "playPlaylist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "rainy day songs play now please",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.144715035919287
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The volume should be reduced by three levels",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The volume should be reduced by three levels",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.2987920410121666
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set the temp at twenty four",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set the temp at twenty four",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2039442509643806
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set it to twenty four",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set it to twenty four",
+        "intent": {
+          "intentName": null,
+          "probability": 0.22133846708716573
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Let's go to nineteen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Let's go to nineteen degrees",
+        "intent": {
+          "intentName": null,
+          "probability": 0.07578497664406707
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make the room with toilets colder by turning on the air conditioning to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make the room with toilets colder by turning on the air conditioning to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.8989533108563977
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Lower the heater to seventeen degrees in the waiting room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Lower the heater to seventeen degrees in the waiting room",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "lower the heater temperature to seventeen degrees now",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "lower the heater temperature to seventeen degrees now",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.48062931314549406
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn the air conditioning lower to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn the air conditioning lower to seventeen degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Boost the temperature of the heater to twenty one degrees it is cold outside",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Boost the temperature of the heater to twenty one degrees it is cold outside",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.7722010431847188
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn up toilet air conditioning to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn up toilet air conditioning to twenty one degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make the heater twenty one degrees, it's cold in here",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make the heater twenty one degrees, it's cold in here",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.8809637269708656
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the bed room heater up to twenty two degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the bed room heater up to twenty two degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make the air to the entire flat about twelve degrees colder please.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make the air to the entire flat about twelve degrees colder please.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 0.7001640323125937
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Initiate air to entire house",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Initiate air to entire house",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.789738681251986
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "begin bathroom air conditioning",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "begin bathroom air conditioning",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.37913932458673194
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "nineteen in the changing room",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "nineteen in the changing room",
+        "intent": {
+          "intentName": null,
+          "probability": 0.13258671287245086
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i liked the previous one better",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i liked the previous one better",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4993335118879128
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to hear the previous one",
+        "intent": {
+          "intentName": "previousSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to hear the previous one",
+        "intent": {
+          "intentName": null,
+          "probability": 0.11136162880223062
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn on the heater",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn on the heater",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make the kids bedroom heater go up three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make the kids bedroom heater go up three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.17818819450396647
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "boardroom needs to be increased one degree",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "boardroom needs to be increased one degree",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.2994820646483912
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make the AC lowered six degrees in the kids bedroom.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make the AC lowered six degrees in the kids bedroom.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.315612485344145
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "warm up the temperature one degree in here.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "warm up the temperature one degree in here.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.39318077815578595
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "My appartment is freezing turn fan heater three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "My appartment is freezing turn fan heater three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.4246416615158046
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make it colder with a one degree increase",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make it colder with a one degree increase",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.09550130571165096
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "increase basement AC temp five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "increase basement AC temp five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.8433593875909872
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "My fan heater ought to go up two degrees please.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "My fan heater ought to go up two degrees please.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.1413980596637067
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The patio air conditioning ought to go up five degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The patio air conditioning ought to go up five degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.1836174216605115
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn up the heat two degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn up the heat two degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the heat up two degrees.",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the heat up two degrees.",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the fan heating in the loo up five degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the fan heating in the loo up five degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5864794074082319
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Turn the electric heater up three degrees",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Turn the electric heater up three degrees",
+        "intent": {
+          "intentName": "thermostatSet",
+          "probability": 0.5714285714285715
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Adjust the toilet air conditioning to a higher setting",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Adjust the toilet air conditioning to a higher setting",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.14585410680084468
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "tune down the aircon",
+        "intent": {
+          "intentName": "thermostatShift",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "tune down the aircon",
+        "intent": {
+          "intentName": "thermostatTurnOff",
+          "probability": 0.6579202547874988
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i don't want to hear any songs",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i don't want to hear any songs",
+        "intent": {
+          "intentName": "nextSong",
+          "probability": 0.2331803737239954
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make it so the music stops playing.",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make it so the music stops playing.",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.32460938549808077
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Pause what is playing.",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Pause what is playing.",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 0.651929681483045
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like the music restarted",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like the music restarted",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.36959248099450576
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Let's hear the song once again",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Let's hear the song once again",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.9061760260066773
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Take the song off pause",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Take the song off pause",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.9438218255290005
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "show kris wu music",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "show kris wu music",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.7824173495344207
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "demi lovato music options",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "demi lovato music options",
+        "intent": {
+          "intentName": "speakerInterrupt",
+          "probability": 0.7824173495344207
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play bryson tiller music",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play bryson tiller music",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.33504889535100224
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "selena gomez random song play",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "selena gomez random song play",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.49494138904152535
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Load kane brown's latest song.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Load kane brown's latest song.",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.5694810493968615
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "fall out boy is what i'd like to hear",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "fall out boy is what i'd like to hear",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 0.15543547501892407
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start the weeknd playing",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start the weeknd playing",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.45908300103214206
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "it's time to hear elvis presley",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "it's time to hear elvis presley",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 0.856580493117096
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play dust at this time. ",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play dust at this time. ",
+        "intent": {
+          "intentName": null,
+          "probability": 0.282862289463558
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "london calling needs to be next",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "london calling needs to be next",
+        "intent": {
+          "intentName": null,
+          "probability": 0.20771789267323076
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Play something from punch the clock",
+        "intent": {
+          "intentName": "playAlbum",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Play something from punch the clock",
+        "intent": {
+          "intentName": null,
+          "probability": 0.31837556473728407
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Dim the lights completely in the living room",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Dim the lights completely in the living room",
+        "intent": {
+          "intentName": "lightsShift",
+          "probability": 0.6231182331796026
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want there to be any light on in the office",
+        "intent": {
+          "intentName": "lightsTurnOff",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want there to be any light on in the office",
+        "intent": {
+          "intentName": "lightsSet",
+          "probability": 0.8879133909264568
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to hear redbone",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to hear redbone",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.8273368799316946
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "please play there's nothing holdin' me back",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "please play there's nothing holdin' me back",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.3352161675225314
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I haven't heard love scars in a while, please play it",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I haven't heard love scars in a while, please play it",
+        "intent": {
+          "intentName": null,
+          "probability": 0.1808844455721907
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "can you get how long playing",
+        "intent": {
+          "intentName": "playSong",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "can you get how long playing",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.08318841034477233
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can I see the title of this music cut",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can I see the title of this music cut",
+        "intent": {
+          "intentName": null,
+          "probability": 0.24394800209379247
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Look up the album for me please.",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Look up the album for me please.",
+        "intent": {
+          "intentName": "playArtist",
+          "probability": 0.14587737025593545
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Could you look up the album that's playing?",
+        "intent": {
+          "intentName": "getInfos",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Could you look up the album that's playing?",
+        "intent": {
+          "intentName": "resumeMusic",
+          "probability": 0.14351291529644067
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make it full volume.",
+        "intent": {
+          "intentName": "volumeUp",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make it full volume.",
+        "intent": {
+          "intentName": "volumeDown",
+          "probability": 0.5654895001304865
+        }
+      }
+    }
+  ]
+}

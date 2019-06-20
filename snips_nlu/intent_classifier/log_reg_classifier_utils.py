@@ -9,13 +9,14 @@ from uuid import uuid4
 import numpy as np
 from future.utils import iteritems, itervalues
 
+from snips_nlu.common.utils import check_random_state
 from snips_nlu.constants import (DATA, ENTITY, INTENTS, TEXT,
                                  UNKNOWNWORD, UTTERANCES)
 from snips_nlu.data_augmentation import augment_utterances
 from snips_nlu.dataset import get_text_from_chunks
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.preprocessing import tokenize_light
-from snips_nlu.resources import get_noise
+from snips_nlu.resources import get_bigrams, get_noise
 
 NOISE_NAME = str(uuid4())
 WORD_REGEX = re.compile(r"\w+(\s+\w+)*")
@@ -50,6 +51,64 @@ def get_noise_it(noise, mean_length, std_length, random_state):
         # pylint: enable=stop-iteration-return
 
 
+def get_bigrams_it(bigrams, bigrams_frequencies, random_state):
+    random_state = check_random_state(random_state)
+    bigrams_indices = range(len(bigrams))
+    while True:
+        bigram_idx = random_state.choice(bigrams_indices,
+                                         p=bigrams_frequencies)
+        yield bigrams[bigram_idx]
+
+
+def get_lm_unigram_it(bigrams, bigrams_frequencies, random_state):
+    previous_unigram = None
+    while True:
+        random_state = check_random_state(random_state)
+        bigrams_indices = range(len(bigrams))
+        if previous_unigram is None:
+            bigram_idx = random_state.choice(bigrams_indices,
+                                             p=bigrams_frequencies)
+            unigram = bigrams[bigram_idx][0]
+        else:
+            filtered_bigrams = [
+                (bigram, freq)
+                for bigram, freq in zip(bigrams, bigrams_frequencies)
+                if bigram[0] == previous_unigram]
+            if not filtered_bigrams:
+                bigram_idx = random_state.choice(bigrams_indices,
+                                                 p=bigrams_frequencies)
+                unigram = bigrams[bigram_idx][0]
+            else:
+                filtered_frequencies = [b[1] for b in filtered_bigrams]
+                norm = np.linalg.norm(filtered_frequencies, 1)
+                filtered_frequencies = filtered_frequencies / norm
+                filtered_bigrams = [b[0] for b in filtered_bigrams]
+                filtered_bigrams_indices = range(len(filtered_bigrams))
+                filtered_bigram_idx = random_state.choice(
+                    filtered_bigrams_indices, p=filtered_frequencies)
+                unigram = filtered_bigrams[filtered_bigram_idx][1]
+
+        previous_unigram = unigram
+        yield unigram
+
+
+def get_bigrams_noise_it(
+        bigrams, bigrams_frequencies, mean_length, std_length, random_state):
+    bigrams_it = get_bigrams_it(bigrams, bigrams_frequencies, random_state)
+    while True:
+        noise_length = int(random_state.normal(mean_length, std_length))
+        nb_bigrams = int(max(noise_length / 2, 1))
+        yield " ".join(w for _ in range(nb_bigrams) for w in next(bigrams_it))
+
+
+def get_lm_noise_it(bigrams, bigrams_frequencies, mean_length, std_length,
+                    random_state):
+    while True:
+        it = get_lm_unigram_it(bigrams, bigrams_frequencies, random_state)
+        noise_length = int(random_state.normal(mean_length, std_length))
+        yield " ".join(next(it) for _ in range(noise_length))
+
+
 def generate_smart_noise(noise, augmented_utterances, replacement_string,
                          language):
     text_utterances = [get_text_from_chunks(u[DATA])
@@ -59,28 +118,39 @@ def generate_smart_noise(noise, augmented_utterances, replacement_string,
     return [w if w in vocab else replacement_string for w in noise]
 
 
-def generate_noise_utterances(augmented_utterances, noise, num_intents,
+def generate_noise_utterances(augmented_utterances, resources, num_intents,
                               data_augmentation_config, language,
                               random_state):
     if not augmented_utterances or not num_intents:
         return []
-    avg_num_utterances = len(augmented_utterances) / float(num_intents)
-    if data_augmentation_config.unknown_words_replacement_string is not None:
-        noise = generate_smart_noise(
-            noise, augmented_utterances,
-            data_augmentation_config.unknown_words_replacement_string,
-            language)
 
-    noise_size = min(
-        int(data_augmentation_config.noise_factor * avg_num_utterances),
-        len(noise))
+    avg_num_utterances = len(augmented_utterances) / float(num_intents)
+    noise_size = int(
+        data_augmentation_config.noise_factor * avg_num_utterances)
     utterances_lengths = [
         len(tokenize_light(get_text_from_chunks(u[DATA]), language))
         for u in augmented_utterances]
     mean_utterances_length = np.mean(utterances_lengths)
     std_utterances_length = np.std(utterances_lengths)
-    noise_it = get_noise_it(noise, mean_utterances_length,
-                            std_utterances_length, random_state)
+    if data_augmentation_config.use_bigrams_noise:
+        bigrams = get_bigrams(resources)
+        # noise_it = get_bigrams_noise_it(
+        #     bigrams["bigrams"], bigrams["frequencies"], mean_utterances_length,
+        #     std_utterances_length, random_state)
+        noise_it = get_lm_noise_it(
+            bigrams["bigrams"], bigrams["frequencies"], mean_utterances_length,
+            std_utterances_length, random_state)
+    else:
+        noise = get_noise(resources)
+        if data_augmentation_config.unknown_words_replacement_string \
+                is not None:
+            noise = generate_smart_noise(
+                noise, augmented_utterances,
+                data_augmentation_config.unknown_words_replacement_string,
+                language)
+        noise_it = get_noise_it(noise, mean_utterances_length,
+                                std_utterances_length, random_state)
+
     # Remove duplicate 'unknownword unknownword'
     return [
         text_to_utterance(UNKNOWNWORD_REGEX.sub(UNKNOWNWORD, next(noise_it)))
@@ -148,9 +218,9 @@ def build_training_data(dataset, language, data_augmentation_config, resources,
         )
 
     # Adding noise
-    noise = get_noise(resources)
     noisy_utterances = generate_noise_utterances(
-        augmented_utterances, noise, len(intents), data_augmentation_config,
+        augmented_utterances, resources, len(intents),
+        data_augmentation_config,
         language, random_state)
 
     augmented_utterances += noisy_utterances

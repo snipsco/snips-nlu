@@ -1,0 +1,60 @@
+{
+  "parsers_metadata": [
+    {
+      "entity_identifier": "VolumeAbsolute1-100_EN",
+      "entity_parser": "parser_1"
+    },
+    {
+      "entity_identifier": "album_name",
+      "entity_parser": "parser_2"
+    },
+    {
+      "entity_identifier": "artistNameCustomEN",
+      "entity_parser": "parser_3"
+    },
+    {
+      "entity_identifier": "house_room_4",
+      "entity_parser": "parser_4"
+    },
+    {
+      "entity_identifier": "house_room_6",
+      "entity_parser": "parser_5"
+    },
+    {
+      "entity_identifier": "house_room_7",
+      "entity_parser": "parser_6"
+    },
+    {
+      "entity_identifier": "lecture_mode",
+      "entity_parser": "parser_7"
+    },
+    {
+      "entity_identifier": "music_item",
+      "entity_parser": "parser_8"
+    },
+    {
+      "entity_identifier": "playlist_name",
+      "entity_parser": "parser_9"
+    },
+    {
+      "entity_identifier": "radio_name",
+      "entity_parser": "parser_10"
+    },
+    {
+      "entity_identifier": "song_name",
+      "entity_parser": "parser_11"
+    },
+    {
+      "entity_identifier": "temperature_device",
+      "entity_parser": "parser_12"
+    },
+    {
+      "entity_identifier": "up_down",
+      "entity_parser": "parser_13"
+    },
+    {
+      "entity_identifier": "up_down_lights",
+      "entity_parser": "parser_14"
+    }
+  ]
+}

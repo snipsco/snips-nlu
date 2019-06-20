@@ -5,6 +5,7 @@ from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 
+import numpy as np
 from future.utils import iteritems
 
 from snips_nlu.common.utils import get_package_path, is_package, json_string
@@ -56,6 +57,7 @@ def load_resources_from_dir(resources_dir, required_resources=None):
     stop_words_filename = metadata["stop_words"]
     stems_filename = metadata["stems"]
     noise_filename = metadata["noise"]
+    bigrams_filename = metadata["bigrams"]
 
     gazetteers = _get_gazetteers(resources_dir / "gazetteers", gazetteer_names)
     word_clusters = _get_word_clusters(resources_dir / "word_clusters",
@@ -64,6 +66,7 @@ def load_resources_from_dir(resources_dir, required_resources=None):
     stems = None
     stop_words = None
     noise = None
+    bigrams = None
 
     if stems_filename is not None:
         stems = _get_stems(resources_dir / "stemming", stems_filename)
@@ -71,6 +74,8 @@ def load_resources_from_dir(resources_dir, required_resources=None):
         stop_words = _get_stop_words(resources_dir, stop_words_filename)
     if noise_filename is not None:
         noise = _get_noise(resources_dir, noise_filename)
+    if bigrams_filename is not None:
+        bigrams = _get_bigrams(resources_dir, bigrams_filename)
 
     return {
         METADATA: metadata,
@@ -79,6 +84,7 @@ def load_resources_from_dir(resources_dir, required_resources=None):
         STOP_WORDS: stop_words,
         NOISE: noise,
         STEMS: stems,
+        "bigrams": bigrams
     }
 
 
@@ -93,6 +99,8 @@ def _update_metadata(metadata, required_resources):
             metadata["stems"] = None
         if not required_resources.get(NOISE, False):
             metadata["noise"] = None
+        if not required_resources.get("bigrams", False):
+            metadata["bigrams"] = None
         if not required_resources.get(STOP_WORDS, False):
             metadata["stop_words"] = None
         return metadata
@@ -130,6 +138,10 @@ def get_noise(resources):
     return _get_resource(resources, NOISE)
 
 
+def get_bigrams(resources):
+    return _get_resource(resources, "bigrams")
+
+
 def get_word_clusters(resources):
     return _get_resource(resources, WORD_CLUSTERS)
 
@@ -161,6 +173,8 @@ def merge_required_resources(lhs, rhs):
     merged_resources = dict()
     if lhs.get(NOISE, False) or rhs.get(NOISE, False):
         merged_resources[NOISE] = True
+    if lhs.get("bigrams", False) or rhs.get("bigrams", False):
+        merged_resources["bigrams"] = True
     if lhs.get(STOP_WORDS, False) or rhs.get(STOP_WORDS, False):
         merged_resources[STOP_WORDS] = True
     if lhs.get(STEMS, False) or rhs.get(STEMS, False):
@@ -190,6 +204,8 @@ def persist_resources(resources, resources_dest_path, required_resources):
     # Update metadata and keep only required resources
     if not required_resources.get(NOISE, False):
         metadata[NOISE] = None
+    if not required_resources.get("bigrams", False):
+        metadata["bigrams"] = None
     if not required_resources.get(STOP_WORDS, False):
         metadata[STOP_WORDS] = None
     if not required_resources.get(STEMS, False):
@@ -206,6 +222,11 @@ def persist_resources(resources, resources_dest_path, required_resources):
         noise_path = (resources_dest_path / metadata[NOISE]) \
             .with_suffix(".txt")
         _persist_noise(get_noise(resources), noise_path)
+
+    if metadata["bigrams"] is not None:
+        bigrams_path = (resources_dest_path / metadata["bigrams"]) \
+            .with_suffix(".txt")
+        _persist_bigrams(get_bigrams(resources), bigrams_path)
 
     if metadata[STOP_WORDS] is not None:
         stop_words_path = (resources_dest_path / metadata[STOP_WORDS]) \
@@ -280,6 +301,38 @@ def _load_noise(noise_path):
 def _persist_noise(noise, path):
     with path.open(encoding="utf8", mode="w") as f:
         f.write(" ".join(noise))
+
+
+def _get_bigrams(resources_dir, bigrams_filename):
+    if not bigrams_filename:
+        return None
+    bigrams_path = (resources_dir / bigrams_filename).with_suffix(".txt")
+    return _load_bigrams(bigrams_path)
+
+
+def _load_bigrams(bigrams_path):
+    counts = []
+    bigrams = []
+    with bigrams_path.open(encoding="utf8") as f:
+        for line in f:
+            elements = [e.strip() for e in line.split("\t")]
+            counts.append(int(elements[0]))
+            bigrams.append(elements[1:3])
+    norm = np.linalg.norm(counts, 1)
+    frequencies = counts / norm
+    return {
+        "bigrams": bigrams,
+        "frequencies": frequencies,
+        "counts": counts,
+    }
+
+
+def _persist_bigrams(bigrams, path):
+    bigrams_with_counts = zip(bigrams["counts"], bigrams["bigrams"])
+    bigrams_with_counts = sorted(bigrams_with_counts, key=lambda x: -x[0])
+    with path.open(encoding="utf8", mode="w") as f:
+        for count, bigram in bigrams_with_counts:
+            f.write("%s\t%s\t%s\n" % (count, bigram[0], bigram[1]))
 
 
 def _get_word_clusters(word_clusters_dir, clusters_names):

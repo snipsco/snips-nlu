@@ -90,7 +90,7 @@ class IntentClassifierDataAugmentationConfig(FromDict, Config):
     def __init__(self, min_utterances=20, noise_factor=5,
                  add_builtin_entities_examples=True, unknown_word_prob=0,
                  unknown_words_replacement_string=None,
-                 max_unknown_words=None):
+                 max_unknown_words=None, use_bigrams_noise=False):
         """
         Args:
             min_utterances (int, optional): The minimum number of utterances to
@@ -105,6 +105,7 @@ class IntentClassifierDataAugmentationConfig(FromDict, Config):
         """
         self.min_utterances = min_utterances
         self.noise_factor = noise_factor
+        self.use_bigrams_noise = use_bigrams_noise
         self.add_builtin_entities_examples = add_builtin_entities_examples
         self.unknown_word_prob = unknown_word_prob
         self.unknown_words_replacement_string = \
@@ -120,13 +121,15 @@ class IntentClassifierDataAugmentationConfig(FromDict, Config):
     def get_required_resources():
         return {
             NOISE: True,
-            STOP_WORDS: True
+            STOP_WORDS: True,
+            "bigrams": True
         }
 
     def to_dict(self):
         return {
             "min_utterances": self.min_utterances,
             "noise_factor": self.noise_factor,
+            "use_bigrams_noise": self.use_bigrams_noise,
             "add_builtin_entities_examples":
                 self.add_builtin_entities_examples,
             "unknown_word_prob": self.unknown_word_prob,

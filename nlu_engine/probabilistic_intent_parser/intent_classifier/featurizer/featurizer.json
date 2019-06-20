@@ -1,0 +1,22 @@
+{
+  "config": {
+    "added_cooccurrence_feature_ratio": 0.0,
+    "cooccurrence_vectorizer_config": {
+      "filter_stop_words": true,
+      "keep_order": true,
+      "unit_name": "cooccurrence_vectorizer",
+      "unknown_words_replacement_string": null,
+      "window_size": null
+    },
+    "pvalue_threshold": 0.4,
+    "tfidf_vectorizer_config": {
+      "unit_name": "tfidf_vectorizer",
+      "use_stemming": false,
+      "word_clusters_name": null
+    },
+    "unit_name": "featurizer"
+  },
+  "cooccurrence_vectorizer": null,
+  "language_code": "en",
+  "tfidf_vectorizer": "tfidf_vectorizer"
+}

@@ -407,10 +407,14 @@ name: my_intent
 utterances:
 - this is [entity1](my first entity)
 - this is [entity2](second_entity)
-- this is [entity3](third_entity)""")
+- this is [entity3](third_entity)
+
+---
+type: entity
+name: entity3
+automatically_extensible: false""")
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        dataset["entities"]["entity3"]["automatically_extensible"] = False
 
         config = {
             "factory_name": "entity_match",

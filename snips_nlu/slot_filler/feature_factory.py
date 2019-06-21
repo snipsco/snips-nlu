@@ -31,20 +31,6 @@ from snips_nlu.slot_filler.features_utils import (
 
 logger = logging.getLogger(__name__)
 
-class _InvalidCustomEntityFilter(ValueError):
-    pass
-
-
-CUSTOM_ENTITIES_FILTER_KEYS = {"automatically_extensible"}
-
-
-def _check_custom_entity_filter(entity_filter):
-    for k in entity_filter:
-        if k not in CUSTOM_ENTITIES_FILTER_KEYS:
-            msg = "Invalid custom entity filter key '%s'. Accepted filter " \
-                  "keys are %s" % (k, list(CUSTOM_ENTITIES_FILTER_KEYS))
-            raise _InvalidCustomEntityFilter(msg)
-
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
     """Abstraction to implement to build CRF features
@@ -520,6 +506,22 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             CUSTOM_ENTITY_PARSER_USAGE:
                 CustomEntityParserUsage.WITHOUT_STEMS
         }
+
+
+class _InvalidCustomEntityFilter(ValueError):
+    pass
+
+
+CUSTOM_ENTITIES_FILTER_KEYS = {"automatically_extensible"}
+
+
+# pylint: disable=redefined-outer-name
+def _check_custom_entity_filter(entity_filter):
+    for k in entity_filter:
+        if k not in CUSTOM_ENTITIES_FILTER_KEYS:
+            msg = "Invalid custom entity filter key '%s'. Accepted filter " \
+                  "keys are %s" % (k, list(CUSTOM_ENTITIES_FILTER_KEYS))
+            raise _InvalidCustomEntityFilter(msg)
 
 
 @CRFFeatureFactory.register("builtin_entity_match")

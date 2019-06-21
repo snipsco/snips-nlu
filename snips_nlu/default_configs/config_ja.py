@@ -85,10 +85,10 @@ CONFIG = {
                     {
                         "args": {
                             "use_stemming": False,
-                            "tagging_scheme_code": 2
-                        },
-                        "filter": {
-                            "automatically_extensible": False
+                            "tagging_scheme_code": 2,
+                            "entity_filter": {
+                                "automatically_extensible": False
+                            }
                         },
                         "factory_name": "entity_match",
                         "offsets": [-1, 0, 1, 2],
@@ -96,10 +96,10 @@ CONFIG = {
                     {
                         "args": {
                             "use_stemming": False,
-                            "tagging_scheme_code": 2
-                        },
-                        "filter": {
-                            "automatically_extensible": True
+                            "tagging_scheme_code": 2,
+                            "entity_filter": {
+                                "automatically_extensible": False
+                            }
                         },
                         "factory_name": "entity_match",
                         "offsets": [-1, 0, 1, 2],

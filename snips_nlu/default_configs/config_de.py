@@ -90,7 +90,7 @@ CONFIG = {
                         "args": {
                             "use_stemming": True,
                             "tagging_scheme_code": 2,
-                            "filter": {
+                            "entity_filter": {
                                 "automatically_extensible": False
                             }
                         },
@@ -101,7 +101,7 @@ CONFIG = {
                         "args": {
                             "use_stemming": True,
                             "tagging_scheme_code": 2,
-                            "filter": {
+                            "entity_filter": {
                                 "automatically_extensible": True
                             }
                         },

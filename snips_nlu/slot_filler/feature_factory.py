@@ -429,7 +429,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
                     "Invalid filter '%s', invalid arguments have been ignored:"
                     " %s", entity_filter, e,
                 )
-        self.entity_filter = entity_filter
+        self.entity_filter = entity_filter or dict()
 
     @property
     def entities(self):
@@ -450,7 +450,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
                 e for e in entities_names
                 if dataset[ENTITIES][e][AUTOMATICALLY_EXTENSIBLE] == extensible
             ]
-        self.entities = entities_names
+        self.entities = list(entities_names)
         return self
 
     def _transform(self, tokens):

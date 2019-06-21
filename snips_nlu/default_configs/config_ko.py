@@ -84,9 +84,9 @@ CONFIG = {
                     },
                     {
                         "args": {
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "tagging_scheme_code": 2,
-                            "filter": {
+                            "entity_filter": {
                                 "automatically_extensible": False
                             }
                         },
@@ -95,9 +95,9 @@ CONFIG = {
                     },
                     {
                         "args": {
-                            "use_stemming": True,
+                            "use_stemming": False,
                             "tagging_scheme_code": 2,
-                            "filter": {
+                            "entity_filter": {
                                 "automatically_extensible": True
                             }
                         },

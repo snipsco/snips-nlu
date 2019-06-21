@@ -420,16 +420,16 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["tagging_scheme_code"])
         self._entities = None
         self.entities = self.args.get("entities")
-        entity_filter = self.args.get("entity_filter")
-        if entity_filter:
+        ent_filter = self.args.get("entity_filter")
+        if ent_filter:
             try:
-                _check_custom_entity_filter(entity_filter)
+                _check_custom_entity_filter(ent_filter)
             except _InvalidCustomEntityFilter as e:
                 logger.warning(
                     "Invalid filter '%s', invalid arguments have been ignored:"
-                    " %s", entity_filter, e,
+                    " %s", ent_filter, e,
                 )
-        self.entity_filter = entity_filter or dict()
+        self.entity_filter = ent_filter or dict()
 
     @property
     def entities(self):

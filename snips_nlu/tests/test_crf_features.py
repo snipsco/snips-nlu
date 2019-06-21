@@ -414,10 +414,7 @@ utterances:
             "factory_name": "entity_match",
             "args": {
                 "tagging_scheme_code": TaggingScheme.BILOU.value,
-                "use_stemming": True,
-                "entity_filter": {
-                    "automatically_extensible": True,
-                }
+                "use_stemming": True
             },
             "offsets": [0]
         }
@@ -491,6 +488,7 @@ automatically_extensible: false""")
                 "use_stemming": True,
                 "entity_filter": {
                     "automatically_extensible": True,
+                    "invalid_filter": "i'm invalid"  # Should be ignored
                 }
             },
             "offsets": [0]

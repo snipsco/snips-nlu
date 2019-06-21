@@ -406,6 +406,74 @@ type: intent
 name: my_intent
 utterances:
 - this is [entity1](my first entity)
+- this is [entity2](second_entity)""")
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        config = {
+            "factory_name": "entity_match",
+            "args": {
+                "tagging_scheme_code": TaggingScheme.BILOU.value,
+                "use_stemming": True,
+                "entity_filter": {
+                    "automatically_extensible": True,
+                }
+            },
+            "offsets": [0]
+        }
+
+        tokens = tokenize(
+            "my first entity and second_entity and third_entity",
+            LANGUAGE_EN)
+        cache = [{TOKEN_NAME: token} for token in tokens]
+        resources = {STEMS: dict()}
+        custom_entity_parser = CustomEntityParser.build(
+            dataset, CustomEntityParserUsage.WITH_STEMS, resources)
+        factory = CRFFeatureFactory.from_config(
+            config, custom_entity_parser=custom_entity_parser,
+            resources=resources)
+        factory.fit(dataset, "my_intent")
+
+        # When
+        features = factory.build_features()
+        features = sorted(features, key=lambda f: f.base_name)
+        res0 = features[0].compute(0, cache)
+        res1 = features[0].compute(1, cache)
+        res2 = features[0].compute(2, cache)
+        res3 = features[0].compute(3, cache)
+        res4 = features[0].compute(4, cache)
+
+        res5 = features[1].compute(0, cache)
+        res6 = features[1].compute(1, cache)
+        res7 = features[1].compute(2, cache)
+        res8 = features[1].compute(3, cache)
+        res9 = features[1].compute(4, cache)
+
+        # Then
+        self.assertIsInstance(factory, CustomEntityMatchFactory)
+        self.assertEqual(len(features), 2)
+        self.assertEqual(features[0].base_name, "entity_match_entity1")
+        self.assertEqual(features[1].base_name, "entity_match_entity2")
+        self.assertEqual(res0, BEGINNING_PREFIX)
+        self.assertEqual(res1, INSIDE_PREFIX)
+        self.assertEqual(res2, LAST_PREFIX)
+        self.assertEqual(res3, None)
+        self.assertEqual(res4, None)
+
+        self.assertEqual(res5, None)
+        self.assertEqual(res6, None)
+        self.assertEqual(res7, None)
+        self.assertEqual(res8, None)
+        self.assertEqual(res9, UNIT_PREFIX)
+
+    def test_entity_match_factory_with_filter(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: my_intent
+utterances:
+- this is [entity1](my first entity)
 - this is [entity2](second_entity)
 - this is [entity3](third_entity)
 

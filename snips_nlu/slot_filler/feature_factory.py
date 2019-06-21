@@ -407,9 +407,9 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
     -   'entity_filter' (dict): a filter applied to select the custom entities
         for which the custom match feature will be computed. Available
         filters:
-            - 'automatically_extensible': if True, selects automatically
-             extensible entities only, if False selects non automatically
-             extensible entities only
+        - 'automatically_extensible': if True, selects automatically
+        extensible entities only, if False selects non automatically
+        extensible entities only
     """
 
     def __init__(self, factory_config, **shared):

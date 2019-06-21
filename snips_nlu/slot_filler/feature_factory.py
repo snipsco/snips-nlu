@@ -405,7 +405,7 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
     -   'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
         allows to give more information about the match.
     -   'entity_filter' (dict): a filter applied to select the custom entities
-        for which the custom match feature should be applied. Available
+        for which the custom match feature will be computed. Available
         filters:
             - 'automatically_extensible': if True, selects automatically
              extensible entities only, if False selects non automatically

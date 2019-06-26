@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.linear_model import SGDClassifier
+from sklearn.utils import compute_class_weight
 
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 LOG_REG_ARGS = {
     "loss": "log",
     "penalty": "l2",
-    "class_weight": "balanced",
+    # "class_weight": "balanced",
     "max_iter": 1000,
     "tol": 1e-3,
     "n_jobs": -1
@@ -102,8 +103,15 @@ class LogRegIntentClassifier(IntentClassifier):
             return self
 
         alpha = get_regularization_factor(dataset)
+        class_weights_arr = compute_class_weight(
+            "balanced", range(none_class + 1), classes)
+        class_weights_arr[-1] *= self.config.noise_weight
+        class_weight = {idx: w
+                        for idx, w in enumerate(class_weights_arr)}
+
         self.classifier = SGDClassifier(
-            random_state=self.random_state, alpha=alpha, **LOG_REG_ARGS)
+            random_state=self.random_state, alpha=alpha,
+            class_weight=class_weight, **LOG_REG_ARGS)
         self.classifier.fit(x, classes)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self

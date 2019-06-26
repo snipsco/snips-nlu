@@ -1,0 +1,5253 @@
+{
+  "average_metrics": {
+    "intent": {
+      "f1": 0.9495105010498497,
+      "precision": 0.9559225716273712,
+      "recall": 0.9448083937943378
+    }
+  },
+  "confusion_matrix": {
+    "intents": [
+      "snips-assistant:AddTime",
+      "snips-assistant:Cancel",
+      "snips-assistant:CancelAlarm",
+      "snips-assistant:CancelReminder",
+      "snips-assistant:CancelTimer",
+      "snips-assistant:CheckTime",
+      "snips-assistant:ConvertTime",
+      "snips-assistant:GetAlarm",
+      "snips-assistant:GetArrivalTime",
+      "snips-assistant:GetDepartureTime",
+      "snips-assistant:GetDirections",
+      "snips-assistant:GetLocalTime",
+      "snips-assistant:GetNavigationTime",
+      "snips-assistant:GetRemainingTime",
+      "snips-assistant:GetReminders",
+      "snips-assistant:GetTimeDifference",
+      "snips-assistant:GetTimezone",
+      "snips-assistant:No",
+      "snips-assistant:PauseTimer",
+      "snips-assistant:RenameAlarm",
+      "snips-assistant:RenameReminder",
+      "snips-assistant:RescheduleAlarm",
+      "snips-assistant:RescheduleReminder",
+      "snips-assistant:ResumeTimer",
+      "snips-assistant:SetAlarm",
+      "snips-assistant:SetReminder",
+      "snips-assistant:SetTimer",
+      "snips-assistant:Silence",
+      "snips-assistant:Stop",
+      "snips-assistant:TemperatureForecast",
+      "snips-assistant:WeatherConditionRequest",
+      "snips-assistant:WeatherForecast",
+      "snips-assistant:Yes",
+      "null"
+    ],
+    "matrix": [
+      [
+        22,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        24,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        154,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        153,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        80,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        72,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        126,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        115,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        194,
+        6,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        246,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        152,
+        1,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        64,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        4,
+        2,
+        146,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        61,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        111,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        100,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        61,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        21,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        50,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        99,
+        1,
+        7,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        99,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        128,
+        5,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        6,
+        132,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        47,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        277,
+        18,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        4
+      ],
+      [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        9,
+        235,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        13
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        69,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        16,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        18,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        81,
+        0,
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        80,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        106,
+        0,
+        3
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        24,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "metrics": {
+    "null": {
+      "exact_parsings": 0,
+      "intent": {
+        "f1": 0.0,
+        "false_negative": 0,
+        "false_positive": 35,
+        "precision": 0.0,
+        "recall": 0.0,
+        "true_positive": 0
+      },
+      "intent_utterances": 0
+    },
+    "snips-assistant:AddTime": {
+      "exact_parsings": 22,
+      "intent": {
+        "f1": 0.9166666666666666,
+        "false_negative": 3,
+        "false_positive": 1,
+        "precision": 0.9565217391304348,
+        "recall": 0.88,
+        "true_positive": 22
+      },
+      "intent_utterances": 25
+    },
+    "snips-assistant:Cancel": {
+      "exact_parsings": 24,
+      "intent": {
+        "f1": 1.0,
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positive": 24
+      },
+      "intent_utterances": 24
+    },
+    "snips-assistant:CancelAlarm": {
+      "exact_parsings": 154,
+      "intent": {
+        "f1": 0.9535603715170279,
+        "false_negative": 6,
+        "false_positive": 9,
+        "precision": 0.9447852760736196,
+        "recall": 0.9625,
+        "true_positive": 154
+      },
+      "intent_utterances": 160
+    },
+    "snips-assistant:CancelReminder": {
+      "exact_parsings": 153,
+      "intent": {
+        "f1": 0.9622641509433961,
+        "false_negative": 2,
+        "false_positive": 10,
+        "precision": 0.9386503067484663,
+        "recall": 0.9870967741935484,
+        "true_positive": 153
+      },
+      "intent_utterances": 155
+    },
+    "snips-assistant:CancelTimer": {
+      "exact_parsings": 80,
+      "intent": {
+        "f1": 0.9142857142857143,
+        "false_negative": 0,
+        "false_positive": 15,
+        "precision": 0.8421052631578947,
+        "recall": 1.0,
+        "true_positive": 80
+      },
+      "intent_utterances": 80
+    },
+    "snips-assistant:CheckTime": {
+      "exact_parsings": 72,
+      "intent": {
+        "f1": 0.9795918367346939,
+        "false_negative": 0,
+        "false_positive": 3,
+        "precision": 0.96,
+        "recall": 1.0,
+        "true_positive": 72
+      },
+      "intent_utterances": 72
+    },
+    "snips-assistant:ConvertTime": {
+      "exact_parsings": 126,
+      "intent": {
+        "f1": 0.9473684210526316,
+        "false_negative": 8,
+        "false_positive": 6,
+        "precision": 0.9545454545454546,
+        "recall": 0.9402985074626866,
+        "true_positive": 126
+      },
+      "intent_utterances": 134
+    },
+    "snips-assistant:GetAlarm": {
+      "exact_parsings": 115,
+      "intent": {
+        "f1": 0.9055118110236221,
+        "false_negative": 19,
+        "false_positive": 5,
+        "precision": 0.9583333333333334,
+        "recall": 0.8582089552238806,
+        "true_positive": 115
+      },
+      "intent_utterances": 134
+    },
+    "snips-assistant:GetArrivalTime": {
+      "exact_parsings": 194,
+      "intent": {
+        "f1": 0.9675810473815462,
+        "false_negative": 7,
+        "false_positive": 6,
+        "precision": 0.97,
+        "recall": 0.9651741293532339,
+        "true_positive": 194
+      },
+      "intent_utterances": 201
+    },
+    "snips-assistant:GetDepartureTime": {
+      "exact_parsings": 246,
+      "intent": {
+        "f1": 0.9761904761904762,
+        "false_negative": 6,
+        "false_positive": 6,
+        "precision": 0.9761904761904762,
+        "recall": 0.9761904761904762,
+        "true_positive": 246
+      },
+      "intent_utterances": 252
+    },
+    "snips-assistant:GetDirections": {
+      "exact_parsings": 152,
+      "intent": {
+        "f1": 0.9620253164556962,
+        "false_negative": 6,
+        "false_positive": 6,
+        "precision": 0.9620253164556962,
+        "recall": 0.9620253164556962,
+        "true_positive": 152
+      },
+      "intent_utterances": 158
+    },
+    "snips-assistant:GetLocalTime": {
+      "exact_parsings": 64,
+      "intent": {
+        "f1": 0.888888888888889,
+        "false_negative": 5,
+        "false_positive": 11,
+        "precision": 0.8533333333333334,
+        "recall": 0.927536231884058,
+        "true_positive": 64
+      },
+      "intent_utterances": 69
+    },
+    "snips-assistant:GetNavigationTime": {
+      "exact_parsings": 146,
+      "intent": {
+        "f1": 0.9542483660130718,
+        "false_negative": 9,
+        "false_positive": 5,
+        "precision": 0.9668874172185431,
+        "recall": 0.9419354838709677,
+        "true_positive": 146
+      },
+      "intent_utterances": 155
+    },
+    "snips-assistant:GetRemainingTime": {
+      "exact_parsings": 61,
+      "intent": {
+        "f1": 0.9531249999999999,
+        "false_negative": 5,
+        "false_positive": 1,
+        "precision": 0.9838709677419355,
+        "recall": 0.9242424242424242,
+        "true_positive": 61
+      },
+      "intent_utterances": 66
+    },
+    "snips-assistant:GetReminders": {
+      "exact_parsings": 111,
+      "intent": {
+        "f1": 0.9173553719008264,
+        "false_negative": 17,
+        "false_positive": 3,
+        "precision": 0.9736842105263158,
+        "recall": 0.8671875,
+        "true_positive": 111
+      },
+      "intent_utterances": 128
+    },
+    "snips-assistant:GetTimeDifference": {
+      "exact_parsings": 100,
+      "intent": {
+        "f1": 0.9803921568627451,
+        "false_negative": 4,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 0.9615384615384616,
+        "true_positive": 100
+      },
+      "intent_utterances": 104
+    },
+    "snips-assistant:GetTimezone": {
+      "exact_parsings": 61,
+      "intent": {
+        "f1": 0.991869918699187,
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.9838709677419355,
+        "recall": 1.0,
+        "true_positive": 61
+      },
+      "intent_utterances": 61
+    },
+    "snips-assistant:No": {
+      "exact_parsings": 21,
+      "intent": {
+        "f1": 0.9767441860465117,
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.9545454545454546,
+        "recall": 1.0,
+        "true_positive": 21
+      },
+      "intent_utterances": 21
+    },
+    "snips-assistant:PauseTimer": {
+      "exact_parsings": 50,
+      "intent": {
+        "f1": 0.9259259259259259,
+        "false_negative": 7,
+        "false_positive": 1,
+        "precision": 0.9803921568627451,
+        "recall": 0.8771929824561403,
+        "true_positive": 50
+      },
+      "intent_utterances": 57
+    },
+    "snips-assistant:RenameAlarm": {
+      "exact_parsings": 99,
+      "intent": {
+        "f1": 0.9209302325581394,
+        "false_negative": 11,
+        "false_positive": 6,
+        "precision": 0.9428571428571428,
+        "recall": 0.9,
+        "true_positive": 99
+      },
+      "intent_utterances": 110
+    },
+    "snips-assistant:RenameReminder": {
+      "exact_parsings": 99,
+      "intent": {
+        "f1": 0.942857142857143,
+        "false_negative": 7,
+        "false_positive": 5,
+        "precision": 0.9519230769230769,
+        "recall": 0.9339622641509434,
+        "true_positive": 99
+      },
+      "intent_utterances": 106
+    },
+    "snips-assistant:RescheduleAlarm": {
+      "exact_parsings": 128,
+      "intent": {
+        "f1": 0.8858131487889274,
+        "false_negative": 14,
+        "false_positive": 19,
+        "precision": 0.8707482993197279,
+        "recall": 0.9014084507042254,
+        "true_positive": 128
+      },
+      "intent_utterances": 142
+    },
+    "snips-assistant:RescheduleReminder": {
+      "exact_parsings": 132,
+      "intent": {
+        "f1": 0.9166666666666666,
+        "false_negative": 12,
+        "false_positive": 12,
+        "precision": 0.9166666666666666,
+        "recall": 0.9166666666666666,
+        "true_positive": 132
+      },
+      "intent_utterances": 144
+    },
+    "snips-assistant:ResumeTimer": {
+      "exact_parsings": 47,
+      "intent": {
+        "f1": 0.9400000000000001,
+        "false_negative": 6,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 0.8867924528301887,
+        "true_positive": 47
+      },
+      "intent_utterances": 53
+    },
+    "snips-assistant:SetAlarm": {
+      "exact_parsings": 277,
+      "intent": {
+        "f1": 0.915702479338843,
+        "false_negative": 28,
+        "false_positive": 23,
+        "precision": 0.9233333333333333,
+        "recall": 0.9081967213114754,
+        "true_positive": 277
+      },
+      "intent_utterances": 305
+    },
+    "snips-assistant:SetReminder": {
+      "exact_parsings": 235,
+      "intent": {
+        "f1": 0.8935361216730038,
+        "false_negative": 29,
+        "false_positive": 27,
+        "precision": 0.8969465648854962,
+        "recall": 0.8901515151515151,
+        "true_positive": 235
+      },
+      "intent_utterances": 264
+    },
+    "snips-assistant:SetTimer": {
+      "exact_parsings": 69,
+      "intent": {
+        "f1": 0.9387755102040816,
+        "false_negative": 5,
+        "false_positive": 4,
+        "precision": 0.9452054794520548,
+        "recall": 0.9324324324324325,
+        "true_positive": 69
+      },
+      "intent_utterances": 74
+    },
+    "snips-assistant:Silence": {
+      "exact_parsings": 16,
+      "intent": {
+        "f1": 0.9696969696969697,
+        "false_negative": 1,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 0.9411764705882353,
+        "true_positive": 16
+      },
+      "intent_utterances": 17
+    },
+    "snips-assistant:Stop": {
+      "exact_parsings": 18,
+      "intent": {
+        "f1": 0.972972972972973,
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.9473684210526315,
+        "recall": 1.0,
+        "true_positive": 18
+      },
+      "intent_utterances": 18
+    },
+    "snips-assistant:TemperatureForecast": {
+      "exact_parsings": 81,
+      "intent": {
+        "f1": 0.9818181818181818,
+        "false_negative": 3,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 0.9642857142857143,
+        "true_positive": 81
+      },
+      "intent_utterances": 84
+    },
+    "snips-assistant:WeatherConditionRequest": {
+      "exact_parsings": 80,
+      "intent": {
+        "f1": 1.0,
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positive": 80
+      },
+      "intent_utterances": 80
+    },
+    "snips-assistant:WeatherForecast": {
+      "exact_parsings": 106,
+      "intent": {
+        "f1": 0.9814814814814815,
+        "false_negative": 3,
+        "false_positive": 1,
+        "precision": 0.9906542056074766,
+        "recall": 0.9724770642201835,
+        "true_positive": 106
+      },
+      "intent_utterances": 109
+    },
+    "snips-assistant:Yes": {
+      "exact_parsings": 24,
+      "intent": {
+        "f1": 1.0,
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positive": 24
+      },
+      "intent_utterances": 24
+    }
+  },
+  "parsing_errors": [
+    {
+      "expected_output": {
+        "input": "I don't want any alarm on weekdays",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want any alarm on weekdays",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 0.2325488683380741
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want any reminder on weekdays",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want any reminder on weekdays",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 0.2829575583012678
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What is the time in Virginia if it is 5 in Florida?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What is the time in Virginia if it is 5 in Florida?",
+        "intent": {
+          "intentName": "snips-assistant:CheckTime",
+          "probability": 0.3752772769095706
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "all alarms of  work days",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "all alarms of  work days",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.654877224214251
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i set an alarm for the hair draisser and need you to search for it please",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i set an alarm for the hair draisser and need you to search for it please",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.2706550338725987
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need all my alarms for the next two days",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need all my alarms for the next two days",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.6653911669328726
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "find for me an alarm called lasagna set within last year",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "find for me an alarm called lasagna set within last year",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.49782351723111656
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "could you locate my anniversary alarm",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "could you locate my anniversary alarm",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.3946515793893316
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Going from work to airport at 9 precisely, when should I be there?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Going from work to airport at 9 precisely, when should I be there?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 0.5905782609263777
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "tell me departure time to reach manhattan at 5 by bicycling if I'm leaving from the moma?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "tell me departure time to reach manhattan at 5 by bicycling if I'm leaving from the moma?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 0.7291523271451152
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "](arrival_time)",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "](arrival_time)",
+        "intent": {
+          "intentName": null,
+          "probability": 0.49873152112068336
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Which is the shortest way to the airport?",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Which is the shortest way to the airport?",
+        "intent": {
+          "intentName": null,
+          "probability": 0.09144661422457212
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need help in getting to new york",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need help in getting to new york",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.054809875553225244
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What's the time in palm city?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What's the time in palm city?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 0.5584913884009877
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "show traveling time to newark",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "show traveling time to newark",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.15204972128927585
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What do I need to do on fridays?",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What do I need to do on fridays?",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 0.2496932458269594
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "all reminders of this month to visit doctor",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "all reminders of this month to visit doctor",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.33166630594391194
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need all reminders. ",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need all reminders. ",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.8207786413851491
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "bring up the airport reminder i set for last weekend",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "bring up the airport reminder i set for last weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.09609062987673317
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What are the times in Savannah and Overland Park?",
+        "intent": {
+          "intentName": "snips-assistant:GetTimeDifference",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What are the times in Savannah and Overland Park?",
+        "intent": {
+          "intentName": null,
+          "probability": 0.22514923573935833
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the bedtime alarm on wednesday to turn the lights off",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the bedtime alarm on wednesday to turn the lights off",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.1830784058407379
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set a new name for one of my alarms.",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set a new name for one of my alarms.",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 0.21399907004758356
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "change the water my plants alarm to go to the movies at that time",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "change the water my plants alarm to go to the movies at that time",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.36047066815132545
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the I have tickets to the opera reminder to be to book my son's doctor's appointment.",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the I have tickets to the opera reminder to be to book my son's doctor's appointment.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.41682247830802044
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set a new name for one of my reminders.",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set a new name for one of my reminders.",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 0.3710594075483722
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have a reminder to text my brother that I need to have changed to start the lasagna for Saturdays dinner.",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have a reminder to text my brother that I need to have changed to start the lasagna for Saturdays dinner.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.2920500218051506
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Modify the reminder medicine to picking up medecine at 8am",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Modify the reminder medicine to picking up medecine at 8am",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.23715833401537714
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Allow me to change the alarm called see my sister to be for 6 am everyday",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Allow me to change the alarm called see my sister to be for 6 am everyday",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 0.3972212877691348
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set the meeting alarm only on weeekdays at 2pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set the meeting alarm only on weeekdays at 2pm",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.5875883951703313
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Remind me to clean the car at 8pm instead of 9pm only on weekends",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Remind me to clean the car at 8pm instead of 9pm only on weekends",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "alarm that's set for gardening on Tuesdays needs to be moved to 7pm tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "alarm that's set for gardening on Tuesdays needs to be moved to 7pm tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.3534326613286902
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please reschedule 6 am appointment for doctor to 7 in the evening",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please reschedule 6 am appointment for doctor to 7 in the evening",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.2729424918090937
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to reschedule my doctors appointment tomorrow at 4pm for next week Friday at 3pm.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to reschedule my doctors appointment tomorrow at 4pm for next week Friday at 3pm.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.293505162359483
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "start the rice timer again.",
+        "intent": {
+          "intentName": "snips-assistant:ResumeTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "start the rice timer again.",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 0.7443612964852637
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "start the rice timer again",
+        "intent": {
+          "intentName": "snips-assistant:ResumeTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "start the rice timer again",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 0.7443612964852637
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please start again the pasta timer from the last stop",
+        "intent": {
+          "intentName": "snips-assistant:ResumeTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please start again the pasta timer from the last stop",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.1742442543075972
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Don't let me forget to give my brother a call tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Don't let me forget to give my brother a call tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make sure I remember to go to jury duty next monday at 9am",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make sure I remember to go to jury duty next monday at 9am",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make sure I remember to get an oil change before next week",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make sure I remember to get an oil change before next week",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make a new alarm for noon to remind me to meet Will for lunch",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make a new alarm for noon to remind me to meet Will for lunch",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.4294832049810779
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Don't let me forget to get waffles every weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Don't let me forget to get waffles every weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Tell me to book a ticket with Delta thursday at 9pm",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Tell me to book a ticket with Delta thursday at 9pm",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want to forget about my doctors appointment next week.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want to forget about my doctors appointment next week.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need a reminder to start the grocery list",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need a reminder to start the grocery list",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 0.18979976080842956
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please add a 1 minute timer",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please add a 1 minute timer",
+        "intent": {
+          "intentName": "snips-assistant:AddTime",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set the time for 20 minutes for the workout",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set the time for 20 minutes for the workout",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.09902748329379006
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm gonna need 10 minutes more ",
+        "intent": {
+          "intentName": "snips-assistant:AddTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm gonna need 10 minutes more ",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 0.3238128430553431
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make it ring in 15 minutes please",
+        "intent": {
+          "intentName": "snips-assistant:AddTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make it ring in 15 minutes please",
+        "intent": {
+          "intentName": null,
+          "probability": 0.18799466746059004
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Delete the alarms I have set for every monday",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Delete the alarms I have set for every monday",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 0.3884461594702741
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have a alarm at 3pm, please delete it.",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have a alarm at 3pm, please delete it.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.1511660364582473
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Given that the time is midday in South Dakota, what is the time in Idaho?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Given that the time is midday in South Dakota, what is the time in Idaho?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.5199602509131013
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "My local time in Fresno is 5, what time is it in Newark?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "My local time in Fresno is 5, what time is it in Newark?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.6297983938533812
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you tell me if it's 7 in Norman what time is it in Pakistan?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you tell me if it's 7 in Norman what time is it in Pakistan?",
+        "intent": {
+          "intentName": "snips-assistant:CheckTime",
+          "probability": 0.6263292631063803
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "open all my active alarms",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "open all my active alarms",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.7820842929637618
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "can you help me find an alarm i had set",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "can you help me find an alarm i had set",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.38438306562065727
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "search alarm of last month",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "search alarm of last month",
+        "intent": {
+          "intentName": null,
+          "probability": 0.27602892838434107
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What do I need to do on fridays?",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What do I need to do on fridays?",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 0.23489956553913052
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "look for an alarm i set in the last year",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "look for an alarm i set in the last year",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.25430446955979885
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Delete my old meetings",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Delete my old meetings",
+        "intent": {
+          "intentName": null,
+          "probability": 0.07274818075232282
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "ETA to new york departure time being 5 p.m.",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "ETA to new york departure time being 5 p.m.",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 0.5477994770604996
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "](travel_mode)",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "](travel_mode)",
+        "intent": {
+          "intentName": null,
+          "probability": 0.4940781664279859
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I must arrive at times square at half past eleven precisely and will be traveling by sub, what is the best time to leave?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I must arrive at times square at half past eleven precisely and will be traveling by sub, what is the best time to leave?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 0.19712472271654682
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm starting at home and want to travel by bus to philadelphia",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm starting at home and want to travel by bus to philadelphia",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 0.2641330106823371
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "How many minutes do I need to spend in the subway to get to newark?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "How many minutes do I need to spend in the subway to get to newark?",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 0.37395740967415453
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Tell me the time to get to the moma?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Tell me the time to get to the moma?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.13070831329937901
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Is there a time estimate to go to newark from here",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Is there a time estimate to go to newark from here",
+        "intent": {
+          "intentName": null,
+          "probability": 0.1524850721491237
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "In regards to my timer, how long will it run for?",
+        "intent": {
+          "intentName": "snips-assistant:GetRemainingTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "In regards to my timer, how long will it run for?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 0.14193932634420459
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "open all my active reminders",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "open all my active reminders",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.7303743405386082
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to know this week's reminders",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to know this week's reminders",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.09723253540402675
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i am looking for a reminder from this month",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i am looking for a reminder from this month",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.3202264714434551
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "can you help me find a reminder i had set",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "can you help me find a reminder i had set",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.3160776648810933
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "all reminders of  work days",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "all reminders of  work days",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.5941014854088935
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need all my reminders for the next two days.",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need all my reminders for the next two days.",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.5504743615202461
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What different times are in San Antonio, Alabama, and Corpus Christi right now?",
+        "intent": {
+          "intentName": "snips-assistant:GetTimeDifference",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What different times are in San Antonio, Alabama, and Corpus Christi right now?",
+        "intent": {
+          "intentName": null,
+          "probability": 0.12362325776559809
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need the timer stopped momentarily.",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need the timer stopped momentarily.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.48940546263109636
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Stop the timer for a brief moment.",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Stop the timer for a brief moment.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.5510889399497033
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The timer needs a small rest.",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The timer needs a small rest.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.8857623770530084
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Put the timer on hold for a sec",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Put the timer on hold for a sec",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 0.5659088663241667
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have an alarm for a tire rotation that should be an alarm to call my brother instead.",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have an alarm for a tire rotation that should be an alarm to call my brother instead.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.3741455008729062
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have an alarm to text my brother that I need to have changed to start the lasagna for Saturday's dinner",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have an alarm to text my brother that I need to have changed to start the lasagna for Saturday's dinner",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.17178529475469392
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "reschedule the general practitioner appointment for tomorrow at 2 pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "reschedule the general practitioner appointment for tomorrow at 2 pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.2758582443556119
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "remind me to do laundry at 7am instead of 5 please.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "remind me to do laundry at 7am instead of 5 please.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to reschedule my doctors appointment tomorrow at 4pm for next week Friday at 3pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to reschedule my doctors appointment tomorrow at 4pm for next week Friday at 3pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.3581360935106616
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have a reminder that needs to be adjusted",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have a reminder that needs to be adjusted",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 0.38100573983014485
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set alarm named be ready for dinner at seven thirty pm every night",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set alarm named be ready for dinner at seven thirty pm every night",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.3092006138782909
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make a new alarm for 5pm",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make a new alarm for 5pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.6016700037971457
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make a new alarm for 8pm and title it New episode of my TV show",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make a new alarm for 8pm and title it New episode of my TV show",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2589250852976861
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Alert me at 7pm that it's time to take the clothes out of the dryer",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Alert me at 7pm that it's time to take the clothes out of the dryer",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 0.06251445386402364
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Don't let me forget to give my brother a call tonight.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Don't let me forget to give my brother a call tonight.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set a reminder to fix the siding on the house this weekend.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set a reminder to fix the siding on the house this weekend.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.12974221264637362
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to remember to turn the lights off at 6am",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to remember to turn the lights off at 6am",
+        "intent": {
+          "intentName": null,
+          "probability": 0.24437680412815083
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "reminder: football game is at 9pm",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "reminder: football game is at 9pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.2623393451265761
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Write down that I need to use the coupon code by midnight tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Write down that I need to use the coupon code by midnight tonight",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2581070581545915
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "For the next two days, I need the forecast for Seabrook.",
+        "intent": {
+          "intentName": "snips-assistant:WeatherForecast",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "For the next two days, I need the forecast for Seabrook.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2524947340435665
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want this timer to last 5 minutes more",
+        "intent": {
+          "intentName": "snips-assistant:AddTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want this timer to last 5 minutes more",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.12114248780737046
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "There's an alarm at 8am tomorrow for a meeting, cancel that.",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "There's an alarm at 8am tomorrow for a meeting, cancel that.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.10840170867820678
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "The time is 10 in Huntsville, United Kingdom, and I want to know what time it is in Cary.",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "The time is 10 in Huntsville, United Kingdom, and I want to know what time it is in Cary.",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.42013520532654686
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "If the time shows 5 in Pittsburgh what will the time be in McAllen?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "If the time shows 5 in Pittsburgh what will the time be in McAllen?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.32880913666993644
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Local time in Chicago is 5, what time is it in Carlsbad?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Local time in Chicago is 5, what time is it in Carlsbad?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.8454606589981459
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "6am is the time in Peoria, Tanzania, and I am wondering what time that is in Garden Grove.",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "6am is the time in Peoria, Tanzania, and I am wondering what time that is in Garden Grove.",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.4718547479687414
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i am looking for an alarm from this month",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i am looking for an alarm from this month",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.17206654377267427
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm heading to the airport at 6 am sharp, when should I be there?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm heading to the airport at 6 am sharp, when should I be there?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 0.4862102069838756
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like to leave camden town at 8 pm; when would I get to manhattan?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like to leave camden town at 8 pm; when would I get to manhattan?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 0.4931021623095509
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "when to leave manhattan to arrive at new york around ten if I take the sub",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "when to leave manhattan to arrive at new york around ten if I take the sub",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 0.5103509699122604
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What time is it in the Republic of Tajikistan?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What time is it in the Republic of Tajikistan?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 0.4702814377365661
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What's the duration of a walking trip to the airport?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What's the duration of a walking trip to the airport?",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 0.07092735635603535
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "When will I get home if i'm cycling there from 85 maiden lane?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "When will I get home if i'm cycling there from 85 maiden lane?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 0.9295252617061943
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "How many hours to get to the Rockefeller Center?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "How many hours to get to the Rockefeller Center?",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 0.17999618906509943
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want an update on my active timers",
+        "intent": {
+          "intentName": "snips-assistant:GetRemainingTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want an update on my active timers",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.27686088610322895
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Timer status please",
+        "intent": {
+          "intentName": "snips-assistant:GetRemainingTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Timer status please",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.8717008199206128
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Did I set a reminder for today for picking up medecine?",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Did I set a reminder for today for picking up medecine?",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.44699319315282815
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please stop the yoga timer for just a bit.",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please stop the yoga timer for just a bit.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.23119422435045725
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change my eggs alarm to milk",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change my eggs alarm to milk",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.5325246511132781
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have an alarm to only get 5 gallons of gas that I'd like to change to be called see my sister instead.",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have an alarm to only get 5 gallons of gas that I'd like to change to be called see my sister instead.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.48556964059402186
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have an alarm to reply to an email from Jane on thursdays, please rename it ask them all to call me back",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have an alarm to reply to an email from Jane on thursdays, please rename it ask them all to call me back",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.11356813520250145
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "change the attend the vet appointment alarm to be ready for dinner please",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "change the attend the vet appointment alarm to be ready for dinner please",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.2561972050215957
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Modify the alarm medicine to picking up medecine at 8am",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Modify the alarm medicine to picking up medecine at 8am",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.20569308921972934
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like to change the time for the alarm I have to call the bank",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like to change the time for the alarm I have to call the bank",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 0.2675492340710426
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need the movie tickets alarm switched to 7",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need the movie tickets alarm switched to 7",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.14965789412834898
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I can't make my oil change Tomorrow at 8am, can we get this rescheduled for 9am?",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I can't make my oil change Tomorrow at 8am, can we get this rescheduled for 9am?",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.2119838007554595
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Allow me to make adjustments to a reminder I have.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Allow me to make adjustments to a reminder I have.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.4865208807173142
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "restart my paused timer for the cookies",
+        "intent": {
+          "intentName": "snips-assistant:ResumeTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "restart my paused timer for the cookies",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 0.4379862806485508
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Don't let me forget to take the trash out every monday at 8am",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Don't let me forget to take the trash out every monday at 8am",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.14895575627859364
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Don't let me forget to get waffles every weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Don't let me forget to get waffles every weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Alert me to create a dentist appointment tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Alert me to create a dentist appointment tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.4712356283311109
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make sure I don't forget to file taxes in april",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make sure I don't forget to file taxes in april",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.23046861891491113
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Will you put down that I need to buy milk tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Will you put down that I need to buy milk tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Can you create sure that I don't forget to buy tickets for the movies for this weekend tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Can you create sure that I don't forget to buy tickets for the movies for this weekend tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.16753475655151545
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "New alarm for watering my plants please",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "New alarm for watering my plants please",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.2344362152495782
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Create a new alarm for noon to remind me of my doctor's appointment",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Create a new alarm for noon to remind me of my doctor's appointment",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.4119914088193148
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to remember to get bananas from the store.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to remember to get bananas from the store.",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 0.14605659888824024
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need a reminder to take my vitamin in the mornings",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need a reminder to take my vitamin in the mornings",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.07633471637456098
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "put this down as a reminder, buy pet food on saturdays",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "put this down as a reminder, buy pet food on saturdays",
+        "intent": {
+          "intentName": null,
+          "probability": 0.32426310303833444
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to book a trip for my vacation in August.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to book a trip for my vacation in August.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.23756630456371375
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Note down to call mom",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Note down to call mom",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 0.20292786144862107
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Create an egg timer.",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Create an egg timer.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.6874120401753122
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What is the tempersture today in Nevada?",
+        "intent": {
+          "intentName": "snips-assistant:TemperatureForecast",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What is the tempersture today in Nevada?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 0.09817334384767575
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What's the weather going to be like in the State of West Virginia?",
+        "intent": {
+          "intentName": "snips-assistant:TemperatureForecast",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What's the weather going to be like in the State of West Virginia?",
+        "intent": {
+          "intentName": "snips-assistant:WeatherForecast",
+          "probability": 0.7510028591727543
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Show me the forecast for Denver this weekend",
+        "intent": {
+          "intentName": "snips-assistant:WeatherForecast",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Show me the forecast for Denver this weekend",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3378813427192489
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "turn off the alarm for tomorrow at 11",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "turn off the alarm for tomorrow at 11",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.3467240613510216
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i am looking for a daily alarm",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i am looking for a daily alarm",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.305766410516123
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "pull up my anniversary alarm",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "pull up my anniversary alarm",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 0.3004249798276732
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Pull the alarm of my dinner with Tammy that I set for 7 am",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Pull the alarm of my dinner with Tammy that I set for 7 am",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.12033893354597623
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "are there alarms for taking the dog for a walk for last weekend",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "are there alarms for taking the dog for a walk for last weekend",
+        "intent": {
+          "intentName": null,
+          "probability": 0.31731602646130114
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'll leave philadelphia for the Empire State building by noon; when should I arrive?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'll leave philadelphia for the Empire State building by noon; when should I arrive?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 0.464831436253277
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Is it possible to travel by bike to the times square?",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Is it possible to travel by bike to the times square?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 0.8350456995061322
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What time is it in Pinole?",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What time is it in Pinole?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 0.8132652821195478
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "show traveling time if i drive from newark to central park",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "show traveling time if i drive from newark to central park",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 0.24071468743785174
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "when is the pizza timer done ",
+        "intent": {
+          "intentName": "snips-assistant:GetRemainingTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "when is the pizza timer done ",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.5831220492161457
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "When is the pizza timer done?",
+        "intent": {
+          "intentName": "snips-assistant:GetRemainingTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "When is the pizza timer done?",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.30899322720391004
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i set a reminder for the hair draisser and need you to search for it please",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i set a reminder for the hair draisser and need you to search for it please",
+        "intent": {
+          "intentName": null,
+          "probability": 0.1088372831525597
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "i am looking for a daily reminder",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "i am looking for a daily reminder",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.2972607094884659
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Delete my old meetings\n",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Delete my old meetings\n",
+        "intent": {
+          "intentName": null,
+          "probability": 0.10046533948365911
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "could you locate my anniversary reminder",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "could you locate my anniversary reminder",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.37487935199064737
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "are there reminders for taking the dog for a walk for last weekend  ",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "are there reminders for taking the dog for a walk for last weekend  ",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3200078759911503
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What is the time in France and Pakistan?",
+        "intent": {
+          "intentName": "snips-assistant:GetTimeDifference",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What is the time in France and Pakistan?",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 0.3541749460528258
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please suspend the yoga timer",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please suspend the yoga timer",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.8340240476041104
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to make time changes to an alarm.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to make time changes to an alarm.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.7272372217453056
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have an daily alarm at 7 in the evening that I'd like to set for tomorrow at 5",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have an daily alarm at 7 in the evening that I'd like to set for tomorrow at 5",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.1899680349233148
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I have an alarm that needs to be adjusted",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I have an alarm that needs to be adjusted",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 0.3625784986957545
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'd like to change the time for the reminder I have to call the bank.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'd like to change the time for the reminder I have to call the bank.",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 0.31405462332350603
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need the movie tickets reminder switched to 7",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need the movie tickets reminder switched to 7",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 0.3949593462748737
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Tell me to book a ticket with Delta thursday at 9pm",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Tell me to book a ticket with Delta thursday at 9pm",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I don't want to forget about my doctors appointment next week",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I don't want to forget about my doctors appointment next week",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please ensure that I don't forget to visit dad tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please ensure that I don't forget to visit dad tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "make sure I don't forget to call mom tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "make sure I don't forget to call mom tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.2973956565390957
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "create a new alarm for 11am and title it prepare for presentation",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "create a new alarm for 11am and title it prepare for presentation",
+        "intent": {
+          "intentName": null,
+          "probability": 0.3219457806859255
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "can you alert me of my client presentation at noon",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "can you alert me of my client presentation at noon",
+        "intent": {
+          "intentName": null,
+          "probability": 0.17469334088708008
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Stop by store to pick up mom's cake at 4:00pm",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Stop by store to pick up mom's cake at 4:00pm",
+        "intent": {
+          "intentName": "snips-assistant:Stop",
+          "probability": 0.1773910461310787
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set a reminder to be at the airport at noon this Friday",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set a reminder to be at the airport at noon this Friday",
+        "intent": {
+          "intentName": null,
+          "probability": 0.13998859628561594
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please let me know that I need to do my taxes before this weekend.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please let me know that I need to do my taxes before this weekend.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Alert me to buy milk tomorrow morning.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Alert me to buy milk tomorrow morning.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Alert me to make a dentist appointment tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Alert me to make a dentist appointment tomorrow",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set up a reminder to take the soup off the burner in 30 minutes.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set up a reminder to take the soup off the burner in 30 minutes.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.07879992927562172
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please reming me that my tires need to be rotated by the end of this month",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please reming me that my tires need to be rotated by the end of this month",
+        "intent": {
+          "intentName": null,
+          "probability": 0.1467308345408037
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Will you put down that I need to buy milk tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Will you put down that I need to buy milk tonight",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Note down that I have to text my father on a daily basis",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Note down that I have to text my father on a daily basis",
+        "intent": {
+          "intentName": null,
+          "probability": 0.138535076452568
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Remind me for twenty five minutes about the roast",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Remind me for twenty five minutes about the roast",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to launch an egg timer.",
+        "intent": {
+          "intentName": "snips-assistant:SetTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to launch an egg timer.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.4708431367634873
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "No sound please",
+        "intent": {
+          "intentName": "snips-assistant:Silence",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "No sound please",
+        "intent": {
+          "intentName": "snips-assistant:No",
+          "probability": 0.6460241353647584
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want the alarms called workout canceled",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want the alarms called workout canceled",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 0.31490615119323395
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Cancel all cleaning my garage.",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Cancel all cleaning my garage.",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.3973662428070308
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to know this week's alarms",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to know this week's alarms",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.20256888818305402
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "all alarms of this month to visit doctor",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "all alarms of this month to visit doctor",
+        "intent": {
+          "intentName": "snips-assistant:CancelAlarm",
+          "probability": 0.25490504106757844
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "bring up the airport alarm i set for last weekend",
+        "intent": {
+          "intentName": "snips-assistant:GetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "bring up the airport alarm i set for last weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.14239274274713723
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm leaving 124 Main Street at 8 pm and trying to get to 26 abbey road; can you tell me at what time I should be there?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm leaving 124 Main Street at 8 pm and trying to get to 26 abbey road; can you tell me at what time I should be there?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 0.4396061392606536
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I'm going to drive from 85 bond street to the airport at 10 am and want to know the ETA",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I'm going to drive from 85 bond street to the airport at 10 am and want to know the ETA",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 0.10317780813857134
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Could you let me know my departure time to be at the airport by 7 am if I'm leaving from the Guggenheim Museum and driving?",
+        "intent": {
+          "intentName": "snips-assistant:GetDepartureTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Could you let me know my departure time to be at the airport by 7 am if I'm leaving from the Guggenheim Museum and driving?",
+        "intent": {
+          "intentName": "snips-assistant:GetArrivalTime",
+          "probability": 0.1623679426444472
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to travel with the tube over to newark from a starting location of philadelphia",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to travel with the tube over to newark from a starting location of philadelphia",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 0.23997891555109638
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Navigate to the airport",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Navigate to the airport",
+        "intent": {
+          "intentName": null,
+          "probability": 0.18128437708787493
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "what time is it in Zibo, Burkina Faso",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "what time is it in Zibo, Burkina Faso",
+        "intent": {
+          "intentName": "snips-assistant:ConvertTime",
+          "probability": 0.8585821160238345
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need the time for the America time zone.",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need the time for the America time zone.",
+        "intent": {
+          "intentName": "snips-assistant:GetTimezone",
+          "probability": 0.5211069577075669
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "What would you say is the time estimate by metro from houston street to the Rockefeller Center?",
+        "intent": {
+          "intentName": "snips-assistant:GetNavigationTime",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "What would you say is the time estimate by metro from houston street to the Rockefeller Center?",
+        "intent": {
+          "intentName": "snips-assistant:GetDirections",
+          "probability": 0.2936333817805757
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "look for a reminder i set in the last year",
+        "intent": {
+          "intentName": "snips-assistant:GetReminders",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "look for a reminder i set in the last year",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.11590090076012934
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Is it later in the day in Georgia compared to South Carolina?",
+        "intent": {
+          "intentName": "snips-assistant:GetTimeDifference",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Is it later in the day in Georgia compared to South Carolina?",
+        "intent": {
+          "intentName": "snips-assistant:CheckTime",
+          "probability": 0.2947719458024804
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Put a temporary stop on the timer.",
+        "intent": {
+          "intentName": "snips-assistant:PauseTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Put a temporary stop on the timer.",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.3690348427786981
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Allow me to adjust the name of one of my alarms",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Allow me to adjust the name of one of my alarms",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 0.2894801124036694
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change the bedtime reminder on wednesday to turn the lights off",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change the bedtime reminder on wednesday to turn the lights off",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.10973114566221906
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Change moving reminder on wednesday to bins",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Change moving reminder on wednesday to bins",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.44594100237472944
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I want to call my reminder differently",
+        "intent": {
+          "intentName": "snips-assistant:RenameReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I want to call my reminder differently",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.4030342728542783
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I can't make my oil change Tomorrow at 8am, can we get this rescheduled for 9am?",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I can't make my oil change Tomorrow at 8am, can we get this rescheduled for 9am?",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 0.10446064709872668
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Allow me to make adjustments to an alarm I have.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Allow me to make adjustments to an alarm I have.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 0.41832317446561446
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "reschedule the general practitioner appointment for tomorrow at 2 pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "reschedule the general practitioner appointment for tomorrow at 2 pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 0.37092420491781375
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Make the post a tweet reminder be for 2 pm.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Make the post a tweet reminder be for 2 pm.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.14982620188842205
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "remind me to do laundry at 7am instead of 5 please.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "remind me to do laundry at 7am instead of 5 please.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Set the meeting reminder only on weeekdays at 2pm",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Set the meeting reminder only on weeekdays at 2pm",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.2097084719438258
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Remind me to clean the car at 8pm instead of 9pm only on weekends.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Remind me to clean the car at 8pm instead of 9pm only on weekends.",
+        "intent": {
+          "intentName": "snips-assistant:RescheduleAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "We need the homework timer to be restarted",
+        "intent": {
+          "intentName": "snips-assistant:ResumeTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "We need the homework timer to be restarted",
+        "intent": {
+          "intentName": "snips-assistant:CancelTimer",
+          "probability": 0.8078323979354854
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Start the timer from where it left off.",
+        "intent": {
+          "intentName": "snips-assistant:ResumeTimer",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Start the timer from where it left off.",
+        "intent": {
+          "intentName": "snips-assistant:GetRemainingTime",
+          "probability": 0.3403431662979039
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please let me know that I need to do my taxes before this weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please let me know that I need to do my taxes before this weekend",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "I need to remember to get bananas from the store",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "I need to remember to get bananas from the store",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "create a dentist appointment for tomorrow morning",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "create a dentist appointment for tomorrow morning",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 0.45131582588516567
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "My dog needs to attend the vet appointment on Friday at 1pm",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "My dog needs to attend the vet appointment on Friday at 1pm",
+        "intent": {
+          "intentName": null,
+          "probability": 0.15845225307926417
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set a new alarm for me at 5am with the name check presentation notes",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set a new alarm for me at 5am with the name check presentation notes",
+        "intent": {
+          "intentName": "snips-assistant:RenameAlarm",
+          "probability": 0.21162100257721564
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "set a reminder to mail out the rent check  before the first of this month",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "set a reminder to mail out the rent check  before the first of this month",
+        "intent": {
+          "intentName": null,
+          "probability": 0.13359520570152136
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Let me know to pickup cheese the next time I leave the house.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Let me know to pickup cheese the next time I leave the house.",
+        "intent": {
+          "intentName": "snips-assistant:GetLocalTime",
+          "probability": 0.2571656346824506
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Please ensure that I don't forget to visit dad tomorrow.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Please ensure that I don't forget to visit dad tomorrow.",
+        "intent": {
+          "intentName": "snips-assistant:SetAlarm",
+          "probability": 1.0
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "My dog needs to attend the vet appointment on Friday at 1pm.",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "My dog needs to attend the vet appointment on Friday at 1pm.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.15845225307926417
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Add a note about calling mom",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Add a note about calling mom",
+        "intent": {
+          "intentName": null,
+          "probability": 0.7347603382800908
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Insert a bullet point about calling mom",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Insert a bullet point about calling mom",
+        "intent": {
+          "intentName": null,
+          "probability": 0.7865926698415048
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "New reminder for watering my plants please",
+        "intent": {
+          "intentName": "snips-assistant:SetReminder",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "New reminder for watering my plants please",
+        "intent": {
+          "intentName": "snips-assistant:CancelReminder",
+          "probability": 0.3140953994407687
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "Give me the predicted temperatures for Italy over the course of the next three days",
+        "intent": {
+          "intentName": "snips-assistant:TemperatureForecast",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "Give me the predicted temperatures for Italy over the course of the next three days",
+        "intent": {
+          "intentName": null,
+          "probability": 0.2012533397280732
+        }
+      }
+    },
+    {
+      "expected_output": {
+        "input": "For Naperville, I need the forcast on tuesday.",
+        "intent": {
+          "intentName": "snips-assistant:WeatherForecast",
+          "probability": 1.0
+        }
+      },
+      "nlu_output": {
+        "input": "For Naperville, I need the forcast on tuesday.",
+        "intent": {
+          "intentName": null,
+          "probability": 0.1775008657443048
+        }
+      }
+    }
+  ]
+}

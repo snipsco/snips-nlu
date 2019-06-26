@@ -45,6 +45,14 @@ Two different models are evaluated:
 - Unigrams (Uni)
 - Cooccurrences (Coo)
 
+## Class re-weighting
+
+In order to adjust the conservative behavior of the NLU with respect to OOD, we use a custom class weighting scheme when training the logistic regression.
+The default weighting scheme used is "balanced", meaning that the weights are computed to be inversely proportional to the number of class samples.
+This default strategy corresponds to a Noise Re-weight of 1 in the results table below.
+
+We re-weight the "balanced" scheme by multiplying the Noise class weight by a factor (Noise re-weight column) which is typically greater than 1 in our case, as we want to increase the recall of the Noise class.
+
 ## Results
 
 Cross validation metrics are run with 5-folds.
@@ -56,37 +64,69 @@ Out of domain utterances are sampled from difference OOD source in order to gene
 
 Both the Macro-average F1 (all intents), and the OOD F1 (F1 of the None class only) are reported.
 
-|    Dataset    | OOD source |Model|  Noise  |Macro-Average F1|OOD F1 |
-|---------------|------------|-----|---------|---------------:|------:|
-|Smart Home     | subtitles  | Uni |  UNo    |         0.913  | 0.944 |
-|               |            | Uni |  BiNo   |         0.905  | 0.926 |
-|               |            | Uni |  LMNo   |         0.905  | 0.927 |
-|               |            | Coo |  UNo    |         0.922  | 0.963 |
-|               |            | Coo |  BiNo   |         0.914  | 0.954 |
-|               |            | Coo |  LMNo   |         0.918  | 0.954 |
-|               | None       | Uni |  UNo    |         0.954  |   N/A |
-|               |            | Uni |  BiNo   |         0.958  |   N/A |
-|               |            | Coo |  UNo    |         0.944  |   N/A |
-|               |            | Coo |  BiNo   |         0.949  |   N/A |
-|               | assistant  | Uni |  UNo    |         0.891  | 0.723 |
-|               |            | Uni |  BiNo   |         0.871  | 0.575 |
-|               |            | Uni |  LMNo   |         0.875  | 0.601 |
-|               |            | Coo |  UNo    |         0.904  | 0.803 |
-|               |            | Coo |  BiNo   |         0.889  | 0.720 |
-|               |            | Coo |  LMNo   |         0.893  | 0.734 |
-|Snips Assistant| subtitles  | Uni |  UNo    |         0.798  | 0.867 |
-|               |            | Uni |  BiNo   |         0.795  | 0.855 |
-|               |            | Uni |  LMNo   |         0.786  | 0.848 |
-|               |            | Coo |  UNo    |         0.810  | 0.908 |
-|               |            | Coo |  BiNo   |         0.802  | 0.892 |
-|               |            | Coo |  LMNo   |         0.795  | 0.894 |
-|               | None       | Uni |  UNo    |         0.954  |   N/A |
-|               |            | Uni |  BiNo   |         0.950  |   N/A |
-|               |            | Coo |  UNo    |         0.922  |   N/A |
-|               |            | Coo |  BiNo   |         0.923  |   N/A |
-|               | assistant  | Uni |  UNo    |         0.846  | 0.654 |
-|               |            | Uni |  BiNo   |         0.812  | 0.416 |
-|               |            | Uni |  LMNo   |         0.818  | 0.420 |
-|               |            | Coo |  UNo    |         0.847  | 0.729 |
-|               |            | Coo |  BiNo   |         0.807  | 0.494 |
-|               |            | Coo |  LMNo   |         0.800  | 0.518 |
+|    Dataset    | OOD source |Model|  Noise  |Noise Re-weight |Macro-Average F1|OOD F1 |
+|---------------|------------|-----|---------|---------------:|---------------:|------:|
+|Smart Home     | subtitles  | Uni |  UNo    |       1        |         0.913  | 0.944 |
+|               |            | Uni |  UNo    |       2        |         0.920  | 0.954 |
+|               |            | Uni |  UNo    |       5        |         0.926  | 0.963 |
+|               |            | Uni |  UNo    |      10        |         0.934  | 0.968 |
+|               |            | Uni |  UNo    |      20        |         0.931  | 0.968 |
+|               |            | Uni |  UNo    |      50        |         0.929  | 0.966 |
+|               |            | Uni |  UNo    |     100        |         0.930  | 0.966 |
+|               |            | Uni |  UNo    |     500        |         0.928  | 0.963 |
+|               |            | Uni |  UNo    |    1000        |         0.921  | 0.957 |
+|               |            | Uni |  UNo    |    5000        |         0.872  | 0.905 |
+|               |            | Uni |  UNo    |   10000        |         0.814  | 0.864 |
+|               |            | Uni |  BiNo   |       1        |         0.905  | 0.926 |
+|               |            | Uni |  LMNo   |       1        |         0.905  | 0.927 |
+|               |            | Coo |  UNo    |       1        |         0.922  | 0.963 |
+|               |            | Coo |  BiNo   |       1        |         0.914  | 0.954 |
+|               |            | Coo |  LMNo   |       1        |         0.918  | 0.954 |
+|               | None       | Uni |  UNo    |       1        |         0.954  |   N/A |
+|               |            | Uni |  UNo    |       2        |         0.951  |   N/A |
+|               |            | Uni |  UNo    |       5        |         0.951  |   N/A |
+|               |            | Uni |  UNo    |      10        |         0.951  |   N/A |
+|               |            | Uni |  UNo    |      20        |         0.949  |   N/A |
+|               |            | Uni |  UNo    |      50        |         0.943  |   N/A |
+|               |            | Uni |  UNo    |     100        |         0.942  |   N/A |
+|               |            | Uni |  UNo    |     500        |         0.939  |       |
+|               |            | Uni |  UNo    |    1000        |         0.933  |       |
+|               |            | Uni |  UNo    |    5000        |         0.873  |       |
+|               |            | Uni |  UNo    |   10000        |         0.844  |       |
+|               |            | Uni |  BiNo   |       1        |         0.958  |   N/A |
+|               |            | Coo |  UNo    |       1        |         0.944  |   N/A |
+|               |            | Coo |  BiNo   |       1        |         0.949  |   N/A |
+|               | assistant  | Uni |  UNo    |       1        |         0.891  | 0.723 |
+|               |            | Uni |  BiNo   |       1        |         0.871  | 0.575 |
+|               |            | Uni |  LMNo   |       1        |         0.875  | 0.601 |
+|               |            | Coo |  UNo    |       1        |         0.904  | 0.803 |
+|               |            | Coo |  BiNo   |       1        |         0.889  | 0.720 |
+|               |            | Coo |  LMNo   |       1        |         0.893  | 0.734 |
+|Snips Assistant| subtitles  | Uni |  UNo    |       1        |         0.798  | 0.867 |
+|               |            | Uni |  UNo    |       2        |         0.824  | 0.899 |
+|               |            | Uni |  UNo    |       5        |         0.847  | 0.925 |
+|               |            | Uni |  UNo    |      10        |         0.863  | 0.936 |
+|               |            | Uni |  UNo    |      20        |         0.873  | 0.946 |
+|               |            | Uni |  UNo    |      50        |         0.878  | 0.951 |
+|               |            | Uni |  UNo    |     100        |         0.889  | 0.960 |
+|               |            | Uni |  BiNo   |       1        |         0.795  | 0.855 |
+|               |            | Uni |  LMNo   |       1        |         0.786  | 0.848 |
+|               |            | Coo |  UNo    |       1        |         0.810  | 0.908 |
+|               |            | Coo |  BiNo   |       1        |         0.802  | 0.892 |
+|               |            | Coo |  LMNo   |       1        |         0.795  | 0.894 |
+|               | None       | Uni |  UNo    |       1        |         0.954  |   N/A |
+|               |            | Uni |  UNo    |       2        |         0.950  |   N/A |
+|               |            | Uni |  UNo    |       5        |         0.956  |   N/A |
+|               |            | Uni |  UNo    |      10        |         0.953  |   N/A |
+|               |            | Uni |  UNo    |      20        |         0.950  |   N/A |
+|               |            | Uni |  UNo    |      50        |         0.945  |   N/A |
+|               |            | Uni |  UNo    |     100        |         0.937  |   N/A |
+|               |            | Uni |  BiNo   |       1        |         0.950  |   N/A |
+|               |            | Coo |  UNo    |       1        |         0.922  |   N/A |
+|               |            | Coo |  BiNo   |       1        |         0.923  |   N/A |
+|               | assistant  | Uni |  UNo    |       1        |         0.846  | 0.654 |
+|               |            | Uni |  BiNo   |       1        |         0.812  | 0.416 |
+|               |            | Uni |  LMNo   |       1        |         0.818  | 0.420 |
+|               |            | Coo |  UNo    |       1        |         0.847  | 0.729 |
+|               |            | Coo |  BiNo   |       1        |         0.807  | 0.494 |
+|               |            | Coo |  LMNo   |       1        |         0.800  | 0.518 |

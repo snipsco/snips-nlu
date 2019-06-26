@@ -134,12 +134,12 @@ def generate_noise_utterances(augmented_utterances, resources, num_intents,
     std_utterances_length = np.std(utterances_lengths)
     if data_augmentation_config.use_bigrams_noise:
         bigrams = get_bigrams(resources)
-        # noise_it = get_bigrams_noise_it(
-        #     bigrams["bigrams"], bigrams["frequencies"], mean_utterances_length,
-        #     std_utterances_length, random_state)
-        noise_it = get_lm_noise_it(
+        noise_it = get_bigrams_noise_it(
             bigrams["bigrams"], bigrams["frequencies"], mean_utterances_length,
             std_utterances_length, random_state)
+        # noise_it = get_lm_noise_it(
+        #     bigrams["bigrams"], bigrams["frequencies"], mean_utterances_length,
+        #     std_utterances_length, random_state)
     else:
         noise = get_noise(resources)
         if data_augmentation_config.unknown_words_replacement_string \

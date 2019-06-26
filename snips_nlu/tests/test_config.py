@@ -112,7 +112,8 @@ class TestConfig(SnipsTest):
             "unit_name": LogRegIntentClassifier.unit_name,
             "data_augmentation_config":
                 IntentClassifierDataAugmentationConfig().to_dict(),
-            "featurizer_config": FeaturizerConfig().to_dict()
+            "featurizer_config": FeaturizerConfig().to_dict(),
+            "noise_reweight_factor": 5,
         }
 
         # When

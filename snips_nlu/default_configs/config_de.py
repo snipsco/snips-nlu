@@ -153,7 +153,8 @@ CONFIG = {
                         "unknown_words_replacement_string": None,
                         "keep_order": True
                     }
-                }
+                },
+                "noise_reweight_factor": 1,
             }
         }
     ]

@@ -13,7 +13,8 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
     """Configuration of a :class:`.LogRegIntentClassifier`"""
 
     # pylint: disable=line-too-long
-    def __init__(self, data_augmentation_config=None, featurizer_config=None):
+    def __init__(self, data_augmentation_config=None, featurizer_config=None,
+                 noise_reweight_factor=None):
         """
         Args:
             data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
@@ -29,6 +30,9 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
         self.data_augmentation_config = data_augmentation_config
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
+        if noise_reweight_factor is None:
+            noise_reweight_factor = 1
+        self.noise_reweight_factor = noise_reweight_factor
 
     # pylint: enable=line-too-long
 
@@ -79,7 +83,8 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
             "unit_name": self.unit_name,
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
-            "featurizer_config": self.featurizer_config.to_dict()
+            "featurizer_config": self.featurizer_config.to_dict(),
+            "noise_reweight_factor": self.noise_reweight_factor,
         }
 
 

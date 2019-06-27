@@ -125,6 +125,12 @@ Both the Macro-average F1 (all intents), and the OOD F1 (F1 of the None class on
 |               |            | Coo |  UNo    |       1        |         0.922  |   N/A |
 |               |            | Coo |  BiNo   |       1        |         0.923  |   N/A |
 |               | assistant  | Uni |  UNo    |       1        |         0.846  | 0.654 |
+|               |            | Uni |  UNo    |       2        |         0.866  | 0.719 |
+|               |            | Uni |  UNo    |       5        |         0.886  | 0.818 |
+|               |            | Uni |  UNo    |      10        |         0.894  | 0.857 |
+|               |            | Uni |  UNo    |      20        |         0.907  | 0.892 |
+|               |            | Uni |  UNo    |      50        |         0.907  | 0.902 |
+|               |            | Uni |  UNo    |     100        |         0.917  | 0.923 |
 |               |            | Uni |  BiNo   |       1        |         0.812  | 0.416 |
 |               |            | Uni |  LMNo   |       1        |         0.818  | 0.420 |
 |               |            | Coo |  UNo    |       1        |         0.847  | 0.729 |

@@ -7,7 +7,7 @@ from builtins import str
 from collections import defaultdict
 from pathlib import Path
 
-from future.utils import iteritems, iterkeys, itervalues
+from future.utils import iteritems, itervalues
 from snips_nlu_utils import normalize
 
 from snips_nlu.common.dataset_utils import get_slot_name_mappings
@@ -483,7 +483,7 @@ def _get_range_shift(matched_range, ranges_mapping):
 
 def _get_group_names_to_slot_names(slot_names_mapping):
     slot_names = {slot_name for mapping in itervalues(slot_names_mapping)
-                  for slot_name in iterkeys(mapping)}
+                  for slot_name in mapping}
     return {"group%s" % i: name
             for i, name in enumerate(sorted(slot_names))}
 

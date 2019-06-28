@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Fixed
+- Fix non-deterministic behavior [#817](https://github.com/snipsco/snips-nlu/pull/817)
+
 ## [0.19.7]
 ### Changed
 - Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
@@ -284,6 +288,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.19.7...lts-0.19.7.x
 [0.19.7]: https://github.com/snipsco/snips-nlu/compare/0.19.6...0.19.7
 [0.19.6]: https://github.com/snipsco/snips-nlu/compare/0.19.5...0.19.6
 [0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5

@@ -989,3 +989,28 @@ No feature weights !
 Features not seen at train time:
 - ngram_1:text"""
         self.assertEqual(expected_log, log)
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        random_state = 42
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        slot_filler1 = CRFSlotFiller(random_state=random_state)
+        slot_filler1.fit(dataset, "MakeTea")
+
+        slot_filler2 = CRFSlotFiller(random_state=random_state)
+        slot_filler2.fit(dataset, "MakeTea")
+
+        # Then
+        self.assertDictEqual(slot_filler1.crf_model.state_features_,
+                             slot_filler2.crf_model.state_features_)
+        self.assertDictEqual(slot_filler1.crf_model.transition_features_,
+                             slot_filler2.crf_model.transition_features_)

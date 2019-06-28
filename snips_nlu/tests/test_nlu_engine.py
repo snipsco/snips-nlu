@@ -3,7 +3,9 @@ from __future__ import unicode_literals
 
 import io
 import shutil
+import sys
 from builtins import str
+from unittest import skipIf
 
 from checksumdir import dirhash
 from mock import MagicMock, patch
@@ -1353,6 +1355,11 @@ utterances:
         # Then
         mocked_build_parser.assert_not_called()
 
+    @skipIf(sys.version_info[0:2] < (3, 5),
+            "The bug fixed here "
+            "https://github.com/scikit-learn/scikit-learn/pull/13422 is "
+            "available for scikit-learn>=0.21.0 in which the support for "
+            "Python<=3.4 has been dropped")
     def test_training_should_be_reproducible(self):
         # Given
         random_state = 42

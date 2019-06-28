@@ -2,7 +2,9 @@
 from __future__ import unicode_literals
 
 import io
+import sys
 from builtins import str
+from unittest import skipIf
 
 from checksumdir import dirhash
 from mock import patch
@@ -473,9 +475,14 @@ utterances:
         self.assertIsInstance(log, str)
         self.assertIn("Top 20", log)
 
+    @skipIf(sys.version_info[0:2] < (3, 5),
+            "The bug fixed here "
+            "https://github.com/scikit-learn/scikit-learn/pull/13422 is "
+            "available for scikit-learn>=0.21.0 in which the support for "
+            "Python<=3.4 has been dropped")
     def test_training_should_be_reproducible(self):
         # Given
-        random_state = 42
+        random_state = 40
         dataset_stream = io.StringIO("""
 ---
 type: intent

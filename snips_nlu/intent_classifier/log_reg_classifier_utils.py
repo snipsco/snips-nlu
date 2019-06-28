@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 
 import itertools
 import re
-from builtins import next, range, str, zip
+from builtins import next, range, str
 from copy import deepcopy
 from uuid import uuid4
 

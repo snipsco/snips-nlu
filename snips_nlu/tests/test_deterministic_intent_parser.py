@@ -4,8 +4,10 @@ from __future__ import unicode_literals
 import io
 from builtins import range
 
+from checksumdir import dirhash
 from mock import patch
 
+from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import (
     DATA, END, ENTITY, LANGUAGE_EN, RES_ENTITY, RES_INTENT, RES_INTENT_NAME,
     RES_PROBA, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, STOP_WORDS)
@@ -1201,3 +1203,39 @@ utterances:
         # When / Then
         self.assertEqual(-1, _get_range_shift((6, 7), ranges_mapping))
         self.assertEqual(2, _get_range_shift((12, 13), ranges_mapping))
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        random_state = 42
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        parser1 = DeterministicIntentParser(random_state=random_state)
+        parser1.fit(dataset)
+
+        parser2 = DeterministicIntentParser(random_state=random_state)
+        parser2.fit(dataset)
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_parser1 = tmp_dir / "parser1"
+            dir_parser2 = tmp_dir / "parser2"
+            parser1.persist(dir_parser1)
+            parser2.persist(dir_parser2)
+            hash1 = dirhash(dir_parser1, 'sha256')
+            hash2 = dirhash(dir_parser2, 'sha256')
+            self.assertEqual(hash1, hash2)

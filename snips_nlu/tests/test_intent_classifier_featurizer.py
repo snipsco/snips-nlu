@@ -5,8 +5,10 @@ import io
 from builtins import str, zip, range
 
 import numpy as np
+from checksumdir import dirhash
 from mock import patch, MagicMock
 
+from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.common.utils import json_string
 from snips_nlu.constants import LANGUAGE_EN, STEMS, WORD_CLUSTERS, STOP_WORDS
 from snips_nlu.dataset import Dataset
@@ -308,6 +310,48 @@ values:
         }
         self.assertDictEqual(
             expected_pairs, featurizer.cooccurrence_vectorizer.word_pairs)
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        utterances = [
+            text_to_utterance("please make me two hots cups of tea"),
+            text_to_utterance("i want a cup of coffee"),
+        ]
+        classes = np.array([0, 1])
+        shared = self.get_shared_data(dataset)
+        shared["random_state"] = 42
+
+        # When
+        featurizer1 = Featurizer(**shared)
+        featurizer1.fit(dataset, utterances, classes, max(classes))
+
+        featurizer2 = Featurizer(**shared)
+        featurizer2.fit(dataset, utterances, classes, max(classes))
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_featurizer1 = tmp_dir / "featurizer1"
+            dir_featurizer2 = tmp_dir / "featurizer2"
+            featurizer1.persist(dir_featurizer1)
+            featurizer2.persist(dir_featurizer2)
+            hash1 = dirhash(dir_featurizer1, 'sha256')
+            hash2 = dirhash(dir_featurizer2, 'sha256')
+            self.assertEqual(hash1, hash2)
 
 
 class TestTfidfVectorizer(FixtureTest):
@@ -674,6 +718,44 @@ values:
         ]
 
         self.assertSequenceEqual(expected_data, processed_data)
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        x = [text_to_utterance("please make me two hots cups of tea")]
+        shared = self.get_shared_data(dataset)
+        shared["random_state"] = 42
+
+        # When
+        vectorizer1 = TfidfVectorizer(**shared)
+        vectorizer1.fit(x, dataset)
+
+        vectorizer2 = TfidfVectorizer(**shared)
+        vectorizer2.fit(x, dataset)
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_vectorizer1 = tmp_dir / "vectorizer1"
+            dir_vectorizer2 = tmp_dir / "vectorizer2"
+            vectorizer1.persist(dir_vectorizer1)
+            vectorizer2.persist(dir_vectorizer2)
+            hash1 = dirhash(dir_vectorizer1, 'sha256')
+            hash2 = dirhash(dir_vectorizer2, 'sha256')
+            self.assertEqual(hash1, hash2)
 
 
 class CooccurrenceVectorizerTest(FixtureTest):
@@ -1193,3 +1275,41 @@ values:
         ]
 
         self.assertSequenceEqual(expected_data, processed_data)
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        x = [text_to_utterance("please make me two hots cups of tea")]
+        shared = self.get_shared_data(dataset)
+        shared["random_state"] = 42
+
+        # When
+        vectorizer1 = CooccurrenceVectorizer(**shared)
+        vectorizer1.fit(x, dataset)
+
+        vectorizer2 = CooccurrenceVectorizer(**shared)
+        vectorizer2.fit(x, dataset)
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_vectorizer1 = tmp_dir / "vectorizer1"
+            dir_vectorizer2 = tmp_dir / "vectorizer2"
+            vectorizer1.persist(dir_vectorizer1)
+            vectorizer2.persist(dir_vectorizer2)
+            hash1 = dirhash(dir_vectorizer1, 'sha256')
+            hash2 = dirhash(dir_vectorizer2, 'sha256')
+            self.assertEqual(hash1, hash2)

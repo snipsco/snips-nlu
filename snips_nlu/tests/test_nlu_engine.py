@@ -5,11 +5,13 @@ import io
 import shutil
 from builtins import str
 
+from checksumdir import dirhash
 from mock import MagicMock, patch
 from snips_nlu_parsers import get_all_languages
 
 import snips_nlu
 from snips_nlu import load_resources
+from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import (
     END, LANGUAGE, LANGUAGE_EN, RES_ENTITY, RES_INPUT, RES_INTENT,
     RES_INTENT_NAME, RES_MATCH_RANGE, RES_RAW_VALUE, RES_SLOTS, RES_SLOT_NAME,
@@ -1350,3 +1352,39 @@ utterances:
 
         # Then
         mocked_build_parser.assert_not_called()
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        random_state = 42
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a hot cup of tea
+- make me five tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me one cup of coffee please
+- brew two cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        engine1 = SnipsNLUEngine(random_state=random_state)
+        engine1.fit(dataset)
+
+        engine2 = SnipsNLUEngine(random_state=random_state)
+        engine2.fit(dataset)
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_engine1 = tmp_dir / "engine1"
+            dir_engine2 = tmp_dir / "engine2"
+            engine1.persist(dir_engine1)
+            engine2.persist(dir_engine2)
+            hash1 = dirhash(dir_engine1, 'sha256')
+            hash2 = dirhash(dir_engine2, 'sha256')
+            self.assertEqual(hash1, hash2)

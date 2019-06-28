@@ -2,10 +2,12 @@
 from __future__ import unicode_literals
 
 import io
-
 from builtins import str
+
+from checksumdir import dirhash
 from mock import patch
 
+from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import (
     INTENTS, LANGUAGE_EN, RES_INTENT_NAME, RES_PROBA, UTTERANCES)
 from snips_nlu.dataset import Dataset
@@ -470,3 +472,39 @@ utterances:
         # Then
         self.assertIsInstance(log, str)
         self.assertIn("Top 20", log)
+
+    def test_training_should_be_reproducible(self):
+        # Given
+        random_state = 42
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        classifier1 = LogRegIntentClassifier(random_state=random_state)
+        classifier1.fit(dataset)
+
+        classifier2 = LogRegIntentClassifier(random_state=random_state)
+        classifier2.fit(dataset)
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_classifier1 = tmp_dir / "classifier1"
+            dir_classifier2 = tmp_dir / "classifier2"
+            classifier1.persist(dir_classifier1)
+            classifier2.persist(dir_classifier2)
+            hash1 = dirhash(dir_classifier1, 'sha256')
+            hash2 = dirhash(dir_classifier2, 'sha256')
+            self.assertEqual(hash1, hash2)

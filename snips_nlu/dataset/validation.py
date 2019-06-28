@@ -47,11 +47,18 @@ def validate_and_format_dataset(dataset):
     if language not in get_all_languages():
         raise DatasetFormatError("Unknown language: '%s'" % language)
 
+    dataset[INTENTS] = {
+        intent_name: intent_data
+        for intent_name, intent_data in sorted(iteritems(dataset[INTENTS]))}
     for intent in itervalues(dataset[INTENTS]):
         _validate_and_format_intent(intent, dataset[ENTITIES])
 
     utterance_entities_values = extract_utterance_entities(dataset)
     builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
+
+    dataset[ENTITIES] = {
+        intent_name: entity_data
+        for intent_name, entity_data in sorted(iteritems(dataset[ENTITIES]))}
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
         uterrance_entities = utterance_entities_values[entity_name]

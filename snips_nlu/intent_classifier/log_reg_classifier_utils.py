@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 
 import itertools
 import re
-from builtins import next, range, str, zip
+from builtins import next, range, str
 from copy import deepcopy
 from uuid import uuid4
 
@@ -120,14 +120,12 @@ def build_training_data(dataset, language, data_augmentation_config, resources,
 
     noise_class = intent_index
 
-    # Computing dataset statistics
-    nb_utterances = [len(intent[UTTERANCES]) for intent in itervalues(intents)]
-
     augmented_utterances = []
     utterance_classes = []
-    for nb_utterance, intent_name in zip(nb_utterances, intents):
+    for intent_name, intent_data in sorted(iteritems(intents)):
+        nb_utterances = len(intent_data[UTTERANCES])
         min_utterances_to_generate = max(
-            data_augmentation_config.min_utterances, nb_utterance)
+            data_augmentation_config.min_utterances, nb_utterances)
         utterances = augment_utterances(
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,

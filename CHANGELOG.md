@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 - Add filter for entity match feature [#814](https://github.com/snipsco/snips-nlu/pull/815)
 - Add noise re-weight factor in `LogRegIntentClassifier` [#815](https://github.com/snipsco/snips-nlu/pull/815)
 
+### Fixed
+- Fix non-deterministic behavior [#817](https://github.com/snipsco/snips-nlu/pull/817)
+
 ## [0.19.7]
 ### Changed
 - Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)

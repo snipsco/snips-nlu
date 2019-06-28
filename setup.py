@@ -50,7 +50,8 @@ extras_require = {
         "mock>=2.0,<3.0",
         "snips_nlu_metrics>=0.14.1,<0.15",
         "pylint<2",
-        "coverage>=4.4.2,<5.0"
+        "coverage>=4.4.2,<5.0",
+        "checksumdir~=1.1.6",
     ]
 }
 

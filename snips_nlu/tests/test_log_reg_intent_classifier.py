@@ -505,6 +505,6 @@ utterances:
             dir_classifier2 = tmp_dir / "classifier2"
             classifier1.persist(dir_classifier1)
             classifier2.persist(dir_classifier2)
-            hash1 = dirhash(dir_classifier1, 'sha256')
-            hash2 = dirhash(dir_classifier2, 'sha256')
+            hash1 = dirhash(str(dir_classifier1), 'sha256')
+            hash2 = dirhash(str(dir_classifier2), 'sha256')
             self.assertEqual(hash1, hash2)

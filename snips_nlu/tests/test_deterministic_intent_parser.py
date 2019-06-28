@@ -1236,6 +1236,6 @@ utterances:
             dir_parser2 = tmp_dir / "parser2"
             parser1.persist(dir_parser1)
             parser2.persist(dir_parser2)
-            hash1 = dirhash(dir_parser1, 'sha256')
-            hash2 = dirhash(dir_parser2, 'sha256')
+            hash1 = dirhash(str(dir_parser1), 'sha256')
+            hash2 = dirhash(str(dir_parser2), 'sha256')
             self.assertEqual(hash1, hash2)

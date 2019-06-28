@@ -349,8 +349,8 @@ utterances:
             dir_featurizer2 = tmp_dir / "featurizer2"
             featurizer1.persist(dir_featurizer1)
             featurizer2.persist(dir_featurizer2)
-            hash1 = dirhash(dir_featurizer1, 'sha256')
-            hash2 = dirhash(dir_featurizer2, 'sha256')
+            hash1 = dirhash(str(dir_featurizer1), 'sha256')
+            hash2 = dirhash(str(dir_featurizer2), 'sha256')
             self.assertEqual(hash1, hash2)
 
 
@@ -753,8 +753,8 @@ utterances:
             dir_vectorizer2 = tmp_dir / "vectorizer2"
             vectorizer1.persist(dir_vectorizer1)
             vectorizer2.persist(dir_vectorizer2)
-            hash1 = dirhash(dir_vectorizer1, 'sha256')
-            hash2 = dirhash(dir_vectorizer2, 'sha256')
+            hash1 = dirhash(str(dir_vectorizer1), 'sha256')
+            hash2 = dirhash(str(dir_vectorizer2), 'sha256')
             self.assertEqual(hash1, hash2)
 
 
@@ -1310,6 +1310,6 @@ utterances:
             dir_vectorizer2 = tmp_dir / "vectorizer2"
             vectorizer1.persist(dir_vectorizer1)
             vectorizer2.persist(dir_vectorizer2)
-            hash1 = dirhash(dir_vectorizer1, 'sha256')
-            hash2 = dirhash(dir_vectorizer2, 'sha256')
+            hash1 = dirhash(str(dir_vectorizer1), 'sha256')
+            hash2 = dirhash(str(dir_vectorizer2), 'sha256')
             self.assertEqual(hash1, hash2)

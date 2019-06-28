@@ -1385,6 +1385,6 @@ utterances:
             dir_engine2 = tmp_dir / "engine2"
             engine1.persist(dir_engine1)
             engine2.persist(dir_engine2)
-            hash1 = dirhash(dir_engine1, 'sha256')
-            hash2 = dirhash(dir_engine2, 'sha256')
+            hash1 = dirhash(str(dir_engine1), 'sha256')
+            hash2 = dirhash(str(dir_engine2), 'sha256')
             self.assertEqual(hash1, hash2)

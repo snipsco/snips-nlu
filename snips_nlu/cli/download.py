@@ -3,7 +3,6 @@ from __future__ import print_function, unicode_literals
 import sys
 
 import plac
-from snips_nlu_parsers import get_all_languages
 
 from snips_nlu import __about__
 from snips_nlu.cli.link import link_resources
@@ -56,6 +55,8 @@ def download_from_resource_name(resource_name, pip_args, verbose=True):
               "installing the resources"))
 def download_all_languages(*pip_args):
     """Download compatible resources for all supported languages"""
+    from snips_nlu_parsers import get_all_languages
+
     for language in get_all_languages():
         download(language, False, *pip_args)
 

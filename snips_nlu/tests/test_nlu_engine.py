@@ -12,7 +12,6 @@ from mock import MagicMock, patch
 from snips_nlu_parsers import get_all_languages
 
 import snips_nlu
-from snips_nlu import load_resources
 from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import (
     END, LANGUAGE, LANGUAGE_EN, RES_ENTITY, RES_INPUT, RES_INTENT,
@@ -28,6 +27,7 @@ from snips_nlu.intent_parser import IntentParser
 from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.pipeline.configs import (
     NLUEngineConfig)
+from snips_nlu.resources import load_resources
 from snips_nlu.result import (
     custom_slot, empty_result, intent_classification_result, parsing_result,
     resolved_slot, unresolved_slot, extraction_result)

@@ -5,13 +5,7 @@ from builtins import str, zip
 from copy import deepcopy
 from pathlib import Path
 
-import numpy as np
-import scipy.sparse as sp
 from future.utils import iteritems
-from sklearn.feature_extraction.text import (
-    TfidfTransformer, TfidfVectorizer as SklearnTfidfVectorizer)
-from sklearn.feature_selection import chi2
-from snips_nlu_utils import normalize
 
 from snips_nlu.common.utils import (
     json_string, fitted_required, replace_entities_with_placeholders,
@@ -78,6 +72,8 @@ class Featurizer(ProcessingUnit):
         return self
 
     def fit_transform(self, dataset, utterances, classes, none_class):
+        import scipy.sparse as sp
+
         dataset = validate_and_format_dataset(dataset)
         self.language = dataset[LANGUAGE]
 
@@ -98,6 +94,8 @@ class Featurizer(ProcessingUnit):
         return x
 
     def transform(self, utterances):
+        import scipy.sparse as sp
+
         x = self.tfidf_vectorizer.transform(utterances)
         if self.cooccurrence_vectorizer:
             x_cooccurrence = self.cooccurrence_vectorizer.transform(utterances)
@@ -105,6 +103,8 @@ class Featurizer(ProcessingUnit):
         return x
 
     def _fit_transform_tfidf_vectorizer(self, x, y, dataset):
+        from sklearn.feature_selection import chi2
+
         self.tfidf_vectorizer = TfidfVectorizer(
             config=self.config.tfidf_vectorizer_config,
             builtin_entity_parser=self.builtin_entity_parser,
@@ -136,6 +136,9 @@ class Featurizer(ProcessingUnit):
         return self.tfidf_vectorizer.transform(x)
 
     def _fit_cooccurrence_vectorizer(self, x, classes, none_class, dataset):
+        import numpy as np
+        from sklearn.feature_selection import chi2
+
         non_null_x = (d for d, c in zip(x, classes) if c != none_class)
         self.cooccurrence_vectorizer = CooccurrenceVectorizer(
             config=self.config.cooccurrence_vectorizer_config,
@@ -425,6 +428,8 @@ class TfidfVectorizer(ProcessingUnit):
         Returns:
             :class:`.TfidfVectorizer`: The vectorizer with limited vocabulary
         """
+        import scipy.sparse as sp
+
         ngrams = set(ngrams)
         vocab = self.vocabulary
         existing_ngrams = set(vocab)
@@ -458,6 +463,9 @@ class TfidfVectorizer(ProcessingUnit):
         return None
 
     def _init_vectorizer(self, language):
+        from sklearn.feature_extraction.text import (
+            TfidfVectorizer as SklearnTfidfVectorizer)
+
         self._tfidf_vectorizer = SklearnTfidfVectorizer(
             tokenizer=lambda x: tokenize_light(x, language))
         return self
@@ -494,6 +502,11 @@ class TfidfVectorizer(ProcessingUnit):
     @classmethod
     # pylint: disable=W0212
     def from_path(cls, path, **shared):
+        import numpy as np
+        import scipy.sparse as sp
+        from sklearn.feature_extraction.text import (
+            TfidfTransformer, TfidfVectorizer as SklearnTfidfVectorizer)
+
         path = Path(path)
 
         model_path = path / "vectorizer.json"
@@ -650,6 +663,9 @@ class CooccurrenceVectorizer(ProcessingUnit):
         Raises:
             NotTrained: when the vectorizer is not fitted
         """
+        import numpy as np
+        import scipy.sparse as sp
+
         preprocessed = self._preprocess(x)
         utterances = [
             self._enrich_utterance(utterance, builtin_ents, custom_ent)
@@ -787,6 +803,8 @@ def _builtin_entity_to_feature(builtin_entity_label, language):
 
 
 def _normalize_stem(text, language, resources, use_stemming):
+    from snips_nlu_utils import normalize
+
     if use_stemming:
         return stem(text, language, resources)
     return normalize(text)

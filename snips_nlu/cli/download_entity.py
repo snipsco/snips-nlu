@@ -3,10 +3,7 @@ from __future__ import print_function, unicode_literals
 import sys
 
 import plac
-
 from future.builtins import str
-from snips_nlu_parsers import (
-    get_builtin_entity_shortname, get_supported_gazetteer_entities)
 
 from snips_nlu import __about__
 from snips_nlu.cli.download import download_from_resource_name
@@ -51,6 +48,8 @@ def download_builtin_entity(entity_name, language, *pip_args):
 def download_language_builtin_entities(language, *pip_args):
     """Download all gazetteer entity resources for a given language as well as
     basic language resources for this language"""
+    from snips_nlu_parsers import get_supported_gazetteer_entities
+
     download_from_resource_name(language, pip_args, verbose=False)
 
     shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
@@ -71,6 +70,8 @@ def download_language_builtin_entities(language, *pip_args):
 
 def _download_and_link_entity(long_resource_name, entity_name, language,
                               compatibility, pip_args):
+    from snips_nlu_parsers import get_builtin_entity_shortname
+
     full_resource_name = long_resource_name + "_" + language
     version = get_resources_version(full_resource_name, entity_name,
                                     compatibility)

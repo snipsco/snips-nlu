@@ -4,7 +4,6 @@ from abc import ABCMeta, abstractmethod
 from builtins import object
 from io import IOBase
 
-import yaml
 from future.utils import with_metaclass
 
 from snips_nlu.constants import DATA, ENTITY, SLOT_NAME, TEXT, UTTERANCES
@@ -103,7 +102,10 @@ class Intent(object):
             IntentFormatError: When the YAML dict does not correspond to the
                 :ref:`expected intent format <yaml_intent_format>`
         """
+
         if isinstance(yaml_dict, IOBase):
+            from snips_nlu.dataset.yaml_wrapper import yaml
+
             yaml_dict = yaml.safe_load(yaml_dict)
 
         object_type = yaml_dict.get("type")

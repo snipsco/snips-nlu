@@ -2,15 +2,15 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 
-from snips_nlu_utils import compute_all_ngrams
-
-from snips_nlu.constants import (END, RES_MATCH_RANGE, START)
 from snips_nlu.common.dict_utils import LimitedSizeDict
+from snips_nlu.constants import END, RES_MATCH_RANGE, START
 
 _NGRAMS_CACHE = LimitedSizeDict(size_limit=1000)
 
 
 def get_all_ngrams(tokens):
+    from snips_nlu_utils import compute_all_ngrams
+
     if not tokens:
         return []
     key = "<||>".join(tokens)

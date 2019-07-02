@@ -10,7 +10,6 @@ from pathlib import Path
 from future.utils import with_metaclass
 
 from snips_nlu.common.abc_utils import abstractclassmethod, classproperty
-from snips_nlu.common.io_utils import temp_dir, unzip_archive
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.common.utils import (
     json_string, check_random_state)
@@ -185,6 +184,8 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         Returns:
             bytearray: the processing unit as bytearray data
         """
+        from snips_nlu.common.io_utils import temp_dir
+
         cleaned_unit_name = _sanitize_unit_name(self.unit_name)
         with temp_dir() as tmp_dir:
             processing_unit_dir = tmp_dir / cleaned_unit_name
@@ -206,6 +207,8 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
             unit_bytes (bytearray): A bytearray representing a zipped
                 processing unit.
         """
+        from snips_nlu.common.io_utils import temp_dir, unzip_archive
+
         cleaned_unit_name = _sanitize_unit_name(cls.unit_name)
         with temp_dir() as tmp_dir:
             file_io = io.BytesIO(unit_bytes)

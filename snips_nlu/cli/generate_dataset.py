@@ -2,9 +2,6 @@ from __future__ import print_function, unicode_literals
 
 import plac
 
-from snips_nlu.dataset import Dataset
-from snips_nlu.common.utils import unicode_string, json_string
-
 
 @plac.annotations(
     language=("Language of the assistant", "positional", None, str),
@@ -23,6 +20,9 @@ def generate_dataset(language, *yaml_files):
     Returns:
         None. The json dataset output is printed out on stdout.
     """
+    from snips_nlu.common.utils import unicode_string, json_string
+    from snips_nlu.dataset import Dataset
+
     language = unicode_string(language)
     dataset = Dataset.from_yaml_files(language, list(yaml_files))
     print(json_string(dataset.json, indent=2, sort_keys=True))

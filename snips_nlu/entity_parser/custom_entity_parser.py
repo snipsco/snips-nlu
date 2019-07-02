@@ -7,7 +7,6 @@ from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems, viewvalues
-from snips_nlu_parsers import GazetteerEntityParser
 
 from snips_nlu.common.utils import json_string
 from snips_nlu.constants import (
@@ -66,6 +65,8 @@ class CustomEntityParser(EntityParser):
 
     @classmethod
     def from_path(cls, path):
+        from snips_nlu_parsers import GazetteerEntityParser
+
         path = Path(path)
         with (path / "metadata.json").open(encoding="utf8") as f:
             metadata = json.load(f)
@@ -77,6 +78,7 @@ class CustomEntityParser(EntityParser):
 
     @classmethod
     def build(cls, dataset, parser_usage, resources):
+        from snips_nlu_parsers import GazetteerEntityParser
         from snips_nlu.dataset import validate_and_format_dataset
 
         dataset = validate_and_format_dataset(dataset)

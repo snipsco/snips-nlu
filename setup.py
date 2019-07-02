@@ -34,6 +34,7 @@ required = [
     "sklearn-crfsuite>=0.3.6,<0.4",
     "snips-nlu-parsers>=0.2,<0.3",
     "snips-nlu-utils>=0.8,<0.9",
+    "deprecation>=2,<3",
 ]
 
 extras_require = {

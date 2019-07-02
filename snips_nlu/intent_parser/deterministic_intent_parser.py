@@ -8,7 +8,6 @@ from collections import defaultdict
 from pathlib import Path
 
 from future.utils import iteritems, itervalues
-from snips_nlu_utils import normalize
 
 from snips_nlu.common.dataset_utils import get_slot_name_mappings
 from snips_nlu.common.log_utils import log_elapsed_time, log_result
@@ -378,6 +377,8 @@ class DeterministicIntentParser(IntentParser):
 
     def _utterance_to_pattern(self, utterance, stop_words,
                               entity_placeholders):
+        from snips_nlu_utils import normalize
+
         slot_names_count = defaultdict(int)
         pattern = []
         for chunk in utterance[DATA]:

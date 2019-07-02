@@ -6,7 +6,6 @@ from collections import Counter
 from copy import deepcopy
 
 from future.utils import iteritems, itervalues
-from snips_nlu_parsers import get_all_languages
 
 from snips_nlu.common.dataset_utils import (validate_key, validate_keys,
                                             validate_type)
@@ -31,6 +30,8 @@ def validate_and_format_dataset(dataset):
     Raise:
         DatasetFormatError: When the dataset format is wrong
     """
+    from snips_nlu_parsers import get_all_languages
+
     # Make this function idempotent
     if dataset.get(VALIDATED, False):
         return dataset

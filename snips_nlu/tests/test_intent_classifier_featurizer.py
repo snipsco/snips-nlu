@@ -269,7 +269,7 @@ values:
         self.assertDictEqual(
             expected, featurizer.feature_index_to_feature_name)
 
-    @patch("snips_nlu.intent_classifier.featurizer.chi2")
+    @patch("sklearn.feature_selection.chi2")
     def test_fit_cooccurrence_vectorizer_feature_selection(self, mocked_chi2):
         # Given
         vectorizer_config = CooccurrenceVectorizerConfig(

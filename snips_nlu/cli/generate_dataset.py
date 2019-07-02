@@ -1,12 +1,22 @@
 from __future__ import print_function, unicode_literals
 
-import plac
+
+def add_generate_dataset_subparser(subparsers):
+    subparser = subparsers.add_parser(
+        "generate-dataset",
+        help="Generate a json dataset from intents and entities yaml files")
+    subparser.add_argument("language", type=str,
+                           help="Language of the dataset")
+    subparser.add_argument("files", nargs="+", type=str,
+                           help="List of intent and entity yaml files")
+    subparser.set_defaults(func=_generate_dataset)
+    return subparser
 
 
-@plac.annotations(
-    language=("Language of the assistant", "positional", None, str),
-    yaml_files=("List of intent and entity yaml files", "positional", None,
-                str, None, "filename"))
+def _generate_dataset(args_namespace):
+    return generate_dataset(args_namespace.language, *args_namespace.files)
+
+
 def generate_dataset(language, *yaml_files):
     """Creates a Snips NLU dataset from YAML definition files
 

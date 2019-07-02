@@ -4,8 +4,10 @@ import shutil
 import tempfile
 
 from snips_nlu import SnipsNLUEngine
-from snips_nlu.cli import (
-    cross_val_metrics, parse, train, train_test_metrics, generate_dataset)
+from snips_nlu.cli.generate_dataset import generate_dataset
+from snips_nlu.cli.inference import parse
+from snips_nlu.cli.metrics import cross_val_metrics, train_test_metrics
+from snips_nlu.cli.training import train
 from snips_nlu.common.utils import unicode_string, json_string
 from snips_nlu.dataset import Dataset
 from snips_nlu.tests.utils import SnipsTest, TEST_PATH, redirect_stdout

@@ -21,8 +21,7 @@ class PrettyPrintLevel(Enum):
     SUCCESS = 3
 
 
-FMT = "[%(levelname)s][%(asctime)s.%(msecs)03d][%(name)s]: " \
-      "%(message)s"
+FMT = "[%(levelname)s][%(asctime)s.%(msecs)03d][%(name)s]: %(message)s"
 DATE_FMT = "%H:%M:%S"
 
 

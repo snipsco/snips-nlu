@@ -10,6 +10,8 @@ def add_train_parser(subparsers):
                            help="Path of the output model")
     subparser.add_argument("-c", "--config_path", type=str,
                            help="Path to the NLU engine configuration")
+    subparser.add_argument("-r", "--random_seed", type=int,
+                           help="Random seed to use for training")
     subparser.add_argument("-v", "--verbosity", action="count", default=0,
                            help="Increase output verbosity")
     subparser.set_defaults(func=_train)
@@ -19,10 +21,12 @@ def add_train_parser(subparsers):
 def _train(args_namespace):
     return train(
         args_namespace.dataset_path, args_namespace.output_path,
-        args_namespace.config_path, args_namespace.verbosity)
+        args_namespace.config_path, args_namespace.verbosity,
+        args_namespace.random_seed)
 
 
-def train(dataset_path, output_path, config_path, verbose):
+def train(dataset_path, output_path, config_path=None, verbose=False,
+          random_seed=None):
     """Train an NLU engine on the provided dataset"""
     import json
     import logging
@@ -30,6 +34,7 @@ def train(dataset_path, output_path, config_path, verbose):
 
     from snips_nlu import SnipsNLUEngine
     from snips_nlu.cli.utils import set_nlu_logger
+    from snips_nlu.common.utils import check_random_state
 
     if verbose == 1:
         set_nlu_logger(logging.INFO)
@@ -44,8 +49,10 @@ def train(dataset_path, output_path, config_path, verbose):
         with Path(config_path).open("r", encoding="utf8") as f:
             config = json.load(f)
 
+    random_state = check_random_state(random_seed)
+
     print("Create and train the engine...")
-    engine = SnipsNLUEngine(config).fit(dataset)
+    engine = SnipsNLUEngine(config, random_state=random_state).fit(dataset)
 
     print("Persisting the engine...")
     engine.persist(output_path)

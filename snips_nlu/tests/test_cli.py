@@ -63,8 +63,7 @@ utterances:
 
     def test_train(self):
         # Given / When
-        train(self.beverage_dataset_path, str(self.tmp_file_path),
-              config_path=None, verbose=False)
+        train(self.beverage_dataset_path, str(self.tmp_file_path))
 
         # Then
         if not self.tmp_file_path.exists():

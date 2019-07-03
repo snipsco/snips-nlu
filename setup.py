@@ -85,7 +85,7 @@ setup(name=about["__title__"],
       include_package_data=True,
       entry_points={
           "console_scripts": [
-              "snips-nlu=snips_nlu.__main__:main"
+              "snips-nlu=snips_nlu.cli:main"
           ]
       },
       zip_safe=False)

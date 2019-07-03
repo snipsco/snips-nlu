@@ -4,6 +4,8 @@ from builtins import str
 from datetime import datetime
 from functools import wraps
 
+from snips_nlu.common.utils import json_debug_string
+
 
 class DifferedLoggingMessage(object):
 
@@ -37,8 +39,6 @@ def log_elapsed_time(logger, level, output_msg=None):
 
 
 def log_result(logger, level, output_msg=None):
-    from snips_nlu.common.utils import json_debug_string
-
     if output_msg is None:
         output_msg = "Result ->:\n{result}"
 

@@ -5,6 +5,8 @@ import shutil
 
 from future.builtins import str
 
+from snips_nlu.common.io_utils import temp_dir
+from snips_nlu.common.utils import json_string
 from snips_nlu.constants import DATA_PATH, ENTITIES, LANGUAGE
 from snips_nlu.entity_parser.entity_parser import EntityParser
 from snips_nlu.result import parsed_entity
@@ -77,8 +79,6 @@ class BuiltinEntityParser(EntityParser):
 
 def _build_builtin_parser(language, gazetteer_entities):
     from snips_nlu_parsers import BuiltinEntityParser as _BuiltinEntityParser
-    from snips_nlu.common.io_utils import temp_dir
-    from snips_nlu.common.utils import json_string
 
     with temp_dir() as serialization_dir:
         gazetteer_entity_parser = None
@@ -99,7 +99,6 @@ def _build_builtin_parser(language, gazetteer_entities):
 
 def _build_gazetteer_parser(target_dir, gazetteer_entities, language):
     from snips_nlu_parsers import get_builtin_entity_shortname
-    from snips_nlu.common.utils import json_string
 
     gazetteer_parser_name = "gazetteer_entity_parser"
     gazetteer_parser_path = target_dir / gazetteer_parser_name

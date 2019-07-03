@@ -26,6 +26,7 @@ from snips_nlu.entity_parser.builtin_entity_parser import (
 from snips_nlu.exceptions import (
     InvalidInputError, IntentNotFoundError, LoadingError,
     IncompatibleModelError)
+from snips_nlu.intent_parser import IntentParser
 from snips_nlu.pipeline.configs import NLUEngineConfig
 from snips_nlu.pipeline.processing_unit import ProcessingUnit
 from snips_nlu.resources import load_resources_from_dir, persist_resources
@@ -91,8 +92,6 @@ class SnipsNLUEngine(ProcessingUnit):
         Returns:
             The same object, trained.
         """
-        from snips_nlu.intent_parser import IntentParser
-
         dataset = validate_and_format_dataset(dataset)
         if self.config is None:
             language = dataset[LANGUAGE]
@@ -340,8 +339,6 @@ class SnipsNLUEngine(ProcessingUnit):
             IncompatibleModelError: when trying to load an engine model which
                 is not compatible with the current version of the lib
         """
-        from snips_nlu.intent_parser import IntentParser
-
         directory_path = Path(path)
         model_path = directory_path / "nlu_engine.json"
         if not model_path.exists():

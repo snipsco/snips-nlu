@@ -14,6 +14,7 @@ from future.utils import iteritems
 
 from snips_nlu.common.dataset_utils import get_slot_name_mapping
 from snips_nlu.common.dict_utils import UnupdatableDict
+from snips_nlu.common.io_utils import mkdir_p
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
     check_persisted_path, fitted_required, json_string)
@@ -404,7 +405,6 @@ class CRFSlotFiller(SlotFiller):
 
 def _get_crf_model(crf_args):
     from sklearn_crfsuite import CRF
-    from snips_nlu.common.io_utils import mkdir_p
 
     model_filename = crf_args.get("model_filename", None)
     if model_filename is not None:

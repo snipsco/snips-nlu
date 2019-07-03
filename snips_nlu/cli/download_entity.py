@@ -72,6 +72,7 @@ def _download_language_builtin_entities(args_namespace):
 def download_language_builtin_entities(language, *pip_args):
     """Download all gazetteer entity resources for a given language as well as
     basic language resources for this language"""
+    from builtins import str
     from snips_nlu_parsers import get_supported_gazetteer_entities
     from snips_nlu import __about__
     from snips_nlu.cli.download import download_from_resource_name
@@ -81,7 +82,7 @@ def download_language_builtin_entities(language, *pip_args):
     download_from_resource_name(language, pip_args, verbose=False)
 
     shortcuts = get_json(__about__.__shortcuts__, "Resource shortcuts")
-    for entity_name in get_supported_gazetteer_entities(language):
+    for entity_name in get_supported_gazetteer_entities(str(language)):
         check_resources_alias(entity_name, shortcuts)
 
         compatibility = get_compatibility()
@@ -97,7 +98,7 @@ def download_language_builtin_entities(language, *pip_args):
 def _download_and_link_entity(long_resource_name, entity_name, language,
                               compatibility, pip_args):
     import sys
-    from future.builtins import str
+    from builtins import str
     from snips_nlu_parsers import get_builtin_entity_shortname
     from snips_nlu.cli.link import link_resources
     from snips_nlu.cli.utils import (
@@ -108,7 +109,7 @@ def _download_and_link_entity(long_resource_name, entity_name, language,
     full_resource_name = long_resource_name + "_" + language
     version = get_resources_version(full_resource_name, entity_name,
                                     compatibility)
-    entity_alias = get_builtin_entity_shortname(entity_name).lower()
+    entity_alias = get_builtin_entity_shortname(str(entity_name)).lower()
     entity_base_url = _get_entity_base_url(language, entity_alias, version)
     latest = get_json(entity_base_url + "/latest",
                       "Latest entity resources version")

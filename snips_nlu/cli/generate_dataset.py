@@ -32,7 +32,7 @@ def generate_dataset(language, *yaml_files):
     """
     from snips_nlu.dataset import Dataset
     from snips_nlu.common.utils import unicode_string, json_string
-    
+
     language = unicode_string(language)
     dataset = Dataset.from_yaml_files(language, list(yaml_files))
     print(json_string(dataset.json, indent=2, sort_keys=True))

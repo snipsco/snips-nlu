@@ -401,7 +401,9 @@ class CRFSlotFiller(SlotFiller):
             return
         try:
             Path(self.crf_model.modelfile.name).unlink()
-        except OSError:
+        except OSError as e:
+            logger.warning("Unable to remove CRF model file at path '%s': %s"
+                           % (self.crf_model.modelfile.name, repr(e)))
             pass
 
 

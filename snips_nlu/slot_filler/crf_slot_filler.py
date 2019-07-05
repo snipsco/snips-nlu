@@ -25,7 +25,6 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
-
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, TAGS, TOKENS, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
@@ -402,9 +401,8 @@ class CRFSlotFiller(SlotFiller):
         try:
             Path(self.crf_model.modelfile.name).unlink()
         except OSError as e:
-            logger.warning("Unable to remove CRF model file at path '%s': %s"
-                           % (self.crf_model.modelfile.name, repr(e)))
-            pass
+            logger.warning("Unable to remove CRF model file at path '%s': %s",
+                           self.crf_model.modelfile.name, repr(e))
 
 
 def _get_crf_model(crf_args):

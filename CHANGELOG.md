@@ -3,12 +3,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
-- Add filter for entity match feature [#814](https://github.com/snipsco/snips-nlu/pull/815)
+- Add filter for entity match feature [#814](https://github.com/snipsco/snips-nlu/pull/814)
 - Add noise re-weight factor in `LogRegIntentClassifier` [#815](https://github.com/snipsco/snips-nlu/pull/815)
-- Add warning logs and improve errors
+- Add warning logs and improve errors [#821](https://github.com/snipsco/snips-nlu/pull/821)
+- Add random seed parameter in training CLI [#819](https://github.com/snipsco/snips-nlu/pull/819)
 
 ### Fixed
 - Fix non-deterministic behavior [#817](https://github.com/snipsco/snips-nlu/pull/817)
+- Import modules lazily to speed up CLI startup time [#819](https://github.com/snipsco/snips-nlu/pull/819)
 
 ## [0.19.7]
 ### Changed

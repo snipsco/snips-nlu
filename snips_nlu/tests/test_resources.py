@@ -3,7 +3,10 @@ from __future__ import unicode_literals
 from deprecation import fail_if_not_removed
 
 from snips_nlu import load_resources as load_resources_the_old_way
-from snips_nlu.constants import DATA_PATH
+from snips_nlu.constants import (
+    DATA_PATH, STOP_WORDS, CUSTOM_ENTITY_PARSER_USAGE, STEMS, WORD_CLUSTERS,
+    GAZETTEERS, NOISE)
+from snips_nlu.entity_parser import CustomEntityParserUsage
 from snips_nlu.resources import (
     MissingResource, _get_resource, load_resources, _persist_stop_words,
     _load_stop_words, _load_noise, _persist_noise, _load_word_clusters,
@@ -19,6 +22,39 @@ class TestResources(FixtureTest):
 
         # Then
         self.assertGreater(len(get_stems(resources)), 0)
+
+    def test_should_load_resources_with_requirements(self):
+        # Given
+        required_resources = {
+            STOP_WORDS: False,
+            CUSTOM_ENTITY_PARSER_USAGE: CustomEntityParserUsage.WITHOUT_STEMS,
+            STEMS: False,
+            NOISE: True,
+            WORD_CLUSTERS: ["brown_clusters"],
+            GAZETTEERS: ["top_10000_words"],
+        }
+
+        # When
+        resources = load_resources("en", required_resources)
+
+        # Then
+        self.assertListEqual(["top_10000_words"], list(resources[GAZETTEERS]))
+        self.assertListEqual(["brown_clusters"],
+                             list(resources[WORD_CLUSTERS]))
+        self.assertIsNone(resources[STOP_WORDS])
+        self.assertIsNone(resources[STEMS])
+        self.assertGreater(len(resources[NOISE]), 0)
+
+    def test_should_not_load_resources_with_bad_requirements(self):
+        # When / Then
+        with self.assertRaises(ValueError) as cm:
+            load_resources("en", {GAZETTEERS: ["unknown"]})
+        self.assertTrue("Unknown gazetteer" in str(cm.exception))
+
+        # When / Then
+        with self.assertRaises(ValueError) as cm:
+            load_resources("en", {WORD_CLUSTERS: ["unknown"]})
+        self.assertTrue("Unknown word clusters" in str(cm.exception))
 
     def test_should_load_resources_from_package(self):
         # When

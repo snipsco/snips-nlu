@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+from deprecation import fail_if_not_removed
+
+from snips_nlu import load_resources as load_resources_the_old_way
 from snips_nlu.constants import (
     DATA_PATH, STOP_WORDS, CUSTOM_ENTITY_PARSER_USAGE, STEMS, WORD_CLUSTERS,
     GAZETTEERS, NOISE)
@@ -146,3 +149,11 @@ class TestResources(FixtureTest):
 
         # Then
         self.assertDictEqual(stems, loaded_stems)
+
+    @fail_if_not_removed
+    def test_load_resources_the_old_way(self):
+        # When
+        resources = load_resources_the_old_way("en")
+
+        # Then
+        self.assertGreater(len(get_stems(resources)), 0)

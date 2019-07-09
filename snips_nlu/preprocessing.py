@@ -3,13 +3,12 @@ from __future__ import unicode_literals
 
 from builtins import object
 
-from snips_nlu_utils import (
-    normalize, tokenize as _tokenize, tokenize_light as _tokenize_light)
-
 from snips_nlu.resources import get_stems
 
 
 def stem(string, language, resources):
+    from snips_nlu_utils import normalize
+
     normalized_string = normalize(string)
     tokens = tokenize_light(normalized_string, language)
     stemmed_tokens = [_stem(token, resources) for token in tokens]
@@ -17,6 +16,8 @@ def stem(string, language, resources):
 
 
 def stem_token(token, resources):
+    from snips_nlu_utils import normalize
+
     if token.stemmed_value:
         return token.stemmed_value
     if not token.normalized_value:
@@ -26,6 +27,8 @@ def stem_token(token, resources):
 
 
 def normalize_token(token):
+    from snips_nlu_utils import normalize
+
     if token.normalized_value:
         return token.normalized_value
     token.normalized_value = normalize(token.value)
@@ -76,6 +79,8 @@ def tokenize(string, language):
     Returns:
         list of :class:`.Token`: The list of tokenized values
     """
+    from snips_nlu_utils import tokenize as _tokenize
+
     tokens = [Token(value=token["value"],
                     start=token["char_range"]["start"],
                     end=token["char_range"]["end"])
@@ -86,5 +91,7 @@ def tokenize(string, language):
 def tokenize_light(string, language):
     """Same behavior as :func:`tokenize` but returns tokenized strings instead
         of :class:`Token` objects"""
+    from snips_nlu_utils import tokenize_light as _tokenize_light
+
     tokenized_string = _tokenize_light(string, language)
     return tokenized_string

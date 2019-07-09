@@ -8,8 +8,6 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
-import numpy as np
-import pkg_resources
 from future.utils import text_type
 
 from snips_nlu.constants import (
@@ -55,6 +53,8 @@ def check_random_state(seed):
     If seed is already a RandomState instance, return it.
     Otherwise raise ValueError.
     """
+    import numpy as np
+
     # pylint: disable=W0212
     # pylint: disable=c-extension-no-member
     if seed is None or seed is np.random:
@@ -137,6 +137,8 @@ def is_package(name):
         bool: True if an installed packaged corresponds to this name, False
             otherwise.
     """
+    import pkg_resources
+
     name = name.lower().replace("-", "_")
     packages = pkg_resources.working_set.by_key.keys()
     for package in packages:

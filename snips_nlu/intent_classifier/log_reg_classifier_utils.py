@@ -6,7 +6,6 @@ from builtins import next, range, str
 from copy import deepcopy
 from uuid import uuid4
 
-import numpy as np
 from future.utils import iteritems, itervalues
 
 from snips_nlu.constants import (DATA, ENTITY, INTENTS, TEXT,
@@ -33,6 +32,8 @@ def remove_builtin_slots(dataset):
 
 
 def get_regularization_factor(dataset):
+    import numpy as np
+
     intents = dataset[INTENTS]
     nb_utterances = [len(intent[UTTERANCES]) for intent in itervalues(intents)]
     avg_utterances = np.mean(nb_utterances)
@@ -62,6 +63,8 @@ def generate_smart_noise(noise, augmented_utterances, replacement_string,
 def generate_noise_utterances(augmented_utterances, noise, num_intents,
                               data_augmentation_config, language,
                               random_state):
+    import numpy as np
+
     if not augmented_utterances or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
@@ -110,6 +113,8 @@ def add_unknown_word_to_utterances(utterances, replacement_string,
 
 def build_training_data(dataset, language, data_augmentation_config, resources,
                         random_state):
+    import numpy as np
+
     # Create class mapping
     intents = dataset[INTENTS]
     intent_index = 0

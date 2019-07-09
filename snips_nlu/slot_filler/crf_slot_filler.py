@@ -11,7 +11,6 @@ from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
-from sklearn_crfsuite import CRF
 
 from snips_nlu.common.dataset_utils import get_slot_name_mapping
 from snips_nlu.common.dict_utils import UnupdatableDict
@@ -406,6 +405,8 @@ class CRFSlotFiller(SlotFiller):
 
 
 def _get_crf_model(crf_args):
+    from sklearn_crfsuite import CRF
+
     model_filename = crf_args.get("model_filename", None)
     if model_filename is not None:
         directory = Path(model_filename).parent
@@ -424,6 +425,8 @@ def _decode_tag(tag):
 
 
 def _crf_model_from_path(crf_model_path):
+    from sklearn_crfsuite import CRF
+
     with crf_model_path.open(mode="rb") as f:
         crf_model_data = f.read()
     with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",

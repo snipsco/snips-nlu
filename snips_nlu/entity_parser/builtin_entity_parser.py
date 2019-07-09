@@ -4,10 +4,6 @@ import json
 import shutil
 
 from future.builtins import str
-from snips_nlu_parsers import (
-    BuiltinEntityParser as _BuiltinEntityParser, get_all_builtin_entities,
-    get_all_gazetteer_entities, get_all_grammar_entities,
-    get_builtin_entity_shortname, get_supported_gazetteer_entities)
 
 from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.common.utils import json_string
@@ -46,11 +42,16 @@ class BuiltinEntityParser(EntityParser):
 
     @classmethod
     def from_path(cls, path):
+        from snips_nlu_parsers import (
+            BuiltinEntityParser as _BuiltinEntityParser)
+
         parser = _BuiltinEntityParser.from_path(path)
         return cls(parser)
 
     @classmethod
     def build(cls, dataset=None, language=None, gazetteer_entity_scope=None):
+        from snips_nlu_parsers import get_supported_gazetteer_entities
+
         global _BUILTIN_ENTITY_PARSERS
 
         if dataset is not None:
@@ -77,6 +78,8 @@ class BuiltinEntityParser(EntityParser):
 
 
 def _build_builtin_parser(language, gazetteer_entities):
+    from snips_nlu_parsers import BuiltinEntityParser as _BuiltinEntityParser
+
     with temp_dir() as serialization_dir:
         gazetteer_entity_parser = None
         if gazetteer_entities:
@@ -95,6 +98,8 @@ def _build_builtin_parser(language, gazetteer_entities):
 
 
 def _build_gazetteer_parser(target_dir, gazetteer_entities, language):
+    from snips_nlu_parsers import get_builtin_entity_shortname
+
     gazetteer_parser_name = "gazetteer_entity_parser"
     gazetteer_parser_path = target_dir / gazetteer_parser_name
     gazetteer_parser_metadata = []
@@ -121,14 +126,20 @@ def _build_gazetteer_parser(target_dir, gazetteer_entities, language):
 
 
 def is_builtin_entity(entity_label):
+    from snips_nlu_parsers import get_all_builtin_entities
+
     return entity_label in get_all_builtin_entities()
 
 
 def is_gazetteer_entity(entity_label):
+    from snips_nlu_parsers import get_all_gazetteer_entities
+
     return entity_label in get_all_gazetteer_entities()
 
 
 def is_grammar_entity(entity_label):
+    from snips_nlu_parsers import get_all_grammar_entities
+
     return entity_label in get_all_grammar_entities()
 
 

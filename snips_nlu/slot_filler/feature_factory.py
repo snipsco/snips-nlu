@@ -6,8 +6,6 @@ from abc import ABCMeta, abstractmethod
 from builtins import str
 
 from future.utils import with_metaclass
-from snips_nlu_parsers import get_supported_grammar_entities
-from snips_nlu_utils import get_shape
 
 from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.registrable import Registrable
@@ -323,6 +321,8 @@ class ShapeNgramFactory(SingleFeatureFactory):
         self.language = dataset[LANGUAGE]
 
     def compute_feature(self, tokens, token_index):
+        from snips_nlu_utils import get_shape
+
         max_len = len(tokens)
         end = token_index + self.n
         if 0 <= token_index < max_len and end <= max_len:
@@ -610,6 +610,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
     @staticmethod
     def _get_builtin_entity_scope(dataset, intent=None):
+        from snips_nlu_parsers import get_supported_grammar_entities
+
         language = dataset[LANGUAGE]
         grammar_entities = list(get_supported_grammar_entities(language))
         gazetteer_entities = list(

@@ -86,19 +86,25 @@ def _update_metadata(metadata, required_resources):
     if required_resources is None:
         return metadata
     metadata = deepcopy(metadata)
-    try:
-        metadata["gazetteers"] = required_resources.get(GAZETTEERS, [])
-        metadata["word_clusters"] = required_resources.get(WORD_CLUSTERS, [])
-        if not required_resources.get(STEMS, False):
-            metadata["stems"] = None
-        if not required_resources.get(NOISE, False):
-            metadata["noise"] = None
-        if not required_resources.get(STOP_WORDS, False):
-            metadata["stop_words"] = None
-        return metadata
-    except KeyError:
-        print_compatibility_error(metadata["language"])
-        raise
+    required_gazetteers = required_resources.get(GAZETTEERS, [])
+    required_word_clusters = required_resources.get(WORD_CLUSTERS, [])
+    for gazetter in required_gazetteers:
+        if gazetter not in metadata["gazetteers"]:
+            raise ValueError("Unknown gazetteer for language '%s': '%s'"
+                             % (metadata["language"], gazetter))
+    for word_clusters in required_word_clusters:
+        if word_clusters not in metadata["word_clusters"]:
+            raise ValueError("Unknown word clusters for language '%s': '%s'"
+                             % (metadata["language"], word_clusters))
+    metadata["gazetteers"] = required_gazetteers
+    metadata["word_clusters"] = required_word_clusters
+    if not required_resources.get(STEMS, False):
+        metadata["stems"] = None
+    if not required_resources.get(NOISE, False):
+        metadata["noise"] = None
+    if not required_resources.get(STOP_WORDS, False):
+        metadata["stop_words"] = None
+    return metadata
 
 
 def print_compatibility_error(language):

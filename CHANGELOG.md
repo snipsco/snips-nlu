@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Fixed
 - Fix non-deterministic behavior [#817](https://github.com/snipsco/snips-nlu/pull/817)
-- Removed dependency on `semantic_version` to accept `"subpatches"` number [#817](https://github.com/snipsco/snips-nlu/pull/825)
+- Removed dependency on `semantic_version` to accept `"subpatches"` number [#825](https://github.com/snipsco/snips-nlu/pull/825)
 
 ## [0.19.7]
 ### Changed

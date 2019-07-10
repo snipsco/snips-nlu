@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import importlib
 import json
 import numbers
+import re
 from builtins import bytes as newbytes, str as newstr
 from datetime import datetime
 from functools import wraps
@@ -12,8 +13,8 @@ import numpy as np
 import pkg_resources
 from future.utils import text_type
 
-from snips_nlu.constants import (
-    END, START, RES_MATCH_RANGE, ENTITY_KIND, RES_VALUE)
+from snips_nlu.constants import (END, ENTITY_KIND, RES_MATCH_RANGE, RES_VALUE,
+                                 START)
 from snips_nlu.exceptions import NotTrained, PersistingError
 
 REGEX_PUNCT = {'\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}',
@@ -215,3 +216,24 @@ def deduplicate_overlapping_entities(entities):
         entities, overlap, sort_key_fn)
     return sorted(deduplicated_entities,
                   key=lambda entity: entity[RES_MATCH_RANGE][START])
+
+
+SEMVER_PATTERN = r"^(?P<major>0|[1-9]\d*)" \
+                 r".(?P<minor>0|[1-9]\d*)" \
+                 r".(?P<patch>0|[1-9]\d*)" \
+                 r"(?:.(?P<subpatch>0|[1-9]\d*))?" \
+                 r"(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-]" \
+                 r"[0-9a-zA-Z-]*)" \
+                 r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?" \
+                 r"(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)" \
+                 r")?$"
+SEMVER_REGEX = re.compile(SEMVER_PATTERN)
+
+
+def parse_version(string_version):
+    match = SEMVER_REGEX.match(string_version)
+    if match is None:
+        msg = "Invalid version: %s. Accepted versions must match the" \
+              " following regex pattern: %s" % (string_version, SEMVER_PATTERN)
+        raise ValueError(msg)
+    return match.groupdict()

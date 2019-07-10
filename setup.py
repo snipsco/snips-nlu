@@ -30,7 +30,6 @@ required = [
     "scikit-learn>=0.20,<0.21; python_version<'3.5'",
     "scikit-learn>=0.21.1,<0.22; python_version>='3.5'",
     "scipy>=1.0,<2.0",
-    "semantic_version>=2.6,<3.0",
     "sklearn-crfsuite>=0.3.6,<0.4",
     "snips-nlu-parsers>=0.2,<0.3",
     "snips-nlu-utils>=0.8,<0.9",

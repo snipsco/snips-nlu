@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 import io
 from unittest import TestCase
 
-import yaml
-
 from snips_nlu.dataset import Entity
 from snips_nlu.exceptions import EntityFormatError
 
@@ -115,7 +113,7 @@ values:
 
     def test_fail_from_yaml_file_when_no_name(self):
         # Given
-        yaml_stream = io.StringIO("""
+        entity_io = io.StringIO("""
 # Location Entity
 ---
 values:
@@ -123,8 +121,7 @@ values:
 - [paris, city of lights]
 - london
         """)
-        yaml_dict = yaml.safe_load(yaml_stream)
 
         # When / Then
         with self.assertRaises(EntityFormatError):
-            Entity.from_yaml(yaml_dict)
+            Entity.from_yaml(entity_io)

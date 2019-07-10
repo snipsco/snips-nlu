@@ -5,9 +5,6 @@ import logging
 from builtins import range, str, zip
 from pathlib import Path
 
-import numpy as np
-from sklearn.linear_model import SGDClassifier
-
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
     check_persisted_path, fitted_required, json_string)
@@ -34,7 +31,6 @@ logger = logging.getLogger(__name__)
 LOG_REG_ARGS = {
     "loss": "log",
     "penalty": "l2",
-    "class_weight": "balanced",
     "max_iter": 1000,
     "tol": 1e-3,
     "n_jobs": -1
@@ -68,6 +64,9 @@ class LogRegIntentClassifier(IntentClassifier):
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
+        from sklearn.linear_model import SGDClassifier
+        from sklearn.utils import compute_class_weight
+
         logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
@@ -98,12 +97,21 @@ class LogRegIntentClassifier(IntentClassifier):
             x = self.featurizer.fit_transform(
                 dataset, utterances, classes, none_class)
         except _EmptyDatasetUtterancesError:
+            logger.warning("No (non-empty) utterances found in dataset")
             self.featurizer = None
             return self
 
         alpha = get_regularization_factor(dataset)
+
+        class_weights_arr = compute_class_weight(
+            "balanced", range(none_class + 1), classes)
+        # Re-weight the noise class
+        class_weights_arr[-1] *= self.config.noise_reweight_factor
+        class_weight = {idx: w for idx, w in enumerate(class_weights_arr)}
+
         self.classifier = SGDClassifier(
-            random_state=self.random_state, alpha=alpha, **LOG_REG_ARGS)
+            random_state=self.random_state, alpha=alpha,
+            class_weight=class_weight, **LOG_REG_ARGS)
         self.classifier.fit(x, classes)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self
@@ -172,6 +180,8 @@ class LogRegIntentClassifier(IntentClassifier):
         return sorted(results, key=lambda res: -res[RES_PROBA])
 
     def _predict_proba(self, X):  # pylint: disable=C0103
+        import numpy as np
+
         self.classifier._check_proba()  # pylint: disable=W0212
 
         prob = self.classifier.decision_function(X)
@@ -223,6 +233,9 @@ class LogRegIntentClassifier(IntentClassifier):
         The data at the given path must have been generated using
         :func:`~LogRegIntentClassifier.persist`
         """
+        import numpy as np
+        from sklearn.linear_model import SGDClassifier
+
         path = Path(path)
         model_path = path / "intent_classifier.json"
         if not model_path.exists():
@@ -259,6 +272,8 @@ class LogRegIntentClassifier(IntentClassifier):
         return intent_classifier
 
     def log_best_features(self, top_n=50):
+        import numpy as np
+
         if not hasattr(self.featurizer, "feature_index_to_feature_name"):
             return None
 
@@ -276,6 +291,8 @@ class LogRegIntentClassifier(IntentClassifier):
         return log
 
     def log_activation_weights(self, text, x, top_n=50):
+        import numpy as np
+
         if not hasattr(self.featurizer, "feature_index_to_feature_name"):
             return None
 

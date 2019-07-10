@@ -79,7 +79,7 @@ class TestDataAugmentation(SnipsTest):
         seq = [next(it_dict["snips/number"]) for _ in range(len(expected_seq))]
         self.assertListEqual(expected_seq, sorted(seq))
 
-    @patch("snips_nlu.data_augmentation.get_builtin_entity_examples")
+    @patch("snips_nlu_parsers.get_builtin_entity_examples")
     @patch("numpy.random.permutation", side_effect=np_random_permutation)
     def test_entities_iterators_with_builtin_examples(
             self, _, mocked_builtin_entity_examples):

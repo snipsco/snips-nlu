@@ -6,7 +6,7 @@ from copy import deepcopy
 from itertools import cycle
 
 import numpy as np
-from future.utils import itervalues
+from future.utils import itervalues, iteritems
 from mock import MagicMock, patch
 
 from snips_nlu.constants import (
@@ -58,8 +58,8 @@ utterances:
             random_state)
 
         # Then
-        expected_utterances = [utterance for intent
-                               in itervalues(dataset[INTENTS])
+        expected_utterances = [utterance for _, intent
+                               in sorted(iteritems(dataset[INTENTS]))
                                for utterance in intent[UTTERANCES]]
         expected_intent_mapping = ["my_first_intent", "my_second_intent"]
         self.assertListEqual(expected_utterances, utterances)

@@ -24,16 +24,15 @@ required = [
     "num2words>=0.5.6,<0.6",
     "numpy>=1.15,<2.0",
     "pathlib>=1.0,<2.0; python_version<'3.4'",
-    "plac>=0.9.6,<2.0",
     "pyaml>=17.0,<20.0",
     "requests>=2.0,<3.0",
     "scikit-learn>=0.20,<0.21; python_version<'3.5'",
     "scikit-learn>=0.21.1,<0.22; python_version>='3.5'",
     "scipy>=1.0,<2.0",
-    "semantic_version>=2.6,<3.0",
     "sklearn-crfsuite>=0.3.6,<0.4",
     "snips-nlu-parsers>=0.2,<0.3",
     "snips-nlu-utils>=0.8,<0.9",
+    "deprecation>=2,<3",
 ]
 
 extras_require = {
@@ -50,7 +49,8 @@ extras_require = {
         "mock>=2.0,<3.0",
         "snips_nlu_metrics>=0.14.1,<0.15",
         "pylint<2",
-        "coverage>=4.4.2,<5.0"
+        "coverage>=4.4.2,<5.0",
+        "checksumdir~=1.1.6",
     ]
 }
 
@@ -84,7 +84,7 @@ setup(name=about["__title__"],
       include_package_data=True,
       entry_points={
           "console_scripts": [
-              "snips-nlu=snips_nlu.__main__:main"
+              "snips-nlu=snips_nlu.cli:main"
           ]
       },
       zip_safe=False)

@@ -1,15 +1,22 @@
 from __future__ import print_function, unicode_literals
 
-import plac
 
-from snips_nlu.dataset import Dataset
-from snips_nlu.common.utils import unicode_string, json_string
+def add_generate_dataset_subparser(subparsers):
+    subparser = subparsers.add_parser(
+        "generate-dataset",
+        help="Generate a json dataset from intents and entities yaml files")
+    subparser.add_argument("language", type=str,
+                           help="Language of the dataset")
+    subparser.add_argument("files", nargs="+", type=str,
+                           help="List of intent and entity yaml files")
+    subparser.set_defaults(func=_generate_dataset)
+    return subparser
 
 
-@plac.annotations(
-    language=("Language of the assistant", "positional", None, str),
-    yaml_files=("List of intent and entity yaml files", "positional", None,
-                str, None, "filename"))
+def _generate_dataset(args_namespace):
+    return generate_dataset(args_namespace.language, *args_namespace.files)
+
+
 def generate_dataset(language, *yaml_files):
     """Creates a Snips NLU dataset from YAML definition files
 
@@ -23,6 +30,9 @@ def generate_dataset(language, *yaml_files):
     Returns:
         None. The json dataset output is printed out on stdout.
     """
+    from snips_nlu.dataset import Dataset
+    from snips_nlu.common.utils import unicode_string, json_string
+
     language = unicode_string(language)
     dataset = Dataset.from_yaml_files(language, list(yaml_files))
     print(json_string(dataset.json, indent=2, sort_keys=True))

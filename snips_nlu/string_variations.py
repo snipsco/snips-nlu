@@ -6,8 +6,6 @@ import re
 from builtins import range, str, zip
 
 from future.utils import iteritems
-from num2words import num2words
-from snips_nlu_utils import normalize
 
 from snips_nlu.constants import (
     END, LANGUAGE_DE, LANGUAGE_EN, LANGUAGE_ES, LANGUAGE_FR, RESOLVED_VALUE,
@@ -105,6 +103,8 @@ def digit_value(number_entity):
 
 
 def alphabetic_value(number_entity, language):
+    from num2words import num2words
+
     value = number_entity[RESOLVED_VALUE][VALUE]
     if value != int(value):  # num2words does not handle floats correctly
         return None
@@ -148,6 +148,8 @@ def case_variations(string):
 
 
 def normalization_variations(string):
+    from snips_nlu_utils import normalize
+
     return {normalize(string)}
 
 

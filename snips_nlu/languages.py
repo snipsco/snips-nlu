@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 import re
 import string
 
-from num2words import num2words
-
 _PUNCTUATION_REGEXES = dict()
 _NUM2WORDS_SUPPORT = dict()
 
@@ -33,6 +31,8 @@ def get_punctuation_regex(language):
 
 
 def supports_num2words(language):
+    from num2words import num2words
+
     global _NUM2WORDS_SUPPORT
 
     if language not in _NUM2WORDS_SUPPORT:

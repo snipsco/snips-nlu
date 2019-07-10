@@ -4,9 +4,6 @@ from __future__ import unicode_literals
 from builtins import str
 from io import IOBase
 
-import yaml
-from snips_nlu_parsers import get_all_builtin_entities
-
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, DATA, MATCHING_STRICTNESS, SYNONYMS,
     USE_SYNONYMS, VALUE)
@@ -44,6 +41,8 @@ class Entity(object):
 
     @property
     def is_builtin(self):
+        from snips_nlu_parsers import get_all_builtin_entities
+
         return self.name in get_all_builtin_entities()
 
     @classmethod
@@ -104,6 +103,8 @@ class Entity(object):
                 :ref:`expected entity format <yaml_entity_format>`
         """
         if isinstance(yaml_dict, IOBase):
+            from snips_nlu.dataset.yaml_wrapper import yaml
+
             yaml_dict = yaml.safe_load(yaml_dict)
 
         object_type = yaml_dict.get("type")

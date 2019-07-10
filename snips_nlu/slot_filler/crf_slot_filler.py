@@ -11,7 +11,6 @@ from copy import deepcopy
 from pathlib import Path
 
 from future.utils import iteritems
-from sklearn_crfsuite import CRF
 
 from snips_nlu.common.dataset_utils import get_slot_name_mapping
 from snips_nlu.common.dict_utils import UnupdatableDict
@@ -25,7 +24,6 @@ from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError
 from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize
-
 from snips_nlu.slot_filler.crf_utils import (
     OUTSIDE, TAGS, TOKENS, tags_to_slots, utterance_to_sample)
 from snips_nlu.slot_filler.feature import TOKEN_NAME
@@ -401,11 +399,14 @@ class CRFSlotFiller(SlotFiller):
             return
         try:
             Path(self.crf_model.modelfile.name).unlink()
-        except OSError:
-            pass
+        except OSError as e:
+            logger.warning("Unable to remove CRF model file at path '%s': %s",
+                           self.crf_model.modelfile.name, repr(e))
 
 
 def _get_crf_model(crf_args):
+    from sklearn_crfsuite import CRF
+
     model_filename = crf_args.get("model_filename", None)
     if model_filename is not None:
         directory = Path(model_filename).parent
@@ -424,6 +425,8 @@ def _decode_tag(tag):
 
 
 def _crf_model_from_path(crf_model_path):
+    from sklearn_crfsuite import CRF
+
     with crf_model_path.open(mode="rb") as f:
         crf_model_data = f.read()
     with tempfile.NamedTemporaryFile(suffix=".crfsuite", prefix="model",

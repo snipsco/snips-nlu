@@ -89,7 +89,21 @@ CONFIG = {
                     {
                         "args": {
                             "use_stemming": True,
-                            "tagging_scheme_code": 2
+                            "tagging_scheme_code": 2,
+                            "entity_filter": {
+                                "automatically_extensible": False
+                            }
+                        },
+                        "factory_name": "entity_match",
+                        "offsets": [-2, -1, 0]
+                    },
+                    {
+                        "args": {
+                            "use_stemming": True,
+                            "tagging_scheme_code": 2,
+                            "entity_filter": {
+                                "automatically_extensible": True
+                            }
                         },
                         "factory_name": "entity_match",
                         "offsets": [-2, -1, 0],
@@ -139,7 +153,8 @@ CONFIG = {
                         "unknown_words_replacement_string": None,
                         "keep_order": True
                     }
-                }
+                },
+                "noise_reweight_factor": 1,
             }
         }
     ]

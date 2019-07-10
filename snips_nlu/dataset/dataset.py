@@ -4,9 +4,6 @@ from __future__ import print_function, unicode_literals
 import io
 from itertools import cycle
 
-import yaml
-from snips_nlu_parsers import get_builtin_entity_examples
-
 from snips_nlu.common.utils import unicode_string
 from snips_nlu.dataset.entity import Entity
 from snips_nlu.dataset.intent import Intent
@@ -167,6 +164,8 @@ class Dataset(object):
 
     @classmethod
     def _load_dataset_parts(cls, stream, stream_description):
+        from snips_nlu.dataset.yaml_wrapper import yaml
+
         intents = []
         entities = []
         for doc in yaml.safe_load_all(stream):
@@ -208,6 +207,8 @@ class Dataset(object):
         return self
 
     def _get_entity_values(self, entity):
+        from snips_nlu_parsers import get_builtin_entity_examples
+
         if entity.is_builtin:
             return cycle(get_builtin_entity_examples(
                 entity.name, self.language))

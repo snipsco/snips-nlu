@@ -6,7 +6,6 @@ from collections import Counter
 from copy import deepcopy
 
 from future.utils import iteritems, itervalues
-from snips_nlu_parsers import get_all_languages
 
 from snips_nlu.common.dataset_utils import (validate_key, validate_keys,
                                             validate_type)
@@ -31,6 +30,8 @@ def validate_and_format_dataset(dataset):
     Raise:
         DatasetFormatError: When the dataset format is wrong
     """
+    from snips_nlu_parsers import get_all_languages
+
     # Make this function idempotent
     if dataset.get(VALIDATED, False):
         return dataset
@@ -47,11 +48,18 @@ def validate_and_format_dataset(dataset):
     if language not in get_all_languages():
         raise DatasetFormatError("Unknown language: '%s'" % language)
 
+    dataset[INTENTS] = {
+        intent_name: intent_data
+        for intent_name, intent_data in sorted(iteritems(dataset[INTENTS]))}
     for intent in itervalues(dataset[INTENTS]):
         _validate_and_format_intent(intent, dataset[ENTITIES])
 
     utterance_entities_values = extract_utterance_entities(dataset)
     builtin_entity_parser = BuiltinEntityParser.build(dataset=dataset)
+
+    dataset[ENTITIES] = {
+        intent_name: entity_data
+        for intent_name, entity_data in sorted(iteritems(dataset[ENTITIES]))}
 
     for entity_name, entity in iteritems(dataset[ENTITIES]):
         uterrance_entities = utterance_entities_values[entity_name]

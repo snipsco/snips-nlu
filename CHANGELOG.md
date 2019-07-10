@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.19.8]
 ### Added
 - Add filter for entity match feature [#814](https://github.com/snipsco/snips-nlu/pull/814)
 - Add noise re-weight factor in `LogRegIntentClassifier` [#815](https://github.com/snipsco/snips-nlu/pull/815)
@@ -295,7 +295,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.19.7...HEAD
+[0.19.8]: https://github.com/snipsco/snips-nlu/compare/0.19.7...0.19.8
 [0.19.7]: https://github.com/snipsco/snips-nlu/compare/0.19.6...0.19.7
 [0.19.6]: https://github.com/snipsco/snips-nlu/compare/0.19.5...0.19.6
 [0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5

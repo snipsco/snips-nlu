@@ -11,6 +11,7 @@ branches:
   only:
   - develop
   - master
+  - /lts-.*/
 
 cache:
   # Cache downloaded pip packages and built wheels.

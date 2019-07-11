@@ -347,7 +347,7 @@ class LookupIntentParser(IntentParser):
 
     def _generate_io_mapping(self, intents, entity_placeholders):
         """Generate input-output pairs"""
-        for intent_name, intent in iteritems(intents):
+        for intent_name, intent in sorted(iteritems(intents)):
             intent_id = self._get_intent_id(intent_name)
             for entry in intent[UTTERANCES]:
                 yield self._build_io_mapping(
@@ -465,7 +465,7 @@ def _get_entity_scopes(dataset):
     intent_entities = extract_intent_entities(dataset)
     intent_groups = []
     entity_scopes = []
-    for intent, entities in iteritems(intent_entities):
+    for intent, entities in sorted(iteritems(intent_entities)):
         scope = {
             "builtin": list(
                 {ent for ent in entities if is_builtin_entity(ent)}),

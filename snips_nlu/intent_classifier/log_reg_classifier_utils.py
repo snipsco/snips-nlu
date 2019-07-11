@@ -2,11 +2,10 @@ from __future__ import division, unicode_literals
 
 import itertools
 import re
-from builtins import next, range, str, zip
+from builtins import next, range, str
 from copy import deepcopy
 from uuid import uuid4
 
-import numpy as np
 from future.utils import iteritems, itervalues
 
 from snips_nlu.constants import (DATA, ENTITY, INTENTS, TEXT,
@@ -33,6 +32,8 @@ def remove_builtin_slots(dataset):
 
 
 def get_regularization_factor(dataset):
+    import numpy as np
+
     intents = dataset[INTENTS]
     nb_utterances = [len(intent[UTTERANCES]) for intent in itervalues(intents)]
     avg_utterances = np.mean(nb_utterances)
@@ -62,6 +63,8 @@ def generate_smart_noise(noise, augmented_utterances, replacement_string,
 def generate_noise_utterances(augmented_utterances, noise, num_intents,
                               data_augmentation_config, language,
                               random_state):
+    import numpy as np
+
     if not augmented_utterances or not num_intents:
         return []
     avg_num_utterances = len(augmented_utterances) / float(num_intents)
@@ -110,6 +113,8 @@ def add_unknown_word_to_utterances(utterances, replacement_string,
 
 def build_training_data(dataset, language, data_augmentation_config, resources,
                         random_state):
+    import numpy as np
+
     # Create class mapping
     intents = dataset[INTENTS]
     intent_index = 0
@@ -120,14 +125,12 @@ def build_training_data(dataset, language, data_augmentation_config, resources,
 
     noise_class = intent_index
 
-    # Computing dataset statistics
-    nb_utterances = [len(intent[UTTERANCES]) for intent in itervalues(intents)]
-
     augmented_utterances = []
     utterance_classes = []
-    for nb_utterance, intent_name in zip(nb_utterances, intents):
+    for intent_name, intent_data in sorted(iteritems(intents)):
+        nb_utterances = len(intent_data[UTTERANCES])
         min_utterances_to_generate = max(
-            data_augmentation_config.min_utterances, nb_utterance)
+            data_augmentation_config.min_utterances, nb_utterances)
         utterances = augment_utterances(
             dataset, intent_name, language=language,
             min_utterances=min_utterances_to_generate,

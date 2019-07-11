@@ -1,10 +1,32 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.19.8]
+### Added
+- Add filter for entity match feature [#814](https://github.com/snipsco/snips-nlu/pull/814)
+- Add noise re-weight factor in `LogRegIntentClassifier` [#815](https://github.com/snipsco/snips-nlu/pull/815)
+- Add warning logs and improve errors [#821](https://github.com/snipsco/snips-nlu/pull/821)
+- Add random seed parameter in training CLI [#819](https://github.com/snipsco/snips-nlu/pull/819)
+
+### Fixed
+- Fix non-deterministic behavior [#817](https://github.com/snipsco/snips-nlu/pull/817)
+- Import modules lazily to speed up CLI startup time [#819](https://github.com/snipsco/snips-nlu/pull/819)
+- Removed dependency on `semantic_version` to accept `"subpatches"` number [#825](https://github.com/snipsco/snips-nlu/pull/825)
+
+## [0.19.7]
 ### Changed
 - Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
 - Accept ambiguous results from `DeterministicIntentParser` when confidence score is above 0.5 [#797](https://github.com/snipsco/snips-nlu/pull/797)
+- Avoid generating number variations when not needed [#799](https://github.com/snipsco/snips-nlu/pull/799)
+- Moved the NLU random state from the config to the shared resources [#801](https://github.com/snipsco/snips-nlu/pull/801)
+- Reduce custom entity parser footprint in training time [#804](https://github.com/snipsco/snips-nlu/pull/804)
+- Bumped `scikit-learn` to `>=0.21,<0.22` for `python>=3.5` and `>=0.20<0.21` for `python<3.5` [#801](https://github.com/snipsco/snips-nlu/pull/801)
+- Update dependencies [#811](https://github.com/snipsco/snips-nlu/pull/811) 
+
+### Fixed
+- Fixed a couple of bugs in the data augmentation which were making the NLU training non-deterministic [#801](https://github.com/snipsco/snips-nlu/pull/801)
+- Remove deprecated code in dataset generation [#803](https://github.com/snipsco/snips-nlu/pull/803)
+- Fix possible override of entity values when generating variations [#808](https://github.com/snipsco/snips-nlu/pull/808)
 
 ## [0.19.6]
 ### Fixed
@@ -274,6 +296,8 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[0.19.8]: https://github.com/snipsco/snips-nlu/compare/0.19.7...0.19.8
+[0.19.7]: https://github.com/snipsco/snips-nlu/compare/0.19.6...0.19.7
 [0.19.6]: https://github.com/snipsco/snips-nlu/compare/0.19.5...0.19.6
 [0.19.5]: https://github.com/snipsco/snips-nlu/compare/0.19.4...0.19.5
 [0.19.4]: https://github.com/snipsco/snips-nlu/compare/0.19.3...0.19.4

@@ -46,6 +46,7 @@ END = "end"
 BUILTIN_ENTITY_PARSER = "builtin_entity_parser"
 CUSTOM_ENTITY_PARSER = "custom_entity_parser"
 MATCHING_STRICTNESS = "matching_strictness"
+RANDOM_STATE = "random_state"
 
 # resources
 RESOURCES = "resources"

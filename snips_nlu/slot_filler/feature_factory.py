@@ -1,23 +1,24 @@
 from __future__ import unicode_literals
 
-from abc import abstractmethod, ABCMeta
+import logging
+
+from abc import ABCMeta, abstractmethod
 from builtins import str
 
 from future.utils import with_metaclass
-from snips_nlu_parsers import get_supported_grammar_entities
-from snips_nlu_utils import get_shape
 
 from snips_nlu.common.abc_utils import classproperty
 from snips_nlu.common.registrable import Registrable
+from snips_nlu.common.utils import check_random_state
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, END, GAZETTEERS, LANGUAGE, RES_MATCH_RANGE,
     START, STEMS, WORD_CLUSTERS, CUSTOM_ENTITY_PARSER, BUILTIN_ENTITY_PARSER,
-    RESOURCES)
+    RESOURCES, RANDOM_STATE, AUTOMATICALLY_EXTENSIBLE, ENTITIES)
 from snips_nlu.dataset import (
     extract_intent_entities, get_dataset_gazetteer_entities)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
-from snips_nlu.entity_parser.custom_entity_parser import \
-    CustomEntityParserUsage
+from snips_nlu.entity_parser.custom_entity_parser import (
+    CustomEntityParserUsage)
 from snips_nlu.languages import get_default_sep
 from snips_nlu.preprocessing import Token, normalize_token, stem_token
 from snips_nlu.resources import get_gazetteer, get_word_cluster
@@ -25,6 +26,8 @@ from snips_nlu.slot_filler.crf_utils import TaggingScheme, get_scheme_prefix
 from snips_nlu.slot_filler.feature import Feature
 from snips_nlu.slot_filler.features_utils import (
     entity_filter, get_word_chunk, initial_string_from_tokens)
+
+logger = logging.getLogger(__name__)
 
 
 class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
@@ -47,6 +50,7 @@ class CRFFeatureFactory(with_metaclass(ABCMeta, Registrable)):
         self.resources = shared.get(RESOURCES)
         self.builtin_entity_parser = shared.get(BUILTIN_ENTITY_PARSER)
         self.custom_entity_parser = shared.get(CUSTOM_ENTITY_PARSER)
+        self.random_state = check_random_state(shared.get(RANDOM_STATE))
 
     @classmethod
     def from_config(cls, factory_config, **shared):
@@ -317,6 +321,8 @@ class ShapeNgramFactory(SingleFeatureFactory):
         self.language = dataset[LANGUAGE]
 
     def compute_feature(self, tokens, token_index):
+        from snips_nlu_utils import get_shape
+
         max_len = len(tokens)
         end = token_index + self.n
         if 0 <= token_index < max_len and end <= max_len:
@@ -384,6 +390,12 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
         for it among the (stemmed) entity values
     -   'tagging_scheme_code' (int): Represents a :class:`.TaggingScheme`. This
         allows to give more information about the match.
+    -   'entity_filter' (dict): a filter applied to select the custom entities
+        for which the custom match feature will be computed. Available
+        filters:
+        - 'automatically_extensible': if True, selects automatically
+        extensible entities only, if False selects non automatically
+        extensible entities only
     """
 
     def __init__(self, factory_config, **shared):
@@ -394,6 +406,16 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["tagging_scheme_code"])
         self._entities = None
         self.entities = self.args.get("entities")
+        ent_filter = self.args.get("entity_filter")
+        if ent_filter:
+            try:
+                _check_custom_entity_filter(ent_filter)
+            except _InvalidCustomEntityFilter as e:
+                logger.warning(
+                    "Invalid filter '%s', invalid arguments have been ignored:"
+                    " %s", ent_filter, e,
+                )
+        self.entity_filter = ent_filter or dict()
 
     @property
     def entities(self):
@@ -406,9 +428,15 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             self.args["entities"] = value
 
     def fit(self, dataset, intent):
-        self.entities = extract_intent_entities(
+        entities_names = extract_intent_entities(
             dataset, lambda e: not is_builtin_entity(e))[intent]
-        self.entities = list(self.entities)
+        extensible = self.entity_filter.get(AUTOMATICALLY_EXTENSIBLE)
+        if extensible is not None:
+            entities_names = [
+                e for e in entities_names
+                if dataset[ENTITIES][e][AUTOMATICALLY_EXTENSIBLE] == extensible
+            ]
+        self.entities = list(entities_names)
         return self
 
     def _transform(self, tokens):
@@ -478,6 +506,22 @@ class CustomEntityMatchFactory(CRFFeatureFactory):
             CUSTOM_ENTITY_PARSER_USAGE:
                 CustomEntityParserUsage.WITHOUT_STEMS
         }
+
+
+class _InvalidCustomEntityFilter(ValueError):
+    pass
+
+
+CUSTOM_ENTITIES_FILTER_KEYS = {"automatically_extensible"}
+
+
+# pylint: disable=redefined-outer-name
+def _check_custom_entity_filter(entity_filter):
+    for k in entity_filter:
+        if k not in CUSTOM_ENTITIES_FILTER_KEYS:
+            msg = "Invalid custom entity filter key '%s'. Accepted filter " \
+                  "keys are %s" % (k, list(CUSTOM_ENTITIES_FILTER_KEYS))
+            raise _InvalidCustomEntityFilter(msg)
 
 
 @CRFFeatureFactory.register("builtin_entity_match")
@@ -566,6 +610,8 @@ class BuiltinEntityMatchFactory(CRFFeatureFactory):
 
     @staticmethod
     def _get_builtin_entity_scope(dataset, intent=None):
+        from snips_nlu_parsers import get_supported_grammar_entities
+
         language = dataset[LANGUAGE]
         grammar_entities = list(get_supported_grammar_entities(language))
         gazetteer_entities = list(

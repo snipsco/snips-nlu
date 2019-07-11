@@ -5,8 +5,6 @@ from copy import deepcopy
 from itertools import cycle
 
 from future.utils import iteritems
-from snips_nlu_parsers import get_builtin_entity_examples
-
 
 from snips_nlu.constants import (
     CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS, TEXT, UTTERANCES)
@@ -67,12 +65,14 @@ def get_contexts_iterator(dataset, intent_name, random_state):
 
 def get_entities_iterators(intent_entities, language,
                            add_builtin_entities_examples, random_state):
+    from snips_nlu_parsers import get_builtin_entity_examples
+
     entities_its = dict()
     for entity_name, entity in iteritems(intent_entities):
-        utterance_values = random_state.permutation(list(entity[UTTERANCES]))
+        utterance_values = random_state.permutation(sorted(entity[UTTERANCES]))
         if add_builtin_entities_examples and is_builtin_entity(entity_name):
-            entity_examples = get_builtin_entity_examples(entity_name,
-                                                          language)
+            entity_examples = get_builtin_entity_examples(
+                entity_name, language)
             # Builtin entity examples must be kept first in the iterator to
             # ensure that they are used when augmenting data
             iterator_values = entity_examples + list(utterance_values)

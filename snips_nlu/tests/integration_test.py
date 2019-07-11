@@ -1,6 +1,8 @@
 # coding=utf-8
 from __future__ import print_function, unicode_literals
 
+from builtins import str
+
 from future.utils import iteritems
 from snips_nlu_metrics import compute_cross_val_metrics
 

@@ -89,7 +89,21 @@ CONFIG = {
                     {
                         "args": {
                             "use_stemming": True,
-                            "tagging_scheme_code": 2
+                            "tagging_scheme_code": 2,
+                            "entity_filter": {
+                                "automatically_extensible": False
+                            }
+                        },
+                        "factory_name": "entity_match",
+                        "offsets": [-2, -1, 0]
+                    },
+                    {
+                        "args": {
+                            "use_stemming": True,
+                            "tagging_scheme_code": 2,
+                            "entity_filter": {
+                                "automatically_extensible": True
+                            }
                         },
                         "factory_name": "entity_match",
                         "offsets": [-2, -1, 0],
@@ -111,8 +125,7 @@ CONFIG = {
                     "min_utterances": 200,
                     "capitalization_ratio": 0.2,
                     "add_builtin_entities_examples": True
-                },
-                "random_seed": None
+                }
             },
             "intent_classifier_config": {
                 "unit_name": "log_reg_intent_classifier",
@@ -141,7 +154,7 @@ CONFIG = {
                         "keep_order": True
                     }
                 },
-                "random_seed": None
+                "noise_reweight_factor": 1,
             }
         }
     ]

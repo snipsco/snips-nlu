@@ -1,22 +1,10 @@
 from __future__ import unicode_literals
 
 from future.utils import iteritems, itervalues
-from snips_nlu_utils import normalize
-from yaml import Loader, SafeLoader
 
 from snips_nlu.constants import (
     DATA, ENTITIES, ENTITY, INTENTS, TEXT, UTTERANCES)
 from snips_nlu.entity_parser.builtin_entity_parser import is_gazetteer_entity
-
-
-def construct_yaml_str(self, node):
-    # Override the default string handling function
-    # to always return unicode objects
-    return self.construct_scalar(node)
-
-
-Loader.add_constructor("tag:yaml.org,2002:str", construct_yaml_str)
-SafeLoader.add_constructor("tag:yaml.org,2002:str", construct_yaml_str)
 
 
 def extract_utterance_entities(dataset):
@@ -43,6 +31,8 @@ def extract_intent_entities(dataset, entity_filter=None):
 
 
 def extract_entity_values(dataset, apply_normalization):
+    from snips_nlu_utils import normalize
+
     entities_per_intent = {intent: set() for intent in dataset[INTENTS]}
     intent_entities = extract_intent_entities(dataset)
     for intent, entities in iteritems(intent_entities):

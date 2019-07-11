@@ -1,23 +1,28 @@
 from __future__ import print_function, unicode_literals
 
-from pathlib import Path
 
-import plac
+def add_link_parser(subparsers):
+    subparser = subparsers.add_parser(
+        "link", help="Manually link downloaded resources")
+    subparser.add_argument("origin", type=str,
+                           help="Package name or local path to model")
+    subparser.add_argument("link_name", type=str,
+                           help="Name of the symbolic link which will be "
+                                "created")
+    subparser.add_argument("-f", "--force", action="store_true",
+                           help="Force overwriting of existing link")
+    subparser.set_defaults(func=_link)
+    return subparser
 
-from snips_nlu.cli.compatibility import create_symlink
-from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
-from snips_nlu.constants import DATA_PATH
-from snips_nlu.resources import get_resources_sub_directory
-from snips_nlu.common.utils import get_package_path, is_package
+
+def _link(args_namespace):
+    return link(args_namespace.origin, args_namespace.link_name,
+                args_namespace.force)
 
 
 # inspired from
 # https://github.com/explosion/spaCy/blob/master/spacy/cli/link.py
 
-@plac.annotations(
-    origin=("package name or local path to model", "positional", None, str),
-    link_name=("name of shortcut link to create", "positional", None, str),
-    force=("force overwriting of existing link", "flag", "f", bool))
 def link(origin, link_name, force=False, resources_path=None):
     """
     Create a symlink for language resources within the snips_nlu/data
@@ -27,6 +32,8 @@ def link(origin, link_name, force=False, resources_path=None):
     Linking resources allows loading them via
     snips_nlu.load_resources(link_name).
     """
+    from snips_nlu.cli.utils import PrettyPrintLevel, pretty_print
+
     link_path, resources_dir = link_resources(origin, link_name, force,
                                               resources_path)
     pretty_print("%s --> %s" % (str(resources_dir), str(link_path)),
@@ -34,6 +41,12 @@ def link(origin, link_name, force=False, resources_path=None):
 
 
 def link_resources(origin, link_name, force, resources_path):
+    from pathlib import Path
+    from snips_nlu.cli.compatibility import create_symlink
+    from snips_nlu.common.utils import get_package_path, is_package
+    from snips_nlu.constants import DATA_PATH
+    from snips_nlu.resources import get_resources_sub_directory
+
     if is_package(origin):
         resources_path = get_package_path(origin)
     else:

@@ -14,15 +14,17 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
 
     # pylint: disable=line-too-long
     def __init__(self, data_augmentation_config=None, featurizer_config=None,
-                 random_seed=None):
+                 noise_reweight_factor=1.0):
         """
         Args:
             data_augmentation_config (:class:`IntentClassifierDataAugmentationConfig`):
                     Defines the strategy of the underlying data augmentation
             featurizer_config (:class:`FeaturizerConfig`): Configuration of the
                 :class:`.Featurizer` used underneath
-            random_seed (int, optional): Allows to fix the seed ot have
-                reproducible trainings
+            noise_reweight_factor (float, optional): this parameter allows to
+                change the weight of the None class. By default, the class
+                weights are computed using a "balanced" strategy. The
+                noise_reweight_factor allows to deviate from this strategy.
         """
         if data_augmentation_config is None:
             data_augmentation_config = IntentClassifierDataAugmentationConfig()
@@ -32,7 +34,7 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
         self.data_augmentation_config = data_augmentation_config
         self._featurizer_config = None
         self.featurizer_config = featurizer_config
-        self.random_seed = random_seed
+        self.noise_reweight_factor = noise_reweight_factor
 
     # pylint: enable=line-too-long
 
@@ -84,7 +86,7 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
             "featurizer_config": self.featurizer_config.to_dict(),
-            "random_seed": self.random_seed
+            "noise_reweight_factor": self.noise_reweight_factor,
         }
 
 

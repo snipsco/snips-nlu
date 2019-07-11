@@ -174,6 +174,26 @@ the dataset we generated earlier:
 
     engine.fit(dataset)
 
+Note that, by default, training of the NLU engine is non-deterministic:
+training and testing multiple times on the same data may produce different
+outputs.
+
+Reproducible trainings can be achieved by passing a **random seed** to the
+engine:
+
+.. code-block:: python
+
+    seed = 42
+    engine = SnipsNLUEngine(config=CONFIG_EN, random_state=seed)
+    engine.fit(dataset)
+
+
+.. note::
+
+    Due to a ``scikit-learn`` bug fixed in version ``0.21`` we can't guarantee
+    any deterministic behavior if you're using a Python version ``<3.5`` since
+    ``scikit-learn>=0.21`` is only available starting from Python ``>=3.5``
+
 
 Parsing
 -------

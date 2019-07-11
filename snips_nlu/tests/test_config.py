@@ -113,7 +113,7 @@ class TestConfig(SnipsTest):
             "data_augmentation_config":
                 IntentClassifierDataAugmentationConfig().to_dict(),
             "featurizer_config": FeaturizerConfig().to_dict(),
-            "random_seed": 42
+            "noise_reweight_factor": 5,
         }
 
         # When
@@ -151,8 +151,7 @@ class TestConfig(SnipsTest):
                 "algorithm": "lbfgs"
             },
             "data_augmentation_config":
-                SlotFillerDataAugmentationConfig().to_dict(),
-            "random_seed": 43
+                SlotFillerDataAugmentationConfig().to_dict()
         }
 
         # When

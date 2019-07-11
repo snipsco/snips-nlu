@@ -2,10 +2,14 @@
 from __future__ import unicode_literals
 
 import io
-
+import sys
 from builtins import str
+from unittest import skipIf
+
+from checksumdir import dirhash
 from mock import patch
 
+from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import (
     INTENTS, LANGUAGE_EN, RES_INTENT_NAME, RES_PROBA, UTTERANCES)
 from snips_nlu.dataset import Dataset
@@ -50,8 +54,7 @@ utterances:
 - does it rain
 - will it rain tomorrow""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        classifier = LogRegIntentClassifier(random_state=42).fit(dataset)
         text = "hey how are you doing ?"
 
         # When
@@ -108,8 +111,7 @@ utterances:
 - brew two cups of coffee
 - can you prepare one cup of coffee""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        classifier = LogRegIntentClassifier(random_state=42).fit(dataset)
 
         # When
         text1 = "Make me two cups of tea"
@@ -169,8 +171,7 @@ name: intent3
 utterances:
   - yili yulu yele""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        config = LogRegIntentClassifierConfig(random_seed=42)
-        classifier = LogRegIntentClassifier(config).fit(dataset)
+        classifier = LogRegIntentClassifier(random_state=42).fit(dataset)
         text = "yala yili yulu"
 
         # When
@@ -239,9 +240,11 @@ name: intent2
 utterances:
   - lorem ipsum""")
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
-        intent_classifier = LogRegIntentClassifier().fit(dataset)
+        intent_classifier = LogRegIntentClassifier(
+            random_state=42).fit(dataset)
         coeffs = intent_classifier.classifier.coef_.tolist()
         intercept = intent_classifier.classifier.intercept_.tolist()
+        t_ = intent_classifier.classifier.t_
 
         # When
         intent_classifier.persist(self.tmp_file_path)
@@ -252,7 +255,7 @@ utterances:
             "config": LogRegIntentClassifierConfig().to_dict(),
             "coeffs": coeffs,
             "intercept": intercept,
-            "t_": 701.0,
+            "t_": t_,
             "intent_list": intent_list,
             "featurizer": "featurizer"
         }
@@ -471,3 +474,44 @@ utterances:
         # Then
         self.assertIsInstance(log, str)
         self.assertIn("Top 20", log)
+
+    @skipIf(sys.version_info[0:2] < (3, 5),
+            "The bug fixed here "
+            "https://github.com/scikit-learn/scikit-learn/pull/13422 is "
+            "available for scikit-learn>=0.21.0 in which the support for "
+            "Python<=3.4 has been dropped")
+    def test_training_should_be_reproducible(self):
+        # Given
+        random_state = 40
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        classifier1 = LogRegIntentClassifier(random_state=random_state)
+        classifier1.fit(dataset)
+
+        classifier2 = LogRegIntentClassifier(random_state=random_state)
+        classifier2.fit(dataset)
+
+        # Then
+        with temp_dir() as tmp_dir:
+            dir_classifier1 = tmp_dir / "classifier1"
+            dir_classifier2 = tmp_dir / "classifier2"
+            classifier1.persist(dir_classifier1)
+            classifier2.persist(dir_classifier2)
+            hash1 = dirhash(str(dir_classifier1), 'sha256')
+            hash2 = dirhash(str(dir_classifier2), 'sha256')
+            self.assertEqual(hash1, hash2)

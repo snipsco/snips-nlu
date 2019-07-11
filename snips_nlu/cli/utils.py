@@ -7,10 +7,10 @@ import sys
 from enum import Enum, unique
 
 import requests
-from semantic_version import Version
 
 import snips_nlu
 from snips_nlu import __about__
+from snips_nlu.common.utils import parse_version
 
 
 @unique
@@ -21,8 +21,7 @@ class PrettyPrintLevel(Enum):
     SUCCESS = 3
 
 
-FMT = "[%(levelname)s][%(asctime)s.%(msecs)03d][%(name)s]: " \
-      "%(message)s"
+FMT = "[%(levelname)s][%(asctime)s.%(msecs)03d][%(name)s]: %(message)s"
 DATE_FMT = "%H:%M:%S"
 
 
@@ -72,8 +71,9 @@ def get_json(url, desc):
 
 def get_compatibility():
     version = __about__.__version__
-    semver_version = Version(version)
-    minor_version = "%d.%d" % (semver_version.major, semver_version.minor)
+    parsed_version = parse_version(version)
+    minor_version = "%s.%s" % (
+        parsed_version["major"], parsed_version["minor"])
     table = get_json(__about__.__compatibility__, "Compatibility table")
     nlu_table = table["snips-nlu"]
     compatibility = nlu_table.get(version, nlu_table.get(minor_version))

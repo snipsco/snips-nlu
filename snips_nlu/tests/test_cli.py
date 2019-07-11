@@ -1,13 +1,20 @@
 # coding=utf-8
 import io
 import shutil
+import sys
 import tempfile
 
-from snips_nlu import SnipsNLUEngine
-from snips_nlu.cli import (
-    cross_val_metrics, parse, train, train_test_metrics, generate_dataset)
+from mock import patch
+
+from snips_nlu.__about__ import __model_version__, __version__
+from snips_nlu.cli import get_arg_parser
+from snips_nlu.cli.generate_dataset import generate_dataset
+from snips_nlu.cli.inference import parse
+from snips_nlu.cli.metrics import cross_val_metrics, train_test_metrics
+from snips_nlu.cli.training import train
 from snips_nlu.common.utils import unicode_string, json_string
 from snips_nlu.dataset import Dataset
+from snips_nlu.nlu_engine import SnipsNLUEngine
 from snips_nlu.tests.utils import SnipsTest, TEST_PATH, redirect_stdout
 
 
@@ -61,8 +68,7 @@ utterances:
 
     def test_train(self):
         # Given / When
-        train(self.beverage_dataset_path, str(self.tmp_file_path),
-              config_path=None, verbose=False)
+        train(self.beverage_dataset_path, str(self.tmp_file_path))
 
         # Then
         if not self.tmp_file_path.exists():
@@ -217,3 +223,123 @@ values:
         # Then
         if not self.tmp_file_path.exists():
             self.fail("No metrics found")
+
+    @patch("snips_nlu.cli.versions.print")
+    @patch("snips_nlu.cli.metrics.train_test_metrics")
+    @patch("snips_nlu.cli.metrics.cross_val_metrics")
+    @patch("snips_nlu.cli.link.link")
+    @patch("snips_nlu.cli.download_entity.download_language_builtin_entities")
+    @patch("snips_nlu.cli.download_entity.download_builtin_entity")
+    @patch("snips_nlu.cli.download.download_all_languages")
+    @patch("snips_nlu.cli.download.download")
+    @patch("snips_nlu.cli.inference.parse")
+    @patch("snips_nlu.cli.training.train")
+    @patch("snips_nlu.cli.generate_dataset.generate_dataset")
+    def test_main_arg_parser(
+            self, mocked_generate_dataset, mocked_train, mocked_parse,
+            mocked_download, mocked_download_all_languages,
+            mocked_download_entity, mocked_download_language_entities,
+            mocked_link, mocked_cross_val_metrics, mocked_train_test_metrics,
+            mocked_print_function):
+        # Given
+        arg_parser = get_arg_parser()
+
+        # When
+        tests = [
+            (
+                "generate-dataset en intent.yaml entity.yaml",
+                mocked_generate_dataset,
+                ["en", "intent.yaml", "entity.yaml"]
+            ),
+            (
+                "train -c config.json -r 42 dataset.json engine -vv",
+                mocked_train,
+                ["dataset.json", "engine", "config.json", 2, 42]
+            ),
+            (
+                "parse engine",
+                mocked_parse,
+                ["engine", None, 0]
+            ),
+            (
+                "parse engine -q foobar",
+                mocked_parse,
+                ["engine", "foobar", 0]
+            ),
+            (
+                "download en",
+                mocked_download,
+                ["en", False]
+            ),
+            (
+                "download en -- --user",
+                mocked_download,
+                ["en", False, "--user"]
+            ),
+            (
+                "download-all-languages",
+                mocked_download_all_languages,
+                []
+            ),
+            (
+                "download-all-languages -- --user",
+                mocked_download_all_languages,
+                ["--user"]
+            ),
+            (
+                "download-entity snips/musicArtist en",
+                mocked_download_entity,
+                ["snips/musicArtist", "en"]
+            ),
+            (
+                "download-entity snips/musicArtist en -- --user",
+                mocked_download_entity,
+                ["snips/musicArtist", "en", "--user"]
+            ),
+            (
+                "download-language-entities en",
+                mocked_download_language_entities,
+                ["en"]
+            ),
+            (
+                "download-language-entities en -- --user",
+                mocked_download_language_entities,
+                ["en", "--user"]
+            ),
+            (
+                "link origin dest --force",
+                mocked_link,
+                ["origin", "dest", True]
+            ),
+            (
+                "cross-val-metrics -c config.json -n 5 -t 0.5 -s -i "
+                "dataset.json metrics.json -vv",
+                mocked_cross_val_metrics,
+                ["dataset.json", "metrics.json", "config.json", 5, 0.5, True,
+                 True, 2]
+            ),
+            (
+                "train-test-metrics -c config.json -s -i train.json test.json "
+                "metrics.json -vv",
+                mocked_train_test_metrics,
+                ["train.json", "test.json", "metrics.json", "config.json",
+                 True, True, 2]
+            ),
+            (
+                "version",
+                mocked_print_function,
+                [__version__]
+            ),
+            (
+                "model-version",
+                mocked_print_function,
+                [__model_version__]
+            ),
+        ]
+
+        # Then
+        for args, expected_fn, expected_fn_args in tests:
+            sys.argv = ["snips-nlu"] + args.split()
+            parsed_args = arg_parser.parse_args()
+            parsed_args.func(parsed_args)
+            expected_fn.assert_called_with(*expected_fn_args)

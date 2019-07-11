@@ -16,7 +16,7 @@ class NLUEngineConfig(FromDict, ProcessingUnitConfig):
             the order in which each parser will be called by the nlu engine.
     """
 
-    def __init__(self, intent_parsers_configs=None):
+    def __init__(self, intent_parsers_configs=None, random_seed=None):
         from snips_nlu.intent_parser import IntentParser
 
         if intent_parsers_configs is None:
@@ -29,6 +29,7 @@ class NLUEngineConfig(FromDict, ProcessingUnitConfig):
             ]
         self.intent_parsers_configs = [
             IntentParser.get_config(conf) for conf in intent_parsers_configs]
+        self.random_seed = random_seed
 
     @property
     def unit_name(self):

@@ -586,15 +586,15 @@ utterances:
         expected_intents = [
             {
                 RES_INTENT_NAME: "greeting1",
-                RES_PROBA: 1. / (1. + 1 / 2 + 1 / 3)
+                RES_PROBA: 1. / (1. + 1. / 2. + 1. / 3.)
             },
             {
                 RES_INTENT_NAME: "greeting2",
-                RES_PROBA: (1. / 2.) / (1. + 1 / 2 + 1 / 3)
+                RES_PROBA: (1. / 2.) / (1. + 1. / 2. + 1. / 3.)
             },
             {
                 RES_INTENT_NAME: "greeting3",
-                RES_PROBA: (1. / 3.) / (1. + 1 / 2 + 1 / 3)
+                RES_PROBA: (1. / 3.) / (1. + 1. / 2. + 1. / 3.)
             },
             {
                 RES_INTENT_NAME: None,
@@ -1033,7 +1033,6 @@ values:
             self.tmp_file_path / "intent_parser.json", parser_dict)
         self.writeJsonContent(self.tmp_file_path / "metadata.json", metadata)
         resources = self.get_resources("en")
-        print("STOP WORDS = %s" % resources[STOP_WORDS])
         builtin_entity_parser = BuiltinEntityParser.build(language="en")
         custom_entity_parser = EntityParserMock()
 

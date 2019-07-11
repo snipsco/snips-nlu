@@ -43,7 +43,7 @@ utterances:
       This is a [dummy_slot_name](dummy_1) query with another 
       [dummy_slot_name2](dummy_2) [startTime](at 10p.m.) or 
       [startTime](tomorrow)
-  - "This    is  a  [dummy_slot_name](dummy_1) "  
+  - "This    is  a  [dummy_slot_name](dummy_1) "
   - "[startTime](tomorrow evening) there is a [dummy_slot_name](dummy_1)"
   
 ---
@@ -514,15 +514,15 @@ utterances:
         expected_intents = [
             {
                 RES_INTENT_NAME: "greeting1",
-                RES_PROBA: 1. / (1. + 1 / 2 + 1 / 3)
+                RES_PROBA: 1. / (1. + 1. / 2. + 1. / 3.)
             },
             {
                 RES_INTENT_NAME: "greeting2",
-                RES_PROBA: (1. / 2.) / (1. + 1 / 2 + 1 / 3)
+                RES_PROBA: (1. / 2.) / (1. + 1. / 2. + 1. / 3.)
             },
             {
                 RES_INTENT_NAME: "greeting3",
-                RES_PROBA: (1. / 3.) / (1. + 1 / 2 + 1 / 3)
+                RES_PROBA: (1. / 3.) / (1. + 1. / 2. + 1. / 3.)
             },
             {
                 RES_INTENT_NAME: None,

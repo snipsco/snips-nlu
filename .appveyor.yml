@@ -20,7 +20,7 @@ cache:
 
 install:
   - "%PYTHON%\\python.exe -m pip install wheel"
-  - "%PYTHON%\\python.exe -m pip install -e .[test] --verbose"
+  - "%PYTHON%\\python.exe -m pip install -e .[test]"
 
 build: false
 

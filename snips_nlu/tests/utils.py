@@ -76,12 +76,12 @@ class SnipsTest(TestCase):
     @staticmethod
     def writeJsonContent(path, json_dict):
         json_content = json_string(json_dict)
-        with path.open(mode="w") as f:
+        with path.open(mode="w", encoding="utf8") as f:
             f.write(json_content)
 
     @staticmethod
     def writeFileContent(path, content):
-        with path.open(mode="w") as f:
+        with path.open(mode="w", encoding="utf8") as f:
             f.write(unicode_string(content))
 
 
@@ -153,7 +153,7 @@ class MockProcessingUnitMixin(object):
     def persist(self, path):
         path = Path(path)
         path.mkdir()
-        with (path / "metadata.json").open(mode="w") as f:
+        with (path / "metadata.json").open(mode="w", encoding="utf8") as f:
             unit_dict = {"unit_name": self.unit_name, "fitted": self.fitted}
             f.write(json_string(unit_dict))
 
@@ -206,8 +206,10 @@ class MockSlotFiller(MockProcessingUnitMixin, SlotFiller):
 
 class EntityParserMock(EntityParser):
 
-    def __init__(self, entities):
+    def __init__(self, entities=None):
         super(EntityParserMock, self).__init__()
+        if entities is None:
+            entities = dict()
         self.entities = entities
 
     def persist(self, path):

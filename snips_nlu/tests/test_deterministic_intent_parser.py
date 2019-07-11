@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import io
 from builtins import range
+from copy import deepcopy
 
 from checksumdir import dirhash
 from mock import patch
@@ -42,7 +43,7 @@ utterances:
       This is a [dummy_slot_name](dummy_1) query with another 
       [dummy_slot_name2](dummy_2) [startTime](at 10p.m.) or 
       [startTime](tomorrow)
-  - "This    is  a  [dummy_slot_name](dummy_1) "  
+  - "This    is  a  [dummy_slot_name](dummy_1) "
   - "[startTime](tomorrow evening) there is a [dummy_slot_name](dummy_1)"
   
 ---
@@ -452,7 +453,7 @@ values:
   - [this thing, that]
   """)
 
-        resources = self.get_resources("en")
+        resources = deepcopy(self.get_resources("en"))
         resources[STOP_WORDS] = {"a", "this", "that"}
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser_config = DeterministicIntentParserConfig(ignore_stop_words=True)
@@ -482,24 +483,26 @@ values:
 
     def test_should_get_intents(self):
         # Given
-        dataset_stream = io.StringIO("""
+        dataset_stream = io.StringIO(
+            """
 ---
 type: intent
 name: greeting1
 utterances:
-  - Hello [name](John)
+  - Hello John
 
 ---
 type: intent
 name: greeting2
 utterances:
-  - How are you [name](Thomas)
-  
+  - Hello [name](John)
+
 ---
 type: intent
 name: greeting3
 utterances:
-  - Hi [name](Robert)""")
+  - "[greeting](Hello) [name](John)"
+        """)
 
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         parser = DeterministicIntentParser().fit(dataset)
@@ -509,10 +512,22 @@ utterances:
 
         # Then
         expected_intents = [
-            {RES_INTENT_NAME: "greeting1", RES_PROBA: 1.0},
-            {RES_INTENT_NAME: "greeting2", RES_PROBA: 0.0},
-            {RES_INTENT_NAME: "greeting3", RES_PROBA: 0.0},
-            {RES_INTENT_NAME: None, RES_PROBA: 0.0}
+            {
+                RES_INTENT_NAME: "greeting1",
+                RES_PROBA: 1. / (1. + 1. / 2. + 1. / 3.)
+            },
+            {
+                RES_INTENT_NAME: "greeting2",
+                RES_PROBA: (1. / 2.) / (1. + 1. / 2. + 1. / 3.)
+            },
+            {
+                RES_INTENT_NAME: "greeting3",
+                RES_PROBA: (1. / 3.) / (1. + 1. / 2. + 1. / 3.)
+            },
+            {
+                RES_INTENT_NAME: None,
+                RES_PROBA: 0.0
+            },
         ]
 
         def sorting_key(intent_res):

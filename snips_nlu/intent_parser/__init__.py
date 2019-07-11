@@ -1,3 +1,4 @@
 from .deterministic_intent_parser import DeterministicIntentParser
 from .intent_parser import IntentParser
+from .lookup_intent_parser import LookupIntentParser
 from .probabilistic_intent_parser import ProbabilisticIntentParser

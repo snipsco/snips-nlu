@@ -222,7 +222,8 @@ class LogRegIntentClassifier(IntentClassifier):
         }
 
         classifier_json = json_string(self_as_dict)
-        with (path / "intent_classifier.json").open(mode="w") as f:
+        with (path / "intent_classifier.json").open(mode="w",
+                                                    encoding="utf8") as f:
             f.write(classifier_json)
         self.persist_metadata(path)
 

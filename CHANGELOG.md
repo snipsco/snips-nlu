@@ -7,7 +7,15 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Replace `DeterministicIntentParser` by `LookupIntentParser` in default configs [#829](https://github.com/snipsco/snips-nlu/pull/829)
-- Bumped `snips-nlu-parsers` to `0.65.0`
+- Bumped `snips-nlu-parsers` to `0.3.x` introducing new builtin entities:
+    - `snips/time`
+    - `snips/timePeriod`
+    - `snips/date`
+    - `snips/datePeriod`
+    - `snips/city`
+    - `snips/country`
+    - `snips/region`
+    
 
 ## [0.19.8]
 ### Added

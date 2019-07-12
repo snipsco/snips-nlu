@@ -4,10 +4,8 @@ CONFIG = {
     "unit_name": "nlu_engine",
     "intent_parsers_configs": [
         {
-            "unit_name": "deterministic_intent_parser",
-            "max_queries": 500,
-            "max_pattern_length": 1000,
-            "ignore_stop_words": False
+            "unit_name": "lookup_intent_parser",
+            "ignore_stop_words": True
         },
         {
             "unit_name": "probabilistic_intent_parser",

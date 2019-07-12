@@ -5,7 +5,7 @@ CONFIG = {
     "intent_parsers_configs": [
         {
             "unit_name": "lookup_intent_parser",
-            "ignore_stop_words": True
+            "ignore_stop_words": False
         },
         {
             "unit_name": "probabilistic_intent_parser",

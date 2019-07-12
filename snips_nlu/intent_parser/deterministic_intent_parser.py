@@ -21,7 +21,7 @@ from snips_nlu.constants import (
     RES_MATCH_RANGE, RES_SLOTS, RES_VALUE, SLOT_NAME, START, TEXT, UTTERANCES,
     RES_PROBA)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.dataset.utils import extract_entity_values
+from snips_nlu.dataset.utils import get_stop_words_whitelist
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.exceptions import IntentNotFoundError, LoadingError
 from snips_nlu.intent_parser.intent_parser import IntentParser
@@ -143,7 +143,7 @@ class DeterministicIntentParser(IntentParser):
         self.slot_names_to_entities = get_slot_name_mappings(dataset)
         self.group_names_to_slot_names = _get_group_names_to_slot_names(
             self.slot_names_to_entities)
-        self._stop_words_whitelist = _get_stop_words_whitelist(
+        self._stop_words_whitelist = get_stop_words_whitelist(
             dataset, self._stop_words)
 
         # Do not use ambiguous patterns that appear in more than one intent
@@ -239,11 +239,12 @@ class DeterministicIntentParser(IntentParser):
             cleaned_processed_text = self._preprocess_text(processed_text,
                                                            intent)
             for regex in self.regexes_per_intent[intent]:
-                res = self._get_matching_result(text, cleaned_processed_text,
-                                                regex, intent, mapping)
+                res = self._get_matching_result(text, cleaned_text, regex,
+                                                intent)
                 if res is None and cleaned_text != cleaned_processed_text:
-                    res = self._get_matching_result(text, cleaned_text, regex,
-                                                    intent)
+                    res = self._get_matching_result(
+                        text, cleaned_processed_text, regex, intent, mapping)
+
                 if res is not None:
                     results.append(res)
                     break
@@ -300,6 +301,7 @@ class DeterministicIntentParser(IntentParser):
 
         if intent not in self.regexes_per_intent:
             raise IntentNotFoundError(intent)
+
         slots = self.parse(text, intents=[intent])[RES_SLOTS]
         if slots is None:
             slots = []
@@ -408,7 +410,7 @@ class DeterministicIntentParser(IntentParser):
         parser_json = json_string(self.to_dict())
         parser_path = path / "intent_parser.json"
 
-        with parser_path.open(mode="w") as f:
+        with parser_path.open(mode="w", encoding="utf8") as f:
             f.write(parser_json)
         self.persist_metadata(path)
 
@@ -514,14 +516,3 @@ def _deduplicate_overlapping_slots(slots, language):
 def _get_entity_name_placeholder(entity_label, language):
     return "%%%s%%" % "".join(
         tokenize_light(entity_label, language)).upper()
-
-
-def _get_stop_words_whitelist(dataset, stop_words):
-    entity_values_per_intent = extract_entity_values(
-        dataset, apply_normalization=True)
-    stop_words_whitelist = dict()
-    for intent, entity_values in iteritems(entity_values_per_intent):
-        whitelist = stop_words.intersection(entity_values)
-        if whitelist:
-            stop_words_whitelist[intent] = whitelist
-    return stop_words_whitelist

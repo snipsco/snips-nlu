@@ -53,7 +53,7 @@ utterances:
         self.beverage_dataset_path = self.fixture_dir / "beverage_dataset.json"
         if self.beverage_dataset_path.exists():
             self.beverage_dataset_path.unlink()
-        with self.beverage_dataset_path.open(mode="w") as f:
+        with self.beverage_dataset_path.open(mode="w", encoding="utf8") as f:
             f.write(json_string(beverage_dataset))
 
         self.tmp_file_path = self.fixture_dir / next(
@@ -147,7 +147,7 @@ name: city
 values:
   - [new york, big apple]"""
         self.tmp_file_path = self.tmp_file_path.with_suffix(".yaml")
-        with self.tmp_file_path.open(mode="w") as f:
+        with self.tmp_file_path.open(mode="w", encoding="utf8") as f:
             f.write(unicode_string(yaml_string))
 
         # When

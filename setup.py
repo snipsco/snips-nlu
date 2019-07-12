@@ -31,8 +31,7 @@ required = [
     "scipy>=1.0,<2.0",
     "sklearn-crfsuite>=0.3.6,<0.4",
     "snips-nlu-parsers>=0.3,<0.4",
-    "snips-nlu-utils>=0.8,<0.9",
-    "deprecation>=2,<3",
+    "snips_nlu_utils>=0.9,<0.10",
 ]
 
 extras_require = {

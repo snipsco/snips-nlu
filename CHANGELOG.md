@@ -2,9 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.20.0]
-### Changed
-- Bumped `snips-nlu-parser` to `0.65.0`
+### Added
+- Add new intent parser: `LookupIntentParser` [#759](https://github.com/snipsco/snips-nlu/pull/759)
 
+### Changed
+- Replace `DeterministicIntentParser` by `LookupIntentParser` in default configs [#829](https://github.com/snipsco/snips-nlu/pull/829)
+- Bumped `snips-nlu-parsers` to `0.65.0`
 
 ## [0.19.8]
 ### Added

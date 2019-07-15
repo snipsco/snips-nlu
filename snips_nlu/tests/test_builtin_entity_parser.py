@@ -41,7 +41,7 @@ class TestBuiltinEntityParser(SnipsTest):
 
     def test_should_parse_gazetteer_entities(self):
         # Given
-        text = "je veux ecouter les daft punk s'il vous plait"
+        text = "je veux ecouter daft punk s'il vous plait"
         parser = BuiltinEntityParser.build(
             language="fr", gazetteer_entity_scope=["snips/musicArtist"])
 
@@ -56,8 +56,8 @@ class TestBuiltinEntityParser(SnipsTest):
                 },
                 "entity_kind": "snips/musicArtist",
                 "range": {
-                    "end": 29,
-                    "start": 20
+                    "end": 25,
+                    "start": 16
                 },
                 "value": "daft punk"
             }
@@ -107,7 +107,7 @@ class TestBuiltinEntityParser(SnipsTest):
                 },
                 "resolved_value": {
                     "kind": "MusicTrack",
-                    "value": "3 nuits par semaine"
+                    "value": "Trois nuits par semaine"
                 },
                 "entity_kind": "snips/musicTrack"
             }

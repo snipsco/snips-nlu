@@ -256,6 +256,15 @@ Licence
 
 This library is provided by `Snips <https://www.snips.ai>`_ as Open Source software. See `LICENSE <LICENSE>`_ for more information.
 
+
+Geonames Licence
+----------------
+
+The `snips/city`, `snips/country` and `snips/region` builtin entities rely on
+software from Geonames, which is made available under a Creative Commons Attribution 4.0
+license international. For the license and warranties for Geonames please refer to: https://creativecommons.org/licenses/by/4.0/legalcode.
+
+
 .. _external language resources: https://github.com/snipsco/snips-nlu-language-resources
 .. _forum: https://forum.snips.ai/
 .. _blog post: https://medium.com/snips-ai/an-introduction-to-snips-nlu-the-open-source-library-behind-snips-embedded-voice-platform-b12b1a60a41a

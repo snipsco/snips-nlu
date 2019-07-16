@@ -745,6 +745,24 @@ utterances:
         with self.assertRaises(IncompatibleModelError):
             SnipsNLUEngine.from_path(self.tmp_file_path)
 
+    def test_should_bypass_model_version_check_when_specified(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: Greeting
+utterances:
+- hello world""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        with patch("snips_nlu.nlu_engine.nlu_engine.__model_version__",
+                   "0.1.0"):
+            engine = SnipsNLUEngine().fit(dataset)
+            engine.persist(self.tmp_file_path)
+
+        # When / Then
+        SnipsNLUEngine.from_path(self.tmp_file_path, bypass_version_check=True)
+
     def test_should_raise_when_persisting_at_existing_path(self):
         # Given
         self.tmp_file_path.mkdir()

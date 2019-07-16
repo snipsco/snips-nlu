@@ -47,6 +47,7 @@ BUILTIN_ENTITY_PARSER = "builtin_entity_parser"
 CUSTOM_ENTITY_PARSER = "custom_entity_parser"
 MATCHING_STRICTNESS = "matching_strictness"
 RANDOM_STATE = "random_state"
+BYPASS_VERSION_CHECK = "bypass_version_check"
 
 # resources
 RESOURCES = "resources"

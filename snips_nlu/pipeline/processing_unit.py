@@ -165,7 +165,7 @@ class ProcessingUnit(with_metaclass(ABCMeta, Registrable)):
         metadata = {"unit_name": self.unit_name}
         metadata.update(kwargs)
         metadata_json = json_string(metadata)
-        with (path / "metadata.json").open(mode="w") as f:
+        with (path / "metadata.json").open(mode="w", encoding="utf8") as f:
             f.write(metadata_json)
 
     @abstractmethod

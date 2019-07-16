@@ -57,9 +57,11 @@ class TestPreprocessing(SnipsTest):
 
         # Then
         expected_tokens = [
-            Token(value='$$', start=0, end=2),
+            Token(value='$', start=0, end=1),
+            Token(value='$', start=1, end=2),
             Token(value='%', start=3, end=4),
-            Token(value='!!', start=5, end=7)
+            Token(value='!', start=5, end=6),
+            Token(value='!', start=6, end=7)
         ]
         self.assertListEqual(tokens, expected_tokens)
 

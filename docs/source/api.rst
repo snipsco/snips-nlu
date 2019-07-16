@@ -27,6 +27,9 @@ Intent Parser
 .. autoclass:: DeterministicIntentParser
    :members:
 
+.. autoclass:: LookupIntentParser
+   :members:
+
 .. autoclass:: ProbabilisticIntentParser
    :members:
 
@@ -87,6 +90,9 @@ Configurations
    :members:
 
 .. autoclass:: DeterministicIntentParserConfig
+   :members:
+
+.. autoclass:: LookupIntentParserConfig
    :members:
 
 .. autoclass:: ProbabilisticIntentParserConfig

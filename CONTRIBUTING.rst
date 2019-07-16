@@ -28,5 +28,5 @@ These guidelines also apply when helping with documentation.
 Submitting Changes
 ------------------
 * Push your changes to a feature branch in your fork of the repository.
-* Submit a ``Pull Request`` on the develop branch.
+* Submit a ``Pull Request``.
 * Wait for maintainer feedback.

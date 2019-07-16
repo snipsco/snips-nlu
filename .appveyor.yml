@@ -9,14 +9,8 @@ environment:
 
 branches:
   only:
-  - develop
   - master
   - /lts-.*/
-
-cache:
-  # Cache downloaded pip packages and built wheels.
-  - '%LocalAppData%\pip\Cache\http'
-  - '%LocalAppData%\pip\Cache\wheels'
 
 install:
   - "%PYTHON%\\python.exe -m pip install wheel"

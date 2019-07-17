@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
+
 ## [0.20.0]
 ### Added
 - Add new intent parser: `LookupIntentParser` [#759](https://github.com/snipsco/snips-nlu/pull/759)
@@ -312,6 +316,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
+[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.20.0...HEAD
 [0.20.0]: https://github.com/snipsco/snips-nlu/compare/0.19.8...0.20.0
 [0.19.8]: https://github.com/snipsco/snips-nlu/compare/0.19.7...0.19.8
 [0.19.7]: https://github.com/snipsco/snips-nlu/compare/0.19.6...0.19.7

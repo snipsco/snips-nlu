@@ -17,7 +17,7 @@ from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, BUILTIN_ENTITY_PARSER, CUSTOM_ENTITY_PARSER,
     ENTITIES, ENTITY_KIND, LANGUAGE, RESOLVED_VALUE, RES_ENTITY,
     RES_INTENT, RES_INTENT_NAME, RES_MATCH_RANGE, RES_PROBA, RES_SLOTS,
-    RES_VALUE, RESOURCES)
+    RES_VALUE, RESOURCES, BYPASS_VERSION_CHECK)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.default_configs import DEFAULT_CONFIGS
 from snips_nlu.entity_parser import CustomEntityParser
@@ -349,7 +349,14 @@ class SnipsNLUEngine(ProcessingUnit):
             model = json.load(f)
         model_version = model.get("model_version")
         if model_version is None or model_version != __model_version__:
-            raise IncompatibleModelError(model_version)
+            bypass_version_check = shared.get(BYPASS_VERSION_CHECK, False)
+            if bypass_version_check:
+                logger.warning(
+                    "Incompatible model version found. The library expected "
+                    "'%s' but the loaded engine is '%s'. The NLU engine may "
+                    "not load correctly.", __model_version__, model_version)
+            else:
+                raise IncompatibleModelError(model_version)
 
         dataset_metadata = model["dataset_metadata"]
         if shared.get(RESOURCES) is None and dataset_metadata is not None:

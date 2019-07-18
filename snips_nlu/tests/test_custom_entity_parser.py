@@ -3,8 +3,10 @@ from __future__ import unicode_literals
 
 from pathlib import Path
 
+import snips_nlu_parsers
 from mock import patch
 
+from snips_nlu.common.utils import parse_version
 from snips_nlu.constants import STEMS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser import CustomEntityParser
@@ -28,7 +30,11 @@ DATASET = validate_and_format_dataset({
             ],
             "use_synonyms": True,
             "automatically_extensible": True,
-            "matching_strictness": 1.0
+            "matching_strictness": 1.0,
+            "license_info": {
+                "filename": "LICENSE",
+                "content": "some license content here"
+            }
         },
         "dummy_entity_2": {
             "data": [
@@ -225,6 +231,7 @@ class TestCustomEntityParser(FixtureTest):
         self.assertEqual(1, mocked_parse.call_count)
 
     def test_should_be_serializable(self):
+        import pkg_resources
         # Given
         parser = CustomEntityParser.build(
             DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
@@ -232,6 +239,9 @@ class TestCustomEntityParser(FixtureTest):
         parser_path = self.tmp_file_path / "custom_entity_parser"
         parser.persist(parser_path)
         loaded_parser = CustomEntityParser.from_path(parser_path)
+
+        expected_license_path = parser_path / "parser_1" / "LICENSE"
+        self.assertTrue(expected_license_path.exists())
 
         # When
         scope = ["dummy_entity_1"]

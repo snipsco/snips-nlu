@@ -168,6 +168,9 @@ def _create_custom_entity_parser_configuration(
                 ]
             }
         }
+        license_info = entity.get("license_info")
+        if license_info is not None:
+            config["entity_parser"]["license_info"] = license_info
         parser_configurations.append(config)
 
     configuration = {

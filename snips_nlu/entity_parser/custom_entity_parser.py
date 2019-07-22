@@ -10,7 +10,8 @@ from future.utils import iteritems, viewvalues
 
 from snips_nlu.common.utils import json_string
 from snips_nlu.constants import (
-    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, START, UTTERANCES)
+    END, ENTITIES, LANGUAGE, MATCHING_STRICTNESS, START, UTTERANCES,
+    LICENSE_INFO)
 from snips_nlu.entity_parser.builtin_entity_parser import is_builtin_entity
 from snips_nlu.entity_parser.custom_entity_parser_usage import (
     CustomEntityParserUsage)
@@ -168,9 +169,8 @@ def _create_custom_entity_parser_configuration(
                 ]
             }
         }
-        license_info = entity.get("license_info")
-        if license_info is not None:
-            config["entity_parser"]["license_info"] = license_info
+        if LICENSE_INFO in entity:
+            config["entity_parser"][LICENSE_INFO] = entity[LICENSE_INFO]
         parser_configurations.append(config)
 
     configuration = {

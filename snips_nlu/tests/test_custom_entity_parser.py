@@ -3,10 +3,8 @@ from __future__ import unicode_literals
 
 from pathlib import Path
 
-import snips_nlu_parsers
 from mock import patch
 
-from snips_nlu.common.utils import parse_version
 from snips_nlu.constants import STEMS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.entity_parser import CustomEntityParser
@@ -231,7 +229,6 @@ class TestCustomEntityParser(FixtureTest):
         self.assertEqual(1, mocked_parse.call_count)
 
     def test_should_be_serializable(self):
-        import pkg_resources
         # Given
         parser = CustomEntityParser.build(
             DATASET, CustomEntityParserUsage.WITHOUT_STEMS, resources=dict())
@@ -239,9 +236,6 @@ class TestCustomEntityParser(FixtureTest):
         parser_path = self.tmp_file_path / "custom_entity_parser"
         parser.persist(parser_path)
         loaded_parser = CustomEntityParser.from_path(parser_path)
-
-        expected_license_path = parser_path / "parser_1" / "LICENSE"
-        self.assertTrue(expected_license_path.exists())
 
         # When
         scope = ["dummy_entity_1"]
@@ -270,6 +264,11 @@ class TestCustomEntityParser(FixtureTest):
             }
         ]
         self.assertListEqual(expected_entities, result)
+        license_path = parser_path / "parser" / "parser_1" / "LICENSE"
+        self.assertTrue(license_path.exists())
+        with license_path.open(encoding="utf8") as f:
+            license_content = f.read()
+        self.assertEqual("some license content here", license_content)
 
     def test_should_compute_tokenization_shift(self):
         # Given
@@ -296,7 +295,7 @@ class TestCustomEntityParser(FixtureTest):
                 "matching_strictness": 1.0
             },
             "b": {
-                "utterances":{
+                "utterances": {
                     "b": "b"
                 },
                 "matching_strictness": 1.0
@@ -347,6 +346,7 @@ class TestCustomEntityParser(FixtureTest):
             ]
         }
         self.assertDictEqual(expected_dict, config)
+
 
 # pylint: disable=unused-argument
 def _persist_parser(path):

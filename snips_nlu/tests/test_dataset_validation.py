@@ -1129,3 +1129,48 @@ class TestDatasetValidation(SnipsTest):
             "validated": True
         }
         self.assertDictEqual(expected_dataset, validated_dataset)
+
+    def test_should_keep_license_info(self):
+        # Given
+        dataset = {
+            "intents": {},
+            "entities": {
+                "my_entity": {
+                    "data": [{"value": "foo", "synonyms": []}],
+                    "use_synonyms": True,
+                    "automatically_extensible": True,
+                    "matching_strictness": 1.0,
+                    "license_info": {
+                        "filename": "LICENSE",
+                        "content": "some license content here"
+                    }
+                },
+            },
+            "language": "en"
+        }
+
+        # When
+        validated_dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        expected_dataset = {
+            "entities": {
+                "my_entity": {
+                    "automatically_extensible": True,
+                    "capitalize": False,
+                    "matching_strictness": 1.0,
+                    "utterances": {
+                        "Foo": "foo",
+                        "foo": "foo"
+                    },
+                    "license_info": {
+                        "filename": "LICENSE",
+                        "content": "some license content here"
+                    }
+                }
+            },
+            "intents": {},
+            "language": "en",
+            "validated": True
+        }
+        self.assertDictEqual(expected_dataset, validated_dataset)

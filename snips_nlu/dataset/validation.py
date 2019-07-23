@@ -12,7 +12,7 @@ from snips_nlu.common.dataset_utils import (validate_key, validate_keys,
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
-    UTTERANCES, VALIDATED, VALUE)
+    UTTERANCES, VALIDATED, VALUE, LICENSE_INFO)
 from snips_nlu.dataset import extract_utterance_entities
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
@@ -146,6 +146,8 @@ def _validate_and_format_custom_entity(entity, utterance_entities, language,
     formatted_entity[AUTOMATICALLY_EXTENSIBLE] = entity[
         AUTOMATICALLY_EXTENSIBLE]
     formatted_entity[MATCHING_STRICTNESS] = entity[MATCHING_STRICTNESS]
+    if LICENSE_INFO in entity:
+        formatted_entity[LICENSE_INFO] = entity[LICENSE_INFO]
     use_synonyms = entity[USE_SYNONYMS]
 
     # Validate format and filter out unused data

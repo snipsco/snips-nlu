@@ -28,7 +28,11 @@ DATASET = validate_and_format_dataset({
             ],
             "use_synonyms": True,
             "automatically_extensible": True,
-            "matching_strictness": 1.0
+            "matching_strictness": 1.0,
+            "license_info": {
+                "filename": "LICENSE",
+                "content": "some license content here"
+            }
         },
         "dummy_entity_2": {
             "data": [
@@ -260,6 +264,11 @@ class TestCustomEntityParser(FixtureTest):
             }
         ]
         self.assertListEqual(expected_entities, result)
+        license_path = parser_path / "parser" / "parser_1" / "LICENSE"
+        self.assertTrue(license_path.exists())
+        with license_path.open(encoding="utf8") as f:
+            license_content = f.read()
+        self.assertEqual("some license content here", license_content)
 
     def test_should_compute_tokenization_shift(self):
         # Given
@@ -286,7 +295,7 @@ class TestCustomEntityParser(FixtureTest):
                 "matching_strictness": 1.0
             },
             "b": {
-                "utterances":{
+                "utterances": {
                     "b": "b"
                 },
                 "matching_strictness": 1.0
@@ -337,6 +346,7 @@ class TestCustomEntityParser(FixtureTest):
             ]
         }
         self.assertDictEqual(expected_dict, config)
+
 
 # pylint: disable=unused-argument
 def _persist_parser(path):

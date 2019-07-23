@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
+- Persist `CustomEntityParser` license when needed [#832](https://github.com/snipsco/snips-nlu/pull/832)
 
 ## [0.20.0]
 ### Added

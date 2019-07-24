@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
 - Persist `CustomEntityParser` license when needed [#832](https://github.com/snipsco/snips-nlu/pull/832)
 
-## [0.20.0]
+## [0.20.0] - 2019-07-16
 ### Added
 - Add new intent parser: `LookupIntentParser` [#759](https://github.com/snipsco/snips-nlu/pull/759)
 
@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
     - `snips/region`
     
 
-## [0.19.8]
+## [0.19.8] - 2019-07-10
 ### Added
 - Add filter for entity match feature [#814](https://github.com/snipsco/snips-nlu/pull/814)
 - Add noise re-weight factor in `LogRegIntentClassifier` [#815](https://github.com/snipsco/snips-nlu/pull/815)
@@ -34,7 +34,7 @@ All notable changes to this project will be documented in this file.
 - Import modules lazily to speed up CLI startup time [#819](https://github.com/snipsco/snips-nlu/pull/819)
 - Removed dependency on `semantic_version` to accept `"subpatches"` number [#825](https://github.com/snipsco/snips-nlu/pull/825)
 
-## [0.19.7]
+## [0.19.7] - 2019-06-20
 ### Changed
 - Re-score ambiguous `DeterministicIntentParser` results based on slots [#791](https://github.com/snipsco/snips-nlu/pull/791)
 - Accept ambiguous results from `DeterministicIntentParser` when confidence score is above 0.5 [#797](https://github.com/snipsco/snips-nlu/pull/797)
@@ -49,12 +49,12 @@ All notable changes to this project will be documented in this file.
 - Remove deprecated code in dataset generation [#803](https://github.com/snipsco/snips-nlu/pull/803)
 - Fix possible override of entity values when generating variations [#808](https://github.com/snipsco/snips-nlu/pull/808)
 
-## [0.19.6]
+## [0.19.6] - 2019-04-26
 ### Fixed
 - Raise an error when using unknown intents in intents filter [#788](https://github.com/snipsco/snips-nlu/pull/788)
 - Fix issue with stop words in `DeterministicIntentParser` [#789](https://github.com/snipsco/snips-nlu/pull/789)
 
-## [0.19.5]
+## [0.19.5] - 2019-04-10
 ### Added
 - Advanced inference logging in the `CRFSlotFiller` [#776](https://github.com/snipsco/snips-nlu/pull/776)
 - Improved failed linking error message after download of resources [#774](https://github.com/snipsco/snips-nlu/pull/774)

@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
 - Persist `CustomEntityParser` license when needed [#832](https://github.com/snipsco/snips-nlu/pull/832)
+- Document metrics CLI [#839](https://github.com/snipsco/snips-nlu/pull/839)
 
 ### Fixed
 - Invalidate importlib caches after dynamically installing module [#838](https://github.com/snipsco/snips-nlu/pull/838)

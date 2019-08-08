@@ -13,7 +13,7 @@ from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
     UTTERANCES, VALIDATED, VALUE, LICENSE_INFO)
-from snips_nlu.dataset import extract_utterance_entities
+from snips_nlu.dataset import extract_utterance_entities, Dataset
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
 from snips_nlu.exceptions import DatasetFormatError
@@ -31,6 +31,9 @@ def validate_and_format_dataset(dataset):
         DatasetFormatError: When the dataset format is wrong
     """
     from snips_nlu_parsers import get_all_languages
+
+    if isinstance(dataset, Dataset):
+        dataset = dataset.json
 
     # Make this function idempotent
     if dataset.get(VALIDATED, False):

@@ -348,14 +348,12 @@ class TestCustomEntityParser(FixtureTest):
         self.assertDictEqual(expected_dict, config)
 
 
-# pylint: disable=unused-argument
 def _persist_parser(path):
     path = Path(path)
     with path.open("w", encoding="utf-8") as f:
         f.write("nothing interesting here")
 
 
-# pylint: disable=unused-argument
 def _load_parser(path):
     path = Path(path)
     with path.open("r", encoding="utf-8") as f:
@@ -365,3 +363,5 @@ def _load_parser(path):
 # pylint: disable=unused-argument
 def _stem(string, language):
     return string[:-1]
+
+# pylint: enable=unused-argument

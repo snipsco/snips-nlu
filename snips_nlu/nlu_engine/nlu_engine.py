@@ -139,10 +139,12 @@ class SnipsNLUEngine(ProcessingUnit):
         Args:
             text (str): Input
             intents (str or list of str, optional): If provided, reduces the
-                scope of intent parsing to the provided list of intents
+                scope of intent parsing to the provided list of intents.
+                The ``None`` intent is never filtered out, meaning that it can
+                be returned even when using an intents scope.
             top_n (int, optional): when provided, this method will return a
-                list of at most top_n most likely intents, instead of a single
-                parsing result.
+                list of at most ``top_n`` most likely intents, instead of a
+                single parsing result.
                 Note that the returned list can contain less than ``top_n``
                 elements, for instance when the parameter ``intents`` is not
                 None, or when ``top_n`` is greater than the total number of

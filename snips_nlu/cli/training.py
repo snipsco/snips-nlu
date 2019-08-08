@@ -1,9 +1,10 @@
 from __future__ import print_function, unicode_literals
 
 
-def add_train_parser(subparsers):
+def add_train_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "train", help="Train an NLU engine on a provided dataset")
+        "train", formatter_class=formatter_class,
+        help="Train an NLU engine on a provided dataset")
     subparser.add_argument("dataset_path", type=str,
                            help="Path to the training dataset file")
     subparser.add_argument("output_path", type=str,

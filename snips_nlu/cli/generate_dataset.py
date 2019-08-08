@@ -1,9 +1,9 @@
 from __future__ import print_function, unicode_literals
 
 
-def add_generate_dataset_subparser(subparsers):
+def add_generate_dataset_subparser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "generate-dataset",
+        "generate-dataset", formatter_class=formatter_class,
         help="Generate a json dataset from intents and entities yaml files")
     subparser.add_argument("language", type=str,
                            help="Language of the dataset")

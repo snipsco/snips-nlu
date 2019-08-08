@@ -20,9 +20,9 @@ def make_engine_cls(config):
     return ConfigEngine
 
 
-def add_cross_val_metrics_parser(subparsers):
+def add_cross_val_metrics_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "cross-val-metrics",
+        "cross-val-metrics", formatter_class=formatter_class,
         help="Compute cross-validation metrics on a given dataset")
     subparser.add_argument("dataset_path", type=str,
                            help="Path to the dataset file")
@@ -99,9 +99,9 @@ def cross_val_metrics(dataset_path, output_path, config_path=None, nb_folds=5,
         f.write(json_string(metrics))
 
 
-def add_train_test_metrics_parser(subparsers):
+def add_train_test_metrics_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "train-test-metrics",
+        "train-test-metrics", formatter_class=formatter_class,
         help="Compute NLU metrics training on a given dataset and testing on "
              "another")
     subparser.add_argument("train_dataset_path", type=str,

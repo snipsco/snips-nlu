@@ -1,9 +1,9 @@
 from __future__ import print_function, unicode_literals
 
 
-def add_download_entity_parser(subparsers):
+def add_download_entity_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "download-entity",
+        "download-entity", formatter_class=formatter_class,
         help="Download resources for a builtin gazetteer entity")
     subparser.add_argument(
         "entity_name", type=str,
@@ -49,9 +49,9 @@ def download_builtin_entity(entity_name, language, *pip_args):
         pip_args)
 
 
-def add_download_language_entities_parser(subparsers):
+def add_download_language_entities_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "download-language-entities",
+        "download-language-entities", formatter_class=formatter_class,
         help="Download resources for all builtin gazetteer entities in a "
              "given language")
     subparser.add_argument("language", type=str,

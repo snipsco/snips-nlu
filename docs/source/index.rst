@@ -84,6 +84,7 @@ the :ref:`api` documentation or alternatively check the `github repository`_.
    data_model
    dataset
    custom_processing_units
+   evaluation
    languages
    cli
    api

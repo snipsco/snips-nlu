@@ -1,9 +1,10 @@
 from __future__ import unicode_literals, print_function
 
 
-def add_parse_parser(subparsers):
+def add_parse_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "parse", help="Load a trained NLU engine and perform parsing")
+        "parse", formatter_class=formatter_class,
+        help="Load a trained NLU engine and perform parsing")
     subparser.add_argument("training_path", type=str,
                            help="Path to a trained engine")
     subparser.add_argument("-q", "--query", type=str,

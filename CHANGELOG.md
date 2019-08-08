@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
 - Persist `CustomEntityParser` license when needed [#832](https://github.com/snipsco/snips-nlu/pull/832)
 
+### Fixed
+- Invalidate importlib caches after dynamically installing module [#838](https://github.com/snipsco/snips-nlu/pull/838)
+
 ## [0.20.0] - 2019-07-16
 ### Added
 - Add new intent parser: `LookupIntentParser` [#759](https://github.com/snipsco/snips-nlu/pull/759)

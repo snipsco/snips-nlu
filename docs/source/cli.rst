@@ -77,6 +77,13 @@ You can also pass a single query using an optional parameter:
 
 .. _version_cli:
 
+Evaluation
+----------
+
+The CLI provides two commands that will help you evaluate the performance of
+your NLU engine.
+These commands are detailed in :ref:`this dedicated section <evaluation>`.
+
 Versions
 --------
 

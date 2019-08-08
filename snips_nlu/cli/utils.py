@@ -12,6 +12,13 @@ import snips_nlu
 from snips_nlu import __about__
 from snips_nlu.common.utils import parse_version
 
+try:
+    from importlib import invalidate_caches
+except ImportError:
+    def invalidate_caches():
+        from time import sleep
+        sleep(1)
+
 
 @unique
 class PrettyPrintLevel(Enum):
@@ -97,7 +104,11 @@ def install_remote_package(download_url, user_pip_args=None):
     if user_pip_args:
         pip_args.extend(user_pip_args)
     cmd = [sys.executable, '-m', 'pip', 'install'] + pip_args + [download_url]
-    return subprocess.call(cmd, env=os.environ.copy())
+    exit_code = subprocess.call(cmd, env=os.environ.copy())
+    # Don't forget to invalidate caches after dynamically installing modules
+    # https://docs.python.org/3/library/importlib.html#importlib.import_module
+    invalidate_caches()
+    return exit_code
 
 
 def check_resources_alias(resource_name, shortcuts):

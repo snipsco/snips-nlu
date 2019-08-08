@@ -1,9 +1,10 @@
 from __future__ import print_function, unicode_literals
 
 
-def add_link_parser(subparsers):
+def add_link_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "link", help="Manually link downloaded resources")
+        "link", formatter_class=formatter_class,
+        help="Manually link downloaded resources")
     subparser.add_argument("origin", type=str,
                            help="Package name or local path to model")
     subparser.add_argument("link_name", type=str,

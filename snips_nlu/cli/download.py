@@ -1,10 +1,11 @@
 from __future__ import print_function, unicode_literals
 
 
-def add_download_parser(subparsers):
+def add_download_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "download", help="Download the language resources required by the "
-                         "snips-nlu library")
+        "download", formatter_class=formatter_class,
+        help="Download the language resources required by the snips-nlu "
+             "library")
     subparser.add_argument(
         "resource_name", type=str,
         help="Name of the language resources to download. Can be either "
@@ -66,9 +67,9 @@ def download_from_resource_name(resource_name, pip_args, verbose=True):
                        pip_args, verbose)
 
 
-def add_download_all_languages_parser(subparsers):
+def add_download_all_languages_parser(subparsers, formatter_class):
     subparser = subparsers.add_parser(
-        "download-all-languages",
+        "download-all-languages", formatter_class=formatter_class,
         help="Download language resources for all languages")
     subparser.add_argument(
         "extra_pip_args", nargs="*", type=str,

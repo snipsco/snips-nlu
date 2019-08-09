@@ -1,14 +1,16 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
+import io
 from builtins import range, str
 
 from future.utils import iteritems
 from mock import mock, patch
 
-from snips_nlu.constants import ENTITIES, SNIPS_DATETIME
-from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.dataset.validation import _validate_and_format_custom_entity
+from snips_nlu.constants import ENTITIES, SNIPS_DATETIME, VALIDATED
+from snips_nlu.dataset import Dataset
+from snips_nlu.dataset.validation import (
+    validate_and_format_dataset, _validate_and_format_custom_entity)
 from snips_nlu.exceptions import DatasetFormatError
 from snips_nlu.tests.utils import SnipsTest, EntityParserMock
 
@@ -1174,3 +1176,63 @@ class TestDatasetValidation(SnipsTest):
             "validated": True
         }
         self.assertDictEqual(expected_dataset, validated_dataset)
+
+    def test_validate_should_be_idempotent(self):
+        # Given
+        dataset_stream = io.StringIO("""
+# getWeather Intent
+---
+type: intent
+name: getWeather
+utterances:
+  - what is the weather in [weatherLocation:location](Paris)?
+  - is it raining in [weatherLocation] [weatherDate:snips/datetime]
+
+# Location Entity
+---
+type: entity
+name: location
+automatically_extensible: true
+values:
+- [new york, big apple]
+- london
+        """)
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream])
+        validated_dataset = validate_and_format_dataset(dataset)
+
+        # When
+        validated_dataset_2 = validate_and_format_dataset(validated_dataset)
+
+        # Then
+        self.assertDictEqual(validated_dataset, validated_dataset_2)
+        self.assertTrue(validated_dataset.get(VALIDATED, False))
+
+    def test_validate_should_accept_dataset_object(self):
+        # Given
+        dataset_stream = io.StringIO("""
+# getWeather Intent
+---
+type: intent
+name: getWeather
+utterances:
+  - what is the weather in [weatherLocation:location](Paris)?
+  - is it raining in [weatherLocation] [weatherDate:snips/datetime]
+
+# Location Entity
+---
+type: entity
+name: location
+automatically_extensible: true
+values:
+- [new york, big apple]
+- london
+        """)
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream])
+
+        # When
+        validated_dataset = validate_and_format_dataset(dataset)
+
+        # Then
+        self.assertTrue(validated_dataset.get(VALIDATED, False))

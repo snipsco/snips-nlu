@@ -20,13 +20,13 @@ their isocode:
 +------------+
 | it         |
 +------------+
-| pt_pt      |
-+------------+
-| pt_br      |
-+------------+
 | ja         |
 +------------+
 | ko         |
++------------+
+| pt_br      |
++------------+
+| pt_pt      |
 +------------+
 
 Support for additional languages will come in the future, stay tuned :)

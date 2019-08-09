@@ -83,7 +83,8 @@ ENTITIES_TABLE_CELL_LENGTH = 50
 
 
 def write_supported_languages(path):
-    languages = [lang_ontology["language"] for lang_ontology in ONTOLOGY]
+    languages = sorted([lang_ontology["language"]
+                        for lang_ontology in ONTOLOGY])
     table = _build_supported_languages_table(languages)
     content = LANGUAGES_DOC_HEADER + table + LANGUAGES_DOC_FOOTER
     with path.open(mode="w") as f:

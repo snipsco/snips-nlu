@@ -14,3 +14,4 @@
 /.tox
 .coverage
 pylint.log
+.DS_Store

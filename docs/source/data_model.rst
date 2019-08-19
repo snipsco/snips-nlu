@@ -212,8 +212,8 @@ provide some *entity resolution* such as an ISO format for a date.
 
 Builtin entities and their underlying extractors are maintained by the Snips
 team. You can find the list of all the builtin entities supported per language
-in the `Snips NLU Ontology <https://github.com/snipsco/snips-nlu-ontology>`_
-repository. The Snips NLU uses the powerful
+in the :ref:`builtin entities <builtin_entities>` section.
+Snips NLU relies on the powerful
 `Rustling <https://github.com/snipsco/rustling-ontology>`_ library to extract
 builtin entities from text.
 

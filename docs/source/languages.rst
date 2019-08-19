@@ -3,30 +3,31 @@
 Supported languages
 ===================
 
-Snips NLU supports various languages, that are speficied in the dataset in the
-``"language"`` attribute. Here is the list of supported language along with
-their isocode:
+Snips NLU supports various languages. The language is specified in the
+:ref:`dataset <json_format>` in the ``"language"`` attribute.
 
-+-----------------+------------+
-| Language        | ISO code   |
-+=================+============+
-| German          | de         |
-+-----------------+------------+
-| English         | en         |
-+-----------------+------------+
-| Spanish         | es         |
-+-----------------+------------+
-| French          | fr         |
-+-----------------+------------+
-| Italian         | it         |
-+-----------------+------------+
-| Japanese        | ja         |
-+-----------------+------------+
-| Korean          | ko         |
-+-----------------+------------+
-| Portuguese (BR) | pt_br      |
-+-----------------+------------+
-| Portuguese (PT) | pt_pt      |
-+-----------------+------------+
+Here is the list of the supported languages along with their isocode:
+
++------------+
+| ISO code   |
++============+
+| de         |
++------------+
+| en         |
++------------+
+| es         |
++------------+
+| fr         |
++------------+
+| it         |
++------------+
+| ja         |
++------------+
+| ko         |
++------------+
+| pt_br      |
++------------+
+| pt_pt      |
++------------+
 
 Support for additional languages will come in the future, stay tuned :)

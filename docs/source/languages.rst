@@ -3,9 +3,10 @@
 Supported languages
 ===================
 
-Snips NLU supports various languages, that are specified in the dataset in the
-``"language"`` attribute. Here is the list of supported language along with
-their isocode:
+Snips NLU supports various languages. The language is specified in the
+:ref:`dataset <json_format>` in the ``"language"`` attribute.
+
+Here is the list of the supported languages along with their isocode:
 
 +------------+
 | ISO code   |

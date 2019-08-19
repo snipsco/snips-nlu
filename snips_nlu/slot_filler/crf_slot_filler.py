@@ -355,6 +355,7 @@ class CRFSlotFiller(SlotFiller):
             destination = path / crf_model_file
             shutil.copy(self.crf_model.modelfile.name, str(destination))
             if os.name == "posix":
+                # On windows, permissions of crfsuite files are correct
                 os.chmod(str(destination), 0o644)
 
         model = {

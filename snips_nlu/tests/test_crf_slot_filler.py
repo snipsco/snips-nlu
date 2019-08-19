@@ -1014,3 +1014,23 @@ utterances:
                              slot_filler2.crf_model.state_features_)
         self.assertDictEqual(slot_filler1.crf_model.transition_features_,
                              slot_filler2.crf_model.transition_features_)
+
+    def test_should_cleanup(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream])
+        slot_filler = CRFSlotFiller().fit(dataset, "MakeTea")
+        crf_file = Path(slot_filler.crf_model.modelfile.name)
+        self.assertTrue(crf_file.exists())
+
+        # When
+        slot_filler._cleanup()
+
+        # Then
+        self.assertFalse(crf_file.exists())

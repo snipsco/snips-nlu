@@ -394,14 +394,12 @@ class CRFSlotFiller(SlotFiller):
             slot_filler.crf_model = crf
         return slot_filler
 
+    def _cleanup(self):
+        if self.crf_model is not None:
+            self.crf_model.modelfile.cleanup()
+
     def __del__(self):
-        if self.crf_model is None or self.crf_model.modelfile.name is None:
-            return
-        try:
-            Path(self.crf_model.modelfile.name).unlink()
-        except OSError as e:
-            logger.warning("Unable to remove CRF model file at path '%s': %s",
-                           self.crf_model.modelfile.name, repr(e))
+        self._cleanup()
 
 
 def _get_crf_model(crf_args):

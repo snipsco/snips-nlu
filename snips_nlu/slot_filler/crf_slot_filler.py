@@ -4,6 +4,7 @@ import base64
 import json
 import logging
 import math
+import os
 import shutil
 import tempfile
 from builtins import range
@@ -350,9 +351,10 @@ class CRFSlotFiller(SlotFiller):
 
         crf_model_file = None
         if self.crf_model is not None:
-            destination = path / Path(self.crf_model.modelfile.name).name
+            crf_model_file = "model.crfsuite"
+            destination = path / crf_model_file
             shutil.copy(self.crf_model.modelfile.name, str(destination))
-            crf_model_file = str(destination.name)
+            os.chmod(str(destination), 0o644)
 
         model = {
             "language_code": self.language,

@@ -5,6 +5,7 @@ import io
 import os
 from builtins import range
 from pathlib import Path
+from unittest import skipIf
 
 from mock import MagicMock, PropertyMock
 from sklearn_crfsuite import CRF
@@ -1035,6 +1036,7 @@ utterances:
         # Then
         self.assertFalse(crf_file.exists())
 
+    @skipIf(os.name != "posix", "files permissions are correct on windows")
     def test_crfsuite_files_modes_should_be_644(self):
         # Given
         dataset_stream = io.StringIO("""

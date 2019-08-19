@@ -354,7 +354,8 @@ class CRFSlotFiller(SlotFiller):
             crf_model_file = "model.crfsuite"
             destination = path / crf_model_file
             shutil.copy(self.crf_model.modelfile.name, str(destination))
-            os.chmod(str(destination), 0o644)
+            if os.name == "posix":
+                os.chmod(str(destination), 0o644)
 
         model = {
             "language_code": self.language,

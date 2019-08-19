@@ -1030,7 +1030,7 @@ utterances:
         self.assertTrue(crf_file.exists())
 
         # When
-        slot_filler._cleanup()
+        slot_filler._cleanup()  # pylint:disable=protected-access
 
         # Then
         self.assertFalse(crf_file.exists())

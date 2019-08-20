@@ -19,7 +19,7 @@ from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize, Token
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, _ensure_safe, _encode_tag)
+    CRFSlotFiller, _ensure_safe, _encode_tag, CRF_MODEL_FILENAME)
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
@@ -515,7 +515,7 @@ utterances:
         metadata_path = self.tmp_file_path / "metadata.json"
         self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
 
-        self.assertTrue((self.tmp_file_path / "model.crfsuite").exists())
+        self.assertTrue((self.tmp_file_path / CRF_MODEL_FILENAME).exists())
 
         expected_feature_factories = [
             {
@@ -533,7 +533,7 @@ utterances:
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
-            "crf_model_file": "model.crfsuite",
+            "crf_model_file": CRF_MODEL_FILENAME,
             "language_code": "en",
             "config": expected_config.to_dict(),
             "intent": intent,
@@ -1053,6 +1053,6 @@ utterances:
         slot_filler.persist(self.tmp_file_path)
 
         # Then
-        crfmodel_file = str(self.tmp_file_path / "model.crfsuite")
+        crfmodel_file = str(self.tmp_file_path / CRF_MODEL_FILENAME)
         filemode = oct(os.stat(crfmodel_file).st_mode & 0o0777)
         self.assertEqual(oct(0o644), filemode)

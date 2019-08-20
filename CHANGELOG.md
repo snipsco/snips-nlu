@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Invalidate importlib caches after dynamically installing module [#838](https://github.com/snipsco/snips-nlu/pull/838)
 - Automatically generate documentation for supported languages and builtin entities [#841](https://github.com/snipsco/snips-nlu/pull/841)
 - Fix issue when cleaning up crfsuite files [#843](https://github.com/snipsco/snips-nlu/pull/843)
+- Fix filemode of persisted crfsuite files [#844](https://github.com/snipsco/snips-nlu/pull/844)
 
 ## [0.20.0] - 2019-07-16
 ### Added

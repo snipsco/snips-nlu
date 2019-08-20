@@ -1036,7 +1036,7 @@ utterances:
         # Then
         self.assertFalse(crf_file.exists())
 
-    @skipIf(os.name != "posix", "files permissions are correct on windows")
+    @skipIf(os.name != "posix", "files permissions are different on windows")
     def test_crfsuite_files_modes_should_be_644(self):
         # Given
         dataset_stream = io.StringIO("""

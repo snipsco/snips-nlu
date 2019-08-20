@@ -354,9 +354,11 @@ class CRFSlotFiller(SlotFiller):
             crf_model_file = "model.crfsuite"
             destination = path / crf_model_file
             shutil.copy(self.crf_model.modelfile.name, str(destination))
+            # On windows, permissions of crfsuite files are correct
             if os.name == "posix":
-                # On windows, permissions of crfsuite files are correct
-                os.chmod(str(destination), 0o644)
+                umask = os.umask(0o022)  # retrieve the system umask
+                os.umask(umask)  # restore the sys umask to its original value
+                os.chmod(str(destination), 0o644 & ~umask)
 
         model = {
             "language_code": self.language,

@@ -1177,6 +1177,79 @@ class TestDatasetValidation(SnipsTest):
         }
         self.assertDictEqual(expected_dataset, validated_dataset)
 
+#     def test_validate_should_raise_when_invalid_intent_in_intent_filters(self):
+#         # Given
+#         dataset_stream = io.StringIO(
+# """
+# ---
+# type: intent
+# name: hello world
+# utterances:
+#   - hello world
+#
+# ---
+# type: intent
+# name: hello you
+# utterances:
+#   - hello you
+#
+# ---
+# type: intent
+# name: bye
+# utterances:
+#   - bye
+#
+# ---
+# type: intent_filters
+# hello:
+#   - hello world
+#   - hello you
+# bye:
+#   - buy
+# """)
+#         assert False
+#
+#         # When
+#
+#         # Then
+#
+#     def test_validate_should_raise_when_filter_is_not_a_list(self):
+#         assert False
+#
+#     def test_validate_should_raise_when_filter_intent_are_not_str(self):
+#         assert False
+#
+#     def test_validate_should_keep_intent_filter(self):
+#         dataset_stream = io.StringIO(
+#     """
+#     ---
+#     type: intent
+#     name: hello world
+#     utterances:
+#       - hello world
+#
+#     ---
+#     type: intent
+#     name: hello you
+#     utterances:
+#       - hello you
+#
+#     ---
+#     type: intent
+#     name: bye
+#     utterances:
+#       - bye
+#
+#     ---
+#     type: intent_filters
+#     hello:
+#       - hello world
+#       - hello you
+#     bye:
+#       - buy
+#     """)
+#         assert False
+
     def test_validate_should_be_idempotent(self):
         # Given
         dataset_stream = io.StringIO("""

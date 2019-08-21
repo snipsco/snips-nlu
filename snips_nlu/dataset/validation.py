@@ -12,7 +12,7 @@ from snips_nlu.common.dataset_utils import (validate_key, validate_keys,
 from snips_nlu.constants import (
     AUTOMATICALLY_EXTENSIBLE, CAPITALIZE, DATA, ENTITIES, ENTITY, INTENTS,
     LANGUAGE, MATCHING_STRICTNESS, SLOT_NAME, SYNONYMS, TEXT, USE_SYNONYMS,
-    UTTERANCES, VALIDATED, VALUE, LICENSE_INFO)
+    UTTERANCES, VALIDATED, VALUE, LICENSE_INFO, INTENT_FILTERS)
 from snips_nlu.dataset import extract_utterance_entities, Dataset
 from snips_nlu.entity_parser.builtin_entity_parser import (
     BuiltinEntityParser, is_builtin_entity)
@@ -50,6 +50,9 @@ def validate_and_format_dataset(dataset):
     validate_type(language, str, object_label="language")
     if language not in get_all_languages():
         raise DatasetFormatError("Unknown language: '%s'" % language)
+    intent_filters = dataset.get(INTENT_FILTERS)
+    if  intent_filters is not None:
+        validate_type(intent_filters, list, object_label="intent filters")
 
     dataset[INTENTS] = {
         intent_name: intent_data
@@ -74,6 +77,8 @@ def validate_and_format_dataset(dataset):
                 _validate_and_format_custom_entity(
                     entity, uterrance_entities, language,
                     builtin_entity_parser)
+
+    _validate_intent_filters(intent_filters, dataset[INTENTS])
     dataset[VALIDATED] = True
     return dataset
 
@@ -252,3 +257,15 @@ def _validate_and_format_custom_entity(entity, utterance_entities, language,
 def _validate_and_format_builtin_entity(entity, utterance_entities):
     validate_type(entity, dict, object_label="builtin entity")
     return {UTTERANCES: set(utterance_entities)}
+
+def _validate_intent_filters(intent_filters, intent_names):
+    intent_names = set(intent_names)
+    for filter_ in intent_filters:
+        validate_type(filter_, list, "filter")
+        for intent_name in filter_:
+            validate_type(intent_name, str, "intent name")
+            if intent_name not in intent_names:
+                raise ValueError(
+                    "Found intent '%s' in the intent filter but this intent is"
+                    " not in the dataset"
+                )

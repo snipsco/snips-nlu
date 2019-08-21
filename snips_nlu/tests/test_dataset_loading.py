@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import io
+from copy import deepcopy
 from unittest import TestCase
 
 from snips_nlu.dataset import Dataset, validate_and_format_dataset
@@ -132,7 +133,11 @@ EXPECTED_DATASET_DICT = {
             ]
         }
     },
-    "language": "en"
+    "language": "en",
+    "intent_filters": {
+        "hello": ["hello world", "hello you"],
+        "bye": ["bye"],
+    }
 }
 
 
@@ -170,15 +175,36 @@ values:
 - london
         """)
 
-        dataset_files = [who_is_game_yaml, get_weather_yaml, location_yaml]
+        filters_yaml = io.StringIO("""
+# Intent filters
+---
+type: intent_filters
+hello:
+  - hello world
+  - hello you
+bye:
+  - buy
+        """)
+
+        dataset_without_filters_files = [
+            who_is_game_yaml, get_weather_yaml, location_yaml]
+        dataset_files = dataset_without_filters_files + [filters_yaml]
 
         # When
-        dataset = Dataset.from_yaml_files("en", dataset_files)
-        dataset_dict = dataset.json
+        dataset_without_filters = Dataset.from_yaml_files(
+            "en", dataset_without_filters_files).json
+        dataset = Dataset.from_yaml_files(
+            "en", dataset_files).json
 
         # Then
-        validate_and_format_dataset(dataset_dict)
-        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
+        expected_dataset = deepcopy(EXPECTED_DATASET_DICT)
+        validate_and_format_dataset(dataset)
+        self.assertDictEqual(expected_dataset, dataset)
+
+        expected_dataset.pop("intent_filters")
+        validate_and_format_dataset(dataset_without_filters)
+        self.assertDictEqual(expected_dataset, dataset_without_filters)
+
 
     def test_should_generate_dataset_from_merged_yaml_file(self):
         # Given
@@ -207,6 +233,19 @@ automatically_extensible: true
 values:
 - [new york, big apple]
 - london
+
+# Intent filters part 1
+---
+type: intent_filters
+hello:
+  - hello world
+  - hello you
+  
+# Intent filters part 2
+---
+type: intent_filters
+bye:
+  - buy
         """)
 
         # When

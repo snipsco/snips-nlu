@@ -7,6 +7,7 @@ from builtins import str
 from unittest import skipIf
 
 from checksumdir import dirhash
+from future.utils import viewitems
 from mock import patch
 
 from snips_nlu.common.io_utils import temp_dir
@@ -16,6 +17,9 @@ from snips_nlu.dataset import Dataset
 from snips_nlu.exceptions import NotTrained
 from snips_nlu.intent_classifier import LogRegIntentClassifier
 from snips_nlu.intent_classifier.featurizer import Featurizer
+from snips_nlu.intent_classifier.log_reg_classifier import (
+    _sample_weights_from_intent_filters
+)
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     text_to_utterance)
 from snips_nlu.pipeline.configs import LogRegIntentClassifierConfig
@@ -515,3 +519,114 @@ utterances:
             hash1 = dirhash(str(dir_classifier1), 'sha256')
             hash2 = dirhash(str(dir_classifier2), 'sha256')
             self.assertEqual(hash1, hash2)
+
+    def test_training_with_intent_filter_should_assign_higher_score(self):
+        # Given
+        random_state = 46
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: TeaConfirmation
+utterances:
+- tea
+- i said tea
+
+---
+type: intent
+name: MakeCoffee
+utterances:
+- make me [number_of_cups:snips/number](one) cup of coffee please
+- brew [number_of_cups] cups of coffee
+
+---
+type: intent
+name: CoffeeConfirmation
+utterances:
+- i want a coffee
+- coffee""")
+
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        dataset_with_filter = dict(dataset)
+        filter_1 = [
+            "MakeTea",
+            "MakeCoffee",
+        ]
+        filter_2 = [
+            "TeaConfirmation",
+            "CoffeeConfirmation",
+        ]
+        intent_filters = {
+            "filter_1": filter_1,
+            "filter_2": filter_2
+        }
+        dataset_with_filter["intent_filters"] = intent_filters
+
+        test_sentences = {
+            "filter_1": {
+                "MakeTea": [
+                    "make some tea",
+                ],
+                "MakeCoffee": [
+                    "make some coffee",
+                    "brew coffee",
+                ],
+            },
+            "filter_2": {
+                "TeaConfirmation": [
+                    "blablabla tea",
+                    "want tea",
+                ],
+                "CoffeeConfirmation": [
+                    "coffee would you",
+                    "i need coffee",
+                ]
+            }
+        }
+
+        # When
+        clf_1 = LogRegIntentClassifier(random_state=random_state).fit(dataset)
+        clf_2 = LogRegIntentClassifier(random_state=random_state).fit(
+            dataset_with_filter)
+
+        for filter, test_sentences in viewitems(test_sentences):
+            for intent, sentences in viewitems(test_sentences):
+                for s in sentences:
+                    res_1 = clf_1.get_intent(
+                        s, intents_filter=intent_filters[filter])
+                    res_2 = clf_2.get_intent(
+                        s, intents_filter=intent_filters[filter])
+                    self.assertEqual(intent, res_1["intentName"])
+                    self.assertEqual(intent, res_2["intentName"])
+                    self.assertGreater(
+                        res_2["probability"], res_1["probability"])
+
+    def test_sample_weights_from_intent_filters(self):
+        import numpy as np
+        # Given
+        intent_list = ["intent_0", "intent_1", "intent_2", "intent_3", None]
+        y = np.array([0, 1, 1, 2, 2, 3, 4])
+        intent_filters = [
+            [0, 1],
+            [0, 2],
+        ]
+
+        # When
+        weights = _sample_weights_from_intent_filters(    # pylint: disable=protected-access
+            y, intent_filters, intent_list, noise_class=4)
+
+        # Then
+        expected_weights = [
+            [1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 0, 0, 0, 1],
+            [1, 0, 0, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+        ]
+        self.assertEqual(expected_weights, weights.tolist())

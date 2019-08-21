@@ -5,10 +5,12 @@ import logging
 from builtins import range, str, zip
 from pathlib import Path
 
+from future.utils import viewvalues
+
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
     check_persisted_path, fitted_required, json_string)
-from snips_nlu.constants import LANGUAGE, RES_PROBA
+from snips_nlu.constants import LANGUAGE, RES_PROBA, INTENT_FILTERS
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import Featurizer
@@ -35,6 +37,32 @@ LOG_REG_ARGS = {
     "tol": 1e-3,
     "n_jobs": -1
 }
+
+
+def _sample_weights_from_intent_filters(
+        y, intent_filters, intent_list, noise_class):
+    import numpy as np
+    class_weight = np.zeros((len(intent_list), y.shape[0]), dtype="int8")
+
+    # Noise samples have weight of 1 for all other classes
+    class_weight[:, y == noise_class] = 1
+
+    # All samples are kept for the noise class
+    class_weight[noise_class, :] = 1
+
+    # Fill the mask with 1 for classes that are not in any filter
+    classes_in_filter = set(c for f in intent_filters for c in f)
+    not_in_filter_classes = set(range(y.max())) - classes_in_filter
+    class_weight[list(not_in_filter_classes), :] = 1
+
+    # Fill the mask for classes in the filter
+    for intent_filter in intent_filters:
+        for i, intent in enumerate(intent_filter):
+            for other_intent in intent_filter[i:]:
+                class_weight[intent, y == other_intent] = 1
+                class_weight[other_intent, y == intent] = 1
+
+    return class_weight
 
 
 @IntentClassifier.register("log_reg_intent_classifier")
@@ -64,7 +92,8 @@ class LogRegIntentClassifier(IntentClassifier):
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
-        from sklearn.linear_model import SGDClassifier
+        from snips_nlu.intent_classifier.sgd_with_per_class_sample_weights \
+            import SGDClassifierWithSampleWeightsPerClass
         from sklearn.utils import compute_class_weight
 
         logger.info("Fitting LogRegIntentClassifier...")
@@ -109,10 +138,31 @@ class LogRegIntentClassifier(IntentClassifier):
         class_weights_arr[-1] *= self.config.noise_reweight_factor
         class_weight = {idx: w for idx, w in enumerate(class_weights_arr)}
 
-        self.classifier = SGDClassifier(
-            random_state=self.random_state, alpha=alpha,
-            class_weight=class_weight, **LOG_REG_ARGS)
+        sample_weight = None
+        intent_filters = dataset.get(INTENT_FILTERS)
+        if intent_filters:
+            intent_to_class = {
+                intent: i
+                for i, intent in enumerate(self.intent_list)
+            }
+            intent_filters = [
+                [intent_to_class[intent] for intent in intent_filter]
+                for intent_filter in viewvalues(intent_filters)
+            ]
+            sample_weight = _sample_weights_from_intent_filters(
+                y=classes,
+                intent_filters=intent_filters,
+                intent_list=self.intent_list,
+                noise_class=none_class,
+            )
+        self.classifier = SGDClassifierWithSampleWeightsPerClass(
+            random_state=self.random_state,
+            alpha=alpha,
+            class_weight=class_weight,
+            **LOG_REG_ARGS,
+        )
         self.classifier.fit(x, classes)
+        self.classifier.fit(x, classes, sample_weight=sample_weight)
         logger.debug("%s", DifferedLoggingMessage(self.log_best_features))
         return self
 

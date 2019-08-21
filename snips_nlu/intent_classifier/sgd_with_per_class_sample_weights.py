@@ -4,9 +4,16 @@ from __future__ import unicode_literals
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.linear_model import SGDClassifier
-from sklearn.linear_model.stochastic_gradient import MAX_INT, fit_binary
+from sklearn.linear_model.stochastic_gradient import fit_binary
 from sklearn.utils import check_random_state
 from sklearn.utils.fixes import _joblib_parallel_args
+
+# In Python 2, sklearn does not contain the fix making the SGD deterministic
+# and MAX_INT is not defined
+try:
+    from sklearn.linear_model.stochastic_gradient import MAX_INT
+except ImportError:
+    MAX_INT = np.iinfo(np.int32).max
 
 
 class SGDClassifierWithSampleWeightsPerClass(SGDClassifier):

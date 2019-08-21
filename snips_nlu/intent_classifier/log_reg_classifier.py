@@ -159,7 +159,7 @@ class LogRegIntentClassifier(IntentClassifier):
             random_state=self.random_state,
             alpha=alpha,
             class_weight=class_weight,
-            **LOG_REG_ARGS,
+            **LOG_REG_ARGS
         )
         self.classifier.fit(x, classes)
         self.classifier.fit(x, classes, sample_weight=sample_weight)

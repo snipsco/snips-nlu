@@ -78,7 +78,7 @@ def validate_and_format_dataset(dataset):
                     entity, uterrance_entities, language,
                     builtin_entity_parser)
 
-    _validate_intent_filters(intent_filters, dataset[INTENTS])
+    # _validate_intent_filters(intent_filters, dataset[INTENTS])
     dataset[VALIDATED] = True
     return dataset
 

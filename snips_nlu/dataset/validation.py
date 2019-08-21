@@ -50,9 +50,9 @@ def validate_and_format_dataset(dataset):
     validate_type(language, str, object_label="language")
     if language not in get_all_languages():
         raise DatasetFormatError("Unknown language: '%s'" % language)
-    intent_filters = dataset.get(INTENT_FILTERS)
-    if  intent_filters is not None:
-        validate_type(intent_filters, list, object_label="intent filters")
+    # intent_filters = dataset.get(INTENT_FILTERS)
+    # if  intent_filters is not None:
+    #     validate_type(intent_filters, list, object_label="intent filters")
 
     dataset[INTENTS] = {
         intent_name: intent_data

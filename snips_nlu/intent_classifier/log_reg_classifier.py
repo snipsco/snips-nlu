@@ -9,8 +9,8 @@ from future.utils import viewvalues
 
 from snips_nlu.common.log_utils import DifferedLoggingMessage, log_elapsed_time
 from snips_nlu.common.utils import (
-    check_persisted_path, fitted_required, json_string)
-from snips_nlu.constants import LANGUAGE, RES_PROBA, INTENT_FILTERS
+    check_persisted_path, fitted_required, json_string, parse_version)
+from snips_nlu.constants import INTENT_FILTERS, LANGUAGE, RES_PROBA
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier.featurizer import Featurizer
@@ -92,9 +92,15 @@ class LogRegIntentClassifier(IntentClassifier):
         Returns:
             :class:`LogRegIntentClassifier`: The same instance, trained
         """
-        from snips_nlu.intent_classifier.sgd_with_per_class_sample_weights \
-            import SGDClassifierWithSampleWeightsPerClass
+        import sklearn
         from sklearn.utils import compute_class_weight
+
+        from snips_nlu.intent_classifier.sgd_with_per_class_sample_weights \
+            import (
+            SGDClassifierWithSampleWeightsPerClass,
+            SGDClassifierWithSampleWeightsPerClassPy2,
+        )
+
 
         logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
@@ -155,7 +161,19 @@ class LogRegIntentClassifier(IntentClassifier):
                 intent_list=self.intent_list,
                 noise_class=none_class,
             )
-        self.classifier = SGDClassifierWithSampleWeightsPerClass(
+
+        sklearn_version = parse_version(sklearn.__version__)
+        if int(sklearn_version["minor"]) == 20:
+            sgd_class = SGDClassifierWithSampleWeightsPerClassPy2
+        elif int(sklearn_version["minor"]) == 21:
+            sgd_class = SGDClassifierWithSampleWeightsPerClass
+        else:
+            raise ValueError(
+                "Unsupported sklearn version: %s"
+                % sklearn_version.__version__
+            )
+
+        self.classifier = sgd_class(
             random_state=self.random_state,
             alpha=alpha,
             class_weight=class_weight,

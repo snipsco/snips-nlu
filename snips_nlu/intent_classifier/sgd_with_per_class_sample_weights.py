@@ -13,7 +13,7 @@ from sklearn.utils.fixes import _joblib_parallel_args
 try:
     from sklearn.linear_model.stochastic_gradient import MAX_INT
 except ImportError:
-    MAX_INT = np.iinfo(np.int32).max
+    pass
 
 
 class SGDClassifierWithSampleWeightsPerClass(SGDClassifier):
@@ -62,6 +62,53 @@ class SGDClassifierWithSampleWeightsPerClass(SGDClassifier):
                                 validation_mask=validation_mask,
                                 random_state=seed)
             for i, seed in enumerate(seeds))
+
+        # take the maximum of n_iter_ over every binary fit
+        n_iter_ = 0.
+        for i, (_, intercept, n_iter_i) in enumerate(result):
+            self.intercept_[i] = intercept
+            n_iter_ = max(n_iter_, n_iter_i)
+
+        self.t_ += n_iter_ * X.shape[0]
+        self.n_iter_ = n_iter_
+
+        if self.average > 0:
+            if self.average <= self.t_ - 1.0:
+                self.coef_ = self.average_coef_
+                self.intercept_ = self.average_intercept_
+            else:
+                self.coef_ = self.standard_coef_
+                self.standard_intercept_ = np.atleast_1d(self.intercept_)
+                self.intercept_ = self.standard_intercept_
+
+
+class SGDClassifierWithSampleWeightsPerClassPy2(
+    SGDClassifierWithSampleWeightsPerClass):
+
+    def _fit_multiclass(self, X, y, alpha, C, learning_rate,
+                        sample_weight, max_iter):
+        """Fit a multi-class classifier by combining binary classifiers
+
+        Each binary classifier predicts one class versus all others. This
+        strategy is called OvA (One versus All) or OvR (One versus Rest).
+
+        Here the we set the class weights so that
+        """
+        # Precompute the validation split using the multiclass labels
+        # to ensure proper balancing of the classes.
+        validation_mask = self._make_validation_split(y)
+
+        # Use joblib to fit OvA in parallel.
+        # Pick the random seed for each job outside of fit_binary to avoid
+        # sharing the estimator random state between threads which could lead
+        # to non-deterministic behavior
+        result = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+                          **_joblib_parallel_args(require="sharedmem"))(
+            delayed(fit_binary)(self, i, X, y, alpha, C, learning_rate,
+                                max_iter, self._expanded_class_weight[i],
+                                1., sample_weight[i],
+                                validation_mask=validation_mask)
+            for i in range(len(self.classes_)))
 
         # take the maximum of n_iter_ over every binary fit
         n_iter_ = 0.

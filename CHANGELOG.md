@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 - Document metrics CLI [#839](https://github.com/snipsco/snips-nlu/pull/839)
 - Allow to fit SnipsNLUEngine with a `Dataset` object [#840](https://github.com/snipsco/snips-nlu/pull/840)
 
+### Changed
+- Update `snips-nlu-parsers` dependency upper bound to 0.5 [#850](https://github.com/snipsco/snips-nlu/pull/850)
+
 ### Fixed
 - Invalidate importlib caches after dynamically installing module [#838](https://github.com/snipsco/snips-nlu/pull/838)
 - Automatically generate documentation for supported languages and builtin entities [#841](https://github.com/snipsco/snips-nlu/pull/841)

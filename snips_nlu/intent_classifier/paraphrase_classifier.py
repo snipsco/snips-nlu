@@ -206,18 +206,20 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                           for n, p in m.named_parameters()]
             }
         ]
-        # optimized_params += [
-        #     {
-        #         "params": [p for n, p in clf.similarity_scorer.bert.named_parameters()
-        #                    if not any(nd in n for nd in no_decay)],
-        #         "weight_decay": 0.01,
-        #     },
-        #     {
-        #         "params": [p for n, p in clf.similarity_scorer.bert.named_parameters()
-        #                    if any(nd in n for nd in no_decay)],
-        #         "weight_decay": 0.0
-        #     }
-        # ]
+        optimized_params += [
+            {
+                "params": [
+                    p for n, p in clf.similarity_scorer.bert.named_parameters()
+                    if not any(nd in n for nd in no_decay)],
+                "weight_decay": 0.01,
+            },
+            {
+                "params": [
+                    p for n, p in clf.similarity_scorer.bert.named_parameters()
+                    if any(nd in n for nd in no_decay)],
+                "weight_decay": 0.0
+            }
+        ]
         logger.debug(f"Optimized parameters: {optimized_params}")
 
         optimizer = AdamW(optimized_params, **self.config.optimizer_config)

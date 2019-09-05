@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.20.1] - 2019-09-04
 ### Added
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
 - Persist `CustomEntityParser` license when needed [#832](https://github.com/snipsco/snips-nlu/pull/832)
@@ -328,7 +328,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.20.0...HEAD
+[0.20.1]: https://github.com/snipsco/snips-nlu/compare/0.20.0...0.20.1
 [0.20.0]: https://github.com/snipsco/snips-nlu/compare/0.19.8...0.20.0
 [0.19.8]: https://github.com/snipsco/snips-nlu/compare/0.19.7...0.19.8
 [0.19.7]: https://github.com/snipsco/snips-nlu/compare/0.19.6...0.19.7

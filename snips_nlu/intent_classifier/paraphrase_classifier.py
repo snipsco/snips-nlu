@@ -458,8 +458,7 @@ class SimilarityScorer(nn.Module):
         embedded = embedded.reshape((-1, n_paraphrases, embedded.shape[-1]))
 
         # (bzs * n_paraphrases, embedding_size)
-        original_embedded = embedded[:, 0].repeat(
-            n_paraphrases, 1).reshape_as(embedded)
+        original_embedded = embedded[:, 0].unsqueeze(1).expand_as(embedded)
         features = torch.cat(
             (embedded, original_embedded, embedded * original_embedded),
             dim=-1

@@ -13,11 +13,11 @@ from pytorch_transformers import AdamW, BertModel, BertTokenizer
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import compute_class_weight
+from tensorboardX import SummaryWriter
 from torch import nn
 from torch.utils.data import (
     DataLoader, DistributedSampler, RandomSampler,
-    TensorDataset)
-from torch.utils.tensorboard import SummaryWriter
+    TensorDataset, Subset)
 from tqdm import tqdm
 
 from snips_nlu.common.registrable import Registrable
@@ -203,7 +203,7 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                            for n, p in m.named_parameters()],
                 "weight_decay": 0.0,
                 "names": [n for m in optimized_modules
-                           for n, p in m.named_parameters()]
+                          for n, p in m.named_parameters()]
             }
         ]
         # optimized_params += [
@@ -252,10 +252,16 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         eval_loader = _data_loader_from_examples(
             eval_examples, self.config.batch_size, return_labels=True)
 
-        # num_batches_per_epoch = len(utterances) / self.config.batch_size
-        eval_frequency = None
-        # if num_batches_per_epoch > 5:
-        #     eval_frequency = 5
+        debug_dataloader = DataLoader(
+            Subset(eval_loader.dataset, list(range(self.config.batch_size))),
+            batch_size=self.config.batch_size,
+        )
+
+        debug_config = {
+            "loader": debug_dataloader,
+            "labels": intent_list,
+            "examples": eval_examples[:self.config.batch_size]
+        }
 
         writer = SummaryWriter(log_dir=str(self.log_dir))
         self._runner.model.none_cls = none_class
@@ -266,8 +272,8 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             optimizer,
             self.config.n_epochs,
             output_dir=self.output_dir,
-            eval_frequency=eval_frequency,
-            writer=writer
+            writer=writer,
+            debug_config=debug_config,
         )
         self.global_step = self._runner.global_step
         return self
@@ -319,6 +325,7 @@ class ParaphraseClassifier(nn.Module):
         batch_size = linguistic_features.shape[0]
         n_paraphrases = linguistic_features.shape[1]
         n_linguistic_features = linguistic_features.shape[2]
+        n_classes = self.sentence_classifier
 
         true = torch.ones((batch_size,), dtype=torch.uint8)
         false = torch.zeros((batch_size,), dtype=torch.uint8)
@@ -344,37 +351,41 @@ class ParaphraseClassifier(nn.Module):
                 (linguistic_features_, none_linguistic_features))
 
         # (bsz * n_paraphrases, n_classes)
-        not_none_probs = self.sentence_classifier(linguistic_features_)
-        # Compute the weighted probabilities and reorder them
-        none_probs = None
-        if num_none:
-            none_probs = not_none_probs[-num_none:]
-            not_none_probs = not_none_probs[:-num_none]
+        probs = self.sentence_classifier(linguistic_features_)
+        unweighted_probs = torch.zeros(
+            (batch_size, n_paraphrases, probs.shape[-1]))
 
-        if paraphrases_input_ids[not_none_index].shape[0]:
-            not_none_probs = not_none_probs.reshape(
-                (-1, n_paraphrases, not_none_probs.shape[-1]))
-            # Embed only not none queries
-            # (bsz, n_paraphrases)
-            similarities = self.similarity_scorer(
+        # Reorder probabilities
+        if num_none:
+            unweighted_probs[not_none_index] = probs[:-num_none].reshape(
+                (batch_size - num_none, n_paraphrases, probs.shape[-1]))
+            unweighted_probs[none_index, :] = probs[-num_none:].unsqueeze(1)
+        else:
+            unweighted_probs = probs.reshape((batch_size, n_paraphrases, -1))
+
+        # Compute similarity only not none queries for none queries,
+        # all paraphrase have the same weight since we only consider the
+        # original sentence
+        # (bsz, n_paraphrases)
+        similarities = torch.ones((batch_size, n_paraphrases))
+        if batch_size - num_none:
+            similarities[not_none_index] = self.similarity_scorer(
                 paraphrases_input_ids[not_none_index],
                 paraphrases_masks[not_none_index],
             )
-            weighted_probs = torch.sum(
-                not_none_probs * similarities.unsqueeze(2), dim=1)
-            final_probs = torch.zeros(batch_size, weighted_probs.shape[1])
-            final_probs[not_none_index] = weighted_probs
-            if none_probs is not None:
-                final_probs[none_index] = none_probs
-        else:  # Only none examples
-            final_probs = none_probs
+        similarities = torch.softmax(similarities, dim=-1)
+        weighted_probs = torch.sum(
+            unweighted_probs * similarities.unsqueeze(2),
+            dim=1
+        )
 
         # Predict
         if y is None:
-            return final_probs
+            return weighted_probs, unweighted_probs, similarities
 
         # Compute loss
-        return self._loss(torch.log(final_probs), y)
+        loss = self._loss(torch.log(weighted_probs), y)
+        return loss, weighted_probs, unweighted_probs, similarities
 
 
 def init_weights(module):
@@ -395,10 +406,10 @@ class MLPSentenceClassifier(SentenceClassifier):
         hidden_sizes = [config["input_size"]] + config["hidden_sizes"]
         hidden_sizes += [config["output_size"]]
         hiddens = [nn.Linear(hidden_sizes[i], hidden_sizes[i + 1])
-                  for i in range(len(hidden_sizes))[:-1]]
+                   for i in range(len(hidden_sizes))[:-1]]
         activation_class = getattr(nn, config["activation"])
         activations = [activation_class()
-                            for _ in config["hidden_sizes"]]
+                       for _ in config["hidden_sizes"]]
         activations.append(nn.Softmax(dim=-1))
         dropouts = [None for _ in hiddens]
         if config["dropout"]:
@@ -436,7 +447,6 @@ class SimilarityScorer(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, token_ids, mask):  # (bsz, n_paraphrases, max_length)
-        batch_size = token_ids.shape[0]
         n_paraphrases = token_ids.shape[1]
         flattened_inputs = token_ids.reshape((-1, token_ids.shape[-1]))
         flattened_masks = token_ids.reshape((-1, token_ids.shape[-1]))
@@ -459,7 +469,6 @@ class SimilarityScorer(nn.Module):
             features.reshape((-1, features.shape[-1]))).squeeze()
         # (bzs, n_paraphrases)
         similarities = similarities.reshape((-1, n_paraphrases))
-        similarities = self.softmax(similarities)
         return similarities
 
 
@@ -501,8 +510,8 @@ class Runner(object):
             self.model = torch.nn.DataParallel(model)
 
     def train(self, training_loader, eval_loader, eval_fn, optimizer,
-              n_epochs, output_dir,
-              eval_frequency=None, patience=10, writer=None):
+              n_epochs, output_dir, patience=10, writer=None,
+              debug_config=None):
         random_state = check_random_state(self.random_state)
         seed = random_state.randint(100000000)
         torch.manual_seed(seed)
@@ -519,64 +528,46 @@ class Runner(object):
         eval_criterion = []
         early_stopper = EarlyStopping(patience=patience)
         best_criteria = None
-        loss = None
+
+        debug_loader, debug_examples, labels = None, None, None
+        if debug_config is not None:
+            labels = debug_config["labels"]
+            debug_examples = debug_config["examples"]
+            debug_loader = debug_config["loader"]
 
         for epoch in range(n_epochs):
             self.model.train()  # prep model for training
             for i, batch in enumerate(training_loader):
                 batch = tuple(t.to(self._device) for t in batch)
                 optimizer.zero_grad()
-                loss = self.model(*batch)
+                loss, _, _, _ = self.model(*batch)
                 loss.backward()
                 optimizer.step()
-                train_losses.append(loss.item())
+                loss = loss.item()
+                train_losses.append(loss)
                 if writer is not None:
                     writer.add_scalar(
-                        "train_loss", loss, global_step=self.global_step)
+                        "loss/train", loss, global_step=self.global_step)
 
-                if eval_frequency is not None and \
-                        self.global_step % eval_frequency == 0:
-                    eval_loss, eval_criteria = self._do_eval(
-                        eval_loader, eval_fn)
-                    eval_losses.append(eval_loss)
-                    eval_criterion.append(eval_criteria)
-                    if writer is not None:
-                        writer.add_scalar(
-                            "val_loss",
-                            eval_loss,
-                            global_step=self.global_step,
-                        )
-                        writer.add_scalar(
-                            "eval_criteria",
-                            eval_criteria,
-                            global_step=self.global_step,
-                        )
-                    msg = _format_loss_msg(
-                        loss, eval_loss, eval_criteria, epoch, n_epochs)
-                    logger.debug(msg)
-                    if best_criteria is None or eval_criteria > best_criteria:
-                        torch.save(self.model.state_dict(), output_dir)
-                    # TODO: use eval_criteria instead ?
-                    stop = early_stopper(eval_loss)
-                    if stop:
-                        logger.debug("Early stopping training !")
-                        break
-
-                self.global_step += 1
-
-            if eval_frequency is None:  # We do eval after each epoch
-                eval_loss, eval_criteria = self._do_eval(
-                    eval_loader, eval_fn)
+                self.global_step += batch[0].shape[0]
+                eval_res = self._do_eval(eval_loader, eval_fn)
+                eval_loss = eval_res[0]
+                eval_criteria = eval_res[1]
                 eval_losses.append(eval_loss)
                 eval_criterion.append(eval_criteria)
+
+                if debug_loader:
+                    self._perform_debug(
+                        debug_examples, debug_loader, labels, writer=writer)
+
                 if writer is not None:
                     writer.add_scalar(
-                        "val_loss",
+                        "loss/val",
                         eval_loss,
                         global_step=self.global_step,
                     )
                     writer.add_scalar(
-                        "eval_criteria",
+                        "metrics/f1",
                         eval_criteria,
                         global_step=self.global_step,
                     )
@@ -594,31 +585,87 @@ class Runner(object):
         self.model.to(self._device)
         return self.model, train_losses, eval_losses, eval_criterion
 
-    def predict(self, data_loader):
-        preds = []
-        for batch in tqdm(data_loader, desc="Predicting"):
-            batch = tuple(batch_item.to(self._device) for batch_item in batch)
-            with torch.no_grad():
-                pred = self.model(batch).detach().to("cpu")
-                preds.append(pred)
-        return torch.cat(preds).numpy()
-
     def _do_eval(self, data_loader, eval_fn):
         eval_losses = []
         criteria = []
+        all_weighted_probs = []
+        all_original_probs = []
+        all_similarities = []
         self.model.eval()
         for batch in tqdm(data_loader, desc="Evaluating"):
             batch = tuple(batch_item.to(self._device) for batch_item in batch)
             with torch.no_grad():
-                probs = self.model(*batch[:-1]).detach().cpu().numpy()
-                eval_loss = self.model(*batch).detach().cpu().numpy()
-            preds = np.argmax(probs, axis=1)
+                loss, w_probs, original_probs, sims = self.model(*batch)
+            preds = np.argmax(w_probs, axis=1)
             criteria.append(eval_fn(batch[-1].detach().cpu().numpy(), preds))
-            eval_losses.append(eval_loss)
+            eval_losses.append(loss.detach().cpu().numpy())
+            all_weighted_probs.append(w_probs.detach().cpu().numpy())
+            all_original_probs.append(original_probs.detach().cpu().numpy())
+            all_similarities.append(sims.detach().cpu().numpy())
 
         eval_loss = np.mean(eval_losses)
         criterion = np.mean(criteria)
-        return eval_loss, criterion
+        return (
+            eval_loss,
+            criterion,
+            all_weighted_probs,
+            all_original_probs,
+            all_similarities,
+        )
+
+    def _perform_debug(self, examples, loader, labels, writer=None):
+        self.model.eval()
+        weighted_probs = []
+        original_probs = []
+        similarities = []
+        for batch in loader:
+            batch = tuple(batch_item.to(self._device) for batch_item in batch)
+            with torch.no_grad():
+                batch = tuple(
+                    batch_item.to(self._device) for batch_item in batch)
+                with torch.no_grad():
+                    w_probs, o_probs, sims = self.model(*batch[:-1])
+                weighted_probs.extend(w_probs.detach().cpu().tolist())
+                original_probs.extend(o_probs.detach().cpu().tolist())
+                similarities.extend(sims.detach().cpu().tolist())
+        debug_str = "# Debugging on examples"
+        for i, (ex, w_probs, o_probs, sims) in enumerate(zip(
+                examples, weighted_probs, original_probs, similarities)):
+            i += 1
+            header = f"\n## {i}/{len(examples)} {labels[ex.label]}:" \
+                     f" '{ex.paraphrases_texts[0]}'"
+            prob_table = _intent_table(w_probs, labels)
+            para_table = _paraphrase_table(
+                ex.paraphrases_texts, o_probs, sims, labels)
+            debug_str += "\n" + "\n\n\n".join((header, prob_table, para_table))
+
+        logger.debug(debug_str)
+        if writer:
+            writer.add_text(
+                "debug/output", debug_str, global_step=self.global_step)
+
+
+def _intent_table(probs, intents):
+    header = _row(intents)
+    table_style = _row(":---" for _ in intents)
+    rows = [header, table_style, _row(probs)]
+    return "\n".join(rows)
+
+
+def _paraphrase_table(paraphrases, probs, similarities, intents):
+    header_cols = ["Paraphrase", "Similarity"] + intents
+    header = _row(header_cols)
+    table_style = _row(":---" for _ in header_cols)
+    rows = [header, table_style]
+    for paraphrase, similarity, p in zip(paraphrases, similarities, probs):
+        col = [paraphrase, similarity] + p
+        row = _row(col)
+        rows.append(row)
+    return "\n".join(rows)
+
+
+def _row(cols):
+    return "| " + " | ".join(str(c) for c in cols) + " |"
 
 
 class EarlyStopping(object):

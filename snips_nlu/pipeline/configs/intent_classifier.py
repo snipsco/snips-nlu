@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 from snips_nlu.common.from_dict import FromDict
-from snips_nlu.constants import (
-    CUSTOM_ENTITY_PARSER_USAGE, NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
+from snips_nlu.constants import (BERT_MODEL_PATH, CUSTOM_ENTITY_PARSER_USAGE,
+                                 NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 from snips_nlu.pipeline.configs import Config, ProcessingUnitConfig
@@ -88,6 +88,140 @@ class LogRegIntentClassifierConfig(FromDict, ProcessingUnitConfig):
             "featurizer_config": self.featurizer_config.to_dict(),
             "noise_reweight_factor": self.noise_reweight_factor,
         }
+
+
+class LogRegIntentClassifierWithParaphraseConfig(
+    FromDict, ProcessingUnitConfig):
+    """Configuration of a :class:`.LogRegIntentClassifier`"""
+
+    # pylint: disable=line-too-long
+    def __init__(self, num_paraphrases, batch_size=16, n_epochs=10,
+                 validation_ratio=.2, data_augmentation_config=None,
+                 featurizer_config=None, paraphrase_classifier_config=None,
+                 runner_config=None, optimizer_config=None,
+                 noise_reweight_factor=1.0):
+        if data_augmentation_config is None:
+            data_augmentation_config = IntentClassifierDataAugmentationConfig()
+        if featurizer_config is None:
+            featurizer_config = FeaturizerConfig()
+        if paraphrase_classifier_config is None:
+            paraphrase_classifier_config = ParaphraseClassifierConfig()
+        if runner_config is None:
+            runner_config = dict()
+        if optimizer_config is None:
+            optimizer_config = dict()
+        self.n_epochs = n_epochs
+        self.optimizer_config = optimizer_config
+        self.paraphrase_classifier_config = paraphrase_classifier_config
+        self._data_augmentation_config = None
+
+        self.data_augmentation_config = data_augmentation_config
+        self._featurizer_config = None
+        self.runner_config = runner_config
+        self.featurizer_config = featurizer_config
+        self.noise_reweight_factor = noise_reweight_factor
+        self.n_paraphrases = num_paraphrases
+        self.validation_ratio = validation_ratio
+        self.batch_size = batch_size
+
+    # pylint: enable=line-too-long
+
+    @property
+    def data_augmentation_config(self):
+        return self._data_augmentation_config
+
+    @data_augmentation_config.setter
+    def data_augmentation_config(self, value):
+        if isinstance(value, dict):
+            self._data_augmentation_config = \
+                IntentClassifierDataAugmentationConfig.from_dict(value)
+        elif isinstance(value, IntentClassifierDataAugmentationConfig):
+            self._data_augmentation_config = value
+        else:
+            raise TypeError("Expected instance of "
+                            "IntentClassifierDataAugmentationConfig or dict"
+                            "but received: %s" % type(value))
+
+    @property
+    def featurizer_config(self):
+        return self._featurizer_config
+
+    @featurizer_config.setter
+    def featurizer_config(self, value):
+        if isinstance(value, dict):
+            self._featurizer_config = \
+                FeaturizerConfig.from_dict(value)
+        elif isinstance(value, FeaturizerConfig):
+            self._featurizer_config = value
+        else:
+            raise TypeError("Expected instance of FeaturizerConfig or dict"
+                            "but received: %s" % type(value))
+
+    @property
+    def unit_name(self):
+        from snips_nlu.intent_classifier import LogRegIntentClassifier
+        return LogRegIntentClassifier.unit_name
+
+    def get_required_resources(self):
+        resources = [
+            self.data_augmentation_config.get_required_resources(),
+            self.paraphrase_classifier_config.get_required_resources(),
+        ]
+        resources = merge_required_resources(*resources)
+        return resources
+
+    def to_dict(self):
+        raise NotImplementedError
+        return {
+            "unit_name": self.unit_name,
+            "data_augmentation_config":
+                self.data_augmentation_config.to_dict(),
+            "featurizer_config": self.featurizer_config.to_dict(),
+            "noise_reweight_factor": self.noise_reweight_factor,
+        }
+
+
+class ParaphraseClassifierConfig(FromDict, Config):
+    def __init__(self, sentence_classifier_config=None):
+        if sentence_classifier_config is None:
+            sentence_classifier_config = {
+                "name": "mlp_intent_classifier",
+                "layer_sizes": [32],
+                "activation": "SELU",
+            }
+        self.sentence_classifier_config = sentence_classifier_config
+
+    @staticmethod
+    def get_required_resources():
+        return {
+            BERT_MODEL_PATH: "bert-base-uncased",
+        }
+
+    def to_dict(self):
+        return {
+            "sentence_classifier_config": self.sentence_classifier_config,
+        }
+
+    def from_dict(cls, dict):
+        def __init__(self, sentence_classifier_config=None):
+            if sentence_classifier_config is None:
+                sentence_classifier_config = {
+                    "name": "mlp_intent_classifier",
+                    "layer_sizes": [32],
+                    "activation": "SELU",
+                }
+            self.sentence_classifier_config = sentence_classifier_config
+
+        @staticmethod
+        def get_required_resources():
+            return {
+                BERT_MODEL_PATH: "bert-base-uncased",
+            }
+
+        def to_dict(self):
+            return {
+                "sentence_classifier_config": self.sentence_classifier_config
+            }
 
 
 class IntentClassifierDataAugmentationConfig(FromDict, Config):

@@ -36,14 +36,14 @@ utterances:
 - i think i'd like to get a coffee
 """)
         stamp = datetime.now()
-        log_dir = ROOT_PATH / ".log" / str(stamp)
-        output_dir = log_dir  / "intent_classifier"
+        log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
+        output_dir = log_dir / "intent_classifier"
         dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
         shared = {
             "log_dir": log_dir,
             "output_dir": output_dir
         }
-        validation_ratio = .2
+        validation_ratio = .4
         sentence_classifier_config = {
             "name": "mlp_intent_classifier",
             "hidden_sizes": [],
@@ -54,12 +54,12 @@ utterances:
             "lr": 1e-3,
         }
         paraphrase_clf_config = ParaphraseClassifierConfig(
-            sentence_classifier_config,)
+            sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
             n_epochs=1000,
             num_paraphrases=3,
             validation_ratio=validation_ratio,
-            batch_size=2,
+            batch_size=8,
             paraphrase_classifier_config=paraphrase_clf_config,
             optimizer_config=optimizer_config,
         )

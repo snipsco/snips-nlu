@@ -60,6 +60,7 @@ STEMS = "stems"
 CUSTOM_ENTITY_PARSER_USAGE = "custom_entity_parser_usage"
 WORD_CLUSTERS = "word_clusters"
 GAZETTEER_ENTITIES = "gazetteer_entities"
+BERT_MODEL_PATH = "bert_model_path"
 
 # builtin entities
 SNIPS_AMOUNT_OF_MONEY = "snips/amountOfMoney"

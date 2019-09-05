@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+from builtins import range
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
@@ -10,7 +11,7 @@ from future.utils import iteritems
 from snips_nlu.common.utils import get_package_path, is_package, json_string
 from snips_nlu.constants import (
     CUSTOM_ENTITY_PARSER_USAGE, DATA_PATH, GAZETTEERS, NOISE,
-    STEMS, STOP_WORDS, WORD_CLUSTERS, METADATA)
+    STEMS, STOP_WORDS, WORD_CLUSTERS, METADATA, BERT_MODEL_PATH)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
 
@@ -56,6 +57,7 @@ def load_resources_from_dir(resources_dir, required_resources=None):
     stop_words_filename = metadata["stop_words"]
     stems_filename = metadata["stems"]
     noise_filename = metadata["noise"]
+    bert_path = metadata[BERT_MODEL_PATH]
 
     gazetteers = _get_gazetteers(resources_dir / "gazetteers", gazetteer_names)
     word_clusters = _get_word_clusters(resources_dir / "word_clusters",
@@ -79,6 +81,7 @@ def load_resources_from_dir(resources_dir, required_resources=None):
         STOP_WORDS: stop_words,
         NOISE: noise,
         STEMS: stems,
+        BERT_MODEL_PATH: bert_path,
     }
 
 
@@ -96,13 +99,15 @@ def _update_metadata(metadata, required_resources):
         if word_clusters not in metadata["word_clusters"]:
             raise ValueError("Unknown word clusters for language '%s': '%s'"
                              % (metadata["language"], word_clusters))
+    required_bert = required_resources.get(BERT_MODEL_PATH)
+    metadata[BERT_MODEL_PATH] = required_bert
     metadata["gazetteers"] = required_gazetteers
     metadata["word_clusters"] = required_word_clusters
-    if not required_resources.get(STEMS, False):
+    if not required_resources.get(STEMS):
         metadata["stems"] = None
-    if not required_resources.get(NOISE, False):
+    if not required_resources.get(NOISE):
         metadata["noise"] = None
-    if not required_resources.get(STOP_WORDS, False):
+    if not required_resources.get(STOP_WORDS):
         metadata["stop_words"] = None
     return metadata
 
@@ -159,7 +164,14 @@ def get_stems(resources):
     return _get_resource(resources, STEMS)
 
 
-def merge_required_resources(lhs, rhs):
+def merge_required_resources(*resources):
+    merged = resources[0]
+    for i in range(1, len(resources)):
+        merged = _merge_required_resources(merged, resources[i])
+    return merged
+
+
+def _merge_required_resources(lhs, rhs):
     if not lhs:
         return dict() if rhs is None else rhs
     if not rhs:
@@ -183,6 +195,12 @@ def merge_required_resources(lhs, rhs):
         rhs.get(WORD_CLUSTERS, set()))
     if word_clusters:
         merged_resources[WORD_CLUSTERS] = word_clusters
+    bert = lhs.get(BERT_MODEL_PATH)
+    other_bert = rhs.get(BERT_MODEL_PATH)
+    if bert and other_bert and bert != other_bert:
+        raise ValueError("Found 2 different bert model path %s and %s"
+                         % (bert, other_bert))
+    merged_resources[BERT_MODEL_PATH] = bert or other_bert
     return merged_resources
 
 

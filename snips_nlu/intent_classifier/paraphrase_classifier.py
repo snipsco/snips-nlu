@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 PARAPHRASE_SERVICE_URL = "http://localhost:8000/api/1.0"
 PIVOTS = {
-    "en": ["de", "fr"]
+    "en": ["de", "fr", "es"]
 }
 
 

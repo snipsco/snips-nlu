@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import unittest
 from datetime import datetime
@@ -11,12 +12,7 @@ from snips_nlu.intent_classifier.paraphrase_classifier import (
 from snips_nlu.pipeline.configs.intent_classifier import (
     LogRegIntentClassifierWithParaphraseConfig, ParaphraseClassifierConfig)
 
-
-class TestParaphraseClassifier(unittest.TestCase):
-    def test_train(self):
-        set_nlu_logger(logging.DEBUG)
-        # Given
-        dataset_stream = io.StringIO("""
+TOY_DATASET = """
 ---
 type: intent
 name: MakeTea
@@ -34,16 +30,28 @@ utterances:
 - brew [number_of_cups:snips/number](two) cups of coffee
 - can you make me some [beverage_temperature:Temperature](very hot) coffee please
 - i think i'd like to get a coffee
-""")
+"""
+TOY_DATASET = Dataset.from_yaml_files("en", [io.StringIO(TOY_DATASET)]).json
+
+ELECTROLUX_PATH = ROOT_PATH / "dataset_electrolux.json"
+
+with ELECTROLUX_PATH.open() as f:
+    ELECTROLUX_DATASET = json.load(f)
+
+class TestParaphraseClassifier(unittest.TestCase):
+    def test_train(self):
+        set_nlu_logger(logging.DEBUG)
+        # Given
+        dataset = ELECTROLUX_DATASET
         stamp = datetime.now()
         log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
         output_dir = log_dir / "intent_classifier"
-        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
         shared = {
             "log_dir": log_dir,
             "output_dir": output_dir
         }
-        validation_ratio = .4
+        validation_ratio = .2
         sentence_classifier_config = {
             "name": "mlp_intent_classifier",
             "hidden_sizes": [],
@@ -57,9 +65,9 @@ utterances:
             sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
             n_epochs=1000,
-            num_paraphrases=3,
+            num_paraphrases=5,
             validation_ratio=validation_ratio,
-            batch_size=8,
+            batch_size=32,
             paraphrase_classifier_config=paraphrase_clf_config,
             optimizer_config=optimizer_config,
         )

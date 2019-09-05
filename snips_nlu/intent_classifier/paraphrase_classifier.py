@@ -1,3 +1,5 @@
+from __future__ import division
+
 import json
 import logging
 import time
@@ -8,21 +10,21 @@ import numpy as np
 import requests
 import torch
 from dataclasses import dataclass
-from future.utils import with_metaclass
+from future.utils import viewvalues, with_metaclass
 from pytorch_transformers import AdamW, BertModel, BertTokenizer
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import compute_class_weight
 from tensorboardX import SummaryWriter
 from torch import nn
-from torch.utils.data import (
-    DataLoader, DistributedSampler, RandomSampler,
-    TensorDataset, Subset)
+from torch.utils.data import (DataLoader, DistributedSampler, RandomSampler,
+                              Subset, TensorDataset)
 from tqdm import tqdm
 
 from snips_nlu.common.registrable import Registrable
 from snips_nlu.common.utils import check_random_state
-from snips_nlu.constants import BERT_MODEL_PATH, DATA, LANGUAGE, TEXT
+from snips_nlu.constants import BERT_MODEL_PATH, DATA, INTENTS, LANGUAGE, TEXT, \
+    UTTERANCES
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier import (
@@ -86,6 +88,8 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
     def fit(self, dataset):
         logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
+        # Remove slots to avoid dirty context/slot augmentation
+        _remove_slots(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
@@ -713,8 +717,11 @@ def _get_paraphrases(sentences, service_url, language, pivot_languages,
     assert res.status_code == 200
     job = json.loads(res.text)
     job_url = job_url + "/" + job["id"]
+    sleep = 1
+    max_sleep = 60
     while True:
-        time.sleep(1)
+        time.sleep(min(sleep, max_sleep))
+        sleep *= 2
         res = requests.get(job_url)
         assert res.status_code == 200
         job = json.loads(res.text)
@@ -825,3 +832,10 @@ def _data_loader_from_examples(
     else:
         sampler = DistributedSampler(data)
     return DataLoader(data, sampler=sampler, batch_size=batch_size)
+
+
+def _remove_slots(dataset):
+    for intent in viewvalues(dataset[INTENTS]):
+        for u in intent[UTTERANCES]:
+            text = _utterance_text(u)
+            u = text_to_utterance(text)

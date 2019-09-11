@@ -668,8 +668,8 @@ class Runner(object):
                         global_step=self.global_step,
                     )
                     writer.add_scalar(
-                        "metrics/f1",
-                        eval_criteria,
+                        "f1",
+                        float(eval_criteria),
                         global_step=self.global_step,
                     )
                 msg = _format_loss_msg(
@@ -677,9 +677,9 @@ class Runner(object):
                 logger.debug(msg)
                 if best_criteria is None or eval_criteria > best_criteria:
                     torch.save(self.model.state_dict(), output_dir)
-                stop = early_stopper(eval_loss)
+                stop = early_stopper(eval_criteria)
                 if stop:
-                    logger.debug("Early stopping training !")
+                    logger.debug("Early stopping model training !")
                     break
 
         self.model.load_state_dict(torch.load(output_dir))
@@ -804,13 +804,12 @@ class EarlyStopping(object):
         self._counter = 0
         self.best_score = None
 
-    def __call__(self, val_loss):
-        score = -val_loss
+    def __call__(self, score):
         if self.best_score is None:
             self.best_score = score
             return False
 
-        if score < self.best_score - self._delta:
+        if score <= self.best_score + self._delta:
             self._counter += 1
             logger.debug(
                 f"EarlyStopping counter: {self._counter}"
@@ -818,12 +817,13 @@ class EarlyStopping(object):
             )
             if self._counter >= self._patience:
                 return True
-        logging.debug(
-            f"Validation loss decreased ({-self.best_score:.6f} -->"
-            f" {val_loss:.6f}). Saving model ..."
+            return False
+        logger.debug(
+            f"Validation criteria increased ({self.best_score:.6f} -->"
+            f" {score:.6f})..."
         )
         self._counter = 0
-        self._best_score = score
+        self.best_score = score
         return False
 
 

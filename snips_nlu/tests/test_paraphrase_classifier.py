@@ -58,7 +58,7 @@ class TestParaphraseClassifier(unittest.TestCase):
             "name": "mlp_intent_classifier",
             "hidden_sizes": [],
             "activation": "SELU",
-            "dropout": .2,
+            "dropout": .5,
         }
         optimizer_config = {
             "lr": 1e-3,
@@ -66,10 +66,10 @@ class TestParaphraseClassifier(unittest.TestCase):
         paraphrase_clf_config = ParaphraseClassifierConfig(
             sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
-            n_epochs=1,
+            n_epochs=int(1e5),
             num_paraphrases=1,
             validation_ratio=validation_ratio,
-            batch_size=32,
+            batch_size=64,
             paraphrase_classifier_config=paraphrase_clf_config,
             optimizer_config=optimizer_config,
         )

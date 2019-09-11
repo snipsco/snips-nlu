@@ -5,6 +5,8 @@ import logging
 import time
 from abc import ABCMeta
 from builtins import object, range, zip
+from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import requests
@@ -22,11 +24,12 @@ from torch.utils.data import (DataLoader, DistributedSampler, RandomSampler,
 from tqdm import tqdm
 
 from snips_nlu.common.registrable import Registrable
-from snips_nlu.common.utils import check_random_state
-from snips_nlu.constants import BERT_MODEL_PATH, DATA, INTENTS, LANGUAGE, TEXT, \
-    UTTERANCES
+from snips_nlu.common.utils import (
+    check_persisted_path, check_random_state, json_string)
+from snips_nlu.constants import (BERT_MODEL_PATH, DATA, INTENTS, LANGUAGE,
+                                 TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
-from snips_nlu.exceptions import _EmptyDatasetUtterancesError
+from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier import (
     Featurizer as LinguisticFeaturizer,
     IntentClassifier,
@@ -40,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 PARAPHRASE_SERVICE_URL = "http://localhost:8000/api/1.0"
 PIVOTS = {
-    "en": ["de", "fr", "es"]
+    "en": ["de", "fr", "es", "it"]
 }
 
 
@@ -58,7 +61,8 @@ def _utterance_text(u):
 
 def get_f1(num_labels):
     def f1(y_true, y_pred):
-        return f1_score(y_pred, y_true, average=None, labels=range(num_labels))
+        return f1_score(
+            y_pred, y_true, average="macro", labels=range(num_labels))
 
     return f1
 
@@ -172,20 +176,20 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             (len(all_utterances), self.config.n_paraphrases, -1))
 
         clf_config = self.config.paraphrase_classifier_config.to_dict()
-        if self._similarity_scorer is None:
+        scorer_config = dict()
+        if self._similarity_scorer is not None:
             scorer_config = {
-                "bert_model_path": self.resources[BERT_MODEL_PATH],
+                BERT_MODEL_PATH: self._similarity_scorer,
             }
-            self._similarity_scorer = SimilarityScorer(scorer_config)
-        clf_config["similarity_scorer"] = self._similarity_scorer
+        clf_config["similarity_scorer"] = scorer_config
         clf_config["n_paraphrases"] = self.config.n_paraphrases
         clf_config["linguistic_input_size"] = x_linguistic.shape[-1]
         clf_config["sentence_classifier_config"][
             "input_size"] = x_linguistic.shape[-1]
         clf_config["sentence_classifier_config"]["output_size"] = len(
             set(classes))
-        # clf_config["class_weights"] = np.array(
-        #     class_weights_arr, dtype="float32")
+        clf_config["class_weights"] = np.array(
+            class_weights_arr, dtype="float32")
 
         clf = ParaphraseClassifier(clf_config)
         clf.none_class = none_class
@@ -210,27 +214,35 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                           for n, p in m.named_parameters()]
             }
         ]
+        bert_params = list(clf.similarity_scorer.bert.named_parameters())
         optimized_params += [
             {
-                "params": [
-                    p for n, p in clf.similarity_scorer.bert.named_parameters()
-                    if not any(nd in n for nd in no_decay)],
+                "params": [p for n, p in bert_params
+                           if not any(nd in n for nd in no_decay)],
                 "weight_decay": 0.01,
+                "names": [n for n, p in bert_params
+                          if not any(nd in n for nd in no_decay)],
             },
             {
-                "params": [
-                    p for n, p in clf.similarity_scorer.bert.named_parameters()
-                    if any(nd in n for nd in no_decay)],
-                "weight_decay": 0.0
+                "params": [p for n, p in bert_params
+                           if any(nd in n for nd in no_decay)],
+                "weight_decay": 0.0,
+                "names": [n for n, p in bert_params
+                          if any(nd in n for nd in no_decay)],
             }
         ]
-        logger.debug(f"Optimized parameters: {optimized_params}")
-
+        optimized_param_names = [n for param_set in optimized_params
+                                 for n in param_set['names']]
+        logger.debug(f"Optimized parameters: {optimized_param_names}")
         optimizer = AdamW(optimized_params, **self.config.optimizer_config)
 
         # Extracting neural features for paraphrased sentences
-        self._tokenizer = BertTokenizer.from_pretrained(
-            self.resources[BERT_MODEL_PATH])
+
+        bert_model_name = "bert-base-uncased"
+        if self._similarity_scorer:
+            bert_model_name = self._similarity_scorer.get(
+                BERT_MODEL_PATH) or bert_model_name
+        self._tokenizer = BertTokenizer.from_pretrained(bert_model_name)
         paraphrase_it = (p for p in paraphrases)
         not_none_paraphrases = [
             [next(paraphrase_it)["data"][0]["text"]
@@ -274,7 +286,7 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         self._runner.train(
             training_loader,
             eval_loader,
-            get_f1(len(classes)),
+            get_f1(len(intent_list)),
             optimizer,
             self.config.n_epochs,
             output_dir=self.output_dir,
@@ -284,32 +296,86 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         self.global_step = self._runner.global_step
         return self
 
-    # def _predict_proba(self, X):  # pylint: disable=C0103
-    #     self._runner.predict()
-    #     prob = self.classifier.decision_function(X)
-    #     prob *= -1
-    #     np.exp(prob, prob)
-    #     prob += 1
-    #     np.reciprocal(prob, prob)
-    #     if prob.ndim == 1:
-    #         return np.vstack([1 - prob, prob]).T
-    #     return prob
+    @check_persisted_path
+    def persist(self, path):
+        path.mkdir()
+
+        featurizer = None
+        if self._linguistic_featurizer is not None:
+            featurizer = "featurizer"
+            featurizer_path = path / featurizer
+            self._linguistic_featurizer.persist(featurizer_path)
+
+        runner = None
+        if self._runner is not None:
+            runner = "runner"
+            self._runner.persist(path / runner)
+
+        self_as_dict = {
+            "config": self.config.to_dict(),
+            "intent_list": self.intent_list,
+            "featurizer": featurizer,
+            "runner": runner,
+            "global_step": self.global_step,
+        }
+
+        classifier_json = json_string(self_as_dict)
+        with (path / "intent_classifier.json").open(
+                mode="w", encoding="utf8") as f:
+            f.write(classifier_json)
+        self.persist_metadata(path)
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        path = Path(path)
+        model_path = path / "intent_classifier.json"
+        if not model_path.exists():
+            raise LoadingError("Missing intent classifier model file: %s"
+                               % model_path.name)
+
+        with model_path.open(encoding="utf8") as f:
+            model_dict = json.load(f)
+
+        # Create the classifier
+        config = LogRegIntentClassifierWithParaphraseConfig.from_dict(
+            model_dict["config"])
+
+        self = cls(config, **shared)
+
+        # Create the underlying ParaphraseClassifier
+        runner = model_dict.get("runner")
+        if runner is not None:
+            runner = Runner.from_path(path / runner)
+        self._runner = runner
+
+        # Add the featurizer
+        featurizer = model_dict["featurizer"]
+        if featurizer is not None:
+            featurizer_path = path / featurizer
+            self._linguistic_featurizer = LinguisticFeaturizer.from_path(
+                featurizer_path, **shared)
+
+        return self
 
 
 class ParaphraseClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
+        self.config = deepcopy(config)
         self.n_paraphrases = config["n_paraphrases"]
-        self.similarity_scorer = config["similarity_scorer"]
+        self.similarity_scorer = SimilarityScorer(
+            config["similarity_scorer"])
         sentence_classifier_cls = SentenceClassifier.by_name(
             config["sentence_classifier_config"].pop("name"))
         self.sentence_classifier = sentence_classifier_cls(
             config["sentence_classifier_config"])
         weight = config.get("class_weights")
         if weight is not None:
-            weight = torch.from_numpy(weight)
+            weight = torch.tensor(weight, dtype=torch.float32)
         self._loss = nn.NLLLoss(weight=weight)
-        self.apply(init_weights)
+        # Init weights only for the classifier, and keep the similarity scorer
+        # pretrained
+        self.sentence_classifier.apply(init_weights)
         self._none_cls = None
 
     @property
@@ -331,7 +397,6 @@ class ParaphraseClassifier(nn.Module):
         batch_size = linguistic_features.shape[0]
         n_paraphrases = linguistic_features.shape[1]
         n_linguistic_features = linguistic_features.shape[2]
-        n_classes = self.sentence_classifier
 
         true = torch.ones((batch_size,), dtype=torch.uint8)
         false = torch.zeros((batch_size,), dtype=torch.uint8)
@@ -368,22 +433,24 @@ class ParaphraseClassifier(nn.Module):
             unweighted_probs[none_index, :] = probs[-num_none:].unsqueeze(1)
         else:
             unweighted_probs = probs.reshape((batch_size, n_paraphrases, -1))
-
-        # Compute similarity only not none queries for none queries,
-        # all paraphrase have the same weight since we only consider the
-        # original sentence
-        # (bsz, n_paraphrases)
+        #
+        # # Compute similarity only not none queries for none queries,
+        # # all paraphrase have the same weight since we only consider the
+        # # original sentence
+        # # (bsz, n_paraphrases)
+        # similarities = torch.ones((batch_size, n_paraphrases))
+        # if batch_size - num_none:
+        #     similarities[not_none_index] = self.similarity_scorer(
+        #         paraphrases_input_ids[not_none_index],
+        #         paraphrases_masks[not_none_index],
+        #     )
+        # similarities = torch.softmax(similarities, dim=-1)
+        # weighted_probs = torch.sum(
+        #     unweighted_probs * similarities.unsqueeze(2),
+        #     dim=1
+        # )
         similarities = torch.ones((batch_size, n_paraphrases))
-        if batch_size - num_none:
-            similarities[not_none_index] = self.similarity_scorer(
-                paraphrases_input_ids[not_none_index],
-                paraphrases_masks[not_none_index],
-            )
-        similarities = torch.softmax(similarities, dim=-1)
-        weighted_probs = torch.sum(
-            unweighted_probs * similarities.unsqueeze(2),
-            dim=1
-        )
+        weighted_probs = unweighted_probs[:, 0]
 
         # Predict
         if y is None:
@@ -392,6 +459,32 @@ class ParaphraseClassifier(nn.Module):
         # Compute loss
         loss = self._loss(torch.log(weighted_probs), y)
         return loss, weighted_probs, unweighted_probs, similarities
+
+    @check_persisted_path
+    def persist(self, path):
+        path = Path(path)
+        if not path.exists():
+            path.mkdir(parents=True)
+        state = "state.pt"
+        torch.save(self.state_dict(), str(path / state))
+        config = self.config
+        config["class_weights"] = config["class_weights"].tolist()
+        self_as_dict = {
+            "state": state,
+            "config": config
+        }
+        with (path / "classifier.json").open("w") as f:
+            json.dump(self_as_dict, f)
+
+    @classmethod
+    def from_path(cls, path):
+        path = Path(path)
+        with (path / "classifier.json").open() as f:
+            clf = json.load(f)
+        self = cls(clf["config"])
+        if clf["state"] is not None:
+            self.load_state_dict(torch.load(str(path / clf["state"])))
+        return self
 
 
 def init_weights(module):
@@ -447,7 +540,8 @@ class LSTMSentenceClassifier(SentenceClassifier):
 class SimilarityScorer(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.bert = BertModel.from_pretrained(config[BERT_MODEL_PATH])
+        self.bert = BertModel.from_pretrained(
+            config.get(BERT_MODEL_PATH, "bert-base-uncased"))
         embedding_size = self.bert.config.hidden_size
         self.linear = nn.Linear(3 * embedding_size, 1)
         self.softmax = nn.Softmax(dim=-1)
@@ -516,7 +610,7 @@ class Runner(object):
 
     def train(self, training_loader, eval_loader, eval_fn, optimizer,
               n_epochs, output_dir, patience=10, writer=None,
-              debug_config=None):
+              debug_config=None, eval_frequency=10):
         random_state = check_random_state(self.random_state)
         seed = random_state.randint(100000000)
         torch.manual_seed(seed)
@@ -550,11 +644,9 @@ class Runner(object):
                 optimizer.step()
                 loss = loss.item()
                 train_losses.append(loss)
-                if writer is not None:
-                    writer.add_scalar(
-                        "loss/train", loss, global_step=self.global_step)
-
                 self.global_step += batch[0].shape[0]
+
+            if not epoch % eval_frequency:
                 eval_res = self._do_eval(eval_loader, eval_fn)
                 eval_loss = eval_res[0]
                 eval_criteria = eval_res[1]
@@ -563,12 +655,16 @@ class Runner(object):
 
                 if debug_loader:
                     self._perform_debug(
-                        debug_examples, debug_loader, labels, writer=writer)
+                        debug_examples,
+                        debug_loader,
+                        labels,
+                        writer=writer
+                    )
 
                 if writer is not None:
-                    writer.add_scalar(
-                        "loss/val",
-                        eval_loss,
+                    writer.add_scalars(
+                        "loss",
+                        {"eval": eval_loss, "train": loss},
                         global_step=self.global_step,
                     )
                     writer.add_scalar(
@@ -592,24 +688,24 @@ class Runner(object):
 
     def _do_eval(self, data_loader, eval_fn):
         eval_losses = []
-        criteria = []
         all_weighted_probs = []
         all_original_probs = []
         all_similarities = []
+        labels = []
         self.model.eval()
         for batch in tqdm(data_loader, desc="Evaluating"):
             batch = tuple(batch_item.to(self._device) for batch_item in batch)
             with torch.no_grad():
                 loss, w_probs, original_probs, sims = self.model(*batch)
-            preds = np.argmax(w_probs, axis=1)
-            criteria.append(eval_fn(batch[-1].detach().cpu().numpy(), preds))
+            labels.extend(batch[-1].detach().cpu().numpy())
             eval_losses.append(loss.detach().cpu().numpy())
-            all_weighted_probs.append(w_probs.detach().cpu().numpy())
-            all_original_probs.append(original_probs.detach().cpu().numpy())
-            all_similarities.append(sims.detach().cpu().numpy())
-
+            all_weighted_probs.extend(w_probs.detach().cpu().numpy())
+            all_original_probs.extend(original_probs.detach().cpu().numpy())
+            all_similarities.extend(sims.detach().cpu().numpy())
+        preds = np.argmax(np.asarray(all_weighted_probs), axis=-1)
+        criterion = eval_fn(labels, preds)
         eval_loss = np.mean(eval_losses)
-        criterion = np.mean(criteria)
+
         return (
             eval_loss,
             criterion,
@@ -649,6 +745,32 @@ class Runner(object):
             writer.add_text(
                 "debug/output", debug_str, global_step=self.global_step)
 
+    def persist(self, path):
+        path = Path(path)
+        model = "model"
+        self.model.persist(path / model)
+        self_as_dict = {
+            "model": model,
+            "global_step": self.global_step,
+            "local_rank": self._local_rank,
+            "no_cuda": self._no_cuda,
+        }
+        with (path / "runner.json").open("w") as f:
+            json.dump(self_as_dict, f)
+
+    @classmethod
+    def from_path(cls, path, **shared):
+        path = Path(path)
+        with (path / "runner.json").open() as f:
+            runner_as_dict = json.load(f)
+        model = runner_as_dict.pop("model")
+        model = ParaphraseClassifier.from_path(path / model)
+        return cls(
+            model,
+            random_state=shared.get("random_state"),
+            **runner_as_dict,
+        )
+
 
 def _intent_table(probs, intents):
     header = _row(intents)
@@ -670,6 +792,7 @@ def _paraphrase_table(paraphrases, probs, similarities, intents):
 
 
 def _row(cols):
+    cols = (f"{c:.2f}" if isinstance(c, float) else str(c) for c in cols)
     return "| " + " | ".join(str(c) for c in cols) + " |"
 
 

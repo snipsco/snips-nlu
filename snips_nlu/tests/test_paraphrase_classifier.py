@@ -5,10 +5,11 @@ import unittest
 from datetime import datetime
 
 from snips_nlu.cli.utils import set_nlu_logger
+from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import ROOT_PATH
 from snips_nlu.dataset import Dataset
 from snips_nlu.intent_classifier.paraphrase_classifier import (
-    LogRegIntentClassifierWithParaphrase)
+    LogRegIntentClassifierWithParaphrase, ParaphraseClassifier)
 from snips_nlu.pipeline.configs.intent_classifier import (
     LogRegIntentClassifierWithParaphraseConfig, ParaphraseClassifierConfig)
 
@@ -38,6 +39,7 @@ ELECTROLUX_PATH = ROOT_PATH / "dataset_electrolux.json"
 with ELECTROLUX_PATH.open() as f:
     ELECTROLUX_DATASET = json.load(f)
 
+
 class TestParaphraseClassifier(unittest.TestCase):
     def test_train(self):
         set_nlu_logger(logging.DEBUG)
@@ -51,12 +53,12 @@ class TestParaphraseClassifier(unittest.TestCase):
             "log_dir": log_dir,
             "output_dir": output_dir
         }
-        validation_ratio = .2
+        validation_ratio = .1
         sentence_classifier_config = {
             "name": "mlp_intent_classifier",
             "hidden_sizes": [],
             "activation": "SELU",
-            "dropout": .0,
+            "dropout": .2,
         }
         optimizer_config = {
             "lr": 1e-3,
@@ -64,8 +66,8 @@ class TestParaphraseClassifier(unittest.TestCase):
         paraphrase_clf_config = ParaphraseClassifierConfig(
             sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
-            n_epochs=1000,
-            num_paraphrases=5,
+            n_epochs=1,
+            num_paraphrases=1,
             validation_ratio=validation_ratio,
             batch_size=32,
             paraphrase_classifier_config=paraphrase_clf_config,
@@ -75,4 +77,10 @@ class TestParaphraseClassifier(unittest.TestCase):
         random_state = 110
         clf = LogRegIntentClassifierWithParaphrase(
             config=config, random_state=random_state, **shared)
+
         clf.fit(dataset)
+        with temp_dir() as tmp:
+            clf_path = tmp / "paraphrase_classifier"
+            clf.persist(clf_path)
+            LogRegIntentClassifierWithParaphrase.from_path(
+                clf_path, **shared)

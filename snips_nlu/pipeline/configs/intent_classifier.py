@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from snips_nlu.common.from_dict import FromDict
-from snips_nlu.constants import (BERT_MODEL_PATH, CUSTOM_ENTITY_PARSER_USAGE,
+from snips_nlu.constants import (CUSTOM_ENTITY_PARSER_USAGE,
                                  NOISE, STEMS, STOP_WORDS, WORD_CLUSTERS)
 from snips_nlu.entity_parser.custom_entity_parser import (
     CustomEntityParserUsage)
@@ -114,7 +114,6 @@ class LogRegIntentClassifierWithParaphraseConfig(
         self.optimizer_config = optimizer_config
         self.paraphrase_classifier_config = paraphrase_classifier_config
         self._data_augmentation_config = None
-
         self.data_augmentation_config = data_augmentation_config
         self._featurizer_config = None
         self.runner_config = runner_config
@@ -165,20 +164,42 @@ class LogRegIntentClassifierWithParaphraseConfig(
     def get_required_resources(self):
         resources = [
             self.data_augmentation_config.get_required_resources(),
-            self.paraphrase_classifier_config.get_required_resources(),
         ]
         resources = merge_required_resources(*resources)
         return resources
 
     def to_dict(self):
-        raise NotImplementedError
         return {
             "unit_name": self.unit_name,
+            "n_epochs": self.n_epochs,
+            "paraphrase_classifier_config":
+                self.paraphrase_classifier_config.to_dict(),
             "data_augmentation_config":
                 self.data_augmentation_config.to_dict(),
+            "runner_config": self.runner_config,
             "featurizer_config": self.featurizer_config.to_dict(),
+            "optimizer_config": self.optimizer_config,
             "noise_reweight_factor": self.noise_reweight_factor,
+            "n_paraphrases": self.n_paraphrases,
+            "validation_ratio": self.validation_ratio,
+            "batch_size": self.batch_size,
         }
+
+    @classmethod
+    def from_dict(cls, dict):
+        args = {
+            "num_paraphrases": dict["n_paraphrases"],
+            "batch_size": dict["batch_size"],
+            "n_epochs": dict["n_epochs"],
+            "validation_ratio": dict["validation_ratio"],
+            "featurizer_config": dict["featurizer_config"],
+            "paraphrase_classifier_config": dict[
+                "paraphrase_classifier_config"],
+            "runner_config": dict["runner_config"],
+            "optimizer_config": dict["optimizer_config"],
+            "noise_reweight_factor": dict["noise_reweight_factor"],
+        }
+        return cls(**args)
 
 
 class ParaphraseClassifierConfig(FromDict, Config):
@@ -191,37 +212,15 @@ class ParaphraseClassifierConfig(FromDict, Config):
             }
         self.sentence_classifier_config = sentence_classifier_config
 
-    @staticmethod
-    def get_required_resources():
-        return {
-            BERT_MODEL_PATH: "bert-base-uncased",
-        }
-
     def to_dict(self):
         return {
             "sentence_classifier_config": self.sentence_classifier_config,
         }
 
+    @classmethod
     def from_dict(cls, dict):
-        def __init__(self, sentence_classifier_config=None):
-            if sentence_classifier_config is None:
-                sentence_classifier_config = {
-                    "name": "mlp_intent_classifier",
-                    "layer_sizes": [32],
-                    "activation": "SELU",
-                }
-            self.sentence_classifier_config = sentence_classifier_config
-
-        @staticmethod
-        def get_required_resources():
-            return {
-                BERT_MODEL_PATH: "bert-base-uncased",
-            }
-
-        def to_dict(self):
-            return {
-                "sentence_classifier_config": self.sentence_classifier_config
-            }
+        return cls(
+            sentence_classifier_config=dict.get("sentence_classifier_config"))
 
 
 class IntentClassifierDataAugmentationConfig(FromDict, Config):

@@ -9,7 +9,7 @@ from snips_nlu.common.io_utils import temp_dir
 from snips_nlu.constants import ROOT_PATH
 from snips_nlu.dataset import Dataset
 from snips_nlu.intent_classifier.paraphrase_classifier import (
-    LogRegIntentClassifierWithParaphrase, ParaphraseClassifier)
+    LogRegIntentClassifierWithParaphrase, remove_slots)
 from snips_nlu.pipeline.configs.intent_classifier import (
     LogRegIntentClassifierWithParaphraseConfig, ParaphraseClassifierConfig)
 
@@ -38,6 +38,7 @@ ELECTROLUX_PATH = ROOT_PATH / "dataset_electrolux.json"
 
 with ELECTROLUX_PATH.open() as f:
     ELECTROLUX_DATASET = json.load(f)
+remove_slots(ELECTROLUX_DATASET)
 
 
 class TestParaphraseClassifier(unittest.TestCase):
@@ -66,7 +67,7 @@ class TestParaphraseClassifier(unittest.TestCase):
         paraphrase_clf_config = ParaphraseClassifierConfig(
             sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
-            n_epochs=int(1e5),
+            n_epochs=int(1e0),
             num_paraphrases=1,
             validation_ratio=validation_ratio,
             batch_size=64,
@@ -82,5 +83,6 @@ class TestParaphraseClassifier(unittest.TestCase):
         with temp_dir() as tmp:
             clf_path = tmp / "paraphrase_classifier"
             clf.persist(clf_path)
-            LogRegIntentClassifierWithParaphrase.from_path(
+            new_clf = LogRegIntentClassifierWithParaphrase.from_path(
                 clf_path, **shared)
+        new_clf.get_intents("i'm here")

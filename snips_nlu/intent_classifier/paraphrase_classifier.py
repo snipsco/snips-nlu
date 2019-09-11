@@ -27,7 +27,7 @@ from snips_nlu.common.registrable import Registrable
 from snips_nlu.common.utils import (
     check_persisted_path, check_random_state, json_string)
 from snips_nlu.constants import (BERT_MODEL_PATH, DATA, INTENTS, LANGUAGE,
-                                 TEXT, UTTERANCES)
+                                 TEXT, UTTERANCES, RES_PROBA)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier import (
@@ -38,12 +38,13 @@ from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data, text_to_utterance)
 from snips_nlu.pipeline.configs.intent_classifier import (
     LogRegIntentClassifierWithParaphraseConfig)
+from snips_nlu.result import intent_classification_result
 
 logger = logging.getLogger(__name__)
 
 PARAPHRASE_SERVICE_URL = "http://localhost:8000/api/1.0"
 PIVOTS = {
-    "en": ["de", "fr", "es", "it"]
+    "en": ["de", "fr", "ru", "es", "it"]
 }
 
 
@@ -88,22 +89,33 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         self._similarity_scorer = shared.get("similarity_scorer")
         self._linguistic_featurizer = None
         self._tokenizer = None
+        self._runner = None
+        self.intent_list = None
+
+    @property
+    def fitted(self):
+        return self._runner is not None
 
     def fit(self, dataset):
         logger.info("Fitting LogRegIntentClassifier...")
         dataset = validate_and_format_dataset(dataset)
         # Remove slots to avoid dirty context/slot augmentation
-        _remove_slots(dataset)
+        remove_slots(dataset)
         self.load_resources_if_needed(dataset[LANGUAGE])
         self.fit_builtin_entity_parser_if_needed(dataset)
         self.fit_custom_entity_parser_if_needed(dataset)
-        language = dataset[LANGUAGE]
+        self.language = dataset[LANGUAGE]
 
         random_state = check_random_state(self.random_state)
+        bert_model_name = "bert-base-uncased"
+        if self._similarity_scorer:
+            bert_model_name = self._similarity_scorer.get(
+                BERT_MODEL_PATH) or bert_model_name
+        self._tokenizer = BertTokenizer.from_pretrained(bert_model_name)
 
         data_augmentation_config = self.config.data_augmentation_config
         utterances, classes, intent_list = build_training_data(
-            dataset, language, data_augmentation_config, self.resources,
+            dataset, self.language, data_augmentation_config, self.resources,
             random_state)
 
         self.intent_list = intent_list
@@ -117,82 +129,90 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             resources=self.resources,
             random_state=self.random_state,
         )
-        self._linguistic_featurizer.language = language
-        none_class = max(classes)
+        self._linguistic_featurizer.language = self.language
+        self.none_class = max(classes)
 
         class_weights_arr = compute_class_weight(
-            "balanced", range(none_class + 1), classes)
+            "balanced", range(self.none_class + 1), classes)
         # Re-weight the noise class
         class_weights_arr[-1] *= self.config.noise_reweight_factor
 
-        not_none_ix = [i for i, c in enumerate(classes) if c != none_class]
-        none_ix = [i for i, c in enumerate(classes) if c == none_class]
-        all_utterances = [_utterance_text(utterances[i])
-                          for i in range(len(utterances))]
-        utterances_to_paraphrase = [all_utterances[i] for i in not_none_ix]
-
-        language = dataset[LANGUAGE]
+        # Extract linguistic features for all utterances
+        text_utterances = [
+            _utterance_text(utterances[i]) for i in range(len(utterances))]
+        not_none_ix = [i for i, c in enumerate(classes)
+                       if c != self.none_class]
+        none_ix = [i for i, c in enumerate(classes)
+                   if c == self.none_class]
+        utterances_to_paraphrase = [text_utterances[i] for i in not_none_ix]
         num_paraphrase_to_generate = self.config.n_paraphrases - 1
         paraphrases = _get_paraphrases(
             utterances_to_paraphrase,
             PARAPHRASE_SERVICE_URL,
-            language,
-            PIVOTS[language],
+            self.language,
+            PIVOTS[self.language],
             num_paraphrase_to_generate,
+            random_state=random_state,
         )
-
-        # Prepend original sentence to paraprhases
+        # Prepend original sentence to paraphrases
         for i, u in enumerate(utterances_to_paraphrase):
             paraphrases[i] = [u] + paraphrases[i]
         paraphrases = [text_to_utterance(pp) for p in paraphrases for pp in p]
-        # Extract linguistic features for all utterances
+
+        # Fit featurizer
         y = np.repeat(
             classes[not_none_ix],
             [self.config.n_paraphrases for _ in range(len(not_none_ix))]
         )
         y = np.concatenate((y, classes[none_ix]))
         try:
-            x = self._linguistic_featurizer.fit_transform(
+            self._linguistic_featurizer.fit(
                 dataset,
                 paraphrases + [utterances[i] for i in none_ix],
                 y,
-                none_class,
+                self.none_class,
             )
         except _EmptyDatasetUtterancesError:
             logger.warning("No (non-empty) utterances found in dataset")
             self.featurizer = None
             return self
-        x = np.asarray(x.todense())
-        x_linguistic = np.zeros(
-            (len(utterances), self.config.n_paraphrases, x.shape[1]))
-        x_linguistic[not_none_ix, :] = x[:-len(none_ix)].reshape(
-            (len(not_none_ix), self.config.n_paraphrases, -1))
-        x_linguistic[none_ix, :] = np.repeat(
-            x[-len(none_ix):],
-            self.config.n_paraphrases,
-            axis=0,
-        ).reshape((len(none_ix), self.config.n_paraphrases, -1))
-        x_linguistic = x_linguistic.reshape(
-            (len(all_utterances), self.config.n_paraphrases, -1))
 
+        # Create examples
+        paraphrase_it = (p for p in paraphrases)
+        not_none_paraphrases = [
+            [next(paraphrase_it)["data"][0]["text"]
+             for _ in range(self.config.n_paraphrases)]
+            for _ in not_none_ix]
+        none_paraphrases = [
+            [text_utterances[i] for _ in range(self.config.n_paraphrases)]
+            for i in none_ix]
+        all_paraphrases = not_none_paraphrases + none_paraphrases
+        labels = np.concatenate((classes[not_none_ix], classes[none_ix]))
+        examples = self._build_examples(
+            all_paraphrases,
+            classes=labels,
+            random_state=random_state,
+        )
         clf_config = self.config.paraphrase_classifier_config.to_dict()
         scorer_config = dict()
         if self._similarity_scorer is not None:
             scorer_config = {
                 BERT_MODEL_PATH: self._similarity_scorer,
             }
+        linguistic_features_size = examples[
+            0].paraphrases_linguistic_features.shape[-1]
         clf_config["similarity_scorer"] = scorer_config
         clf_config["n_paraphrases"] = self.config.n_paraphrases
-        clf_config["linguistic_input_size"] = x_linguistic.shape[-1]
+        clf_config["linguistic_input_size"] = linguistic_features_size
         clf_config["sentence_classifier_config"][
-            "input_size"] = x_linguistic.shape[-1]
+            "input_size"] = linguistic_features_size
         clf_config["sentence_classifier_config"]["output_size"] = len(
             set(classes))
         clf_config["class_weights"] = np.array(
             class_weights_arr, dtype="float32")
 
         clf = ParaphraseClassifier(clf_config)
-        clf.none_class = none_class
+        clf.none_class = self.none_class
         self._runner = Runner(
             clf,
             global_step=self.global_step,
@@ -235,31 +255,6 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                                  for n in param_set['names']]
         logger.debug(f"Optimized parameters: {optimized_param_names}")
         optimizer = AdamW(optimized_params, **self.config.optimizer_config)
-
-        # Extracting neural features for paraphrased sentences
-
-        bert_model_name = "bert-base-uncased"
-        if self._similarity_scorer:
-            bert_model_name = self._similarity_scorer.get(
-                BERT_MODEL_PATH) or bert_model_name
-        self._tokenizer = BertTokenizer.from_pretrained(bert_model_name)
-        paraphrase_it = (p for p in paraphrases)
-        not_none_paraphrases = [
-            [next(paraphrase_it)["data"][0]["text"]
-             for _ in range(self.config.n_paraphrases)]
-            for _ in not_none_ix]
-        none_paraphrases = [
-            [all_utterances[i] for _ in range(self.config.n_paraphrases)]
-            for i in none_ix]
-        all_paraphrases = not_none_paraphrases + none_paraphrases
-
-        examples = _create_examples(
-            all_paraphrases,
-            x_linguistic,
-            self._tokenizer,
-            labels=classes,
-        )
-
         train_examples, eval_examples = train_test_split(
             examples,
             test_size=self.config.validation_ratio,
@@ -282,7 +277,7 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         }
 
         writer = SummaryWriter(log_dir=str(self.log_dir))
-        self._runner.model.none_cls = none_class
+        self._runner.model.none_cls = self.none_class
         self._runner.train(
             training_loader,
             eval_loader,
@@ -342,6 +337,9 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
 
         self = cls(config, **shared)
 
+        if model_dict["intent_list"] is not None:
+            self.intent_list = model_dict["intent_list"]
+
         # Create the underlying ParaphraseClassifier
         runner = model_dict.get("runner")
         if runner is not None:
@@ -356,6 +354,63 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                 featurizer_path, **shared)
 
         return self
+
+    def _get_intents(self, text, intents_filter):
+        if isinstance(intents_filter, str):
+            intents_filter = {intents_filter}
+        elif isinstance(intents_filter, list):
+            intents_filter = set(intents_filter)
+
+        if not text or not self.intent_list or not self.featurizer:
+            results = [intent_classification_result(None, 1.0)]
+            results += [intent_classification_result(i, 0.0)
+                        for i in self.intent_list if i is not None]
+            return results
+
+        if len(self.intent_list) == 1:
+            return [intent_classification_result(self.intent_list[0], 1.0)]
+
+        # Set the random state to avoid stochastic inference
+        random_state = check_random_state(0)
+        paraphrases = _get_paraphrases(
+            [text],
+            PARAPHRASE_SERVICE_URL,
+            self.language,
+            PIVOTS[self.language],
+            self.config.n_paraphrases - 1,
+            random_state=random_state,
+        )
+        # Prepende the actual text
+        paraphrases[0] = [text_to_utterance(text)] + paraphrases[0]
+        examples = self._build_examples(paraphrases, random_state)
+        loader = _data_loader_from_examples(examples, batch_size=1)
+        proba_vec = self._runner.predict(loader)
+        results = [
+            intent_classification_result(i, proba)
+            for i, proba in zip(self.intent_list, proba_vec[0])
+            if intents_filter is None or i is None or i in intents_filter]
+
+        return sorted(results, key=lambda res: -res[RES_PROBA])
+
+    def _build_examples(self, paraphrases, random_state, classes=None):
+        # Extract linguistic features for all utterances
+        try:
+            x = self._linguistic_featurizer.transform(
+                [text_to_utterance(p) for pp in paraphrases for p in pp])
+        except _EmptyDatasetUtterancesError:
+            logger.warning("No (non-empty) utterances found in dataset")
+            self.featurizer = None
+            return self
+        x = np.asarray(x.todense()).reshape(
+            (len(paraphrases), self.config.n_paraphrases, -1))
+        examples = _create_examples(
+            paraphrases,
+            x,
+            self._tokenizer,
+            labels=classes,
+            random_state=random_state,
+        )
+        return examples
 
 
 class ParaphraseClassifier(nn.Module):
@@ -686,6 +741,25 @@ class Runner(object):
         self.model.to(self._device)
         return self.model, train_losses, eval_losses, eval_criterion
 
+    def predict(self, loader):
+        all_original_probs = []
+        all_weighted_probs = []
+        all_similarities = []
+        self.model.eval()
+        for batch in tqdm(loader, desc="Predicting"):
+            batch = tuple(batch_item.to(self._device) for batch_item in batch)
+            with torch.no_grad():
+                w_probs, original_probs, sims = self.model(*batch)
+            all_weighted_probs.extend(w_probs.detach().cpu().numpy())
+            all_original_probs.extend(original_probs.detach().cpu().numpy())
+            all_similarities.extend(sims.detach().cpu().numpy())
+
+        return (
+            all_weighted_probs,
+            all_original_probs,
+            all_similarities,
+        )
+
     def _do_eval(self, data_loader, eval_fn):
         eval_losses = []
         all_weighted_probs = []
@@ -828,7 +902,7 @@ class EarlyStopping(object):
 
 
 def _get_paraphrases(sentences, service_url, language, pivot_languages,
-                     num_paraphrases):
+                     num_paraphrases, random_state):
     job = {
         "language": language,
         "texts": sentences,
@@ -854,8 +928,9 @@ def _get_paraphrases(sentences, service_url, language, pivot_languages,
     res = requests.get(paraphrase_url)
     assert res.status_code == 200
     paraphrases = json.loads(res.text)
-    return [[p[i]["paraphrase"] for i in range(num_paraphrases)]
-            for p in paraphrases]
+    return [
+        [pp["paraphrase"] for pp in random_state.choice(p, num_paraphrases)]
+        for p in paraphrases]
 
 
 @dataclass(unsafe_hash=True)
@@ -868,7 +943,8 @@ class InputExample:
     label: None
 
 
-def _create_examples(paraphrases, linguistic_features, tokenizer, labels=None):
+def _create_examples(paraphrases, linguistic_features, tokenizer, random_state,
+                     labels=None):
     examples = []
     paraphrases_tokens = [[tokenizer.tokenize(t) for t in p]
                           for p in paraphrases]
@@ -915,23 +991,22 @@ def _create_examples(paraphrases, linguistic_features, tokenizer, labels=None):
             ex.label = labels[i]
         examples.append(ex)
 
-        if i < 20:
-            logger.debug("*** Example ***")
-            logger.debug("example_index: %s" % i)
-            logger.debug("Label: %s" % ex.label)
-            for j, t in enumerate(ex.paraphrases_texts):
-                example_label = "Original" if j > 1 else "Paraphrase %s" % j
-                logger.debug(
-                    f"{example_label} text: {ex.paraphrases_texts[j]}")
-                logger.debug(
-                    f"{example_label} tokens: {ex.paraphrases_tokens[j]}")
-                logger.debug(
-                    f"{example_label} mask: {ex.paraphrases_masks[j]}")
-                logger.debug(
-                    f"{example_label} ids: {ex.paraphrases_input_ids[j]}")
-                reverted_ids = tokenizer.convert_ids_to_tokens(
-                    ex.paraphrases_input_ids[j])
-                logger.debug(f"{example_label} ids: {reverted_ids}\n")
+    logger.debug("*** Example ***")
+    for ex in random_state.choice(examples, min(len(examples), 20)):
+        logger.debug("Label: %s" % ex.label)
+        for j, t in enumerate(ex.paraphrases_texts):
+            example_label = "Original" if j > 1 else "Paraphrase %s" % j
+            logger.debug(
+                f"{example_label} text: {ex.paraphrases_texts[j]}")
+            logger.debug(
+                f"{example_label} tokens: {ex.paraphrases_tokens[j]}")
+            logger.debug(
+                f"{example_label} mask: {ex.paraphrases_masks[j]}")
+            logger.debug(
+                f"{example_label} ids: {ex.paraphrases_input_ids[j]}")
+            reverted_ids = tokenizer.convert_ids_to_tokens(
+                ex.paraphrases_input_ids[j])
+            logger.debug(f"{example_label} ids: {reverted_ids}\n")
 
     return examples
 
@@ -957,7 +1032,7 @@ def _data_loader_from_examples(
     return DataLoader(data, sampler=sampler, batch_size=batch_size)
 
 
-def _remove_slots(dataset):
+def remove_slots(dataset):
     for intent in viewvalues(dataset[INTENTS]):
         for u in intent[UTTERANCES]:
             text = _utterance_text(u)

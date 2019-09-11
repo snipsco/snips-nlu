@@ -62,12 +62,12 @@ class TestParaphraseClassifier(unittest.TestCase):
             "dropout": .5,
         }
         optimizer_config = {
-            "lr": 1e-3,
+            "lr": 5e-3,
         }
         paraphrase_clf_config = ParaphraseClassifierConfig(
             sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
-            n_epochs=int(1e0),
+            n_epochs=int(1e5),
             num_paraphrases=1,
             validation_ratio=validation_ratio,
             batch_size=64,
@@ -75,7 +75,7 @@ class TestParaphraseClassifier(unittest.TestCase):
             optimizer_config=optimizer_config,
         )
 
-        random_state = 110
+        random_state = 220
         clf = LogRegIntentClassifierWithParaphrase(
             config=config, random_state=random_state, **shared)
 

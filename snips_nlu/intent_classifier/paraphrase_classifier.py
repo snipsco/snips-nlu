@@ -723,7 +723,7 @@ class Runner(object):
                         global_step=self.global_step,
                     )
                     writer.add_scalar(
-                        "f1",
+                        "metrics/f1",
                         float(eval_criteria),
                         global_step=self.global_step,
                     )

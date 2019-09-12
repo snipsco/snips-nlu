@@ -219,42 +219,7 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             random_state=self.random_state,
             **self.config.runner_config
         )
-        no_decay = ["bias", "LayerNorm.weight"]
 
-        optimized_modules = [
-            clf.sentence_classifier,
-            clf.similarity_scorer.linear
-        ]
-        optimized_params = [
-            {
-                "params": [p for m in optimized_modules
-                           for n, p in m.named_parameters()],
-                "weight_decay": 0.0,
-                "names": [n for m in optimized_modules
-                          for n, p in m.named_parameters()]
-            }
-        ]
-        bert_params = list(clf.similarity_scorer.bert.named_parameters())
-        optimized_params += [
-            {
-                "params": [p for n, p in bert_params
-                           if not any(nd in n for nd in no_decay)],
-                "weight_decay": 0.01,
-                "names": [n for n, p in bert_params
-                          if not any(nd in n for nd in no_decay)],
-            },
-            {
-                "params": [p for n, p in bert_params
-                           if any(nd in n for nd in no_decay)],
-                "weight_decay": 0.0,
-                "names": [n for n, p in bert_params
-                          if any(nd in n for nd in no_decay)],
-            }
-        ]
-        optimized_param_names = [n for param_set in optimized_params
-                                 for n in param_set['names']]
-        logger.debug(f"Optimized parameters: {optimized_param_names}")
-        optimizer = AdamW(optimized_params, **self.config.optimizer_config)
         train_examples, eval_examples = train_test_split(
             examples,
             test_size=self.config.validation_ratio,
@@ -278,6 +243,55 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
 
         writer = SummaryWriter(log_dir=str(self.log_dir))
         self._runner.model.none_cls = self.none_class
+
+        optimized_modules = [
+            clf.sentence_classifier,
+            clf.similarity_scorer.linear,
+        ]
+        optimized_params = [
+            {
+                "params": [p for m in optimized_modules
+                           for n, p in m.named_parameters()],
+                "weight_decay": 0.0,
+                "names": [n for m in optimized_modules
+                          for n, p in m.named_parameters()]
+            }
+        ]
+        optimized_param_names = [n for param_set in optimized_params
+                                 for n in param_set['names']]
+        logger.debug(f"Optimized parameters: {optimized_param_names}")
+        optimizer = AdamW(optimized_params, **self.config.optimizer_config)
+        # Pre-train classifier layer
+        self._runner.train(
+            training_loader,
+            eval_loader,
+            get_f1(len(intent_list)),
+            optimizer,
+            self.config.n_epochs,
+            output_dir=self.output_dir,
+            writer=writer,
+            debug_config=debug_config,
+        )
+        # Fine-tune the full network
+        bert_params = list(clf.similarity_scorer.bert.named_parameters())
+        no_decay = ["bias", "LayerNorm.weight"]
+        bert_params = [
+            {
+                "params": [p for n, p in bert_params
+                           if not any(nd in n for nd in no_decay)],
+                "weight_decay": 0.01,
+                "names": [n for n, p in bert_params
+                          if not any(nd in n for nd in no_decay)],
+            },
+            {
+                "params": [p for n, p in bert_params
+                           if any(nd in n for nd in no_decay)],
+                "weight_decay": 0.0,
+                "names": [n for n, p in bert_params
+                          if any(nd in n for nd in no_decay)],
+            }
+        ]
+        optimizer.add_param_group(bert_params)
         self._runner.train(
             training_loader,
             eval_loader,

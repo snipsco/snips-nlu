@@ -2,6 +2,7 @@ import io
 import json
 import logging
 import unittest
+from copy import deepcopy
 from datetime import datetime
 
 from snips_nlu_metrics import Engine, compute_cross_val_metrics
@@ -55,7 +56,7 @@ def make_engine_cls(intent_classifier_cls, config, shared):
             self._clf = None
 
         def fit(self, dataset):
-            self._clf = self.cls(self.config, **self.shared)
+            self._clf = self.cls(deepcopy(self.config), **self.shared)
             self._clf.fit(dataset)
             return self
 

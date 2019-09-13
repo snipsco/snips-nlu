@@ -226,9 +226,17 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             random_state=random_state,
         )
         training_loader = _data_loader_from_examples(
-            train_examples, self.config.batch_size, return_labels=True)
+            train_examples,
+            self.config.batch_size,
+            return_labels=True,
+            shuffle=True
+        )
         eval_loader = _data_loader_from_examples(
-            eval_examples, self.config.batch_size, return_labels=True)
+            eval_examples,
+            self.config.batch_size,
+            return_labels=True,
+            shuffle=True
+        )
 
         debug_dataloader = DataLoader(
             Subset(eval_loader.dataset, list(range(self.config.batch_size))),
@@ -291,7 +299,8 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                           if any(nd in n for nd in no_decay)],
             }
         ]
-        optimizer.add_param_group(bert_params)
+        for g in bert_params:
+            optimizer.add_param_group(g)
         self._runner.train(
             training_loader,
             eval_loader,
@@ -370,41 +379,58 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         return self
 
     def _get_intents(self, text, intents_filter):
+        return self.batch_get_intent([text], intents_filter=intents_filter)
+
+    def batch_get_intents(self, texts, intents_filter=None):
         if isinstance(intents_filter, str):
             intents_filter = {intents_filter}
         elif isinstance(intents_filter, list):
             intents_filter = set(intents_filter)
 
-        if not text or not self.intent_list or not self.featurizer:
+        if not texts or not self.intent_list \
+                or not self._linguistic_featurizer:
             results = [intent_classification_result(None, 1.0)]
             results += [intent_classification_result(i, 0.0)
                         for i in self.intent_list if i is not None]
-            return results
+            return results * len(texts)
 
         if len(self.intent_list) == 1:
-            return [intent_classification_result(self.intent_list[0], 1.0)]
+            return [intent_classification_result(self.intent_list[0], 1.0)
+                    ] * len(texts)
 
         # Set the random state to avoid stochastic inference
         random_state = check_random_state(0)
         paraphrases = _get_paraphrases(
-            [text],
+            texts,
             PARAPHRASE_SERVICE_URL,
             self.language,
             PIVOTS[self.language],
             self.config.n_paraphrases - 1,
             random_state=random_state,
         )
-        # Prepende the actual text
-        paraphrases[0] = [text_to_utterance(text)] + paraphrases[0]
+        # Prepend original sentence to paraphrases
+        for i, t in enumerate(texts):
+            paraphrases[i] = [t] + paraphrases[i]
         examples = self._build_examples(paraphrases, random_state)
-        loader = _data_loader_from_examples(examples, batch_size=1)
-        proba_vec = self._runner.predict(loader)
-        results = [
-            intent_classification_result(i, proba)
-            for i, proba in zip(self.intent_list, proba_vec[0])
-            if intents_filter is None or i is None or i in intents_filter]
+        loader = _data_loader_from_examples(
+            examples, batch_size=self.config.batch_size, shuffle=False)
+        proba_vec = self._runner.predict(loader)[0].tolist()
+        if intents_filter is not None:
+            intents_filter = set(intents_filter)
+        results = []
+        for probs in proba_vec:
+            res = [
+                intent_classification_result(i, proba)
+                for i, proba in zip(self.intent_list, probs)
+                if intents_filter is None or i is None or i in intents_filter
+            ]
+            results.append(res)
+        return [sorted(res_, key=lambda res: -res[RES_PROBA])
+                for res_ in results]
 
-        return sorted(results, key=lambda res: -res[RES_PROBA])
+    def batch_get_intent(self, texts, intents_filter=None):
+        return [res[0] for res in
+                self.batch_get_intents(texts, intents_filter=intents_filter)]
 
     def _build_examples(self, paraphrases, random_state, classes=None):
         # Extract linguistic features for all utterances
@@ -413,7 +439,7 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                 [text_to_utterance(p) for pp in paraphrases for p in pp])
         except _EmptyDatasetUtterancesError:
             logger.warning("No (non-empty) utterances found in dataset")
-            self.featurizer = None
+            self._linguistic_featurizer = None
             return self
         x = np.asarray(x.todense()).reshape(
             (len(paraphrases), self.config.n_paraphrases, -1))
@@ -502,24 +528,28 @@ class ParaphraseClassifier(nn.Module):
             unweighted_probs[none_index, :] = probs[-num_none:].unsqueeze(1)
         else:
             unweighted_probs = probs.reshape((batch_size, n_paraphrases, -1))
-        #
-        # # Compute similarity only not none queries for none queries,
-        # # all paraphrase have the same weight since we only consider the
-        # # original sentence
-        # # (bsz, n_paraphrases)
-        # similarities = torch.ones((batch_size, n_paraphrases))
-        # if batch_size - num_none:
-        #     similarities[not_none_index] = self.similarity_scorer(
-        #         paraphrases_input_ids[not_none_index],
-        #         paraphrases_masks[not_none_index],
-        #     )
-        # similarities = torch.softmax(similarities, dim=-1)
-        # weighted_probs = torch.sum(
-        #     unweighted_probs * similarities.unsqueeze(2),
-        #     dim=1
-        # )
+
+        #######################
+        # Compute similarity only not none queries for none queries,
+        # all paraphrase have the same weight since we only consider the
+        # original sentence
+        # (bsz, n_paraphrases)
         similarities = torch.ones((batch_size, n_paraphrases))
-        weighted_probs = unweighted_probs[:, 0]
+        if batch_size - num_none:
+            similarities[not_none_index] = self.similarity_scorer(
+                paraphrases_input_ids[not_none_index],
+                paraphrases_masks[not_none_index],
+            )
+        similarities = torch.softmax(similarities, dim=-1)
+        weighted_probs = torch.sum(
+            unweighted_probs * similarities.unsqueeze(2),
+            dim=1
+        )
+        #######################
+        # To mimic the log reg uncomment this section and set n_parapharse to 1
+        # similarities = torch.ones((batch_size, n_paraphrases))
+        # weighted_probs = unweighted_probs[:, 0]
+        #######################
 
         # Predict
         if y is None:
@@ -769,9 +799,9 @@ class Runner(object):
             all_similarities.extend(sims.detach().cpu().numpy())
 
         return (
-            all_weighted_probs,
-            all_original_probs,
-            all_similarities,
+            np.asarray(all_weighted_probs),
+            np.asarray(all_original_probs),
+            np.asarray(all_similarities),
         )
 
     def _do_eval(self, data_loader, eval_fn):
@@ -1026,7 +1056,12 @@ def _create_examples(paraphrases, linguistic_features, tokenizer, random_state,
 
 
 def _data_loader_from_examples(
-        examples, batch_size, return_labels=False, local_rank=-1):
+    examples,
+    batch_size,
+    return_labels=False,
+    local_rank=-1,
+    shuffle=False
+):
     input_ids = torch.tensor(
         [f.paraphrases_input_ids for f in examples], dtype=torch.long)
     input_mask = torch.tensor(
@@ -1039,11 +1074,17 @@ def _data_loader_from_examples(
         labels = torch.tensor([f.label for f in examples], dtype=torch.long)
         tensors.append(labels)
     data = TensorDataset(*tensors)
-    if local_rank == -1:
-        sampler = RandomSampler(data)
-    else:
-        sampler = DistributedSampler(data)
-    return DataLoader(data, sampler=sampler, batch_size=batch_size)
+    if shuffle:
+        if local_rank == -1:
+            sampler = RandomSampler(data)
+        else:
+            sampler = DistributedSampler(data)
+        return DataLoader(
+            data,
+            sampler=sampler,
+            batch_size=batch_size,
+        )
+    return DataLoader(data, shuffle=False, batch_size=batch_size)
 
 
 def remove_slots(dataset):

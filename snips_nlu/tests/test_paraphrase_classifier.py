@@ -56,8 +56,8 @@ def make_engine_cls(intent_classifier_cls, config, shared):
             self._clf = None
 
         def fit(self, dataset):
-            self._clf = self.cls(deepcopy(self.config), **self.shared)
-            self._clf.fit(dataset)
+            self._clf = self.cls(
+                deepcopy(self.config), **self.shared).fit(dataset)
             return self
 
         def parse(self, text, intents_filter=None):
@@ -66,6 +66,12 @@ def make_engine_cls(intent_classifier_cls, config, shared):
                 self._clf.get_intent(text, intents_filter=intents_filter),
                 [],
             )
+
+        def batch_parse(self, texts, intents_filter=None):
+            results = self._clf.batch_get_intent(
+                texts, intents_filter=intents_filter)
+            return [parsing_result(t, res, [])
+                    for t, res in zip(texts, results)]
 
     return IntentClassifierEngine
 
@@ -94,10 +100,10 @@ class TestParaphraseClassifier(unittest.TestCase):
             "lr": 5e-3,
         }
         paraphrase_clf_config = ParaphraseClassifierConfig(
-            sentence_classifier_config, )
+            sentence_classifier_config,)
         config = LogRegIntentClassifierWithParaphraseConfig(
             n_epochs=int(1e5),
-            num_paraphrases=1,
+            num_paraphrases=5,
             validation_ratio=validation_ratio,
             batch_size=64,
             paraphrase_classifier_config=paraphrase_clf_config,

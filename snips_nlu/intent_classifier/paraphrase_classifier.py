@@ -265,10 +265,10 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
                           for n, p in m.named_parameters()]
             }
         ]
-        optimized_param_names = [n for param_set in optimized_params
-                                 for n in param_set['names']]
-        logger.debug(f"Optimized parameters: {optimized_param_names}")
         optimizer = AdamW(optimized_params, **self.config.optimizer_config)
+        optimized_param_names = [n for param_set in optimizer.param_groups
+                                 for n in param_set["names"]]
+        logger.debug(f"Optimized parameters: {optimized_param_names}")
         # Pre-train classifier layer
         self._runner.train(
             training_loader,
@@ -301,6 +301,9 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         ]
         for g in bert_params:
             optimizer.add_param_group(g)
+        optimized_param_names = [n for param_set in optimizer.param_groups
+                                 for n in param_set["names"]]
+        logger.debug(f"Optimized all parameters: {optimized_param_names}")
         self._runner.train(
             training_loader,
             eval_loader,

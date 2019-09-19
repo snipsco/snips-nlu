@@ -154,7 +154,7 @@ class TestParaphraseClassifier(SnipsTest):
         validation_ratio = .1
         sentence_classifier_config = {
             "name": "mlp_intent_classifier",
-            "hidden_sizes": [],
+            "hidden_sizes": [16],
             "activation": "SELU",
             "dropout": .5,
         }

@@ -95,7 +95,7 @@ class LogRegIntentClassifierWithParaphraseConfig(
     """Configuration of a :class:`.LogRegIntentClassifier`"""
 
     # pylint: disable=line-too-long
-    def __init__(self, num_paraphrases, batch_size=16, n_epochs=10,
+    def __init__(self, n_paraphrases, batch_size=16, n_epochs=10,
                  validation_ratio=.2, data_augmentation_config=None,
                  featurizer_config=None, paraphrase_classifier_config=None,
                  runner_config=None, optimizer_config=None,
@@ -119,7 +119,7 @@ class LogRegIntentClassifierWithParaphraseConfig(
         self.runner_config = runner_config
         self.featurizer_config = featurizer_config
         self.noise_reweight_factor = noise_reweight_factor
-        self.n_paraphrases = num_paraphrases
+        self.n_paraphrases = n_paraphrases
         self.validation_ratio = validation_ratio
         self.batch_size = batch_size
 
@@ -188,7 +188,7 @@ class LogRegIntentClassifierWithParaphraseConfig(
     @classmethod
     def from_dict(cls, dict):
         args = {
-            "num_paraphrases": dict["n_paraphrases"],
+            "n_paraphrases": dict["n_paraphrases"],
             "batch_size": dict["batch_size"],
             "n_epochs": dict["n_epochs"],
             "validation_ratio": dict["validation_ratio"],
@@ -203,24 +203,51 @@ class LogRegIntentClassifierWithParaphraseConfig(
 
 
 class ParaphraseClassifierConfig(FromDict, Config):
-    def __init__(self, sentence_classifier_config=None):
+    def __init__(self, n_paraphrases=None, sentence_classifier_config=None,
+                 similarity_scorer_config=None, class_weights=None):
+        self.n_paraphrases = n_paraphrases
         if sentence_classifier_config is None:
             sentence_classifier_config = {
                 "name": "mlp_intent_classifier",
-                "layer_sizes": [32],
+                "hidden_sizes": [],
                 "activation": "SELU",
+                "dropout": None,
+            }
+        if similarity_scorer_config is None:
+            similarity_scorer_config = {
+                "sentence_embedder_config": {
+                    "name": "bilstm_sentence_embedder",
+                    "bert_model_path": "bert-base-uncased",
+                    "hidden_size": 32,
+                    "num_layers": 1,
+                    "dropout": 0.0,
+                }
             }
         self.sentence_classifier_config = sentence_classifier_config
+        self.similarity_scorer_config = similarity_scorer_config
+        self.class_weights = class_weights
 
     def to_dict(self):
+        import numpy as np
+        class_weights = self.class_weights
+        if isinstance(class_weights, np.ndarray):
+            class_weights = self.class_weights.tolist()
         return {
+            "n_paraphrase": self.n_paraphrases,
             "sentence_classifier_config": self.sentence_classifier_config,
+            "class_weights": class_weights,
+            "similarity_scorer_config": self.similarity_scorer_config,
         }
 
     @classmethod
     def from_dict(cls, dict):
+        import numpy as np
         return cls(
-            sentence_classifier_config=dict.get("sentence_classifier_config"))
+            n_paraphrases=dict.get("n_paraphrases"),
+            sentence_classifier_config=dict.get("sentence_classifier_config"),
+            similarity_scorer_config=dict.get("similarity_scorer_config"),
+            class_weights=np.asarray(dict.get("class_weights"))
+        )
 
 
 class IntentClassifierDataAugmentationConfig(FromDict, Config):

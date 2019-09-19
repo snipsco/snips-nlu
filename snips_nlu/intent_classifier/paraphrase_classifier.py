@@ -3,7 +3,7 @@ from __future__ import division
 import json
 import logging
 import time
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from builtins import object, range, zip
 from copy import deepcopy
 from pathlib import Path
@@ -19,6 +19,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import compute_class_weight
 from tensorboardX import SummaryWriter
 from torch import nn
+from torch.nn import Embedding, LSTM
+from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import (DataLoader, DistributedSampler, RandomSampler,
                               Subset, TensorDataset)
 from tqdm import tqdm
@@ -27,7 +29,7 @@ from snips_nlu.common.registrable import Registrable
 from snips_nlu.common.utils import (
     check_persisted_path, check_random_state, json_string)
 from snips_nlu.constants import (BERT_MODEL_PATH, DATA, INTENTS, LANGUAGE,
-                                 TEXT, UTTERANCES, RES_PROBA)
+                                 RES_PROBA, TEXT, UTTERANCES)
 from snips_nlu.dataset import validate_and_format_dataset
 from snips_nlu.exceptions import LoadingError, _EmptyDatasetUtterancesError
 from snips_nlu.intent_classifier import (
@@ -37,7 +39,7 @@ from snips_nlu.intent_classifier import (
 from snips_nlu.intent_classifier.log_reg_classifier_utils import (
     build_training_data, text_to_utterance)
 from snips_nlu.pipeline.configs.intent_classifier import (
-    LogRegIntentClassifierWithParaphraseConfig)
+    LogRegIntentClassifierWithParaphraseConfig, ParaphraseClassifierConfig)
 from snips_nlu.result import intent_classification_result
 
 logger = logging.getLogger(__name__)
@@ -47,14 +49,6 @@ PIVOTS = {
     "en": ["de", "fr", "ru", "es", "it"]
 }
 
-
-# TODO:
-#  - check the initializations
-#  - check that examples are in the right order and well labeled
-#  - observe similarities
-#  - set the training flag to False for inference
-#  - use the same similarity score for each dataset
-#  - make use of the class weights
 
 def _utterance_text(u):
     return "".join(c[TEXT] for c in u[DATA])
@@ -86,11 +80,12 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         if not self.output_dir.parent.exists():
             self.output_dir.parent.mkdir(parents=True)
         self.global_step = shared.get("global_step", 0)
-        self._similarity_scorer = shared.get("similarity_scorer")
         self._linguistic_featurizer = None
         self._tokenizer = None
+        self._bert_model_path = None
         self._runner = None
         self.intent_list = None
+        self.language = None
 
     @property
     def fitted(self):
@@ -107,11 +102,12 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         self.language = dataset[LANGUAGE]
 
         random_state = check_random_state(self.random_state)
-        bert_model_name = "bert-base-uncased"
-        if self._similarity_scorer:
-            bert_model_name = self._similarity_scorer.get(
-                BERT_MODEL_PATH) or bert_model_name
-        self._tokenizer = BertTokenizer.from_pretrained(bert_model_name)
+
+        self._bert_model_path = self.config. \
+            paraphrase_classifier_config. \
+            similarity_scorer_config[
+            "sentence_embedder_config"][BERT_MODEL_PATH]
+        self._tokenizer = BertTokenizer.from_pretrained(self._bert_model_path)
 
         data_augmentation_config = self.config.data_augmentation_config
         utterances, classes, intent_list = build_training_data(
@@ -193,22 +189,15 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             classes=labels,
             random_state=random_state,
         )
-        clf_config = self.config.paraphrase_classifier_config.to_dict()
-        scorer_config = dict()
-        if self._similarity_scorer is not None:
-            scorer_config = {
-                BERT_MODEL_PATH: self._similarity_scorer,
-            }
+        clf_config = self.config.paraphrase_classifier_config
         linguistic_features_size = examples[
             0].paraphrases_linguistic_features.shape[-1]
-        clf_config["similarity_scorer"] = scorer_config
-        clf_config["n_paraphrases"] = self.config.n_paraphrases
-        clf_config["linguistic_input_size"] = linguistic_features_size
-        clf_config["sentence_classifier_config"][
+        clf_config.n_paraphrases = self.config.n_paraphrases
+        clf_config.sentence_classifier_config[
             "input_size"] = linguistic_features_size
-        clf_config["sentence_classifier_config"]["output_size"] = len(
+        clf_config.sentence_classifier_config["output_size"] = len(
             set(classes))
-        clf_config["class_weights"] = np.array(
+        clf_config.class_weights = np.array(
             class_weights_arr, dtype="float32")
 
         clf = ParaphraseClassifier(clf_config)
@@ -252,23 +241,20 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         writer = SummaryWriter(log_dir=str(self.log_dir))
         self._runner.model.none_cls = self.none_class
 
-        optimized_modules = [
-            clf.sentence_classifier,
-            clf.similarity_scorer.linear,
-        ]
+        # Train the network
+        optimized_params = self._runner.model.pretrainable_params
         optimized_params = [
             {
-                "params": [p for m in optimized_modules
-                           for n, p in m.named_parameters()],
+                "params": [p for n, p in optimized_params],
                 "weight_decay": 0.0,
-                "names": [n for m in optimized_modules
-                          for n, p in m.named_parameters()]
+                "names": [n for n, p in optimized_params]
             }
         ]
         optimizer = AdamW(optimized_params, **self.config.optimizer_config)
         optimized_param_names = [n for param_set in optimizer.param_groups
                                  for n in param_set["names"]]
-        logger.debug(f"Optimized parameters: {optimized_param_names}")
+        logger.debug(
+            f"Optimizing pretrainable parameters: {optimized_param_names}")
         # Pre-train classifier layer
         self._runner.train(
             training_loader,
@@ -280,40 +266,43 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             writer=writer,
             debug_config=debug_config,
         )
-        # Fine-tune the full network
-        bert_params = list(clf.similarity_scorer.bert.named_parameters())
-        no_decay = ["bias", "LayerNorm.weight"]
-        bert_params = [
-            {
-                "params": [p for n, p in bert_params
-                           if not any(nd in n for nd in no_decay)],
-                "weight_decay": 0.01,
-                "names": [n for n, p in bert_params
-                          if not any(nd in n for nd in no_decay)],
-            },
-            {
-                "params": [p for n, p in bert_params
-                           if any(nd in n for nd in no_decay)],
-                "weight_decay": 0.0,
-                "names": [n for n, p in bert_params
-                          if any(nd in n for nd in no_decay)],
-            }
-        ]
-        for g in bert_params:
-            optimizer.add_param_group(g)
-        optimized_param_names = [n for param_set in optimizer.param_groups
-                                 for n in param_set["names"]]
-        logger.debug(f"Optimized all parameters: {optimized_param_names}")
-        self._runner.train(
-            training_loader,
-            eval_loader,
-            get_f1(len(intent_list)),
-            optimizer,
-            self.config.n_epochs,
-            output_dir=self.output_dir,
-            writer=writer,
-            debug_config=debug_config,
-        )
+
+        # Fine-tune the full network if needed
+        finetunable_params = self._runner.model.finetunable_params
+        if finetunable_params:
+            no_decay = {"bias", "LayerNorm.weight"}
+            finetunable_params = [
+                {
+                    "params": [p for n, p in finetunable_params
+                               if not any(nd in n for nd in no_decay)],
+                    "weight_decay": 0.01,
+                    "names": [n for n, p in finetunable_params
+                              if not any(nd in n for nd in no_decay)],
+                },
+                {
+                    "params": [p for n, p in finetunable_params
+                               if any(nd in n for nd in no_decay)],
+                    "weight_decay": 0.0,
+                    "names": [n for n, p in finetunable_params
+                              if any(nd in n for nd in no_decay)],
+                }
+            ]
+            for g in finetunable_params:
+                optimizer.add_param_group(g)
+            optimized_param_names = [n for param_set in optimizer.param_groups
+                                     for n in param_set["names"]]
+            logger.debug(f"Optimized all parameters: {optimized_param_names}")
+            self._runner.train(
+                training_loader,
+                eval_loader,
+                get_f1(len(intent_list)),
+                optimizer,
+                self.config.n_epochs,
+                output_dir=self.output_dir,
+                writer=writer,
+                debug_config=debug_config,
+            )
+
         self.global_step = self._runner.global_step
         return self
 
@@ -338,7 +327,10 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             "featurizer": featurizer,
             "runner": runner,
             "global_step": self.global_step,
+            "language": self.language,
         }
+        if self._tokenizer is not None:
+            self_as_dict["tokenizer"] = self._bert_model_path
 
         classifier_json = json_string(self_as_dict)
         with (path / "intent_classifier.json").open(
@@ -366,6 +358,8 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
         if model_dict["intent_list"] is not None:
             self.intent_list = model_dict["intent_list"]
 
+        self.language = model_dict["language"]
+
         # Create the underlying ParaphraseClassifier
         runner = model_dict.get("runner")
         if runner is not None:
@@ -378,6 +372,11 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
             featurizer_path = path / featurizer
             self._linguistic_featurizer = LinguisticFeaturizer.from_path(
                 featurizer_path, **shared)
+
+        # Add the tokenizer
+        tokenizer = model_dict.get("tokenizer")
+        if tokenizer:
+            self._tokenizer = BertTokenizer.from_pretrained(tokenizer)
 
         return self
 
@@ -459,15 +458,20 @@ class LogRegIntentClassifierWithParaphrase(LogRegIntentClassifier):
 class ParaphraseClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.config = deepcopy(config)
-        self.n_paraphrases = config["n_paraphrases"]
+        self.config = config
+        self.n_paraphrases = config.n_paraphrases or 1
         self.similarity_scorer = SimilarityScorer(
-            config["similarity_scorer"])
+            config.similarity_scorer_config)
+
+        sentence_classifier_config = deepcopy(
+            config.sentence_classifier_config)
+        sentence_classifier_name = sentence_classifier_config.pop("name")
         sentence_classifier_cls = SentenceClassifier.by_name(
-            config["sentence_classifier_config"].pop("name"))
+            sentence_classifier_name)
         self.sentence_classifier = sentence_classifier_cls(
-            config["sentence_classifier_config"])
-        weight = config.get("class_weights")
+            sentence_classifier_config)
+
+        weight = config.class_weights
         if weight is not None:
             weight = torch.tensor(weight, dtype=torch.float32)
         self._loss = nn.NLLLoss(weight=weight)
@@ -475,6 +479,12 @@ class ParaphraseClassifier(nn.Module):
         # pretrained
         self.sentence_classifier.apply(init_weights)
         self._none_cls = None
+        self._pretrainable_params = (
+                self.sentence_classifier.pretrainable_params +
+                self.similarity_scorer.pretrainable_params)
+        self._finetunable_params = (
+                self.sentence_classifier.finetunable_params +
+                self.similarity_scorer.finetunable_params)
 
     @property
     def none_class(self):
@@ -483,6 +493,14 @@ class ParaphraseClassifier(nn.Module):
     @none_class.setter
     def none_class(self, value):
         self._none_cls = value
+
+    @property
+    def pretrainable_params(self):
+        return self._pretrainable_params
+
+    @property
+    def finetunable_params(self):
+        return self._finetunable_params
 
     def forward(
             self,
@@ -569,8 +587,10 @@ class ParaphraseClassifier(nn.Module):
             path.mkdir(parents=True)
         state = "state.pt"
         torch.save(self.state_dict(), str(path / state))
-        config = self.config
-        config["class_weights"] = config["class_weights"].tolist()
+        config = self.config.to_dict()
+        config["class_weights"] = None
+        if self.config.class_weights is not None:
+            config["class_weights"] = self.config.class_weights.tolist()
         self_as_dict = {
             "state": state,
             "config": config
@@ -583,7 +603,8 @@ class ParaphraseClassifier(nn.Module):
         path = Path(path)
         with (path / "classifier.json").open() as f:
             clf = json.load(f)
-        self = cls(clf["config"])
+        config = ParaphraseClassifierConfig.from_dict(clf["config"])
+        self = cls(config)
         if clf["state"] is not None:
             self.load_state_dict(torch.load(str(path / clf["state"])))
         return self
@@ -613,7 +634,7 @@ class MLPSentenceClassifier(SentenceClassifier):
                        for _ in config["hidden_sizes"]]
         activations.append(nn.Softmax(dim=-1))
         dropouts = [None for _ in hiddens]
-        if config["dropout"]:
+        if config.get("dropout"):
             dropouts = [nn.Dropout(config["dropout"]) for _ in hiddens[:-1]]
             dropouts.append(None)
         layers = []
@@ -628,6 +649,14 @@ class MLPSentenceClassifier(SentenceClassifier):
         output = self.layers(x)
         return output
 
+    @property
+    def pretrainable_params(self):
+        return list(self.named_parameters())
+
+    @property
+    def finetunable_params(self):
+        return []
+
 
 @SentenceClassifier.register("cnn_intent_classifier")
 class CNNSentenceClassifier(SentenceClassifier):
@@ -639,21 +668,105 @@ class LSTMSentenceClassifier(SentenceClassifier):
     pass
 
 
+class SentenceEmbedder(with_metaclass(ABCMeta, nn.Module, Registrable)):
+    @property
+    @abstractmethod
+    def embedding_size(self):
+        pass
+
+    @property
+    def pretrainable_params(self):
+        return list(self.named_parameters())
+
+    @property
+    def finetunable_params(self):
+        return []
+
+
+@SentenceEmbedder.register("bert_sentence_embedder")
+class BertSentenceEmbedder(SentenceEmbedder):
+    def __init__(self, config):
+        super(BertSentenceEmbedder, self).__init__()
+        self.bert = BertModel.from_pretrained(config[BERT_MODEL_PATH])
+
+    def forward(self, input_ids, attention_mask):
+        _, outputs = self.bert(
+            input_ids=input_ids, attention_mask=attention_mask)
+        return outputs
+
+    @property
+    def embedding_size(self):
+        return self.bert.config.hidden_size
+
+    @property
+    def pretrainable_params(self):
+        return []
+
+    @property
+    def finetunable_params(self):
+        return list(self.bert.named_parameters())
+
+
+@SentenceEmbedder.register("bilstm_sentence_embedder")
+class BiLSTMSentenceEmbedder(SentenceEmbedder):
+    def __init__(self, config):
+        super(BiLSTMSentenceEmbedder, self).__init__()
+        bert = BertModel.from_pretrained(
+            config[BERT_MODEL_PATH])
+        bert_config = deepcopy(bert.config)
+        # We only keep the BERT word embedding, not the position nor the token
+        # type embedding
+        self.embeddings = Embedding(
+            bert_config.vocab_size,
+            bert_config.hidden_size,
+            padding_idx=0,
+        )
+        self.embeddings.load_state_dict(
+            bert.embeddings.word_embeddings.state_dict())
+        del bert
+        self.lstm = LSTM(
+            input_size=self.embeddings.embedding_dim,
+            hidden_size=config["hidden_size"],
+            num_layers=config.get("num_layers", 1),
+            bidirectional=True,
+            dropout=config.get("dropout", 0),
+        )
+
+    def forward(self, input_ids, attention_mask, hidden=None):
+        bert_embedding = self.embeddings(input_ids)
+        seq_lengths = attention_mask.sum(dim=-1)
+        packed = pack_padded_sequence(
+            bert_embedding,
+            seq_lengths,
+            batch_first=True,
+            enforce_sorted=False
+        )
+        _, (h_n, _) = self.lstm(packed, hidden)
+        # Sum the forward and backward direction + the output of all the layers
+        return h_n.sum(0)
+
+    @property
+    def embedding_size(self):
+        return self.lstm.hidden_size
+
+
 class SimilarityScorer(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.bert = BertModel.from_pretrained(
-            config.get(BERT_MODEL_PATH, "bert-base-uncased"))
-        embedding_size = self.bert.config.hidden_size
+        embedder_config = deepcopy(config["sentence_embedder_config"])
+        embedder_name = embedder_config.pop("name")
+        embedder_cls = SentenceEmbedder.by_name(embedder_name)
+        self.sentence_embedder = embedder_cls(embedder_config)
+        embedding_size = self.sentence_embedder.embedding_size
         self.linear = nn.Linear(3 * embedding_size, 1)
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, token_ids, mask):  # (bsz, n_paraphrases, max_length)
         n_paraphrases = token_ids.shape[1]
         flattened_inputs = token_ids.reshape((-1, token_ids.shape[-1]))
-        flattened_masks = token_ids.reshape((-1, token_ids.shape[-1]))
+        flattened_masks = mask.reshape((-1, mask.shape[-1]))
 
-        _, embedded = self.bert(
+        embedded = self.sentence_embedder(
             input_ids=flattened_inputs, attention_mask=flattened_masks)
 
         # (bzs * n_paraphrases, embedding_size)
@@ -671,6 +784,15 @@ class SimilarityScorer(nn.Module):
         # (bzs, n_paraphrases)
         similarities = similarities.reshape((-1, n_paraphrases))
         return similarities
+
+    @property
+    def pretrainable_params(self):
+        return self.sentence_embedder.pretrainable_params \
+               + list(self.linear.named_parameters())
+
+    @property
+    def finetunable_params(self):
+        return self.sentence_embedder.finetunable_params
 
 
 def _format_loss_msg(train_loss, eval_loss, eval_criteria, epoch, max_epoch):
@@ -1059,11 +1181,11 @@ def _create_examples(paraphrases, linguistic_features, tokenizer, random_state,
 
 
 def _data_loader_from_examples(
-    examples,
-    batch_size,
-    return_labels=False,
-    local_rank=-1,
-    shuffle=False
+        examples,
+        batch_size,
+        return_labels=False,
+        local_rank=-1,
+        shuffle=False
 ):
     input_ids = torch.tensor(
         [f.paraphrases_input_ids for f in examples], dtype=torch.long)

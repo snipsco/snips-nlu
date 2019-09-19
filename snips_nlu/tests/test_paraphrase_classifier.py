@@ -17,6 +17,7 @@ from snips_nlu.intent_classifier.paraphrase_classifier import (
 from snips_nlu.pipeline.configs.intent_classifier import (
     LogRegIntentClassifierWithParaphraseConfig, ParaphraseClassifierConfig)
 from snips_nlu.result import parsing_result
+from snips_nlu.tests.utils import SnipsTest
 
 TOY_DATASET = """
 ---
@@ -76,51 +77,65 @@ def make_engine_cls(intent_classifier_cls, config, shared):
     return IntentClassifierEngine
 
 
-class TestParaphraseClassifier(unittest.TestCase):
+class TestParaphraseClassifier(SnipsTest):
     def test_train(self):
         set_nlu_logger(logging.DEBUG)
         # Given
-        dataset = ELECTROLUX_DATASET
-        stamp = datetime.now()
-        log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
-        output_dir = log_dir / "intent_classifier"
+        dataset = TOY_DATASET
+        shared = self.get_shared_data(dataset)
+        sentence_embedder_configs = [
+            {
+                "name": "bilstm_sentence_embedder",
+                "bert_model_path": "bert-base-uncased",
+                "hidden_size": 32,
+                "num_layers": 1,
+                "dropout": 0.0,
+            },
+            {
+                "name": "bert_sentence_embedder",
+                "bert_model_path": "bert-base-uncased",
+            }
+        ]
+        for embedder_config in sentence_embedder_configs:
+            stamp = datetime.now()
+            log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
+            output_dir = log_dir / "intent_classifier"
+            shared.update({
+                "log_dir": log_dir,
+                "output_dir": output_dir,
+                "random_state": 220,
+            })
+            validation_ratio = .5
+            optimizer_config = {
+                "lr": 5e-3,
+            }
+            similarity_scorer_config = {
+                "sentence_embedder_config": embedder_config
+            }
+            paraphrase_clf_config = ParaphraseClassifierConfig(
+                similarity_scorer_config=similarity_scorer_config,
+            )
+            n_paraphrases = 3
+            config = LogRegIntentClassifierWithParaphraseConfig(
+                n_epochs=1,
+                n_paraphrases=n_paraphrases,
+                validation_ratio=validation_ratio,
+                batch_size=4,
+                paraphrase_classifier_config=paraphrase_clf_config,
+                optimizer_config=optimizer_config,
+            )
 
-        shared = {
-            "log_dir": log_dir,
-            "output_dir": output_dir
-        }
-        validation_ratio = .1
-        sentence_classifier_config = {
-            "name": "mlp_intent_classifier",
-            "hidden_sizes": [],
-            "activation": "SELU",
-            "dropout": .5,
-        }
-        optimizer_config = {
-            "lr": 5e-3,
-        }
-        paraphrase_clf_config = ParaphraseClassifierConfig(
-            sentence_classifier_config,)
-        config = LogRegIntentClassifierWithParaphraseConfig(
-            n_epochs=int(1e5),
-            num_paraphrases=5,
-            validation_ratio=validation_ratio,
-            batch_size=64,
-            paraphrase_classifier_config=paraphrase_clf_config,
-            optimizer_config=optimizer_config,
-        )
+            clf = LogRegIntentClassifierWithParaphrase(config=config, **shared)
+            # When
+            clf.fit(dataset)
 
-        random_state = 220
-        clf = LogRegIntentClassifierWithParaphrase(
-            config=config, random_state=random_state, **shared)
-
-        clf.fit(dataset)
-        with temp_dir() as tmp:
-            clf_path = tmp / "paraphrase_classifier"
-            clf.persist(clf_path)
-            new_clf = LogRegIntentClassifierWithParaphrase.from_path(
-                clf_path, **shared)
-        new_clf.get_intents("i'm here")
+            # Then
+            with temp_dir() as tmp:
+                clf_path = tmp / "paraphrase_classifier"
+                clf.persist(clf_path)
+                new_clf = LogRegIntentClassifierWithParaphrase.from_path(
+                    clf_path, **shared)
+            new_clf.get_intents("i'm here")
 
     def test_metrics(self):
         set_nlu_logger(logging.DEBUG)
@@ -150,7 +165,7 @@ class TestParaphraseClassifier(unittest.TestCase):
             sentence_classifier_config, )
         config = LogRegIntentClassifierWithParaphraseConfig(
             n_epochs=int(1e5),
-            num_paraphrases=1,
+            n_paraphrases=1,
             validation_ratio=validation_ratio,
             batch_size=64,
             paraphrase_classifier_config=paraphrase_clf_config,

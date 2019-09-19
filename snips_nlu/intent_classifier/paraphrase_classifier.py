@@ -749,6 +749,14 @@ class BiLSTMSentenceEmbedder(SentenceEmbedder):
     def embedding_size(self):
         return self.lstm.hidden_size
 
+    @property
+    def pretrainable_params(self):
+        return list(self.lstm.named_parameters())
+
+    @property
+    def finetunable_params(self):
+        return list(self.embeddings.named_parameters())
+
 
 class SimilarityScorer(nn.Module):
     def __init__(self, config):

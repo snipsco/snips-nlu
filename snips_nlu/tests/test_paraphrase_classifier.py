@@ -145,7 +145,7 @@ class TestParaphraseClassifier(SnipsTest):
         log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
         output_dir = log_dir / "intent_classifier"
         random_state = 220
-
+        n_paraphrases = 5
         shared = {
             "log_dir": log_dir,
             "output_dir": output_dir,
@@ -161,11 +161,23 @@ class TestParaphraseClassifier(SnipsTest):
         optimizer_config = {
             "lr": 5e-3,
         }
+        similarity_scorer_config = {
+            "sentence_embedder_config": {
+                "name": "bilstm_sentence_embedder",
+                "bert_model_path": "bert-base-uncased",
+                "hidden_size": 32,
+                "num_layers": 1,
+                "dropout": 0.0,
+            }
+        }
         paraphrase_clf_config = ParaphraseClassifierConfig(
-            sentence_classifier_config, )
+            n_paraphrases=n_paraphrases,
+            sentence_classifier_config=sentence_classifier_config,
+            similarity_scorer_config=similarity_scorer_config,
+        )
         config = LogRegIntentClassifierWithParaphraseConfig(
             n_epochs=int(1e5),
-            n_paraphrases=1,
+            n_paraphrases=n_paraphrases,
             validation_ratio=validation_ratio,
             batch_size=64,
             paraphrase_classifier_config=paraphrase_clf_config,

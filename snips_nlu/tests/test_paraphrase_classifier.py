@@ -1,7 +1,6 @@
 import io
 import json
 import logging
-import unittest
 from copy import deepcopy
 from datetime import datetime
 
@@ -48,7 +47,6 @@ remove_slots(ELECTROLUX_DATASET)
 
 
 def make_engine_cls(intent_classifier_cls, config, shared):
-
     class IntentClassifierEngine(Engine):
         def __init__(self):
             self.cls = intent_classifier_cls
@@ -103,7 +101,7 @@ class TestParaphraseClassifier(SnipsTest):
             shared.update({
                 "log_dir": log_dir,
                 "output_dir": output_dir,
-                "random_state": 220,
+                "random_state": 222,
             })
             validation_ratio = .5
             optimizer_config = {
@@ -144,7 +142,7 @@ class TestParaphraseClassifier(SnipsTest):
         stamp = datetime.now()
         log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
         output_dir = log_dir / "intent_classifier"
-        random_state = 220
+        random_state = 222
         n_paraphrases = 5
         shared = {
             "log_dir": log_dir,
@@ -154,7 +152,7 @@ class TestParaphraseClassifier(SnipsTest):
         validation_ratio = .1
         sentence_classifier_config = {
             "name": "mlp_intent_classifier",
-            "hidden_sizes": [16],
+            "hidden_sizes": [],
             "activation": "SELU",
             "dropout": .5,
         }
@@ -183,7 +181,6 @@ class TestParaphraseClassifier(SnipsTest):
             paraphrase_classifier_config=paraphrase_clf_config,
             optimizer_config=optimizer_config,
         )
-
 
         engine_cls = make_engine_cls(
             LogRegIntentClassifierWithParaphrase, config, shared)

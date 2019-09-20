@@ -20,9 +20,14 @@ from sklearn.utils import compute_class_weight
 from tensorboardX import SummaryWriter
 from torch import nn
 from torch.nn import Embedding, LSTM
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-from torch.utils.data import (DataLoader, DistributedSampler, RandomSampler,
-                              Subset, TensorDataset)
+from torch.nn.utils.rnn import pack_padded_sequence
+from torch.utils.data import (
+    DataLoader,
+    DistributedSampler,
+    RandomSampler,
+    Subset,
+    TensorDataset
+)
 from tqdm import tqdm
 
 from snips_nlu.common.registrable import Registrable
@@ -742,11 +747,6 @@ class BiLSTMSentenceEmbedder(SentenceEmbedder):
             enforce_sorted=False
         )
         _, (h_n, _) = self.lstm(packed, hidden)
-        # Make sure we reorder the output vector: since we've used
-        # pack_padded_sequence, the output is sorted by decreasing sequence
-        # length we just use the packed sequence unsorted index to find out
-        # the original order
-        h_n = h_n[:, packed.unsorted_indices]
         # Sum the forward and backward direction + the output of all the layers
         return h_n.sum(0)
 

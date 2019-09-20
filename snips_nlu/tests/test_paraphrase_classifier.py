@@ -81,20 +81,42 @@ class TestParaphraseClassifier(SnipsTest):
         # Given
         dataset = TOY_DATASET
         shared = self.get_shared_data(dataset)
-        sentence_embedder_configs = [
+        similarity_scorer_configs = [
             {
-                "name": "bilstm_sentence_embedder",
-                "bert_model_path": "bert-base-uncased",
-                "hidden_size": 32,
-                "num_layers": 1,
-                "dropout": 0.0,
+                "sentence_embedder_config": {
+                    "name": "bilstm_sentence_embedder",
+                    "bert_model_path": "bert-base-uncased",
+                    "hidden_size": 32,
+                    "num_layers": 1,
+                    "dropout": 0.0,
+                },
+                "similarity": {
+                    "name": "cosine_similarity"
+                }
             },
             {
-                "name": "bert_sentence_embedder",
-                "bert_model_path": "bert-base-uncased",
+                "sentence_embedder_config": {
+                    "name": "bilstm_sentence_embedder",
+                    "bert_model_path": "bert-base-uncased",
+                    "hidden_size": 32,
+                    "num_layers": 1,
+                    "dropout": 0.0,
+                },
+                "similarity": {
+                    "name": "feedforward_similarity"
+                }
+            },
+            {
+                "sentence_embedder_config": {
+                        "name": "bert_sentence_embedder",
+                        "bert_model_path": "bert-base-uncased",
+                },
+                "similarity": {
+                    "name": "feedforward_similarity"
+                }
             }
         ]
-        for embedder_config in sentence_embedder_configs:
+        for similarity_scorer_config in similarity_scorer_configs:
             stamp = datetime.now()
             log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
             output_dir = log_dir / "intent_classifier"
@@ -106,9 +128,6 @@ class TestParaphraseClassifier(SnipsTest):
             validation_ratio = .5
             optimizer_config = {
                 "lr": 5e-3,
-            }
-            similarity_scorer_config = {
-                "sentence_embedder_config": embedder_config
             }
             paraphrase_clf_config = ParaphraseClassifierConfig(
                 similarity_scorer_config=similarity_scorer_config,
@@ -143,7 +162,7 @@ class TestParaphraseClassifier(SnipsTest):
         log_dir = ROOT_PATH / ".log" / str(stamp).replace(":", "_")
         output_dir = log_dir / "intent_classifier"
         random_state = 222
-        n_paraphrases = 5
+        n_paraphrases = 10
         shared = {
             "log_dir": log_dir,
             "output_dir": output_dir,
@@ -166,6 +185,9 @@ class TestParaphraseClassifier(SnipsTest):
                 "hidden_size": 32,
                 "num_layers": 1,
                 "dropout": 0.0,
+            },
+            "similarity_config": {
+                "name": "cosine_similarity"
             }
         }
         paraphrase_clf_config = ParaphraseClassifierConfig(

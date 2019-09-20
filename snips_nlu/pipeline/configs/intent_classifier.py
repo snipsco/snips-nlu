@@ -221,6 +221,9 @@ class ParaphraseClassifierConfig(FromDict, Config):
                     "hidden_size": 32,
                     "num_layers": 1,
                     "dropout": 0.0,
+                },
+                "similarity_config": {
+                    "name": "cosine_similarity"
                 }
             }
         self.sentence_classifier_config = sentence_classifier_config

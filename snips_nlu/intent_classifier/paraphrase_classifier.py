@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import compute_class_weight
 from tensorboardX import SummaryWriter
 from torch import nn
-from torch.nn import Embedding, LSTM
+from torch.nn import CosineSimilarity as TorchCosineSimilarity, Embedding, LSTM
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import (
     DataLoader,
@@ -763,6 +763,45 @@ class BiLSTMSentenceEmbedder(SentenceEmbedder):
         return list(self.embeddings.named_parameters())
 
 
+class Similarity(with_metaclass(ABCMeta, nn.Module, Registrable)):
+    @property
+    def pretrainable_params(self):
+        return []
+
+    @property
+    def finetunable_params(self):
+        return []
+
+
+@Similarity.register("cosine_similarity")
+class CosineSimilarity(Similarity):
+    def __init__(self, _):
+        super(CosineSimilarity, self).__init__()
+        self.cosine_similarity = TorchCosineSimilarity(dim=-1)
+
+    def forward(self, a, b):
+        return self.cosine_similarity(a, b)
+
+
+@Similarity.register("feedforward_similarity")
+class FeedforwardSimilarity(Similarity):
+    def __init__(self, config):
+        super(FeedforwardSimilarity, self).__init__()
+        self.linear = nn.Linear(3 * config["embedding_size"], 1)
+        self.linear.apply(init_weights)
+
+    def forward(self, a, b):
+        features = torch.cat((a, b, a * b), dim=-1)
+        # (bzs * n_paraphrases)
+        similarities = self.linear(
+            features.reshape((-1, features.shape[-1]))).squeeze()
+        return similarities
+
+    @property
+    def pretrainable_params(self):
+        return list(self.linear.named_parameters())
+
+
 class SimilarityScorer(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -770,8 +809,13 @@ class SimilarityScorer(nn.Module):
         embedder_name = embedder_config.pop("name")
         embedder_cls = SentenceEmbedder.by_name(embedder_name)
         self.sentence_embedder = embedder_cls(embedder_config)
+
         embedding_size = self.sentence_embedder.embedding_size
-        self.linear = nn.Linear(3 * embedding_size, 1)
+        similarity_args = deepcopy(config["similarity"])
+        similarity_name = similarity_args.pop("name")
+        similarity_args["embedding_size"] = embedding_size
+        self.similarity = Similarity.by_name(similarity_name)(similarity_args)
+
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, token_ids, mask):  # (bsz, n_paraphrases, max_length)
@@ -787,13 +831,9 @@ class SimilarityScorer(nn.Module):
 
         # (bzs * n_paraphrases, embedding_size)
         original_embedded = embedded[:, 0].unsqueeze(1).expand_as(embedded)
-        features = torch.cat(
-            (embedded, original_embedded, embedded * original_embedded),
-            dim=-1
-        )
-        # (bzs * n_paraphrases)
-        similarities = self.linear(
-            features.reshape((-1, features.shape[-1]))).squeeze()
+
+        similarities = self.similarity(embedded, original_embedded)
+
         # (bzs, n_paraphrases)
         similarities = similarities.reshape((-1, n_paraphrases))
         return similarities
@@ -801,11 +841,12 @@ class SimilarityScorer(nn.Module):
     @property
     def pretrainable_params(self):
         return self.sentence_embedder.pretrainable_params \
-               + list(self.linear.named_parameters())
+               + self.similarity.pretrainable_params
 
     @property
     def finetunable_params(self):
-        return self.sentence_embedder.finetunable_params
+        return self.sentence_embedder.finetunable_params \
+               + self.similarity.finetunable_params
 
 
 def _format_loss_msg(train_loss, eval_loss, eval_criteria, epoch, max_epoch):

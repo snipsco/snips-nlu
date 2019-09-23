@@ -811,7 +811,7 @@ class SimilarityScorer(nn.Module):
         self.sentence_embedder = embedder_cls(embedder_config)
 
         embedding_size = self.sentence_embedder.embedding_size
-        similarity_args = deepcopy(config["similarity"])
+        similarity_args = deepcopy(config["similarity_config"])
         similarity_name = similarity_args.pop("name")
         similarity_args["embedding_size"] = embedding_size
         self.similarity = Similarity.by_name(similarity_name)(similarity_args)

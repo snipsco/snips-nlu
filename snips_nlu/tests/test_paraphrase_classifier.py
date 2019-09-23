@@ -90,7 +90,7 @@ class TestParaphraseClassifier(SnipsTest):
                     "num_layers": 1,
                     "dropout": 0.0,
                 },
-                "similarity": {
+                "similarity_config": {
                     "name": "cosine_similarity"
                 }
             },
@@ -102,7 +102,7 @@ class TestParaphraseClassifier(SnipsTest):
                     "num_layers": 1,
                     "dropout": 0.0,
                 },
-                "similarity": {
+                "similarity_config": {
                     "name": "feedforward_similarity"
                 }
             },
@@ -111,7 +111,7 @@ class TestParaphraseClassifier(SnipsTest):
                         "name": "bert_sentence_embedder",
                         "bert_model_path": "bert-base-uncased",
                 },
-                "similarity": {
+                "similarity_config": {
                     "name": "feedforward_similarity"
                 }
             }

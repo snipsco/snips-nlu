@@ -30,8 +30,8 @@ required = [
     "scikit-learn>=0.21.1,<0.22; python_version>='3.5'",
     "scipy>=1.0,<2.0",
     "sklearn-crfsuite>=0.3.6,<0.4",
-    "snips-nlu-parsers>=0.3.1,<0.4",
-    "snips_nlu_utils>=0.9,<0.10",
+    "snips-nlu-parsers>=0.3.1,<0.5",
+    "snips-nlu-utils>=0.9,<0.10",
 ]
 
 extras_require = {
@@ -42,11 +42,11 @@ extras_require = {
         "sphinx-tabs>=1.1,<1.2"
     ],
     "metrics": [
-        "snips_nlu_metrics>=0.14.1,<0.15",
+        "snips-nlu-metrics>=0.14.1,<0.15",
     ],
     "test": [
         "mock>=2.0,<3.0",
-        "snips_nlu_metrics>=0.14.1,<0.15",
+        "snips-nlu-metrics>=0.14.1,<0.15",
         "pylint<2",
         "coverage>=4.4.2,<5.0",
         "checksumdir~=1.1.6",

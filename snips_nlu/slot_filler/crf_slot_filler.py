@@ -4,6 +4,7 @@ import base64
 import json
 import logging
 import math
+import os
 import shutil
 import tempfile
 from builtins import range
@@ -29,6 +30,8 @@ from snips_nlu.slot_filler.crf_utils import (
 from snips_nlu.slot_filler.feature import TOKEN_NAME
 from snips_nlu.slot_filler.feature_factory import CRFFeatureFactory
 from snips_nlu.slot_filler.slot_filler import SlotFiller
+
+CRF_MODEL_FILENAME = "model.crfsuite"
 
 logger = logging.getLogger(__name__)
 
@@ -350,9 +353,14 @@ class CRFSlotFiller(SlotFiller):
 
         crf_model_file = None
         if self.crf_model is not None:
-            destination = path / Path(self.crf_model.modelfile.name).name
+            crf_model_file = CRF_MODEL_FILENAME
+            destination = path / crf_model_file
             shutil.copy(self.crf_model.modelfile.name, str(destination))
-            crf_model_file = str(destination.name)
+            # On windows, permissions of crfsuite files are correct
+            if os.name == "posix":
+                umask = os.umask(0o022)  # retrieve the system umask
+                os.umask(umask)  # restore the sys umask to its original value
+                os.chmod(str(destination), 0o644 & ~umask)
 
         model = {
             "language_code": self.language,

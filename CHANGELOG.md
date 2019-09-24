@@ -1,17 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.20.1] - 2019-09-04
 ### Added
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)
 - Persist `CustomEntityParser` license when needed [#832](https://github.com/snipsco/snips-nlu/pull/832)
 - Document metrics CLI [#839](https://github.com/snipsco/snips-nlu/pull/839)
 - Allow to fit SnipsNLUEngine with a `Dataset` object [#840](https://github.com/snipsco/snips-nlu/pull/840)
 
+### Changed
+- Update `snips-nlu-parsers` dependency upper bound to 0.5 [#850](https://github.com/snipsco/snips-nlu/pull/850)
+
 ### Fixed
 - Invalidate importlib caches after dynamically installing module [#838](https://github.com/snipsco/snips-nlu/pull/838)
 - Automatically generate documentation for supported languages and builtin entities [#841](https://github.com/snipsco/snips-nlu/pull/841)
 - Fix issue when cleaning up crfsuite files [#843](https://github.com/snipsco/snips-nlu/pull/843)
+- Fix filemode of persisted crfsuite files [#844](https://github.com/snipsco/snips-nlu/pull/844)
 
 ## [0.20.0] - 2019-07-16
 ### Added
@@ -324,7 +328,7 @@ several commands.
 - Fix compiling issue with `bindgen` dependency when installing from source
 - Fix issue in `CRFSlotFiller` when handling builtin entities
 
-[Unreleased]: https://github.com/snipsco/snips-nlu/compare/0.20.0...HEAD
+[0.20.1]: https://github.com/snipsco/snips-nlu/compare/0.20.0...0.20.1
 [0.20.0]: https://github.com/snipsco/snips-nlu/compare/0.19.8...0.20.0
 [0.19.8]: https://github.com/snipsco/snips-nlu/compare/0.19.7...0.19.8
 [0.19.7]: https://github.com/snipsco/snips-nlu/compare/0.19.6...0.19.7

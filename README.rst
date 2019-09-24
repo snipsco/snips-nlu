@@ -20,7 +20,7 @@ Snips NLU
    :target: https://twitter.com/intent/tweet?text=Extract%20meaning%20from%20text%20with%20Snips%20NLU,%20an%20open%20source%20library%20written%20in%20python%20and%20rust&url=https://github.com/snipsco/snips-nlu&via=snips&hashtags=nlu,nlp,machinelearning,python,rustlang
 
 
-`Snips NLU <https://snips-nlu.readthedocs.io>`_ (Natural Language Understanding) is a Python library that allows to parse sentences written in natural language and extracts structured information.
+`Snips NLU <https://snips-nlu.readthedocs.io>`_ (Natural Language Understanding) is a Python library that allows to extract structured information from sentences written in natural language.
 
 Summary
 -------

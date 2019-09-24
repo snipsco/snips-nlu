@@ -14,7 +14,7 @@ branches:
 
 install:
   - "%PYTHON%\\python.exe -m pip install wheel"
-  - "%PYTHON%\\python.exe -m pip install -e .[test]"
+  - "%PYTHON%\\python.exe -m pip install -e .[test] --upgrade --upgrade-strategy eager"
 
 build: false
 

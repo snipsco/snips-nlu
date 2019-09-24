@@ -2,8 +2,10 @@
 from __future__ import unicode_literals
 
 import io
+import os
 from builtins import range
 from pathlib import Path
+from unittest import skipIf
 
 from mock import MagicMock, PropertyMock
 from sklearn_crfsuite import CRF
@@ -17,7 +19,7 @@ from snips_nlu.pipeline.configs import CRFSlotFillerConfig
 from snips_nlu.preprocessing import tokenize, Token
 from snips_nlu.result import unresolved_slot
 from snips_nlu.slot_filler.crf_slot_filler import (
-    CRFSlotFiller, _ensure_safe, _encode_tag)
+    CRFSlotFiller, _ensure_safe, _encode_tag, CRF_MODEL_FILENAME)
 from snips_nlu.slot_filler.crf_utils import TaggingScheme
 from snips_nlu.slot_filler.feature_factory import (
     IsDigitFactory, NgramFactory, ShapeNgramFactory)
@@ -513,8 +515,7 @@ utterances:
         metadata_path = self.tmp_file_path / "metadata.json"
         self.assertJsonContent(metadata_path, {"unit_name": "crf_slot_filler"})
 
-        expected_crf_file = Path(slot_filler.crf_model.modelfile.name).name
-        self.assertTrue((self.tmp_file_path / expected_crf_file).exists())
+        self.assertTrue((self.tmp_file_path / CRF_MODEL_FILENAME).exists())
 
         expected_feature_factories = [
             {
@@ -532,7 +533,7 @@ utterances:
             tagging_scheme=TaggingScheme.BILOU,
             feature_factory_configs=expected_feature_factories)
         expected_slot_filler_dict = {
-            "crf_model_file": expected_crf_file,
+            "crf_model_file": CRF_MODEL_FILENAME,
             "language_code": "en",
             "config": expected_config.to_dict(),
             "intent": intent,
@@ -1034,3 +1035,24 @@ utterances:
 
         # Then
         self.assertFalse(crf_file.exists())
+
+    @skipIf(os.name != "posix", "files permissions are different on windows")
+    def test_crfsuite_files_modes_should_be_644(self):
+        # Given
+        dataset_stream = io.StringIO("""
+---
+type: intent
+name: MakeTea
+utterances:
+- make me a [beverage_temperature:Temperature](hot) cup of tea
+- make me [number_of_cups:snips/number](five) tea cups""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+
+        # When
+        slot_filler = CRFSlotFiller().fit(dataset, "MakeTea")
+        slot_filler.persist(self.tmp_file_path)
+
+        # Then
+        crfmodel_file = str(self.tmp_file_path / CRF_MODEL_FILENAME)
+        filemode = oct(os.stat(crfmodel_file).st_mode & 0o0777)
+        self.assertEqual(oct(0o644), filemode)

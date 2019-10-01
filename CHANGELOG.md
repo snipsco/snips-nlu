@@ -93,7 +93,7 @@ All notable changes to this project will be documented in this file.
 - Wrong required resources of the `DeterministicIntentParser`
 - Issue with non ASCII characters when using the parsing CLI with Python2 
 
-## [0.19.2] - 2019-02-11
+## [0.19.2] - 2019-02-11
 ### Fixed
 - Fix an issue regarding the way builtin entities were handled by the `CRFSlotFiller`
 

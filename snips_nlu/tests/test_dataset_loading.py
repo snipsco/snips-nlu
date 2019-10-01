@@ -181,7 +181,6 @@ values:
 
         # Then
         validate_and_format_dataset(dataset)
-        self.maxDiff = None
         self.assertDictEqual(EXPECTED_DATASET_DICT, dataset.json)
 
     def test_should_generate_dataset_from_merged_yaml_file(self):

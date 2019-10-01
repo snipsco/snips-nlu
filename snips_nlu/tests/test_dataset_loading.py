@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import io
 from unittest import TestCase
 
+import mock
+
 from snips_nlu.dataset import Dataset, validate_and_format_dataset
 
 EXPECTED_DATASET_DICT = {
@@ -173,12 +175,14 @@ values:
         dataset_files = [who_is_game_yaml, get_weather_yaml, location_yaml]
 
         # When
-        dataset = Dataset.from_yaml_files("en", dataset_files)
-        dataset_dict = dataset.json
+        with mock.patch("snips_nlu_parsers.get_builtin_entity_examples",
+                        return_value=["Today"]):
+            dataset = Dataset.from_yaml_files("en", dataset_files)
 
         # Then
-        validate_and_format_dataset(dataset_dict)
-        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
+        validate_and_format_dataset(dataset)
+        self.maxDiff = None
+        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset.json)
 
     def test_should_generate_dataset_from_merged_yaml_file(self):
         # Given
@@ -210,9 +214,10 @@ values:
         """)
 
         # When
-        dataset = Dataset.from_yaml_files("en", [dataset_stream])
-        dataset_dict = dataset.json
+        with mock.patch("snips_nlu_parsers.get_builtin_entity_examples",
+                        return_value=["Today"]):
+            dataset = Dataset.from_yaml_files("en", [dataset_stream])
 
         # Then
-        validate_and_format_dataset(dataset_dict)
-        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset_dict)
+        validate_and_format_dataset(dataset)
+        self.assertDictEqual(EXPECTED_DATASET_DICT, dataset.json)

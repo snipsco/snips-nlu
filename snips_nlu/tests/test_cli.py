@@ -259,12 +259,17 @@ values:
             (
                 "parse engine",
                 mocked_parse,
-                ["engine", None, 0]
+                ["engine", None, 0, None]
+            ),
+            (
+                "parse engine -f MakeCoffee,MakeTea",
+                mocked_parse,
+                ["engine", None, 0, "MakeCoffee,MakeTea"]
             ),
             (
                 "parse engine -q foobar",
                 mocked_parse,
-                ["engine", "foobar", 0]
+                ["engine", "foobar", 0, None]
             ),
             (
                 "download en",

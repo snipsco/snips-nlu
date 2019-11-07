@@ -25,6 +25,7 @@ def _parse(args_namespace):
 
 def parse(training_path, query, verbose=False, intents_filter=None):
     """Load a trained NLU engine and play with its parsing API interactively"""
+    import csv
     import logging
     from builtins import input, str
     from snips_nlu import SnipsNLUEngine
@@ -34,9 +35,10 @@ def parse(training_path, query, verbose=False, intents_filter=None):
         set_nlu_logger(logging.INFO)
     elif verbose >= 2:
         set_nlu_logger(logging.DEBUG)
-
     if intents_filter:
-        intents_filter = intents_filter.split(",")
+        # use csv in order to properly handle commas and other special
+        # characters in intent names
+        intents_filter = next(csv.reader([intents_filter]))
     else:
         intents_filter = None
 

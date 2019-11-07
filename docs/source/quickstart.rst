@@ -57,7 +57,7 @@ Let's try to parse something now!
 
     import json
 
-    parsing = nlu_engine.parse(u"What will be the weather in San Francisco next week?")
+    parsing = nlu_engine.parse("What will be the weather in San Francisco next week?")
     print(json.dumps(parsing, indent=2))
 
 

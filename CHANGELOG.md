@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- Add intents filter parameter in parsing CLI [#858](https://github.com/snipsco/snips-nlu/pull/858)
+- Add documentation about intents filters [#858](https://github.com/snipsco/snips-nlu/pull/858)
+
 ## [0.20.1] - 2019-09-04
 ### Added
 - Allow to bypass the model version check [#830](https://github.com/snipsco/snips-nlu/pull/830)

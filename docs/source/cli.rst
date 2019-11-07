@@ -75,6 +75,14 @@ You can also pass a single query using an optional parameter:
 
    snips-nlu parse path/to/persisted_engine -q "my query"
 
+In both previous examples, you can perform parsing using
+:ref:`intents filters <intents_filters>` by providing a comma-separated list
+of intents:
+
+.. code-block:: bash
+
+   snips-nlu parse path/to/persisted_engine -f intent1,intent3
+
 .. _version_cli:
 
 Evaluation

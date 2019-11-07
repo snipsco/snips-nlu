@@ -12,17 +12,20 @@ def add_parse_parser(subparsers, formatter_class):
                                 "interactive behavior.")
     subparser.add_argument("-v", "--verbosity", action="count", default=0,
                            help="Increase output verbosity")
+    subparser.add_argument("-f", "--intents-filter", type=str,
+                           help="Intents filter as a comma-separated list")
     subparser.set_defaults(func=_parse)
     return subparser
 
 
 def _parse(args_namespace):
     return parse(args_namespace.training_path, args_namespace.query,
-                 args_namespace.verbosity)
+                 args_namespace.verbosity, args_namespace.intents_filter)
 
 
-def parse(training_path, query, verbose=False):
+def parse(training_path, query, verbose=False, intents_filter=None):
     """Load a trained NLU engine and play with its parsing API interactively"""
+    import csv
     import logging
     from builtins import input, str
     from snips_nlu import SnipsNLUEngine
@@ -32,11 +35,17 @@ def parse(training_path, query, verbose=False):
         set_nlu_logger(logging.INFO)
     elif verbose >= 2:
         set_nlu_logger(logging.DEBUG)
+    if intents_filter:
+        # use csv in order to properly handle commas and other special
+        # characters in intent names
+        intents_filter = next(csv.reader([intents_filter]))
+    else:
+        intents_filter = None
 
     engine = SnipsNLUEngine.from_path(training_path)
 
     if query:
-        print_parsing_result(engine, query)
+        print_parsing_result(engine, query, intents_filter)
         return
 
     while True:
@@ -45,12 +54,13 @@ def parse(training_path, query, verbose=False):
             query = query.decode("utf-8")
         if query == "q":
             break
-        print_parsing_result(engine, query)
+        print_parsing_result(engine, query, intents_filter)
 
 
-def print_parsing_result(engine, query):
+def print_parsing_result(engine, query, intents_filter):
     from snips_nlu.common.utils import unicode_string, json_string
 
     query = unicode_string(query)
-    json_dump = json_string(engine.parse(query), sort_keys=True, indent=2)
+    json_dump = json_string(engine.parse(query, intents_filter),
+                            sort_keys=True, indent=2)
     print(json_dump)

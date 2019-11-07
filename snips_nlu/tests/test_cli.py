@@ -130,6 +130,60 @@ utterances:
 """
         self.assertEqual(expected_output, output)
 
+    def test_parse_with_intents_filter(self):
+        # Given / When
+        dataset_stream = io.StringIO(u"""
+---
+type: intent
+name: MakeTea
+utterances:
+  - make me a [beverage_temperature:Temperature](hot) cup of tea
+  - make me [number_of_cups:snips/number](five) tea cups
+
+---
+type: intent
+name: Make,Coffee
+utterances:
+  - brew [number_of_cups:snips/number](one) cup of coffee please
+  - make me [number_of_cups] cups of coffee""")
+        dataset = Dataset.from_yaml_files("en", [dataset_stream]).json
+        nlu_engine = SnipsNLUEngine().fit(dataset)
+        nlu_engine.persist(self.tmp_file_path)
+
+        # When / Then
+        output_target = io.StringIO()
+        with self.fail_if_exception("Failed to parse using CLI script"):
+            with redirect_stdout(output_target):
+                parse(str(self.tmp_file_path), "Make me two cups of coffee",
+                      False, 'MakeTea,"Make,Coffee"')
+        output = output_target.getvalue()
+
+        # Then
+        expected_output = """{
+  "input": "Make me two cups of coffee",
+  "intent": {
+    "intentName": "Make,Coffee",
+    "probability": 1.0
+  },
+  "slots": [
+    {
+      "entity": "snips/number",
+      "range": {
+        "end": 11,
+        "start": 8
+      },
+      "rawValue": "two",
+      "slotName": "number_of_cups",
+      "value": {
+        "kind": "Number",
+        "value": 2.0
+      }
+    }
+  ]
+}
+"""
+        self.assertEqual(expected_output, output)
+
     def test_generate_dataset(self):
         # Given
         yaml_string = """
@@ -259,12 +313,17 @@ values:
             (
                 "parse engine",
                 mocked_parse,
-                ["engine", None, 0]
+                ["engine", None, 0, None]
+            ),
+            (
+                "parse engine -f MakeCoffee,MakeTea",
+                mocked_parse,
+                ["engine", None, 0, "MakeCoffee,MakeTea"]
             ),
             (
                 "parse engine -q foobar",
                 mocked_parse,
-                ["engine", "foobar", 0]
+                ["engine", "foobar", 0, None]
             ),
             (
                 "download en",

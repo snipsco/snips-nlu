@@ -27,7 +27,7 @@ required = [
     "pyaml>=17.0,<20.0",
     "requests>=2.0,<3.0",
     "scikit-learn>=0.20,<0.21; python_version<'3.5'",
-    "scikit-learn>=0.21.1,<0.22; python_version>='3.5'",
+    "scikit-learn>=0.21.1,<0.23; python_version>='3.5'",
     "scipy>=1.0,<2.0",
     "sklearn-crfsuite>=0.3.6,<0.4",
     "snips-nlu-parsers>=0.3.1,<0.5",

@@ -4,8 +4,6 @@ environment:
       TARGET: x86_64-pc-windows-msvc
     - PYTHON: "C:\\Python37-x64"
       TARGET: x86_64-pc-windows-msvc
-    - PYTHON: "C:\\Python38-x64"
-      TARGET: x86_64-pc-windows-msvc
 
 branches:
   only:

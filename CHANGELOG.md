@@ -1,10 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.20.2] - 2020-01-15
 ### Added
 - Add intents filter parameter in parsing CLI [#858](https://github.com/snipsco/snips-nlu/pull/858)
 - Add documentation about intents filters [#858](https://github.com/snipsco/snips-nlu/pull/858)
+- Update dependencies for better python3.8 support [#867](https://github.com/snipsco/snips-nlu/pull/867)
 
 ## [0.20.1] - 2019-09-04
 ### Added

@@ -13,7 +13,7 @@ __author__ = "Clement Doumouro, Adrien Ball"
 __email__ = "clement.doumouro@snips.ai, adrien.ball@snips.ai"
 __license__ = "Apache License, Version 2.0"
 
-__version__ = "0.20.1"
+__version__ = "0.20.2"
 __model_version__ = "0.20.0"
 
 __download_url__ = "https://github.com/snipsco/snips-nlu-language-resources/releases/download"

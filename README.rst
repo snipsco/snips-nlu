@@ -207,7 +207,7 @@ In January 2018, we reproduced an `academic benchmark`_ which was published duri
 
 .. image:: .img/benchmarks.png
 
-In the figure above, `F1 scores`_ of both intent classification and slot filling were computed for several NLU providers, and averaged accross the three datasets used in the academic benchmark mentionned before. All the underlying results can be found `here <https://github.com/snipsco/nlu-benchmark/tree/master/2018-01-Braum-et-al-extension>`_.
+In the figure above, `F1 scores`_ of both intent classification and slot filling were computed for several NLU providers, and averaged across the three datasets used in the academic benchmark mentionned before. All the underlying results can be found `here <https://github.com/snipsco/nlu-benchmark/tree/master/2018-01-Braum-et-al-extension>`_.
 
 
 Documentation

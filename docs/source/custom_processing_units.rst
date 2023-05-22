@@ -18,7 +18,7 @@ By default, two parsers are used by the engine: a
 
 Let's focus on the probabilistic intent parser. This parser parses text using
 two steps: first it classifies the intent using an
-:class:`.IntentClassifier` and once the intent is known, it using a
+:class:`.IntentClassifier` and once the intent is known, it uses a
 :class:`.SlotFiller` in order to extract the slots.
 
 For the purpose of this tutorial, let's build a custom alternative to the
